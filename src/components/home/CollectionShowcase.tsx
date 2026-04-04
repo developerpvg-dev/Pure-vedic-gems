@@ -35,8 +35,18 @@ export function CollectionShowcase() {
   const filtered = active === 'All' ? PRODUCTS : PRODUCTS.filter((p) => p.category === active);
 
   return (
-    <section className="px-4 py-14 md:px-6 md:py-20">
-      <div className="mx-auto max-w-[1400px] text-center">
+    <section
+      className="relative px-4 py-14 md:px-6 md:py-20"
+      style={{
+        backgroundImage: 'url(/collection-bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Subtle overlay to keep text readable */}
+      <div className="pointer-events-none absolute inset-0 bg-white/40" />
+      <div className="relative mx-auto max-w-[1400px] text-center">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[3px] text-[var(--pvg-accent)]">
           Our Collection
         </p>

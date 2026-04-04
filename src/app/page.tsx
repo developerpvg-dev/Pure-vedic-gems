@@ -2,8 +2,9 @@ import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { HeroSection } from '@/components/home/HeroSection';
 import { CertMarquee } from '@/components/layout/CertMarquee';
 import { NavaratnaGrid } from '@/components/home/NavaratnaGrid';
-import { CollectionShowcase } from '@/components/home/CollectionShowcase';
+import { UpratnaGrid } from '@/components/home/UpratnaGrid';
 import { FeaturedGems } from '@/components/home/FeaturedGems';
+import { CategoryShowcase } from '@/components/home/CategoryShowcase';
 import { DirectorsPick } from '@/components/home/DirectorsPick';
 import { ConfiguratorCTA } from '@/components/home/ConfiguratorCTA';
 import { KnowledgeHighlights } from '@/components/home/KnowledgeHighlights';
@@ -41,20 +42,25 @@ export default function HomePage() {
         <PromoBanners />
       </ScrollReveal>
 
-      {/* 3. Navaratna Grid */}
+      {/* 3. Navaratna Grid — 9 Sacred Gems */}
       <ScrollReveal>
         <NavaratnaGrid />
       </ScrollReveal>
 
-      {/* 4. Our Collection */}
+      {/* 3b. Upratna Grid — Semi-Precious Gems */}
       <ScrollReveal>
-        <CollectionShowcase />
+        <UpratnaGrid />
       </ScrollReveal>
 
       <LotusDivider />
 
       {/* 5. Featured Gems — Scroll Carousel */}
       <FeaturedGems />
+
+      {/* 5b. Category Showcase — Rudraksha, Idols, Jewellery */}
+      <ScrollReveal>
+        <CategoryShowcase />
+      </ScrollReveal>
 
       {/* 6. Director's Pick */}
       <ScrollReveal>

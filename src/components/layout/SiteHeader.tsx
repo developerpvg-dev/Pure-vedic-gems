@@ -1,11 +1,13 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, Search, ShoppingBag } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/constants/nav-items';
+import { useCart } from '@/lib/hooks/useCart';
 import { MobileNav } from './MobileNav';
+import { UserAuthButton } from '@/components/auth/UserAuthButton';
 
 /* ── contact marquee items ── */
 const STRIP = [
@@ -21,6 +23,7 @@ const MARQUEE = [...STRIP, ...STRIP];
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { cart } = useCart();
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 10);
@@ -79,10 +82,10 @@ export function SiteHeader() {
               aria-label="PureVedicGems home"
               className="group flex shrink-0 flex-col items-center px-8"
             >
-              <div className="relative h-[54px] w-[54px] transition-transform duration-300 group-hover:scale-105">
+              <div className="relative h-[44px] w-[44px] transition-transform duration-300 group-hover:scale-105">
                 <Image src="/PVG NEW LOGO DESIGN.PNG" alt="PureVedicGems" fill className="object-contain" priority />
               </div>
-              <div className="relative mt-0.5 h-[18px] w-[150px]">
+              <div className="relative mt-0.5 h-[15px] w-[130px]">
                 <Image src="/Algerian.png" alt="Pure Vedic Gems" fill className="object-contain" priority />
               </div>
             </Link>
@@ -106,9 +109,17 @@ export function SiteHeader() {
                 <button aria-label="Search" className="text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-accent)]">
                   <Search className="h-[18px] w-[18px]" strokeWidth={1.6} />
                 </button>
-                <Link href="/cart" aria-label="Cart" className="text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-accent)]">
+                <Link href="/cart" aria-label={`Cart (${cart.item_count} items)`} className="relative text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-accent)]">
                   <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.6} />
+                  {cart.item_count > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--pvg-accent)] text-[9px] font-black text-white">
+                      {cart.item_count > 9 ? '9+' : cart.item_count}
+                    </span>
+                  )}
                 </Link>
+                <Suspense fallback={<div className="h-[18px] w-[18px]" />}>
+                  <UserAuthButton iconSize={18} />
+                </Suspense>
                 <Link
                   href="/consultation"
                   className="ml-1 rounded-sm bg-[var(--pvg-primary)] px-5 py-2 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:bg-[var(--pvg-accent)] hover:text-[var(--pvg-primary)] hover:-translate-y-0.5"
@@ -141,9 +152,19 @@ export function SiteHeader() {
             </button>
 
             {/* Cart */}
-            <Link href="/cart" aria-label="Cart" className="p-1.5 text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-accent)]">
+            <Link href="/cart" aria-label={`Cart (${cart.item_count} items)`} className="relative p-1.5 text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-accent)]">
               <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.6} />
+              {cart.item_count > 0 && (
+                <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--pvg-accent)] text-[9px] font-black text-white">
+                  {cart.item_count > 9 ? '9+' : cart.item_count}
+                </span>
+              )}
             </Link>
+
+            {/* User / Auth */}
+            <Suspense fallback={<div className="h-[18px] w-[18px] p-1.5" />}>
+              <UserAuthButton iconSize={18} className="p-1.5" />
+            </Suspense>
 
             {/* Consult */}
             <Link

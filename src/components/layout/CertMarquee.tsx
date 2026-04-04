@@ -1,12 +1,16 @@
 import Image from 'next/image';
 
 const CERT_ITEMS = [
-  { name: 'GIA', logo: '/GIA-PVG.webp' },
-  { name: 'IGI', logo: '/IGI-PVG.webp' },
-  { name: 'IIGJ', logo: '/IIGJ.jpg' },
-  { name: 'GRS', logo: '/GRS-PVG.webp' },
-  { name: 'Gübelin', logo: '/CUBELIN LAB-PVG.webp' },
-  { name: 'GII', logo: '/GII-PVG.webp' },
+  { name: 'GJEPC', logo: '/labslogo/GJEPC.jpg' },
+  { name: 'GIA', logo: '/labslogo/GIA.jpg' },
+  { name: 'GÜBELIN', logo: '/labslogo/GUBELIN.jpg' },
+  { name: 'GII', logo: '/labslogo/GII.jpg' },
+  { name: 'GRS', logo: '/labslogo/GRS.jpg' },
+  { name: 'IIGJ', logo: '/labslogo/IIGJ.jpg' },
+  { name: 'IGI', logo: '/labslogo/IGI.jpg' },
+  { name: 'SSEF', logo: '/labslogo/SSEF.jpg' },
+  { name: 'GFCO', logo: '/labslogo/GFCO.jpg' },
+  { name: 'HRD ANTWERP', logo: '/labslogo/HRD ANTWERP.jpg' },
 ];
 
 export function CertMarquee() {
@@ -18,17 +22,17 @@ export function CertMarquee() {
         {items.map((item, i) => (
           <div
             key={i}
-            className="flex shrink-0 items-center gap-3 whitespace-nowrap text-[11px] font-bold uppercase tracking-[2.5px] text-[var(--pvg-muted)] md:text-xs"
+            className="flex shrink-0 items-center"
           >
-            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[var(--pvg-border)] md:h-9 md:w-9">
+            <div className="relative h-8 w-auto shrink-0 md:h-9">
               <Image
                 src={item.logo}
                 alt={`${item.name} certification`}
-                fill
-                className="object-cover"
+                width={80}
+                height={36}
+                className="h-full w-auto object-contain"
               />
             </div>
-            {item.name}
           </div>
         ))}
       </div>

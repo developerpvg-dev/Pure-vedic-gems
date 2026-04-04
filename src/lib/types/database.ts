@@ -56,6 +56,7 @@ export interface Database {
           low_stock_threshold: number;
           featured: boolean;
           is_directors_pick: boolean;
+          configurator_enabled: boolean;
           is_active: boolean;
           display_order: number;
           meta_title: string | null;
@@ -109,6 +110,7 @@ export interface Database {
           low_stock_threshold?: number;
           featured?: boolean;
           is_directors_pick?: boolean;
+          configurator_enabled?: boolean;
           is_active?: boolean;
           display_order?: number;
           meta_title?: string | null;
@@ -162,6 +164,7 @@ export interface Database {
           low_stock_threshold?: number;
           featured?: boolean;
           is_directors_pick?: boolean;
+          configurator_enabled?: boolean;
           is_active?: boolean;
           display_order?: number;
           meta_title?: string | null;
@@ -169,6 +172,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       experts: {
         Row: {
@@ -228,6 +232,7 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       customer_profiles: {
         Row: {
@@ -278,6 +283,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       orders: {
         Row: {
@@ -409,6 +415,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       jewelry_designs: {
         Row: {
@@ -450,6 +457,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       energization_options: {
         Row: {
@@ -488,6 +496,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       certification_labs: {
         Row: {
@@ -529,6 +538,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       product_configurations: {
         Row: {
@@ -606,6 +616,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       consultations: {
         Row: {
@@ -674,6 +685,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       enquiries: {
         Row: {
@@ -724,6 +736,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       reviews: {
         Row: {
@@ -774,6 +787,7 @@ export interface Database {
           is_featured?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       coupons: {
         Row: {
@@ -818,6 +832,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       saved_items: {
         Row: {
@@ -838,6 +853,7 @@ export interface Database {
           product_id?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       admin_activity_log: {
         Row: {
@@ -870,6 +886,7 @@ export interface Database {
           ip_address?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       team_members: {
         Row: {
@@ -896,6 +913,97 @@ export interface Database {
           permissions?: Json;
           created_at?: string;
         };
+        Relationships: [];
+      };
+      gem_categories: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          type: string;
+          sanskrit_name: string | null;
+          planet: string | null;
+          emoji: string | null;
+          color: string | null;
+          image_url: string | null;
+          description: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          type: string;
+          sanskrit_name?: string | null;
+          planet?: string | null;
+          emoji?: string | null;
+          color?: string | null;
+          image_url?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          type?: string;
+          sanskrit_name?: string | null;
+          planet?: string | null;
+          emoji?: string | null;
+          color?: string | null;
+          image_url?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      metals: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          purity: string | null;
+          price_per_gram: number;
+          description: string | null;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          purity?: string | null;
+          price_per_gram: number;
+          description?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          purity?: string | null;
+          price_per_gram?: number;
+          description?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       gold_rate_cache: {
         Row: {
@@ -925,6 +1033,7 @@ export interface Database {
           fetched_at?: string;
           manual_override?: boolean;
         };
+        Relationships: [];
       };
       notification_log: {
         Row: {
@@ -957,6 +1066,7 @@ export interface Database {
           error_message?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
@@ -984,3 +1094,7 @@ export type SavedItem = Database['public']['Tables']['saved_items']['Row'];
 export type TeamMember = Database['public']['Tables']['team_members']['Row'];
 export type GoldRateCache = Database['public']['Tables']['gold_rate_cache']['Row'];
 export type NotificationLog = Database['public']['Tables']['notification_log']['Row'];
+export type GemCategoryRow = Database['public']['Tables']['gem_categories']['Row'];
+export type GemCategoryInsert = Database['public']['Tables']['gem_categories']['Insert'];
+export type Metal = Database['public']['Tables']['metals']['Row'];
+export type MetalInsert = Database['public']['Tables']['metals']['Insert'];

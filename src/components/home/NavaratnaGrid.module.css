@@ -1,0 +1,9 @@
+.bgPulse {
+  animation: navratnaBgPulse 5s ease-in-out infinite;
+}
+
+@keyframes navratnaBgPulse {
+  0%   { opacity: 0.2; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0.2; }
+}

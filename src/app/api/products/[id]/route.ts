@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type { Product, ProductDetailResponse } from '@/lib/types/product';
 
 // UUID v4 regex for differentiating slug vs UUID lookups
@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Determine if lookup is by UUID or slug and run the appropriate typed query
     const isUuid = UUID_REGEX.test(id);

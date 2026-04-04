@@ -13,10 +13,10 @@ const FOOTER_LINKS = {
     { label: 'FAQs', href: '/faqs' },
   ],
   Popular: [
-    { label: 'Yellow Sapphire', href: '/shop/gemstones/yellow-sapphire' },
-    { label: 'Blue Sapphire', href: '/shop/gemstones/blue-sapphire' },
-    { label: 'Ruby', href: '/shop/gemstones/ruby' },
-    { label: 'Emerald', href: '/shop/gemstones/emerald' },
+    { label: 'Yellow Sapphire', href: '/shop/yellow-sapphire' },
+    { label: 'Blue Sapphire', href: '/shop/blue-sapphire' },
+    { label: 'Ruby', href: '/shop/ruby' },
+    { label: 'Emerald', href: '/shop/emerald' },
     { label: 'Rudraksha', href: '/shop/rudraksha' },
   ],
 };

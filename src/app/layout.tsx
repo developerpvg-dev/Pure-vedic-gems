@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { Playfair_Display, DM_Sans } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/lib/theme-context';
+import { CartProvider } from '@/lib/hooks/useCart';
+import { AuthProvider } from '@/lib/hooks/useAuth';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
-import { SiteHeader } from '@/components/layout/SiteHeader';
-import { Footer } from '@/components/layout/Footer';
+import { LayoutShell } from '@/components/layout/LayoutShell';
 import { SplashAnimation } from '@/components/home/SplashAnimation';
 import './globals.css';
 
@@ -62,12 +63,14 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-body bg-background text-foreground">
         <ThemeProvider>
-          <SplashAnimation />
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <ThemeSwitcher />
-          <Toaster richColors position="top-right" />
+          <AuthProvider>
+            <CartProvider>
+              <SplashAnimation />
+              <LayoutShell>{children}</LayoutShell>
+              <ThemeSwitcher />
+              <Toaster richColors position="top-right" />
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

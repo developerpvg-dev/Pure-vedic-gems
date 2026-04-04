@@ -27,7 +27,9 @@ export type ProductCard = Pick<
   | 'treatment'
   | 'planet'
   | 'created_at'
->;
+> & {
+  configurator_enabled?: boolean;
+};
 
 // Filter parameters for product listing API
 export interface ProductFilters {

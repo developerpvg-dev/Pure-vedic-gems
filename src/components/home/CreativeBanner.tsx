@@ -13,19 +13,19 @@ const BANNERS: BannerItem[] = [
     image: 'https://images.unsplash.com/photo-1551122089-4e3e72477432?w=800&h=500&fit=crop&q=80',
     title: 'Yellow Sapphire',
     subtitle: 'The Gem of Jupiter — Prosperity & Wisdom',
-    href: '/shop/gemstones/yellow-sapphire',
+    href: '/shop/yellow-sapphire',
   },
   {
     image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&h=500&fit=crop&q=80',
     title: 'Blue Sapphire',
     subtitle: 'Saturn\'s Stone — Power & Discipline',
-    href: '/shop/gemstones/blue-sapphire',
+    href: '/shop/blue-sapphire',
   },
   {
     image: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=800&h=500&fit=crop&q=80',
     title: 'Emerald',
     subtitle: 'Mercury\'s Gift — Intellect & Communication',
-    href: '/shop/gemstones/emerald',
+    href: '/shop/emerald',
   },
 ];
 

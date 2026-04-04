@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { Landmark, FlaskConical, Sparkles, PackageCheck } from 'lucide-react';
 
 export function HeroSection() {
   return (
@@ -91,9 +92,9 @@ export function HeroSection() {
               animation: 'pvgSlideRight 1s ease-out 0.5s both',
             }}
           >
-            India&apos;s oldest and most trusted source for natural, certified and
-            Vedic-energised gemstones, rudrakshas and yagyas backed by ancient wisdom
-            and four generations of experience.
+            World&apos;s Oldest and Most Trusted Source for Natural, Certified and
+            Vedic-Energised Gemstones, Rudrakshas and Yagyas Backed by Ancient Wisdom
+            and Four Generations of Experience.
           </p>
 
           <div className="flex flex-wrap gap-4" style={{ animation: 'pvgSlideRight 1s ease-out 0.7s both' }}>
@@ -148,8 +149,9 @@ export function HeroSection() {
           className="mb-8"
           style={{ fontSize: '15px', lineHeight: '1.8', color: 'rgba(255,255,255,0.75)' }}
         >
-          India&apos;s most trusted source for natural, certified and Vedic-energised
-          gemstones backed by four generations of expertise.
+          World&apos;s Oldest and Most Trusted Source for Natural, Certified and
+          Vedic-Energised Gemstones, Rudrakshas and Yagyas Backed by Ancient Wisdom
+          and Four Generations of Experience.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
@@ -174,18 +176,18 @@ export function HeroSection() {
         className="absolute bottom-8 left-1/2 z-10 hidden -translate-x-1/2 items-center gap-8 lg:flex"
         style={{ animation: 'pvgSlideRight 1s ease-out 1.2s both' }}
       >
-        {[
-          { icon: '🏛', text: 'Since 1937', sub: '87+ Years Legacy' },
-          { icon: '🔬', text: 'Lab Certified', sub: 'GIA · IGI · GJEPC' },
-          { icon: '🔱', text: 'Vedic Energized', sub: 'Authentic Puja' },
-          { icon: '🚚', text: 'Insured Delivery', sub: 'Worldwide Shipping' },
-        ].map((item) => (
+        {([
+          { Icon: Landmark, text: 'Since 1937', sub: '87+ Years Legacy' },
+          { Icon: FlaskConical, text: 'Lab Certified', sub: 'GIA · IGI · GJEPC' },
+          { Icon: Sparkles, text: 'Vedic Energized', sub: 'Authentic Puja' },
+          { Icon: PackageCheck, text: 'Insured Delivery', sub: 'Worldwide Shipping' },
+        ] as const).map((item) => (
           <div key={item.text} className="flex items-center gap-2.5">
             <div
-              className="flex h-9 w-9 items-center justify-center rounded-full text-base"
+              className="flex h-9 w-9 items-center justify-center rounded-full"
               style={{ background: 'rgba(201,168,76,0.2)', border: '1px solid rgba(201,168,76,0.35)' }}
             >
-              {item.icon}
+              <item.Icon className="h-4 w-4" style={{ color: 'rgb(201,168,76)' }} strokeWidth={1.5} />
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: '#fff' }}>{item.text}</p>

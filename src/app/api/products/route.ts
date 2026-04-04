@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { productFiltersSchema } from '@/lib/validators/product';
 import type { ProductListResponse } from '@/lib/types/product';
 
@@ -7,7 +7,7 @@ import type { ProductListResponse } from '@/lib/types/product';
 const CARD_SELECT = `
   id, slug, name, category, sub_category, price, price_per_carat, compare_price,
   carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url,
-  in_stock, featured, is_directors_pick, treatment, planet, created_at
+  in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled
 `;
 
 export async function GET(request: NextRequest) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     const filters = parsed.data;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Build query with dynamic filters
     let query = supabase
@@ -64,6 +64,15 @@ export async function GET(request: NextRequest) {
     }
     if (filters.treatment) {
       query = query.eq('treatment', filters.treatment);
+    }
+    if (filters.featured !== undefined) {
+      query = query.eq('featured', filters.featured);
+    }
+
+    // Configurator-enabled filter
+    const configuratorEnabled = searchParams.get('configurator_enabled');
+    if (configuratorEnabled === 'true') {
+      query = query.eq('configurator_enabled', true);
     }
 
     // Sorting

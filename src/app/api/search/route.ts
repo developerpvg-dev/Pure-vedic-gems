@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { searchQuerySchema } from '@/lib/validators/product';
 import type { SearchResponse } from '@/lib/types/product';
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { q } = parsed.data;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Use PostgreSQL full-text search with ts_query
     // Search across: name, vedic_name, origin, planet, short_desc

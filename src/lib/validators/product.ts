@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Valid enum values
-const CATEGORIES = ['gemstone', 'rudraksha', 'idol', 'mala', 'jewelry'] as const;
+const CATEGORIES = ['navaratna', 'upratna', 'gemstone', 'rudraksha', 'idol', 'mala', 'jewelry'] as const;
 const SORT_BY = ['price', 'carat', 'newest'] as const;
 const SORT_ORDER = ['asc', 'desc'] as const;
 
@@ -21,6 +21,7 @@ export const productFiltersSchema = z.object({
   planet: z.enum(PLANETS).optional(),
   certification: z.enum(CERTIFICATIONS).optional(),
   treatment: z.enum(TREATMENTS).optional(),
+  featured: z.coerce.boolean().optional(),
   sort_by: z.enum(SORT_BY).optional().default('newest'),
   sort_order: z.enum(SORT_ORDER).optional().default('desc'),
   page: z.coerce.number().int().min(1).optional().default(1),
@@ -96,6 +97,7 @@ export const productCreateSchema = z.object({
   featured: z.boolean().default(false),
   is_directors_pick: z.boolean().default(false),
   is_active: z.boolean().default(true),
+  configurator_enabled: z.boolean().default(false),
   display_order: z.number().int().default(0),
   meta_title: z.string().max(200).optional(),
   meta_description: z.string().max(500).optional(),

@@ -1,28 +1,66 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import styles from './NavaratnaGrid.module.css';
 
-const GEMS = [
-  { name: 'Yellow Sapphire', planet: 'Jupiter \u00B7 \u0917\u0941\u0930\u0941', slug: 'yellow-sapphire', color: '#E8B840', img: 'https://images.unsplash.com/photo-1551122089-4e3e72477432?w=400&h=400&fit=crop&q=80' },
-  { name: 'Blue Sapphire', planet: 'Saturn \u00B7 \u0936\u0928\u093F', slug: 'blue-sapphire', color: '#3B5EC2', img: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=400&h=400&fit=crop&q=80' },
-  { name: 'Ruby', planet: 'Sun \u00B7 \u0938\u0942\u0930\u094D\u092F', slug: 'ruby', color: '#C0292E', img: 'https://images.unsplash.com/photo-1624927637280-f033784c1279?w=400&h=400&fit=crop&q=80' },
-  { name: 'Emerald', planet: 'Mercury \u00B7 \u092C\u0941\u0927', slug: 'emerald', color: '#2F9E5A', img: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=400&h=400&fit=crop&q=80' },
-  { name: 'Diamond', planet: 'Venus \u00B7 \u0936\u0941\u0915\u094D\u0930', slug: 'diamond', color: '#B8C4D0', img: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=400&h=400&fit=crop&q=80' },
-  { name: 'Hessonite', planet: 'Rahu \u00B7 \u0930\u093E\u0939\u0941', slug: 'hessonite', color: '#D17B3A', img: 'https://images.unsplash.com/photo-1624927637280-f033784c1279?w=400&h=400&fit=crop&q=80' },
-  { name: "Cat's Eye", planet: 'Ketu \u00B7 \u0915\u0947\u0924\u0941', slug: 'cats-eye', color: '#8B9B3E', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=400&fit=crop&q=80' },
-  { name: 'Pearl', planet: 'Moon \u00B7 \u091A\u0902\u0926\u094D\u0930', slug: 'pearl', color: '#D4CFC4', img: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=400&h=400&fit=crop&q=80' },
-  { name: 'Red Coral', planet: 'Mars \u00B7 \u092E\u0902\u0917\u0932', slug: 'red-coral', color: '#E05030', img: 'https://images.unsplash.com/photo-1545239705-1564e58b9e4a?w=400&h=400&fit=crop&q=80' },
-  { name: 'Rudraksha', planet: 'Shiva \u00B7 \u0936\u093F\u0935', slug: 'rudraksha', color: '#6B4423', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=400&fit=crop&q=80' },
-  { name: 'Opal', planet: 'Venus \u00B7 \u0936\u0941\u0915\u094D\u0930', slug: 'opal', color: '#5BC0BE', img: 'https://images.unsplash.com/photo-1624927637280-f033784c1279?w=400&h=400&fit=crop&q=80' },
-  { name: 'Turquoise', planet: 'Jupiter \u00B7 \u0917\u0941\u0930\u0941', slug: 'turquoise', color: '#3AAFA9', img: 'https://images.unsplash.com/photo-1551122089-4e3e72477432?w=400&h=400&fit=crop&q=80' },
-];
+interface GemCategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  planet: string | null;
+  sanskrit_name: string | null;
+  emoji: string | null;
+  color: string | null;
+  image_url: string | null;
+  hover_image_url: string | null;
+}
+
+// Fallback images when DB has no image_url set
+const FALLBACK_IMAGES: Record<string, string> = {
+  'yellow-sapphire': 'https://images.unsplash.com/photo-1551122089-4e3e72477432?w=400&h=400&fit=crop&q=80',
+  'blue-sapphire': 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=400&h=400&fit=crop&q=80',
+  ruby: 'https://images.unsplash.com/photo-1624927637280-f033784c1279?w=400&h=400&fit=crop&q=80',
+  emerald: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=400&h=400&fit=crop&q=80',
+  diamond: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=400&h=400&fit=crop&q=80',
+  hessonite: 'https://images.unsplash.com/photo-1624927637280-f033784c1279?w=400&h=400&fit=crop&q=80',
+  'cats-eye': 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=400&fit=crop&q=80',
+  pearl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=400&h=400&fit=crop&q=80',
+  'red-coral': 'https://images.unsplash.com/photo-1545239705-1564e58b9e4a?w=400&h=400&fit=crop&q=80',
+};
+
+// Hindi planet names
+const PLANET_HINDI: Record<string, string> = {
+  Sun: 'सूर्य', Moon: 'चन्द्र', Mars: 'मंगल', Mercury: 'बुध',
+  Jupiter: 'गुरु', Venus: 'शुक्र', Saturn: 'शनि', Rahu: 'राहु', Ketu: 'केतु',
+};
 
 export function NavaratnaGrid() {
+  const [gems, setGems] = useState<GemCategoryItem[]>([]);
+
+  useEffect(() => {
+    fetch('/api/categories?type=navaratna')
+      .then(res => res.json())
+      .then(data => { if (data.categories) setGems(data.categories); })
+      .catch(() => {});
+  }, []);
+
   return (
-    <section className="bg-[var(--pvg-surface)] px-4 py-14 md:px-6 md:py-20">
+    <section className="relative bg-[var(--pvg-surface)] px-8 py-14 md:px-14 md:py-20 overflow-hidden">
+      {/* Pulsing celestial background */}
+      <div className={`absolute inset-0 pointer-events-none ${styles.bgPulse}`}>
+        <Image
+          src="/navratnassectionbg.png"
+          alt=""
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority={false}
+        />
+      </div>
       {/* Section header */}
-      <div className="mx-auto max-w-[1400px] text-center">
+      <div className="relative z-10 mx-auto max-w-[1400px] text-center">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[3px] text-[var(--pvg-accent)]">
           The Sacred Nine
         </p>
@@ -37,42 +75,61 @@ export function NavaratnaGrid() {
         </p>
       </div>
 
-      {/* 4-col card grid */}
-      <div className="mx-auto mt-10 grid max-w-[1400px] grid-cols-2 gap-3 sm:grid-cols-3 md:mt-14 md:grid-cols-4 lg:grid-cols-6 md:gap-4">
-        {GEMS.map((gem) => (
-          <Link
-            key={gem.slug}
-            href={`/shop/${gem.slug}`}
-            className="group relative overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-bg)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_48px_rgba(0,0,0,0.1)]"
-          >
-            {/* Image area */}
-            <div className="relative aspect-square overflow-hidden">
-              <Image
-                src={gem.img}
-                alt={gem.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                sizes="(max-width:640px) 50vw, (max-width:768px) 33vw, 25vw"
-              />
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-            </div>
-            {/* Text */}
-            <div className="relative p-3 md:p-4">
-              <h4 className="font-heading text-sm font-semibold text-[var(--pvg-primary)] md:text-[15px]">
-                {gem.name}
-              </h4>
-              <p className="mt-0.5 text-[10px] text-[var(--pvg-muted)] md:text-xs">
-                {gem.planet}
-              </p>
-              <span
-                className="mt-2 inline-flex items-center text-[10px] font-semibold uppercase tracking-wider text-[var(--pvg-accent)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:text-[11px]"
-              >
-                Explore &rarr;
-              </span>
-            </div>
-          </Link>
-        ))}
+      {/* Row: 6 gems per row on large screens, 3 on tablet, 2 on mobile */}
+      <div className="relative z-10 mx-auto mt-10 flex max-w-[1400px] flex-wrap justify-center gap-2 md:mt-14 md:gap-3">
+        {gems.map((gem) => {
+          const imgSrc = gem.image_url || FALLBACK_IMAGES[gem.slug] || FALLBACK_IMAGES.ruby;
+          const planetLabel = gem.planet
+            ? `${gem.planet} · ${PLANET_HINDI[gem.planet] ?? ''}`
+            : '';
+
+          return (
+            <Link
+              key={gem.slug}
+              href={`/shop/${gem.slug}`}
+              className="group relative w-[calc(50%-4px)] overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-bg)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] sm:w-[calc(33.333%-6px)] lg:w-[calc(16.666%-8px)]"
+            >
+              {/* Image area */}
+              <div className="relative aspect-square overflow-hidden">
+                <Image
+                  src={imgSrc}
+                  alt={gem.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  sizes="(max-width:640px) 50vw, (max-width:768px) 33vw, 16vw"
+                />
+                {/* Hover image overlay — fades in + scale */}
+                {gem.hover_image_url && (
+                  <div className="absolute inset-0 overflow-hidden opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                    <Image
+                      src={gem.hover_image_url}
+                      alt={`${gem.name} hover`}
+                      fill
+                      className="object-cover transition-transform duration-500 scale-100 group-hover:scale-110"
+                      sizes="(max-width:640px) 50vw, (max-width:768px) 33vw, 16vw"
+                    />
+                  </div>
+                )}
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+              </div>
+              {/* Text */}
+              <div className="relative p-2 md:p-3">
+                <h4 className="font-heading text-xs font-semibold text-[var(--pvg-primary)] md:text-sm">
+                  {gem.name}
+                </h4>
+                <p className="mt-0.5 text-[9px] text-[var(--pvg-muted)] md:text-[10px]">
+                  {planetLabel}
+                </p>
+                <span
+                  className="mt-1.5 inline-flex items-center text-[9px] font-semibold uppercase tracking-wider text-[var(--pvg-accent)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:text-[10px]"
+                >
+                  Explore &rarr;
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
