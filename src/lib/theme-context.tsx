@@ -28,16 +28,14 @@ export function useTheme() {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [palette, setPaletteState] = useState(1);
-  const [font, setFontState] = useState(1);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedPalette = localStorage.getItem('pvg-palette');
-    const savedFont = localStorage.getItem('pvg-font');
-    if (savedPalette) setPaletteState(Number(savedPalette));
-    if (savedFont) setFontState(Number(savedFont));
-  }, []);
+  const [palette, setPaletteState] = useState(() => {
+    if (typeof window === 'undefined') return 1;
+    return Number(localStorage.getItem('pvg-palette')) || 1;
+  });
+  const [font, setFontState] = useState(() => {
+    if (typeof window === 'undefined') return 1;
+    return Number(localStorage.getItem('pvg-font')) || 1;
+  });
 
   // Apply data attributes to <html>
   useEffect(() => {

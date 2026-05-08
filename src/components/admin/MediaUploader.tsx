@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Upload, X, Image as ImageIcon, Film, Loader2 } from 'lucide-react';
+import { Upload, X, Film, Loader2 } from 'lucide-react';
 
 interface MediaFile {
   url: string;

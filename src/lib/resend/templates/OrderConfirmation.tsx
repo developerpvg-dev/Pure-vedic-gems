@@ -57,7 +57,6 @@ function formatINR(amount: number): string {
 export function OrderConfirmationEmail({
   customerName,
   orderNumber,
-  orderId,
   items,
   subtotal,
   shippingCost,

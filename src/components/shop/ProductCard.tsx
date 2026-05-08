@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, Eye, Heart, Settings2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingBag, Eye, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
+import { WishlistButton } from '@/components/shop/WishlistButton';
+import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { formatPrice, formatCarats } from '@/lib/utils/format';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
@@ -67,18 +70,28 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
   const { addItem, isInCart } = useCart();
   const badge = resolveBadge(product);
   const inCart = isInCart(product.id);
   const href = `/shop/${product.category}/${product.slug}`;
   const imageSrc = getImageSrc(product);
+  const isUnavailable =
+    !product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isUnavailable) {
+      toast.error('This product is currently unavailable', {
+        description: 'Contact us and we can help source a similar item.',
+      });
+      return;
+    }
     addItem({
       product_id: product.id,
-      sku: product.slug,
+      sku: product.sku,
+      tag_number: product.tag_number ?? null,
       name: product.name,
       category: product.category,
       image_url: imageSrc,
@@ -87,10 +100,20 @@ export function ProductCard({ product }: ProductCardProps) {
       carat_weight: product.carat_weight ?? null,
       origin: product.origin ?? null,
     });
+    trackStorefrontEvent('add_to_cart', {
+      product_id: product.id,
+      sku: product.sku,
+      category: product.category,
+      source: 'product_card',
+    });
     toast.success(`${product.name} added to cart`, {
       description: 'View your cart to proceed to checkout.',
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
+  };
+
+  const openProduct = () => {
+    router.push(href);
   };
 
   const meta = [
@@ -102,9 +125,21 @@ export function ProductCard({ product }: ProductCardProps) {
     .join(' · ');
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(61,43,31,0.14)]">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(61,43,31,0.14)]">
       {/* ── Image (5:6 portrait — compact) ── */}
-      <Link href={href} className="relative block overflow-hidden" style={{ paddingBottom: '120%' }}>
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={openProduct}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openProduct();
+          }
+        }}
+        className="relative block cursor-pointer overflow-hidden"
+        style={{ paddingBottom: '120%' }}
+      >
         <Image
           src={imageSrc}
           alt={product.name}
@@ -120,17 +155,19 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="absolute inset-x-0 bottom-0 hidden flex-col gap-2 p-3 opacity-0 md:flex md:translate-y-3 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
           <button
             onClick={handleAddToCart}
+            disabled={isUnavailable}
             className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:scale-[1.02] active:scale-95"
-            style={{ background: inCart ? '#2e7d32' : 'var(--pvg-accent)' }}
+            style={{ background: isUnavailable ? 'rgba(255,255,255,0.28)' : inCart ? '#2e7d32' : 'var(--pvg-accent)' }}
           >
             <ShoppingBag className="h-3.5 w-3.5" />
-            {inCart ? 'In Cart ✓' : 'Add to Cart'}
+            {isUnavailable ? 'Unavailable' : inCart ? 'In Cart ✓' : 'Add to Cart'}
           </button>
           {product.configurator_enabled && (
             <Link
               href={`/configure/${product.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--pvg-accent)] py-2 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:bg-[var(--pvg-accent)]"
+              onClickCapture={() => trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_card' })}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--pvg-accent)] py-2 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:bg-brand-accent"
             >
               <Settings2 className="h-3.5 w-3.5" />
               Configure Jewelry
@@ -139,17 +176,18 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="flex gap-2">
             <Link
               href={href}
+              onClick={(e) => e.stopPropagation()}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/40 bg-white/15 py-2 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm transition hover:bg-white/25"
             >
               <Eye className="h-3 w-3" />
               Quick View
             </Link>
-            <button
-              aria-label="Wishlist"
-              className="flex items-center justify-center rounded-lg border border-white/40 bg-white/15 px-3 py-2 text-white backdrop-blur-sm transition hover:bg-white/25"
-            >
-              <Heart className="h-3.5 w-3.5" />
-            </button>
+            <WishlistButton
+              productId={product.id}
+              productName={product.name}
+              className="border-white/40 bg-white/15 px-3 py-2 text-white backdrop-blur-sm hover:bg-white/25"
+              iconClassName="h-3.5 w-3.5"
+            />
           </div>
         </div>
 
@@ -169,7 +207,13 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.certification}
           </span>
         )}
-      </Link>
+
+        {isUnavailable && (
+          <span className="absolute bottom-3 left-3 z-10 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[var(--pvg-primary)]">
+            {product.availability_status === 'reserved' ? 'Reserved' : product.availability_status === 'sold' ? 'Sold' : 'Unavailable'}
+          </span>
+        )}
+      </div>
 
       {/* ── Card Info ── */}
       <div className="flex flex-1 flex-col gap-1 p-2 lg:p-3">

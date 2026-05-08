@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import ConfiguratorClient from '../ConfiguratorClient';
 import type { ProductCard } from '@/lib/types/product';
 
@@ -10,7 +10,15 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { productId } = await params;
-  const supabase = createAdminClient();
+  const supabase = createOptionalPublicClient();
+
+  if (!supabase) {
+    return {
+      title: 'Configure | PureVedicGems',
+      description: 'Design custom jewelry with PureVedicGems.',
+    };
+  }
+
   const { data: product } = await supabase
     .from('products')
     .select('name, category')
@@ -38,13 +46,18 @@ export default async function ConfigureProductPage({ params }: Props) {
     notFound();
   }
 
-  const supabase = createAdminClient();
+  const supabase = createOptionalPublicClient();
+  if (!supabase) {
+    notFound();
+  }
+
   const { data: product } = await supabase
     .from('products')
     .select(
       'id, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at'
     )
     .eq('id', productId)
+    .eq('is_active', true)
     .eq('in_stock', true)
     .single();
 

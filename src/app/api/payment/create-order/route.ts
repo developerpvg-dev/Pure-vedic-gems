@@ -3,6 +3,7 @@ import { PaymentCreateOrderSchema } from '@/lib/validators/order';
 import { getRazorpayClient } from '@/lib/razorpay/client';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { isPaidPaymentStatus } from '@/lib/constants/order-status';
 
 /**
  * POST /api/payment/create-order
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: order, error: fetchError } = await supabase
     .from('orders')
-    .select('id, order_number, total, payment_status, razorpay_order_id')
+    .select('id, order_number, total, payment_status, status, razorpay_order_id, payment_attempts')
     .eq('id', order_id)
     .single();
 
@@ -65,20 +66,35 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Verify order state ───────────────────────────────────────────────
-  if (order.payment_status === 'completed') {
+  if (isPaidPaymentStatus(order.payment_status)) {
     return NextResponse.json(
       { error: 'This order has already been paid' },
       { status: 400 }
     );
   }
 
+  if (!['pending', 'authorized', 'failed'].includes(order.payment_status)) {
+    return NextResponse.json(
+      { error: 'This order is not eligible for payment at the moment' },
+      { status: 409 }
+    );
+  }
+
+  const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID;
+
   // ── If Razorpay order already exists, return it ──────────────────────
   if (order.razorpay_order_id) {
+    await supabase
+      .from('orders')
+      .update({ payment_attempts: (order.payment_attempts ?? 0) + 1 })
+      .eq('id', order_id)
+      .then(null, () => undefined);
+
     return NextResponse.json({
       razorpay_order_id: order.razorpay_order_id,
       amount: Math.round(order.total * 100), // Razorpay uses paise
       currency: 'INR',
-      key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      key_id: razorpayKeyId,
       order_number: order.order_number,
     });
   }
@@ -102,6 +118,14 @@ export async function POST(req: NextRequest) {
       amount: amountInPaise,
       currency: 'INR',
       receipt: order.order_number,
+      payment: {
+        capture: 'automatic',
+        capture_options: {
+          automatic_expiry_period: 12,
+          manual_expiry_period: 7200,
+          refund_speed: 'normal',
+        },
+      },
       notes: {
         order_id: order.id,
         order_number: order.order_number,
@@ -118,7 +142,12 @@ export async function POST(req: NextRequest) {
   // ── Store razorpay_order_id on the order ────────────────────────────
   const { error: updateError } = await supabase
     .from('orders')
-    .update({ razorpay_order_id: razorpayOrder.id })
+    .update({
+      razorpay_order_id: razorpayOrder.id,
+      payment_attempts: (order.payment_attempts ?? 0) + 1,
+      payment_status: 'pending',
+      status: 'pending_payment',
+    })
     .eq('id', order_id);
 
   if (updateError) {
@@ -130,7 +159,7 @@ export async function POST(req: NextRequest) {
     razorpay_order_id: razorpayOrder.id,
     amount: amountInPaise,
     currency: 'INR',
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    key_id: razorpayKeyId,
     order_number: order.order_number,
   });
 }

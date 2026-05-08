@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
@@ -22,10 +22,15 @@ export const metadata: Metadata = {
 };
 
 const CARD_SELECT = `
-  id, slug, name, category, sub_category, price, price_per_carat, compare_price,
+  id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price,
   carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url,
-  in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled
+  in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled,
+  product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number
 `;
+
+function buildSearchTerm(query: string) {
+  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
+}
 
 interface ShopPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -35,46 +40,63 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
   const parsed = productFiltersSchema.safeParse(searchParams);
   const filters = parsed.success ? parsed.data : productFiltersSchema.parse({});
 
-  const supabase = createAdminClient();
-
-  let query = supabase
-    .from('products')
-    .select(CARD_SELECT, { count: 'exact' })
-    .eq('is_active', true)
-    .eq('in_stock', true);
-
-  if (filters.category) query = query.eq('category', filters.category);
-  if (filters.sub_category) query = query.eq('sub_category', filters.sub_category);
-  if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);
-  if (filters.max_price !== undefined) query = query.lte('price', filters.max_price);
-  if (filters.min_carat !== undefined) query = query.gte('carat_weight', filters.min_carat);
-  if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat);
-  if (filters.origin) query = query.eq('origin', filters.origin);
-  if (filters.planet) query = query.eq('planet', filters.planet);
-  if (filters.certification) query = query.eq('certification', filters.certification);
-  if (filters.treatment) query = query.eq('treatment', filters.treatment);
-
-  const sortColumn =
-    filters.sort_by === 'price' ? 'price' :
-    filters.sort_by === 'carat' ? 'carat_weight' : 'created_at';
-  const ascending = filters.sort_order === 'asc';
-  query = query.order(sortColumn, { ascending });
-
+  const supabase = createOptionalPublicClient();
   const perPage = filters.per_page;
   const page = filters.page;
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
-  query = query.range(from, to);
+  let products: ProductCard[] = [];
+  let total = 0;
 
-  const { data: products, count } = await query;
-  const total = count ?? 0;
+  if (supabase) {
+    let query = supabase
+      .from('products')
+      .select(CARD_SELECT, { count: 'exact' })
+      .eq('is_active', true);
+
+    if (filters.category) query = query.eq('category', filters.category);
+    if (filters.featured) query = query.eq('featured', true);
+    if (filters.product_type) query = query.eq('product_type', filters.product_type);
+    if (filters.availability_status) {
+      query = query.eq('availability_status', filters.availability_status);
+    } else {
+      query = query.eq('in_stock', true);
+    }
+    if (filters.sub_category) query = query.eq('sub_category', filters.sub_category);
+    if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);
+    if (filters.max_price !== undefined) query = query.lte('price', filters.max_price);
+    if (filters.min_carat !== undefined) query = query.gte('carat_weight', filters.min_carat);
+    if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat);
+    if (filters.origin) query = query.eq('origin', filters.origin);
+    if (filters.planet) query = query.eq('planet', filters.planet);
+    if (filters.certification) query = query.eq('certification', filters.certification);
+    if (filters.treatment) query = query.eq('treatment', filters.treatment);
+    if (filters.q) {
+      const searchTerm = buildSearchTerm(filters.q);
+      query = query.or(
+        `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
+      );
+    }
+
+    const sortColumn =
+      filters.sort_by === 'price' ? 'price' :
+      filters.sort_by === 'carat' ? 'carat_weight' : 'created_at';
+    const ascending = filters.sort_order === 'asc';
+    query = query.order(sortColumn, { ascending });
+
+    const from = (page - 1) * perPage;
+    const to = from + perPage - 1;
+    query = query.range(from, to);
+
+    const { data, count } = await query;
+    products = (data ?? []) as ProductCard[];
+    total = count ?? 0;
+  }
   const totalPages = Math.ceil(total / perPage);
 
   return (
     <>
       <FilterBar total={total} />
       <div className="mt-6">
-        <ProductGrid products={(products ?? []) as ProductCard[]} />
+        <ProductGrid products={products} />
       </div>
       {/* Pagination */}
       {totalPages > 1 && (
@@ -108,7 +130,7 @@ function Pagination({
       {page > 1 && (
         <Link
           href={buildHref(page - 1)}
-          className="rounded-lg border border-[var(--pvg-border)] px-4 py-2 text-[13px] font-medium text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-primary)] hover:text-[var(--pvg-bg)]"
+          className="rounded-lg border border-[var(--pvg-border)] px-4 py-2 text-[13px] font-medium text-[var(--pvg-primary)] transition hover:bg-brand-primary hover:text-[var(--pvg-bg)]"
         >
           ← Previous
         </Link>
@@ -137,7 +159,7 @@ function Pagination({
       {page < totalPages && (
         <Link
           href={buildHref(page + 1)}
-          className="rounded-lg border border-[var(--pvg-border)] px-4 py-2 text-[13px] font-medium text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-primary)] hover:text-[var(--pvg-bg)]"
+          className="rounded-lg border border-[var(--pvg-border)] px-4 py-2 text-[13px] font-medium text-[var(--pvg-primary)] transition hover:bg-brand-primary hover:text-[var(--pvg-bg)]"
         >
           Next →
         </Link>
@@ -149,15 +171,15 @@ function Pagination({
 function ShopSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-14 w-full animate-pulse rounded-xl bg-[var(--pvg-border)]" />
+      <div className="h-14 w-full animate-pulse rounded-xl bg-brand-border" />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 lg:gap-3">
         {Array.from({ length: 9 }).map((_, i) => (
           <div key={i} className="overflow-hidden rounded-xl border border-[var(--pvg-border)]">
-            <div className="relative w-full animate-pulse bg-[var(--pvg-border)]" style={{ paddingBottom: '120%' }} />
+            <div className="relative w-full animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />
             <div className="space-y-2 p-3">
-              <div className="h-3 w-2/3 animate-pulse rounded bg-[var(--pvg-border)]" />
-              <div className="h-4 w-full animate-pulse rounded bg-[var(--pvg-border)]" />
-              <div className="h-5 w-1/3 animate-pulse rounded bg-[var(--pvg-border)]" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-brand-border" />
+              <div className="h-4 w-full animate-pulse rounded bg-brand-border" />
+              <div className="h-5 w-1/3 animate-pulse rounded bg-brand-border" />
             </div>
           </div>
         ))}
@@ -175,16 +197,17 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const categoryName = params.category
     ? params.category.charAt(0).toUpperCase() + params.category.slice(1) + 's'
     : null;
+  const searchQuery = params.q?.trim();
 
   return (
-    <main className="min-h-screen bg-[var(--pvg-bg)] px-4 pb-24 pt-[130px] md:px-6 lg:px-10">
+    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-[130px] md:px-6 lg:px-10">
       <div className="mx-auto max-w-[1400px]">
         {/* ── Breadcrumb ── */}
         <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--pvg-muted)]" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-[var(--pvg-accent)]">Home</Link>
           <span>/</span>
           <span className="text-[var(--pvg-primary)]">
-            {categoryName ? `Shop → ${categoryName}` : 'Shop'}
+            {searchQuery ? `Search: ${searchQuery}` : categoryName ? `Shop → ${categoryName}` : 'Shop'}
           </span>
         </nav>
 
@@ -194,11 +217,12 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             Heritage Collection
           </p>
           <h1 className="font-heading text-[var(--pvg-primary)]" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-            {categoryName ?? 'Our Collections'}
+            {searchQuery ? `Search results for "${searchQuery}"` : categoryName ?? 'Our Collections'}
           </h1>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[var(--pvg-muted)]">
-            Certified natural gemstones, sacred rudraksha and handcrafted jewelry — sourced
-            with integrity and backed by 87+ years of legacy.
+            {searchQuery
+              ? `Showing catalog matches for "${searchQuery}" across gemstones, SKU tags, origins, planets, and descriptions.`
+              : 'Certified natural gemstones, sacred rudraksha and handcrafted jewelry — sourced with integrity and backed by 87+ years of legacy.'}
           </p>
           <OrnamentalDivider className="mt-4" />
         </div>

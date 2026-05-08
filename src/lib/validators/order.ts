@@ -60,6 +60,7 @@ export const OrderItemSchema = z.object({
   product_id: z.string().uuid('Invalid product ID'),
   name: z.string().min(1),
   sku: z.string().optional(),
+  tag_number: z.string().nullable().optional(),
   quantity: z.number().int().min(1).max(10),
   price: z.number().min(0), // client-sent price (will be re-verified server-side)
   carat_weight: z.number().nullable().optional(),
@@ -68,6 +69,8 @@ export const OrderItemSchema = z.object({
   category: z.string().optional(),
   configuration_id: z.string().uuid().optional(),
   configuration_summary: z.string().optional(),
+  configuration_snapshot: z.unknown().optional(),
+  delivery_eta_label: z.string().optional(),
 });
 
 // ─── Energization / Puja fields ─────────────────────────────────────────────

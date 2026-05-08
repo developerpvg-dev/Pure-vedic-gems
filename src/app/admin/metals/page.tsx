@@ -47,7 +47,9 @@ export default function AdminMetalsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchMetals(); }, [fetchMetals]);
+  useEffect(() => {
+    void Promise.resolve().then(fetchMetals);
+  }, [fetchMetals]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

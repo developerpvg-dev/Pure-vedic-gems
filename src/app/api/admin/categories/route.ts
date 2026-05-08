@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+const CATEGORY_TYPES = ['navaratna', 'upratna', 'rudraksha'] as const;
+
+function isCategoryType(value: string): value is (typeof CATEGORY_TYPES)[number] {
+  return (CATEGORY_TYPES as readonly string[]).includes(value);
+}
+
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -59,18 +65,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, slug, type, sanskrit_name, planet, emoji, color, image_url, hover_image_url, description, sort_order } = body as {
+  const { name, slug, type, sanskrit_name, planet, emoji, color, image_url, hover_image_url, description, display_locations, sort_order } = body as {
     name?: string; slug?: string; type?: string; sanskrit_name?: string;
     planet?: string; emoji?: string; color?: string; image_url?: string; hover_image_url?: string;
-    description?: string; sort_order?: number;
+    description?: string; display_locations?: string; sort_order?: number;
   };
 
   if (!name || !slug || !type) {
     return NextResponse.json({ error: 'name, slug, and type are required' }, { status: 400 });
   }
 
-  if (type !== 'navaratna' && type !== 'upratna') {
-    return NextResponse.json({ error: 'type must be navaratna or upratna' }, { status: 400 });
+  if (!isCategoryType(type)) {
+    return NextResponse.json({ error: 'type must be navaratna, upratna, or rudraksha' }, { status: 400 });
   }
 
   // Sanitize slug
@@ -90,6 +96,7 @@ export async function POST(request: NextRequest) {
       image_url: image_url ? String(image_url).trim() : null,
       hover_image_url: hover_image_url ? String(hover_image_url).trim() : null,
       description: description ? String(description).trim() : null,
+      display_locations: display_locations ? String(display_locations).trim() : null,
       sort_order: typeof sort_order === 'number' ? sort_order : 0,
     })
     .select()

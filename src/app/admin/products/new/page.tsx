@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { MediaUploader } from '@/components/admin/MediaUploader';
+import {
+  AVAILABILITY_STATUS_OPTIONS,
+  CANONICAL_CATEGORY_OPTIONS,
+  JEWELLERY_TYPES,
+  PRODUCT_TYPE_OPTIONS,
+} from '@/lib/constants/product-taxonomy';
 
 const RichTextEditor = dynamic(
   () => import('@/components/admin/RichTextEditor').then((m) => m.RichTextEditor),
@@ -13,13 +19,7 @@ const RichTextEditor = dynamic(
 );
 
 // ── Categories mapped from old PureVedicGems website ────────────────
-const CATEGORIES = [
-  { value: 'navaratna', label: 'Navaratna (Sacred Nine Gems)' },
-  { value: 'upratna', label: 'Upratna (Semi-Precious Gems)' },
-  { value: 'rudraksha', label: 'Rudraksha' },
-  { value: 'idol', label: 'Spiritual Idols' },
-  { value: 'jewelry', label: 'Jewellery' },
-];
+const CATEGORIES = CANONICAL_CATEGORY_OPTIONS;
 
 const SUB_CATEGORIES: Record<string, { value: string; label: string }[]> = {
   navaratna: [
@@ -153,7 +153,7 @@ function FormSelect({
   id, value, onChange, options, placeholder,
 }: {
   id: string; value: string; onChange: (v: string) => void;
-  options: string[] | { value: string; label: string }[]; placeholder?: string;
+  options: readonly string[] | readonly { value: string; label: string }[]; placeholder?: string;
 }) {
   return (
     <select
@@ -180,18 +180,79 @@ interface MediaFile {
   preview?: string;
 }
 
+type CategoryOption = { value: string; label: string };
+
+type ManagedCategoryApiRow = {
+  name: string;
+  slug: string;
+  type?: string;
+  family?: string;
+  parent_id?: string | null;
+  homepage_slot?: string | null;
+  is_active?: boolean;
+};
+
+const RUDRAKSHA_TYPES = ['Nepali', 'Indonesian', 'Java', 'Collector', 'Gauri Shankar', 'Ganesh', 'Savar', 'Trijuti'];
+const IDOL_COMPOSITIONS = ['Brass', 'Copper', 'Panchdhatu', 'Ashtadhatu', 'Silver', 'Crystal', 'Marble', 'Gemstone', 'Wood'];
+
+function categoryKeyFromManaged(row: ManagedCategoryApiRow) {
+  if (row.type === 'navaratna' || row.type === 'upratna' || row.type === 'rudraksha') return row.type;
+  if (row.family === 'idol') return 'idol';
+  if (row.family === 'mala') return 'mala';
+  if (row.family === 'jewelry' || row.homepage_slot === 'explore_jewelry') return 'jewelry';
+  return null;
+}
+
+function mergeOptions(...groups: CategoryOption[][]) {
+  const seen = new Set<string>();
+  const merged: CategoryOption[] = [];
+  for (const group of groups) {
+    for (const option of group) {
+      if (seen.has(option.value)) continue;
+      seen.add(option.value);
+      merged.push(option);
+    }
+  }
+  return merged;
+}
+
+function parsePositiveNumber(value: string) {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function parsePositiveInteger(value: string) {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function productTypeForCategory(category: string) {
+  if (category === 'rudraksha') return 'rudraksha';
+  if (category === 'idol') return 'idol';
+  if (category === 'jewelry') return 'jewelry';
+  if (category === 'mala') return 'mala';
+  return 'gemstone';
+}
+
 export default function NewProductPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get('category') ?? '';
+  const initialProductType = searchParams.get('product_type') ?? productTypeForCategory(initialCategory);
+  const initialSubCategory = searchParams.get('sub_category') ?? '';
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [managedSubCategories, setManagedSubCategories] = useState<Record<string, CategoryOption[]>>({});
 
   // Step 1: Basic info
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [slug, setSlug] = useState('');
-  const [category, setCategory] = useState('');
-  const [subCategory, setSubCategory] = useState('');
+  const [category, setCategory] = useState(initialCategory);
+  const [subCategory, setSubCategory] = useState(initialSubCategory);
+  const [productType, setProductType] = useState(initialProductType);
+  const [tagNumber, setTagNumber] = useState('');
   const [shortDesc, setShortDesc] = useState('');
   const [description, setDescription] = useState('');
 
@@ -204,6 +265,31 @@ export default function NewProductPage() {
   const [treatment, setTreatment] = useState('Natural');
   const [certification, setCertification] = useState('');
   const [quality, setQuality] = useState('');
+  const [certificateNumber, setCertificateNumber] = useState('');
+  const [certificateLab, setCertificateLab] = useState('');
+  const [certificateDisplayEnabled, setCertificateDisplayEnabled] = useState(false);
+  const [mukhiCount, setMukhiCount] = useState('');
+  const [rudrakshaType, setRudrakshaType] = useState('');
+  const [rulingDeity, setRulingDeity] = useState('');
+  const [deity, setDeity] = useState('');
+  const [beadSizeMm, setBeadSizeMm] = useState('');
+  const [beadWeight, setBeadWeight] = useState('');
+  const [xrayCertified, setXrayCertified] = useState(false);
+  const [xrayCertificateNumber, setXrayCertificateNumber] = useState('');
+  const [energizationEligible, setEnergizationEligible] = useState(false);
+  const [jewelleryType, setJewelleryType] = useState('');
+  const [baseMetal, setBaseMetal] = useState('');
+  const [metalPurity, setMetalPurity] = useState('');
+  const [metalWeightGrams, setMetalWeightGrams] = useState('');
+  const [sizeLabel, setSizeLabel] = useState('');
+  const [ringSize, setRingSize] = useState('');
+  const [designCode, setDesignCode] = useState('');
+  const [makingCharge, setMakingCharge] = useState('');
+  const [readyStock, setReadyStock] = useState(false);
+  const [composition, setComposition] = useState('');
+  const [dimensionLength, setDimensionLength] = useState('');
+  const [dimensionWidth, setDimensionWidth] = useState('');
+  const [dimensionDepth, setDimensionDepth] = useState('');
 
   // Step 3: Pricing
   const [price, setPrice] = useState('');
@@ -218,16 +304,47 @@ export default function NewProductPage() {
   const [finger, setFinger] = useState('');
   const [wearingDay, setWearingDay] = useState('');
   const [wearingMetal, setWearingMetal] = useState('');
+  const [mantra, setMantra] = useState('');
+  const [vedicSignificance, setVedicSignificance] = useState('');
+  const [benefitsText, setBenefitsText] = useState('');
+  const [wearingGuide, setWearingGuide] = useState('');
+  const [expertNote, setExpertNote] = useState('');
 
   // Step 5: Media & status
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [certificateUrl, setCertificateUrl] = useState('');
+  const [availabilityStatus, setAvailabilityStatus] = useState('in_stock');
   const [inStock, setInStock] = useState(true);
   const [stockQty, setStockQty] = useState('1');
   const [featured, setFeatured] = useState(false);
   const [isDirectorsPick, setIsDirectorsPick] = useState(false);
+  const [displayOrder, setDisplayOrder] = useState('0');
   const [isActive, setIsActive] = useState(true);
   const [configuratorEnabled, setConfiguratorEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchManagedCategories() {
+      const response = await fetch('/api/admin/homepage-categories');
+      if (!response.ok) return;
+      const data = await response.json();
+      const rows = [
+        ...((data.gem_categories ?? []) as ManagedCategoryApiRow[]),
+        ...((data.catalog_categories ?? []) as ManagedCategoryApiRow[]),
+      ].filter((row) => row.is_active !== false);
+
+      const next: Record<string, CategoryOption[]> = {};
+      for (const row of rows) {
+        const key = categoryKeyFromManaged(row);
+        if (!key) continue;
+        next[key] = [...(next[key] ?? []), { value: row.slug, label: row.name }];
+      }
+      if (!cancelled) setManagedSubCategories(next);
+    }
+
+    void fetchManagedCategories();
+    return () => { cancelled = true; };
+  }, []);
 
   function handleNameChange(val: string) {
     setName(val);
@@ -246,7 +363,21 @@ export default function NewProductPage() {
   }
 
   const totalSteps = 5;
-  const subCats = category ? SUB_CATEGORIES[category] ?? [] : [];
+  const subCats = useMemo(() => {
+    if (!category) return [];
+    return mergeOptions(SUB_CATEGORIES[category] ?? [], managedSubCategories[category] ?? []);
+  }, [category, managedSubCategories]);
+  const isGemstoneProduct = productType === 'gemstone' || ['navaratna', 'upratna', 'gemstone'].includes(category);
+  const isRudrakshaProduct = productType === 'rudraksha' || category === 'rudraksha';
+  const isJewelleryProduct = productType === 'jewelry' || productType === 'mala' || category === 'jewelry' || category === 'mala';
+  const isIdolProduct = productType === 'idol' || category === 'idol';
+  const detailStepLabel = isRudrakshaProduct
+    ? 'Rudraksha Details'
+    : isJewelleryProduct
+      ? 'Jewellery Details'
+      : isIdolProduct
+        ? 'Idol Details'
+        : 'Gem Details';
 
   async function handleSubmit() {
     setError('');
@@ -259,6 +390,8 @@ export default function NewProductPage() {
       slug: slug.trim(),
       category,
       sub_category: subCategory || undefined,
+      product_type: productType,
+      tag_number: tagNumber || undefined,
       short_desc: shortDesc || undefined,
       description: description || undefined,
       carat_weight: caratWeight ? parseFloat(caratWeight) : undefined,
@@ -268,7 +401,38 @@ export default function NewProductPage() {
       clarity: clarity || undefined,
       treatment: treatment || 'Natural',
       certification: certification || undefined,
+      quality_label: quality || undefined,
+      certificate_number: certificateNumber || undefined,
+      certificate_lab: certificateLab || certification || undefined,
+      certificate_status: certificateDisplayEnabled || certification ? 'available' : 'not_required',
+      certificate_display_enabled: certificateDisplayEnabled,
+      mukhi_count: parsePositiveInteger(mukhiCount),
+      rudraksha_type: rudrakshaType || undefined,
+      ruling_deity: rulingDeity || undefined,
+      deity: deity || undefined,
+      bead_size_mm: parsePositiveNumber(beadSizeMm),
+      bead_weight: parsePositiveNumber(beadWeight),
+      xray_certified: xrayCertified,
+      xray_certificate_number: xrayCertificateNumber || undefined,
+      energization_eligible: energizationEligible,
+      jewellery_type: jewelleryType || undefined,
+      base_metal: baseMetal || undefined,
+      metal_purity: metalPurity || undefined,
+      metal_weight_grams: parsePositiveNumber(metalWeightGrams),
+      size_label: sizeLabel || undefined,
+      ring_size: ringSize || undefined,
+      design_code: designCode || undefined,
+      making_charge: parsePositiveNumber(makingCharge),
+      ready_stock: readyStock,
+      composition: composition || undefined,
+      dimensions_mm: dimensionLength || dimensionWidth || dimensionDepth ? {
+        length: parsePositiveNumber(dimensionLength),
+        width: parsePositiveNumber(dimensionWidth),
+        depth: parsePositiveNumber(dimensionDepth),
+        unit: 'mm',
+      } : undefined,
       price: parseFloat(price) || 0,
+      price_mode: pricePerCarat ? 'per_carat' : availabilityStatus === 'on_demand' ? 'on_demand' : 'fixed',
       price_per_carat: pricePerCarat ? parseFloat(pricePerCarat) : undefined,
       compare_price: comparePrice ? parseFloat(comparePrice) : undefined,
       planet: planet || undefined,
@@ -278,16 +442,39 @@ export default function NewProductPage() {
       finger: finger || undefined,
       wearing_day: wearingDay || undefined,
       wearing_metal: wearingMetal || undefined,
+      mantra: mantra || undefined,
+      vedic_significance: vedicSignificance || undefined,
+      benefits: benefitsText.split('\n').map((item) => item.trim()).filter(Boolean),
+      wearing_guide: wearingGuide || undefined,
+      expert_note: expertNote || undefined,
       images: images.length > 0 ? images : undefined,
       video_url: videos[0] || undefined,
       certificate_url: certificateUrl || undefined,
+      certificate_file_url: certificateUrl || undefined,
       thumbnail_url: images[0] || undefined,
-      in_stock: inStock,
+      availability_status: availabilityStatus,
+      stock_status: inStock ? 'in_stock' : 'out_of_stock',
+      in_stock: inStock && availabilityStatus === 'in_stock',
       stock_quantity: parseInt(stockQty) || 1,
       featured,
       is_directors_pick: isDirectorsPick,
+      display_order: parseInt(displayOrder) || 0,
       is_active: isActive,
       configurator_enabled: configuratorEnabled,
+      category_assignments: subCategory ? [
+        { category_slug: subCategory, is_primary: true, sort_order: 0 },
+        category && category !== subCategory ? { category_slug: category, is_primary: false, sort_order: 1 } : null,
+      ].filter(Boolean) : undefined,
+      option_rules: {
+        certificate_enabled: certificateDisplayEnabled,
+        energization_enabled: configuratorEnabled,
+        jewelry_design_enabled: configuratorEnabled,
+        metal_enabled: configuratorEnabled,
+        ring_size_enabled: configuratorEnabled,
+        allowed_setting_types: configuratorEnabled ? ['ring', 'pendant', 'bracelet'] : [],
+        allowed_metals: [],
+        allowed_ring_size_systems: configuratorEnabled ? ['india', 'us', 'uk_au', 'eu'] : [],
+      },
     };
 
     setSaving(true);
@@ -337,7 +524,7 @@ export default function NewProductPage() {
 
       {/* Step labels */}
       <div className="mb-6 hidden gap-1.5 sm:flex">
-        {['Basic Info', 'Gem Details', 'Pricing', 'Vedic', 'Media & Status'].map((label, i) => (
+        {['Basic Info', detailStepLabel, 'Pricing', 'Vedic', 'Media & Status'].map((label, i) => (
           <button
             key={label}
             type="button"
@@ -379,11 +566,30 @@ export default function NewProductPage() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
+              <Label htmlFor="product_type">Product Type *</Label>
+              <FormSelect id="product_type" value={productType} onChange={setProductType} options={PRODUCT_TYPE_OPTIONS} />
+            </div>
+            <div>
+              <Label htmlFor="tag_number">Legacy Tag Number</Label>
+              <FormInput id="tag_number" value={tagNumber} onChange={setTagNumber} placeholder="e.g. S216" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
               <Label htmlFor="category">Category *</Label>
               <FormSelect
                 id="category"
                 value={category}
-                onChange={(v) => { setCategory(v); setSubCategory(''); }}
+                onChange={(v) => {
+                  setCategory(v);
+                  setSubCategory('');
+                  if (v === 'rudraksha') setProductType('rudraksha');
+                  else if (v === 'idol') setProductType('idol');
+                  else if (v === 'jewelry') setProductType('jewelry');
+                  else if (v === 'mala') setProductType('mala');
+                  else if (['navaratna', 'upratna', 'gemstone'].includes(v)) setProductType('gemstone');
+                }}
                 options={CATEGORIES}
                 placeholder="Select category..."
               />
@@ -425,52 +631,195 @@ export default function NewProductPage() {
         </div>
       )}
 
-      {/* ── Step 2: Gemstone Details ───────────── */}
+      {/* ── Step 2: Section-aware product details ───────────── */}
       {step === 2 && (
         <div className="space-y-5 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-          <h2 className="text-lg font-semibold text-gray-900">Gemstone Details</h2>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="carat_weight">Carat Weight</Label>
-              <FormInput id="carat_weight" value={caratWeight} onChange={setCaratWeight} placeholder="e.g. 4.51" type="number" />
-            </div>
-            <div>
-              <Label htmlFor="quality">Quality</Label>
-              <FormSelect id="quality" value={quality} onChange={setQuality} options={QUALITIES} placeholder="Select quality" />
-            </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{detailStepLabel}</h2>
+            <p className="mt-1 text-sm text-gray-500">Only the fields relevant to the selected section need to be filled.</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="origin">Origin</Label>
-              <FormSelect id="origin" value={origin} onChange={setOrigin} options={ORIGINS} placeholder="Select origin" />
+          {isGemstoneProduct && (
+            <div className="space-y-4 rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">Gemstone identity</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="carat_weight">Carat Weight</Label>
+                  <FormInput id="carat_weight" value={caratWeight} onChange={setCaratWeight} placeholder="e.g. 4.51" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="quality">Quality</Label>
+                  <FormSelect id="quality" value={quality} onChange={setQuality} options={QUALITIES} placeholder="Select quality" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="origin">Origin</Label>
+                  <FormSelect id="origin" value={origin} onChange={setOrigin} options={ORIGINS} placeholder="Select origin" />
+                </div>
+                <div>
+                  <Label htmlFor="shape">Shape</Label>
+                  <FormSelect id="shape" value={shape} onChange={setShape} options={SHAPES} placeholder="Select shape" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="color_grade">Color Grade</Label>
+                  <FormInput id="color_grade" value={colorGrade} onChange={setColorGrade} placeholder="e.g. Royal Blue, Vivid" />
+                </div>
+                <div>
+                  <Label htmlFor="clarity">Clarity</Label>
+                  <FormInput id="clarity" value={clarity} onChange={setClarity} placeholder="e.g. Eye Clean, VS1" />
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="shape">Shape</Label>
-              <FormSelect id="shape" value={shape} onChange={setShape} options={SHAPES} placeholder="Select shape" />
+          )}
+
+          {isRudrakshaProduct && (
+            <div className="space-y-4 rounded-lg border border-orange-100 bg-orange-50/60 p-4">
+              <h3 className="text-sm font-semibold text-orange-950">Rudraksha specifications</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="mukhi_count">Mukhi Count</Label>
+                  <FormInput id="mukhi_count" value={mukhiCount} onChange={setMukhiCount} placeholder="e.g. 5" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="rudraksha_type">Rudraksha Type</Label>
+                  <FormSelect id="rudraksha_type" value={rudrakshaType} onChange={setRudrakshaType} options={RUDRAKSHA_TYPES} placeholder="Select type" />
+                </div>
+                <div>
+                  <Label htmlFor="ruling_deity">Ruling Deity</Label>
+                  <FormInput id="ruling_deity" value={rulingDeity} onChange={setRulingDeity} placeholder="e.g. Shiva" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="bead_size_mm">Bead Size (mm)</Label>
+                  <FormInput id="bead_size_mm" value={beadSizeMm} onChange={setBeadSizeMm} placeholder="e.g. 18" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="bead_weight">Bead Weight (g)</Label>
+                  <FormInput id="bead_weight" value={beadWeight} onChange={setBeadWeight} placeholder="e.g. 2.4" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="xray_certificate_number">X-Ray Certificate No.</Label>
+                  <FormInput id="xray_certificate_number" value={xrayCertificateNumber} onChange={setXrayCertificateNumber} placeholder="Certificate number" />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" checked={xrayCertified} onChange={(e) => setXrayCertified(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                  X-Ray certified
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" checked={energizationEligible} onChange={(e) => setEnergizationEligible(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                  Energization eligible
+                </label>
+              </div>
             </div>
-          </div>
+          )}
+
+          {isJewelleryProduct && (
+            <div className="space-y-4 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+              <h3 className="text-sm font-semibold text-emerald-950">Jewellery and setting details</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="jewellery_type">Jewellery Type</Label>
+                  <FormSelect id="jewellery_type" value={jewelleryType} onChange={setJewelleryType} options={JEWELLERY_TYPES} placeholder="Select type" />
+                </div>
+                <div>
+                  <Label htmlFor="base_metal">Base Metal</Label>
+                  <FormSelect id="base_metal" value={baseMetal} onChange={setBaseMetal} options={METALS} placeholder="Select metal" />
+                </div>
+                <div>
+                  <Label htmlFor="metal_purity">Metal Purity</Label>
+                  <FormInput id="metal_purity" value={metalPurity} onChange={setMetalPurity} placeholder="22K, 18K, 925" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="metal_weight_grams">Metal Weight (g)</Label>
+                  <FormInput id="metal_weight_grams" value={metalWeightGrams} onChange={setMetalWeightGrams} placeholder="e.g. 5.2" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="ring_size">Ring Size</Label>
+                  <FormInput id="ring_size" value={ringSize} onChange={setRingSize} placeholder="e.g. 14 India" />
+                </div>
+                <div>
+                  <Label htmlFor="size_label">Size Label</Label>
+                  <FormInput id="size_label" value={sizeLabel} onChange={setSizeLabel} placeholder="Adjustable, 18 inch" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="design_code">Design Code</Label>
+                  <FormInput id="design_code" value={designCode} onChange={setDesignCode} placeholder="PVG-RING-001" />
+                </div>
+                <div>
+                  <Label htmlFor="making_charge">Making Charge (₹)</Label>
+                  <FormInput id="making_charge" value={makingCharge} onChange={setMakingCharge} placeholder="e.g. 1500" type="number" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={readyStock} onChange={(e) => setReadyStock(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                Ready stock item
+              </label>
+            </div>
+          )}
+
+          {isIdolProduct && (
+            <div className="space-y-4 rounded-lg border border-violet-100 bg-violet-50/60 p-4">
+              <h3 className="text-sm font-semibold text-violet-950">Idol details</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="deity">Deity</Label>
+                  <FormInput id="deity" value={deity} onChange={setDeity} placeholder="Ganesha, Lakshmi, Shiva" />
+                </div>
+                <div>
+                  <Label htmlFor="composition">Material / Composition</Label>
+                  <FormSelect id="composition" value={composition} onChange={setComposition} options={IDOL_COMPOSITIONS} placeholder="Select material" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="dimension_length">Length (mm)</Label>
+                  <FormInput id="dimension_length" value={dimensionLength} onChange={setDimensionLength} placeholder="e.g. 90" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="dimension_width">Width (mm)</Label>
+                  <FormInput id="dimension_width" value={dimensionWidth} onChange={setDimensionWidth} placeholder="e.g. 60" type="number" />
+                </div>
+                <div>
+                  <Label htmlFor="dimension_depth">Depth (mm)</Label>
+                  <FormInput id="dimension_depth" value={dimensionDepth} onChange={setDimensionDepth} placeholder="e.g. 45" type="number" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={energizationEligible} onChange={(e) => setEnergizationEligible(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                Energization or pran pratistha eligible
+              </label>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="color_grade">Color Grade</Label>
-              <FormInput id="color_grade" value={colorGrade} onChange={setColorGrade} placeholder="e.g. Royal Blue, Vivid" />
-            </div>
-            <div>
-              <Label htmlFor="clarity">Clarity</Label>
-              <FormInput id="clarity" value={clarity} onChange={setClarity} placeholder="e.g. Eye Clean, VS1" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="treatment">Treatment</Label>
+              <Label htmlFor="treatment">Treatment / Finish</Label>
               <FormSelect id="treatment" value={treatment} onChange={setTreatment} options={TREATMENTS} />
             </div>
             <div>
               <Label htmlFor="certification">Certification</Label>
               <FormSelect id="certification" value={certification} onChange={setCertification} options={CERTIFICATIONS} placeholder="Select lab" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="certificate_number">Certificate Number</Label>
+              <FormInput id="certificate_number" value={certificateNumber} onChange={setCertificateNumber} placeholder="e.g. IGI-GTL-12345" />
+            </div>
+            <div>
+              <Label htmlFor="certificate_lab">Certificate Lab / Authority</Label>
+              <FormInput id="certificate_lab" value={certificateLab} onChange={setCertificateLab} placeholder="e.g. IGI-GTL Delhi" />
             </div>
           </div>
         </div>
@@ -547,6 +896,67 @@ export default function NewProductPage() {
               <FormSelect id="wearing_metal" value={wearingMetal} onChange={setWearingMetal} options={METALS} placeholder="Select metal" />
             </div>
           </div>
+
+          <div>
+            <Label htmlFor="mantra">Mantra</Label>
+            <textarea
+              id="mantra"
+              value={mantra}
+              onChange={(e) => setMantra(e.target.value)}
+              rows={2}
+              placeholder="Optional mantra or invocation text..."
+              className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="vedic_significance">Vedic Significance</Label>
+              <textarea
+                id="vedic_significance"
+                value={vedicSignificance}
+                onChange={(e) => setVedicSignificance(e.target.value)}
+                rows={4}
+                placeholder="Why this product is spiritually or astrologically selected..."
+                className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <Label htmlFor="wearing_guide">Wearing / Placement Guide</Label>
+              <textarea
+                id="wearing_guide"
+                value={wearingGuide}
+                onChange={(e) => setWearingGuide(e.target.value)}
+                rows={4}
+                placeholder="Day, method, placement, care, or activation notes..."
+                className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="benefits">Benefits</Label>
+            <textarea
+              id="benefits"
+              value={benefitsText}
+              onChange={(e) => setBenefitsText(e.target.value)}
+              rows={3}
+              placeholder="One benefit per line"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="expert_note">Expert Note</Label>
+            <textarea
+              id="expert_note"
+              value={expertNote}
+              onChange={(e) => setExpertNote(e.target.value)}
+              rows={3}
+              placeholder="Internal curator or expert-facing note for this product..."
+              className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            />
+          </div>
         </div>
       )}
 
@@ -570,6 +980,10 @@ export default function NewProductPage() {
               <Label htmlFor="stock_qty">Stock Quantity</Label>
               <FormInput id="stock_qty" value={stockQty} onChange={setStockQty} placeholder="1" type="number" />
             </div>
+            <div>
+              <Label htmlFor="availability_status">Availability Status</Label>
+              <FormSelect id="availability_status" value={availabilityStatus} onChange={setAvailabilityStatus} options={AVAILABILITY_STATUS_OPTIONS} />
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -589,10 +1003,20 @@ export default function NewProductPage() {
               <input type="checkbox" checked={isDirectorsPick} onChange={(e) => setIsDirectorsPick(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
               <span className="text-sm text-gray-700">Director&apos;s Pick</span>
             </label>
+            {isDirectorsPick && (
+              <div className="ml-7 max-w-xs">
+                <Label htmlFor="display_order">Director&apos;s Pick Display Order</Label>
+                <FormInput id="display_order" value={displayOrder} onChange={setDisplayOrder} placeholder="0" type="number" />
+              </div>
+            )}
             <label className="flex items-center gap-3">
               <input type="checkbox" checked={configuratorEnabled} onChange={(e) => setConfiguratorEnabled(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
               <span className="text-sm text-gray-700">Enable Configurator</span>
               <span className="text-[10px] text-gray-400">(Customers can configure this gem into jewelry)</span>
+            </label>
+            <label className="flex items-center gap-3">
+              <input type="checkbox" checked={certificateDisplayEnabled} onChange={(e) => setCertificateDisplayEnabled(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+              <span className="text-sm text-gray-700">Show certificate option/details</span>
             </label>
           </div>
         </div>

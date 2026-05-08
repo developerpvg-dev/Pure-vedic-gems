@@ -17,7 +17,7 @@ export function CertMarquee() {
   const items = [...CERT_ITEMS, ...CERT_ITEMS];
 
   return (
-    <div className="overflow-hidden border-y border-[var(--pvg-border)] bg-[var(--pvg-surface)] py-3">
+    <div className="overflow-hidden border-y border-[var(--pvg-border)] bg-brand-surface py-3">
       <div className="animate-marquee flex w-max items-center gap-12 hover:[animation-play-state:paused] md:gap-16">
         {items.map((item, i) => (
           <div
@@ -30,7 +30,8 @@ export function CertMarquee() {
                 alt={`${item.name} certification`}
                 width={80}
                 height={36}
-                className="h-full w-auto object-contain"
+                className="h-full object-contain"
+                style={{ width: 'auto' }}
               />
             </div>
           </div>

@@ -26,7 +26,7 @@ function CartItemRow({
       {/* Thumbnail */}
       <Link
         href={`/shop/${item.category}/${item.product_id}`}
-        className="relative h-[90px] w-[72px] shrink-0 overflow-hidden rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)]"
+        className="relative h-[90px] w-[72px] shrink-0 overflow-hidden rounded-lg border border-[var(--pvg-border)] bg-brand-bg-alt"
       >
         <Image
           src={item.image_url}
@@ -57,19 +57,24 @@ function CartItemRow({
               {item.configuration_summary.split(' · ').map((part, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded bg-[var(--pvg-gold-light)] px-2 py-0.5 text-[10px] font-medium text-[var(--pvg-accent)]"
+                  className="inline-block rounded bg-brand-gold-light px-2 py-0.5 text-[10px] font-medium text-[var(--pvg-accent)]"
                 >
                   {part}
                 </span>
               ))}
             </div>
             <Link
-              href={`/configure/${item.product_id}`}
+              href={item.configuration_edit_url ?? `/configure/${item.product_id}`}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--pvg-accent)] transition hover:underline"
             >
               <Settings2 className="h-3 w-3" />
               Edit Configuration
             </Link>
+            {item.delivery_eta_label && (
+              <p className="text-[11px] font-medium text-[var(--pvg-muted)]">
+                Delivery ETA: {item.delivery_eta_label}
+              </p>
+            )}
           </div>
         )}
 
@@ -125,7 +130,7 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
   const total = subtotal + shipping;
 
   return (
-    <div className="sticky top-[100px] rounded-2xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)] p-6">
+    <div className="sticky top-[100px] rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-6">
       <h2 className="font-heading mb-6 text-lg font-semibold text-[var(--pvg-primary)]">
         Order Summary
       </h2>
@@ -156,12 +161,12 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
       </div>
 
       {!user && (
-        <div className="mt-6 rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] p-4">
+        <div className="mt-6 rounded-xl border border-[var(--pvg-border)] bg-brand-bg-alt p-4">
           <p className="text-sm font-semibold text-[var(--pvg-primary)]">
-            Create an account to continue to checkout
+            Checkout as a guest or create an account
           </p>
           <p className="mt-1 text-xs text-[var(--pvg-muted)]">
-            Track your order status, delivery updates, invoice history, and future gemstone purchases.
+            Guest checkout is available. An account helps you track order status, delivery updates, invoices, and future gemstone purchases.
           </p>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <button
@@ -169,7 +174,7 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
                 setAuthView('register');
                 setAuthModalOpen(true);
               }}
-              className="rounded-lg bg-[var(--pvg-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+              className="rounded-lg bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
             >
               Create Account
             </button>
@@ -178,7 +183,7 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
                 setAuthView('login');
                 setAuthModalOpen(true);
               }}
-              className="rounded-lg border border-[var(--pvg-border)] px-4 py-2.5 text-sm font-semibold text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-gold-light)]"
+              className="rounded-lg border border-[var(--pvg-border)] px-4 py-2.5 text-sm font-semibold text-[var(--pvg-primary)] transition hover:bg-brand-gold-light"
             >
               I Already Have an Account
             </button>
@@ -186,28 +191,14 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
         </div>
       )}
 
-      {user ? (
-        <Link
-          href="/checkout"
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
-          style={{ background: 'var(--pvg-primary)' }}
-        >
-          Proceed to Checkout
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      ) : (
-        <button
-          onClick={() => {
-            setAuthView('register');
-            setAuthModalOpen(true);
-          }}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
-          style={{ background: 'var(--pvg-primary)' }}
-        >
-          Sign In to Checkout
-          <ArrowRight className="h-4 w-4" />
-        </button>
-      )}
+      <Link
+        href="/checkout"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
+        style={{ background: 'var(--pvg-primary)' }}
+      >
+        Proceed to Checkout
+        <ArrowRight className="h-4 w-4" />
+      </Link>
 
       <LoginModal
         open={authModalOpen}
@@ -246,7 +237,7 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
 function EmptyCart() {
   return (
     <div className="flex flex-col items-center justify-center px-4 py-24 text-center">
-      <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[var(--pvg-gold-light)]">
+      <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-brand-gold-light">
         <ShoppingBag className="h-10 w-10 text-[var(--pvg-accent)]" />
       </div>
       <h2 className="font-heading mb-2 text-2xl text-[var(--pvg-primary)]">
@@ -274,7 +265,7 @@ export default function CartPage() {
   const { items, subtotal, item_count } = cart;
 
   return (
-    <main className="min-h-screen bg-[var(--pvg-bg)] px-4 pb-24 pt-[130px] md:px-6 lg:px-10">
+    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-[130px] md:px-6 lg:px-10">
       <div className="mx-auto max-w-[1400px]">
         {/* Header */}
         <div className="mb-8 flex items-baseline justify-between">
@@ -294,7 +285,7 @@ export default function CartPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
             {/* ── Items ── */}
             <div>
-              <div className="rounded-2xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)] px-5 py-2">
+              <div className="rounded-2xl border border-[var(--pvg-border)] bg-brand-surface px-5 py-2">
                 {items.map((item) => (
                   <CartItemRow
                     key={item.key}

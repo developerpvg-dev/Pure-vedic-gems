@@ -7,17 +7,24 @@ export type OrderStatus =
   | 'placed'
   | 'confirmed'
   | 'processing'
+  | 'jewelry_making'
+  | 'certification'
+  | 'energization'
   | 'quality_check'
   | 'shipped'
   | 'delivered'
   | 'cancelled'
-  | 'refunded';
+  | 'refunded'
+  | 'payment_review';
 
 export type PaymentStatus =
   | 'pending'
-  | 'completed'
+  | 'authorized'
+  | 'captured'
   | 'failed'
-  | 'refunded';
+  | 'refunded'
+  | 'amount_mismatch'
+  | 'cancelled';
 
 export interface OrderRecord {
   id: string;
@@ -61,7 +68,10 @@ export interface OrderRecord {
   status: OrderStatus;
   tracking_number: string | null;
   tracking_url: string | null;
+  carrier?: string | null;
   estimated_delivery: string | null;
+  shipped_at?: string | null;
+  delivery_status?: string | null;
   invoice_number: string | null;
   invoice_url: string | null;
   created_at: string;
@@ -72,6 +82,7 @@ export interface OrderItemRecord {
   product_id: string;
   name: string;
   sku?: string;
+  tag_number?: string | null;
   quantity: number;
   unit_price: number;
   line_total: number;

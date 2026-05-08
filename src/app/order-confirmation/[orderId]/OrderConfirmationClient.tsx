@@ -14,6 +14,16 @@ import {
   Check,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
+import { isPaidPaymentStatus } from '@/lib/constants/order-status';
+
+const CONFETTI_COLORS = ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'];
+const CONFETTI_PIECES = Array.from({ length: 40 }, (_, i) => ({
+  left: `${(i * 37) % 100}%`,
+  animationDelay: `${((i * 13) % 20) / 10}s`,
+  animationDuration: `${2 + ((i * 7) % 30) / 10}s`,
+  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+  rotation: `rotate(${(i * 29) % 360}deg)`,
+}));
 
 interface OrderData {
   id: string;
@@ -53,12 +63,10 @@ interface Props {
 }
 
 export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // Trigger confetti animation on mount
   useEffect(() => {
-    setShowConfetti(true);
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
   }, []);
@@ -76,31 +84,62 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
     }
   };
 
-  const isPaid = order.payment_status === 'completed';
+  const isPaid = isPaidPaymentStatus(order.payment_status);
+  const isPaymentReview = order.payment_status === 'amount_mismatch' || order.status === 'payment_review';
+  const isFailed = order.payment_status === 'failed' || order.payment_status === 'cancelled';
+  const statusTitle = isPaid
+    ? 'Thank You!'
+    : isPaymentReview
+      ? 'Payment Under Review'
+      : isFailed
+        ? 'Payment Not Completed'
+        : 'Order Created';
+  const statusMessage = isPaid
+    ? 'Your payment was successful. We\'re preparing your order with utmost care.'
+    : isPaymentReview
+      ? 'We received a payment update that needs manual review. Our team will contact you before processing the order.'
+      : isFailed
+        ? 'Your order was created, but the payment was not completed. You can retry checkout or contact support with this order number.'
+        : 'Your order has been created. We\'re confirming your payment.';
+  const badgeClass = isPaid
+    ? 'bg-green-100 text-green-700'
+    : isPaymentReview || isFailed
+      ? 'bg-red-100 text-red-700'
+      : 'bg-amber-100 text-amber-700';
+  const badgeDotClass = isPaid
+    ? 'bg-green-500'
+    : isPaymentReview || isFailed
+      ? 'bg-red-500'
+      : 'bg-amber-500';
+  const badgeText = isPaid
+    ? 'Payment Confirmed'
+    : isPaymentReview
+      ? 'Payment Under Review'
+      : isFailed
+        ? 'Payment Failed'
+        : 'Confirming Payment...';
 
   return (
-    <div className="min-h-screen bg-[var(--pvg-bg)]">
+    <div className="min-h-screen bg-brand-bg">
       {/* Confetti overlay */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {Array.from({ length: 40 }).map((_, i) => (
+          {CONFETTI_PIECES.map((piece, i) => (
             <div
               key={i}
               className="absolute animate-confetti"
               style={{
-                left: `${Math.random() * 100}%`,
+                left: piece.left,
                 top: '-10px',
-                animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${2 + Math.random() * 3}s`,
+                animationDelay: piece.animationDelay,
+                animationDuration: piece.animationDuration,
               }}
             >
               <div
                 className="w-2 h-2 rounded-sm"
                 style={{
-                  backgroundColor: ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'][
-                    Math.floor(Math.random() * 6)
-                  ],
-                  transform: `rotate(${Math.random() * 360}deg)`,
+                  backgroundColor: piece.color,
+                  transform: piece.rotation,
                 }}
               />
             </div>
@@ -115,17 +154,15 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
             <CheckCircle2 className="h-10 w-10 text-green-600" />
           </div>
           <h1 className="font-heading text-3xl md:text-4xl font-bold text-[var(--pvg-primary)] mb-3">
-            {isPaid ? 'Thank You!' : 'Order Created'}
+            {statusTitle}
           </h1>
           <p className="text-[var(--pvg-muted)] text-lg max-w-md mx-auto">
-            {isPaid
-              ? 'Your payment was successful. We\'re preparing your order with utmost care.'
-              : 'Your order has been created. We\'re confirming your payment.'}
+            {statusMessage}
           </p>
         </div>
 
         {/* Order Number Card */}
-        <div className="bg-[var(--pvg-surface)] rounded-2xl border border-[var(--pvg-border)] p-8 mb-6 text-center">
+        <div className="bg-brand-surface rounded-2xl border border-[var(--pvg-border)] p-8 mb-6 text-center">
           <p className="text-xs text-[var(--pvg-muted)] uppercase tracking-[3px] mb-2">
             Order Number
           </p>
@@ -135,7 +172,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
             </h2>
             <button
               onClick={handleCopyOrderNumber}
-              className="p-1.5 rounded-md hover:bg-[var(--pvg-bg-alt)] transition-colors"
+              className="p-1.5 rounded-md hover:bg-brand-bg-alt transition-colors"
               title="Copy order number"
             >
               {copied ? (
@@ -156,31 +193,25 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
           {/* Status badge */}
           <div className="mt-4">
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                isPaid
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-amber-100 text-amber-700'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${badgeClass}`}
             >
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isPaid ? 'bg-green-500' : 'bg-amber-500'
-                }`}
+                className={`h-1.5 w-1.5 rounded-full ${badgeDotClass}`}
               />
-              {isPaid ? 'Payment Confirmed' : 'Confirming Payment...'}
+              {badgeText}
             </span>
           </div>
         </div>
 
         {/* Items Summary */}
-        <div className="bg-[var(--pvg-surface)] rounded-2xl border border-[var(--pvg-border)] p-6 mb-6">
+        <div className="bg-brand-surface rounded-2xl border border-[var(--pvg-border)] p-6 mb-6">
           <h3 className="font-heading text-base font-semibold text-[var(--pvg-primary)] mb-4">
             Items Ordered
           </h3>
           <div className="space-y-3">
             {order.items.map((item, i) => (
               <div key={i} className="flex items-start gap-3">
-                <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)]">
+                <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-[var(--pvg-border)] bg-brand-bg-alt">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -238,7 +269,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
         </div>
 
         {/* Shipping address */}
-        <div className="bg-[var(--pvg-surface)] rounded-2xl border border-[var(--pvg-border)] p-6 mb-8">
+        <div className="bg-brand-surface rounded-2xl border border-[var(--pvg-border)] p-6 mb-8">
           <h3 className="font-heading text-base font-semibold text-[var(--pvg-primary)] mb-3">
             Shipping To
           </h3>
@@ -256,7 +287,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           <Link
             href="/account/orders"
-            className="flex items-center justify-center gap-2 bg-[var(--pvg-primary)] text-white py-3.5 px-6 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
+            className="flex items-center justify-center gap-2 bg-brand-primary text-white py-3.5 px-6 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
           >
             <Package className="h-4 w-4" />
             Track Order
@@ -275,7 +306,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
 
         {/* Guest CTA */}
         {!isLoggedIn && order.guest_email && (
-          <div className="bg-[var(--pvg-gold-light)] rounded-2xl border border-[var(--pvg-accent)]/30 p-6 mb-8 text-center">
+          <div className="bg-brand-gold-light rounded-2xl border border-[var(--pvg-accent)]/30 p-6 mb-8 text-center">
             <UserPlus className="h-8 w-8 text-[var(--pvg-accent)] mx-auto mb-3" />
             <h3 className="font-heading text-base font-semibold text-[var(--pvg-primary)] mb-2">
               Create an account to track future orders
@@ -284,8 +315,8 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
               Get order updates, save favorites, and enjoy faster checkout.
             </p>
             <Link
-              href="/?auth=login"
-              className="inline-flex items-center gap-2 bg-[var(--pvg-accent)] text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+              href={`/order-confirmation/${order.id}?auth=login`}
+              className="inline-flex items-center gap-2 bg-brand-accent text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
             >
               Create Account
             </Link>

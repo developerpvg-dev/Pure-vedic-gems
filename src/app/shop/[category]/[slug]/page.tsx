@@ -2,15 +2,18 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { ProductGallery } from '@/components/shop/ProductGallery';
-import { ProductTabs } from '@/components/shop/ProductTabs';
+import { ProductTabs, type ProductReview } from '@/components/shop/ProductTabs';
 import { PriceDisplay } from '@/components/shop/PriceDisplay';
 import { AddToCartBar } from '@/components/shop/AddToCartBar';
 import { ProductCard } from '@/components/shop/ProductCard';
+import { EmiCalculator } from '@/components/shop/EmiCalculator';
+import { RecentlyViewedProducts, type RecentlyViewedProduct } from '@/components/shop/RecentlyViewedProducts';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
+import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 60;
 
@@ -31,19 +34,41 @@ function buildSKUMeta(product: Product): string {
   return parts.join(' · ');
 }
 
+function formatLabel(value?: string | null) {
+  if (!value) return null;
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDimensions(dimensions: Product['dimensions_mm']) {
+  if (!dimensions) return null;
+  const parts = [dimensions.length, dimensions.width, dimensions.depth]
+    .filter((value): value is number => typeof value === 'number')
+    .map((value) => value.toFixed(1));
+  if (parts.length === 0) return null;
+  return `${parts.join(' x ')} ${dimensions.unit ?? 'mm'}`;
+}
+
 // ─── JSON-LD ─────────────────────────────────────────────────────────────────
 
 function ProductJsonLd({
   product,
   slug,
   category,
+  reviews,
 }: {
   product: Product;
   slug: string;
   category: string;
+  reviews: ProductReview[];
 }) {
   const images = extractImages(product.images);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com';
+  const unavailable =
+    !product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+  const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
+  const averageRating = ratedReviews.length > 0
+    ? ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
+    : null;
 
   const schema = {
     '@context': 'https://schema.org/',
@@ -58,16 +83,18 @@ function ProductJsonLd({
       url: `${siteUrl}/shop/${category}/${slug}`,
       priceCurrency: 'INR',
       price: product.price,
-      availability: product.in_stock
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
+      availability: unavailable ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'PureVedicGems' },
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '47',
-    },
+    ...(averageRating != null
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Math.round(averageRating * 10) / 10,
+            reviewCount: reviews.length,
+          },
+        }
+      : {}),
   };
 
   return (
@@ -86,7 +113,9 @@ export async function generateMetadata({
   params: Promise<{ category: string; slug: string }>;
 }): Promise<Metadata> {
   const { category, slug } = await params;
-  const supabase = createAdminClient();
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return {};
+
   const { data: productMeta } = await supabase
     .from('products')
     .select('*')
@@ -100,17 +129,12 @@ export async function generateMetadata({
   const images = extractImages((product.images as Json) ?? []);
   const imageUrl = product.thumbnail_url ?? images[0];
 
-  return {
-    title: product.meta_title ?? `${product.name} — PureVedicGems`,
-    description:
-      product.meta_description ?? product.short_desc ?? `Buy ${product.name} at PureVedicGems`,
-    openGraph: {
-      title: product.meta_title ?? product.name,
-      description: product.meta_description ?? product.short_desc ?? '',
-      images: imageUrl ? [{ url: imageUrl }] : [],
-      type: 'website',
-    },
-  };
+  return buildMetadata({
+    title: product.meta_title ?? `${product.name} | PureVedicGems`,
+    description: product.meta_description ?? product.short_desc ?? `Buy ${product.name} at PureVedicGems`,
+    path: `/shop/${category}/${slug}`,
+    image: imageUrl,
+  });
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -119,30 +143,12 @@ interface ProductDetailPageProps {
   params: Promise<{ category: string; slug: string }>;
 }
 
-const FULL_SELECT = `
-  id, sku, name, slug, category, sub_category,
-  price, price_per_carat, compare_price, currency,
-  carat_weight, ratti_weight, origin, shape, treatment,
-  color_grade, clarity, certification, planet, vedic_name, hindi_name,
-  chakra, rashi, finger, wearing_day, wearing_metal,
-  mukhi_count, xray_certified, ruling_deity,
-  short_desc, description, vedic_significance, benefits, wearing_guide,
-  expert_note, expert_id,
-  images, certificate_url, video_url, thumbnail_url,
-  in_stock, stock_quantity, low_stock_threshold,
-  featured, is_directors_pick, is_active, display_order, configurator_enabled,
-  meta_title, meta_description, created_at, updated_at
-`;
-
-const CARD_SELECT = `
-  id, slug, name, category, sub_category, price, price_per_carat, compare_price,
-  carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url,
-  in_stock, featured, is_directors_pick, treatment, planet, created_at
-`;
-
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { category, slug } = await params;
-  const supabase = createAdminClient();
+  const supabase = createOptionalPublicClient();
+  if (!supabase) {
+    notFound();
+  }
 
   // Fetch primary product (by slug)
   const { data: productData, error } = await supabase
@@ -161,12 +167,20 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   // Fetch related products (same category, different slug, limit 4)
   const { data: relatedData } = await supabase
     .from('products')
-    .select('id, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at')
+    .select('id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number')
     .eq('category', product.category)
     .eq('is_active', true)
     .eq('in_stock', true)
     .neq('slug', slug)
     .limit(6);
+
+  const { data: reviewData } = await supabase
+    .from('reviews')
+    .select('id, customer_name, customer_location, rating, title, review_text, is_verified, created_at')
+    .eq('product_id', product.id)
+    .eq('is_approved', true)
+    .order('created_at', { ascending: false })
+    .limit(8);
 
   // Fetch expert if set
   let expert: {
@@ -201,6 +215,15 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const images = extractImages(product.images as Json);
   const skuMeta = buildSKUMeta(product);
   const related = (relatedData ?? []) as unknown as ProductCardType[];
+  const reviews = (reviewData ?? []) as unknown as ProductReview[];
+  const recentlyViewedProduct: RecentlyViewedProduct = {
+    id: product.id,
+    name: product.name,
+    href: `/shop/${product.category}/${product.slug}`,
+    imageUrl: product.thumbnail_url ?? images[0] ?? null,
+    price: product.price,
+    meta: skuMeta || null,
+  };
 
   const categoryLabel =
     product.sub_category
@@ -209,9 +232,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   return (
     <>
-      <ProductJsonLd product={product} slug={slug} category={category} />
+      <ProductJsonLd product={product} slug={slug} category={category} reviews={reviews} />
 
-      <main className="min-h-screen bg-[var(--pvg-bg)] px-4 pb-24 pt-[88px] md:px-6 md:pt-[110px] lg:px-8">
+      <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-[88px] md:px-6 md:pt-[110px] lg:px-8">
         <div className="mx-auto max-w-[1280px]">
 
           {/* ── Breadcrumb ── */}
@@ -261,7 +284,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                     </span>
                   )}
                   {product.treatment && product.treatment !== 'none' && (
-                    <span className="rounded bg-[var(--pvg-gold-light)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--pvg-muted)]">
+                    <span className="rounded bg-brand-gold-light px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--pvg-muted)]">
                       {product.treatment}
                     </span>
                   )}
@@ -293,18 +316,30 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 caratWeight={product.carat_weight}
               />
 
+              <EmiCalculator amount={product.price} compact />
+
               {/* Gemstone quick specs */}
-              <div className="grid grid-cols-3 gap-x-3 gap-y-3 rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)] p-3 sm:grid-cols-3">
+              <div className="grid grid-cols-3 gap-x-3 gap-y-3 rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-3 sm:grid-cols-3">
                 {[
+                  { label: 'Tag', value: product.tag_number },
+                  { label: 'Availability', value: formatLabel(product.availability_status) },
                   { label: 'Weight', value: product.carat_weight ? `${product.carat_weight.toFixed(2)} ct` : null },
                   { label: 'Ratti', value: product.ratti_weight ? `${product.ratti_weight.toFixed(2)} rt` : null },
                   { label: 'Origin', value: product.origin },
+                  { label: 'Origin Region', value: product.origin_region ?? product.origin_display },
                   { label: 'Shape', value: product.shape },
                   { label: 'Colour', value: product.color_grade },
                   { label: 'Clarity', value: product.clarity },
+                  { label: 'Quality', value: product.quality_label ?? product.commercial_quality_grade },
+                  { label: 'Treatment', value: product.treatment_summary ?? formatLabel(product.treatment) },
+                  { label: 'Dimensions', value: formatDimensions(product.dimensions_mm) },
+                  { label: 'Lab', value: product.certificate_lab ?? product.certification },
+                  { label: 'Certificate No.', value: product.certificate_number },
                   { label: 'Planet', value: product.planet },
                   { label: 'Rashi', value: product.rashi },
                   { label: 'Vedic Name', value: product.vedic_name },
+                  { label: 'Energization', value: product.energization_eligible ? 'Eligible' : null },
+                  { label: 'Jewellery', value: product.configurator_enabled ? 'Configurable' : null },
                 ]
                   .filter(({ value }) => !!value)
                   .map(({ label, value }) => (
@@ -322,7 +357,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
               {/* Expert Note */}
               {(product.expert_note || expert) && (
-                <div className="rounded-xl border border-[var(--pvg-gold-light)] bg-[var(--pvg-gold-light)] p-4">
+                <div className="rounded-xl border border-[var(--pvg-gold-light)] bg-brand-gold-light p-4">
                   <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[2px] text-[var(--pvg-accent)]">
                     Expert Note
                   </p>
@@ -355,8 +390,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
           {/* ── Tabs: Description, Vedic, Certificate, Wearing, Reviews ── */}
           <div className="mt-16">
-            <ProductTabs product={product} />
+            <ProductTabs product={product} reviews={reviews} />
           </div>
+
+          <RecentlyViewedProducts current={recentlyViewedProduct} />
 
           {/* ── Related Products ── */}
           {related.length > 0 && (

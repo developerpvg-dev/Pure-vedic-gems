@@ -4,8 +4,9 @@ import Image from 'next/image';
 import { Heart, ChevronLeft, ShoppingBag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { SavedGemRemoveButton } from '@/components/account/SavedGemRemoveButton';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Saved Gems | PureVedicGems',
@@ -17,7 +18,7 @@ export default async function SavedPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/?auth=login');
+  if (!user) redirect('/shop?auth=login&next=/account/saved');
 
   // Fetch saved items with product details
   const { data: savedItems } = await supabase
@@ -70,7 +71,7 @@ export default async function SavedPage() {
         >
           Saved Gems
         </h1>
-        <OrnamentalDivider className="mt-4 max-w-[200px]" />
+        <OrnamentalDivider className="mt-4 max-w-50" />
       </div>
 
       {items.length === 0 ? (
@@ -126,6 +127,10 @@ export default async function SavedPage() {
                   background: 'var(--pvg-surface)',
                 }}
               >
+                <SavedGemRemoveButton
+                  productId={product.id}
+                  productName={product.name}
+                />
                 {/* Image */}
                 <Link
                   href={`/shop/${product.category}/${product.slug}`}

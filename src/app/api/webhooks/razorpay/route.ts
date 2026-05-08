@@ -1,330 +1,298 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyWebhookSignature } from '@/lib/razorpay/verify';
+import { captureAuthorizedRazorpayPayment, fetchRazorpayPaymentFacts } from '@/lib/razorpay/transactions';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation';
-import type { Order } from '@/lib/types/database';
+import {
+  finalizeCapturedPayment,
+  markOrderPaymentFailed,
+  markOrderPaymentReview,
+  markPaymentEventProcessed,
+  upsertPaymentEvent,
+} from '@/lib/orders/payment-finalization';
+import type { Json, Order } from '@/lib/types/database';
 
-/**
- * POST /api/webhooks/razorpay
- *
- * Handles Razorpay webhook events server-to-server.
- * This is the authoritative payment confirmation path — more reliable than
- * the client-side verify callback because it works even if the user's browser
- * closes or the network drops mid-checkout.
- *
- * SECURITY:
- * - Verifies HMAC-SHA256 signature using the webhook secret
- * - No rate limiting here (Razorpay retries on failure)
- * - Idempotent: re-processing an already-confirmed payment is a no-op
- *
- * Events handled:
- * - payment.captured → order confirmed, email sent
- * - payment.failed → order marked failed
- * - refund.processed → order marked refunded
- */
-export async function POST(req: NextRequest) {
-  // ── Read raw body for HMAC verification ──────────────────────────────
-  const rawBody = await req.text();
-  const signature = req.headers.get('x-razorpay-signature') ?? '';
+type UnknownRecord = Record<string, unknown>;
 
-  // ── Verify webhook signature ─────────────────────────────────────────
-  if (!signature) {
-    console.error('[Webhook] Missing x-razorpay-signature header');
-    return NextResponse.json(
-      { error: 'Missing signature' },
-      { status: 401 }
-    );
-  }
-
-  // If webhook secret is not configured, log warning but still process
-  // (for test environments where webhook secret may not be set)
-  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const isValid = verifyWebhookSignature(rawBody, signature);
-    if (!isValid) {
-      console.error('[Webhook] Invalid signature');
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      );
-    }
-  } else {
-    console.warn(
-      '[Webhook] RAZORPAY_WEBHOOK_SECRET not set — skipping signature verification'
-    );
-  }
-
-  // ── Parse the webhook payload ────────────────────────────────────────
-  let payload;
-  try {
-    payload = JSON.parse(rawBody);
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON' },
-      { status: 400 }
-    );
-  }
-
-  const event = payload.event as string;
-  const supabase = createAdminClient();
-
-  // ── Handle events ────────────────────────────────────────────────────
-  switch (event) {
-    case 'payment.captured':
-    case 'payment.authorized': {
-      await handlePaymentCaptured(payload, supabase);
-      break;
-    }
-
-    case 'payment.failed': {
-      await handlePaymentFailed(payload, supabase);
-      break;
-    }
-
-    case 'refund.processed': {
-      await handleRefundProcessed(payload, supabase);
-      break;
-    }
-
-    default: {
-      // Log unhandled events for debugging
-      console.log(`[Webhook] Unhandled event: ${event}`);
-    }
-  }
-
-  // Always return 200 to prevent Razorpay from retrying
-  return NextResponse.json({ status: 'ok' });
+function asRecord(value: unknown): UnknownRecord | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as UnknownRecord)
+    : null;
 }
 
-// ─── payment.captured handler ───────────────────────────────────────────────
+function paymentEntity(payload: UnknownRecord) {
+  const payloadRecord = asRecord(payload.payload);
+  const paymentRecord = asRecord(payloadRecord?.payment);
+  return asRecord(paymentRecord?.entity);
+}
 
-async function handlePaymentCaptured(
-  payload: Record<string, unknown>,
-  supabase: ReturnType<typeof createAdminClient>
-) {
-  const entity = (payload.payload as Record<string, unknown>)?.payment as
-    | Record<string, unknown>
-    | undefined;
-  const paymentEntity = entity?.entity as Record<string, unknown> | undefined;
+function refundEntity(payload: UnknownRecord) {
+  const payloadRecord = asRecord(payload.payload);
+  const refundRecord = asRecord(payloadRecord?.refund);
+  return asRecord(refundRecord?.entity);
+}
 
-  if (!paymentEntity) {
-    console.error('[Webhook] Missing payment entity in payload');
-    return;
-  }
+function webhookEventId(payload: UnknownRecord, event: string, entityId: string | null) {
+  const explicitId = typeof payload.id === 'string' ? payload.id : null;
+  if (explicitId) return explicitId;
 
-  const razorpayOrderId = paymentEntity.order_id as string;
-  const razorpayPaymentId = paymentEntity.id as string;
-  const amountPaise = paymentEntity.amount as number;
+  const accountId = typeof payload.account_id === 'string' ? payload.account_id : 'account';
+  const createdAt =
+    typeof payload.created_at === 'number' || typeof payload.created_at === 'string'
+      ? String(payload.created_at)
+      : 'unknown-time';
 
-  if (!razorpayOrderId || !razorpayPaymentId) {
-    console.error('[Webhook] Missing order_id or payment_id');
-    return;
-  }
+  return `webhook:${accountId}:${event}:${entityId ?? 'unknown'}:${createdAt}`;
+}
 
-  // Find the order by razorpay_order_id
-  const rawResult = await supabase
+async function findOrderByRazorpayOrderId(razorpayOrderId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
     .from('orders')
     .select('*')
     .eq('razorpay_order_id', razorpayOrderId)
     .single();
-  const order = rawResult.data as Order | null;
-  const error = rawResult.error;
 
-  if (error || !order) {
-    console.error(
-      `[Webhook] Order not found for razorpay_order_id: ${razorpayOrderId}`
-    );
-    return;
+  if (error || !data) return null;
+  return data as Order;
+}
+
+export async function POST(req: NextRequest) {
+  const rawBody = await req.text();
+  const signature = req.headers.get('x-razorpay-signature') ?? '';
+
+  if (!signature) {
+    return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
   }
 
-  // Idempotency: skip if already completed
-  if (order.payment_status === 'completed') {
-    console.log(
-      `[Webhook] Order ${order.order_number} already confirmed, skipping`
-    );
-    return;
+  if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    console.error('[Webhook] RAZORPAY_WEBHOOK_SECRET is missing; refusing to process Razorpay webhook.');
+    return NextResponse.json({ error: 'Webhook verification is not configured' }, { status: 503 });
   }
 
-  // Amount verification: ensure the paid amount matches our order total
-  const expectedPaise = Math.round(order.total * 100);
-  if (amountPaise !== expectedPaise) {
-    console.error(
-      `[Webhook] Amount mismatch: expected ${expectedPaise} paise, got ${amountPaise} paise for order ${order.order_number}`
-    );
-    // Still mark as completed but log the discrepancy
-    await supabase.from('notification_log').insert({
-      type: 'amount_mismatch',
-      recipient: 'admin',
-      template: 'amount_mismatch_alert',
-      context: {
-        order_id: order.id,
-        order_number: order.order_number,
-        expected_paise: expectedPaise,
-        received_paise: amountPaise,
+  let validSignature = false;
+  try {
+    validSignature = verifyWebhookSignature(rawBody, signature);
+  } catch (error) {
+    console.error('[Webhook] Signature verification failed:', error);
+  }
+
+  if (!validSignature) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
+  let payload: UnknownRecord;
+  try {
+    const parsed = JSON.parse(rawBody) as unknown;
+    const record = asRecord(parsed);
+    if (!record) throw new Error('payload is not an object');
+    payload = record;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const event = typeof payload.event === 'string' ? payload.event : 'unknown';
+
+  switch (event) {
+    case 'payment.captured':
+    case 'payment.authorized':
+      return handlePaymentWebhook(event, payload);
+    case 'payment.failed':
+      return handlePaymentFailed(payload);
+    case 'refund.processed':
+      return handleRefundProcessed(payload);
+    default: {
+      const { event: paymentEvent } = await upsertPaymentEvent({
+        eventId: webhookEventId(payload, event, null),
+        eventType: event,
+        signatureValid: true,
+        status: 'ignored',
+        payload: payload as Json,
+      });
+      await markPaymentEventProcessed(paymentEvent.id, 'ignored');
+      return NextResponse.json({ status: 'ignored' });
+    }
+  }
+}
+
+async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
+  const entity = paymentEntity(payload);
+  const razorpayOrderId = typeof entity?.order_id === 'string' ? entity.order_id : null;
+  const razorpayPaymentId = typeof entity?.id === 'string' ? entity.id : null;
+  const amountPaise = typeof entity?.amount === 'number' ? entity.amount : null;
+  const method = typeof entity?.method === 'string' ? entity.method : null;
+
+  if (!razorpayOrderId || !razorpayPaymentId) {
+    return NextResponse.json({ error: 'Missing payment entity identifiers' }, { status: 400 });
+  }
+
+  const order = await findOrderByRazorpayOrderId(razorpayOrderId);
+  const expectedPaise = order ? Math.round(order.total * 100) : null;
+  const { event, alreadyProcessed } = await upsertPaymentEvent({
+    eventId: webhookEventId(payload, eventType, razorpayPaymentId),
+    eventType,
+    orderId: order?.id ?? null,
+    razorpayOrderId,
+    razorpayPaymentId,
+    signatureValid: true,
+    amountPaise,
+    expectedPaise,
+    status: 'received',
+    payload: payload as Json,
+  });
+
+  if (alreadyProcessed) return NextResponse.json({ status: 'duplicate' });
+  if (!order) {
+    await markPaymentEventProcessed(event.id, 'order_not_found');
+    return NextResponse.json({ status: 'order_not_found' });
+  }
+
+  let facts;
+  try {
+    facts = await fetchRazorpayPaymentFacts(razorpayOrderId, razorpayPaymentId);
+  } catch (error) {
+    console.error('[Webhook] Could not verify Razorpay payment facts:', error);
+    return NextResponse.json({ error: 'Razorpay lookup failed' }, { status: 502 });
+  }
+
+  const amountMatches =
+    facts.razorpayOrderAmountPaise === expectedPaise &&
+    facts.razorpayPaymentAmountPaise === expectedPaise &&
+    facts.currency === 'INR';
+
+  if (!amountMatches) {
+    const reason = `Expected ${expectedPaise} paise INR, got order ${facts.razorpayOrderAmountPaise}, payment ${facts.razorpayPaymentAmountPaise}, currency ${facts.currency}.`;
+    await markOrderPaymentReview({
+      order,
+      eventId: event.id,
+      razorpayPaymentId,
+      reason,
+      expectedPaise,
+      amountPaise: facts.razorpayPaymentAmountPaise,
+    });
+    await markPaymentEventProcessed(event.id, 'amount_mismatch');
+    return NextResponse.json({ status: 'amount_mismatch' });
+  }
+
+  if (!facts.captured && facts.paymentStatus === 'authorized') {
+    try {
+      facts = await captureAuthorizedRazorpayPayment(facts, razorpayPaymentId, expectedPaise, 'INR');
+    } catch (error) {
+      console.error('[Webhook] Razorpay capture failed after authorization:', error);
+      const supabase = createAdminClient();
+      await supabase
+        .from('orders')
+        .update({
+          razorpay_payment_id: razorpayPaymentId,
+          payment_status: 'authorized',
+          payment_method: method ?? facts.method ?? 'razorpay',
+          payment_failure_reason: null,
+          payment_review_reason: 'Payment authorized but server-side capture is still pending',
+        })
+        .eq('id', order.id);
+      await markPaymentEventProcessed(event.id, 'capture_pending');
+      return NextResponse.json({ status: 'capture_pending' });
+    }
+  }
+
+  if (!facts.captured) {
+    const supabase = createAdminClient();
+    await supabase
+      .from('orders')
+      .update({
         razorpay_payment_id: razorpayPaymentId,
+        payment_status: 'authorized',
+        payment_method: method ?? facts.method ?? 'razorpay',
+      })
+      .eq('id', order.id);
+    await markPaymentEventProcessed(event.id, 'authorized');
+    return NextResponse.json({ status: 'authorized' });
+  }
+
+  await finalizeCapturedPayment({
+    order,
+    eventId: event.id,
+    razorpayPaymentId,
+    method: method ?? facts.method,
+  });
+
+  return NextResponse.json({ status: 'captured' });
+}
+
+async function handlePaymentFailed(payload: UnknownRecord) {
+  const entity = paymentEntity(payload);
+  const razorpayOrderId = typeof entity?.order_id === 'string' ? entity.order_id : null;
+  const razorpayPaymentId = typeof entity?.id === 'string' ? entity.id : null;
+  const errorDescription = typeof entity?.error_description === 'string'
+    ? entity.error_description
+    : 'Razorpay reported payment failure.';
+
+  if (!razorpayOrderId || !razorpayPaymentId) {
+    return NextResponse.json({ error: 'Missing failed payment identifiers' }, { status: 400 });
+  }
+
+  const order = await findOrderByRazorpayOrderId(razorpayOrderId);
+  const { event, alreadyProcessed } = await upsertPaymentEvent({
+    eventId: webhookEventId(payload, 'payment.failed', razorpayPaymentId),
+    eventType: 'payment.failed',
+    orderId: order?.id ?? null,
+    razorpayOrderId,
+    razorpayPaymentId,
+    signatureValid: true,
+    status: 'received',
+    payload: payload as Json,
+  });
+
+  if (alreadyProcessed) return NextResponse.json({ status: 'duplicate' });
+  if (order) {
+    await markOrderPaymentFailed(order, errorDescription, razorpayPaymentId);
+  }
+  await markPaymentEventProcessed(event.id, 'failed');
+  return NextResponse.json({ status: 'failed' });
+}
+
+async function handleRefundProcessed(payload: UnknownRecord) {
+  const entity = refundEntity(payload);
+  const paymentId = typeof entity?.payment_id === 'string' ? entity.payment_id : null;
+  const refundId = typeof entity?.id === 'string' ? entity.id : null;
+  const eventId = webhookEventId(payload, 'refund.processed', refundId ?? paymentId);
+  const supabase = createAdminClient();
+  const { data: order } = paymentId
+    ? await supabase.from('orders').select('*').eq('razorpay_payment_id', paymentId).single()
+    : { data: null };
+  const refundOrder = order as Order | null;
+
+  const { event, alreadyProcessed } = await upsertPaymentEvent({
+    eventId,
+    eventType: 'refund.processed',
+    orderId: refundOrder?.id ?? null,
+    razorpayPaymentId: paymentId,
+    signatureValid: true,
+    status: 'received',
+    payload: payload as Json,
+  });
+
+  if (alreadyProcessed) return NextResponse.json({ status: 'duplicate' });
+
+  if (refundOrder) {
+    await supabase
+      .from('orders')
+      .update({ payment_status: 'refunded', status: 'refunded' })
+      .eq('id', refundOrder.id);
+
+    await supabase.from('notification_log').insert({
+      type: 'webhook',
+      recipient: process.env.ADMIN_NOTIFICATION_EMAIL ?? 'admin',
+      template: 'refund_processed',
+      context: {
+        order_id: refundOrder.id,
+        order_number: refundOrder.order_number,
+        refund_id: refundId,
+        refund_amount: typeof entity?.amount === 'number' ? entity.amount : null,
       },
-      status: 'sent',
+      status: 'queued',
     });
   }
 
-  // Update order status
-  await supabase
-    .from('orders')
-    .update({
-      razorpay_payment_id: razorpayPaymentId,
-      payment_status: 'completed',
-      payment_method: (paymentEntity.method as string) ?? 'razorpay',
-      status: 'confirmed',
-    })
-    .eq('id', order.id);
-
-  // Log the webhook event
-  await supabase.from('notification_log').insert({
-    type: 'webhook',
-    recipient: order.customer_id ?? order.guest_email ?? 'unknown',
-    template: 'payment_captured',
-    context: {
-      order_id: order.id,
-      order_number: order.order_number,
-      razorpay_payment_id: razorpayPaymentId,
-      amount: order.total,
-      method: (paymentEntity.method as string) ?? null,
-    },
-    status: 'sent',
-  });
-
-  // Send confirmation email if not already sent via the verify route
-  const emailTo = order.guest_email ?? null;
-  let customerName = order.guest_name ?? 'Valued Customer';
-
-  let emailAddress = emailTo;
-  if (!emailAddress && order.customer_id) {
-    const { data: profile } = await supabase
-      .from('customer_profiles')
-      .select('email, full_name')
-      .eq('id', order.customer_id)
-      .single();
-    emailAddress = profile?.email ?? null;
-    customerName = profile?.full_name ?? customerName;
-  }
-
-  if (emailAddress) {
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
-
-    await sendOrderConfirmationEmail(emailAddress, {
-      customerName,
-      orderNumber: order.order_number,
-      orderId: order.id,
-      items:
-        (order.items as Array<{
-          name: string;
-          quantity: number;
-          unit_price: number;
-          line_total: number;
-        }>) ?? [],
-      subtotal: order.subtotal,
-      shippingCost: order.shipping_cost,
-      gstAmount: order.gst_amount,
-      total: order.total,
-      shippingAddress: order.shipping_address as {
-        line1: string;
-        line2?: string;
-        city: string;
-        state: string;
-        pincode: string;
-        country: string;
-      },
-      siteUrl,
-    });
-  }
-}
-
-// ─── payment.failed handler ─────────────────────────────────────────────────
-
-async function handlePaymentFailed(
-  payload: Record<string, unknown>,
-  supabase: ReturnType<typeof createAdminClient>
-) {
-  const entity = (payload.payload as Record<string, unknown>)?.payment as
-    | Record<string, unknown>
-    | undefined;
-  const paymentEntity = entity?.entity as Record<string, unknown> | undefined;
-
-  if (!paymentEntity) return;
-
-  const razorpayOrderId = paymentEntity.order_id as string;
-  if (!razorpayOrderId) return;
-
-  const { data: order } = await supabase
-    .from('orders')
-    .select('id, order_number')
-    .eq('razorpay_order_id', razorpayOrderId)
-    .single();
-
-  if (!order) return;
-
-  await supabase
-    .from('orders')
-    .update({ payment_status: 'failed' })
-    .eq('id', order.id);
-
-  await supabase.from('notification_log').insert({
-    type: 'webhook',
-    recipient: 'admin',
-    template: 'payment_failed',
-    context: {
-      order_id: order.id,
-      order_number: order.order_number,
-      error_code: (paymentEntity.error_code as string) ?? null,
-      error_description: (paymentEntity.error_description as string) ?? null,
-    },
-    status: 'sent',
-  });
-}
-
-// ─── refund.processed handler ───────────────────────────────────────────────
-
-async function handleRefundProcessed(
-  payload: Record<string, unknown>,
-  supabase: ReturnType<typeof createAdminClient>
-) {
-  const entity = (payload.payload as Record<string, unknown>)?.refund as
-    | Record<string, unknown>
-    | undefined;
-  const refundEntity = entity?.entity as Record<string, unknown> | undefined;
-
-  if (!refundEntity) return;
-
-  const paymentId = refundEntity.payment_id as string;
-  if (!paymentId) return;
-
-  const { data: order } = await supabase
-    .from('orders')
-    .select('id, order_number')
-    .eq('razorpay_payment_id', paymentId)
-    .single();
-
-  if (!order) return;
-
-  await supabase
-    .from('orders')
-    .update({
-      payment_status: 'refunded',
-      status: 'refunded',
-    })
-    .eq('id', order.id);
-
-  await supabase.from('notification_log').insert({
-    type: 'webhook',
-    recipient: 'admin',
-    template: 'refund_processed',
-    context: {
-      order_id: order.id,
-      order_number: order.order_number,
-      refund_id: (refundEntity.id as string) ?? null,
-      refund_amount: (refundEntity.amount as number) ?? null,
-    },
-    status: 'sent',
-  });
+  await markPaymentEventProcessed(event.id, 'refunded');
+  return NextResponse.json({ status: 'refunded' });
 }

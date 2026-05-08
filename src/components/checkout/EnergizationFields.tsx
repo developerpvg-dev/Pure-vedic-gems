@@ -28,7 +28,7 @@ export function EnergizationFieldsForm({ value, onChange }: EnergizationFieldsFo
   };
 
   return (
-    <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-accent)]/30 p-6">
+    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-accent)]/30 p-6">
       <h3 className="font-heading text-base font-semibold text-[var(--pvg-primary)] mb-1">
         🔱 Energization & Puja
       </h3>
@@ -63,7 +63,7 @@ export function EnergizationFieldsForm({ value, onChange }: EnergizationFieldsFo
               type="date"
               value={value.ceremony_dob ?? ''}
               onChange={(e) => update({ ceremony_dob: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-brand-bg focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
             />
           </div>
 
@@ -78,7 +78,7 @@ export function EnergizationFieldsForm({ value, onChange }: EnergizationFieldsFo
               onChange={(e) => update({ ceremony_gotra: e.target.value })}
               placeholder="e.g., Kashyap, Bharadwaj, Vatsa"
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
             />
           </div>
 
@@ -90,7 +90,7 @@ export function EnergizationFieldsForm({ value, onChange }: EnergizationFieldsFo
             <select
               value={value.ceremony_rashi ?? ''}
               onChange={(e) => update({ ceremony_rashi: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-brand-bg focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
             >
               <option value="">Select your Rashi</option>
               {RASHI_OPTIONS.map((rashi) => (

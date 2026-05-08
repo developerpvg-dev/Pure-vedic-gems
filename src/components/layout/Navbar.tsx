@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ export function Navbar() {
   const rightLinks = NAV_ITEMS.slice(3);
 
   const linkCls =
-    'relative text-[13px] font-medium uppercase tracking-[1.5px] text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-primary)] after:absolute after:-bottom-0.5 after:left-0 after:h-[1.5px] after:w-0 after:bg-[var(--pvg-accent)] after:transition-all hover:after:w-full';
+    'relative text-[13px] font-medium uppercase tracking-[1.5px] text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-primary)] after:absolute after:-bottom-0.5 after:left-0 after:h-[1.5px] after:w-0 after:bg-brand-accent after:transition-all hover:after:w-full';
 
   return (
     <>
@@ -30,14 +30,14 @@ export function Navbar() {
        * overflow-visible is required so the arch dome can extend below the nav border.
        */}
       <nav
-        className={`fixed inset-x-0 z-[1000] overflow-visible border-b border-[var(--pvg-border)] bg-[var(--pvg-bg)]/97 backdrop-blur-[20px] transition-shadow ${
+        className={`fixed inset-x-0 z-[1000] overflow-visible border-b border-[var(--pvg-border)] bg-brand-bg/97 backdrop-blur-[20px] transition-shadow ${
           scrolled ? 'shadow-[0_4px_24px_rgba(0,0,0,0.07)]' : ''
         }`}
         style={{ top: '32px' }}
       >
         <div className="mx-auto flex max-w-[1400px] items-center px-4 py-1.5 md:px-6">
 
-          {/* ── LEFT LINKS (desktop) ── */}
+          {/* -- LEFT LINKS (desktop) -- */}
           <ul className="hidden flex-1 list-none items-center gap-6 lg:flex">
             {leftLinks.map((item) => (
               <li key={item.href}>
@@ -48,7 +48,7 @@ export function Navbar() {
             ))}
           </ul>
 
-          {/* ── HAMBURGER (mobile) ── */}
+          {/* -- HAMBURGER (mobile) -- */}
           <div className="flex flex-1 items-center lg:hidden">
             <button
               onClick={() => setMobileOpen(true)}
@@ -59,10 +59,10 @@ export function Navbar() {
             </button>
           </div>
 
-          {/* ── CENTRE — Logo with arch dome ── */}
+          {/* -- CENTRE � Logo with arch dome -- */}
           <div className="relative flex shrink-0 items-center justify-center">
             {/*
-             * Arch dome — desktop only.
+             * Arch dome � desktop only.
              * Positioned absolutely so it extends 16px below the nav's border-b,
              * creating the "wider rounded centre" effect the user requested.
              * It has the same bg as the navbar and its own border on 3 sides.
@@ -81,7 +81,7 @@ export function Navbar() {
               }}
             />
 
-            {/* Logo link — sits on top of the arch (z-10) */}
+            {/* Logo link � sits on top of the arch (z-10) */}
             <Link
               href="/"
               className="relative z-10 flex flex-col items-center px-6 md:px-10 lg:px-16"
@@ -93,6 +93,7 @@ export function Navbar() {
                   alt="PureVedicGems Logo"
                   fill
                   className="object-contain"
+                  sizes="(max-width: 768px) 42px, 52px"
                   priority
                 />
               </div>
@@ -102,6 +103,7 @@ export function Navbar() {
                   alt="Pure Vedic Gems"
                   fill
                   className="object-contain"
+                  sizes="(max-width: 768px) 120px, 160px"
                   priority
                 />
               </div>
@@ -111,7 +113,7 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* ── RIGHT LINKS + CTA (desktop) ── */}
+          {/* -- RIGHT LINKS + CTA (desktop) -- */}
           <ul className="hidden flex-1 list-none items-center justify-end gap-6 lg:flex">
             {rightLinks.map((item) => (
               <li key={item.href}>
@@ -123,18 +125,18 @@ export function Navbar() {
             <li>
               <Link
                 href="/consultation"
-                className="rounded bg-[var(--pvg-primary)] px-4 py-2 text-[12px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:bg-[var(--pvg-accent)] hover:text-[var(--pvg-primary)] hover:-translate-y-0.5"
+                className="rounded bg-brand-primary px-4 py-2 text-[12px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:bg-brand-accent hover:text-[var(--pvg-primary)] hover:-translate-y-0.5"
               >
                 Book Consultation
               </Link>
             </li>
           </ul>
 
-          {/* ── MOBILE RIGHT — small CTA button ── */}
+          {/* -- MOBILE RIGHT � small CTA button -- */}
           <div className="flex flex-1 items-center justify-end lg:hidden">
             <Link
               href="/consultation"
-              className="rounded bg-[var(--pvg-primary)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1px] text-[var(--pvg-bg)]"
+              className="rounded bg-brand-primary px-3 py-1.5 text-[10px] font-bold uppercase tracking-[1px] text-[var(--pvg-bg)]"
             >
               Consult
             </Link>

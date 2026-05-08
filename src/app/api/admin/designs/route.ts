@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+
+async function requireAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+
+  const admin = createAdminClient();
+  const { data: member } = await admin
+    .from('team_members')
+    .select('role, is_active')
+    .eq('id', user.id)
+    .single();
+
+  const m = member as { role: string; is_active: boolean } | null;
+  if (!m?.is_active) {
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+  return { user, role: m.role };
+}
 
 /**
  * GET /api/admin/designs
@@ -7,6 +27,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
  * Supports ?setting_type=ring|pendant|bracelet filter.
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth) return auth.error;
+
   const { searchParams } = request.nextUrl;
   const settingType = searchParams.get('setting_type');
 
@@ -37,6 +60,9 @@ export async function GET(request: NextRequest) {
  * Create a new jewelry design.
  */
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth) return auth.error;
+
   try {
     const body = await request.json();
 
@@ -79,6 +105,9 @@ export async function POST(request: NextRequest) {
  * Update an existing jewelry design.
  */
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth) return auth.error;
+
   try {
     const body = await request.json();
     const { id, ...updates } = body;
@@ -112,6 +141,9 @@ export async function PATCH(request: NextRequest) {
  * Soft-delete a design (set is_active=false).
  */
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin();
+  if ('error' in auth) return auth.error;
+
   const { searchParams } = request.nextUrl;
   const id = searchParams.get('id');
 

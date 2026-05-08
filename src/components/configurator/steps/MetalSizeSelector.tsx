@@ -8,18 +8,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
-import { Loader2, TrendingUp } from 'lucide-react';
 import {
   METAL_OPTIONS,
   CHAIN_LENGTHS,
 } from '@/lib/types/configurator';
-import type {
-  MetalId,
-  MetalOption,
-  SettingType,
-  GoldRateData,
-} from '@/lib/types/configurator';
+import type { MetalId, MetalOption, SettingType, GoldRateData } from '@/lib/types/configurator';
 import type { JewelryDesign } from '@/lib/types/database';
+import {
+  getAllowedRingSizeSystems,
+  isMetalAllowed,
+  parseRingSizeValue,
+  RING_SIZE_SYSTEMS,
+  type ConfiguratorOptionRules,
+  type RingSizeSystemId,
+} from '@/lib/utils/configurator-rules';
 
 interface MetalSizeSelectorProps {
   settingType: SettingType;
@@ -28,53 +30,10 @@ interface MetalSizeSelectorProps {
   chainLength: string | null;
   goldRate: GoldRateData | null;
   selectedDesign: JewelryDesign | null;
+  optionRules: ConfiguratorOptionRules | null;
   onMetalChange: (metal: MetalId) => void;
   onRingSizeChange: (size: string | null) => void;
   onChainLengthChange: (length: string) => void;
-}
-
-const RING_SIZE_SYSTEMS = [
-  {
-    id: 'indian',
-    label: 'Indian',
-    sizes: Array.from({ length: 24 }, (_, index) => {
-      const value = String(index + 5);
-      return { value, label: value };
-    }),
-  },
-  {
-    id: 'european',
-    label: 'EU',
-    sizes: Array.from({ length: 14 }, (_, index) => {
-      const value = String(44 + index * 2);
-      return { value, label: value };
-    }),
-  },
-  {
-    id: 'uk_au',
-    label: 'UK',
-    sizes: [
-      'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    ].map((value) => ({ value, label: value })),
-  },
-  {
-    id: 'us',
-    label: 'US',
-    sizes: ['4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13']
-      .map((value) => ({ value, label: value })),
-  },
-] as const;
-
-type RingSizeSystemId = (typeof RING_SIZE_SYSTEMS)[number]['id'];
-
-function parseRingSizeValue(value: string | null): { system: RingSizeSystemId; size: string | null } {
-  if (!value) return { system: 'indian', size: null };
-  const separatorIndex = value.indexOf(':');
-  if (separatorIndex === -1) return { system: 'indian', size: value };
-  const system = value.slice(0, separatorIndex) as RingSizeSystemId;
-  const size = value.slice(separatorIndex + 1) || null;
-  if (!RING_SIZE_SYSTEMS.some((item) => item.id === system)) return { system: 'indian', size: value };
-  return { system, size };
 }
 
 const SLUG_TO_RATE_KEY: Record<string, keyof GoldRateData> = {
@@ -124,6 +83,7 @@ export default function MetalSizeSelector({
   chainLength,
   goldRate,
   selectedDesign,
+  optionRules,
   onMetalChange,
   onRingSizeChange,
   onChainLengthChange,
@@ -136,10 +96,23 @@ export default function MetalSizeSelector({
   }, [ringSize]);
 
   const parsedRingSize = useMemo(() => parseRingSizeValue(ringSize), [ringSize]);
+  const allowedRingSizeSystems = useMemo(() => getAllowedRingSizeSystems(optionRules), [optionRules]);
+  const visibleMetals = useMemo(
+    () => metals.filter((option) => isMetalAllowed(optionRules, option.id)),
+    [metals, optionRules]
+  );
   const activeRingSizeSystem = useMemo(
     () => RING_SIZE_SYSTEMS.find((item) => item.id === ringSizeSystem) ?? RING_SIZE_SYSTEMS[0],
     [ringSizeSystem]
   );
+
+  useEffect(() => {
+    if (!allowedRingSizeSystems.includes(ringSizeSystem)) {
+      const fallbackSystem = allowedRingSizeSystems[0] ?? 'indian';
+      setRingSizeSystem(fallbackSystem);
+      onRingSizeChange(null);
+    }
+  }, [allowedRingSizeSystems, onRingSizeChange, ringSizeSystem]);
 
   useEffect(() => {
     fetch('/api/metals')
@@ -158,7 +131,7 @@ export default function MetalSizeSelector({
       <fieldset className="mt-3">
         <legend className="text-xs font-medium text-primary mb-1.5">Select Metal</legend>
         <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Metal type">
-          {metals.map((opt) => {
+          {visibleMetals.map((opt) => {
             const isSelected = metal === opt.id;
             const estimate = getEstimatedMetalPrice(opt.id, selectedDesign, goldRate);
 
@@ -189,6 +162,11 @@ export default function MetalSizeSelector({
             );
           })}
         </div>
+        {visibleMetals.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            No metals are enabled for this product. Choose the loose stone option or contact us for a custom quote.
+          </p>
+        )}
       </fieldset>
 
       {/* Ring Size */}
@@ -199,7 +177,7 @@ export default function MetalSizeSelector({
           {/* System switcher + live size display */}
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex gap-1">
-              {RING_SIZE_SYSTEMS.map((system) => (
+              {RING_SIZE_SYSTEMS.filter((system) => allowedRingSizeSystems.includes(system.id)).map((system) => (
                 <button
                   key={system.id}
                   onClick={() => { setRingSizeSystem(system.id); onRingSizeChange(null); }}

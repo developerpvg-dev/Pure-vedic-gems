@@ -32,6 +32,13 @@ interface RazorpayResponse {
   razorpay_signature: string;
 }
 
+interface PaymentVerifyResponse {
+  success?: boolean;
+  pending?: boolean;
+  retry_after_ms?: number;
+  error?: string;
+}
+
 interface RazorpayInstance {
   open: () => void;
   on: (event: string, handler: (response: { error: { description: string } }) => void) => void;
@@ -41,6 +48,10 @@ declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
   }
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ─── Props ──────────────────────────────────────────────────────────────────
@@ -80,6 +91,12 @@ export function PaymentSection({
         resolve(true);
         return;
       }
+      const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(true), { once: true });
+        existing.addEventListener('error', () => resolve(false), { once: true });
+        return;
+      }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.onload = () => resolve(true);
@@ -105,6 +122,7 @@ export function PaymentSection({
             product_id: item.product_id,
             name: item.name,
             sku: item.sku,
+            tag_number: item.tag_number,
             quantity: item.quantity,
             price: item.price,
             carat_weight: item.carat_weight,
@@ -113,6 +131,8 @@ export function PaymentSection({
             category: item.category,
             configuration_id: item.configuration_id,
             configuration_summary: item.configuration_summary,
+            configuration_snapshot: item.configuration_snapshot,
+            delivery_eta_label: item.delivery_eta_label,
           })),
           contact,
           shipping_address: shippingAddress,
@@ -162,28 +182,47 @@ export function PaymentSection({
           // ── Step 5: Verify payment server-side ──────────────────────
           setStep('verifying');
           try {
-            const verifyRes = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                order_id,
-              }),
-            });
+            let verifyData: PaymentVerifyResponse | null = null;
+            for (let attempt = 1; attempt <= 3; attempt += 1) {
+              const verifyRes = await fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  order_id,
+                }),
+              });
 
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok) {
-              throw new Error(verifyData.error || 'Payment verification failed');
+              const data = (await verifyRes.json()) as PaymentVerifyResponse;
+              verifyData = data;
+              if (!verifyRes.ok) {
+                throw new Error(data.error || 'Payment verification failed');
+              }
+              if (data.success) break;
+              if (!data.pending || attempt === 3) break;
+              await wait(data.retry_after_ms ?? 2500);
+            }
+
+            if (!verifyData?.success) {
+              throw new Error(
+                verifyData?.pending
+                  ? 'Payment is still being confirmed. Please wait a moment, then check your order status or contact support with your order number.'
+                  : 'Payment could not be confirmed. Please retry or contact support.'
+              );
             }
 
             onPaymentSuccess(order_id);
           } catch (verifyErr) {
-            // Payment was captured but verification failed — the webhook will handle it
             console.error('[Checkout] Verification error:', verifyErr);
-            // Still redirect to confirmation — webhook will confirm
-            onPaymentSuccess(order_id);
+            setIsProcessing(false);
+            setStep('idle');
+            setError(
+              verifyErr instanceof Error
+                ? verifyErr.message
+                : 'Payment could not be confirmed. Please retry or contact support.'
+            );
           }
         },
         prefill: {
@@ -209,7 +248,10 @@ export function PaymentSection({
       rzp.on('payment.failed', (response: { error: { description: string } }) => {
         setIsProcessing(false);
         setStep('idle');
-        setError(response.error.description || 'Payment failed. Please try again.');
+        setError(
+          response.error.description ||
+            'Payment failed. Please try again. Your order is saved for a short time.'
+        );
       });
       rzp.open();
     } catch (err) {
@@ -240,34 +282,34 @@ export function PaymentSection({
   };
 
   return (
-    <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6">
+    <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
       <div className="flex items-center gap-2 mb-6">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[var(--pvg-accent)] text-white text-xs font-bold">
+        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-accent text-white text-xs font-bold">
           3
         </span>
-        <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
+        <h2 className="font-heading text-lg font-semibold text-brand-primary">
           Payment
         </h2>
       </div>
 
       {/* Payment info */}
-      <div className="mb-6 p-4 rounded-lg bg-[var(--pvg-bg)] border border-[var(--pvg-border)]">
+      <div className="mb-6 p-4 rounded-lg bg-brand-bg border border-brand-border">
         <div className="flex items-center gap-2 mb-3">
-          <CreditCard className="h-4 w-4 text-[var(--pvg-accent)]" />
-          <span className="text-sm font-medium text-[var(--pvg-primary)]">
+          <CreditCard className="h-4 w-4 text-brand-accent" />
+          <span className="text-sm font-medium text-brand-primary">
             Razorpay Secure Payment
           </span>
         </div>
-        <p className="text-xs text-[var(--pvg-muted)] mb-3">
+        <p className="text-xs text-brand-muted mb-3">
           You&apos;ll be redirected to Razorpay&apos;s secure checkout to complete your payment.
           Your card details never touch our servers.
         </p>
-        <div className="flex flex-wrap gap-2 text-xs text-[var(--pvg-muted)]">
-          <span className="px-2 py-1 bg-[var(--pvg-surface)] rounded border border-[var(--pvg-border)]">UPI</span>
-          <span className="px-2 py-1 bg-[var(--pvg-surface)] rounded border border-[var(--pvg-border)]">Credit Card</span>
-          <span className="px-2 py-1 bg-[var(--pvg-surface)] rounded border border-[var(--pvg-border)]">Debit Card</span>
-          <span className="px-2 py-1 bg-[var(--pvg-surface)] rounded border border-[var(--pvg-border)]">Net Banking</span>
-          <span className="px-2 py-1 bg-[var(--pvg-surface)] rounded border border-[var(--pvg-border)]">EMI</span>
+        <div className="flex flex-wrap gap-2 text-xs text-brand-muted">
+          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">UPI</span>
+          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">Credit Card</span>
+          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">Debit Card</span>
+          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">Net Banking</span>
+          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">EMI</span>
         </div>
       </div>
 
@@ -292,8 +334,8 @@ export function PaymentSection({
         disabled={isProcessing}
         className={`w-full py-4 rounded-lg font-semibold text-base flex items-center justify-center gap-2 transition-all ${
           isProcessing
-            ? 'bg-[var(--pvg-muted)] text-white cursor-wait'
-            : 'bg-[var(--pvg-accent)] text-white hover:brightness-105 hover:shadow-lg'
+            ? 'bg-brand-muted text-white cursor-wait'
+            : 'bg-brand-accent text-white hover:brightness-105 hover:shadow-lg'
         }`}
       >
         {isProcessing ? (
@@ -309,13 +351,13 @@ export function PaymentSection({
         )}
       </button>
 
-      <p className="text-center text-xs text-[var(--pvg-muted)] mt-3">
+      <p className="text-center text-xs text-brand-muted mt-3">
         By proceeding, you agree to our{' '}
-        <a href="/policies/terms" className="underline hover:text-[var(--pvg-accent)]">
+        <a href="/policies/terms" className="underline hover:text-brand-accent">
           Terms of Service
         </a>{' '}
         and{' '}
-        <a href="/policies/privacy" className="underline hover:text-[var(--pvg-accent)]">
+        <a href="/policies/privacy" className="underline hover:text-brand-accent">
           Privacy Policy
         </a>
       </p>

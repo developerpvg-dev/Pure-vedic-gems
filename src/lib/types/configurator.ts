@@ -114,7 +114,15 @@ export interface ConfigPricingBreakdown {
   gold_rate_per_gram: number;
   certification_fee: number;
   energization_fee: number;
+  custom_design_fee: number;
   total: number;
+}
+
+export interface ConfigurationDeliveryEta {
+  min_days: number;
+  max_days: number;
+  label: string;
+  components: string[];
 }
 
 // ─── Gold Rate ──────────────────────────────────────────────────────────────
@@ -126,6 +134,9 @@ export interface GoldRateData {
   panchdhatu_per_gram: number;
   platinum_per_gram: number;
   fetched_at: string;
+  source?: string;
+  stale?: boolean;
+  manual_override?: boolean;
 }
 
 // ─── Energization Form Data ────────────────────────────────────────────────

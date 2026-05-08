@@ -16,6 +16,10 @@ import { formatPrice } from '@/lib/utils/format';
 import { createClient } from '@/lib/supabase/client';
 import type { EnergizationOption } from '@/lib/types/database';
 import type { EnergizationFormData } from '@/lib/types/configurator';
+import {
+  isEnergizationAllowed,
+  type ConfiguratorOptionRules,
+} from '@/lib/utils/configurator-rules';
 
 const RASHI_OPTIONS = [
   { value: 'mesh', label: 'Mesh (Aries)', hindi: 'मेष' },
@@ -35,6 +39,7 @@ const RASHI_OPTIONS = [
 interface EnergizationSelectorProps {
   selected: EnergizationOption | null;
   energizationForm: EnergizationFormData | null;
+  optionRules: ConfiguratorOptionRules | null;
   onSelect: (option: EnergizationOption | null) => void;
   onFormChange: (form: EnergizationFormData) => void;
 }
@@ -42,12 +47,17 @@ interface EnergizationSelectorProps {
 export default function EnergizationSelector({
   selected,
   energizationForm,
+  optionRules,
   onSelect,
   onFormChange,
 }: EnergizationSelectorProps) {
   const [options, setOptions] = useState<EnergizationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const energizationEnabled = optionRules?.energization_enabled ?? true;
+  const visibleOptions = energizationEnabled
+    ? options.filter((option) => isEnergizationAllowed(optionRules, option.id))
+    : [];
 
   useEffect(() => {
     async function fetchOptions() {
@@ -116,7 +126,13 @@ export default function EnergizationSelector({
         </div>
       ) : (
         <div className="mt-2 space-y-2">
-          {options.map((option) => {
+          {!energizationEnabled && (
+            <div className="rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
+              Energization is not enabled for this product.
+            </div>
+          )}
+
+          {visibleOptions.map((option) => {
             const isChosen = selected?.id === option.id;
             const includes = (option.includes ?? []) as string[];
 
@@ -173,6 +189,12 @@ export default function EnergizationSelector({
               </button>
             );
           })}
+
+          {energizationEnabled && visibleOptions.length === 0 && (
+            <p className="text-center text-xs text-muted-foreground">
+              No energization options are enabled for this product.
+            </p>
+          )}
         </div>
       )}
 

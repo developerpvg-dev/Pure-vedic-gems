@@ -24,7 +24,7 @@ export function ThemeSwitcher() {
   if (process.env.NEXT_PUBLIC_SHOW_THEME_SWITCHER !== 'true') return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[10000] w-72 rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-surface)] p-5 shadow-xl">
+    <div className="fixed bottom-6 right-6 z-[10000] w-72 rounded-lg border border-[var(--pvg-border)] bg-brand-surface p-5 shadow-xl">
       <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[3px] text-[var(--pvg-primary)]">
         Theme Controls
       </h3>
@@ -40,8 +40,8 @@ export function ThemeSwitcher() {
             onClick={() => setPalette(p.id)}
             className={`flex items-center gap-2.5 rounded px-3 py-2 text-left text-[13px] transition-all border ${
               palette === p.id
-                ? 'border-[var(--pvg-accent)] bg-[var(--pvg-gold-light)]'
-                : 'border-[var(--pvg-border)] bg-[var(--pvg-surface)] hover:border-[var(--pvg-accent)]'
+                ? 'border-[var(--pvg-accent)] bg-brand-gold-light'
+                : 'border-[var(--pvg-border)] bg-brand-surface hover:border-[var(--pvg-accent)]'
             }`}
           >
             <span className="flex gap-1">
@@ -69,8 +69,8 @@ export function ThemeSwitcher() {
             onClick={() => setFont(f.id)}
             className={`rounded px-3 py-2 text-left transition-all border ${
               font === f.id
-                ? 'border-[var(--pvg-accent)] bg-[var(--pvg-gold-light)]'
-                : 'border-[var(--pvg-border)] bg-[var(--pvg-surface)] hover:border-[var(--pvg-accent)]'
+                ? 'border-[var(--pvg-accent)] bg-brand-gold-light'
+                : 'border-[var(--pvg-border)] bg-brand-surface hover:border-[var(--pvg-accent)]'
             }`}
           >
             <div className="text-[15px] text-[var(--pvg-text)]">{f.heading}</div>

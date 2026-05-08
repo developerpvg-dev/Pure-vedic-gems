@@ -6,7 +6,7 @@
  * Mobile/tablet prioritizes a phone-friendly stacked flow with sticky actions.
  */
 
-import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState, type Dispatch } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,11 @@ import type {
   GoldRateData,
 } from '@/lib/types/configurator';
 import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
+import {
+  isSettingTypeAllowed,
+  normalizeConfiguratorRules,
+  type ConfiguratorOptionRules,
+} from '@/lib/utils/configurator-rules';
 
 import PriceSummary from './PriceSummary';
 import StepSidebar from './StepSidebar';
@@ -103,6 +108,7 @@ export default function ConfiguratorWrapper({
 }: ConfiguratorWrapperProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [priceMobileOpen, setPriceMobileOpen] = useState(false);
+  const [optionRules, setOptionRules] = useState<ConfiguratorOptionRules | null>(null);
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
 
@@ -134,6 +140,12 @@ export default function ConfiguratorWrapper({
     dispatch({ type: 'PREV_STEP' });
   }, [dispatch, startStep, state.current_step]);
 
+  const handleBuyLoose = useCallback(() => {
+    setPriceMobileOpen(false);
+    dispatch({ type: 'SET_SETTING_TYPE', payload: 'loose' });
+    dispatch({ type: 'GO_TO_STEP', payload: 6 });
+  }, [dispatch]);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -157,6 +169,38 @@ export default function ConfiguratorWrapper({
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.current_step]);
+
+  useEffect(() => {
+    const productId = state.selected_product?.id;
+    if (!productId) {
+      startTransition(() => setOptionRules(null));
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/configurations/options?product_id=${encodeURIComponent(productId)}`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { rules?: unknown } | null) => {
+        if (!controller.signal.aborted) {
+          setOptionRules(normalizeConfiguratorRules(payload?.rules));
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setOptionRules(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [state.selected_product?.id]);
+
+  useEffect(() => {
+    if (state.setting_type && !isSettingTypeAllowed(optionRules, state.setting_type)) {
+      startTransition(() => handleBuyLoose());
+    }
+  }, [handleBuyLoose, optionRules, state.setting_type]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -193,6 +237,7 @@ export default function ConfiguratorWrapper({
         return (
           <SettingTypeSelector
             selected={state.setting_type}
+            optionRules={optionRules}
             onSelect={(settingType) => {
               dispatch({ type: 'SET_SETTING_TYPE', payload: settingType });
               dispatch({ type: 'NEXT_STEP' });
@@ -203,6 +248,7 @@ export default function ConfiguratorWrapper({
         return (
           <DesignSelector
             settingType={state.setting_type!}
+            optionRules={optionRules}
             selected={state.selected_design}
             customDesignUrl={state.custom_design_url}
             onSelectDesign={(design) => {
@@ -224,6 +270,7 @@ export default function ConfiguratorWrapper({
             chainLength={state.chain_length}
             goldRate={goldRate}
             selectedDesign={state.selected_design}
+            optionRules={optionRules}
             onMetalChange={(metal) => dispatch({ type: 'SET_METAL', payload: metal })}
             onRingSizeChange={(size) => dispatch({ type: 'SET_RING_SIZE', payload: size })}
             onChainLengthChange={(length) =>
@@ -236,6 +283,7 @@ export default function ConfiguratorWrapper({
           <CertificationSelector
             selected={state.selected_lab}
             certificationSkipped={state.certification_skipped}
+            optionRules={optionRules}
             onSelect={(lab) => {
               dispatch({ type: 'SET_LAB', payload: lab });
               dispatch({ type: 'NEXT_STEP' });
@@ -251,6 +299,7 @@ export default function ConfiguratorWrapper({
           <EnergizationSelector
             selected={state.selected_energization}
             energizationForm={state.energization_form}
+            optionRules={optionRules}
             onSelect={(option) => dispatch({ type: 'SET_ENERGIZATION', payload: option })}
             onFormChange={(form) =>
               dispatch({ type: 'SET_ENERGIZATION_FORM', payload: form })
@@ -279,6 +328,11 @@ export default function ConfiguratorWrapper({
     (step) => step.id >= startStep && !isStepSkipped(step.id, state.setting_type)
   );
   const canGoBack = state.current_step > startStep;
+  const canBuyLoose =
+    !!state.selected_product &&
+    state.current_step >= 3 &&
+    state.setting_type !== 'loose' &&
+    isSettingTypeAllowed(optionRules, 'loose');
 
   return (
     <>
@@ -401,6 +455,15 @@ export default function ConfiguratorWrapper({
                       ? ` · ${state.selected_product.carat_weight.toFixed(2)} ct`
                       : ''}
                   </p>
+                  {canBuyLoose ? (
+                    <button
+                      type="button"
+                      onClick={handleBuyLoose}
+                      className="shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[10px] font-semibold text-accent"
+                    >
+                      Buy loose
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -439,6 +502,15 @@ export default function ConfiguratorWrapper({
               </div>
 
               <div className="flex shrink-0 items-center gap-1.5">
+                {canBuyLoose ? (
+                  <button
+                    type="button"
+                    onClick={handleBuyLoose}
+                    className="rounded-xl border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition hover:border-accent/60 hover:bg-accent/15"
+                  >
+                    Buy loose stone
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={reset}

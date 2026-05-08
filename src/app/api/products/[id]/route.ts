@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createPublicClient } from '@/lib/supabase/public';
 import type { Product, ProductDetailResponse } from '@/lib/types/product';
 
 // UUID v4 regex for differentiating slug vs UUID lookups
@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = createAdminClient();
+    const supabase = createPublicClient();
 
     // Determine if lookup is by UUID or slug and run the appropriate typed query
     const isUuid = UUID_REGEX.test(id);
@@ -37,7 +37,7 @@ export async function GET(
     const { data: relatedProducts } = await supabase
       .from('products')
       .select(
-        'id, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at'
+        'id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number'
       )
       .eq('category', product.category)
       .eq('is_active', true)

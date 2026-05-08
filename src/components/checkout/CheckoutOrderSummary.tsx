@@ -17,7 +17,7 @@ export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSum
   const total = subtotal + shipping + gst;
 
   return (
-    <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6">
+    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
       <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)] mb-4">
         Order Summary
       </h2>
@@ -26,7 +26,7 @@ export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSum
       <div className="space-y-3 mb-4">
         {items.map((item) => (
           <div key={item.key} className="flex items-start gap-3">
-            <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)]">
+            <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-[var(--pvg-border)] bg-brand-bg-alt">
               <Image
                 src={item.image_url || '/placeholder-gem.png'}
                 alt={item.name}
@@ -35,7 +35,7 @@ export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSum
                 className="object-cover"
               />
               {item.quantity > 1 && (
-                <span className="absolute -top-1 -right-1 bg-[var(--pvg-accent)] text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                   {item.quantity}
                 </span>
               )}

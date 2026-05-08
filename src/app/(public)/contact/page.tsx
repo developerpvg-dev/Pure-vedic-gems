@@ -92,11 +92,28 @@ export default function ContactPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setStatus('sending');
-    // In production, this would POST to /api/enquiry
-    // For now, simulate submission
-    await new Promise((r) => setTimeout(r, 1000));
-    setStatus('sent');
-    setFormState({ name: '', email: '', phone: '', subject: '', message: '' });
+    try {
+      const res = await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formState.name,
+          email: formState.email,
+          phone: formState.phone || undefined,
+          subject: formState.subject || undefined,
+          message: formState.message,
+          source: 'contact_form',
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Submission failed');
+      }
+      setStatus('sent');
+      setFormState({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch {
+      setStatus('error');
+    }
   };
 
   return (

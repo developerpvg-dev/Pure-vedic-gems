@@ -1,9 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { OrderCreateSchema } from '@/lib/validators/order';
 import { recalculateOrderTotal } from '@/lib/utils/pricing';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { ORDER_STATUS_LABELS } from '@/lib/constants/order-status';
+import type { Json } from '@/lib/types/database';
+
+function createGuestOrderToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  const hash = crypto.createHash('sha256').update(token).digest('hex');
+  return { token, hash };
+}
+
+async function reserveUniquePhysicalProducts({
+  orderId,
+  orderNumber,
+  customerId,
+  holdUntil,
+  items,
+}: {
+  orderId: string;
+  orderNumber: string;
+  customerId: string | null;
+  holdUntil: string;
+  items: Awaited<ReturnType<typeof recalculateOrderTotal>>['items'];
+}) {
+  const supabase = createAdminClient();
+  const now = new Date().toISOString();
+
+  for (const item of items) {
+    if (!item.sold_individually) continue;
+
+    const { data, error } = await supabase
+      .from('products')
+      .update({
+        availability_status: 'reserved',
+        reserved_until: holdUntil,
+        reserved_by_customer_id: customerId,
+        reserved_quantity: item.quantity,
+        reservation_note: `Payment hold for ${orderNumber}`,
+      })
+      .eq('id', item.product_id)
+      .or(`reserved_until.is.null,reserved_until.lt.${now}`)
+      .select('id');
+
+    if (error || !data || data.length === 0) {
+      await supabase
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          payment_status: 'cancelled',
+          payment_failure_reason: 'Product reservation failed before payment.',
+        })
+        .eq('id', orderId);
+      throw new Error(`Product "${item.name}" was just reserved by another customer.`);
+    }
+  }
+}
 
 /**
  * POST /api/orders/create
@@ -100,21 +155,26 @@ export async function POST(req: NextRequest) {
     return {
       product_id: pricedItem.product_id,
       name: pricedItem.name,
-      sku: clientItem?.sku ?? '',
+      sku: pricedItem.sku,
+      tag_number: pricedItem.tag_number,
       quantity: pricedItem.quantity,
       unit_price: pricedItem.unit_price,
       line_total: pricedItem.line_total,
-      carat_weight: clientItem?.carat_weight ?? null,
-      origin: clientItem?.origin ?? null,
-      image_url: clientItem?.image_url ?? '',
-      category: clientItem?.category ?? '',
+      carat_weight: pricedItem.carat_weight,
+      origin: pricedItem.origin,
+      image_url: pricedItem.image_url || clientItem?.image_url || '',
+      category: pricedItem.category,
       configuration_id: clientItem?.configuration_id ?? null,
       configuration_summary: clientItem?.configuration_summary ?? null,
+      configuration_snapshot: clientItem?.configuration_snapshot ?? null,
+      delivery_eta_label: clientItem?.delivery_eta_label ?? null,
     };
   });
 
   // ── Insert order into database ───────────────────────────────────────
   const supabaseAdmin = createAdminClient();
+  const guestAccess = customerId ? null : createGuestOrderToken();
+  const reservationHoldUntil = new Date(Date.now() + 20 * 60 * 1000).toISOString();
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
@@ -123,7 +183,7 @@ export async function POST(req: NextRequest) {
       guest_email: customerId ? null : contact.email,
       guest_phone: customerId ? null : contact.phone,
       guest_name: customerId ? null : contact.full_name,
-      items: orderItems,
+      items: orderItems as Json,
       subtotal: pricing.subtotal,
       jewelry_charges: pricing.jewelry_charges,
       metal_charges: pricing.metal_charges,
@@ -145,6 +205,8 @@ export async function POST(req: NextRequest) {
       record_ceremony: energization?.record_ceremony ?? false,
       payment_status: 'pending',
       status: 'pending_payment',
+      guest_access_token: guestAccess?.hash ?? null,
+      reservation_expires_at: reservationHoldUntil,
     })
     .select('id, order_number, total')
     .single();
@@ -157,29 +219,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Increment coupon usage if applied ────────────────────────────────
-  if (coupon_code && pricing.discount > 0) {
-    const upperCode = coupon_code.toUpperCase();
-    const { data: couponRow } = await supabaseAdmin
-      .from('coupons')
-      .select('used_count')
-      .eq('code', upperCode)
-      .single();
-    if (couponRow) {
-      await supabaseAdmin
-        .from('coupons')
-        .update({ used_count: couponRow.used_count + 1 })
-        .eq('code', upperCode)
-        .then(null, () => {
-          console.warn('[Orders] Failed to increment coupon usage');
-        });
-    }
+  try {
+    await reserveUniquePhysicalProducts({
+      orderId: order.id,
+      orderNumber: order.order_number,
+      customerId,
+      holdUntil: reservationHoldUntil,
+      items: pricing.items,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to reserve products.';
+    return NextResponse.json({ error: message }, { status: 409 });
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     order_id: order.id,
     order_number: order.order_number,
     total: order.total,
+    guest_order_token: guestAccess?.token ?? null,
+    reservation_expires_at: reservationHoldUntil,
+    order_status_label: ORDER_STATUS_LABELS.pending_payment,
     pricing_breakdown: {
       subtotal: pricing.subtotal,
       jewelry_charges: pricing.jewelry_charges,
@@ -192,4 +251,18 @@ export async function POST(req: NextRequest) {
       total: pricing.total,
     },
   });
+
+  if (guestAccess) {
+    response.cookies.set({
+      name: 'pvg_guest_order_token',
+      value: `${order.id}.${guestAccess.token}`,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 14,
+    });
+  }
+
+  return response;
 }

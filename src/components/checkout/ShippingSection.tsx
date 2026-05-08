@@ -131,7 +131,7 @@ export function ShippingSection({
   // ── Collapsed/complete view ──────────────────────────────────────────
   if (!isActive && isComplete && savedData) {
     return (
-      <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6">
+      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">
@@ -163,9 +163,9 @@ export function ShippingSection({
   // ── Disabled view ────────────────────────────────────────────────────
   if (!isActive || disabled) {
     return (
-      <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6 opacity-50">
+      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6 opacity-50">
         <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[var(--pvg-bg-alt)] text-[var(--pvg-muted)] text-xs font-bold">
+          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-bg-alt text-[var(--pvg-muted)] text-xs font-bold">
             2
           </span>
           <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
@@ -178,9 +178,9 @@ export function ShippingSection({
 
   // ── Active form ──────────────────────────────────────────────────────
   return (
-    <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6">
+    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
       <div className="flex items-center gap-2 mb-6">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[var(--pvg-accent)] text-white text-xs font-bold">
+        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-accent text-white text-xs font-bold">
           2
         </span>
         <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
@@ -201,7 +201,7 @@ export function ShippingSection({
               value={line1}
               onChange={(e) => setLine1(e.target.value)}
               placeholder="House/Flat No., Building, Street"
-              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
+              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
                 errors.line1 ? 'border-red-400' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -219,7 +219,7 @@ export function ShippingSection({
             value={line2}
             onChange={(e) => setLine2(e.target.value)}
             placeholder="Landmark, Area, Colony"
-            className="w-full px-4 py-3 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
+            className="w-full px-4 py-3 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)]"
           />
         </div>
 
@@ -237,7 +237,7 @@ export function ShippingSection({
               onChange={(e) => handlePincodeChange(e.target.value)}
               placeholder="110017"
               maxLength={6}
-              className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
+              className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
                 errors.pincode ? 'border-red-400' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -257,7 +257,7 @@ export function ShippingSection({
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="City"
-              className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
+              className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
                 errors.city ? 'border-red-400' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -274,7 +274,7 @@ export function ShippingSection({
               value={state}
               onChange={(e) => setState(e.target.value)}
               placeholder="State"
-              className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
+              className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
                 errors.state ? 'border-red-400' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -291,7 +291,7 @@ export function ShippingSection({
             type="text"
             value={country}
             readOnly
-            className="w-full px-4 py-3 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-muted)] bg-[var(--pvg-bg-alt)] cursor-not-allowed"
+            className="w-full px-4 py-3 rounded-lg border border-[var(--pvg-border)] text-sm text-[var(--pvg-muted)] bg-brand-bg-alt cursor-not-allowed"
           />
         </div>
 
@@ -308,7 +308,7 @@ export function ShippingSection({
                   key={method.id}
                   className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                     shippingMethod === method.id
-                      ? 'border-[var(--pvg-accent)] bg-[var(--pvg-gold-light)]'
+                      ? 'border-[var(--pvg-accent)] bg-brand-gold-light'
                       : 'border-[var(--pvg-border)] hover:border-[var(--pvg-accent)]/50'
                   }`}
                 >
@@ -337,7 +337,7 @@ export function ShippingSection({
 
         <button
           type="submit"
-          className="w-full bg-[var(--pvg-primary)] text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+          className="w-full bg-brand-primary text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
           Continue to Payment
           <ChevronDown className="h-4 w-4 rotate-[-90deg]" />

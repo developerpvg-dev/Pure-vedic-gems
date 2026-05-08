@@ -33,6 +33,7 @@ export default function PriceSummary({
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
   const p = state.pricing;
+  const deliveryEtaLabel = getEstimatedDeliveryEta(state);
 
   const handleAddToCart = async () => {
     if (!state.selected_product || !isComplete) return;
@@ -63,7 +64,13 @@ export default function PriceSummary({
         throw new Error(err.error || 'Failed to save configuration');
       }
 
-      const { configuration_id, verified_total } = await res.json();
+      const {
+        configuration_id,
+        verified_total,
+        configuration_summary,
+        configuration_snapshot,
+        delivery_eta,
+      } = await res.json();
 
       // Build human-readable summary
       const parts: string[] = [];
@@ -80,7 +87,8 @@ export default function PriceSummary({
       addItem({
         product_id: state.selected_product.id,
         key: `${state.selected_product.id}_cfg_${configuration_id}`,
-        sku: state.selected_product.slug ?? state.selected_product.id,
+        sku: state.selected_product.sku ?? state.selected_product.id,
+        tag_number: state.selected_product.tag_number ?? null,
         name: state.selected_product.name,
         category: state.selected_product.category,
         image_url:
@@ -91,7 +99,10 @@ export default function PriceSummary({
         carat_weight: state.selected_product.carat_weight,
         origin: state.selected_product.origin,
         configuration_id,
-        configuration_summary: parts.join(' · '),
+        configuration_summary: configuration_summary ?? parts.join(' · '),
+        configuration_snapshot,
+        configuration_edit_url: `/configure/${state.selected_product.id}`,
+        delivery_eta_label: delivery_eta?.label,
       });
 
       toast.success('Configuration added to cart!');
@@ -128,6 +139,9 @@ export default function PriceSummary({
             <p className="text-lg font-bold text-primary">
               {p.total > 0 ? formatPrice(p.total) : '—'}
             </p>
+            {deliveryEtaLabel && (
+              <p className="text-[10px] text-muted-foreground">ETA {deliveryEtaLabel}</p>
+            )}
           </div>
 
           <Button
@@ -199,6 +213,9 @@ export default function PriceSummary({
           <p className="mt-0.5 text-xs text-muted-foreground">
             or {formatEMI(p.total)}/mo × 12 EMI
           </p>
+        )}
+        {deliveryEtaLabel && (
+          <p className="mt-1 text-xs text-muted-foreground">Delivery ETA {deliveryEtaLabel}</p>
         )}
       </div>
 
@@ -275,6 +292,7 @@ function PriceLineItems({
     },
     { label: 'Certification', value: pricing.certification_fee, show: true },
     { label: 'Energization', value: pricing.energization_fee, show: pricing.energization_fee > 0 },
+    { label: 'Custom Design Review', value: pricing.custom_design_fee, show: pricing.custom_design_fee > 0 },
   ];
 
   return (
@@ -291,4 +309,29 @@ function PriceLineItems({
         ))}
     </>
   );
+}
+
+function getEstimatedDeliveryEta(state: ConfiguratorState) {
+  if (!state.selected_product || !state.setting_type) return null;
+
+  let minDays = 3;
+  let maxDays = 5;
+  if (state.setting_type !== 'loose') {
+    minDays += 7;
+    maxDays += 12;
+  }
+  if (state.custom_design_url) {
+    minDays += 2;
+    maxDays += 4;
+  }
+  if (state.selected_lab) {
+    minDays += state.selected_lab.turnaround_days;
+    maxDays += state.selected_lab.turnaround_days;
+  }
+  if (state.selected_energization) {
+    minDays += 1;
+    maxDays += state.selected_energization.includes_video ? 4 : 2;
+  }
+
+  return `${minDays}-${maxDays} business days`;
 }

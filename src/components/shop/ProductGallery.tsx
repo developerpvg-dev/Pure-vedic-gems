@@ -27,24 +27,25 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
     <>
       <div className="flex flex-col gap-4">
         {/* ── Main image — full width on all screen sizes ── */}
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)]">
+        <div className="relative overflow-hidden rounded-2xl border border-brand-border bg-brand-bg-alt">
           {/* Responsive aspect ratio: 4:3 (landscape) on mobile/tablet;
               3:2 (wider landscape) on desktop for horizontal gem display */}
-          <div className="relative aspect-[4/3] w-full lg:aspect-[3/2]">
+          <div className="relative aspect-4/3 w-full lg:aspect-3/2">
             <Image
               src={imgs[activeIdx]}
               alt={`${productName} — image ${activeIdx + 1}`}
               fill
               className="object-cover transition-opacity duration-300"
-              sizes="(min-width: 1024px) 100vw, 100vw"
-              priority
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
 
           {/* Zoom button */}
           <button
             onClick={() => setZoomOpen(true)}
-            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--pvg-primary)] shadow-md backdrop-blur-sm transition hover:bg-[var(--pvg-accent)] hover:text-white"
+            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white"
             aria-label="View full size image"
           >
             <ZoomIn className="h-4 w-4" />
@@ -55,14 +56,14 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
             <>
               <button
                 onClick={prevImg}
-                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--pvg-primary)] shadow-md backdrop-blur-sm transition hover:bg-[var(--pvg-accent)] hover:text-white"
+                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={nextImg}
-                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--pvg-primary)] shadow-md backdrop-blur-sm transition hover:bg-[var(--pvg-accent)] hover:text-white"
+                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -93,7 +94,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
             <button
               key={i}
               onClick={() => setActiveIdx(i)}
-              className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 hover:opacity-100 lg:h-[80px] lg:w-[80px]"
+              className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 hover:opacity-100 lg:h-20 lg:w-20"
               style={{
                 borderColor:
                   i === activeIdx ? 'var(--pvg-accent)' : 'var(--pvg-border)',

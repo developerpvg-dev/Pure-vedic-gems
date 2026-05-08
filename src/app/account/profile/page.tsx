@@ -208,7 +208,7 @@ export default function ProfilePage() {
         >
           My Profile
         </h1>
-        <OrnamentalDivider className="mt-4 max-w-[200px]" />
+        <OrnamentalDivider className="mt-4 max-w-50" />
       </div>
 
       <form onSubmit={handleSubmit}>

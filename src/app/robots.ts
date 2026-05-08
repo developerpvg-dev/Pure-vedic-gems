@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next';
-
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com';
+import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,9 +7,25 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/account/'],
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/account/',
+          '/cart',
+          '/checkout',
+          '/order-confirmation/',
+          '/studio/',
+          '/configure/',
+          '/*?*min_price=',
+          '/*?*max_price=',
+          '/*?*sort_by=',
+          '/*?*per_page=',
+          '/*?*page=',
+          '/*?*preview=',
+        ],
       },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    host: getSiteUrl(),
+    sitemap: absoluteUrl('/sitemap.xml'),
   };
 }

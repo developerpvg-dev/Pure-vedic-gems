@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Eye } from 'lucide-react';
+import type { Json } from '@/lib/types/database';
 
 interface Order {
   id: string;
@@ -13,15 +14,23 @@ interface Order {
   status: string;
   payment_status: string;
   created_at: string;
-  items: any[];
+  items: Json;
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  pending_payment: 'bg-gray-100 text-gray-800',
   placed: 'bg-blue-100 text-blue-800',
+  confirmed: 'bg-indigo-100 text-indigo-800',
   processing: 'bg-yellow-100 text-yellow-800',
+  jewelry_making: 'bg-yellow-100 text-yellow-800',
+  certification: 'bg-cyan-100 text-cyan-800',
+  energization: 'bg-violet-100 text-violet-800',
+  quality_check: 'bg-orange-100 text-orange-800',
   shipped: 'bg-purple-100 text-purple-800',
   delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
+  refunded: 'bg-pink-100 text-pink-800',
+  payment_review: 'bg-red-100 text-red-800',
 };
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
@@ -30,9 +39,11 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   captured: 'text-green-600',
   failed: 'text-red-600',
   refunded: 'text-purple-600',
+  amount_mismatch: 'text-red-600',
+  cancelled: 'text-red-600',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function OrdersPage() {
   const supabase = createAdminClient();
@@ -68,7 +79,7 @@ export default async function OrdersPage() {
         ].map(stat => (
           <div
             key={stat.label}
-            className="rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-surface)] p-4"
+            className="rounded-lg border border-[var(--pvg-border)] bg-brand-surface p-4"
           >
             <p className="text-sm font-medium text-[var(--pvg-muted)]">{stat.label}</p>
             <p className="mt-2 text-3xl font-bold text-[var(--pvg-primary)]">{stat.value}</p>
@@ -77,10 +88,10 @@ export default async function OrdersPage() {
       </div>
 
       {/* Orders Table */}
-      <div className="rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-surface)] overflow-hidden">
+      <div className="rounded-lg border border-[var(--pvg-border)] bg-brand-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-[var(--pvg-bg-alt)] border-b border-[var(--pvg-border)]">
+            <thead className="bg-brand-bg-alt border-b border-[var(--pvg-border)]">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
                   Order #
@@ -122,7 +133,7 @@ export default async function OrdersPage() {
                 allOrders.map(order => (
                   <tr
                     key={order.id}
-                    className="border-b border-[var(--pvg-border)] hover:bg-[var(--pvg-bg)] transition"
+                    className="border-b border-[var(--pvg-border)] hover:bg-brand-bg transition"
                   >
                     <td className="px-4 py-3 font-medium text-[var(--pvg-primary)]">
                       {order.order_number}
@@ -149,7 +160,7 @@ export default async function OrdersPage() {
                           STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -159,7 +170,7 @@ export default async function OrdersPage() {
                         }`}
                       >
                         {order.payment_status.charAt(0).toUpperCase() +
-                          order.payment_status.slice(1)}
+                          order.payment_status.slice(1).replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--pvg-muted)]">
@@ -168,7 +179,7 @@ export default async function OrdersPage() {
                     <td className="px-4 py-3 text-center">
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--pvg-border)] px-2 py-1 text-xs font-semibold text-[var(--pvg-primary)] transition hover:border-[var(--pvg-primary)] hover:bg-[var(--pvg-gold-light)]"
+                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--pvg-border)] px-2 py-1 text-xs font-semibold text-[var(--pvg-primary)] transition hover:border-[var(--pvg-primary)] hover:bg-brand-gold-light"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         View

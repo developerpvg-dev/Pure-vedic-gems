@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createPublicClient } from '@/lib/supabase/public';
 
 /**
  * GET /api/categories
  * Public endpoint — returns active gem categories.
- * Supports ?type=navaratna|upratna filter.
+ * Supports ?type=navaratna|upratna|rudraksha filter.
  * Cached for 5 minutes via ISR.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const type = searchParams.get('type');
 
-  const supabase = createAdminClient();
+  const supabase = createPublicClient();
 
   let query = supabase
     .from('gem_categories')
-    .select('id, name, slug, type, sanskrit_name, planet, emoji, color, image_url, hover_image_url, description, sort_order')
+    .select('id, name, slug, type, sanskrit_name, planet, emoji, color, image_url, hover_image_url, description, display_locations, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
 
-  if (type === 'navaratna' || type === 'upratna') {
+  if (type === 'navaratna' || type === 'upratna' || type === 'rudraksha') {
     query = query.eq('type', type);
   }
 

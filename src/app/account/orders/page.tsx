@@ -2,11 +2,11 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Package, ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { ReorderButton } from '@/components/account/ReorderButton';
 import type { Order } from '@/lib/types/database';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'My Orders | PureVedicGems',
@@ -36,14 +36,13 @@ const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = 
 
 export default async function OrdersPage() {
   const supabase = await createClient();
-  const adminDb = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/?auth=login');
+  if (!user) redirect('/shop?auth=login&next=/account/orders');
 
-  const { data: rawOrders } = await adminDb
+  const { data: rawOrders } = await supabase
     .from('orders')
     .select('*')
     .eq('customer_id', user.id)
@@ -67,7 +66,7 @@ export default async function OrdersPage() {
         >
           My Orders
         </h1>
-        <OrnamentalDivider className="mt-4 max-w-[200px]" />
+        <OrnamentalDivider className="mt-4 max-w-50" />
       </div>
 
       {/* Order list */}
@@ -281,20 +280,29 @@ export default async function OrdersPage() {
                         {order.tracking_number}
                       </p>
                     </div>
-                    {order.tracking_url && (
-                      <a
-                        href={order.tracking_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all hover:-translate-y-0.5"
-                        style={{
-                          background: 'var(--pvg-primary)',
-                          color: 'var(--pvg-bg)',
-                        }}
-                      >
-                        Track Package
-                      </a>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {order.tracking_url && (
+                        <a
+                          href={order.tracking_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all hover:-translate-y-0.5"
+                          style={{
+                            background: 'var(--pvg-primary)',
+                            color: 'var(--pvg-bg)',
+                          }}
+                        >
+                          Track Package
+                        </a>
+                      )}
+                      <ReorderButton orderId={order.id} />
+                    </div>
+                  </div>
+                )}
+
+                {!order.tracking_number && (
+                  <div className="flex items-center justify-end border-t px-6 py-3" style={{ borderColor: 'var(--pvg-border)' }}>
+                    <ReorderButton orderId={order.id} />
                   </div>
                 )}
               </div>

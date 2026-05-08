@@ -1,8 +1,12 @@
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
+import crypto from 'crypto';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Metadata } from 'next';
 import { OrderConfirmationClient } from './OrderConfirmationClient';
+
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ orderId: string }>;
@@ -11,9 +15,13 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { orderId } = await params;
   return {
-    title: `Order Confirmed — ${orderId.slice(0, 8)}`,
+    title: `Order Status - ${orderId.slice(0, 8)}`,
     robots: { index: false, follow: false },
   };
+}
+
+function hashGuestToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 export default async function OrderConfirmationPage({ params }: Props) {
@@ -36,7 +44,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
   // Fetch order using admin client to bypass RLS
   const { data: order, error } = await adminDb
     .from('orders')
-    .select('id, order_number, items, subtotal, shipping_cost, gst_amount, total, shipping_address, payment_status, status, guest_name, guest_email, customer_id, created_at')
+    .select('id, order_number, items, subtotal, shipping_cost, gst_amount, total, shipping_address, payment_status, status, guest_name, guest_email, customer_id, guest_access_token, created_at')
     .eq('id', orderId)
     .single();
 
@@ -47,6 +55,21 @@ export default async function OrderConfirmationPage({ params }: Props) {
   // Security: only show if user is the owner, or it's a guest order accessed in the same session
   if (order.customer_id && user?.id !== order.customer_id) {
     notFound();
+  }
+
+  if (!order.customer_id) {
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get('pvg_guest_order_token')?.value ?? '';
+    const [cookieOrderId, guestToken] = cookieValue.split('.');
+    const expectedHash = guestToken ? hashGuestToken(guestToken) : null;
+
+    if (
+      !order.guest_access_token ||
+      cookieOrderId !== order.id ||
+      expectedHash !== order.guest_access_token
+    ) {
+      notFound();
+    }
   }
 
   return (

@@ -7,13 +7,17 @@ import {
   ChevronRight,
   Star,
   ShoppingBag,
+  MapPin,
+  Bell,
+  Shield,
+  MessageSquare,
+  CalendarClock,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
-import type { CustomerProfile, Order } from '@/lib/types/database';
+import type { Consultation, CustomerProfile, Order } from '@/lib/types/database';
 
-// ISR: revalidate every 60 seconds
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'My Account | PureVedicGems',
@@ -42,10 +46,40 @@ const QUICK_LINKS = [
     desc: 'Edit details & birth info',
   },
   {
+    href: '/account/addresses',
+    icon: MapPin,
+    label: 'Address Book',
+    desc: 'Shipping and GST details',
+  },
+  {
+    href: '/account/reviews',
+    icon: MessageSquare,
+    label: 'My Reviews',
+    desc: 'Verified purchase reviews',
+  },
+  {
+    href: '/account/preferences',
+    icon: Bell,
+    label: 'Preferences',
+    desc: 'Consent and notifications',
+  },
+  {
+    href: '/account/consultations',
+    icon: CalendarClock,
+    label: 'My Consultations',
+    desc: 'Bookings & payment status',
+  },
+  {
     href: '/consultation',
     icon: Star,
     label: 'Book Consultation',
     desc: 'Expert Vedic guidance',
+  },
+  {
+    href: '/track-order',
+    icon: Shield,
+    label: 'Track Guest Order',
+    desc: 'Secure email or phone lookup',
   },
 ];
 
@@ -56,10 +90,10 @@ export default async function AccountPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/?auth=login');
+  if (!user) redirect('/shop?auth=login&next=/account');
 
-  // Fetch profile + recent orders in parallel
-  const [profileResult, ordersResult] = await Promise.all([
+  // Fetch profile + recent activity in parallel
+  const [profileResult, ordersResult, consultationsResult] = await Promise.all([
     supabase
       .from('customer_profiles')
       .select('*')
@@ -71,10 +105,17 @@ export default async function AccountPage() {
       .eq('customer_id', user.id)
       .order('created_at', { ascending: false })
       .limit(3),
+      supabase
+        .from('consultations')
+        .select('*')
+        .eq('customer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3),
   ]);
 
   const profile = profileResult.data as CustomerProfile | null;
   const recentOrders = (ordersResult.data ?? []) as Order[];
+      const recentConsultations = (consultationsResult.data ?? []) as Consultation[];
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Valued Customer';
 
   return (
@@ -136,6 +177,87 @@ export default async function AccountPage() {
             />
           </Link>
         ))}
+      </div>
+
+      {/* ── Recent consultations ─────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl border p-6 md:p-8"
+        style={{
+          borderColor: 'var(--pvg-border)',
+          background: 'var(--pvg-surface)',
+        }}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <h2
+            className="font-heading text-xl"
+            style={{ color: 'var(--pvg-primary)' }}
+          >
+            Consultation Bookings
+          </h2>
+          <Link
+            href="/account/consultations"
+            className="flex items-center gap-1 text-sm font-semibold transition-colors hover:text-[var(--pvg-accent)]"
+            style={{ color: 'var(--pvg-accent)' }}
+          >
+            View all <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {recentConsultations.length === 0 ? (
+          <div className="py-10 text-center">
+            <CalendarClock
+              className="mx-auto mb-4 h-11 w-11"
+              style={{ color: 'var(--pvg-muted)', opacity: 0.4 }}
+            />
+            <p className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>
+              No consultations yet
+            </p>
+            <Link
+              href="/consultation"
+              className="mt-3 inline-block text-sm font-semibold underline underline-offset-4"
+              style={{ color: 'var(--pvg-accent)' }}
+            >
+              Book a paid consultation
+            </Link>
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: 'var(--pvg-border)' }}>
+            {recentConsultations.map((consultation) => (
+              <div
+                key={consultation.id}
+                className="flex flex-wrap items-center justify-between gap-4 py-4"
+              >
+                <div>
+                  <p
+                    className="font-semibold"
+                    style={{ color: 'var(--pvg-primary)' }}
+                  >
+                    {consultation.plan_title_snapshot || 'Vedic Consultation'}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--pvg-muted)' }}>
+                    {new Date(consultation.created_at).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                    {' · '}
+                    {consultation.razorpay_payment_id || consultation.razorpay_order_id || 'Payment pending'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <ConsultationStatusBadge status={consultation.payment_status} kind="payment" />
+                  <ConsultationStatusBadge status={consultation.status} kind="booking" />
+                  <span
+                    className="font-semibold"
+                    style={{ color: 'var(--pvg-primary)' }}
+                  >
+                    ₹{(consultation.amount_inr ?? 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Recent orders ────────────────────────────────────────────────── */}
@@ -226,6 +348,41 @@ export default async function AccountPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function ConsultationStatusBadge({ status, kind }: { status: string; kind: 'payment' | 'booking' }) {
+  const PAYMENT_MAP: Record<string, { label: string; bg: string; text: string }> = {
+    pending: { label: 'Payment Pending', bg: '#fef9c3', text: '#854d0e' },
+    created: { label: 'Payment Created', bg: '#dbeafe', text: '#1e40af' },
+    captured: { label: 'Paid', bg: '#dcfce7', text: '#166534' },
+    failed: { label: 'Payment Failed', bg: '#fee2e2', text: '#991b1b' },
+    amount_mismatch: { label: 'Review', bg: '#ede9fe', text: '#5b21b6' },
+  };
+
+  const BOOKING_MAP: Record<string, { label: string; bg: string; text: string }> = {
+    pending_payment: { label: 'Pending Payment', bg: '#fef9c3', text: '#854d0e' },
+    pending: { label: 'Pending', bg: '#dbeafe', text: '#1e40af' },
+    confirmed: { label: 'Confirmed', bg: '#fef3c7', text: '#92400e' },
+    completed: { label: 'Completed', bg: '#dcfce7', text: '#166534' },
+    cancelled: { label: 'Cancelled', bg: '#fee2e2', text: '#991b1b' },
+    payment_review: { label: 'Payment Review', bg: '#ede9fe', text: '#5b21b6' },
+  };
+
+  const selectedMap = kind === 'payment' ? PAYMENT_MAP : BOOKING_MAP;
+  const s = selectedMap[status] ?? {
+    label: status.replace(/_/g, ' '),
+    bg: 'var(--pvg-bg-alt)',
+    text: 'var(--pvg-muted)',
+  };
+
+  return (
+    <span
+      className="rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider"
+      style={{ background: s.bg, color: s.text }}
+    >
+      {s.label}
+    </span>
   );
 }
 

@@ -16,11 +16,39 @@ import {
   Redo,
   Minus,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
+}
+
+function ToolBtn({
+  onClick,
+  active,
+  children,
+  title,
+}: {
+  onClick: () => void;
+  active?: boolean;
+  children: ReactNode;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`rounded p-1.5 transition-colors ${
+        active
+          ? 'bg-amber-100 text-amber-700'
+          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
@@ -29,6 +57,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
+        underline: false,
       }),
       Underline,
       Placeholder.configure({ placeholder: placeholder ?? 'Start typing...' }),
@@ -46,31 +75,6 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
   });
 
   if (!editor) return null;
-
-  const ToolBtn = ({
-    onClick,
-    active,
-    children,
-    title,
-  }: {
-    onClick: () => void;
-    active?: boolean;
-    children: React.ReactNode;
-    title: string;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`rounded p-1.5 transition-colors ${
-        active
-          ? 'bg-amber-100 text-amber-700'
-          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-      }`}
-    >
-      {children}
-    </button>
-  );
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white overflow-hidden focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">

@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const files = formData.getAll('files') as File[];
+  const requestedFolder = formData.get('folder');
+  const baseFolder = typeof requestedFolder === 'string'
+    ? requestedFolder.toLowerCase().replace(/[^a-z0-9/_-]/g, '-').replace(/-+/g, '-').replace(/^\/|\/$/g, '')
+    : '';
 
   if (!files.length) {
     return NextResponse.json({ error: 'No files provided' }, { status: 400 });
@@ -71,11 +75,10 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'bin';
     const folder = ALLOWED_VIDEO_TYPES.includes(file.type) ? 'videos' : 'images';
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = `${folder}/${timestamp}-${safeName}`;
+    const path = [baseFolder, folder, `${timestamp}-${safeName}`].filter(Boolean).join('/');
 
     const arrayBuffer = await file.arrayBuffer();
     const { error } = await admin.storage

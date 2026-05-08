@@ -1,4 +1,4 @@
-﻿const STRIP_ITEMS = [
+const STRIP_ITEMS = [
   '\u{1F4DE} +91-9871582404',
   '\u2709 info@purevedicgems.com',
   '\u{1F4CD} Delhi \u00B7 Noida \u00B7 London',
@@ -15,7 +15,7 @@ const MARQUEE_ITEMS = [...STRIP_ITEMS, ...STRIP_ITEMS];
 export function TopStrip() {
   return (
     <div
-      className="fixed inset-x-0 top-0 z-[999] overflow-hidden bg-[var(--pvg-primary)] py-[6px]"
+      className="fixed inset-x-0 top-0 z-[999] overflow-hidden bg-brand-primary py-[6px]"
       style={{ height: '32px' }}
     >
       <div

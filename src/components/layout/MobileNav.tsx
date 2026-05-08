@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/constants/nav-items';
 
 interface MobileNavProps {
@@ -11,54 +10,132 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ open, onClose }: MobileNavProps) {
-  // Lock body scroll when open
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = open ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex flex-col overflow-y-auto bg-[var(--pvg-bg)] px-8 pb-12 pt-24"
-      role="dialog"
-      aria-label="Mobile navigation"
-    >
-      {/* Close button */}
-      <button
+    <>
+      {/* Overlay — matching static .mob-overlay */}
+      <div
+        aria-hidden="true"
         onClick={onClose}
-        className="absolute right-6 top-6 p-2"
-        aria-label="Close menu"
-      >
-        <X className="h-6 w-6 text-[var(--pvg-primary)]" />
-      </button>
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 1100,
+          background: 'rgba(0,0,0,0.5)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity 0.3s',
+        }}
+      />
 
-      {/* Nav links */}
-      {NAV_ITEMS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
+      {/* Drawer — matching static .mob-drawer */}
+      <div
+        id="mobDrawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+        aria-hidden={!open}
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          width: 'min(300px, 88vw)',
+          height: '100%',
+          background: '#fff',
+          zIndex: 1110,
+          transform: open ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
+          visibility: open ? 'visible' : 'hidden',
+          pointerEvents: open ? 'auto' : 'none',
+          overflowY: 'auto',
+          padding: '72px 20px 40px',
+          borderLeft: '3px solid #7A1515',
+        }}
+      >
+        {/* Close button */}
+        <button
+          type="button"
           onClick={onClose}
-          className="block border-b border-[var(--pvg-border)] py-4 font-heading text-[22px] text-[var(--pvg-primary)] transition-colors hover:text-[var(--pvg-accent)]"
+          aria-label="Close menu"
+          style={{
+            position: 'absolute',
+            top: '18px',
+            right: '18px',
+            width: '36px',
+            height: '36px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            background: '#F5F0E8',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '16px',
+            color: '#3A3A3A',
+          }}
         >
-          {item.label}
-        </Link>
-      ))}
+          ✕
+        </button>
 
-      <Link
-        href="/consultation"
-        onClick={onClose}
-        className="mt-7 w-full bg-[var(--pvg-primary)] py-4 text-center text-sm font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-colors hover:bg-[var(--pvg-accent)] hover:text-[var(--pvg-primary)]"
-      >
-        Book Consultation
-      </Link>
-    </div>
+        {/* Nav links — matching static .mob-link */}
+        {NAV_ITEMS.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onClose}
+            className="pvg-mob-link"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 0',
+              fontSize: '13px',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: '#3A3A3A',
+              borderBottom: '1px solid #EDE6D5',
+              transition: 'color 0.2s',
+              textDecoration: 'none',
+            }}
+          >
+            {item.label}
+            <span style={{ color: '#7A1515', fontSize: '16px', lineHeight: 1 }}>›</span>
+          </Link>
+        ))}
+
+        {/* Consultation CTA — matching static .mob-consult */}
+        <Link
+          href="/consultation"
+          onClick={onClose}
+          style={{
+            display: 'block',
+            marginTop: '24px',
+            padding: '14px',
+            background: '#7A1515',
+            color: '#fff',
+            textAlign: 'center',
+            fontSize: '11.5px',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            borderRadius: '2px',
+            textDecoration: 'none',
+          }}
+        >
+          Book Consultation
+        </Link>
+      </div>
+
+      <style>{`
+        .pvg-mob-link:hover { color: #7A1515 !important; }
+      `}</style>
+    </>
   );
 }

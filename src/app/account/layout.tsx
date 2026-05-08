@@ -13,15 +13,15 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/?auth=login');
+    redirect('/shop?auth=login&next=/account');
   }
 
   return (
     <div
-      className="min-h-screen pb-16 pt-[130px]"
+      className="min-h-screen pb-16 pt-32.5"
       style={{ background: 'var(--pvg-bg)' }}
     >
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-275 px-4 sm:px-6 lg:px-8">
         {children}
       </div>
     </div>

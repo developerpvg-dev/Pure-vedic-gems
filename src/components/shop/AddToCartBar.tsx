@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Heart, MessageCircle, Share2, ShieldCheck, Package, Zap, BadgeCheck, Gem, Phone } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Share2, ShieldCheck, Package, Zap, BadgeCheck, Gem, Phone } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
+import { WishlistButton } from '@/components/shop/WishlistButton';
+import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { toast } from 'sonner';
 import type { Product } from '@/lib/types/product';
 
@@ -25,6 +27,8 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const [localQty, setLocalQty] = useState(1);
   const inCart = isInCart(product.id);
   const cartQty = getItemQty(product.id);
+  const isUnavailable =
+    !product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
 
   // When item is in cart, the counter mirrors the cart quantity directly.
   // When not yet in cart, the counter is a local "how many to add" state.
@@ -48,9 +52,17 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   };
 
   const handleAdd = useCallback(() => {
+    if (isUnavailable) {
+      toast.error('This product is currently unavailable', {
+        description: 'Contact us and we can help source a similar item.',
+      });
+      return;
+    }
+
     addItem({
       product_id: product.id,
       sku: product.sku,
+      tag_number: product.tag_number ?? null,
       name: product.name,
       category: product.category,
       image_url: getImageSrc(product),
@@ -59,12 +71,18 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       carat_weight: product.carat_weight ?? null,
       origin: product.origin ?? null,
     });
+    trackStorefrontEvent('add_to_cart', {
+      product_id: product.id,
+      sku: product.sku,
+      category: product.category,
+      source: 'product_detail',
+    });
     setLocalQty(1); // reset local counter after adding
     toast.success(`${product.name} added to cart`, {
       description: `${localQty} item${localQty > 1 ? 's' : ''} added.`,
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
-  }, [addItem, product, localQty]);
+  }, [addItem, product, localQty, isUnavailable]);
 
   const waLink = `https://wa.me/919871582404?text=${encodeURIComponent(
     `Hi, I'm interested in: ${product.name} (SKU: ${product.sku}). Please share more details.`
@@ -81,20 +99,13 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
 
   const configuratorEnabled = !!(product as Product & { configurator_enabled?: boolean }).configurator_enabled;
 
-  // Reset localQty to 1 when item is removed from cart (inCart goes from true to false)
-  useEffect(() => {
-    if (!inCart && localQty > 1) {
-      setLocalQty(1);
-    }
-  }, [inCart, localQty]);
-
   return (
     <div className="space-y-3">
       {/* Stock status */}
-      {product.in_stock ? (
+      {!isUnavailable ? (
         <div className="flex items-center gap-2 text-[12px] font-semibold text-green-700">
           <span className="h-2 w-2 rounded-full bg-green-500" />
-          In Stock
+          {product.availability_status === 'on_demand' ? 'Available on Demand' : 'In Stock'}
           {product.stock_quantity <= product.low_stock_threshold && (
             <span className="ml-1 text-amber-600">— Only {product.stock_quantity} left!</span>
           )}
@@ -102,14 +113,14 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       ) : (
         <div className="flex items-center gap-2 text-[12px] font-semibold text-red-600">
           <span className="h-2 w-2 rounded-full bg-red-500" />
-          Out of Stock
+          {product.availability_status === 'reserved' ? 'Reserved' : product.availability_status === 'sold' ? 'Sold' : 'Out of Stock'}
         </div>
       )}
 
       {/* Primary action row — quantity + main CTA */}
       <div className="flex gap-2">
         {/* Quantity selector */}
-        <div className="flex items-center rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
+        <div className="flex items-center rounded-lg border border-[var(--pvg-border)] bg-brand-surface">
           <button
             onClick={handleDecrease}
             className="flex h-10 w-9 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
@@ -132,7 +143,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         {/* Main CTA: Buy Loose (if configurator) or Add to Cart */}
         <button
           onClick={inCart ? undefined : handleAdd}
-          disabled={!product.in_stock}
+          disabled={isUnavailable}
           className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[12px] font-bold uppercase tracking-[1.5px] transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
           style={{
             background: inCart
@@ -145,36 +156,32 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           }}
         >
           {configuratorEnabled ? (
-            <><Gem className="h-4 w-4" />{inCart ? 'In Cart ✓' : 'Buy Loose'}</>
+            <><Gem className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In Cart ✓' : 'Buy Loose'}</>
           ) : (
-            <><ShoppingBag className="h-4 w-4" />{inCart ? 'In Cart ✓' : 'Add to Cart'}</>
+            <><ShoppingBag className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In Cart ✓' : 'Add to Cart'}</>
           )}
         </button>
 
-        {/* Icon buttons — wishlist + share (non-configurator layout) */}
-        {!configuratorEnabled && (
-          <>
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--pvg-border)] text-[var(--pvg-muted)] transition hover:border-[var(--pvg-accent)] hover:text-[var(--pvg-accent)]"
-              aria-label="Add to Wishlist"
-            >
-              <Heart className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--pvg-border)] text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)]"
-              aria-label="Share"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
-          </>
-        )}
+        <WishlistButton
+          productId={product.id}
+          productName={product.name}
+          className="h-10 w-10"
+          stopPropagation={false}
+        />
+        <button
+          onClick={handleShare}
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--pvg-border)] text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)]"
+          aria-label="Share"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Configure in Jewelry — only shown when configurator is enabled */}
       {configuratorEnabled && (
         <Link
           href={`/configure/${product.id}`}
+          onClick={() => trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_detail' })}
           className="flex w-full items-center justify-center gap-2 rounded-lg border-2 py-2.5 text-[12px] font-bold uppercase tracking-[1.5px] transition-all hover:-translate-y-0.5 hover:shadow-md"
           style={{
             borderColor: 'var(--pvg-primary)',
@@ -205,16 +212,6 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           <Phone className="h-3.5 w-3.5" />
           Book Consultation
         </Link>
-        {/* Share — shown in configurator layout only */}
-        {configuratorEnabled && (
-          <button
-            onClick={handleShare}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--pvg-border)] text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)]"
-            aria-label="Share"
-          >
-            <Share2 className="h-3.5 w-3.5" />
-          </button>
-        )}
       </div>
 
       {/* Trust badges — compact 4-column row */}
@@ -227,7 +224,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         ].map((badge) => (
           <div
             key={badge.label}
-            className="flex flex-col items-center gap-1 rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-surface)] px-1.5 py-2 text-center"
+            className="flex flex-col items-center gap-1 rounded-lg border border-[var(--pvg-border)] bg-brand-surface px-1.5 py-2 text-center"
           >
             <span className="text-[var(--pvg-accent)]">{badge.icon}</span>
             <span className="text-[9px] font-semibold uppercase leading-tight tracking-[0.5px] text-[var(--pvg-muted)]">

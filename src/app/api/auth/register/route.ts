@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Ensure customer_profiles row exists (DB trigger does this too, belt-and-suspenders)
-  await (supabase as any)
+  await supabase
     .from('customer_profiles')
     .upsert(
       {

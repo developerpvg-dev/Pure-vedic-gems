@@ -15,11 +15,13 @@ import { formatPrice } from '@/lib/utils/format';
 import { createClient } from '@/lib/supabase/client';
 import type { JewelryDesign } from '@/lib/types/database';
 import type { SettingType } from '@/lib/types/configurator';
+import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
 
 interface DesignSelectorProps {
   settingType: SettingType;
   selected: JewelryDesign | null;
   customDesignUrl: string | null;
+  optionRules: ConfiguratorOptionRules | null;
   onSelectDesign: (design: JewelryDesign) => void;
   onCustomDesignUpload: (url: string) => void;
 }
@@ -37,6 +39,7 @@ export default function DesignSelector({
   settingType,
   selected,
   customDesignUrl,
+  optionRules,
   onSelectDesign,
   onCustomDesignUpload,
 }: DesignSelectorProps) {
@@ -46,6 +49,7 @@ export default function DesignSelector({
   const [customUploadError, setCustomUploadError] = useState<string | null>(null);
   const [customUploading, setCustomUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const customDesignEnabled = optionRules?.jewelry_design_enabled ?? true;
 
   useEffect(() => {
     async function fetchDesigns() {
@@ -212,12 +216,13 @@ export default function DesignSelector({
             {/* Upload custom */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              disabled={customUploading}
+              disabled={customUploading || !customDesignEnabled}
               className={cn(
                 'group flex min-h-[152px] flex-col items-center justify-center rounded-lg border-2 border-dashed p-3 text-center transition-all',
                 'hover:border-accent hover:bg-accent/5',
                 customDesignUrl ? 'border-accent bg-accent/5' : 'border-border',
-                customUploading && 'cursor-wait opacity-80'
+                customUploading && 'cursor-wait opacity-80',
+                !customDesignEnabled && 'cursor-not-allowed opacity-50'
               )}
             >
               {customUploading ? (
@@ -228,7 +233,9 @@ export default function DesignSelector({
               <span className="mt-2 text-[11px] font-semibold text-primary">
                 {customUploading
                   ? 'Uploading...'
-                  : customDesignUrl
+                  : !customDesignEnabled
+                    ? 'Custom unavailable'
+                    : customDesignUrl
                     ? 'Custom Uploaded ✓'
                     : 'Upload Custom'}
               </span>

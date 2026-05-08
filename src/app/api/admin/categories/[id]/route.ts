@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+const CATEGORY_TYPES = ['navaratna', 'upratna', 'rudraksha'] as const;
+
+function isCategoryType(value: string): value is (typeof CATEGORY_TYPES)[number] {
+  return (CATEGORY_TYPES as readonly string[]).includes(value);
+}
+
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,14 +50,14 @@ export async function PUT(
 
   // Build update object — only include fields that are present
   const update: Record<string, unknown> = {};
-  const allowedFields = ['name', 'slug', 'type', 'sanskrit_name', 'planet', 'emoji', 'color', 'image_url', 'hover_image_url', 'description', 'sort_order', 'is_active'];
+  const allowedFields = ['name', 'slug', 'type', 'sanskrit_name', 'planet', 'emoji', 'color', 'image_url', 'hover_image_url', 'description', 'display_locations', 'sort_order', 'is_active'];
 
   for (const field of allowedFields) {
     if (field in body) {
       if (field === 'slug' && typeof body[field] === 'string') {
         update[field] = String(body[field]).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      } else if (field === 'type' && body[field] !== 'navaratna' && body[field] !== 'upratna') {
-        return NextResponse.json({ error: 'type must be navaratna or upratna' }, { status: 400 });
+      } else if (field === 'type' && !isCategoryType(String(body[field]))) {
+        return NextResponse.json({ error: 'type must be navaratna, upratna, or rudraksha' }, { status: 400 });
       } else {
         update[field] = body[field];
       }

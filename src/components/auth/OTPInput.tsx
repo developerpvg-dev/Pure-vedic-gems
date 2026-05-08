@@ -115,7 +115,7 @@ export function OTPInput({
             hasError
               ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-500 focus:ring-red-300'
               : digit
-              ? 'border-[var(--pvg-accent)] bg-[var(--pvg-gold-light)] text-[var(--pvg-primary)] focus:border-[var(--pvg-accent)] focus:ring-[var(--pvg-accent)]/30'
+              ? 'border-[var(--pvg-accent)] bg-brand-gold-light text-[var(--pvg-primary)] focus:border-[var(--pvg-accent)] focus:ring-[var(--pvg-accent)]/30'
               : 'border-[var(--pvg-border)] bg-white text-[var(--pvg-text)] focus:border-[var(--pvg-accent)] focus:ring-[var(--pvg-accent)]/30'
           )}
         />

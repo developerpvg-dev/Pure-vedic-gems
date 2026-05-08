@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import type { ProductListResponse } from '@/lib/types/product';
 
 // Card-level columns to select (avoid fetching full descriptions for listing)
 const CARD_SELECT = `
-  id, slug, name, category, sub_category, price, price_per_carat, compare_price,
+  id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price,
   carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url,
-  in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled
+  in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled,
+  product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number
 `;
+
+function buildSearchTerm(query: string) {
+  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     const filters = parsed.data;
-    const supabase = createAdminClient();
+    const supabase = createPublicClient();
 
     // Build query with dynamic filters
     let query = supabase
@@ -37,6 +42,12 @@ export async function GET(request: NextRequest) {
     // Apply filters
     if (filters.category) {
       query = query.eq('category', filters.category);
+    }
+    if (filters.product_type) {
+      query = query.eq('product_type', filters.product_type);
+    }
+    if (filters.availability_status) {
+      query = query.eq('availability_status', filters.availability_status);
     }
     if (filters.sub_category) {
       query = query.eq('sub_category', filters.sub_category);
@@ -64,6 +75,12 @@ export async function GET(request: NextRequest) {
     }
     if (filters.treatment) {
       query = query.eq('treatment', filters.treatment);
+    }
+    if (filters.q) {
+      const searchTerm = buildSearchTerm(filters.q);
+      query = query.or(
+        `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
+      );
     }
     if (filters.featured !== undefined) {
       query = query.eq('featured', filters.featured);

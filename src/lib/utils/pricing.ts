@@ -9,7 +9,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SHIPPING_METHODS } from '@/lib/validators/order';
 import type { ShippingMethodId } from '@/lib/validators/order';
-import type { Coupon } from '@/lib/types/database';
+import type { Coupon, ShippingMethod } from '@/lib/types/database';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,14 @@ export interface OrderItemForPricing {
 export interface PricingBreakdown {
   items: Array<{
     product_id: string;
+    sku: string;
+    tag_number: string | null;
     name: string;
+    category: string;
+    image_url: string;
+    carat_weight: number | null;
+    origin: string | null;
+    sold_individually: boolean;
     unit_price: number;
     quantity: number;
     line_total: number;
@@ -41,6 +48,85 @@ export interface PricingBreakdown {
 // ─── GST Rate (Gemstones: 3% is standard for precious stones in India) ──────
 const GST_RATE = 0.03;
 
+const PRODUCT_SELECT = `
+  id, sku, tag_number, name, category, price, carat_weight, origin, images,
+  thumbnail_url, in_stock, stock_quantity, stock_status, availability_status,
+  is_active, sold_individually, backorders_allowed, reserved_until,
+  reserved_by_customer_id
+`;
+
+type ProductForPricing = {
+  id: string;
+  sku: string;
+  tag_number: string | null;
+  name: string;
+  category: string;
+  price: number;
+  carat_weight: number | null;
+  origin: string | null;
+  images: unknown;
+  thumbnail_url: string | null;
+  in_stock: boolean;
+  stock_quantity: number;
+  stock_status: string;
+  availability_status: string;
+  is_active: boolean;
+  sold_individually: boolean;
+  backorders_allowed: boolean;
+  reserved_until: string | null;
+  reserved_by_customer_id: string | null;
+};
+
+function getProductImage(product: ProductForPricing) {
+  if (product.thumbnail_url) return product.thumbnail_url;
+  if (Array.isArray(product.images) && typeof product.images[0] === 'string') {
+    return product.images[0];
+  }
+  return '';
+}
+
+function isReservationActive(reservedUntil: string | null) {
+  if (!reservedUntil) return false;
+  const expires = new Date(reservedUntil).getTime();
+  return !Number.isNaN(expires) && expires > Date.now();
+}
+
+async function getShippingMethod(
+  methodId: ShippingMethodId,
+  subtotal: number
+): Promise<{ id: ShippingMethodId; cost: number; label: string }> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from('shipping_methods')
+    .select('*')
+    .eq('id', methodId)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  const method = data as ShippingMethod | null;
+  if (method) {
+    if (method.min_order_amount && subtotal < method.min_order_amount) {
+      throw new Error(`${method.label} is not available for this order total.`);
+    }
+    if (method.max_order_amount && subtotal > method.max_order_amount) {
+      throw new Error(`${method.label} is not available for this order total.`);
+    }
+    return {
+      id: method.id as ShippingMethodId,
+      label: method.label,
+      cost: method.free_above && subtotal >= method.free_above ? 0 : Number(method.cost),
+    };
+  }
+
+  const fallback = SHIPPING_METHODS.find((m) => m.id === methodId);
+  if (!fallback) throw new Error('Invalid shipping method.');
+  return fallback;
+}
+
+function values<T>(input: T[] | null | undefined) {
+  return Array.isArray(input) ? input.filter(Boolean) : [];
+}
+
 /**
  * Recalculate a complete order total from the database.
  * This is the single source of truth for pricing — called during order creation
@@ -58,7 +144,7 @@ export async function recalculateOrderTotal(
   const productIds = items.map((i) => i.product_id);
   const { data: products, error: prodError } = await supabase
     .from('products')
-    .select('id, name, price, in_stock')
+    .select(PRODUCT_SELECT)
     .in('id', productIds);
 
   if (prodError || !products) {
@@ -66,7 +152,7 @@ export async function recalculateOrderTotal(
   }
 
   // Build a map of product_id → product for O(1) lookups
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map((products as ProductForPricing[]).map((p) => [p.id, p]));
 
   // Verify all products exist and are in stock
   const pricedItems: PricingBreakdown['items'] = [];
@@ -75,12 +161,32 @@ export async function recalculateOrderTotal(
     if (!product) {
       throw new Error(`Product ${item.product_id} not found`);
     }
-    if (!product.in_stock) {
+    if (!product.is_active) {
+      throw new Error(`Product "${product.name}" is no longer available`);
+    }
+    if (!product.in_stock || product.stock_status === 'out_of_stock') {
       throw new Error(`Product "${product.name}" is currently out of stock`);
     }
+    if (['sold', 'archived', 'out_of_stock'].includes(product.availability_status)) {
+      throw new Error(`Product "${product.name}" is not available for purchase`);
+    }
+    if (product.availability_status === 'reserved' && isReservationActive(product.reserved_until)) {
+      throw new Error(`Product "${product.name}" is currently reserved`);
+    }
+    if (!product.backorders_allowed && product.stock_quantity < item.quantity) {
+      throw new Error(`Only ${product.stock_quantity} unit(s) of "${product.name}" are available`);
+    }
+
     pricedItems.push({
       product_id: item.product_id,
+      sku: product.sku,
+      tag_number: product.tag_number,
       name: product.name,
+      category: product.category,
+      image_url: getProductImage(product),
+      carat_weight: product.carat_weight,
+      origin: product.origin,
+      sold_individually: product.sold_individually,
       unit_price: product.price,
       quantity: item.quantity,
       line_total: product.price * item.quantity,
@@ -93,28 +199,39 @@ export async function recalculateOrderTotal(
   let jewelryCharges = 0;
   let metalCharges = 0;
   let certificationCharges = 0;
+  let energizationCharges = 0;
 
   const configIds = items
     .filter((i) => i.configuration_id)
     .map((i) => i.configuration_id!);
 
   if (configIds.length > 0) {
+    const configItemMap = new Map(
+      items
+        .filter((item) => item.configuration_id)
+        .map((item) => [item.configuration_id!, item])
+    );
     const { data: configs } = await supabase
       .from('product_configurations')
-      .select('id, making_charge, metal_price, certification_fee')
+      .select('id, product_id, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee')
       .in('id', configIds);
 
     if (configs) {
       for (const cfg of configs) {
-        jewelryCharges += cfg.making_charge ?? 0;
-        metalCharges += cfg.metal_price ?? 0;
-        certificationCharges += cfg.certification_fee ?? 0;
+        const sourceItem = configItemMap.get(cfg.id);
+        if (!sourceItem || sourceItem.product_id !== cfg.product_id) {
+          throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
+        }
+        const quantity = sourceItem.quantity;
+        jewelryCharges += ((cfg.making_charge ?? 0) + (cfg.custom_design_fee ?? 0)) * quantity;
+        metalCharges += (cfg.metal_price ?? 0) * quantity;
+        certificationCharges += (cfg.certification_fee ?? 0) * quantity;
+        energizationCharges += (cfg.energization_fee ?? 0) * quantity;
       }
     }
   }
 
   // ── 3. Energization charges ────────────────────────────────────────────
-  let energizationCharges = 0;
   if (energizationType) {
     const { data: energization } = await supabase
       .from('energization_options')
@@ -123,13 +240,13 @@ export async function recalculateOrderTotal(
       .single();
 
     if (energization) {
-      energizationCharges = energization.price;
+      energizationCharges += energization.price;
     }
   }
 
   // ── 4. Shipping cost ──────────────────────────────────────────────────
-  const shippingConfig = SHIPPING_METHODS.find((m) => m.id === shippingMethod);
-  const shippingCost = shippingConfig?.cost ?? 0;
+  const shippingConfig = await getShippingMethod(shippingMethod, subtotal);
+  const shippingCost = shippingConfig.cost;
 
   // ── 5. Coupon discount ────────────────────────────────────────────────
   let discount = 0;
@@ -142,28 +259,49 @@ export async function recalculateOrderTotal(
       .single();
     const coupon = rawResult.data as Coupon | null;
 
-    if (coupon) {
-      const now = new Date();
-      const validFrom = coupon.valid_from ? new Date(coupon.valid_from) : null;
-      const validTo = coupon.valid_until ? new Date(coupon.valid_until) : null;
+    if (!coupon) {
+      throw new Error('Coupon code is invalid or inactive.');
+    }
 
-      const isDateValid =
-        (!validFrom || now >= validFrom) && (!validTo || now <= validTo);
-      const isUsageValid =
-        !coupon.usage_limit || coupon.used_count < coupon.usage_limit;
-      const meetsMinimum =
-        !coupon.min_order_amount || subtotal >= coupon.min_order_amount;
+    const now = new Date();
+    const validFrom = coupon.valid_from ? new Date(coupon.valid_from) : null;
+    const validTo = coupon.valid_until ? new Date(coupon.valid_until) : null;
+    const isDateValid =
+      (!validFrom || now >= validFrom) && (!validTo || now <= validTo);
+    const isUsageValid =
+      !coupon.usage_limit || coupon.used_count < coupon.usage_limit;
+    const meetsMinimum =
+      !coupon.min_order_amount || subtotal >= coupon.min_order_amount;
 
-      if (isDateValid && isUsageValid && meetsMinimum) {
-        if (coupon.discount_type === 'percentage') {
-          discount = Math.round(subtotal * (coupon.discount_value / 100));
-          if (coupon.max_discount) {
-            discount = Math.min(discount, coupon.max_discount);
-          }
-        } else {
-          discount = coupon.discount_value;
-        }
+    if (!isDateValid) throw new Error('Coupon code is not valid for today.');
+    if (!isUsageValid) throw new Error('Coupon usage limit has been reached.');
+    if (!meetsMinimum) throw new Error(`Coupon requires a minimum order of Rs. ${coupon.min_order_amount}.`);
+
+    const includeProducts = values(coupon.applies_to_product_ids);
+    const includeCategories = values(coupon.applies_to_category_slugs);
+    const excludeProducts = values(coupon.excluded_product_ids);
+    const excludeCategories = values(coupon.excluded_category_slugs);
+
+    const eligibleItems = pricedItems.filter((item) => {
+      if (excludeProducts.includes(item.product_id)) return false;
+      if (excludeCategories.includes(item.category)) return false;
+      if (includeProducts.length > 0 && !includeProducts.includes(item.product_id)) return false;
+      if (includeCategories.length > 0 && !includeCategories.includes(item.category)) return false;
+      return true;
+    });
+
+    const eligibleSubtotal = eligibleItems.reduce((sum, item) => sum + item.line_total, 0);
+    if (eligibleSubtotal <= 0) {
+      throw new Error('Coupon is not valid for the items in this cart.');
+    }
+
+    if (coupon.discount_type === 'percentage') {
+      discount = Math.round(eligibleSubtotal * (coupon.discount_value / 100));
+      if (coupon.max_discount) {
+        discount = Math.min(discount, coupon.max_discount);
       }
+    } else {
+      discount = Math.min(coupon.discount_value, eligibleSubtotal);
     }
   }
 

@@ -605,13 +605,9 @@ CREATE POLICY "Admin inserts activity log"
 -- Team members: admins only
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin reads team members"
-    ON team_members FOR SELECT USING (
-        EXISTS (SELECT 1 FROM team_members WHERE id = auth.uid() AND is_active = true)
-    );
+    ON team_members FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Director manages team"
-    ON team_members FOR ALL USING (
-        EXISTS (SELECT 1 FROM team_members WHERE id = auth.uid() AND role = 'director' AND is_active = true)
-    );
+    ON team_members FOR ALL USING (auth.uid() = id AND role = 'director' AND is_active = true);
 
 -- Gold rate cache: publicly readable
 ALTER TABLE gold_rate_cache ENABLE ROW LEVEL SECURITY;

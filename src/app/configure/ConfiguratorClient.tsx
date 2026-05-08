@@ -6,7 +6,7 @@
  */
 
 import { useMemo } from 'react';
-import { useGoldRate } from '@/lib/hooks/useGoldRate';
+import { useManualMetalPrices } from '@/lib/hooks/useManualMetalPrices';
 import {
   createConfiguratorState,
   useConfigurator,
@@ -31,9 +31,9 @@ function ConfiguratorSession({
   startStep,
   storageKey,
 }: ConfiguratorSessionProps) {
-  const { goldRate } = useGoldRate();
+  const { metalPrices } = useManualMetalPrices();
   const { state, dispatch, canGoToStep, canProceed, isComplete, reset } =
-    useConfigurator(goldRate, { initialState, storageKey });
+    useConfigurator(metalPrices, { initialState, storageKey });
 
   return (
     <ConfiguratorWrapper
@@ -43,7 +43,7 @@ function ConfiguratorSession({
       canProceed={canProceed}
       isComplete={isComplete}
       reset={reset}
-      goldRate={goldRate}
+      goldRate={metalPrices}
       startStep={startStep}
     />
   );

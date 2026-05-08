@@ -23,6 +23,7 @@ const EMPTY_PRICING: ConfigPricingBreakdown = {
   gold_rate_per_gram: 0,
   certification_fee: 0,
   energization_fee: 0,
+  custom_design_fee: 0,
   total: 0,
 };
 
@@ -140,8 +141,9 @@ function recalcPricing(
 
   const certificationFee = state.selected_lab?.extra_charge ?? 0;
   const energizationFee = state.selected_energization?.price ?? 0;
+  const customDesignFee = 0;
 
-  const total = gemPrice + makingCharge + metalPrice + certificationFee + energizationFee;
+  const total = gemPrice + makingCharge + metalPrice + certificationFee + energizationFee + customDesignFee;
 
   return {
     gem_price: gemPrice,
@@ -151,6 +153,7 @@ function recalcPricing(
     gold_rate_per_gram: goldRatePerGram,
     certification_fee: certificationFee,
     energization_fee: energizationFee,
+    custom_design_fee: customDesignFee,
     total,
   };
 }

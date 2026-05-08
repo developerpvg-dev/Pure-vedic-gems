@@ -20,7 +20,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="mt-8 bg-[var(--pvg-primary)] px-10 py-3.5 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-bg)] transition-all hover:-translate-y-0.5 hover:bg-[var(--pvg-accent)] hover:text-[var(--pvg-primary)]"
+        className="mt-8 bg-brand-primary px-10 py-3.5 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-bg)] transition-all hover:-translate-y-0.5 hover:bg-brand-accent hover:text-[var(--pvg-primary)]"
       >
         Return Home
       </Link>

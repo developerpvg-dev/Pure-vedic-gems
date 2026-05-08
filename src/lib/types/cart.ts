@@ -8,6 +8,7 @@ export interface CartItem {
   key: string;
   product_id: string;
   sku: string;
+  tag_number?: string | null;
   name: string;
   category: string;
   image_url: string;
@@ -20,6 +21,10 @@ export interface CartItem {
   configuration_id?: string;
   /** Human-readable config summary, e.g. "Yellow Sapphire · Gold Ring · GIA · Energized" */
   configuration_summary?: string;
+  /** Immutable server-verified configuration snapshot saved when the line was created */
+  configuration_snapshot?: unknown;
+  configuration_edit_url?: string;
+  delivery_eta_label?: string;
 }
 
 export interface Cart {

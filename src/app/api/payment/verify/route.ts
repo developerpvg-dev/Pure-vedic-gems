@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentVerifySchema } from '@/lib/validators/order';
 import { verifyPaymentSignature } from '@/lib/razorpay/verify';
+import { captureAuthorizedRazorpayPayment, fetchRazorpayPaymentFacts } from '@/lib/razorpay/transactions';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation';
+import {
+  finalizeCapturedPayment,
+  markOrderPaymentFailed,
+  markOrderPaymentReview,
+  markPaymentEventProcessed,
+  upsertPaymentEvent,
+} from '@/lib/orders/payment-finalization';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import type { Order } from '@/lib/types/database';
 
@@ -18,10 +25,9 @@ import type { Order } from '@/lib/types/database';
  * Flow:
  * 1. Validate input fields
  * 2. Verify HMAC-SHA256 signature (order_id|payment_id)
- * 3. Cross-check amount: Razorpay order amount === DB order total
- * 4. Update order: payment_status → 'completed', status → 'confirmed'
- * 5. Send order confirmation email
- * 6. Return order details for confirmation page
+ * 3. Fetch Razorpay order/payment and cross-check amount/status
+ * 4. Confirm only captured payments with matching amount
+ * 5. Otherwise leave order pending/failed/review, never falsely confirmed
  */
 export async function POST(req: NextRequest) {
   // ── Rate limiting ────────────────────────────────────────────────────
@@ -64,11 +70,20 @@ export async function POST(req: NextRequest) {
   } = parsed.data;
 
   // ── Verify HMAC-SHA256 signature ─────────────────────────────────────
-  const isValid = verifyPaymentSignature(
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature
-  );
+  let isValid = false;
+  try {
+    isValid = verifyPaymentSignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    );
+  } catch (error) {
+    console.error('[Payment] Signature verification unavailable:', error);
+    return NextResponse.json(
+      { error: 'Payment verification is not configured. Please contact support.' },
+      { status: 500 }
+    );
+  }
 
   if (!isValid) {
     console.error(
@@ -108,8 +123,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Don't re-process already completed payments (idempotency)
-  if (order.payment_status === 'completed') {
+  // Don't re-process already captured payments (idempotency)
+  if (order.payment_status === 'captured') {
     return NextResponse.json({
       success: true,
       order_id: order.id,
@@ -118,110 +133,123 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // ── Update order: mark as paid and confirmed ─────────────────────────
-  const { error: updateError } = await supabase
-    .from('orders')
-    .update({
+  const expectedPaise = Math.round(order.total * 100);
+  const eventId = `client:${razorpay_payment_id}`;
+  const { event, alreadyProcessed } = await upsertPaymentEvent({
+    eventId,
+    eventType: 'client.payment.verify',
+    orderId: order.id,
+    razorpayOrderId: razorpay_order_id,
+    razorpayPaymentId: razorpay_payment_id,
+    signatureValid: true,
+    expectedPaise,
+    status: 'received',
+    payload: {
+      order_id,
+      razorpay_order_id,
       razorpay_payment_id,
-      razorpay_signature,
-      payment_status: 'completed',
-      payment_method: 'razorpay',
-      status: 'confirmed',
-    })
-    .eq('id', order_id);
+    },
+  });
 
-  if (updateError) {
-    console.error('[Payment] Failed to update order after verification:', updateError);
+  if (alreadyProcessed) {
+    return NextResponse.json({
+      success: order.payment_status === 'captured',
+      order_id: order.id,
+      order_number: order.order_number,
+      already_verified: order.payment_status === 'captured',
+    });
+  }
+
+  let facts;
+  try {
+    facts = await fetchRazorpayPaymentFacts(razorpay_order_id, razorpay_payment_id);
+  } catch (error) {
+    console.error('[Payment] Failed to fetch Razorpay payment facts:', error);
     return NextResponse.json(
-      { error: 'Order update failed. Please contact support.' },
-      { status: 500 }
+      { error: 'Payment could not be verified with Razorpay. Please retry or contact support.' },
+      { status: 502 }
     );
   }
 
-  // ── Log notification ─────────────────────────────────────────────────
   await supabase
-    .from('notification_log')
-    .insert({
-      type: 'payment_verified',
-      recipient: order.customer_id ?? order.guest_email ?? 'unknown',
-      template: 'payment_verification',
-      context: {
-        order_id: order.id,
-        order_number: order.order_number,
-        razorpay_payment_id,
-        amount: order.total,
-      },
-      status: 'sent',
+    .from('payment_events')
+    .update({
+      amount_paise: facts.razorpayPaymentAmountPaise,
+      expected_paise: expectedPaise,
     })
-    .then(null, () => {
-      // Non-critical logging
+    .eq('id', event.id);
+
+  const amountMatches =
+    facts.razorpayOrderAmountPaise === expectedPaise &&
+    facts.razorpayPaymentAmountPaise === expectedPaise &&
+    facts.currency === 'INR';
+
+  if (!amountMatches) {
+    const reason = `Expected ${expectedPaise} paise INR, got order ${facts.razorpayOrderAmountPaise}, payment ${facts.razorpayPaymentAmountPaise}, currency ${facts.currency}.`;
+    await markOrderPaymentReview({
+      order,
+      eventId: event.id,
+      razorpayPaymentId: razorpay_payment_id,
+      reason,
+      expectedPaise,
+      amountPaise: facts.razorpayPaymentAmountPaise,
     });
-
-  // ── Send confirmation email (non-blocking) ───────────────────────────
-  const customerEmail = order.customer_id
-    ? null // Will be fetched below
-    : order.guest_email;
-
-  let emailTo = customerEmail;
-  if (!emailTo && order.customer_id) {
-    // Fetch email from auth user
-    const { data: profile } = await supabase
-      .from('customer_profiles')
-      .select('email, full_name')
-      .eq('id', order.customer_id)
-      .single();
-    emailTo = profile?.email ?? null;
+    await markPaymentEventProcessed(event.id, 'amount_mismatch');
+    return NextResponse.json(
+      { error: 'Payment amount mismatch. Our team will review this payment before confirming the order.' },
+      { status: 409 }
+    );
   }
 
-  if (emailTo) {
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
-    const orderItems = (order.items as Array<{
-      name: string;
-      quantity: number;
-      unit_price: number;
-      line_total: number;
-    }>) ?? [];
-
-    // Fire-and-forget — don't block the response
-    sendOrderConfirmationEmail(emailTo, {
-      customerName: order.guest_name ?? 'Valued Customer',
-      orderNumber: order.order_number,
-      orderId: order.id,
-      items: orderItems,
-      subtotal: order.subtotal,
-      shippingCost: order.shipping_cost,
-      gstAmount: order.gst_amount,
-      total: order.total,
-      shippingAddress: order.shipping_address as {
-        line1: string;
-        line2?: string;
-        city: string;
-        state: string;
-        pincode: string;
-        country: string;
-      },
-      siteUrl,
-    }).then((messageId) => {
-      if (messageId) {
-        // Log email sent
-        supabase
-          .from('notification_log')
-          .insert({
-            type: 'email',
-            recipient: emailTo!,
-            template: 'order_confirmation',
-            context: {
-              order_id: order.id,
-              order_number: order.order_number,
-              resend_message_id: messageId,
-            },
-            status: 'sent',
+  if (!facts.captured) {
+    if (facts.paymentStatus === 'authorized') {
+      try {
+        facts = await captureAuthorizedRazorpayPayment(facts, razorpay_payment_id, expectedPaise, 'INR');
+      } catch (error) {
+        console.error('[Payment] Razorpay capture failed after authorization:', error);
+        await supabase
+          .from('orders')
+          .update({
+            razorpay_payment_id,
+            razorpay_signature,
+            payment_status: 'authorized',
+            payment_method: facts.method ?? 'razorpay',
+            payment_failure_reason: null,
+            payment_review_reason: 'Payment authorized but server-side capture is still pending',
           })
-          .then(null, () => {});
+          .eq('id', order.id);
+        await markPaymentEventProcessed(event.id, 'capture_pending');
+        return NextResponse.json(
+          {
+            success: false,
+            pending: true,
+            retry_after_ms: 2500,
+            order_id: order.id,
+            order_number: order.order_number,
+          },
+          { status: 202 }
+        );
       }
-    });
+    }
   }
+
+  if (!facts.captured) {
+
+    await markOrderPaymentFailed(order, `Razorpay payment status: ${facts.paymentStatus}`, razorpay_payment_id);
+    await markPaymentEventProcessed(event.id, 'failed');
+    return NextResponse.json(
+      { error: 'Payment was not captured. Please retry payment or contact support.' },
+      { status: 402 }
+    );
+  }
+
+  await finalizeCapturedPayment({
+    order,
+    eventId: event.id,
+    razorpayPaymentId: razorpay_payment_id,
+    razorpaySignature: razorpay_signature,
+    method: facts.method,
+  });
 
   return NextResponse.json({
     success: true,

@@ -20,6 +20,7 @@ export function UserAuthButton({
   const { user, profile, isLoading, signOut } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [postAuthRedirect, setPostAuthRedirect] = useState<string | null>(null);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -28,14 +29,30 @@ export function UserAuthButton({
   // Open login modal when ?auth=login is in the URL
   useEffect(() => {
     if (searchParams.get('auth') === 'login' && !user) {
-      startTransition(() => setModalOpen(true));
+      const next = searchParams.get('next');
+      const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : null;
+      startTransition(() => {
+        setPostAuthRedirect(safeNext);
+        setModalOpen(true);
+      });
       // Clean URL without reload
       const params = new URLSearchParams(searchParams.toString());
       params.delete('auth');
+      params.delete('next');
       const newUrl = params.size > 0 ? `${pathname}?${params}` : pathname;
       router.replace(newUrl);
     }
   }, [searchParams, user, pathname, router]);
+
+  function handleAuthSuccess() {
+    setModalOpen(false);
+    if (postAuthRedirect) {
+      router.push(postAuthRedirect);
+      setPostAuthRedirect(null);
+    } else {
+      router.refresh();
+    }
+  }
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -75,10 +92,7 @@ export function UserAuthButton({
         <LoginModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          onSuccess={() => {
-            setModalOpen(false);
-            router.refresh();
-          }}
+          onSuccess={handleAuthSuccess}
         />
       </>
     );
@@ -157,7 +171,7 @@ export function UserAuthButton({
               key={href}
               href={href}
               onClick={() => setDropdownOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--pvg-bg-alt)]"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-brand-bg-alt"
               style={{ color: 'var(--pvg-text)' }}
             >
               <Icon

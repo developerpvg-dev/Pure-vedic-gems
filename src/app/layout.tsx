@@ -1,26 +1,35 @@
 import type { Metadata } from 'next';
-import { Playfair_Display, DM_Sans } from 'next/font/google';
+import { Roboto, Playfair_Display, Montserrat } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/lib/theme-context';
 import { CartProvider } from '@/lib/hooks/useCart';
 import { AuthProvider } from '@/lib/hooks/useAuth';
-import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { SavedItemsProvider } from '@/lib/hooks/useSavedItems';
 import { LayoutShell } from '@/components/layout/LayoutShell';
-import { SplashAnimation } from '@/components/home/SplashAnimation';
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { organizationJsonLd } from '@/lib/utils/seo';
 import './globals.css';
 
-const playfairDisplay = Playfair_Display({
-  variable: '--font-playfair-display',
+const roboto = Roboto({
+  variable: '--font-roboto',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '700', '900'],
+  display: 'swap',
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: '--font-playfair',
+  subsets: ['latin'],
+  weight: ['500', '700'],
   style: ['normal', 'italic'],
   display: 'swap',
 });
 
-const dmSans = DM_Sans({
-  variable: '--font-dm-sans',
+const montserrat = Montserrat({
+  variable: '--font-montserrat',
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -47,6 +56,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default function RootLayout({
@@ -59,17 +71,20 @@ export default function RootLayout({
       lang="en"
       data-palette="1"
       data-font="1"
-      className={`${playfairDisplay.variable} ${dmSans.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${roboto.variable} ${playfairDisplay.variable} ${montserrat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body bg-background text-foreground">
+        <GoogleAnalytics />
+        <JsonLd data={organizationJsonLd()} />
         <ThemeProvider>
           <AuthProvider>
-            <CartProvider>
-              <SplashAnimation />
-              <LayoutShell>{children}</LayoutShell>
-              <ThemeSwitcher />
-              <Toaster richColors position="top-right" />
-            </CartProvider>
+            <SavedItemsProvider>
+              <CartProvider>
+                <LayoutShell>{children}</LayoutShell>
+                <Toaster richColors position="top-right" />
+              </CartProvider>
+            </SavedItemsProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

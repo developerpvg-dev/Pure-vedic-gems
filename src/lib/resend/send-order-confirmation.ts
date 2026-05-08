@@ -9,7 +9,8 @@ import {
   type OrderConfirmationEmailProps,
 } from '@/lib/resend/templates/OrderConfirmation';
 
-const FROM_EMAIL = 'PureVedicGems <orders@purevedicgems.com>';
+const FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL || 'PureVedicGems <orders@purevedicgems.com>';
 
 /**
  * Send order confirmation email to the customer.

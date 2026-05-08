@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { User, Mail, Phone, ChevronDown, Pencil } from 'lucide-react';
 import { ContactInfoSchema, type ContactInfo } from '@/lib/validators/order';
 
@@ -31,10 +32,16 @@ export function ContactSection({
   // Auto-fill from profile when it loads
   useEffect(() => {
     if (!savedData && defaultValues.full_name) {
-      setFullName((prev) => prev || defaultValues.full_name || '');
-      setEmail((prev) => prev || defaultValues.email || '');
-      setPhone((prev) => prev || defaultValues.phone || '');
+      const timeoutId = setTimeout(() => {
+        setFullName((prev) => prev || defaultValues.full_name || '');
+        setEmail((prev) => prev || defaultValues.email || '');
+        setPhone((prev) => prev || defaultValues.phone || '');
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
     }
+
+    return undefined;
   }, [defaultValues, savedData]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -57,7 +64,7 @@ export function ContactSection({
   // ── Collapsed view when complete ──────────────────────────────────────
   if (!isActive && isComplete && savedData) {
     return (
-      <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6">
+      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">
@@ -86,9 +93,9 @@ export function ContactSection({
   // ── Disabled view ────────────────────────────────────────────────────
   if (!isActive) {
     return (
-      <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6 opacity-50">
+      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6 opacity-50">
         <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[var(--pvg-bg-alt)] text-[var(--pvg-muted)] text-xs font-bold">
+          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-bg-alt text-[var(--pvg-muted)] text-xs font-bold">
             1
           </span>
           <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
@@ -101,9 +108,9 @@ export function ContactSection({
 
   // ── Active form ──────────────────────────────────────────────────────
   return (
-    <div className="bg-[var(--pvg-surface)] rounded-xl border border-[var(--pvg-border)] p-6">
+    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
       <div className="flex items-center gap-2 mb-6">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-[var(--pvg-accent)] text-white text-xs font-bold">
+        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-accent text-white text-xs font-bold">
           1
         </span>
         <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
@@ -114,9 +121,9 @@ export function ContactSection({
       {!isLoggedIn && (
         <p className="text-xs text-[var(--pvg-muted)] mb-4">
           Already have an account?{' '}
-          <a href="/?auth=login" className="text-[var(--pvg-accent)] hover:underline font-medium">
+          <Link href="/checkout?auth=login" className="text-[var(--pvg-accent)] hover:underline font-medium">
             Log in
-          </a>{' '}
+          </Link>{' '}
           for a faster checkout.
         </p>
       )}
@@ -134,7 +141,7 @@ export function ContactSection({
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Enter your full name"
-              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] transition-shadow ${
+              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] transition-shadow ${
                 errors.full_name ? 'border-red-400 ring-1 ring-red-300' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -156,7 +163,7 @@ export function ContactSection({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] transition-shadow ${
+              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] transition-shadow ${
                 errors.email ? 'border-red-400 ring-1 ring-red-300' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -178,7 +185,7 @@ export function ContactSection({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+91 98765 43210"
-              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-[var(--pvg-bg)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] transition-shadow ${
+              className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-bg placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] transition-shadow ${
                 errors.phone ? 'border-red-400 ring-1 ring-red-300' : 'border-[var(--pvg-border)]'
               }`}
             />
@@ -193,7 +200,7 @@ export function ContactSection({
 
         <button
           type="submit"
-          className="w-full bg-[var(--pvg-primary)] text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+          className="w-full bg-brand-primary text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
         >
           Continue to Shipping
           <ChevronDown className="h-4 w-4 rotate-[-90deg]" />

@@ -9,9 +9,14 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { SETTING_TYPES, SETTING_TYPE_META } from '@/lib/types/configurator';
 import type { SettingType } from '@/lib/types/configurator';
+import {
+  isSettingTypeAllowed,
+  type ConfiguratorOptionRules,
+} from '@/lib/utils/configurator-rules';
 
 interface SettingTypeSelectorProps {
   selected: SettingType | null;
+  optionRules: ConfiguratorOptionRules | null;
   onSelect: (type: SettingType) => void;
 }
 
@@ -24,12 +29,15 @@ const SETTING_IMAGES: Record<SettingType, string> = {
 
 export default function SettingTypeSelector({
   selected,
+  optionRules,
   onSelect,
 }: SettingTypeSelectorProps) {
+  const availableTypes = SETTING_TYPES.filter((type) => isSettingTypeAllowed(optionRules, type));
+
   return (
     <div>
       <div className="mt-0 grid grid-cols-2 gap-3 sm:grid-cols-4" role="radiogroup" aria-label="Setting type">
-        {SETTING_TYPES.map((type) => {
+        {availableTypes.map((type) => {
           const meta = SETTING_TYPE_META[type];
           const isSelected = selected === type;
 

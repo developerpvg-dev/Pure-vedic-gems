@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
+import { OrderActions } from '@/components/admin/OrderActions';
 import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
   User, FileText, Hash, Calendar, Tag, ExternalLink,
@@ -41,11 +42,15 @@ const ORDER_STATUS_STYLE: Record<string, string> = {
   placed:          'bg-blue-100 text-blue-800',
   confirmed:       'bg-indigo-100 text-indigo-800',
   processing:      'bg-yellow-100 text-yellow-800',
+  jewelry_making:  'bg-yellow-100 text-yellow-800',
+  certification:   'bg-cyan-100 text-cyan-800',
+  energization:    'bg-violet-100 text-violet-800',
   quality_check:   'bg-orange-100 text-orange-800',
   shipped:         'bg-purple-100 text-purple-800',
   delivered:       'bg-green-100 text-green-800',
   cancelled:       'bg-red-100 text-red-800',
   refunded:        'bg-pink-100 text-pink-800',
+  payment_review:  'bg-red-100 text-red-800',
 };
 
 const PAYMENT_STATUS_STYLE: Record<string, string> = {
@@ -55,6 +60,8 @@ const PAYMENT_STATUS_STYLE: Record<string, string> = {
   authorized: 'bg-blue-100 text-blue-800',
   failed:     'bg-red-100 text-red-800',
   refunded:   'bg-pink-100 text-pink-800',
+  amount_mismatch: 'bg-red-100 text-red-800',
+  cancelled:  'bg-red-100 text-red-800',
 };
 
 // ── types ──────────────────────────────────────────────────────────────────
@@ -98,7 +105,7 @@ interface FullConfig {
 
 // ── page ──────────────────────────────────────────────────────────────────
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -195,7 +202,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--pvg-border)] bg-white text-[var(--pvg-muted)] transition hover:bg-[var(--pvg-surface)] hover:text-[var(--pvg-primary)]"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--pvg-border)] bg-white text-[var(--pvg-muted)] transition hover:bg-brand-surface hover:text-[var(--pvg-primary)]"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
@@ -225,7 +232,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               href={o.invoice_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--pvg-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-gold-light)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--pvg-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--pvg-primary)] transition hover:bg-brand-gold-light"
             >
               <FileText className="h-3.5 w-3.5" />
               Invoice
@@ -243,7 +250,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
           { label: 'Payment Method',  value: cap(o.payment_method) ?? 'N/A', icon: Hash },
           { label: 'Shipping Method', value: cap(o.shipping_method) ?? 'Standard', icon: Truck },
         ].map(s => (
-          <div key={s.label} className="rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)] p-4">
+          <div key={s.label} className="rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-4">
             <div className="flex items-center gap-2 text-[var(--pvg-muted)]">
               <s.icon className="h-4 w-4" />
               <p className="text-xs font-medium uppercase tracking-wide">{s.label}</p>
@@ -260,8 +267,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
         <div className="space-y-6">
 
           {/* Order Items */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] px-5 py-3.5">
+          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
+            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
               <Package className="h-4 w-4 text-[var(--pvg-primary)]" />
               <h2 className="font-semibold text-[var(--pvg-primary)]">Order Items ({items.length})</h2>
             </div>
@@ -278,7 +285,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                       {/* Top row: image + name + price */}
                       <div className="flex gap-4">
                         {item.image_url && (
-                          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)]">
+                          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-[var(--pvg-border)] bg-brand-bg-alt">
                             <Image
                               src={item.image_url}
                               alt={item.name}
@@ -455,8 +462,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </section>
 
           {/* Pricing Breakdown */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] px-5 py-3.5">
+          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
+            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
               <CreditCard className="h-4 w-4 text-[var(--pvg-primary)]" />
               <h2 className="font-semibold text-[var(--pvg-primary)]">Order Price Breakdown</h2>
             </div>
@@ -486,9 +493,25 @@ export default async function OrderDetailPage({ params }: PageProps) {
         {/* ── RIGHT SIDEBAR ── */}
         <div className="space-y-5">
 
+          {/* Order Actions — Status update, notes, WhatsApp */}
+          <OrderActions
+            orderId={o.id}
+            currentStatus={o.status}
+            currentNotes={(o as unknown as Record<string, unknown>).admin_notes as string | null}
+            currentTracking={o.tracking_number}
+            currentTrackingUrl={o.tracking_url}
+            currentEstDelivery={o.estimated_delivery}
+            currentCarrier={(o as unknown as Record<string, string | null>).carrier ?? null}
+            currentShippedAt={(o as unknown as Record<string, string | null>).shipped_at ?? null}
+            currentDeliveryStatus={(o as unknown as Record<string, string | null>).delivery_status ?? null}
+            customerPhone={displayPhone}
+            customerName={displayName}
+            orderNumber={o.order_number}
+          />
+
           {/* Customer Details */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] px-5 py-3.5">
+          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
+            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
               <User className="h-4 w-4 text-[var(--pvg-primary)]" />
               <h2 className="font-semibold text-[var(--pvg-primary)]">Customer Details</h2>
             </div>
@@ -523,8 +546,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </section>
 
           {/* Shipping Address */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] px-5 py-3.5">
+          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
+            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
               <MapPin className="h-4 w-4 text-[var(--pvg-primary)]" />
               <h2 className="font-semibold text-[var(--pvg-primary)]">Shipping Address</h2>
             </div>
@@ -540,7 +563,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 <p className="italic text-[var(--pvg-muted)]">No address recorded</p>
               )}
               {o.special_instructions && (
-                <div className="mt-3 rounded-lg bg-[var(--pvg-bg)] p-3">
+                <div className="mt-3 rounded-lg bg-brand-bg p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pvg-muted)]">Special Instructions</p>
                   <p className="mt-1 text-xs leading-relaxed">{o.special_instructions}</p>
                 </div>
@@ -549,8 +572,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </section>
 
           {/* Delivery / Tracking */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] px-5 py-3.5">
+          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
+            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
               <Truck className="h-4 w-4 text-[var(--pvg-primary)]" />
               <h2 className="font-semibold text-[var(--pvg-primary)]">Delivery</h2>
             </div>
@@ -563,7 +586,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Tracking Number</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                    <code className="rounded bg-[var(--pvg-bg)] px-2 py-1 font-mono text-xs">{o.tracking_number}</code>
+                    <code className="rounded bg-brand-bg px-2 py-1 font-mono text-xs">{o.tracking_number}</code>
                     {o.tracking_url && (
                       <a
                         href={o.tracking_url}
@@ -575,6 +598,18 @@ export default async function OrderDetailPage({ params }: PageProps) {
                       </a>
                     )}
                   </div>
+                </div>
+              )}
+              {(o as unknown as Record<string, string | null>).carrier && (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Carrier</p>
+                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{(o as unknown as Record<string, string | null>).carrier}</p>
+                </div>
+              )}
+              {(o as unknown as Record<string, string | null>).delivery_status && (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Delivery Status</p>
+                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{cap((o as unknown as Record<string, string | null>).delivery_status)}</p>
                 </div>
               )}
               {o.estimated_delivery && (
@@ -595,7 +630,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
           {/* Energization (order-level) */}
           {o.include_energization && (
-            <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
+            <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
               <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-amber-50 px-5 py-3.5">
                 <Zap className="h-4 w-4 text-amber-600" />
                 <h2 className="font-semibold text-amber-700">Ceremony Details</h2>
@@ -639,8 +674,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
           )}
 
           {/* Payment Details */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)]">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-[var(--pvg-bg-alt)] px-5 py-3.5">
+          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
+            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
               <CreditCard className="h-4 w-4 text-[var(--pvg-primary)]" />
               <h2 className="font-semibold text-[var(--pvg-primary)]">Payment Details</h2>
             </div>
@@ -660,7 +695,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               {o.razorpay_order_id && (
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Razorpay Order ID</p>
-                  <code className="mt-0.5 block break-all rounded bg-[var(--pvg-bg)] px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
+                  <code className="mt-0.5 block break-all rounded bg-brand-bg px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
                     {o.razorpay_order_id}
                   </code>
                 </div>
@@ -668,7 +703,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               {o.razorpay_payment_id && (
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Payment ID</p>
-                  <code className="mt-0.5 block break-all rounded bg-[var(--pvg-bg)] px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
+                  <code className="mt-0.5 block break-all rounded bg-brand-bg px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
                     {o.razorpay_payment_id}
                   </code>
                 </div>
@@ -676,7 +711,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               {o.razorpay_signature && (
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Signature</p>
-                  <code className="mt-0.5 block break-all rounded bg-[var(--pvg-bg)] px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
+                  <code className="mt-0.5 block break-all rounded bg-brand-bg px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
                     {o.razorpay_signature.slice(0, 32)}...
                   </code>
                 </div>
@@ -692,7 +727,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                   href={o.invoice_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-[var(--pvg-border)] px-3 py-2 text-xs font-semibold text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-gold-light)]"
+                  className="flex items-center gap-2 rounded-lg border border-[var(--pvg-border)] px-3 py-2 text-xs font-semibold text-[var(--pvg-primary)] transition hover:bg-brand-gold-light"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   View Invoice

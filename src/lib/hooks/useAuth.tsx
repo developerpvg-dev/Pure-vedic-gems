@@ -6,9 +6,10 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createOptionalClient, hasBrowserSupabaseConfig } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/database';
 
@@ -38,25 +39,30 @@ interface AuthContextValue {
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const missingSupabaseConfigMessage = 'Supabase is not configured.';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => hasBrowserSupabaseConfig());
 
-  // Note: createClient() returns a singleton in the browser
-  const supabase = createClient();
+  const supabase = useMemo(() => createOptionalClient(), []);
 
   // ── Fetch customer profile row ──────────────────────────────────────────────
   const fetchProfile = useCallback(
     async (userId: string) => {
+      if (!supabase) {
+        setProfile(null);
+        return;
+      }
+
       const { data } = await supabase
         .from('customer_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       setProfile((data as CustomerProfile) ?? null);
     },
     [supabase]
@@ -69,6 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Initialise session + listen for changes ─────────────────────────────────
   useEffect(() => {
     let mounted = true;
+
+    if (!supabase) {
+      return () => {
+        mounted = false;
+      };
+    }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
@@ -94,12 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchProfile, supabase]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<{ error?: string }> => {
+      if (!supabase) return { error: missingSupabaseConfigMessage };
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -129,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       full_name: string;
       phone?: string;
     }): Promise<{ error?: string; requiresEmailVerification?: boolean }> => {
+      if (!supabase) return { error: missingSupabaseConfigMessage };
+
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,18 +154,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { error: json.error ?? 'Registration failed.' };
       return { requiresEmailVerification: json.requires_email_verification };
     },
-    []
+    [supabase]
   );
 
   const signOut = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    await supabase.auth.signOut();
+    await supabase?.auth.signOut();
     setUser(null);
     setProfile(null);
   }, [supabase]);
 
   const sendOTP = useCallback(
     async (phone: string): Promise<{ error?: string }> => {
+      if (!supabase) return { error: missingSupabaseConfigMessage };
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,11 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { error: json.error ?? 'Failed to send OTP.' };
       return {};
     },
-    []
+    [supabase]
   );
 
   const verifyOTP = useCallback(
     async (phone: string, token: string): Promise<{ error?: string }> => {
+      if (!supabase) return { error: missingSupabaseConfigMessage };
+
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,6 +201,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendMagicLink = useCallback(
     async (email: string): Promise<{ error?: string }> => {
+      if (!supabase) return { error: missingSupabaseConfigMessage };
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -190,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { error: json.error ?? 'Failed to send magic link.' };
       return {};
     },
-    []
+    [supabase]
   );
 
   return (

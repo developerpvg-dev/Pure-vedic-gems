@@ -72,23 +72,25 @@ export function LoginModal({
 
   // Reset on open/close
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     if (open) {
-      setView(initialView);
-      return;
+      timeoutId = setTimeout(() => setView(initialView), 0);
+      return () => clearTimeout(timeoutId);
     }
 
-    if (!open) {
-      setTimeout(() => {
-        setView(initialView);
-        setActiveTab('email');
-        setError('');
-        setEmail('');
-        setPassword('');
-        setPhone('');
-        setOtp('');
-        setMagicEmail('');
-      }, 300);
-    }
+    timeoutId = setTimeout(() => {
+      setView(initialView);
+      setActiveTab('email');
+      setError('');
+      setEmail('');
+      setPassword('');
+      setPhone('');
+      setOtp('');
+      setMagicEmail('');
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [initialView, open]);
 
   // Prevent body scroll when open
@@ -204,41 +206,93 @@ export function LoginModal({
   if (!open) return null;
 
   return createPortal(
+    /*
+     * Portal layout (all three elements are siblings directly in document.body):
+     *
+     * 1. Backdrop (z-99998) — dark blur overlay; click fires onClose.
+     * 2. Scroll container (z-99999, overflow-y-auto) — handles very tall
+     *    modals without losing the centered position.
+     *    Inside: a min-h-full flex centering wrapper so the modal is always
+     *    vertically AND horizontally centered even when content is short.
+     *    Clicking the padding area (outside the panel) also fires onClose.
+     *
+     * Backdrop and scroll container are placed as siblings in the portal so
+     * that both receive pointer events correctly (backdrop click = close,
+     * scroll container handles the panel).
+     */
     <>
-      {/* Backdrop */}
+      {/* ① Backdrop */}
       <div
-        className="fixed inset-0 z-[2000] bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
         aria-hidden="true"
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 99998,
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)',
+        }}
       />
 
-      {/* Panel */}
+      {/* ② Scroll container + centering wrapper */}
       <div
-        className="fixed inset-0 z-[2001] flex items-center justify-center p-4 overflow-y-auto"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 99999,
+          overflowY: 'auto',
+          /* Clicking the transparent area outside the panel closes the modal */
+        }}
         role="dialog"
         aria-modal="true"
         aria-label="Sign in to PureVedicGems"
+        onClick={onClose}
       >
+        {/*
+         * Centering wrapper — MUST use min-height + flex so that:
+         *   • Short content → modal is vertically centered.
+         *   • Tall content  → centering div grows, scroll container scrolls.
+         * Never combine overflow + align-items:center on the SAME element
+         * (Chrome bug that pushes content to the top).
+         */}
         <div
-          className="relative w-full my-auto max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
-          style={{
-            maxWidth: '460px',
-            background: 'var(--pvg-bg)',
-            border: '1px solid var(--pvg-border)',
-          }}
           onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'flex',
+            minHeight: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
         >
+          {/* ③ Modal panel */}
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '460px',
+              /* On very small screens allow full-width with tiny margin */
+              borderRadius: 'clamp(12px, 2vw, 16px)',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.12)',
+              background: 'var(--pvg-bg, #FDF7EE)',
+              border: '1px solid var(--pvg-border, rgba(61,43,31,0.12))',
+              /* Isolate stacking context so internal z-indices don't leak */
+              isolation: 'isolate',
+            }}
+          >
           {/* Close */}
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full transition-colors"
-            style={{ background: 'var(--pvg-bg-alt)', color: 'var(--pvg-muted)' }}
+            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:opacity-80"
+            style={{ background: 'var(--pvg-bg-alt, #F4EADB)', color: 'var(--pvg-muted, #7A6250)' }}
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
 
-          <div className="p-7">
+          {/* Responsive padding: tighter on mobile */}
+          <div className="p-5 sm:p-7">
             {/* ── REGISTER VIEW ── */}
             {view === 'register' && (
               <RegisterForm
@@ -662,16 +716,17 @@ export function LoginModal({
 
           {/* Heritage footer strip */}
           <div
-            className="rounded-b-2xl px-7 py-3 text-center text-[11px] uppercase tracking-[2px]"
+            className="rounded-b-2xl px-5 sm:px-7 py-3 text-center text-[11px] uppercase tracking-[2px]"
             style={{
-              background: 'var(--pvg-primary)',
+              background: 'var(--pvg-primary, #3D2B1F)',
               color: 'rgba(255,255,255,0.6)',
             }}
           >
             Heritage since 1937 · 87+ Years of Trust
           </div>
-        </div>
-      </div>
+          </div>{/* end modal panel */}
+        </div>{/* end centering wrapper */}
+      </div>{/* end scroll container */}
     </>,
     document.body
   );

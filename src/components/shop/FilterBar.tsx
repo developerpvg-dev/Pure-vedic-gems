@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useCallback, useTransition, useState } from 'react';
-import { ChevronDown, SlidersHorizontal, X, ChevronRight, LayoutGrid } from 'lucide-react';
+import { ChevronDown, X, ChevronRight, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { SIDEBAR_CATEGORIES, useGemCategories } from '@/components/shop/ShopSidebar';
 import {
@@ -20,6 +20,12 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import {
+  AVAILABILITY_STATUS_OPTIONS,
+  CERTIFICATIONS,
+  PRODUCT_TYPE_OPTIONS,
+  TREATMENTS,
+} from '@/lib/constants/product-taxonomy';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -39,6 +45,14 @@ const PRICE_RANGES = [
   { label: '₹25,000 – ₹1,00,000', value: '25000-100000' },
   { label: '₹1,00,000 – ₹5,00,000', value: '100000-500000' },
   { label: '₹5,00,000+', value: '500000-' },
+];
+
+const CARAT_RANGES = [
+  { label: 'Any Weight', value: '' },
+  { label: 'Under 2 ct', value: '0-2' },
+  { label: '2 - 5 ct', value: '2-5' },
+  { label: '5 - 10 ct', value: '5-10' },
+  { label: '10 ct+', value: '10-' },
 ];
 
 const ORIGINS = [
@@ -126,16 +140,25 @@ function ActiveFilters({
   if (entries.length === 0) return null;
 
   const LABELS: Record<string, string> = {
+    q: 'Search',
     category: 'Category',
+    product_type: 'Product Type',
+    availability_status: 'Availability',
     price: 'Price',
+    carat: 'Weight',
     origin: 'Origin',
     planet: 'Planet',
+    certification: 'Certificate',
+    treatment: 'Treatment',
     sort: 'Sort',
   };
 
   const VALUES: Record<string, Record<string, string>> = {
     category: Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label])),
+    product_type: Object.fromEntries(PRODUCT_TYPE_OPTIONS.map((p) => [p.value, p.label])),
+    availability_status: Object.fromEntries(AVAILABILITY_STATUS_OPTIONS.map((p) => [p.value, p.label])),
     price: Object.fromEntries(PRICE_RANGES.map((p) => [p.value, p.label])),
+    carat: Object.fromEntries(CARAT_RANGES.map((p) => [p.value, p.label])),
     sort: Object.fromEntries(SORT_OPTIONS.map((s) => [s.value, s.label])),
   };
 
@@ -148,7 +171,7 @@ function ActiveFilters({
         <Badge
           key={key}
           variant="secondary"
-          className="flex items-center gap-1 rounded-full bg-[var(--pvg-gold-light)] px-3 py-1 text-[11px] font-medium text-[var(--pvg-primary)] hover:bg-[var(--pvg-accent)] hover:text-white"
+          className="flex items-center gap-1 rounded-full bg-brand-gold-light px-3 py-1 text-[11px] font-medium text-[var(--pvg-primary)] hover:bg-brand-accent hover:text-white"
         >
           <span>
             {LABELS[key] ?? key}: {VALUES[key]?.[val] ?? val}
@@ -179,7 +202,7 @@ function FilterContent({
   clearAll: () => void;
   hideCategory?: boolean;
 }) {
-  const hasFilters = ['category', 'price', 'origin', 'planet'].some((k) => get(k) !== '');
+  const hasFilters = ['category', 'product_type', 'availability_status', 'price', 'carat', 'origin', 'planet', 'certification', 'treatment', 'q'].some((k) => get(k) !== '');
 
   return (
     <div className="flex flex-col gap-5">
@@ -209,6 +232,46 @@ function FilterContent({
         </div>
       </div>}
 
+      {/* Product Type */}
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
+          Product Type
+        </p>
+        <Select value={get('product_type') ?? ''} onValueChange={(v) => updateParam({ product_type: v ?? '' })}>
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
+            <SelectValue placeholder="Any Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Any Type</SelectItem>
+            {PRODUCT_TYPE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Availability */}
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
+          Availability
+        </p>
+        <Select value={get('availability_status') ?? ''} onValueChange={(v) => updateParam({ availability_status: v ?? '' })}>
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
+            <SelectValue placeholder="In Stock" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">In Stock</SelectItem>
+            {AVAILABILITY_STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Price Range */}
       <div>
         <p className="mb-2 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
@@ -225,11 +288,40 @@ function FilterContent({
             }
           }}
         >
-          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-[var(--pvg-surface)] text-[13px] text-[var(--pvg-text)]">
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
             <SelectValue placeholder="Any Price" />
           </SelectTrigger>
           <SelectContent>
             {PRICE_RANGES.map((p) => (
+              <SelectItem key={p.value} value={p.value}>
+                {p.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Weight Range */}
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
+          Carat Weight
+        </p>
+        <Select
+          value={get('carat') ?? ''}
+          onValueChange={(v) => {
+            if (!v || v === '') {
+              updateParam({ min_carat: '', max_carat: '', carat: '' });
+            } else {
+              const [min, max] = v.split('-');
+              updateParam({ min_carat: min ?? '', max_carat: max ?? '', carat: v });
+            }
+          }}
+        >
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
+            <SelectValue placeholder="Any Weight" />
+          </SelectTrigger>
+          <SelectContent>
+            {CARAT_RANGES.map((p) => (
               <SelectItem key={p.value} value={p.value}>
                 {p.label}
               </SelectItem>
@@ -244,7 +336,7 @@ function FilterContent({
           Origin
         </p>
         <Select value={get('origin') ?? ''} onValueChange={(v) => updateParam({ origin: v ?? '' })}>
-          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-[var(--pvg-surface)] text-[13px] text-[var(--pvg-text)]">
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
             <SelectValue placeholder="Any Origin" />
           </SelectTrigger>
           <SelectContent>
@@ -264,7 +356,7 @@ function FilterContent({
           Ruling Planet
         </p>
         <Select value={get('planet') ?? ''} onValueChange={(v) => updateParam({ planet: v ?? '' })}>
-          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-[var(--pvg-surface)] text-[13px] text-[var(--pvg-text)]">
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
             <SelectValue placeholder="Any Planet" />
           </SelectTrigger>
           <SelectContent>
@@ -272,6 +364,46 @@ function FilterContent({
             {PLANETS.map((p) => (
               <SelectItem key={p} value={p}>
                 {p}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Certification */}
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
+          Certification
+        </p>
+        <Select value={get('certification') ?? ''} onValueChange={(v) => updateParam({ certification: v ?? '' })}>
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
+            <SelectValue placeholder="Any Lab" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Any Lab</SelectItem>
+            {CERTIFICATIONS.map((certification) => (
+              <SelectItem key={certification} value={certification}>
+                {certification}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Treatment */}
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
+          Treatment
+        </p>
+        <Select value={get('treatment') ?? ''} onValueChange={(v) => updateParam({ treatment: v ?? '' })}>
+          <SelectTrigger className="w-full border-[var(--pvg-border)] bg-brand-surface text-[13px] text-[var(--pvg-text)]">
+            <SelectValue placeholder="Any Treatment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Any Treatment</SelectItem>
+            {TREATMENTS.map((treatment) => (
+              <SelectItem key={treatment} value={treatment}>
+                {treatment}
               </SelectItem>
             ))}
           </SelectContent>
@@ -378,16 +510,22 @@ export function FilterBar({ total }: FilterBarProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const activeFilters = {
+    q: get('q'),
     category: get('category'),
+    product_type: get('product_type'),
+    availability_status: get('availability_status'),
     price: get('price'),
+    carat: get('carat'),
     origin: get('origin'),
     planet: get('planet'),
+    certification: get('certification'),
+    treatment: get('treatment'),
   };
 
   return (
     <div className="space-y-3">
       {/* ── Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--pvg-border)] bg-[var(--pvg-surface)] px-4 py-3 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--pvg-border)] bg-brand-surface px-4 py-3 shadow-sm">
         {/* Left — mobile filter trigger + count */}
         <div className="flex items-center gap-3">
           {/* Mobile: Sheet trigger */}
@@ -398,7 +536,7 @@ export function FilterBar({ total }: FilterBarProps) {
             </SheetTrigger>
             <SheetContent
               side="bottom"
-              className="max-h-[90vh] overflow-y-auto rounded-t-2xl border-[var(--pvg-border)] bg-[var(--pvg-bg)] px-5 pb-10 pt-6"
+              className="max-h-[90vh] overflow-y-auto rounded-t-2xl border-[var(--pvg-border)] bg-brand-bg px-5 pb-10 pt-6"
             >
               <SheetHeader className="mb-5">
                 <SheetTitle className="font-heading text-lg text-[var(--pvg-primary)]">
@@ -425,7 +563,31 @@ export function FilterBar({ total }: FilterBarProps) {
         {/* Right — sort + desktop dropdowns */}
         <div className="flex items-center gap-2">
           {/* Desktop extra filters */}
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="hidden flex-wrap items-center gap-2 lg:flex">
+            <Select value={get('product_type') ?? ''} onValueChange={(v) => updateParam({ product_type: v ?? '' })}>
+              <SelectTrigger className="h-8 w-[145px] border-[var(--pvg-border)] text-[12px]">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Any Type</SelectItem>
+                {PRODUCT_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={get('availability_status') ?? ''} onValueChange={(v) => updateParam({ availability_status: v ?? '' })}>
+              <SelectTrigger className="h-8 w-[140px] border-[var(--pvg-border)] text-[12px]">
+                <SelectValue placeholder="Availability" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">In Stock</SelectItem>
+                {AVAILABILITY_STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={get('price') ?? ''} onValueChange={(v) => {
               if (!v || v === '') {
                 updateParam({ min_price: '', max_price: '', price: '' });
@@ -439,6 +601,24 @@ export function FilterBar({ total }: FilterBarProps) {
               </SelectTrigger>
               <SelectContent>
                 {PRICE_RANGES.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={get('carat') ?? ''} onValueChange={(v) => {
+              if (!v || v === '') {
+                updateParam({ min_carat: '', max_carat: '', carat: '' });
+              } else {
+                const [min, max] = v.split('-');
+                updateParam({ min_carat: min ?? '', max_carat: max ?? '', carat: v });
+              }
+            }}>
+              <SelectTrigger className="h-8 w-[130px] border-[var(--pvg-border)] text-[12px]">
+                <SelectValue placeholder="Weight" />
+              </SelectTrigger>
+              <SelectContent>
+                {CARAT_RANGES.map((p) => (
                   <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -461,6 +641,26 @@ export function FilterBar({ total }: FilterBarProps) {
               <SelectContent>
                 <SelectItem value="">Any Planet</SelectItem>
                 {PLANETS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
+            <Select value={get('certification') ?? ''} onValueChange={(v) => updateParam({ certification: v ?? '' })}>
+              <SelectTrigger className="h-8 w-[120px] border-[var(--pvg-border)] text-[12px]">
+                <SelectValue placeholder="Lab" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Any Lab</SelectItem>
+                {CERTIFICATIONS.map((certification) => <SelectItem key={certification} value={certification}>{certification}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
+            <Select value={get('treatment') ?? ''} onValueChange={(v) => updateParam({ treatment: v ?? '' })}>
+              <SelectTrigger className="h-8 w-[135px] border-[var(--pvg-border)] text-[12px]">
+                <SelectValue placeholder="Treatment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Any Treatment</SelectItem>
+                {TREATMENTS.map((treatment) => <SelectItem key={treatment} value={treatment}>{treatment}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -568,6 +768,8 @@ export function FilterBar({ total }: FilterBarProps) {
         onClear={(key) => {
           if (key === 'price') {
             updateParam({ price: '', min_price: '', max_price: '' });
+          } else if (key === 'carat') {
+            updateParam({ carat: '', min_carat: '', max_carat: '' });
           } else {
             updateParam({ [key]: '' });
           }

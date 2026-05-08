@@ -4,7 +4,7 @@ import { rateLimit } from '@/lib/utils/rate-limit';
 
 const BUCKET = 'custom-uploads';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
 async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   const { data } = await admin.storage.getBucket(BUCKET);
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json(
-      { error: 'Please upload a JPG, PNG, or PDF file.' },
+      { error: 'Please upload a JPG, PNG, WebP, or PDF file.' },
       { status: 400 }
     );
   }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       data: { publicUrl },
     } = admin.storage.from(BUCKET).getPublicUrl(path);
 
-    return NextResponse.json({ publicUrl });
+    return NextResponse.json({ publicUrl, path, contentType: file.type, size: file.size });
   } catch (error) {
     return NextResponse.json(
       {

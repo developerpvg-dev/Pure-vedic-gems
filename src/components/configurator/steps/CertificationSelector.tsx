@@ -13,10 +13,15 @@ import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
 import { createClient } from '@/lib/supabase/client';
 import type { CertificationLab } from '@/lib/types/database';
+import {
+  isCertificationAllowed,
+  type ConfiguratorOptionRules,
+} from '@/lib/utils/configurator-rules';
 
 interface CertificationSelectorProps {
   selected: CertificationLab | null;
   certificationSkipped: boolean;
+  optionRules: ConfiguratorOptionRules | null;
   onSelect: (lab: CertificationLab) => void;
   onSkip: () => void;
 }
@@ -24,12 +29,17 @@ interface CertificationSelectorProps {
 export default function CertificationSelector({
   selected,
   certificationSkipped,
+  optionRules,
   onSelect,
   onSkip,
 }: CertificationSelectorProps) {
   const [labs, setLabs] = useState<CertificationLab[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const certificateEnabled = optionRules?.certificate_enabled ?? true;
+  const visibleLabs = certificateEnabled
+    ? labs.filter((lab) => isCertificationAllowed(optionRules, lab.id))
+    : [];
 
   useEffect(() => {
     async function fetchLabs() {
@@ -92,7 +102,13 @@ export default function CertificationSelector({
             <span className="mt-1 text-[9px] text-muted-foreground">Skip · No cost</span>
           </button>
 
-          {labs.map((lab) => {
+          {!certificateEnabled && (
+            <div className="col-span-2 rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
+              Additional certificates are not enabled for this product. You can continue without adding a lab certificate.
+            </div>
+          )}
+
+          {visibleLabs.map((lab) => {
             const isChosen = selected?.id === lab.id;
             const isFree = lab.extra_charge === 0;
 
@@ -153,6 +169,12 @@ export default function CertificationSelector({
               </button>
             );
           })}
+
+          {certificateEnabled && visibleLabs.length === 0 && (
+            <p className="col-span-2 text-center text-xs text-muted-foreground">
+              No additional lab options are enabled for this product.
+            </p>
+          )}
         </div>
       )}
     </div>
