@@ -609,7 +609,10 @@
     /* ============================================================
        RESET & BASE
     ============================================================ */
-    *, *::before, *::after {
+    .pvg-react-home-root,
+    .pvg-react-home-root *,
+    .pvg-react-home-root *::before,
+    .pvg-react-home-root *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -617,7 +620,7 @@
 
     html { scroll-behavior: smooth; }
 
-    body {
+    .pvg-react-home-root {
       font-family: var(--font-ui);
       background: var(--cream);
       color: var(--charcoal);
@@ -626,9 +629,9 @@
       overflow-x: hidden;
     }
 
-    a { text-decoration: none; color: inherit; }
-    button { font-family: inherit; cursor: pointer; border: none; background: none; }
-    img { display: block; max-width: 100%; }
+    .pvg-react-home-root a { text-decoration: none; color: inherit; }
+    .pvg-react-home-root button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    .pvg-react-home-root img { display: block; max-width: 100%; }
 
     /* ============================================================
        TOP INFORMATION BAR â€” SCROLLING MARQUEE
