@@ -28,45 +28,30 @@ function TruckSvg() {
     </svg>
   );
 }
-const ASHOKA_SPOKES = Array.from({ length: 24 }, (_, i) => {
-  const angle = (i * Math.PI) / 12;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  return {
-    x1: parseFloat((11 + 2.3 * cos).toFixed(6)),
-    y1: parseFloat((7.5 + 2.3 * sin).toFixed(6)),
-    x2: parseFloat((11 + 1.2 * cos).toFixed(6)),
-    y2: parseFloat((7.5 + 1.2 * sin).toFixed(6)),
-  };
-});
-
 function FlagIN() {
   return (
-    <svg width="22" height="15" viewBox="0 0 22 15" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ borderRadius: '2px', flexShrink: 0, display: 'block' }}>
-      <rect width="22" height="5" fill="#FF9933"/>
-      <rect y="5" width="22" height="5" fill="#FFFFFF"/>
-      <rect y="10" width="22" height="5" fill="#138808"/>
-      <circle cx="11" cy="7.5" r="2.3" fill="none" stroke="#000080" strokeWidth="0.6"/>
-      <circle cx="11" cy="7.5" r="0.55" fill="#000080"/>
-      {ASHOKA_SPOKES.map((s, i) => (
-        <line key={i}
-          x1={s.x1} y1={s.y1}
-          x2={s.x2} y2={s.y2}
-          stroke="#000080" strokeWidth="0.4"
-        />
-      ))}
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/flags/india.svg"
+      alt=""
+      width={22}
+      height={15}
+      aria-hidden="true"
+      style={{ borderRadius: '2px', flexShrink: 0, display: 'block', objectFit: 'cover' }}
+    />
   );
 }
 function FlagGB() {
   return (
-    <svg width="22" height="15" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ borderRadius: '2px', flexShrink: 0, display: 'block' }}>
-      <rect width="60" height="40" fill="#012169"/>
-      <path d="M0,0 L60,40 M60,0 L0,40" stroke="#ffffff" strokeWidth="10"/>
-      <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" strokeWidth="4"/>
-      <path d="M30,0 V40 M0,20 H60" stroke="#ffffff" strokeWidth="13"/>
-      <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" strokeWidth="8"/>
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/flags/uk.svg"
+      alt=""
+      width={22}
+      height={15}
+      aria-hidden="true"
+      style={{ borderRadius: '2px', flexShrink: 0, display: 'block', objectFit: 'cover' }}
+    />
   );
 }
 function SearchSvg() {
@@ -90,6 +75,22 @@ function CalendarSvg() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
       <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function MapPinSvg() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  );
+}
+function PhoneSvg() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 17z"/>
     </svg>
   );
 }
@@ -191,6 +192,41 @@ function DesktopNavLink({ item }: { item: HeaderNavItem }) {
   );
 }
 
+/* ── Marquee content for mobile/tablet topbar ──────────────────── */
+function TopbarMarqueeItems() {
+  return (
+    <>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '7px',
+        paddingRight: '32px', fontSize: '12.5px', fontWeight: 700,
+        color: '#D4A843', letterSpacing: '0.04em', textTransform: 'uppercase',
+        whiteSpace: 'nowrap', fontFamily: "'Roboto', sans-serif",
+      }}>
+        <TruckSvg />
+        Worldwide Safe &amp; Insured Delivery
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.3)', paddingRight: '24px', fontSize: '11px' }}>◆</span>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '8px',
+        paddingRight: '32px', fontSize: '13px', fontWeight: 600,
+        color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', fontFamily: "'Roboto', sans-serif",
+      }}>
+        <FlagIN />
+        +91-9310172512
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.3)', paddingRight: '24px', fontSize: '11px' }}>◆</span>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '8px',
+        paddingRight: '64px', fontSize: '13px', fontWeight: 600,
+        color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', fontFamily: "'Roboto', sans-serif",
+      }}>
+        <FlagGB />
+        +447831491778
+      </span>
+    </>
+  );
+}
+
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -241,31 +277,38 @@ export function SiteHeader() {
         .pvg-nav-icon:hover { background: #F5F0E8 !important; color: #7A1515 !important; }
         .pvg-btn-consult:hover { background: #4D0A0A !important; box-shadow: 0 4px 16px rgba(122,21,21,0.35) !important; transform: translateY(-1px) !important; }
         .pvg-ham:hover { background: #F5F0E8 !important; }
-        /* Responsive show/hide — not relying on Tailwind purge */
+
+        /* Desktop nav at ≥1024px; phone + tablet use hamburger */
         .pvg-desk-nav { display: none; }
         .pvg-mob-nav  { display: flex; }
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
           .pvg-desk-nav { display: flex; }
           .pvg-mob-nav  { display: none; }
         }
-        .pvg-topbar-track { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
-        .pvg-topbar-flow { display: flex; align-items: center; min-width: 0; overflow: hidden; font-family: 'Roboto', sans-serif; }
-        .pvg-topbar-location { display: flex; align-items: center; gap: 10px; flex-shrink: 0; font-family: 'Roboto', sans-serif; }
-        .pvg-topbar-mobile-locations { display: none; }
+
+        /* Topbar: desktop = static layout, mobile/tablet = marquee */
+        .pvg-topbar-desktop { display: flex; width: 100%; height: 100%; align-items: center; justify-content: space-between; }
+        .pvg-topbar-mobile  { display: none; height: 100%; overflow: hidden; align-items: center; flex: 1; }
+        .pvg-topbar-phone-link { text-decoration: none; transition: color 0.2s; }
+        .pvg-topbar-phone-link:hover { color: #F0C96A !important; }
+
+        /* Seamless marquee: content is duplicated, animate by -50% of total width */
+        @keyframes pvg-topbar-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .pvg-topbar-marquee-inner {
+          display: inline-flex;
+          align-items: center;
+          white-space: nowrap;
+          will-change: transform;
+          animation: pvg-topbar-marquee 24s linear infinite;
+        }
+        .pvg-topbar-marquee-inner:hover { animation-play-state: paused; }
+
         @media (max-width: 1023px) {
-          .pvg-topbar-track { padding: 0 !important; overflow: hidden; justify-content: flex-start !important; }
-          .pvg-topbar-flow { flex: 0 0 auto; min-width: max-content; overflow: visible !important; animation: pvg-topbar-marquee 24s linear infinite; }
-          .pvg-topbar-location { display: none !important; }
-          .pvg-topbar-mobile-locations { display: inline-flex; align-items: center; gap: 10px; padding: 0 28px 0 16px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.92); white-space: nowrap; border-left: 1px solid rgba(255,255,255,0.12); }
-          .pvg-topbar-flow:hover { animation-play-state: paused; }
+          .pvg-topbar-desktop { display: none !important; }
+          .pvg-topbar-mobile  { display: flex !important; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .pvg-topbar-flow { animation: none !important; overflow-x: auto !important; scrollbar-width: none; }
-          .pvg-topbar-flow::-webkit-scrollbar { display: none; }
-        }
-        @keyframes pvg-topbar-marquee {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(calc(100vw - 20px)); }
+          .pvg-topbar-marquee-inner { animation: none !important; overflow-x: auto; }
         }
       `}</style>
 
@@ -279,83 +322,74 @@ export function SiteHeader() {
           boxShadow: scrolled ? '0 4px 28px rgba(0,0,0,0.10)' : 'none',
         }}
       >
-        {/* ── Topbar static desktop / flowing mobile ── */}
+        {/* ── Topbar ── */}
         <div
           role="complementary"
           aria-label="Locations and contact"
           style={{
-            background: 'linear-gradient(135deg, #5B2E2E 0%, #8B4545 100%)',
-            borderBottom: '1px solid rgba(212,168,67,0.35)',
-            height: '36px',
+            background: 'linear-gradient(90deg, #3D1212 0%, #6B2020 40%, #7A2828 60%, #3D1212 100%)',
+            borderBottom: '1px solid rgba(212,168,67,0.45)',
+            height: '38px',
+            overflow: 'hidden',
           }}
         >
-          <div className="pvg-topbar-track" style={{
+          {/* Desktop static layout (visible ≥1024px) */}
+          <div className="pvg-topbar-desktop" style={{
             maxWidth: '1400px', margin: '0 auto', padding: '0 28px',
-            height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            height: '100%', fontFamily: "'Roboto', sans-serif",
           }}>
-            {/* Left: delivery message + phone numbers */}
-            <div className="pvg-topbar-flow" style={{ display: 'flex', alignItems: 'center', overflow: 'hidden', fontFamily: "'Roboto', sans-serif" }}>
+            {/* Left: delivery + phone numbers */}
+            <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '7px',
-                paddingRight: '16px', fontSize: '13px', fontWeight: 600,
-                color: '#D4A843', letterSpacing: '0.02em', whiteSpace: 'nowrap',
-                borderRight: '1px solid rgba(255,255,255,0.12)', flexShrink: 0,
+                paddingRight: '18px', fontSize: '12.5px', fontWeight: 700,
+                color: '#D4A843', letterSpacing: '0.04em', textTransform: 'uppercase',
+                whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.14)', flexShrink: 0,
                 fontFamily: "'Roboto', sans-serif",
               }}>
                 <TruckSvg />
                 Worldwide Safe &amp; Insured Delivery
               </span>
-              <span style={{
+              <a href="tel:+919310172512" className="pvg-topbar-phone-link" aria-label="Call India +91-9310172512" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
-                padding: '0 16px', fontSize: '13px', fontWeight: 500,
-                color: 'rgba(255,255,255,0.92)', letterSpacing: '0.01em', whiteSpace: 'nowrap',
-                borderRight: '1px solid rgba(255,255,255,0.12)', flexShrink: 0,
+                padding: '0 18px', fontSize: '13px', fontWeight: 600,
+                color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap',
+                borderRight: '1px solid rgba(255,255,255,0.14)', flexShrink: 0,
                 fontFamily: "'Roboto', sans-serif",
               }}>
                 <FlagIN />
                 +91-9310172512
-              </span>
-              <span style={{
+              </a>
+              <a href="tel:+447831491778" className="pvg-topbar-phone-link" aria-label="Call UK +447831491778" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
-                paddingLeft: '16px', fontSize: '13px', fontWeight: 500,
-                color: 'rgba(255,255,255,0.92)', letterSpacing: '0.01em', whiteSpace: 'nowrap',
-                flexShrink: 0,
+                paddingLeft: '18px', fontSize: '13px', fontWeight: 600,
+                color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', flexShrink: 0,
                 fontFamily: "'Roboto', sans-serif",
               }}>
                 <FlagGB />
                 +447831491778
+              </a>
+            </div>
+            {/* Right: India | UK */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0,
+              borderLeft: '1px solid rgba(255,255,255,0.14)', paddingLeft: '18px',
+            }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
+                <FlagIN /> India
               </span>
-              <span className="pvg-topbar-mobile-locations">
-                <FlagIN />
-                India
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '14px', fontWeight: 300 }}>|</span>
-                <FlagGB />
-                UK
+              <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '16px', fontWeight: 200, lineHeight: 1 }}>|</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
+                <FlagGB /> UK
               </span>
             </div>
+          </div>
 
-            {/* Right: location flags only */}
-            <div className="pvg-topbar-location" style={{
-              display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0,
-              fontFamily: "'Roboto', sans-serif",
-            }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                fontSize: '13px', fontWeight: 600,
-                color: 'rgba(255,255,255,0.92)', letterSpacing: '0.01em',
-              }}>
-                <FlagIN />
-                India
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '14px', fontWeight: 300 }}>|</span>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                fontSize: '13px', fontWeight: 600,
-                color: 'rgba(255,255,255,0.92)', letterSpacing: '0.01em',
-              }}>
-                <FlagGB />
-                UK
-              </span>
+          {/* Mobile/tablet marquee (visible <1024px) — content duplicated for seamless loop */}
+          <div className="pvg-topbar-mobile">
+            <div className="pvg-topbar-marquee-inner">
+              <TopbarMarqueeItems />
+              <TopbarMarqueeItems />
             </div>
           </div>
         </div>
@@ -363,7 +397,7 @@ export function SiteHeader() {
         {/* ── Navbar ── */}
         <nav aria-label="Main navigation" style={{ background: '#fff', borderBottom: '2px solid #7A1515' }}>
 
-          {/* Desktop — visible at ≥768 px (md) */}
+          {/* Desktop — visible at ≥1024px */}
           <div
           className="pvg-desk-nav"
             style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 28px', height: '74px', alignItems: 'center', gap: '16px' }}

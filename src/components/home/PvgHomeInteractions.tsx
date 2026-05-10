@@ -55,26 +55,33 @@ const PARTIAL_HREFS: Array<[RegExp, string]> = [
   [/mukhi/i, '/shop/rudraksha'],
 ];
 
+type ScrollSequence = {
+  section: HTMLElement;
+  steps: HTMLElement[];
+  currentIndex: number;
+  setActive: (index: number, options?: { scrollStepIntoView?: boolean }) => void;
+  cleanup: () => void;
+};
+
+type LockableScrollSequence = ScrollSequence & {
+  isLockEligible: boolean;
+  wheelDelta: number;
+  lastStepAt: number;
+  lastTouchY: number | null;
+};
+
+const LOCK_INTERSECTION_RATIO = 0.82;
+const MIN_LOCK_INTERSECTION_RATIO = 0.4;
+const STEP_COOLDOWN_MS = 520;
+const WHEEL_STEP_DELTA = 48;
+const TOUCH_STEP_DELTA = 42;
+
 function normalizeLabel(value: string | null | undefined) {
-  return (value ?? '').replace(/[→▾]/g, '').replace(/\s+/g, ' ').trim();
+  return (value ?? '').replace(/[\u2192\u25be]/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
-}
-
-function getSectionVisibility(section: HTMLElement) {
-  const rect = section.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const visibleHeight = Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
-  const sectionHeight = Math.max(1, Math.min(rect.height || section.offsetHeight || 1, viewportHeight));
-
-  return {
-    rect,
-    viewportHeight,
-    visibleRatio: clamp(visibleHeight / sectionHeight, 0, 1),
-    fullyVisible: rect.top >= -2 && rect.bottom <= viewportHeight + 2 && rect.bottom > 0,
-  };
 }
 
 function resolveHref(label: string) {
@@ -85,454 +92,615 @@ function resolveHref(label: string) {
   return null;
 }
 
-function cycleStack(selector: string, intervalMs: number) {
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function setupRotatingStack(selector: string, intervalMs: number) {
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selector));
-  if (!cards.length) return undefined;
-  let currentIndex = 0;
-  const timer = window.setInterval(() => {
-    currentIndex = (currentIndex + 1) % cards.length;
+  if (cards.length <= 1) return undefined;
+
+  const container = cards[0].closest('section') ?? cards[0].parentElement;
+  let activeIndex = cards.findIndex((card) => card.dataset.pos === '0');
+  if (activeIndex < 0) activeIndex = cards.length - 1;
+
+  let timer: number | null = null;
+  let isVisible = false;
+  const reduceMotion = prefersReducedMotion();
+
+  const render = () => {
     cards.forEach((card, index) => {
-      const position = (index - currentIndex + cards.length) % cards.length;
-      card.setAttribute('data-pos', String(position));
+      const position = (activeIndex - index + cards.length) % cards.length;
+      card.dataset.pos = String(position);
+      card.classList.toggle('is-top', position === 0);
     });
-  }, intervalMs);
-  return () => window.clearInterval(timer);
+  };
+
+  const stop = () => {
+    if (timer) window.clearTimeout(timer);
+    timer = null;
+  };
+
+  const schedule = () => {
+    stop();
+    if (!isVisible || reduceMotion || document.hidden) return;
+    timer = window.setTimeout(() => {
+      activeIndex = (activeIndex + 1) % cards.length;
+      render();
+      schedule();
+    }, intervalMs);
+  };
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      isVisible = Boolean(entry?.isIntersecting);
+      schedule();
+    },
+    { rootMargin: '180px 0px' }
+  );
+
+  const onVisibilityChange = () => schedule();
+
+  render();
+  if (container) observer.observe(container);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  return () => {
+    stop();
+    observer.disconnect();
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  };
+}
+
+function setupAutoCarousel(cardSelector: string, dotSelector: string, intervalMs: number) {
+  const cards = Array.from(document.querySelectorAll<HTMLElement>(cardSelector));
+  const dots = Array.from(document.querySelectorAll<HTMLElement>(dotSelector));
+  if (!cards.length) return undefined;
+
+  let currentIndex = Math.max(0, cards.findIndex((card) => card.classList.contains('is-active')));
+  let timer: number | null = null;
+  let isVisible = false;
+  const reduceMotion = prefersReducedMotion();
+
+  const goTo = (nextIndex: number) => {
+    cards[currentIndex]?.classList.remove('is-active');
+    dots[currentIndex]?.classList.remove('is-active');
+    currentIndex = (nextIndex + cards.length) % cards.length;
+    cards[currentIndex]?.classList.add('is-active');
+    dots[currentIndex]?.classList.add('is-active');
+  };
+
+  const stop = () => {
+    if (timer) window.clearTimeout(timer);
+    timer = null;
+  };
+
+  const schedule = () => {
+    stop();
+    if (!isVisible || reduceMotion || document.hidden) return;
+    timer = window.setTimeout(() => {
+      goTo(currentIndex + 1);
+      schedule();
+    }, intervalMs);
+  };
+
+  const dotCleanups = dots.map((dot, index) => {
+    const handler = () => {
+      goTo(index);
+      schedule();
+    };
+    dot.addEventListener('click', handler);
+    return () => dot.removeEventListener('click', handler);
+  });
+
+  const carouselRoot = cards[0].parentElement;
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      isVisible = Boolean(entry?.isIntersecting);
+      schedule();
+    },
+    { rootMargin: '180px 0px' }
+  );
+
+  const onVisibilityChange = () => schedule();
+
+  goTo(currentIndex);
+  if (carouselRoot) observer.observe(carouselRoot);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  return () => {
+    stop();
+    observer.disconnect();
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    dotCleanups.forEach((cleanup) => cleanup());
+  };
+}
+
+function syncStepWindow(steps: HTMLElement[], index: number) {
+  const stepWindow = steps[0]?.parentElement as HTMLElement | null;
+  if (!stepWindow || steps.length <= 4) return;
+  if (stepWindow.classList.contains('remedy-timeline')) {
+    stepWindow.style.setProperty('--step-window-shift', '0px');
+    return;
+  }
+
+  const firstVisibleIndex = clamp(index - 1, 0, steps.length - 4);
+  const rowGap = Number.parseFloat(window.getComputedStyle(stepWindow).rowGap || '0') || 0;
+  const stepHeight = steps[0]?.getBoundingClientRect().height ?? 0;
+  const targetTop = firstVisibleIndex * (stepHeight + rowGap);
+  stepWindow.style.setProperty('--step-window-shift', `${-targetTop}px`);
+}
+
+function setupScrollSequence(options: {
+  sectionSelector: string;
+  stepSelector: string;
+  imageSelector: string;
+  stepKey: string;
+  imageKey: string;
+}): ScrollSequence | null {
+  const section = document.querySelector<HTMLElement>(options.sectionSelector);
+  const steps = Array.from(document.querySelectorAll<HTMLElement>(options.stepSelector));
+  const images = Array.from(document.querySelectorAll<HTMLElement>(options.imageSelector));
+
+  if (!section || !steps.length || !images.length) return null;
+
+  let currentIndex = -1;
+  const stepCleanups: Array<() => void> = [];
+
+  const setActive = (index: number, activeOptions?: { scrollStepIntoView?: boolean }) => {
+    const safeIndex = clamp(index, 0, steps.length - 1);
+    if (safeIndex === currentIndex) {
+      syncStepWindow(steps, safeIndex);
+      return;
+    }
+
+    currentIndex = safeIndex;
+    const target = String(safeIndex);
+
+    section.dataset.currentStep = String(safeIndex + 1);
+    section.style.setProperty('--sequence-progress', `${steps.length > 1 ? (safeIndex / (steps.length - 1)) * 100 : 100}%`);
+
+    steps.forEach((step) => {
+      const isActive = step.dataset[options.stepKey] === target;
+      step.classList.toggle('is-active', isActive);
+      step.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    images.forEach((image) => {
+      image.classList.toggle('is-active', image.dataset[options.imageKey] === target);
+    });
+
+    syncStepWindow(steps, safeIndex);
+
+    if (activeOptions?.scrollStepIntoView && !prefersReducedMotion()) {
+      steps[safeIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  };
+
+  steps.forEach((step) => {
+    const handler = () => {
+      setActive(Number(step.dataset[options.stepKey] || 0), { scrollStepIntoView: false });
+    };
+    step.addEventListener('click', handler);
+    stepCleanups.push(() => step.removeEventListener('click', handler));
+  });
+
+  setActive(0);
+  section.dataset.stepCount = String(steps.length);
+
+  return {
+    section,
+    steps,
+    get currentIndex() {
+      return currentIndex;
+    },
+    setActive,
+    cleanup() {
+      stepCleanups.forEach((cleanup) => cleanup());
+    },
+  };
+}
+
+function normalizeWheelDelta(event: WheelEvent) {
+  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return event.deltaY * 16;
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return event.deltaY * window.innerHeight;
+  return event.deltaY;
+}
+
+function canStep(sequence: ScrollSequence, direction: number) {
+  if (direction < 0) return sequence.currentIndex > 0;
+  return sequence.currentIndex < sequence.steps.length - 1;
+}
+
+function stepSequence(sequence: LockableScrollSequence, direction: number) {
+  sequence.setActive(sequence.currentIndex + direction, { scrollStepIntoView: false });
+  sequence.lastStepAt = performance.now();
+  sequence.wheelDelta = 0;
+}
+
+function getActiveLockedSequence(sequences: LockableScrollSequence[]) {
+  if (prefersReducedMotion()) return null;
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  return sequences
+    .filter((sequence) => sequence.isLockEligible)
+    .sort((left, right) => {
+      const leftRect = left.section.getBoundingClientRect();
+      const rightRect = right.section.getBoundingClientRect();
+      const leftDistance = Math.abs(leftRect.top + leftRect.height / 2 - viewportHeight / 2);
+      const rightDistance = Math.abs(rightRect.top + rightRect.height / 2 - viewportHeight / 2);
+      return leftDistance - rightDistance;
+    })[0] ?? null;
+}
+
+function getLockThreshold(entry: IntersectionObserverEntry) {
+  const viewportHeight = entry.rootBounds?.height ?? window.innerHeight;
+  const maxReachableRatio = clamp(viewportHeight / Math.max(1, entry.boundingClientRect.height), 0, 1);
+  if (maxReachableRatio >= LOCK_INTERSECTION_RATIO) return LOCK_INTERSECTION_RATIO;
+  return Math.max(MIN_LOCK_INTERSECTION_RATIO, maxReachableRatio - 0.02);
+}
+
+function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
+  if (!sequences.length) return undefined;
+
+  const lockedSequences: LockableScrollSequence[] = sequences.map((sequence) => ({
+    section: sequence.section,
+    steps: sequence.steps,
+    get currentIndex() {
+      return sequence.currentIndex;
+    },
+    setActive: sequence.setActive,
+    cleanup: sequence.cleanup,
+    isLockEligible: false,
+    wheelDelta: 0,
+    lastStepAt: 0,
+    lastTouchY: null,
+  }));
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const sequence = lockedSequences.find((item) => item.section === entry.target);
+        if (!sequence) return;
+        sequence.isLockEligible = entry.isIntersecting && entry.intersectionRatio >= getLockThreshold(entry);
+        if (!sequence.isLockEligible) {
+          sequence.wheelDelta = 0;
+          sequence.lastTouchY = null;
+        }
+      });
+    },
+    { threshold: [0, MIN_LOCK_INTERSECTION_RATIO, 0.5, 0.6, LOCK_INTERSECTION_RATIO, 0.95, 1] }
+  );
+
+  const onWheel = (event: WheelEvent) => {
+    const sequence = getActiveLockedSequence(lockedSequences);
+    if (!sequence || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+    const deltaY = normalizeWheelDelta(event);
+    const direction = deltaY > 0 ? 1 : -1;
+
+    if (!canStep(sequence, direction)) {
+      sequence.wheelDelta = 0;
+      return;
+    }
+
+    event.preventDefault();
+
+    const now = performance.now();
+    if (now - sequence.lastStepAt < STEP_COOLDOWN_MS) return;
+
+    if (sequence.wheelDelta && Math.sign(sequence.wheelDelta) !== Math.sign(deltaY)) {
+      sequence.wheelDelta = 0;
+    }
+
+    sequence.wheelDelta += deltaY;
+    if (Math.abs(sequence.wheelDelta) >= WHEEL_STEP_DELTA) {
+      stepSequence(sequence, direction);
+    }
+  };
+
+  const onTouchStart = (event: TouchEvent) => {
+    const sequence = getActiveLockedSequence(lockedSequences);
+    if (!sequence) return;
+    sequence.lastTouchY = event.touches[0]?.clientY ?? null;
+  };
+
+  const onTouchMove = (event: TouchEvent) => {
+    const sequence = getActiveLockedSequence(lockedSequences);
+    if (!sequence || sequence.lastTouchY === null || !event.touches.length) return;
+
+    const currentTouchY = event.touches[0].clientY;
+    const deltaY = sequence.lastTouchY - currentTouchY;
+    if (Math.abs(deltaY) < 8) return;
+
+    const direction = deltaY > 0 ? 1 : -1;
+    if (!canStep(sequence, direction)) {
+      sequence.lastTouchY = currentTouchY;
+      return;
+    }
+
+    event.preventDefault();
+
+    const now = performance.now();
+    if (now - sequence.lastStepAt < STEP_COOLDOWN_MS) return;
+
+    if (Math.abs(deltaY) >= TOUCH_STEP_DELTA) {
+      stepSequence(sequence, direction);
+      sequence.lastTouchY = currentTouchY;
+    }
+  };
+
+  const onTouchEnd = () => {
+    lockedSequences.forEach((sequence) => {
+      sequence.lastTouchY = null;
+    });
+  };
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    const keyDirections: Record<string, number> = {
+      ArrowDown: 1,
+      PageDown: 1,
+      ArrowUp: -1,
+      PageUp: -1,
+    };
+    const direction = keyDirections[event.key];
+    if (!direction) return;
+
+    const sequence = getActiveLockedSequence(lockedSequences);
+    if (!sequence || !canStep(sequence, direction)) return;
+
+    event.preventDefault();
+    const now = performance.now();
+    if (now - sequence.lastStepAt < STEP_COOLDOWN_MS) return;
+    stepSequence(sequence, direction);
+  };
+
+  lockedSequences.forEach((sequence) => observer.observe(sequence.section));
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
+  window.addEventListener('touchend', onTouchEnd, { passive: true });
+  window.addEventListener('keydown', onKeyDown);
+
+  return () => {
+    observer.disconnect();
+    window.removeEventListener('wheel', onWheel);
+    window.removeEventListener('touchstart', onTouchStart);
+    window.removeEventListener('touchmove', onTouchMove);
+    window.removeEventListener('touchend', onTouchEnd);
+    window.removeEventListener('keydown', onKeyDown);
+    sequences.forEach((sequence) => sequence.cleanup());
+  };
+}
+
+function setupTrustRotation() {
+  const trustCards = Array.from(document.querySelectorAll<HTMLElement>('.trust-card'));
+  if (!trustCards.length) return undefined;
+
+  let groupIndex = 0;
+  let cardsPerTrustGroup = 0;
+  let timer: number | null = null;
+  let resizeFrame = 0;
+
+  const getCardsPerTrustGroup = () => {
+    const width = window.innerWidth;
+    if (width <= 767) return 2;
+    if (width <= 1024) return 3;
+    return 0;
+  };
+
+  const clearTrustGroups = () => trustCards.forEach((card) => card.classList.remove('trust-hidden'));
+
+  const showGroup = () => {
+    if (!cardsPerTrustGroup || trustCards.length <= cardsPerTrustGroup) {
+      clearTrustGroups();
+      return;
+    }
+
+    const totalGroups = Math.ceil(trustCards.length / cardsPerTrustGroup);
+    groupIndex %= totalGroups;
+    trustCards.forEach((card, index) => {
+      card.classList.toggle('trust-hidden', Math.floor(index / cardsPerTrustGroup) !== groupIndex);
+    });
+  };
+
+  const restart = () => {
+    if (timer) window.clearInterval(timer);
+    timer = null;
+    cardsPerTrustGroup = getCardsPerTrustGroup();
+    groupIndex = 0;
+    showGroup();
+    if (!prefersReducedMotion() && cardsPerTrustGroup && trustCards.length > cardsPerTrustGroup) {
+      timer = window.setInterval(() => {
+        groupIndex += 1;
+        showGroup();
+      }, 3200);
+    }
+  };
+
+  const onResize = () => {
+    if (resizeFrame) return;
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = 0;
+      restart();
+    });
+  };
+
+  restart();
+  window.addEventListener('resize', onResize, { passive: true });
+
+  return () => {
+    if (timer) window.clearInterval(timer);
+    if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
+    window.removeEventListener('resize', onResize);
+    clearTrustGroups();
+  };
+}
+
+function setupTabs(tabSelector: string, panelSelector: string, panelPrefix: string, dataAttr: string) {
+  const tabs = Array.from(document.querySelectorAll<HTMLElement>(tabSelector));
+  const panels = Array.from(document.querySelectorAll<HTMLElement>(panelSelector));
+
+  return tabs.map((tab) => {
+    const handler = () => {
+      tabs.forEach((item) => {
+        item.classList.remove('is-active');
+        item.setAttribute('aria-selected', 'false');
+      });
+      panels.forEach((panel) => panel.classList.remove('is-active'));
+      tab.classList.add('is-active');
+      tab.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById(`${panelPrefix}${tab.dataset[dataAttr]}`);
+      panel?.classList.add('is-active');
+    };
+
+    tab.addEventListener('click', handler);
+    return () => tab.removeEventListener('click', handler);
+  });
+}
+
+function setupSliderButtons() {
+  const sliderButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.pvg-slider-btn'));
+
+  return sliderButtons.map((button) => {
+    const handler = () => {
+      const targetId = button.dataset.sliderTarget;
+      const direction = button.dataset.sliderDirection === 'prev' ? -1 : 1;
+      const scrollTarget = targetId ? document.getElementById(targetId) : null;
+      if (!scrollTarget) return;
+
+      const amount = Math.max(240, Math.round(scrollTarget.clientWidth * 0.82));
+      scrollTarget.scrollBy({ left: amount * direction, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    };
+
+    button.addEventListener('click', handler);
+    return () => button.removeEventListener('click', handler);
+  });
+}
+
+function setupKnowledgeHubScrollControls() {
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.khub-scroll-btn'));
+  if (!buttons.length) return undefined;
+
+  const scrollActivePanel = (direction: number) => {
+    const activePanel = document.querySelector<HTMLElement>('.khub-panel.is-active');
+    if (!activePanel) return;
+
+    const amount = Math.max(220, Math.round(activePanel.clientWidth * 0.82));
+    activePanel.scrollBy({ left: amount * direction, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  };
+
+  const cleanups = buttons.map((button) => {
+    const handler = () => scrollActivePanel(button.dataset.khubDirection === 'prev' ? -1 : 1);
+    button.addEventListener('click', handler);
+    return () => button.removeEventListener('click', handler);
+  });
+
+  return () => cleanups.forEach((cleanup) => cleanup());
+}
+
+function setupTestimonials() {
+  const testimonialTrack = document.getElementById('testiTrackV2');
+  if (!testimonialTrack) return undefined;
+
+  const cards = Array.from(testimonialTrack.querySelectorAll<HTMLElement>('.testi-card-v2'));
+  let index = 0;
+
+  const getVisibleCount = () => {
+    const width = testimonialTrack.parentElement?.offsetWidth ?? 0;
+    if (width < 600) return 1;
+    if (width < 940) return 2;
+    return 3;
+  };
+
+  const goTo = (nextIndex: number) => {
+    const firstCard = cards[0];
+    if (!firstCard) return;
+    const max = Math.max(0, cards.length - getVisibleCount());
+    index = clamp(nextIndex, 0, max);
+    testimonialTrack.style.transform = `translate3d(-${index * (firstCard.offsetWidth + 20)}px, 0, 0)`;
+  };
+
+  const nextButton = document.getElementById('testiNextV2');
+  const prevButton = document.getElementById('testiPrevV2');
+  const nextHandler = () => goTo(index + 1);
+  const prevHandler = () => goTo(index - 1);
+  const resizeHandler = () => goTo(0);
+
+  nextButton?.addEventListener('click', nextHandler);
+  prevButton?.addEventListener('click', prevHandler);
+  window.addEventListener('resize', resizeHandler, { passive: true });
+
+  return () => {
+    nextButton?.removeEventListener('click', nextHandler);
+    prevButton?.removeEventListener('click', prevHandler);
+    window.removeEventListener('resize', resizeHandler);
+  };
+}
+
+function setupScrollTopButton() {
+  const scrollTopButton = document.getElementById('pvgScrollTop');
+  if (!scrollTopButton) return undefined;
+
+  let frame = 0;
+  const scrollHandler = () => {
+    if (frame) return;
+    frame = window.requestAnimationFrame(() => {
+      frame = 0;
+      scrollTopButton.classList.toggle('show', window.scrollY > 500);
+    });
+  };
+  const clickHandler = () => window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+
+  window.addEventListener('scroll', scrollHandler, { passive: true });
+  scrollTopButton.addEventListener('click', clickHandler);
+  scrollHandler();
+
+  return () => {
+    if (frame) window.cancelAnimationFrame(frame);
+    window.removeEventListener('scroll', scrollHandler);
+    scrollTopButton.removeEventListener('click', clickHandler);
+  };
+}
+
+function setupLegacyHashLinks(router: ReturnType<typeof useRouter>) {
+  const root = document.querySelector<HTMLElement>('.pvg-react-home-root');
+  if (!root) return undefined;
+
+  const linkHandler = (event: MouseEvent) => {
+    const target = event.target as Element | null;
+    const anchor = target?.closest<HTMLAnchorElement>('a[href="#"]');
+    if (!anchor) return;
+
+    const href = resolveHref(normalizeLabel(anchor.textContent));
+    if (!href) return;
+
+    event.preventDefault();
+    if (href.startsWith('#')) {
+      document.querySelector(href)?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    } else {
+      router.push(href);
+    }
+  };
+
+  root.addEventListener('click', linkHandler);
+  return () => root.removeEventListener('click', linkHandler);
 }
 
 export function PvgHomeInteractions() {
   const router = useRouter();
 
   useEffect(() => {
-    const cleanups: Array<() => void> = [];
+    const cleanups: Array<(() => void) | undefined> = [];
 
-    const syncStepWindow = (steps: HTMLElement[], index: number) => {
-      const stepWindow = steps[0]?.parentElement as HTMLElement | null;
-      if (!stepWindow || steps.length <= 4) return;
-      if (stepWindow.classList.contains('remedy-timeline')) {
-        stepWindow.style.setProperty('--step-window-shift', '0px');
-        return;
-      }
-      const firstVisibleIndex = clamp(index - 1, 0, steps.length - 4);
-      const rowGap = Number.parseFloat(window.getComputedStyle(stepWindow).rowGap || '0') || 0;
-      const stepHeight = steps[0]?.getBoundingClientRect().height ?? 0;
-      const targetTop = firstVisibleIndex * (stepHeight + rowGap);
-      stepWindow.style.setProperty('--step-window-shift', `${-targetTop}px`);
-    };
-
-    const setupScrollSequence = (options: {
-      sectionSelector: string;
-      stepSelector: string;
-      imageSelector: string;
-      stepKey: string;
-      imageKey: string;
-    }) => {
-      const section = document.querySelector<HTMLElement>(options.sectionSelector);
-      const steps = Array.from(document.querySelectorAll<HTMLElement>(options.stepSelector));
-      const images = Array.from(document.querySelectorAll<HTMLElement>(options.imageSelector));
-      let currentIndex = -1;
-
-      if (!section || !steps.length || !images.length) return null;
-
-      const setActive = (index: number) => {
-        const safeIndex = clamp(index, 0, steps.length - 1);
-        if (safeIndex === currentIndex) {
-          syncStepWindow(steps, safeIndex);
-          return;
-        }
-        currentIndex = safeIndex;
-        const target = String(safeIndex);
-
-        steps.forEach((step) => {
-          const isActive = step.dataset[options.stepKey] === target;
-          step.classList.toggle('is-active', isActive);
-          step.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        });
-
-        images.forEach((image) => {
-          image.classList.toggle('is-active', image.dataset[options.imageKey] === target);
-        });
-
-        section.style.setProperty('--sequence-progress', `${steps.length > 1 ? (safeIndex / (steps.length - 1)) * 100 : 100}%`);
-        syncStepWindow(steps, safeIndex);
-      };
-
-      const stepHandlers = steps.map((step) => {
-        const handler = () => {
-          setActive(Number(step.dataset[options.stepKey] || 0));
-        };
-        step.addEventListener('click', handler);
-        return () => step.removeEventListener('click', handler);
-      });
-
-      setActive(0);
-
-      return {
-        section,
-        steps,
-        cleanup() {
-          stepHandlers.forEach((handler) => handler());
-        },
-        setActive,
-        getIndex() {
-          return currentIndex < 0 ? 0 : currentIndex;
-        },
-        update() {
-          const { rect, viewportHeight } = getSectionVisibility(section);
-          if (rect.top >= viewportHeight - 2) {
-            setActive(0);
-          } else if (rect.bottom <= 2) {
-            setActive(steps.length - 1);
-          } else if (currentIndex < 0) {
-            setActive(0);
-          } else {
-            syncStepWindow(steps, currentIndex);
-          }
-        },
-      };
-    };
-
-    const setupScrollGate = (sequences: Array<NonNullable<ReturnType<typeof setupScrollSequence>>>) => {
-      type ScrollSequence = NonNullable<ReturnType<typeof setupScrollSequence>>;
-
-      const gateThreshold = 180;
-      const entryThreshold = 0.65;
-      const mobileGateQuery = window.matchMedia('(max-width: 767px)');
-      const wheelState = new Map<ScrollSequence, { delta: number; direction: number }>();
-      let activeGate: ScrollSequence | null = null;
-      let releasedGate: { sequence: ScrollSequence; direction: number } | null = null;
-      let lastTouchY: number | null = null;
-
-      const pinSequence = (sequence: ScrollSequence) => {
-        const previousScrollBehavior = document.documentElement.style.scrollBehavior;
-        document.documentElement.style.scrollBehavior = 'auto';
-        const absoluteTop = Math.max(0, window.scrollY + sequence.section.getBoundingClientRect().top);
-        window.scrollTo(0, absoluteTop);
-        document.documentElement.style.scrollBehavior = previousScrollBehavior;
-      };
-
-      const clearReleasedGate = (direction: number) => {
-        if (releasedGate && releasedGate.direction !== direction) releasedGate = null;
-      };
-
-      const findGateSequence = (direction: number) => {
-        clearReleasedGate(direction);
-
-        if (activeGate) {
-          const activeVisibility = getSectionVisibility(activeGate.section);
-          const stillNearby = activeVisibility.rect.bottom > -activeVisibility.rect.height * 0.15
-            && activeVisibility.rect.top < activeVisibility.viewportHeight + activeVisibility.rect.height * 0.15;
-          if (stillNearby) {
-            return { sequence: activeGate, justEntered: false };
-          }
-          activeGate = null;
-        }
-
-        const candidates = sequences
-          .map((sequence) => ({ sequence, visibility: getSectionVisibility(sequence.section) }))
-          .filter(({ sequence, visibility }) => {
-            const intersectsViewport = visibility.rect.bottom > 0 && visibility.rect.top < visibility.viewportHeight;
-            if (!intersectsViewport || visibility.visibleRatio < entryThreshold) {
-              if (releasedGate?.sequence === sequence) releasedGate = null;
-              return false;
-            }
-
-            if (releasedGate && releasedGate.sequence === sequence && releasedGate.direction === direction) {
-              return false;
-            }
-
-            return true;
-          })
-          .sort((left, right) => {
-            if (right.visibility.visibleRatio !== left.visibility.visibleRatio) {
-              return right.visibility.visibleRatio - left.visibility.visibleRatio;
-            }
-            return Math.abs(left.visibility.rect.top) - Math.abs(right.visibility.rect.top);
-          });
-
-        const candidate = candidates[0];
-        if (!candidate) return null;
-
-        const { sequence, visibility } = candidate;
-        activeGate = sequence;
-        if (direction > 0 && visibility.rect.top > 0) sequence.setActive(0);
-        if (direction < 0 && visibility.rect.bottom < visibility.viewportHeight) sequence.setActive(sequence.steps.length - 1);
-        return { sequence, justEntered: true };
-      };
-
-      const advanceSequence = (sequence: ScrollSequence, direction: number) => {
-        const currentIndex = sequence.getIndex();
-        const nextIndex = clamp(currentIndex + direction, 0, sequence.steps.length - 1);
-        sequence.setActive(nextIndex);
-      };
-
-      const getGateState = (sequence: ScrollSequence, direction: number) => {
-        const state = wheelState.get(sequence) || { delta: 0, direction };
-        if (state.direction !== direction) {
-          state.delta = 0;
-          state.direction = direction;
-        }
-        return state;
-      };
-
-      const handleGateDelta = (deltaY: number, event: Event) => {
-        if (mobileGateQuery.matches || !deltaY) return false;
-        const direction = deltaY > 0 ? 1 : -1;
-        const gate = findGateSequence(direction);
-        if (!gate) {
-          activeGate = null;
-          wheelState.clear();
-          return false;
-        }
-        const { sequence, justEntered } = gate;
-
-        const currentIndex = sequence.getIndex();
-        const atFirstStep = currentIndex <= 0;
-        const atLastStep = currentIndex >= sequence.steps.length - 1;
-        if ((direction > 0 && atLastStep) || (direction < 0 && atFirstStep)) {
-          activeGate = null;
-          releasedGate = { sequence, direction };
-          wheelState.set(sequence, { delta: 0, direction });
-          return false;
-        }
-
-        event.preventDefault();
-        releasedGate = null;
-        pinSequence(sequence);
-        if (justEntered) {
-          wheelState.set(sequence, { delta: 0, direction });
-          return true;
-        }
-
-        const state = getGateState(sequence, direction);
-        state.delta += Math.abs(deltaY);
-        if (state.delta >= gateThreshold) {
-          const before = sequence.getIndex();
-          advanceSequence(sequence, direction);
-          state.delta = sequence.getIndex() === before ? state.delta : 0;
-        }
-        wheelState.set(sequence, state);
-        return true;
-      };
-
-      const onWheel = (event: WheelEvent) => {
-        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-        handleGateDelta(event.deltaY, event);
-      };
-
-      const onTouchStart = (event: TouchEvent) => {
-        lastTouchY = event.touches[0]?.clientY ?? null;
-      };
-
-      const onTouchMove = (event: TouchEvent) => {
-        if (lastTouchY === null || !event.touches.length) return;
-        const currentTouchY = event.touches[0].clientY;
-        const handled = handleGateDelta(lastTouchY - currentTouchY, event);
-        if (handled) lastTouchY = currentTouchY;
-      };
-
-      const onTouchEnd = () => {
-        lastTouchY = null;
-      };
-
-      window.addEventListener('wheel', onWheel, { passive: false });
-      window.addEventListener('touchstart', onTouchStart, { passive: true });
-      window.addEventListener('touchmove', onTouchMove, { passive: false });
-      window.addEventListener('touchend', onTouchEnd);
-
-      return () => {
-        window.removeEventListener('wheel', onWheel);
-        window.removeEventListener('touchstart', onTouchStart);
-        window.removeEventListener('touchmove', onTouchMove);
-        window.removeEventListener('touchend', onTouchEnd);
-      };
-    };
-
-    const aboutCleanup = cycleStack('#aboutStack .about-stack-card', 5000);
-    const certCleanup = cycleStack('#certStack .cert-stack-card', 5000);
-    if (aboutCleanup) cleanups.push(aboutCleanup);
-    if (certCleanup) cleanups.push(certCleanup);
-
-    const rudraCards = Array.from(document.querySelectorAll<HTMLElement>('#rudraCarousel .rudra-left-card'));
-    const rudraDots = Array.from(document.querySelectorAll<HTMLElement>('#rudraCarouselDots .rudra-c-dot'));
-    if (rudraCards.length) {
-      let currentIndex = 0;
-      const goToRudra = (nextIndex: number) => {
-        rudraCards[currentIndex]?.classList.remove('is-active');
-        rudraDots[currentIndex]?.classList.remove('is-active');
-        currentIndex = (nextIndex + rudraCards.length) % rudraCards.length;
-        rudraCards[currentIndex]?.classList.add('is-active');
-        rudraDots[currentIndex]?.classList.add('is-active');
-      };
-      let timer = window.setInterval(() => goToRudra(currentIndex + 1), 3500);
-      const dotHandlers = rudraDots.map((dot, index) => {
-        const handler = () => {
-          goToRudra(index);
-          window.clearInterval(timer);
-          timer = window.setInterval(() => goToRudra(currentIndex + 1), 3500);
-        };
-        dot.addEventListener('click', handler);
-        return () => dot.removeEventListener('click', handler);
-      });
-      cleanups.push(() => {
-        window.clearInterval(timer);
-        dotHandlers.forEach((cleanup) => cleanup());
-      });
-    }
-
-    const trustCards = Array.from(document.querySelectorAll<HTMLElement>('.trust-card'));
-    if (trustCards.length) {
-      let groupIndex = 0;
-      let cardsPerTrustGroup = 0;
-      let timer: number | null = null;
-      const getCardsPerTrustGroup = () => {
-        const width = window.innerWidth;
-        if (width <= 767) return 2;
-        if (width <= 1024) return 3;
-        return 0;
-      };
-      const clearTrustGroups = () => trustCards.forEach((card) => card.classList.remove('trust-hidden'));
-      const showGroup = () => {
-        if (!cardsPerTrustGroup || trustCards.length <= cardsPerTrustGroup) {
-          clearTrustGroups();
-          return;
-        }
-        const totalGroups = Math.ceil(trustCards.length / cardsPerTrustGroup);
-        groupIndex %= totalGroups;
-        trustCards.forEach((card, index) => {
-          card.classList.toggle('trust-hidden', Math.floor(index / cardsPerTrustGroup) !== groupIndex);
-        });
-      };
-      const restartTrustRotation = () => {
-        if (timer) window.clearInterval(timer);
-        timer = null;
-        cardsPerTrustGroup = getCardsPerTrustGroup();
-        groupIndex = 0;
-        showGroup();
-        if (cardsPerTrustGroup && trustCards.length > cardsPerTrustGroup) {
-          timer = window.setInterval(() => {
-            groupIndex += 1;
-            showGroup();
-          }, 2500);
-        }
-      };
-      restartTrustRotation();
-      window.addEventListener('resize', restartTrustRotation, { passive: true });
-      cleanups.push(() => {
-        if (timer) window.clearInterval(timer);
-        window.removeEventListener('resize', restartTrustRotation);
-        clearTrustGroups();
-      });
-    }
-
-    const bindTabs = (tabSelector: string, panelSelector: string, panelPrefix: string, dataAttr: string) => {
-      const tabs = Array.from(document.querySelectorAll<HTMLElement>(tabSelector));
-      const panels = Array.from(document.querySelectorAll<HTMLElement>(panelSelector));
-      const handlers = tabs.map((tab) => {
-        const handler = () => {
-          tabs.forEach((item) => {
-            item.classList.remove('is-active');
-            item.setAttribute('aria-selected', 'false');
-          });
-          panels.forEach((panel) => panel.classList.remove('is-active'));
-          tab.classList.add('is-active');
-          tab.setAttribute('aria-selected', 'true');
-          const panel = document.getElementById(`${panelPrefix}${tab.dataset[dataAttr]}`);
-          panel?.classList.add('is-active');
-        };
-        tab.addEventListener('click', handler);
-        return () => tab.removeEventListener('click', handler);
-      });
-      cleanups.push(...handlers);
-    };
-
-    bindTabs('.explore-tab', '.explore-panel', 'panel-', 'tab');
-    bindTabs('.khub-tab', '.khub-panel', 'khub-panel-', 'khub');
-
-    const scrollAreas = Array.from(document.querySelectorAll<HTMLElement>('.semi-circle-scroll, .explore-scroll, .dp-scroll-wrap'));
-    const dragCleanups = scrollAreas.map((element) => {
-      let isDragging = false;
-      let startX = 0;
-      let scrollLeft = 0;
-      const onMouseDown = (event: MouseEvent) => {
-        isDragging = true;
-        element.style.cursor = 'grabbing';
-        startX = event.pageX - element.offsetLeft;
-        scrollLeft = element.scrollLeft;
-      };
-      const stopDragging = () => {
-        isDragging = false;
-        element.style.cursor = 'grab';
-      };
-      const onMouseMove = (event: MouseEvent) => {
-        if (!isDragging) return;
-        event.preventDefault();
-        const currentX = event.pageX - element.offsetLeft;
-        element.scrollLeft = scrollLeft - (currentX - startX) * 1.4;
-      };
-      element.addEventListener('mousedown', onMouseDown);
-      element.addEventListener('mouseleave', stopDragging);
-      element.addEventListener('mouseup', stopDragging);
-      element.addEventListener('mousemove', onMouseMove);
-      return () => {
-        element.removeEventListener('mousedown', onMouseDown);
-        element.removeEventListener('mouseleave', stopDragging);
-        element.removeEventListener('mouseup', stopDragging);
-        element.removeEventListener('mousemove', onMouseMove);
-      };
-    });
-    cleanups.push(...dragCleanups);
-
-    const sliderButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.pvg-slider-btn'));
-    const sliderCleanups = sliderButtons.map((button) => {
-      const handler = () => {
-        const targetId = button.dataset.sliderTarget;
-        const direction = button.dataset.sliderDirection === 'prev' ? -1 : 1;
-        const scrollTarget = targetId ? document.getElementById(targetId) : null;
-        if (!scrollTarget) return;
-        const amount = Math.max(240, Math.round(scrollTarget.clientWidth * 0.82));
-        scrollTarget.scrollBy({ left: amount * direction, behavior: 'smooth' });
-      };
-      button.addEventListener('click', handler);
-      return () => button.removeEventListener('click', handler);
-    });
-    cleanups.push(...sliderCleanups);
-
-    const stepRows = Array.from(document.querySelectorAll<HTMLElement>('.cfg-step-row'));
-    const imageSlots = Array.from(document.querySelectorAll<HTMLElement>('.cfg-img-slot'));
-    if (stepRows.length && imageSlots.length) {
-      let currentStep = 0;
-      const goToStep = (nextStep: number) => {
-        stepRows.forEach((row, index) => row.classList.toggle('is-cfg-active', index === nextStep));
-        imageSlots.forEach((slot, index) => {
-          slot.classList.toggle('cfg-visible', index === nextStep);
-          slot.classList.toggle('cfg-hidden', index !== nextStep);
-        });
-        currentStep = nextStep;
-      };
-      const stepHandlers = stepRows.map((row, index) => {
-        const handler = () => goToStep(index);
-        row.addEventListener('click', handler);
-        return () => row.removeEventListener('click', handler);
-      });
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let timer: number | null = prefersReducedMotion ? null : window.setInterval(() => goToStep((currentStep + 1) % stepRows.length), 2500);
-      const section = document.getElementById('configurator');
-      const pause = () => {
-        if (timer) window.clearInterval(timer);
-        timer = null;
-      };
-      const resume = () => {
-        if (!timer && !prefersReducedMotion) timer = window.setInterval(() => goToStep((currentStep + 1) % stepRows.length), 2500);
-      };
-      section?.addEventListener('mouseenter', pause);
-      section?.addEventListener('mouseleave', resume);
-      cleanups.push(() => {
-        if (timer) window.clearInterval(timer);
-        stepHandlers.forEach((cleanup) => cleanup());
-        section?.removeEventListener('mouseenter', pause);
-        section?.removeEventListener('mouseleave', resume);
-      });
-    }
+    cleanups.push(setupRotatingStack('#aboutStack .about-stack-card', 4200));
+    cleanups.push(setupRotatingStack('#certStack .cert-stack-card', 4400));
+    cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200));
+    cleanups.push(setupTrustRotation());
+    cleanups.push(...setupTabs('.explore-tab', '.explore-panel', 'panel-', 'tab'));
+    cleanups.push(...setupTabs('.khub-tab', '.khub-panel', 'khub-panel-', 'khub'));
+    cleanups.push(...setupSliderButtons());
+    cleanups.push(setupKnowledgeHubScrollControls());
 
     const scrollSequences = [
       setupScrollSequence({
@@ -549,91 +717,14 @@ export function PvgHomeInteractions() {
         stepKey: 'legacyStep',
         imageKey: 'legacyImage',
       }),
-    ].filter((sequence): sequence is NonNullable<typeof sequence> => Boolean(sequence));
+    ].filter((sequence): sequence is ScrollSequence => Boolean(sequence));
 
-    if (scrollSequences.length) {
-      const runScrollSync = () => {
-        scrollSequences.forEach((sequence) => sequence.update());
-      };
+    cleanups.push(setupLockedScrollSteppers(scrollSequences));
+    cleanups.push(setupTestimonials());
+    cleanups.push(setupScrollTopButton());
+    cleanups.push(setupLegacyHashLinks(router));
 
-      const scrollGateCleanup = setupScrollGate(scrollSequences);
-      window.addEventListener('scroll', runScrollSync, { passive: true });
-      window.addEventListener('resize', runScrollSync);
-      runScrollSync();
-
-      cleanups.push(() => {
-        window.removeEventListener('scroll', runScrollSync);
-        window.removeEventListener('resize', runScrollSync);
-        scrollSequences.forEach((sequence) => sequence.cleanup());
-        scrollGateCleanup?.();
-      });
-    }
-
-    const testimonialTrack = document.getElementById('testiTrackV2');
-    if (testimonialTrack) {
-      const cards = Array.from(testimonialTrack.querySelectorAll<HTMLElement>('.testi-card-v2'));
-      let index = 0;
-      const getVisibleCount = () => {
-        const width = testimonialTrack.parentElement?.offsetWidth ?? 0;
-        if (width < 600) return 1;
-        if (width < 940) return 2;
-        return 3;
-      };
-      const goToTestimonial = (nextIndex: number) => {
-        const firstCard = cards[0];
-        if (!firstCard) return;
-        const max = Math.max(0, cards.length - getVisibleCount());
-        index = Math.min(Math.max(nextIndex, 0), max);
-        testimonialTrack.style.transform = `translateX(-${index * (firstCard.offsetWidth + 20)}px)`;
-      };
-      const nextButton = document.getElementById('testiNextV2');
-      const prevButton = document.getElementById('testiPrevV2');
-      const nextHandler = () => goToTestimonial(index + 1);
-      const prevHandler = () => goToTestimonial(index - 1);
-      const resizeHandler = () => goToTestimonial(0);
-      nextButton?.addEventListener('click', nextHandler);
-      prevButton?.addEventListener('click', prevHandler);
-      window.addEventListener('resize', resizeHandler, { passive: true });
-      cleanups.push(() => {
-        nextButton?.removeEventListener('click', nextHandler);
-        prevButton?.removeEventListener('click', prevHandler);
-        window.removeEventListener('resize', resizeHandler);
-      });
-    }
-
-    const scrollTopButton = document.getElementById('pvgScrollTop');
-    if (scrollTopButton) {
-      const scrollHandler = () => scrollTopButton.classList.toggle('show', window.scrollY > 500);
-      const clickHandler = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-      window.addEventListener('scroll', scrollHandler, { passive: true });
-      scrollTopButton.addEventListener('click', clickHandler);
-      scrollHandler();
-      cleanups.push(() => {
-        window.removeEventListener('scroll', scrollHandler);
-        scrollTopButton.removeEventListener('click', clickHandler);
-      });
-    }
-
-    const root = document.querySelector<HTMLElement>('.pvg-react-home-root');
-    if (root) {
-      const linkHandler = (event: MouseEvent) => {
-        const target = event.target as Element | null;
-        const anchor = target?.closest<HTMLAnchorElement>('a[href="#"]');
-        if (!anchor) return;
-        const href = resolveHref(normalizeLabel(anchor.textContent));
-        if (!href) return;
-        event.preventDefault();
-        if (href.startsWith('#')) {
-          document.querySelector(href)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-          router.push(href);
-        }
-      };
-      root.addEventListener('click', linkHandler);
-      cleanups.push(() => root.removeEventListener('click', linkHandler));
-    }
-
-    return () => cleanups.forEach((cleanup) => cleanup());
+    return () => cleanups.forEach((cleanup) => cleanup?.());
   }, [router]);
 
   return null;

@@ -221,8 +221,8 @@ export function PvgReferenceSections({
           </div>
 
           <h2 className="s-heading" id="who-heading">
-            Four Generations.<br />
-            <em>One Sacred Mission.</em>
+            Four Generations<br />
+            <em>One Sacred Mission</em>
           </h2>
 
           <div className="s-rule"></div>
@@ -255,7 +255,7 @@ export function PvgReferenceSections({
           </div>
 
           <div className="about-cta-row">
-            <a href="#" className="btn-maroon">Our Full Story</a>
+            <a href="/about" className="btn-maroon">Our Full Story</a>
           </div>
         </div>
 
@@ -276,7 +276,7 @@ export function PvgReferenceSections({
 
         
         <div>
-          <h2 className="section-title" id="cert-heading" style={toStyle("margin-bottom: 0;")}>Certificates of<br /><em>Immutable Trust.</em></h2>
+          <h2 className="section-title" id="cert-heading" style={toStyle("margin-bottom: 0;")}>Certificates of<br /><em>Immutable Trust</em></h2>
           <div className="section-rule-left" style={toStyle("width:60px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin:14px 0 0;")}></div>
           <p className="who-body" style={toStyle("margin-top: 18px; color: var(--muted);")}>Every gemstone we deliver is accompanied by a certificate from the world's most respected independent gem laboratories. These documents are your permanent proof of origin, treatment status, and quality — issued without bias.</p>
 
@@ -626,34 +626,128 @@ export function PvgReferenceSections({
   )}
 
   
-  <section className="configurator-section" id="configurator" aria-labelledby="config-heading" data-scroll-sync="config">
+  <section className="journey-section" id="configurator" aria-labelledby="journey-heading">
     <div className="container">
-      <div className="configurator-shell">
-        <div className="configurator-copy">
-          <h2 id="config-heading">Gem-to-Jewellery<br />Configurator</h2>
-          <div className="config-steps" role="tablist" aria-label="Configurator steps">
-            {['Select Gemstone', 'Setting Type', 'Metal and Size', 'Select Design', 'Certification Lab', 'Energization and Puja'].map((label, index) => (
-              <button key={label} className={`config-step${index === 0 ? ' is-active' : ''}`} type="button" role="tab" aria-selected={index === 0 ? 'true' : 'false'} data-config-step={index}>
-                <span>{index + 1}</span>
-                <strong>{label}</strong>
-              </button>
-            ))}
-          </div>
-          <a href="/configure" className="btn-maroon config-start-btn">Start Configuring</a>
-        </div>
 
-        <div className="config-preview" aria-live="polite">
-          <div className="config-preview-orbit">
-            <div className="config-progress" aria-hidden="true" />
-            {[1, 2, 3, 4, 5, 6].map((step, index) => (
-              <div key={step} className={`config-image${index === 0 ? ' is-active' : ''}`} data-config-image={index}>
-                <img src={`/home/configuratorsteps/step${step}.png`} alt={`Configurator step ${step}`} loading="lazy" />
-              </div>
-            ))}
-          </div>
-        </div>
-
+      {/* Header */}
+      <div className="journey-header">
+        <h2 id="journey-heading" className="journey-title">From Gem to Jewellery</h2>
+        <div className="journey-title-rule" aria-hidden="true" />
+        <p className="journey-subtitle">A story of transformation. From nature&apos;s rarest wonders to timeless treasures.</p>
       </div>
+
+      {/* 6-Step Grid */}
+      <div className="journey-steps-grid">
+        {([
+          {
+            title: 'Select Gemstone',
+            desc: "Handpicked from nature\u2019s finest for its rarity and energy.",
+          },
+          {
+            title: 'Setting Type',
+            desc: 'Choose the setting that complements your style.',
+          },
+          {
+            title: 'Metal & Size',
+            desc: 'Select your preferred metal and the perfect size.',
+          },
+          {
+            title: 'Select Design',
+            desc: 'Bring your vision to life with a design that reflects you.',
+          },
+          {
+            title: 'Certification Lab',
+            desc: 'Tested and certified for authenticity and quality.',
+          },
+          {
+            title: 'Energization & Puja',
+            desc: 'Blessed with Vedic rituals for positive energy and protection.',
+          },
+        ] as Array<{ title: string; desc: string }>).map((step, i) => (
+          <div className="journey-step" key={i}>
+            <div className="journey-step-img-wrap">
+              <img src={`/home/configuratorsteps/step${i + 1}.png`} alt={step.title} loading="lazy" className="journey-step-img" />
+            </div>
+            <div className="journey-step-num" aria-hidden="true">{i + 1}</div>
+            <div className="journey-step-title">{step.title.toUpperCase()}</div>
+            <p className="journey-step-desc">{step.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="journey-cta-wrap">
+        <a href="/configure" className="journey-cta-btn">Start Configuring</a>
+      </div>
+
+      {/* Trust Bar */}
+      <div className="journey-trust-bar">
+        {([
+          {
+            title: '100% Authentic',
+            sub: 'Certified Gemstones',
+            icon: (
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 2L4 8v9c0 7 5 11 12 13 7-2 12-6 12-13V8L16 2z"/><path d="M10 16l4 4 8-8"/>
+              </svg>
+            ),
+          },
+          {
+            title: 'Vedic Blessings',
+            sub: 'Energized & Protected',
+            icon: (
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 28s-8-5-8-13c0-4 3.6-7 8-7s8 3 8 7c0 8-8 13-8 13z"/><path d="M16 8c-2-3-7-6-7-6s2 4 4 8"/><path d="M16 8c2-3 7-6 7-6s-2 4-4 8"/>
+              </svg>
+            ),
+          },
+          {
+            title: 'Expert',
+            sub: 'Craftsmanship',
+            icon: (
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 4L4 13l12 15 12-15L16 4z"/><path d="M4 13h24"/>
+              </svg>
+            ),
+          },
+          {
+            title: 'Trusted By',
+            sub: '50,000+ Customers',
+            icon: (
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="9" r="4"/><circle cx="22" cy="9" r="3"/><path d="M4 28v-3c0-3 4-5 8-5s8 2 8 5v3"/><path d="M22 12c3 0 6 1.5 6 4v3"/>
+              </svg>
+            ),
+          },
+          {
+            title: 'Secure & Insured',
+            sub: 'Worldwide Delivery',
+            icon: (
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 2L4 8v9c0 7 5 11 12 13 7-2 12-6 12-13V8L16 2z"/><rect x="11" y="16" width="10" height="7" rx="1"/><path d="M13 16v-3a3 3 0 016 0v3"/>
+              </svg>
+            ),
+          },
+          {
+            title: 'Exquisite Packaging',
+            sub: 'Perfect for Gifting',
+            icon: (
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="12" width="24" height="4" rx="1"/><rect x="6" y="16" width="20" height="12" rx="1"/><path d="M16 12v16"/><path d="M16 12c0-2-2-6-4-6s-2 4 4 6"/><path d="M16 12c0-2 2-6 4-6s2 4-4 6"/>
+              </svg>
+            ),
+          },
+        ] as Array<{ title: string; sub: string; icon: ReactNode }>).map((badge, i) => (
+          <div className="journey-trust-item" key={i}>
+            <div className="journey-trust-icon">{badge.icon}</div>
+            <div>
+              <div className="journey-trust-label">{badge.title.toUpperCase()}</div>
+              <div className="journey-trust-sub">{badge.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
     </div>
   </section>
 
@@ -776,6 +870,15 @@ export function PvgReferenceSections({
       </div>
 
       <div className="scroll-hint">Swipe to read more <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+      <div className="khub-scroll-controls" aria-label="Knowledge Hub carousel controls">
+        <button className="khub-scroll-btn" type="button" data-khub-direction="prev" aria-label="Previous Knowledge Hub articles">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <button className="khub-scroll-btn" type="button" data-khub-direction="next" aria-label="Next Knowledge Hub articles">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+      </div>
 
       <div className="khub-footer">
         <a href="#" className="btn-maroon">Explore All Articles</a>
@@ -1200,9 +1303,7 @@ export function PvgReferenceSections({
   <footer className="pvg-footer" id="footer" role="contentinfo">
     <div className="pvg-footer-main">
       <div className="container">
-        <div className="pvg-footer-grid">
-
-          
+        <div className="pvg-footer-brand-strip">
           <div>
             <div className="pvg-footer-brand-row">
               <img
@@ -1219,91 +1320,156 @@ export function PvgReferenceSections({
               </div>
             </div>
             <p className="pvg-footer-about">For over 87 years and four generations, we have been the most trusted source of authentic, lab-certified Jyotish gemstones and sacred Rudrakshas — serving seekers across 40+ countries.</p>
-            <div className="pvg-footer-socials" aria-label="Social media links">
-              <a href="#" className="pvg-social-icon" aria-label="Facebook">
-                <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              </a>
-              <a href="#" className="pvg-social-icon" aria-label="Instagram">
-                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              </a>
-              <a href="#" className="pvg-social-icon" aria-label="YouTube">
-                <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02"/></svg>
-              </a>
-              <a href="#" className="pvg-social-icon" aria-label="LinkedIn">
-                <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-              </a>
+          </div>
+          <div className="pvg-footer-socials" aria-label="Social media links">
+            <a href="#" className="pvg-social-icon" aria-label="Facebook">
+              <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            </a>
+            <a href="#" className="pvg-social-icon" aria-label="Instagram">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+            <a href="#" className="pvg-social-icon" aria-label="YouTube">
+              <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02"/></svg>
+            </a>
+            <a href="#" className="pvg-social-icon" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div className="pvg-footer-directory">
+          {([
+            {
+              title: 'Company',
+              links: [
+                ['Home', '/'],
+                ['About Us', '/about'],
+                ['Our Experts', '/about/experts'],
+                ['Our Stores', '/about/stores'],
+                ['Contact Us', '/contact'],
+                ['Track Order', '/track-order'],
+              ],
+            },
+            {
+              title: 'Shop',
+              links: [
+                ['All Gemstones', '/shop'],
+                ['Navaratna Gemstones', '/shop/navaratna'],
+                ['Rudraksha Beads', '/shop/rudraksha'],
+                ['Semi-Precious Gemstones', '/shop?category=upratna'],
+                ['Director\'s Pick', '/shop?directors_pick=true'],
+                ['Cart', '/cart'],
+              ],
+            },
+            {
+              title: 'Navaratna Gems',
+              links: [
+                ['Ruby', '/shop/ruby'],
+                ['Pearl', '/shop/pearl'],
+                ['Red Coral', '/shop/red-coral'],
+                ['Emerald', '/shop/emerald'],
+                ['Yellow Sapphire', '/shop/yellow-sapphire'],
+                ['Blue Sapphire', '/shop/blue-sapphire'],
+                ['Hessonite', '/shop/hessonite'],
+                ['Cat\'s Eye', '/shop/cats-eye'],
+                ['Diamond', '/shop/diamond'],
+              ],
+            },
+            {
+              title: 'Services',
+              links: [
+                ['Consultation', '/consultation'],
+                ['Gem-to-Jewellery Configurator', '/configure'],
+                ['Gem Recommendation Tool', '/tools/recommendation'],
+                ['Carat to Ratti Converter', '/tools/carat-to-ratti'],
+                ['Ring Size Guide', '/tools/ring-size-guide'],
+                ['Buying Guides', '/knowledge/buying-guides'],
+              ],
+            },
+            {
+              title: 'Knowledge',
+              links: [
+                ['Knowledge Hub', '/knowledge'],
+                ['Gemstone Guides', '/knowledge/gemstones'],
+                ['Rudraksha Guides', '/knowledge/rudraksha'],
+                ['Astrology', '/knowledge/astrology'],
+                ['Blog', '/blog'],
+                ['Account', '/account'],
+              ],
+            },
+            {
+              title: 'Policies',
+              links: [
+                ['Privacy Policy', '/policies/privacy'],
+                ['Terms of Service', '/policies/terms'],
+                ['Shipping Policy', '/policies/shipping'],
+                ['Returns Policy', '/policies/returns'],
+                ['My Orders', '/account/orders'],
+                ['Saved Items', '/account/saved'],
+              ],
+            },
+          ] as Array<{ title: string; links: Array<[string, string]> }>).map((group) => (
+            <div className="pvg-footer-link-group" key={group.title}>
+              <div className="pvg-footer-col-title">{group.title}</div>
+              {group.links.map(([label, href]) => (
+                <a key={`${group.title}-${href}-${label}`} href={href} className="pvg-footer-link">{label}</a>
+              ))}
             </div>
-          </div>
+          ))}
+        </div>
 
-          
-          <div>
-            <div className="pvg-footer-col-title">Quick Links</div>
-            <a href="#" className="pvg-footer-link">Home</a>
-            <a href="#" className="pvg-footer-link">Shop Gemstones</a>
-            <a href="#" className="pvg-footer-link">Rudraksha Malas</a>
-            <a href="#" className="pvg-footer-link">Certified Jewellery</a>
-            <a href="#" className="pvg-footer-link">Consultation</a>
-            <a href="#" className="pvg-footer-link">Knowledge Hub</a>
-            <a href="#" className="pvg-footer-link">Our Experts</a>
-            <a href="#" className="pvg-footer-link">Our Legacy</a>
-            <a href="#" className="pvg-footer-link">About Us</a>
-            <a href="#" className="pvg-footer-link">Contact</a>
-          </div>
-
-          
+        <div className="pvg-footer-service-strip">
           <div>
             <div className="pvg-footer-col-title">Our Locations</div>
-
-            <div className="pvg-footer-loc">
-              <div className="pvg-footer-loc-flag">IN</div>
-              <div>
-                <span className="pvg-footer-loc-city">Delhi — Saket</span>
-                <span className="pvg-footer-loc-addr">M-24, GF, Select Citywalk Mall, Saket, New Delhi — 110017</span>
+            <div className="pvg-footer-loc-list">
+              <div className="pvg-footer-loc">
+                <div className="pvg-footer-loc-flag">IN</div>
+                <div>
+                  <span className="pvg-footer-loc-city">Delhi - Saket</span>
+                  <span className="pvg-footer-loc-addr">M-24, GF, Select Citywalk Mall, Saket, New Delhi - 110017</span>
+                </div>
               </div>
-            </div>
 
-            <div className="pvg-footer-loc">
-              <div className="pvg-footer-loc-flag">IN</div>
-              <div>
-                <span className="pvg-footer-loc-city">Noida — Sector 49</span>
-                <span className="pvg-footer-loc-addr">H 65, Sector 49, Noida — 201301, Uttar Pradesh</span>
+              <div className="pvg-footer-loc">
+                <div className="pvg-footer-loc-flag">IN</div>
+                <div>
+                  <span className="pvg-footer-loc-city">Noida - Sector 49</span>
+                  <span className="pvg-footer-loc-addr">H 65, Sector 49, Noida - 201301, Uttar Pradesh</span>
+                </div>
               </div>
-            </div>
 
-            <div className="pvg-footer-loc">
-              <div className="pvg-footer-loc-flag">UK</div>
-              <div>
-                <span className="pvg-footer-loc-city">London — Hounslow</span>
-                <span className="pvg-footer-loc-addr">219 Staines Rd, Hounslow, London TW3 3JQ, United Kingdom</span>
+              <div className="pvg-footer-loc">
+                <div className="pvg-footer-loc-flag">UK</div>
+                <div>
+                  <span className="pvg-footer-loc-city">London - Hounslow</span>
+                  <span className="pvg-footer-loc-addr">219 Staines Rd, Hounslow, London TW3 3JQ, United Kingdom</span>
+                </div>
               </div>
             </div>
           </div>
 
-          
           <div>
             <div className="pvg-footer-col-title">Contact &amp; Hours</div>
-
-            <div className="pvg-footer-contact-item">
+            <a className="pvg-footer-contact-item" href="tel:+919310172512">
               <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.9.7 2.81a2 2 0 0 1-.45 2.11L10.91 17a16 16 0 0 0 6.09 6.09l.32-.32a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 21.92z"/></svg>
               +91-9310172512 (India)
-            </div>
-            <div className="pvg-footer-contact-item">
+            </a>
+            <a className="pvg-footer-contact-item" href="tel:+919871582404">
               <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.9.7 2.81a2 2 0 0 1-.45 2.11L10.91 17a16 16 0 0 0 6.09 6.09l.32-.32a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 21.92z"/></svg>
               +91-9871582404 (India)
-            </div>
-            <div className="pvg-footer-contact-item">
+            </a>
+            <a className="pvg-footer-contact-item" href="tel:+447831491778">
               <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.9.7 2.81a2 2 0 0 1-.45 2.11L10.91 17a16 16 0 0 0 6.09 6.09l.32-.32a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 21.92z"/></svg>
               +44 7831 491778 (UK)
-            </div>
+            </a>
 
-            <p className="pvg-footer-hours">Open Mon, Tue, Thu &ndash; Sun: 11am &ndash; 8pm<br />Closed on Wednesdays</p>
+            <p className="pvg-footer-hours">Open Mon, Tue, Thu - Sun: 11am - 8pm<br />Closed on Wednesdays</p>
 
             <a href="https://wa.me/919310172512" target="_blank" rel="noopener noreferrer" className="pvg-footer-wa">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
               WhatsApp Us
             </a>
           </div>
-
         </div>
       </div>
     </div>
@@ -1324,14 +1490,6 @@ export function PvgReferenceSections({
   </footer>
 
   
-  <a href="tel:+919310172512" className="pvg-call-float" aria-label="Call us">
-    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.38 2 2 0 0 1 3.64 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6.29 6.29l1.15-1.15a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2.02z"/></svg>
-  </a>
-
-  <a href="https://wa.me/919310172512" className="pvg-wa-float" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-  </a>
-
   <button className="pvg-scroll-top" id="pvgScrollTop" aria-label="Back to top">
     <svg viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
   </button>

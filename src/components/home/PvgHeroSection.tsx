@@ -1,23 +1,26 @@
-/* eslint-disable @next/next/no-img-element */
-
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 const SLIDES: Array<{
-  image: string;
+  desktopImage: string;
+  mobileImage: string;
   alt: string;
 }> = [
   {
-    image: '/home/hero/pvgherobg1.png',
+    desktopImage: '/home/hero/pvgheropc1.png',
+    mobileImage: '/home/hero/pvgherobg1.png',
     alt: 'Find Your Lucky Gem - Pure Vedic Gems',
   },
   {
-    image: '/home/hero/pvgherobg2.png',
+    desktopImage: '/home/hero/pvgheropc2.png',
+    mobileImage: '/home/hero/pvgherobg2.png',
     alt: 'Create Your Perfect Gemstone Jewellery - Pure Vedic Gems',
   },
   {
-    image: '/home/hero/pvgherobg3.png',
+    desktopImage: '/home/hero/pvgheropc3.png',
+    mobileImage: '/home/hero/pvgherobg3.png',
     alt: 'Swift Results & Blessed Life - Pure Vedic Gems',
   },
 ];
@@ -54,39 +57,29 @@ export function PvgHeroSection() {
         }
       }}
     >
-      <style>{`
-        .pvg-hero-clean {
-          background: #F6EFE3 !important;
-          height: clamp(300px, 41vw, 620px) !important;
-          min-height: 220px !important;
-          max-height: 650px !important;
-        }
-        .pvg-hero-clean::after { display: none !important; }
-        .pvg-hero-clean .hero-slide-img {
-          object-fit: contain !important;
-          object-position: center center !important;
-          transform: none !important;
-        }
-        .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
-          transform: none !important;
-        }
-        .pvg-hero-clean .hero-yantra { display: none !important; }
-        @media (max-width: 640px) {
-          .pvg-hero-clean {
-            height: clamp(210px, 60vw, 360px) !important;
-          }
-        }
-      `}</style>
-
       {/* Slide images */}
       {SLIDES.map((item, index) => (
-        <div key={item.image} className={`hero-slide${index === currentSlide ? ' is-active' : ''}`} data-index={index}>
-          <img
-            src={item.image}
+        <div key={item.desktopImage} className={`hero-slide${index === currentSlide ? ' is-active' : ''}`} data-index={index}>
+          {/* Desktop image (≥768px) — hidden on mobile via CSS */}
+          <Image
+            src={item.desktopImage}
             alt={item.alt}
-            className="hero-slide-img"
-            loading={index === 0 ? 'eager' : 'lazy'}
-            fetchPriority={index === 0 ? 'high' : undefined}
+            fill
+            className="hero-slide-img pvg-hero-img-desktop"
+            priority={index === 0}
+            loading={index === 0 ? undefined : 'lazy'}
+            sizes="(max-width: 767px) 1px, 100vw"
+          />
+          {/* Mobile/tablet image (<768px) — hidden on desktop via CSS */}
+          <Image
+            src={item.mobileImage}
+            alt=""
+            aria-hidden="true"
+            fill
+            className="hero-slide-img pvg-hero-img-mobile"
+            priority={index === 0}
+            loading={index === 0 ? undefined : 'lazy'}
+            sizes="(min-width: 768px) 1px, 100vw"
           />
         </div>
       ))}
@@ -96,7 +89,7 @@ export function PvgHeroSection() {
         <div className="hero-dots" id="heroDots">
           {SLIDES.map((item, index) => (
             <button
-              key={item.image}
+              key={item.desktopImage}
               type="button"
               className={`hero-dot${index === currentSlide ? ' is-active' : ''}`}
               data-index={index}

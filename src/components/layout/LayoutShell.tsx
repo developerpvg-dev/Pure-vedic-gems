@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { StickyContactRail } from './StickyContactRail';
 import { SiteHeader } from './SiteHeader';
 import { Footer } from './Footer';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
@@ -18,6 +19,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     <>
       <SiteHeader />
       <main className="flex-1">{children}</main>
+      <StickyContactRail />
       {!isHome ? <Footer /> : null}
       {!isHome ? <ThemeSwitcher /> : null}
     </>

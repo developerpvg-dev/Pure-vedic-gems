@@ -4,6 +4,7 @@
 @source "../lib";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./home.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -223,6 +224,99 @@
 [data-font='6'] {
   --fh: var(--font-roboto);
   --fb: var(--font-roboto);
+}
+
+.pvg-sticky-contact-rail {
+  position: fixed;
+  top: auto;
+  bottom: clamp(88px, 10vh, 120px);
+  right: 14px;
+  z-index: 920;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transform: none;
+}
+
+.pvg-sticky-contact-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(61, 43, 31, 0.16);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.pvg-sticky-contact-link span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.pvg-sticky-contact-link svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.pvg-sticky-contact-call {
+  background: linear-gradient(135deg, #7a1515 0%, #4d0a0a 100%);
+  border-color: rgba(122, 21, 21, 0.38);
+  color: #ffffff;
+}
+
+.pvg-sticky-contact-call svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pvg-sticky-contact-whatsapp {
+  background: linear-gradient(135deg, #f5edd9 0%, #d4a843 100%);
+  border-color: rgba(184, 134, 30, 0.34);
+  color: #4d0a0a;
+}
+
+.pvg-sticky-contact-whatsapp svg {
+  fill: currentColor;
+}
+
+.pvg-sticky-contact-link:hover {
+  transform: translateX(-3px);
+  box-shadow: 0 16px 34px rgba(61, 43, 31, 0.22);
+}
+
+@media (max-width: 767px) {
+  .pvg-sticky-contact-rail {
+    right: 10px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+    gap: 8px;
+  }
+
+  .pvg-sticky-contact-link {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 10px;
+  }
+
+  .pvg-sticky-contact-link span {
+    display: none;
+  }
+
+  .pvg-sticky-contact-link svg {
+    width: 15px;
+    height: 15px;
+  }
 }
 
 .dark {

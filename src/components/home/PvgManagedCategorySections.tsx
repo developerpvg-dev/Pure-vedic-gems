@@ -144,6 +144,7 @@ const DIRECTOR_PICK_FALLBACK: HomeDirectorPick[] = [
   { id: 'blue-sapphire', name: 'Kashmir Blue Sapphire - Neelam', slug: 'kashmir-blue-sapphire-neelam', category: 'navaratna', sub_category: 'blue-sapphire', price: 948000, carat_weight: 4.74, origin: 'Kashmir', shape: 'Cushion', treatment: 'No Heat', certification: 'GRS Cert.', certificate_lab: 'GRS', quality_label: null, thumbnail_url: null, images: [], display_order: 2 },
   { id: 'emerald', name: 'Colombian Emerald - Panna', slug: 'colombian-emerald-panna', category: 'navaratna', sub_category: 'emerald', price: 572800, carat_weight: 3.58, origin: 'Colombia', shape: 'Oval Cut', treatment: 'Minor Oil Only', certification: 'Gubelin', certificate_lab: 'Gubelin', quality_label: null, thumbnail_url: null, images: [], display_order: 3 },
   { id: 'yellow-sapphire', name: 'Ceylon Yellow Sapphire - Pukhraj', slug: 'ceylon-yellow-sapphire-pukhraj', category: 'navaratna', sub_category: 'yellow-sapphire', price: 358400, carat_weight: 5.12, origin: 'Ceylon', shape: 'Oval Cut', treatment: 'No Heat', certification: 'IGI Cert.', certificate_lab: 'IGI', quality_label: null, thumbnail_url: null, images: [], display_order: 4 },
+  { id: 'diamond', name: 'Natural Diamond - Heera', slug: 'natural-diamond-heera', category: 'navaratna', sub_category: 'diamond', price: 486000, carat_weight: 1.21, origin: 'South Africa', shape: 'Round Brilliant', treatment: 'Natural', certification: 'IGI Cert.', certificate_lab: 'IGI', quality_label: 'VVS', thumbnail_url: null, images: [], display_order: 5 },
 ];
 
 const FALLBACK_BUCKETS: CategoryBucket = {
@@ -288,6 +289,20 @@ function normalizeDirectorPick(row: Record<string, unknown>): HomeDirectorPick {
   };
 }
 
+function ensureDirectorPickCount(items: HomeDirectorPick[]) {
+  if (!items.length) return DIRECTOR_PICK_FALLBACK;
+
+  const seen = new Set(items.map((item) => item.slug || item.id));
+  const merged = [...items];
+  for (const fallback of DIRECTOR_PICK_FALLBACK) {
+    if (merged.length >= 5) break;
+    if (seen.has(fallback.slug || fallback.id)) continue;
+    merged.push(fallback);
+    seen.add(fallback.slug || fallback.id);
+  }
+  return merged;
+}
+
 export async function getHomeSectionCatalog(): Promise<HomeSectionCatalog> {
   const supabase = createOptionalPublicClient();
   if (!supabase) {
@@ -333,7 +348,7 @@ export async function getHomeSectionCatalog(): Promise<HomeSectionCatalog> {
     rudrakshaFeatures: rudrakshaFeatures.length ? rudrakshaFeatures : RUDRAKSHA_FEATURE_FALLBACK,
     exploreIdols: exploreIdols.length ? exploreIdols : EXPLORE_IDOL_FALLBACK,
     exploreJewelry: exploreJewelry.length ? exploreJewelry : EXPLORE_JEWELRY_FALLBACK,
-    directorPicks: directorPicks.length ? directorPicks : DIRECTOR_PICK_FALLBACK,
+    directorPicks: ensureDirectorPickCount(directorPicks),
   };
 }
 
@@ -465,6 +480,11 @@ function IntegratedCategoryCta({
           </div>
         </div>
       </div>
+
+      <div className="pvg-rcta-v2-mobile-actions">
+        <Link href={primary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary">{primary.label}</Link>
+        <Link href={secondary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-secondary">{secondary.label}</Link>
+      </div>
     </section>
   );
 }
@@ -474,8 +494,8 @@ function exploreFallbackBackground(category: HomeCatalogCategory) {
   return `radial-gradient(circle at 35% 30%, ${color}, #6A4400 55%, #2A1800 100%)`;
 }
 
-function formatPrice(price: number) {
-  return `Rs. ${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(price || 0)}`;
+function formatPriceValue(price: number) {
+  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(price || 0);
 }
 
 function directorMeta(product: HomeDirectorPick) {
@@ -499,6 +519,17 @@ function directorFallbackImage(product: HomeDirectorPick) {
   if (comparable.includes('hessonite') || comparable.includes('gomed')) return '/home/navratnaimg/stone8.png';
   if (comparable.includes('eye') || comparable.includes('lehsun')) return '/home/navratnaimg/stone9.png';
   return '/home/navratnaimg/stone1.png';
+}
+
+function directorNote(product: HomeDirectorPick) {
+  const comparable = `${product.slug} ${product.name} ${product.sub_category ?? ''}`.toLowerCase();
+  if (comparable.includes('ruby') || comparable.includes('manik')) return 'Excellent clarity & color. Ideal for confidence & leadership.';
+  if (comparable.includes('blue-sapphire') || comparable.includes('blue sapphire') || comparable.includes('neelam')) return 'Finest quality with exceptional clarity and brilliance.';
+  if (comparable.includes('emerald') || comparable.includes('panna')) return 'Vivid green with natural charm. Enhances wisdom & prosperity.';
+  if (comparable.includes('yellow-sapphire') || comparable.includes('yellow sapphire') || comparable.includes('pukhraj')) return 'Bright golden hue. Brings prosperity, health & happiness.';
+  if (comparable.includes('coral') || comparable.includes('moonga')) return 'Strong natural vitality. Supports courage & decisive action.';
+  if (comparable.includes('pearl') || comparable.includes('moti')) return 'Soft natural lustre. Encourages calm, purity & balance.';
+  return 'Personally selected for quality, beauty and Jyotish suitability.';
 }
 
 export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCategory[] }) {
@@ -528,6 +559,18 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
               ))}
             </div>
           ))}
+
+          <div className="navratna-tablet-grid" aria-label="Navaratna gemstone categories">
+            {categories.slice(0, 9).map((category) => (
+              <Link key={category.slug} href={`/shop/${category.slug}`} className="gem-card-new">
+                <div className="gem-img-wrap">
+                  {layeredImage(category.image_url, category.hover_image_url, category.name, fallbackGemBackground(category))}
+                </div>
+                <div className="gem-name-primary">{categoryLabel(category)}</div>
+                <div className="gem-origin">{navaratnaLocationLabel()}</div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
       <IntegratedCategoryCta
@@ -717,10 +760,16 @@ function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
       <div className="director-pick-media" style={!imageUrl ? { background: 'linear-gradient(145deg, #faf7ef, #efe3cf)' } : undefined}>
         {imageUrl ? <img src={imageUrl} alt={product.name} loading="lazy" /> : <div className="director-pick-gem-fallback" />}
       </div>
-      <div className="director-pick-info">
-        <h4>{product.name}</h4>
-        <span className="pick-meta">{directorMeta(product) || product.origin || 'Curated selection'}</span>
-        <span className="pick-price">{formatPrice(product.price)}</span>
+      <div className="director-pick-body">
+        <div className="director-pick-info">
+          <h4>{product.name}</h4>
+          <span className="pick-meta">{directorMeta(product) || product.origin || 'Curated selection'}</span>
+          <span className="pick-note">{directorNote(product)}</span>
+        </div>
+        <span className="pick-price">
+          <span className="pick-price-label">Rs.</span>
+          <span className="pick-price-value">{formatPriceValue(product.price)}</span>
+        </span>
       </div>
     </Link>
   );
@@ -740,16 +789,29 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
 
           <div className="director-content">
             <div className="director-strip">
-              <div>
+              <div className="director-strip-copy">
+                <span className="director-mobile-gem" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 4h11l4 5-9.5 11L2.5 9l4-5zm1.2 1.8L4.9 9.2h3.7l1.7-3.4H7.7zm4.3 0L10.3 9.2h3.4L12 5.8zm4.3 0h-2.6l1.7 3.4h3.7l-2.8-3.4zM9.2 11H5.7l5.1 5.8L9.2 11zm2.8 6 4.9-6h-3.5L12 17zm-1.7-5.8 1.7 6 1.7-6h-3.4z" /></svg>
+                </span>
                 <h2 className="section-title" id="director-heading">Director&apos;s Pick</h2>
+                <span className="director-mobile-rule" aria-hidden="true"><span /></span>
                 <p className="section-sub">Premium stones selected for quality, beauty and Jyotish suitability.</p>
               </div>
               <Link href="/shop?directors_pick=true" className="button-outline director-all-link">View All Picks</Link>
             </div>
 
-            <div className="director-picks">
-              {products.slice(0, 4).map((product) => <DirectorPickCard key={product.id} product={product} />)}
+            <div className="director-mobile-scroll-cue" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M6 9l6 6 6-6" /></svg>
             </div>
+
+            <div className="director-picks">
+              {products.slice(0, 5).map((product) => <DirectorPickCard key={product.id} product={product} />)}
+            </div>
+
+            <Link href="/shop?directors_pick=true" className="director-mobile-cta">
+              <span>View All Picks</span>
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M8 5l8 7-8 7" /></svg>
+            </Link>
           </div>
         </div>
       </div>
