@@ -68,6 +68,8 @@ const nextConfig: NextConfig = {
 
   images: {
     qualities: [75, 85, 90],
+    minimumCacheTTL: 86400, // 1 day for Next.js optimized images
+    formats: ['image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -87,6 +89,37 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
+      // Long-lived cache for all static assets in /public
+      {
+        source: '/home/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' }, // 30 days
+        ],
+      },
+      {
+        source: '/labslogo/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/our_expets_img/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/stones_img/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/flags/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

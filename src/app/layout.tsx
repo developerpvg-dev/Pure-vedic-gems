@@ -74,6 +74,23 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${roboto.variable} ${playfairDisplay.variable} ${montserrat.variable} h-full antialiased`}
     >
+      <head>
+        {/* Preload the first hero image (LCP element) for both desktop and mobile */}
+        <link
+          rel="preload"
+          as="image"
+          href="/home/hero/pvgheropc1.webp"
+          media="(min-width: 768px)"
+          fetchPriority="high"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/home/hero/pvgherobg1.webp"
+          media="(max-width: 767px)"
+          fetchPriority="high"
+        />
+      </head>
       <body className="min-h-full flex flex-col font-body bg-background text-foreground">
         <GoogleAnalytics />
         <JsonLd data={organizationJsonLd()} />

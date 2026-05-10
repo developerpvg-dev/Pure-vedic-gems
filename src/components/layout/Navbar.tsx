@@ -59,10 +59,10 @@ export function Navbar() {
             </button>
           </div>
 
-          {/* -- CENTRE — Logo with arch dome -- */}
+          {/* -- CENTRE ï¿½ Logo with arch dome -- */}
           <div className="relative flex shrink-0 items-center justify-center">
             {/*
-             * Arch dome — desktop only.
+             * Arch dome ï¿½ desktop only.
              * Positioned absolutely so it extends 16px below the nav's border-b,
              * creating the "wider rounded centre" effect the user requested.
              * It has the same bg as the navbar and its own border on 3 sides.
@@ -81,7 +81,7 @@ export function Navbar() {
               }}
             />
 
-            {/* Logo link — sits on top of the arch (z-10) */}
+            {/* Logo link ï¿½ sits on top of the arch (z-10) */}
             <Link
               href="/"
               className="relative z-10 flex flex-col items-center px-6 md:px-10 lg:px-16"
@@ -89,7 +89,7 @@ export function Navbar() {
             >
               <div className="relative h-[42px] w-[42px] md:h-[52px] md:w-[52px]">
                 <Image
-                  src="/PVG NEW LOGO DESIGN.PNG"
+                  src="/PVG NEW LOGO DESIGN.webp"
                   alt="PureVedicGems Logo"
                   fill
                   className="object-contain"
@@ -99,7 +99,7 @@ export function Navbar() {
               </div>
               <div className="relative mt-0.5 h-[16px] w-[120px] md:h-[20px] md:w-[160px]">
                 <Image
-                  src="/Algerian.png"
+                  src="/Algerian.webp"
                   alt="Pure Vedic Gems"
                   fill
                   className="object-contain"
@@ -132,7 +132,7 @@ export function Navbar() {
             </li>
           </ul>
 
-          {/* -- MOBILE RIGHT — small CTA button -- */}
+          {/* -- MOBILE RIGHT ï¿½ small CTA button -- */}
           <div className="flex flex-1 items-center justify-end lg:hidden">
             <Link
               href="/consultation"

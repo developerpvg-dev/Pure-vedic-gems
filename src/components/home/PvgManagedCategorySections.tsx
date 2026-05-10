@@ -385,20 +385,20 @@ function navaratnaLocationLabel() {
 }
 
 const RUDRAKSHA_IMAGE_BY_SLUG: Record<string, string> = {
-  '1-mukhi': '/home/rudrakhshas%20images/1Mukhi-150x150.jpg',
-  '2-mukhi': '/home/rudrakhshas%20images/2Mukhi-150x150.jpg',
-  '3-mukhi': '/home/rudrakhshas%20images/3Mukhi-150x150.jpg',
-  '4-mukhi': '/home/rudrakhshas%20images/4Mukhi-150x150.jpg',
-  '5-mukhi': '/home/rudrakhshas%20images/5Mukhi-150x150.jpg',
-  '6-mukhi': '/home/rudrakhshas%20images/6Mukhi-150x150.jpg',
-  '7-mukhi': '/home/rudrakhshas%20images/7Mukhi-150x150.jpg',
-  '8-mukhi': '/home/rudrakhshas%20images/8Mukhi-150x150.jpg',
-  '9-mukhi': '/home/rudrakhshas%20images/9Mukhi-150x150.jpg',
-  '10-mukhi': '/home/rudrakhshas%20images/10Mukhi-150x150.jpg',
-  '11-mukhi': '/home/rudrakhshas%20images/11Mukhi-150x150.jpg',
-  '12-mukhi': '/home/rudrakhshas%20images/12Mukhi-150x150.jpg',
-  '13-mukhi': '/home/rudrakhshas%20images/13Mukhi-150x150.jpg',
-  '14-mukhi': '/home/rudrakhshas%20images/14Mukhi-150x150.jpg',
+  '1-mukhi': '/home/rudrakhshas%20images/1Mukhi-150x150.webp',
+  '2-mukhi': '/home/rudrakhshas%20images/2Mukhi-150x150.webp',
+  '3-mukhi': '/home/rudrakhshas%20images/3Mukhi-150x150.webp',
+  '4-mukhi': '/home/rudrakhshas%20images/4Mukhi-150x150.webp',
+  '5-mukhi': '/home/rudrakhshas%20images/5Mukhi-150x150.webp',
+  '6-mukhi': '/home/rudrakhshas%20images/6Mukhi-150x150.webp',
+  '7-mukhi': '/home/rudrakhshas%20images/7Mukhi-150x150.webp',
+  '8-mukhi': '/home/rudrakhshas%20images/8Mukhi-150x150.webp',
+  '9-mukhi': '/home/rudrakhshas%20images/9Mukhi-150x150.webp',
+  '10-mukhi': '/home/rudrakhshas%20images/10Mukhi-150x150.webp',
+  '11-mukhi': '/home/rudrakhshas%20images/11Mukhi-150x150.webp',
+  '12-mukhi': '/home/rudrakhshas%20images/12Mukhi-150x150.webp',
+  '13-mukhi': '/home/rudrakhshas%20images/13Mukhi-150x150.webp',
+  '14-mukhi': '/home/rudrakhshas%20images/14Mukhi-150x150.webp',
   '15-mukhi': '/home/rudrakhshas%20images/15mukhirudraksha.webp',
   '16-mukhi': '/home/rudrakhshas%20images/16Mukhi%20rudraksha.webp',
   '17-mukhi': '/home/rudrakhshas%20images/17Mukhi%20rudraksha.webp',
@@ -509,16 +509,16 @@ function directorMeta(product: HomeDirectorPick) {
 
 function directorFallbackImage(product: HomeDirectorPick) {
   const comparable = `${product.slug} ${product.name} ${product.sub_category ?? ''}`.toLowerCase();
-  if (comparable.includes('ruby') || comparable.includes('manik')) return '/home/navratnaimg/stone1.png';
-  if (comparable.includes('pearl') || comparable.includes('moti')) return '/home/navratnaimg/stone2.png';
-  if (comparable.includes('blue-sapphire') || comparable.includes('blue sapphire') || comparable.includes('neelam')) return '/home/navratnaimg/stone3.png';
-  if (comparable.includes('emerald') || comparable.includes('panna')) return '/home/navratnaimg/stone4.png';
-  if (comparable.includes('yellow-sapphire') || comparable.includes('yellow sapphire') || comparable.includes('pukhraj')) return '/home/navratnaimg/stone5.png';
-  if (comparable.includes('diamond') || comparable.includes('heera')) return '/home/navratnaimg/stone6.png';
-  if (comparable.includes('coral') || comparable.includes('moonga')) return '/home/navratnaimg/stone7.png';
-  if (comparable.includes('hessonite') || comparable.includes('gomed')) return '/home/navratnaimg/stone8.png';
-  if (comparable.includes('eye') || comparable.includes('lehsun')) return '/home/navratnaimg/stone9.png';
-  return '/home/navratnaimg/stone1.png';
+  if (comparable.includes('ruby') || comparable.includes('manik')) return '/home/navratnaimg/stone1.webp';
+  if (comparable.includes('pearl') || comparable.includes('moti')) return '/home/navratnaimg/stone2.webp';
+  if (comparable.includes('blue-sapphire') || comparable.includes('blue sapphire') || comparable.includes('neelam')) return '/home/navratnaimg/stone3.webp';
+  if (comparable.includes('emerald') || comparable.includes('panna')) return '/home/navratnaimg/stone4.webp';
+  if (comparable.includes('yellow-sapphire') || comparable.includes('yellow sapphire') || comparable.includes('pukhraj')) return '/home/navratnaimg/stone5.webp';
+  if (comparable.includes('diamond') || comparable.includes('heera')) return '/home/navratnaimg/stone6.webp';
+  if (comparable.includes('coral') || comparable.includes('moonga')) return '/home/navratnaimg/stone7.webp';
+  if (comparable.includes('hessonite') || comparable.includes('gomed')) return '/home/navratnaimg/stone8.webp';
+  if (comparable.includes('eye') || comparable.includes('lehsun')) return '/home/navratnaimg/stone9.webp';
+  return '/home/navratnaimg/stone1.webp';
 }
 
 function directorNote(product: HomeDirectorPick) {
@@ -579,7 +579,7 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
         copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
         primary={{ label: 'Get Gem Recommendation', href: '/configure' }}
         secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
-        image="/home/ctas/cta1.png"
+        image="/home/ctas/cta1.webp"
         imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
         imageSide="right"
       />
@@ -661,7 +661,7 @@ export function RudrakshaHomeSection({
         copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
         primary={{ label: 'Get Rudraksha Guidance', href: '/configure' }}
         secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
-        image="/home/ctas/cta2.png"
+        image="/home/ctas/cta2.webp"
         imageAlt="Rudraksha expert offering personalised guidance"
         imageSide="left"
       />
@@ -782,7 +782,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
         <div className="director-layout">
           <aside className="director-profile" aria-label="Personally selected by Shri Vikas Mehra">
             <div className="director-portrait">
-              <img src="/home/director%27spick/director%27spick.png" alt="Shri Vikas Mehra, Director of Pure Vedic Gems" loading="lazy" />
+              <img src="/home/director%27spick/director%27spick.webp" alt="Shri Vikas Mehra, Director of Pure Vedic Gems" loading="lazy" decoding="async" />
             </div>
             <div className="director-profile-note">Personally selected by Shri Vikas Mehra</div>
           </aside>
@@ -859,7 +859,7 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
         copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
         primary={{ label: 'Get Uparatna Guidance', href: '/configure' }}
         secondary={{ label: 'See Uparatna Collection', href: '/shop?category=upratna' }}
-        image="/home/ctas/cta3.png"
+        image="/home/ctas/cta3.webp"
         imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"
         imageSide="right"
       />

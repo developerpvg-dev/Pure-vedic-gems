@@ -192,19 +192,19 @@ export function PvgReferenceSections({
           <div className="about-img-stack" id="aboutStack" aria-label="Heritage photographs">
 
             <div className="about-stack-card" data-pos="3">
-              <img className="about-stack-img" src="/home/whoweare/1Heritage.jpeg" alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" />
+              <img className="about-stack-img" src="/home/whoweare/1Heritage.webp" alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="2">
-              <img className="about-stack-img" src="/home/whoweare/2Sourcing.png" alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" />
+              <img className="about-stack-img" src="/home/whoweare/2Sourcing.webp" alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="1">
-              <img className="about-stack-img" src="/home/whoweare/3Certification.png" alt="Pure Vedic Gems certification bodies" loading="lazy" />
+              <img className="about-stack-img" src="/home/whoweare/3Certification.webp" alt="Pure Vedic Gems certification bodies" loading="lazy" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="0">
-              <img className="about-stack-img" src="/home/whoweare/4Energization.png" alt="Authentic Vedic gemstone energization ritual" loading="lazy" />
+              <img className="about-stack-img" src="/home/whoweare/4Energization.webp" alt="Authentic Vedic gemstone energization ritual" loading="lazy" decoding="async" />
             </div>
 
           </div>
@@ -282,16 +282,16 @@ export function PvgReferenceSections({
 
           <div className="cert-logos-wrap">
             <div className="cert-logos-grid">
-              <div className="cert-logo-item"><img src="/labslogo/GIA.jpg" alt="GIA — Gemological Institute of America" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IGI.jpg" alt="IGI — International Gemological Institute" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GRS.jpg" alt="GRS — Gem Research Swisslab" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GUBELIN.jpg" alt="Gübelin Gem Lab" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GII.jpg" alt="GII" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IIGJ.jpg" alt="IIGJ" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.jpg" alt="HRD Antwerp" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GJEPC.jpg" alt="GJEPC" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/SSEF.jpg" alt="SSEF" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GFCO.jpg" alt="GFCO" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GIA.webp" alt="GIA — Gemological Institute of America" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IGI.webp" alt="IGI — International Gemological Institute" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GRS.webp" alt="GRS — Gem Research Swisslab" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GUBELIN.webp" alt="Gübelin Gem Lab" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO" loading="lazy" decoding="async" /></div>
             </div>
           </div>
         </div>
@@ -302,25 +302,25 @@ export function PvgReferenceSections({
 
             <div className="cert-stack-card" data-pos="3">
               <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GIA (1).png" alt="GIA gemstone certificate sample" loading="lazy" />
+                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GIA (1).webp" alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
               <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle IGI (1).png" alt="IGI gemstone certificate sample" loading="lazy" />
+                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle IGI (1).webp" alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
               <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GII (1).png" alt="GII gemstone certificate sample" loading="lazy" />
+                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GII (1).webp" alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="0">
               <div className="cert-card-inner">
-                <img className="cert-real-img cert-real-img-landscape" src="/home/certificates/1170x826 pixle copy (1).png" alt="Multiple gemstone certification reports from global labs" loading="lazy" />
+                <img className="cert-real-img cert-real-img-landscape" src="/home/certificates/1170x826 pixle copy (1).webp" alt="Multiple gemstone certification reports from global labs" loading="lazy" decoding="async" />
               </div>
             </div>
 
@@ -666,7 +666,7 @@ export function PvgReferenceSections({
         ] as Array<{ title: string; desc: string }>).map((step, i) => (
           <div className="journey-step" key={i}>
             <div className="journey-step-img-wrap">
-              <img src={`/home/configuratorsteps/step${i + 1}.png`} alt={step.title} loading="lazy" className="journey-step-img" />
+              <img src={`/home/configuratorsteps/step${i + 1}.webp`} alt={step.title} loading="lazy" decoding="async" className="journey-step-img" />
             </div>
             <div className="journey-step-num" aria-hidden="true">{i + 1}</div>
             <div className="journey-step-title">{step.title.toUpperCase()}</div>
@@ -901,7 +901,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mr.%20Vikash%20Mehra.jpeg" alt="Mr. Vikas Mehra" loading="lazy" />
+              <img src="/our_expets_img/Mr.%20Vikash%20Mehra.webp" alt="Mr. Vikas Mehra" loading="lazy" decoding="async" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -922,7 +922,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mrs%20.%20Tanya%20Mehra.jpeg" alt="Mrs. Tanya Mehra" loading="lazy" />
+              <img src="/our_expets_img/Mrs%20.%20Tanya%20Mehra.webp" alt="Mrs. Tanya Mehra" loading="lazy" decoding="async" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -943,7 +943,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mr.%20Vrayas%20Mehra.jpeg" alt="Mr. Vrayas Mehra" loading="lazy" />
+              <img src="/our_expets_img/Mr.%20Vrayas%20Mehra.webp" alt="Mr. Vrayas Mehra" loading="lazy" decoding="async" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -971,15 +971,15 @@ export function PvgReferenceSections({
       <div className="remedy-shell">
         <div className="remedy-showcase" aria-live="polite">
           {[
-            { src: '/home/whoweare/1Heritage.jpeg', alt: 'Pure Vedic Gems heritage milestone' },
-            { src: '/home/whoweare/2Sourcing.png', alt: 'Gemstone sourcing milestone' },
-            { src: '/home/whoweare/3Certification.png', alt: 'Certification milestone' },
-            { src: '/home/whoweare/4Energization.png', alt: 'Energization milestone' },
-            { src: '/stones_img/stone1.png', alt: 'Global clientele milestone' },
-            { src: '/home/hero/pvgherobg3.png', alt: 'Next generation platform milestone' },
+            { src: '/home/whoweare/1Heritage.webp', alt: 'Pure Vedic Gems heritage milestone' },
+            { src: '/home/whoweare/2Sourcing.webp', alt: 'Gemstone sourcing milestone' },
+            { src: '/home/whoweare/3Certification.webp', alt: 'Certification milestone' },
+            { src: '/home/whoweare/4Energization.webp', alt: 'Energization milestone' },
+            { src: '/stones_img/stone1.webp', alt: 'Global clientele milestone' },
+            { src: '/home/hero/pvgherobg3.webp', alt: 'Next generation platform milestone' },
           ].map((item, index) => (
             <div key={item.src} className={`remedy-image${index === 0 ? ' is-active' : ''}`} data-legacy-image={index}>
-              <img src={item.src} alt={item.alt} loading="lazy" />
+              <img src={item.src} alt={item.alt} loading="lazy" decoding="async" />
             </div>
           ))}
           <div className="remedy-showcase-copy">
@@ -1225,7 +1225,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service2.png" alt="Vedic Astrology Consultation" loading="lazy" />
+            <img src="/home/ourservicesimg/service2.webp" alt="Vedic Astrology Consultation" loading="lazy" decoding="async" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Online Live &amp; Telephonic Horoscope Consultation by Genuine Vedic Astrologers</p>
@@ -1236,7 +1236,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service3.png" alt="Gem & Rudraksha Jewellery Crafting" loading="lazy" />
+            <img src="/home/ourservicesimg/service3.webp" alt="Gem & Rudraksha Jewellery Crafting" loading="lazy" decoding="async" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Crafting Gemstones &amp; Rudrakshas into Authentic Astro-Rashi Jewellery</p>
@@ -1247,7 +1247,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service1.png" alt="Vedic Energisation Prana Pratishtha" loading="lazy" />
+            <img src="/home/ourservicesimg/service1.webp" alt="Vedic Energisation Prana Pratishtha" loading="lazy" decoding="async" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Vedic Energisation (Prana Pratishtha) According to Your Gotra &amp; Rashi — Live &amp; Recorded</p>
@@ -1258,7 +1258,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service4.png" alt="Safe Worldwide Shipping" loading="lazy" />
+            <img src="/home/ourservicesimg/service4.webp" alt="Safe Worldwide Shipping" loading="lazy" decoding="async" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">COD in Delhi-NCR &amp; Worldwide Safe, Insured Shipping Available</p>
@@ -1269,7 +1269,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service5.png" alt="Ancient Vedic Remedies" loading="lazy" />
+            <img src="/home/ourservicesimg/service5.webp" alt="Ancient Vedic Remedies" loading="lazy" decoding="async" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Ancient Vedic Remedies — Mantra, Yagya, Yantra, Rudraksha &amp; Ratna Dharana</p>
@@ -1280,7 +1280,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service6.png" alt="Online & Offline Gem Retail" loading="lazy" />
+            <img src="/home/ourservicesimg/service6.webp" alt="Online & Offline Gem Retail" loading="lazy" decoding="async" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Online &amp; Offline Retail — Vedic Gems, Rudrakshas, Yagya Research &amp; Energising Centre</p>
@@ -1307,12 +1307,12 @@ export function PvgReferenceSections({
           <div>
             <div className="pvg-footer-brand-row">
               <img
-                src="/PVG NEW LOGO DESIGN.PNG"
+                src="/PVG NEW LOGO DESIGN.webp"
                 alt="Pure Vedic Gems emblem"
                 className="pvg-footer-logo-img" />
               <div style={toStyle("display:flex;flex-direction:column;align-items:flex-start;margin-left:10px;")}>
                 <img
-                  src="/Algerian.png"
+                  src="/Algerian.webp"
                   alt="Pure Vedic Gems"
                   className="pvg-footer-logo-wordmark" />
                 <span style={toStyle("display:none;font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold-light);letter-spacing:0.05em;")}>PURE VEDIC GEMS®</span>

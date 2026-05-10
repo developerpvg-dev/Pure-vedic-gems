@@ -21,10 +21,10 @@ interface SettingTypeSelectorProps {
 }
 
 const SETTING_IMAGES: Record<SettingType, string> = {
-  ring: '/config_img/ring.png',
-  pendant: '/config_img/pandent.png',
-  bracelet: '/config_img/bracelet.png',
-  loose: '/config_img/loose.png',
+  ring: '/config_img/ring.webp',
+  pendant: '/config_img/pandent.webp',
+  bracelet: '/config_img/bracelet.webp',
+  loose: '/config_img/loose.webp',
 };
 
 export default function SettingTypeSelector({

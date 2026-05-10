@@ -404,10 +404,10 @@ export function SiteHeader() {
           >
             {/* Logo */}
             <Link href="/" aria-label="Pure Vedic Gems — Home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
-              <Image src="/PVG NEW LOGO DESIGN.PNG" alt="Pure Vedic Gems emblem" width={48} height={48} priority
+              <Image src="/PVG NEW LOGO DESIGN.webp" alt="Pure Vedic Gems emblem" width={48} height={48} priority
                 style={{ width: '48px', height: '48px', objectFit: 'contain', flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
-                <Image src="/Algerian.png" alt="Pure Vedic Gems" width={150} height={30} priority
+                <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30} priority
                   style={{ width: '150px', height: '30px', objectFit: 'contain', display: 'block' }} />
                 <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#B8861E', marginTop: '3px', paddingLeft: '2px' }}>
                   Since 1937
@@ -455,10 +455,10 @@ export function SiteHeader() {
           {/* Mobile — visible below md (768 px) */}
           <div className="pvg-mob-nav" style={{ height: '62px', alignItems: 'center', padding: '0 16px' }}>
             <Link href="/" aria-label="Pure Vedic Gems home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
-              <Image src="/PVG NEW LOGO DESIGN.PNG" alt="Pure Vedic Gems" width={40} height={40} priority
+              <Image src="/PVG NEW LOGO DESIGN.webp" alt="Pure Vedic Gems" width={40} height={40} priority
                 style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
-                <Image src="/Algerian.png" alt="Pure Vedic Gems" width={120} height={24} priority
+                <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority
                   style={{ width: '120px', height: '24px', objectFit: 'contain', display: 'block' }} />
                 <span style={{ fontSize: '8px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#B8861E', marginTop: '2px', paddingLeft: '2px' }}>Since 1937</span>
               </div>

@@ -1,16 +1,16 @@
 import Image from 'next/image';
 
 const CERT_ITEMS = [
-  { name: 'GJEPC', logo: '/labslogo/GJEPC.jpg' },
-  { name: 'GIA', logo: '/labslogo/GIA.jpg' },
-  { name: 'GÜBELIN', logo: '/labslogo/GUBELIN.jpg' },
-  { name: 'GII', logo: '/labslogo/GII.jpg' },
-  { name: 'GRS', logo: '/labslogo/GRS.jpg' },
-  { name: 'IIGJ', logo: '/labslogo/IIGJ.jpg' },
-  { name: 'IGI', logo: '/labslogo/IGI.jpg' },
-  { name: 'SSEF', logo: '/labslogo/SSEF.jpg' },
-  { name: 'GFCO', logo: '/labslogo/GFCO.jpg' },
-  { name: 'HRD ANTWERP', logo: '/labslogo/HRD ANTWERP.jpg' },
+  { name: 'GJEPC', logo: '/labslogo/GJEPC.webp' },
+  { name: 'GIA', logo: '/labslogo/GIA.webp' },
+  { name: 'GÜBELIN', logo: '/labslogo/GUBELIN.webp' },
+  { name: 'GII', logo: '/labslogo/GII.webp' },
+  { name: 'GRS', logo: '/labslogo/GRS.webp' },
+  { name: 'IIGJ', logo: '/labslogo/IIGJ.webp' },
+  { name: 'IGI', logo: '/labslogo/IGI.webp' },
+  { name: 'SSEF', logo: '/labslogo/SSEF.webp' },
+  { name: 'GFCO', logo: '/labslogo/GFCO.webp' },
+  { name: 'HRD ANTWERP', logo: '/labslogo/HRD ANTWERP.webp' },
 ];
 
 export function CertMarquee() {

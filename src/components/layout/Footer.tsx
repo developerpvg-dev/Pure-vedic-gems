@@ -39,14 +39,14 @@ export function Footer() {
       <div className="mb-15 border-b border-white/8 pb-15 text-center">
         <div className="flex items-center justify-center gap-3">
           <Image
-            src="/PVG NEW LOGO DESIGN.PNG"
+            src="/PVG NEW LOGO DESIGN.webp"
             alt="Pure Vedic Gems Logo"
             width={60}
             height={60}
             className="object-contain"
           />
           <Image
-            src="/Algerian.png"
+            src="/Algerian.webp"
             alt="Pure Vedic Gems"
             width={180}
             height={40}

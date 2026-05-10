@@ -9,18 +9,18 @@ const SLIDES: Array<{
   alt: string;
 }> = [
   {
-    desktopImage: '/home/hero/pvgheropc1.png',
-    mobileImage: '/home/hero/pvgherobg1.png',
+    desktopImage: '/home/hero/pvgheropc1.webp',
+    mobileImage: '/home/hero/pvgherobg1.webp',
     alt: 'Find Your Lucky Gem - Pure Vedic Gems',
   },
   {
-    desktopImage: '/home/hero/pvgheropc2.png',
-    mobileImage: '/home/hero/pvgherobg2.png',
+    desktopImage: '/home/hero/pvgheropc2.webp',
+    mobileImage: '/home/hero/pvgherobg2.webp',
     alt: 'Create Your Perfect Gemstone Jewellery - Pure Vedic Gems',
   },
   {
-    desktopImage: '/home/hero/pvgheropc3.png',
-    mobileImage: '/home/hero/pvgherobg3.png',
+    desktopImage: '/home/hero/pvgheropc3.webp',
+    mobileImage: '/home/hero/pvgherobg3.webp',
     alt: 'Swift Results & Blessed Life - Pure Vedic Gems',
   },
 ];
