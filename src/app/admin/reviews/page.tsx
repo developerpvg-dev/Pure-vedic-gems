@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Check, Loader2, Star, X } from 'lucide-react';
+import { productHref } from '@/lib/categories/storefront';
+import { AdminPagination } from '@/components/admin/AdminPagination';
 
 interface AdminReview {
   id: string;
@@ -18,19 +20,27 @@ interface AdminReview {
   products?: { id: string; name: string; slug: string; category: string; thumbnail_url: string | null } | null;
 }
 
+const REVIEWS_PER_PAGE = 20;
+
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [status, setStatus] = useState('pending');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
-    const response = await fetch(`/api/admin/reviews?status=${status}`, { cache: 'no-store' });
-    const data = await response.json().catch(() => null) as { reviews?: AdminReview[] } | null;
+    const params = new URLSearchParams({ status, page: String(page), limit: String(REVIEWS_PER_PAGE) });
+    const response = await fetch(`/api/admin/reviews?${params.toString()}`, { cache: 'no-store' });
+    const data = await response.json().catch(() => null) as { reviews?: AdminReview[]; total?: number; total_pages?: number } | null;
     setReviews(data?.reviews ?? []);
+    setTotal(data?.total ?? 0);
+    setTotalPages(data?.total_pages ?? 1);
     setLoading(false);
-  }, [status]);
+  }, [page, status]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void fetchReviews(); }, 0);
@@ -55,7 +65,7 @@ export default function AdminReviewsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Review Moderation</h1>
           <p className="mt-1 text-sm text-gray-500">Approve verified reviews before ratings appear publicly.</p>
         </div>
-        <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+        <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="featured">Featured</option>
@@ -83,7 +93,7 @@ export default function AdminReviewsPage() {
                     {Array.from({ length: 5 }).map((_, index) => <Star key={index} className="h-4 w-4" fill={index < (review.rating ?? 0) ? 'currentColor' : 'none'} />)}
                   </div>
                   {review.products && (
-                    <Link href={`/shop/${review.products.category}/${review.products.slug}`} className="mt-2 inline-block text-xs font-medium text-amber-700 hover:underline">
+                    <Link href={productHref(review.products)} className="mt-2 inline-block text-xs font-medium text-amber-700 hover:underline">
                       {review.products.name}
                     </Link>
                   )}
@@ -99,6 +109,7 @@ export default function AdminReviewsPage() {
               </div>
             </article>
           ))}
+          <AdminPagination page={page} totalPages={totalPages} total={total} perPage={REVIEWS_PER_PAGE} onPageChange={setPage} />
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ import type { ConsultationPlan } from '@/lib/types/database';
 
 export const metadata: Metadata = {
   title: 'Book a Vedic Consultation | PureVedicGems',
-  description: 'Book a paid PureVedicGems Vedic consultation with secure Razorpay payment and account dashboard tracking.',
+  description: 'Choose a PureVedicGems Vedic consultation plan and complete secure Razorpay payment online.',
 };
 
 export default async function ConsultationPage() {

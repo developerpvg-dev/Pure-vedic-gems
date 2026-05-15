@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { productHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
 
@@ -39,7 +40,7 @@ function getImage(product: FeedProduct) {
 }
 
 function renderItem(product: FeedProduct) {
-  const href = absoluteUrl(`/shop/${product.category}/${product.slug}`);
+  const href = absoluteUrl(productHref(product));
   const image = getImage(product);
   const availability = product.in_stock && product.availability_status !== 'sold' ? 'in stock' : 'out of stock';
   const price = `${product.price ?? 0} ${product.currency || 'INR'}`;

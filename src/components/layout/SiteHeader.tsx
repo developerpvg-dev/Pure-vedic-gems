@@ -1,21 +1,26 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  GEMSTONE_NAV_LINKS,
   HEADER_NAV_ITEMS,
-  RUDRAKSHA_NAV_LINKS,
   SERVICE_NAV_LINKS,
 } from '@/lib/constants/nav-items';
+import { findStorefrontGroup, type StorefrontCategoryGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
 import { useCart } from '@/lib/hooks/useCart';
+import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { UserAuthButton } from '@/components/auth/UserAuthButton';
 import { SearchDialog } from '@/components/layout/SearchDialog';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { MobileNav } from './MobileNav';
 
 type HeaderNavItem = (typeof HEADER_NAV_ITEMS)[number];
+
+const subscribeToHydrationStore = () => () => undefined;
+const getClientHydrationSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
 /* ── Inline SVG icons matching the static HTML exactly ─────────────── */
 function TruckSvg() {
@@ -79,66 +84,69 @@ function CalendarSvg() {
   );
 }
 
-function MapPinSvg() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </svg>
-  );
-}
-function PhoneSvg() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 17z"/>
-    </svg>
-  );
-}
-
 /* ── Topbar item content ─────────────────────────────────────────────── */
 
 
-function DropdownContent({ item }: { item: HeaderNavItem }) {
-  const dropStyle: React.CSSProperties = {
-    background: '#fff',
-    border: '1px solid #DDD0B4',
-    borderTop: '3px solid #7A1515',
-    borderRadius: '0 0 6px 6px',
-    boxShadow: '0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
+  const shellStyle: React.CSSProperties = {
+    width: '34px',
+    height: '34px',
+    borderRadius: '9px',
+    flexShrink: 0,
+    overflow: 'hidden',
   };
 
-  if (item.dropdown === 'gemstones') {
+  if (link.image) {
     return (
-      <div style={{ ...dropStyle, width: '620px', padding: '22px 24px 18px' }}>
-        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7A1515', paddingBottom: '12px', marginBottom: '14px', borderBottom: '1px solid #EDE6D5', fontFamily: "'Roboto', sans-serif" }}>
-          Shop By Gem
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '2px' }}>
-          {GEMSTONE_NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="pvg-mega-item"
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '2px', borderLeft: '2px solid transparent', transition: 'background 0.2s, border-color 0.2s' }}
-            >
-              <span style={{ width: '20px', height: '20px', borderRadius: '3px', flexShrink: 0, background: link.swatch }} />
-              <span style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.2, fontFamily: "'Roboto', sans-serif" }}>{link.label}</span>
-                <span style={{ fontSize: '11px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif" }}>{link.planet}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-        <Link href="/shop" style={{ display: 'block', padding: '10px 0 0', marginTop: '10px', borderTop: '1px solid #EDE6D5', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A1515', fontFamily: "'Roboto', sans-serif" }}>
-          View All Gemstones →
-        </Link>
-      </div>
+      <span style={shellStyle} aria-hidden="true">
+        <Image src={link.image} alt="" width={34} height={34} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </span>
     );
   }
 
-  const links = item.dropdown === 'rudraksha' ? RUDRAKSHA_NAV_LINKS : SERVICE_NAV_LINKS;
   return (
-    <div style={{ ...dropStyle, minWidth: '230px', padding: '8px 0' }}>
+    <span
+      style={{
+        ...shellStyle,
+        background: `radial-gradient(circle at 35% 30%, #fff 0 12%, ${link.swatch || '#D4A843'} 13% 62%, #5B2E14 100%)`,
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function CategoryMenuSection({ group, columns = 1 }: { group: StorefrontCategoryGroup; columns?: 1 | 2 | 3 }) {
+  return (
+    <div>
+      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7A1515', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid #EDE6D5', fontFamily: "'Roboto', sans-serif" }}>
+        {group.label}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0,1fr))`, gap: '2px' }}>
+        {group.subcategories.map((link) => (
+          <Link
+            key={`${group.slug}-${link.href}-${link.label}`}
+            href={link.href}
+            className="pvg-mega-item"
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '2px', borderLeft: '2px solid transparent', transition: 'background 0.2s, border-color 0.2s' }}
+          >
+            <CategoryThumb link={link} />
+            <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.2, fontFamily: "'Roboto', sans-serif" }}>{link.label}</span>
+              {link.meta ? <span style={{ fontSize: '11px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif" }}>{link.meta}</span> : null}
+            </span>
+          </Link>
+        ))}
+      </div>
+      <Link href={group.href} style={{ display: 'block', padding: '10px 0 0', marginTop: '8px', borderTop: '1px solid #EDE6D5', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A1515', fontFamily: "'Roboto', sans-serif" }}>
+        View All {group.label} →
+      </Link>
+    </div>
+  );
+}
+
+function SimpleLinkDropdown({ links }: { links: readonly { label: string; href: string }[] }) {
+  return (
+    <>
       {links.map((link) => (
         <Link
           key={`${link.href}-${link.label}`}
@@ -149,11 +157,63 @@ function DropdownContent({ item }: { item: HeaderNavItem }) {
           {link.label}
         </Link>
       ))}
+    </>
+  );
+}
+
+function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; categoryGroups: StorefrontCategoryGroup[] }) {
+  const dropStyle: React.CSSProperties = {
+    background: '#fff',
+    border: '1px solid #DDD0B4',
+    borderTop: '3px solid #7A1515',
+    borderRadius: '0 0 6px 6px',
+    boxShadow: '0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+  };
+
+  if (item.dropdown === 'gemstones') {
+    const navaratna = findStorefrontGroup(categoryGroups, 'navaratna');
+    const upratna = findStorefrontGroup(categoryGroups, 'upratna');
+    return (
+      <div style={{ ...dropStyle, width: '720px', padding: '22px 24px 18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '22px' }}>
+          <CategoryMenuSection group={navaratna} columns={2} />
+          <CategoryMenuSection group={upratna} columns={2} />
+        </div>
+      </div>
+    );
+  }
+
+  if (item.dropdown === 'rudraksha') {
+    return (
+      <div style={{ ...dropStyle, width: '360px', padding: '18px 20px 16px' }}>
+        <CategoryMenuSection group={findStorefrontGroup(categoryGroups, 'rudraksha')} columns={2} />
+      </div>
+    );
+  }
+
+  if (item.dropdown === 'collections') {
+    const collections = [
+      findStorefrontGroup(categoryGroups, 'idols'),
+      findStorefrontGroup(categoryGroups, 'jewelry'),
+      findStorefrontGroup(categoryGroups, 'malas'),
+    ];
+    return (
+      <div style={{ ...dropStyle, width: '680px', padding: '22px 24px 18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px' }}>
+          {collections.map((group) => <CategoryMenuSection key={group.slug} group={group} />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ ...dropStyle, minWidth: '230px', padding: '8px 0' }}>
+      <SimpleLinkDropdown links={SERVICE_NAV_LINKS} />
     </div>
   );
 }
 
-function DesktopNavLink({ item }: { item: HeaderNavItem }) {
+function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categoryGroups: StorefrontCategoryGroup[] }) {
   const hasDropdown = Boolean(item.dropdown);
   return (
     <li
@@ -185,7 +245,7 @@ function DesktopNavLink({ item }: { item: HeaderNavItem }) {
             transition: 'opacity 0.26s ease, transform 0.26s ease, visibility 0s linear 0.26s',
           }}
         >
-          <DropdownContent item={item} />
+          <DropdownContent item={item} categoryGroups={categoryGroups} />
         </div>
       ) : null}
     </li>
@@ -231,7 +291,14 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribeToHydrationStore,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot
+  );
   const { cart } = useCart();
+  const cartCount = mounted ? cart.item_count : 0;
+  const categoryGroups = useStorefrontCategories();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -419,7 +486,7 @@ export function SiteHeader() {
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
               <ul style={{ display: 'flex', alignItems: 'center', listStyle: 'none', height: '74px', margin: 0, padding: 0 }}>
                 {HEADER_NAV_ITEMS.map((item) => (
-                  <DesktopNavLink key={item.label} item={item} />
+                  <DesktopNavLink key={item.label} item={item} categoryGroups={categoryGroups} />
                 ))}
               </ul>
             </div>
@@ -434,12 +501,13 @@ export function SiteHeader() {
               <Suspense fallback={<span style={{ width: '40px', height: '40px', display: 'flex' }} />}>
                 <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
               </Suspense>
-              <Link href="/cart" aria-label={`Shopping cart, ${cart.item_count} items`}
+              <NotificationBell />
+              <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
                 className="pvg-nav-icon"
                 style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A', transition: 'background 0.2s, color 0.2s' }}>
                 <CartSvg />
                 <span aria-hidden="true" style={{ position: 'absolute', top: '5px', right: '5px', width: '15px', height: '15px', background: '#7A1515', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                  {cart.item_count > 9 ? '9+' : cart.item_count}
+                  {cartCount > 9 ? '9+' : cartCount}
                 </span>
               </Link>
               <div aria-hidden="true" style={{ width: '1px', height: '26px', background: '#E2D9C8', margin: '0 6px' }} />
@@ -472,12 +540,13 @@ export function SiteHeader() {
               <Suspense fallback={<span style={{ width: '40px', height: '40px' }} />}>
                 <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
               </Suspense>
-              <Link href="/cart" aria-label={`Shopping cart, ${cart.item_count} items`}
+              <NotificationBell />
+              <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
                 style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A' }}>
                 <CartSvg />
-                {cart.item_count > 0 ? (
+                {cartCount > 0 ? (
                   <span aria-hidden="true" style={{ position: 'absolute', top: '5px', right: '5px', width: '15px', height: '15px', background: '#7A1515', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                    {cart.item_count > 9 ? '9+' : cart.item_count}
+                    {cartCount > 9 ? '9+' : cartCount}
                   </span>
                 ) : null}
               </Link>

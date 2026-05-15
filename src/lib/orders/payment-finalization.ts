@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import type { Json, Order, PaymentEvent } from '@/lib/types/database';
 
 interface OrderItemSnapshot {
@@ -172,7 +174,7 @@ async function updateInventoryForCapturedOrder(order: Order) {
 
     const { data: product } = await supabase
       .from('products')
-      .select('id, stock_quantity, sold_individually')
+      .select('id, sku, name, category, stock_quantity, sold_individually')
       .eq('id', item.product_id)
       .single();
 
@@ -192,6 +194,13 @@ async function updateInventoryForCapturedOrder(order: Order) {
         })
         .eq('id', item.product_id)
         .then(null, () => undefined);
+      await notifyLowStockProduct({
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        category: product.category,
+        stock_quantity: 0,
+      }, 'order_captured');
       continue;
     }
 
@@ -210,6 +219,13 @@ async function updateInventoryForCapturedOrder(order: Order) {
       })
       .eq('id', item.product_id)
       .then(null, () => undefined);
+    await notifyLowStockProduct({
+      id: product.id,
+      sku: product.sku,
+      name: product.name,
+      category: product.category,
+      stock_quantity: nextQuantity,
+    }, 'order_captured');
   }
 }
 
@@ -333,6 +349,30 @@ async function sendVerifiedOrderNotifications(order: Order) {
       .update({ admin_notification_sent_at: new Date().toISOString() })
       .eq('id', order.id);
   }
+
+  await createInAppNotifications([
+    ...(order.customer_id && !confirmationEmailSentAt ? [{
+      audience: 'user' as const,
+      recipientUserId: order.customer_id,
+      type: 'order_confirmed',
+      title: 'Order confirmed',
+      message: `Payment received for order ${order.order_number}. You can track the order from your dashboard.`,
+      href: '/account/orders',
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { order_number: order.order_number, total: order.total },
+    }] : []),
+    ...(!adminNotificationSentAt ? [{
+      audience: 'admin' as const,
+      type: 'order_paid',
+      title: 'Order paid',
+      message: `Order ${order.order_number} was paid for ₹${Number(order.total ?? 0).toLocaleString('en-IN')}.`,
+      href: `/admin/orders/${order.id}`,
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { order_number: order.order_number, total: order.total },
+    }] : []),
+  ]);
 }
 
 export async function finalizeCapturedPayment({

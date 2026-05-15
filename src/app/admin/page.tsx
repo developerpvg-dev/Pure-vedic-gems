@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   Package, Plus, ShoppingCart, DollarSign, TrendingUp,
   AlertCircle, Clock, Loader2, ArrowRight, Eye, MessageSquare,
+  BarChart3, CreditCard, PieChart, Users,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -15,6 +16,20 @@ interface DashboardStats {
   pendingOrders: number;
   newEnquiries: number;
   activeProducts: number;
+  lowStockProducts: number;
+  totalConsultations: number;
+  consultationRevenue: number;
+}
+
+interface CurrentAdmin {
+  role: string;
+  normalizedRole: string;
+  name: string | null;
+}
+
+interface CountTotal {
+  count: number;
+  total: number;
 }
 
 interface ChartDay {
@@ -34,10 +49,29 @@ interface RecentOrder {
   created_at: string;
 }
 
+interface LowStockProduct {
+  id: string;
+  sku: string | null;
+  name: string;
+  category: string | null;
+  sub_category: string | null;
+  stock_quantity: number;
+  availability_status: string;
+}
+
 interface DashboardData {
+  currentAdmin: CurrentAdmin;
   stats: DashboardStats;
   pipeline: Record<string, number>;
+  paymentStatus: Record<string, CountTotal>;
+  consultationStatus: Record<string, number>;
+  consultationPayments: Record<string, CountTotal>;
+  enquiryStatus: Record<string, number>;
+  productAvailability: Record<string, number>;
+  productCategories: Record<string, number>;
+  teamRoles: Record<string, number>;
   chartData: ChartDay[];
+  lowStockProducts: LowStockProduct[];
   recentOrders: RecentOrder[];
 }
 
@@ -57,6 +91,24 @@ const STATUS_COLORS: Record<string, string> = {
 
 function fmt(n: number) {
   return '₹' + n.toLocaleString('en-IN');
+}
+
+function labelize(value: string) {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function topEntries(record: Record<string, number>, limit = 6) {
+  return Object.entries(record)
+    .map(([label, value]) => ({ label: labelize(label), value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
+}
+
+function countTotalEntries(record: Record<string, CountTotal>, limit = 6) {
+  return Object.entries(record)
+    .map(([label, value]) => ({ label: labelize(label), value: value.count, meta: fmt(value.total) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
 }
 
 function RevenueChart({ data }: { data: ChartDay[] }) {
@@ -83,6 +135,119 @@ function RevenueChart({ data }: { data: ChartDay[] }) {
         );
       })}
     </div>
+  );
+}
+
+function MetricBars({
+  title,
+  icon: Icon,
+  items,
+  emptyLabel = 'No data yet',
+}: {
+  title: string;
+  icon: ComponentType<{ className?: string }>;
+  items: { label: string; value: number; meta?: string }[];
+  emptyLabel?: string;
+}) {
+  const max = Math.max(...items.map((item) => item.value), 1);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-500">
+        <Icon className="h-4 w-4 text-amber-600" />
+        {title}
+      </h2>
+      {items.length === 0 ? (
+        <p className="rounded-lg bg-gray-50 px-3 py-4 text-sm text-gray-400">{emptyLabel}</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item) => {
+            const width = Math.max((item.value / max) * 100, 5);
+            return (
+              <div key={item.label}>
+                <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold text-gray-700">{item.label}</span>
+                  <span className="shrink-0 font-bold text-gray-900">{item.value.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${width}%` }} />
+                </div>
+                {item.meta && <p className="mt-1 text-xs font-medium text-gray-400">{item.meta}</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RoleChartGrid({ data }: { data: DashboardData }) {
+  const role = data.currentAdmin.normalizedRole;
+  const roleLabel = labelize(role);
+
+  const commonPanels = [
+    <MetricBars key="orders" title="Order Pipeline" icon={BarChart3} items={topEntries(data.pipeline, 7)} />,
+    <MetricBars key="payments" title="Payment Status" icon={CreditCard} items={countTotalEntries(data.paymentStatus)} />,
+    <MetricBars key="consultations" title="Consultations" icon={MessageSquare} items={topEntries(data.consultationStatus)} />,
+  ];
+
+  const panelsByRole: Record<string, ReactNode[]> = {
+    finance: [
+      <MetricBars key="payments" title="Payment Status" icon={CreditCard} items={countTotalEntries(data.paymentStatus)} />,
+      <MetricBars key="consult-payment" title="Consultation Payments" icon={DollarSign} items={countTotalEntries(data.consultationPayments)} />,
+      <MetricBars key="orders" title="Order Pipeline" icon={BarChart3} items={topEntries(data.pipeline, 7)} />,
+    ],
+    sales: [
+      <MetricBars key="consultations" title="Consultation Funnel" icon={MessageSquare} items={topEntries(data.consultationStatus)} />,
+      <MetricBars key="enquiries" title="Lead Status" icon={PieChart} items={topEntries(data.enquiryStatus)} />,
+      <MetricBars key="orders" title="Order Pipeline" icon={BarChart3} items={topEntries(data.pipeline, 7)} />,
+    ],
+    support: [
+      <MetricBars key="enquiries" title="Lead Status" icon={PieChart} items={topEntries(data.enquiryStatus)} />,
+      <MetricBars key="consultations" title="Consultation Funnel" icon={MessageSquare} items={topEntries(data.consultationStatus)} />,
+      <MetricBars key="orders" title="Order Pipeline" icon={BarChart3} items={topEntries(data.pipeline, 7)} />,
+    ],
+    inventory: [
+      <MetricBars key="availability" title="Product Availability" icon={Package} items={topEntries(data.productAvailability)} />,
+      <MetricBars key="categories" title="Category Mix" icon={PieChart} items={topEntries(data.productCategories)} />,
+      <MetricBars key="orders" title="Order Pipeline" icon={BarChart3} items={topEntries(data.pipeline, 7)} />,
+    ],
+    content: [
+      <MetricBars key="categories" title="Category Mix" icon={PieChart} items={topEntries(data.productCategories)} />,
+      <MetricBars key="availability" title="Product Availability" icon={Package} items={topEntries(data.productAvailability)} />,
+      <MetricBars key="consultations" title="Consultations" icon={MessageSquare} items={topEntries(data.consultationStatus)} />,
+    ],
+    fulfillment: [
+      <MetricBars key="orders" title="Order Pipeline" icon={BarChart3} items={topEntries(data.pipeline, 7)} />,
+      <MetricBars key="availability" title="Product Availability" icon={Package} items={topEntries(data.productAvailability)} />,
+      <MetricBars key="payments" title="Payment Status" icon={CreditCard} items={countTotalEntries(data.paymentStatus)} />,
+    ],
+    owner: [
+      ...commonPanels,
+      <MetricBars key="roles" title="Team Role Mix" icon={Users} items={topEntries(data.teamRoles)} />,
+    ],
+    admin: [
+      ...commonPanels,
+      <MetricBars key="roles" title="Team Role Mix" icon={Users} items={topEntries(data.teamRoles)} />,
+    ],
+  };
+
+  const panels = panelsByRole[role] ?? commonPanels;
+
+  return (
+    <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Role Graphs</p>
+          <h2 className="text-lg font-bold text-gray-950">{roleLabel} View</h2>
+        </div>
+        <p className="text-sm font-medium text-amber-900">Charts are prioritized for this admin role.</p>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-4">
+        {panels}
+      </div>
+    </section>
   );
 }
 
@@ -122,7 +287,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const { stats, pipeline, chartData, recentOrders } = data;
+  const { stats, pipeline, chartData, lowStockProducts, recentOrders } = data;
 
   const PIPELINE_STAGES = [
     'placed', 'confirmed', 'processing', 'jewelry_making',
@@ -205,10 +370,49 @@ export default function AdminDashboard() {
             </div>
           </div>
           <p className="mt-2 text-xs text-gray-400">
-            {stats.activeProducts} active products
+            {stats.activeProducts} active products, {stats.totalConsultations} consultations
           </p>
         </div>
       </div>
+
+      <RoleChartGrid data={data} />
+
+      {stats.lowStockProducts > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-amber-900">
+                <AlertCircle className="h-5 w-5" />
+                <h2 className="text-base font-bold">Low Stock Inventory</h2>
+              </div>
+              <p className="mt-1 text-sm text-amber-800">
+                {stats.lowStockProducts} active product{stats.lowStockProducts === 1 ? '' : 's'} have stock below 5.
+              </p>
+            </div>
+            <Link
+              href="/admin/products?stock=low"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+            >
+              Review Stock <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {lowStockProducts.map((product) => (
+              <Link
+                key={product.id}
+                href={`/admin/products/${product.id}`}
+                className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm transition hover:border-amber-300"
+              >
+                <p className="truncate font-semibold text-gray-900">{product.name}</p>
+                <p className="mt-0.5 text-xs text-gray-500">{product.sku || product.category || 'Product'}</p>
+                <p className="mt-2 text-xs font-bold uppercase tracking-wide text-amber-700">
+                  {product.stock_quantity} unit{product.stock_quantity === 1 ? '' : 's'} left
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Order Pipeline */}
       <div className="rounded-xl border border-gray-200 bg-white p-5">
@@ -316,7 +520,7 @@ export default function AdminDashboard() {
                 recentOrders.map((order) => (
                   <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                     <td className="px-4 py-2.5 font-medium text-amber-700">{order.order_number}</td>
-                    <td className="px-4 py-2.5 text-gray-700 truncate max-w-[140px]">{order.customer}</td>
+                    <td className="px-4 py-2.5 text-gray-700 truncate max-w-35">{order.customer}</td>
                     <td className="px-4 py-2.5 text-gray-600">{order.items_count}</td>
                     <td className="px-4 py-2.5 font-semibold text-gray-900">{fmt(order.total)}</td>
                     <td className="px-4 py-2.5">

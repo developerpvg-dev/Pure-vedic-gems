@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ChevronLeft, ShoppingBag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { productHref } from '@/lib/categories/storefront';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import { SavedGemRemoveButton } from '@/components/account/SavedGemRemoveButton';
 
@@ -109,6 +110,7 @@ export default async function SavedPage() {
             const images = Array.isArray(product.images)
               ? (product.images as string[])
               : [];
+            const href = productHref(product);
             const imgSrc = product.thumbnail_url ?? images[0] ?? null;
             const discount = product.compare_price
               ? Math.round(
@@ -133,7 +135,7 @@ export default async function SavedPage() {
                 />
                 {/* Image */}
                 <Link
-                  href={`/shop/${product.category}/${product.slug}`}
+                  href={href}
                   className="block"
                 >
                   <div
@@ -182,7 +184,7 @@ export default async function SavedPage() {
 
                 {/* Info */}
                 <div className="p-3">
-                  <Link href={`/shop/${product.category}/${product.slug}`}>
+                  <Link href={href}>
                     <h3
                       className="line-clamp-2 text-sm font-semibold leading-snug hover:text-[var(--pvg-accent)]"
                       style={{ color: 'var(--pvg-primary)' }}
@@ -221,7 +223,7 @@ export default async function SavedPage() {
                     )}
                   </div>
                   <Link
-                    href={`/shop/${product.category}/${product.slug}`}
+                    href={href}
                     className="mt-3 flex w-full items-center justify-center rounded-lg py-2 text-xs font-bold uppercase tracking-wider transition-all hover:-translate-y-0.5"
                     style={{
                       background: product.in_stock

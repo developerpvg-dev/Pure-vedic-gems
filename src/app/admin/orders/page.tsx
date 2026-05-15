@@ -17,6 +17,25 @@ interface Order {
   items: Json;
 }
 
+interface CustomerProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+interface OrdersPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+function customerDisplay(order: Order, profile?: CustomerProfile) {
+  return {
+    name: order.guest_name || profile?.full_name || profile?.email || 'Guest',
+    email: order.guest_email || profile?.email || '',
+    phone: order.guest_phone || profile?.phone || '',
+  };
+}
+
 const STATUS_COLORS: Record<string, string> = {
   pending_payment: 'bg-gray-100 text-gray-800',
   placed: 'bg-blue-100 text-blue-800',
@@ -43,30 +62,112 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   cancelled: 'text-red-600',
 };
 
+const ORDERS_PER_PAGE = 20;
+
+function OrdersPagination({
+  page,
+  totalPages,
+  total,
+  searchParams,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  searchParams: Record<string, string>;
+}) {
+  if (totalPages <= 1) return null;
+
+  const buildHref = (pageNumber: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', String(pageNumber));
+    return `/admin/orders?${params.toString()}`;
+  };
+
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1).filter(
+    (pageNumber) => pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - page) <= 1
+  );
+  const from = (page - 1) * ORDERS_PER_PAGE + 1;
+  const to = Math.min(total, page * ORDERS_PER_PAGE);
+
+  return (
+    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-brand-muted">Showing {from}-{to} of {total}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Link href={buildHref(Math.max(1, page - 1))} className={`rounded-lg border border-brand-border px-3 py-1.5 text-sm transition ${page <= 1 ? 'pointer-events-none opacity-40' : 'hover:bg-brand-bg-alt'}`}>
+          Prev
+        </Link>
+        {pages.map((pageNumber, index) => {
+          const previous = pages[index - 1];
+          return (
+            <span key={pageNumber} className="flex items-center gap-2">
+              {previous && pageNumber - previous > 1 ? <span className="text-brand-muted">...</span> : null}
+              <Link
+                href={buildHref(pageNumber)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm transition ${
+                  pageNumber === page
+                    ? 'border-brand-primary bg-brand-primary text-brand-bg'
+                    : 'border-brand-border hover:bg-brand-bg-alt'
+                }`}
+              >
+                {pageNumber}
+              </Link>
+            </span>
+          );
+        })}
+        <Link href={buildHref(Math.min(totalPages, page + 1))} className={`rounded-lg border border-brand-border px-3 py-1.5 text-sm transition ${page >= totalPages ? 'pointer-events-none opacity-40' : 'hover:bg-brand-bg-alt'}`}>
+          Next
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export const dynamic = 'force-dynamic';
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+  const rawParams = await searchParams;
+  const params = Object.fromEntries(
+    Object.entries(rawParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : (value ?? '')])
+  ) as Record<string, string>;
+  const page = Math.max(1, Number(params.page ?? '1') || 1);
+  const from = (page - 1) * ORDERS_PER_PAGE;
   const supabase = createAdminClient();
 
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [ordersResult, pendingResult, paidResult, deliveredResult] = await Promise.all([
+    supabase
+      .from('orders')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, from + ORDERS_PER_PAGE - 1),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'pending'),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'captured'),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'delivered'),
+  ]);
 
-  const allOrders = (orders ?? []) as unknown as Order[];
+  const allOrders = (ordersResult.data ?? []) as unknown as Order[];
+  const total = ordersResult.count ?? 0;
+  const totalPages = Math.ceil(total / ORDERS_PER_PAGE);
+  const customerIds = Array.from(new Set(allOrders.map((order) => order.customer_id).filter((id): id is string => Boolean(id))));
+  const { data: profiles } = customerIds.length
+    ? await supabase
+        .from('customer_profiles')
+        .select('id, full_name, email, phone')
+        .in('id', customerIds)
+    : { data: [] };
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile as CustomerProfile]));
 
   const stats = {
-    total: allOrders.length,
-    pending: allOrders.filter(o => o.payment_status === 'pending').length,
-    paid: allOrders.filter(o => o.payment_status === 'captured').length,
-    delivered: allOrders.filter(o => o.status === 'delivered').length,
+    total,
+    pending: pendingResult.count ?? 0,
+    paid: paidResult.count ?? 0,
+    delivered: deliveredResult.count ?? 0,
   };
 
   return (
     <div className="space-y-6 p-6">
       <div>
         <h1 className="font-heading text-3xl font-bold">Orders</h1>
-        <p className="text-[var(--pvg-muted)]">Manage all customer orders</p>
+        <p className="text-brand-muted">Manage all customer orders</p>
       </div>
 
       {/* Stats */}
@@ -79,42 +180,42 @@ export default async function OrdersPage() {
         ].map(stat => (
           <div
             key={stat.label}
-            className="rounded-lg border border-[var(--pvg-border)] bg-brand-surface p-4"
+            className="rounded-lg border border-brand-border bg-brand-surface p-4"
           >
-            <p className="text-sm font-medium text-[var(--pvg-muted)]">{stat.label}</p>
-            <p className="mt-2 text-3xl font-bold text-[var(--pvg-primary)]">{stat.value}</p>
+            <p className="text-sm font-medium text-brand-muted">{stat.label}</p>
+            <p className="mt-2 text-3xl font-bold text-brand-primary">{stat.value}</p>
           </div>
         ))}
       </div>
 
       {/* Orders Table */}
-      <div className="rounded-lg border border-[var(--pvg-border)] bg-brand-surface overflow-hidden">
+      <div className="rounded-lg border border-brand-border bg-brand-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-brand-bg-alt border-b border-[var(--pvg-border)]">
+            <thead className="bg-brand-bg-alt border-b border-brand-border">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Order #
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Customer
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Items
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Total
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Payment
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-left font-semibold text-brand-muted">
                   Date
                 </th>
-                <th className="px-4 py-3 text-center font-semibold text-[var(--pvg-muted)]">
+                <th className="px-4 py-3 text-center font-semibold text-brand-muted">
                   Action
                 </th>
               </tr>
@@ -124,34 +225,37 @@ export default async function OrdersPage() {
                 <tr>
                   <td
                     colSpan={8}
-                    className="px-4 py-8 text-center text-[var(--pvg-muted)]"
+                    className="px-4 py-8 text-center text-brand-muted"
                   >
                     No orders yet
                   </td>
                 </tr>
               ) : (
-                allOrders.map(order => (
+                allOrders.map(order => {
+                  const customer = customerDisplay(order, order.customer_id ? profileById.get(order.customer_id) : undefined);
+
+                  return (
                   <tr
                     key={order.id}
-                    className="border-b border-[var(--pvg-border)] hover:bg-brand-bg transition"
+                    className="border-b border-brand-border hover:bg-brand-bg transition"
                   >
-                    <td className="px-4 py-3 font-medium text-[var(--pvg-primary)]">
+                    <td className="px-4 py-3 font-medium text-brand-primary">
                       {order.order_number}
                     </td>
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-medium text-[var(--pvg-text)]">
-                          {order.guest_name || 'Guest'}
+                        <p className="font-medium text-brand-text">
+                          {customer.name}
                         </p>
-                        <p className="text-xs text-[var(--pvg-muted)]">
-                          {order.guest_email}
+                        <p className="text-xs text-brand-muted">
+                          {customer.email || customer.phone || 'No contact saved'}
                         </p>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--pvg-text)]">
+                    <td className="px-4 py-3 text-brand-text">
                       {Array.isArray(order.items) ? order.items.length : 0} item(s)
                     </td>
-                    <td className="px-4 py-3 font-semibold text-[var(--pvg-text)]">
+                    <td className="px-4 py-3 font-semibold text-brand-text">
                       ₹{(order.total ?? 0).toLocaleString('en-IN')}
                     </td>
                     <td className="px-4 py-3">
@@ -173,25 +277,27 @@ export default async function OrdersPage() {
                           order.payment_status.slice(1).replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-[var(--pvg-muted)]">
+                    <td className="px-4 py-3 text-xs text-brand-muted">
                       {new Date(order.created_at).toLocaleDateString('en-IN')}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--pvg-border)] px-2 py-1 text-xs font-semibold text-[var(--pvg-primary)] transition hover:border-[var(--pvg-primary)] hover:bg-brand-gold-light"
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-border px-2 py-1 text-xs font-semibold text-brand-primary transition hover:border-brand-primary hover:bg-brand-gold-light"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         View
                       </Link>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
+      <OrdersPagination page={page} totalPages={totalPages} total={total} searchParams={params} />
     </div>
   );
 }

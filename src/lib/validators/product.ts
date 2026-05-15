@@ -30,10 +30,16 @@ const optionalUrl = z.preprocess(
   z.string().trim().url().optional()
 );
 
-const optionalBoolean = z.preprocess(
-  emptyToUndefined,
-  z.coerce.boolean().optional()
-);
+const optionalFilterBoolean = z.preprocess((value) => {
+  const cleaned = emptyToUndefined(value);
+  if (cleaned === undefined || typeof cleaned === 'boolean') return cleaned;
+  if (typeof cleaned === 'string') {
+    const normalized = cleaned.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  }
+  return cleaned;
+}, z.boolean().optional());
 
 const optionalNonNegativeNumber = z.preprocess(
   emptyToUndefined,
@@ -140,11 +146,17 @@ export const productFiltersSchema = z
     min_carat: optionalNonNegativeNumber,
     max_carat: optionalNonNegativeNumber,
     origin: optionalString(100),
+    shape: optionalString(100),
     planet: z.enum(PLANETS).optional(),
     certification: optionalString(100),
+    certificate_lab: optionalString(100),
+    quality_label: optionalString(100),
     treatment: z.enum(TREATMENTS).optional(),
+    price_mode: z.enum(PRICE_MODES).optional(),
+    configurator_enabled: optionalFilterBoolean,
     q: optionalString(200),
-    featured: optionalBoolean,
+    featured: optionalFilterBoolean,
+    directors_pick: optionalFilterBoolean,
     sort_by: z.enum(SORT_BY).optional().default('newest'),
     sort_order: z.enum(SORT_ORDER).optional().default('desc'),
     page: z.coerce.number().int().min(1).optional().default(1),

@@ -4,6 +4,7 @@ import { productUpdateSchema } from '@/lib/validators/product';
 import type { ProductUpdateInput } from '@/lib/validators/product';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
+import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 
 type RelatedProductPayload = Pick<
   ProductUpdateInput,
@@ -151,7 +152,7 @@ export async function PUT(
   const admin = createAdminClient();
   const { data: before } = await admin
     .from('products')
-    .select('sku, name, price, availability_status, is_active')
+    .select('sku, name, price, availability_status, is_active, stock_quantity')
     .eq('id', id)
     .single();
 
@@ -190,6 +191,14 @@ export async function PUT(
     details: { previous: before, updated: product },
     ipAddress: getRequestIp(request),
   });
+
+  await notifyLowStockProduct({
+    id: product.id,
+    sku: product.sku,
+    name: product.name,
+    category: product.category,
+    stock_quantity: product.stock_quantity,
+  }, before?.stock_quantity !== product.stock_quantity ? 'product_edit_stock' : 'product_edit');
 
   return NextResponse.json({ product });
 }

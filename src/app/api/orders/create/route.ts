@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/order-status';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Json } from '@/lib/types/database';
 
 function createGuestOrderToken() {
@@ -231,6 +232,30 @@ export async function POST(req: NextRequest) {
     const message = error instanceof Error ? error.message : 'Unable to reserve products.';
     return NextResponse.json({ error: message }, { status: 409 });
   }
+
+  await createInAppNotifications([
+    {
+      audience: 'admin',
+      type: 'order_created',
+      title: 'New order started',
+      message: `${contact.full_name} created order ${order.order_number} for ₹${Number(order.total ?? 0).toLocaleString('en-IN')}.`,
+      href: `/admin/orders/${order.id}`,
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { order_number: order.order_number, total: order.total, payment_status: 'pending' },
+    },
+    ...(customerId ? [{
+      audience: 'user' as const,
+      recipientUserId: customerId,
+      type: 'order_pending_payment',
+      title: 'Order created',
+      message: `Order ${order.order_number} is waiting for payment confirmation.`,
+      href: '/account/orders',
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { order_number: order.order_number, total: order.total },
+    }] : []),
+  ]);
 
   const response = NextResponse.json({
     order_id: order.id,

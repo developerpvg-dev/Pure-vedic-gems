@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { consultationPlanUpdateSchema } from '@/lib/validators/consultation';
+import type { Database, Json } from '@/lib/types/database';
+
+type ConsultationPlanUpdate = Database['public']['Tables']['consultation_plans']['Update'];
 
 export async function PUT(
   request: NextRequest,
@@ -28,9 +31,18 @@ export async function PUT(
   }
 
   const admin = createAdminClient();
+  const { metadata, ...fields } = parsed.data;
+  const payload: ConsultationPlanUpdate = {
+    ...fields,
+    updated_at: new Date().toISOString(),
+  };
+  if (metadata !== undefined) {
+    payload.metadata = metadata as Json;
+  }
+
   const { data, error } = await admin
     .from('consultation_plans')
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .select('*')
     .single();
@@ -54,15 +66,15 @@ export async function DELETE(
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('consultation_plans')
-    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .delete()
     .eq('id', id)
-    .select('*')
+    .select('id')
     .single();
 
   if (error) {
-    console.error('[Admin] Consultation plan deactivate failed:', error);
-    return NextResponse.json({ error: 'Failed to deactivate consultation plan' }, { status: 500 });
+    console.error('[Admin] Consultation plan delete failed:', error);
+    return NextResponse.json({ error: 'Failed to delete consultation plan' }, { status: 500 });
   }
 
-  return NextResponse.json({ plan: data });
+  return NextResponse.json({ deleted: true, id: data.id });
 }

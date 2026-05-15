@@ -7,6 +7,7 @@ export interface CartItem {
   /** Line-item key — product_id, or product_id+configuration_id for configured items */
   key: string;
   product_id: string;
+  slug?: string;
   sku: string;
   tag_number?: string | null;
   name: string;
@@ -15,6 +16,11 @@ export interface CartItem {
   /** Unit price (server-validated for configured items) */
   price: number;
   quantity: number;
+  stock_quantity?: number | null;
+  stock_status?: string | null;
+  availability_status?: string | null;
+  in_stock?: boolean | null;
+  sold_individually?: boolean | null;
   carat_weight: number | null;
   origin: string | null;
   /** Present only for Gem-to-Jewelry configured items */

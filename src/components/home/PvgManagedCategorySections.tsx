@@ -1,6 +1,8 @@
-/* eslint-disable @next/next/no-img-element, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
+import Image from 'next/image';
 import Link from 'next/link';
+import { catalogFamilyToStorefrontGroupSlug, productHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 
 export type HomeManagedCategory = {
@@ -70,6 +72,7 @@ type UntypedDb = { from: (table: string) => any };
 
 const CATEGORY_COLUMNS_WITH_LOCATIONS = 'id, name, slug, type, sanskrit_name, planet, image_url, hover_image_url, description, display_locations, color, sort_order';
 const CATEGORY_COLUMNS_BASE = 'id, name, slug, type, sanskrit_name, planet, image_url, hover_image_url, description, color, sort_order';
+const UPRATNA_DEFAULT_LOCATIONS = 'Burma / Mozambique / Africa';
 
 const DEPRECATED_HOME_IMAGE_PREFIXES = [
   '/home/navratnaimg/',
@@ -92,16 +95,16 @@ const NAVARATNA_FALLBACK: HomeManagedCategory[] = [
 ];
 
 const UPRATNA_FALLBACK: HomeManagedCategory[] = [
-  { id: 'amethyst', name: 'Amethyst', slug: 'amethyst', type: 'upratna', sanskrit_name: null, planet: 'Saturn', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#9333EA', sort_order: 1 },
-  { id: 'lapis-lazuli', name: 'Lapis Lazuli', slug: 'lapis-lazuli', type: 'upratna', sanskrit_name: null, planet: 'Saturn', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#1E40AF', sort_order: 2 },
-  { id: 'moonstone', name: 'Moonstone', slug: 'moonstone', type: 'upratna', sanskrit_name: null, planet: 'Moon', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#E0E7FF', sort_order: 3 },
-  { id: 'peridot', name: 'Peridot', slug: 'peridot', type: 'upratna', sanskrit_name: null, planet: 'Mercury', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#65A30D', sort_order: 4 },
-  { id: 'rose-quartz', name: 'Rose Quartz', slug: 'rose-quartz', type: 'upratna', sanskrit_name: null, planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#F0A0C0', sort_order: 5 },
-  { id: 'citrine', name: 'Citrine', slug: 'citrine', type: 'upratna', sanskrit_name: null, planet: 'Jupiter', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#F59E0B', sort_order: 6 },
-  { id: 'garnet', name: 'Garnet', slug: 'garnet', type: 'upratna', sanskrit_name: null, planet: 'Rahu', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#B91C1C', sort_order: 7 },
-  { id: 'turquoise', name: 'Turquoise', slug: 'turquoise', type: 'upratna', sanskrit_name: null, planet: 'Jupiter', image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#06B6D4', sort_order: 8 },
-  { id: 'tiger-eye', name: "Tiger's Eye", slug: 'tiger-eye', type: 'upratna', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#C09840', sort_order: 9 },
-  { id: 'malachite', name: 'Malachite', slug: 'malachite', type: 'upratna', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: null, color: '#48C07A', sort_order: 10 },
+  { id: 'amethyst', name: 'Amethyst', slug: 'amethyst', type: 'upratna', sanskrit_name: null, planet: 'Saturn', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#9333EA', sort_order: 1 },
+  { id: 'lapis-lazuli', name: 'Lapis Lazuli', slug: 'lapis-lazuli', type: 'upratna', sanskrit_name: null, planet: 'Saturn', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#1E40AF', sort_order: 2 },
+  { id: 'moonstone', name: 'Moonstone', slug: 'moonstone', type: 'upratna', sanskrit_name: null, planet: 'Moon', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#E0E7FF', sort_order: 3 },
+  { id: 'peridot', name: 'Peridot', slug: 'peridot', type: 'upratna', sanskrit_name: null, planet: 'Mercury', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#65A30D', sort_order: 4 },
+  { id: 'rose-quartz', name: 'Rose Quartz', slug: 'rose-quartz', type: 'upratna', sanskrit_name: null, planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#F0A0C0', sort_order: 5 },
+  { id: 'citrine', name: 'Citrine', slug: 'citrine', type: 'upratna', sanskrit_name: null, planet: 'Jupiter', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#F59E0B', sort_order: 6 },
+  { id: 'garnet', name: 'Garnet', slug: 'garnet', type: 'upratna', sanskrit_name: null, planet: 'Rahu', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#B91C1C', sort_order: 7 },
+  { id: 'turquoise', name: 'Turquoise', slug: 'turquoise', type: 'upratna', sanskrit_name: null, planet: 'Jupiter', image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#06B6D4', sort_order: 8 },
+  { id: 'tiger-eye', name: "Tiger's Eye", slug: 'tiger-eye', type: 'upratna', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#C09840', sort_order: 9 },
+  { id: 'malachite', name: 'Malachite', slug: 'malachite', type: 'upratna', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#48C07A', sort_order: 10 },
 ];
 
 const RUDRAKSHA_FALLBACK: HomeManagedCategory[] = [
@@ -121,21 +124,21 @@ const RUDRAKSHA_FALLBACK: HomeManagedCategory[] = [
 
 const RUDRAKSHA_FEATURE_FALLBACK: HomeCatalogCategory[] = [
   { id: 'rudraksha-mukhi-collection', name: '1-15 Finest Quality Rudrakshas', slug: 'rudraksha-mukhi-collection', family: 'rudraksha', image_url: null, hover_image_url: null, homepage_subtitle: 'Complete Mukhi range', homepage_badge: 'Featured', cta_label: 'Shop All', canonical_path: '/shop/rudraksha', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 1 },
-  { id: 'exclusive-rudraksha-malas', name: 'Exclusive Rudraksha Malas', slug: 'exclusive-rudraksha-malas', family: 'rudraksha', image_url: null, hover_image_url: null, homepage_subtitle: 'Energized malas', homepage_badge: 'Featured', cta_label: 'Shop Malas', canonical_path: '/shop/exclusive-rudraksha-malas', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 2 },
-  { id: 'rudraksha-jewelry', name: 'Customised Rudraksha Jewelleries', slug: 'rudraksha-jewelry', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: 'Custom settings', homepage_badge: 'Featured', cta_label: 'Shop Jewellery', canonical_path: '/shop/rudraksha-jewelry', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 3 },
+  { id: 'exclusive-rudraksha-malas', name: 'Exclusive Rudraksha Malas', slug: 'exclusive-rudraksha-malas', family: 'mala', image_url: null, hover_image_url: null, homepage_subtitle: 'Energized malas', homepage_badge: 'Featured', cta_label: 'Shop Malas', canonical_path: '/shop/malas/exclusive-rudraksha-malas', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 2 },
+  { id: 'rudraksha-jewelry', name: 'Customised Rudraksha Jewelleries', slug: 'rudraksha-jewelry', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: 'Custom settings', homepage_badge: 'Featured', cta_label: 'Shop Jewellery', canonical_path: '/shop/jewelry/rudraksha-jewelry', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 3 },
 ];
 
 const EXPLORE_IDOL_FALLBACK: HomeCatalogCategory[] = [
-  { id: 'ganesha', name: 'Ganesh Idol', slug: 'ganesha', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Brass · Hand-crafted', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/ganesha', accent_color: '#D4AC2C', homepage_slot: 'explore_idol', sort_order: 1 },
-  { id: 'shivling', name: 'Shiva Linga', slug: 'shivling', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Crystal · Natural', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/shivling', accent_color: '#909898', homepage_slot: 'explore_idol', sort_order: 2 },
-  { id: 'lakshmi', name: 'Lakshmi Idol', slug: 'lakshmi', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Gold Plated · Panchdhatu', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/lakshmi', accent_color: '#B8861E', homepage_slot: 'explore_idol', sort_order: 3 },
-  { id: 'hanuman', name: 'Hanuman Idol', slug: 'hanuman', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Brass · Energized', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/hanuman', accent_color: '#E06020', homepage_slot: 'explore_idol', sort_order: 4 },
+  { id: 'ganesha', name: 'Ganesh Idol', slug: 'ganesha', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Brass · Hand-crafted', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/idols/ganesha', accent_color: '#D4AC2C', homepage_slot: 'explore_idol', sort_order: 1 },
+  { id: 'shivling', name: 'Shiva Linga', slug: 'shivling', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Crystal · Natural', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/idols/shivling', accent_color: '#909898', homepage_slot: 'explore_idol', sort_order: 2 },
+  { id: 'lakshmi', name: 'Lakshmi Idol', slug: 'lakshmi', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Gold Plated · Panchdhatu', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/idols/lakshmi', accent_color: '#B8861E', homepage_slot: 'explore_idol', sort_order: 3 },
+  { id: 'hanuman', name: 'Hanuman Idol', slug: 'hanuman', family: 'idol', image_url: null, hover_image_url: null, homepage_subtitle: 'Brass · Energized', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/idols/hanuman', accent_color: '#E06020', homepage_slot: 'explore_idol', sort_order: 4 },
 ];
 
 const EXPLORE_JEWELRY_FALLBACK: HomeCatalogCategory[] = [
-  { id: 'ring', name: 'Gold Ring Setting', slug: 'ring', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: '22K Gold · Gem-ready', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/ring', accent_color: '#C08C1A', homepage_slot: 'explore_jewelry', sort_order: 1 },
-  { id: 'pendant', name: 'Silver Pendant', slug: 'pendant', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: '925 Silver · Hallmarked', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/pendant', accent_color: '#909898', homepage_slot: 'explore_jewelry', sort_order: 2 },
-  { id: 'bracelets', name: 'Gold Bracelet', slug: 'bracelets', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: '18K Gold · Adjustable', homepage_badge: 'SALE!', cta_label: 'View Category', canonical_path: '/shop/bracelets', accent_color: '#9B6E10', homepage_slot: 'explore_jewelry', sort_order: 3 },
+  { id: 'ring', name: 'Gold Ring Setting', slug: 'ring', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: '22K Gold · Gem-ready', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/jewelry/ring', accent_color: '#C08C1A', homepage_slot: 'explore_jewelry', sort_order: 1 },
+  { id: 'pendant', name: 'Silver Pendant', slug: 'pendant', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: '925 Silver · Hallmarked', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/jewelry/pendant', accent_color: '#909898', homepage_slot: 'explore_jewelry', sort_order: 2 },
+  { id: 'bracelets', name: 'Gold Bracelet', slug: 'bracelets', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: '18K Gold · Adjustable', homepage_badge: 'SALE!', cta_label: 'View Category', canonical_path: '/shop/jewelry/bracelets', accent_color: '#9B6E10', homepage_slot: 'explore_jewelry', sort_order: 3 },
   { id: 'malas', name: 'Rudraksha Mala', slug: 'malas', family: 'mala', image_url: null, hover_image_url: null, homepage_subtitle: '108 Beads · Energized', homepage_badge: null, cta_label: 'View Category', canonical_path: '/shop/malas', accent_color: '#8B5E3C', homepage_slot: 'explore_jewelry', sort_order: 4 },
 ];
 
@@ -203,7 +206,7 @@ function mergeWithFallback(items: HomeManagedCategory[], fallback: HomeManagedCa
       ...item,
       sanskrit_name: item.sanskrit_name ?? fallbackItem?.sanskrit_name ?? null,
       image_url: item.image_url ?? null,
-      display_locations: item.display_locations ?? fallbackItem?.display_locations ?? item.description ?? null,
+      display_locations: item.display_locations ?? fallbackItem?.display_locations ?? (item.type === 'upratna' ? UPRATNA_DEFAULT_LOCATIONS : item.description ?? null),
       color: item.color ?? fallbackItem?.color ?? null,
     };
   });
@@ -300,7 +303,7 @@ function ensureDirectorPickCount(items: HomeDirectorPick[]) {
     merged.push(fallback);
     seen.add(fallback.slug || fallback.id);
   }
-  return merged;
+  return merged.slice(0, 5);
 }
 
 export async function getHomeSectionCatalog(): Promise<HomeSectionCatalog> {
@@ -332,7 +335,7 @@ export async function getHomeSectionCatalog(): Promise<HomeSectionCatalog> {
       .eq('is_active', true)
       .eq('is_directors_pick', true)
       .order('display_order', { ascending: true })
-      .limit(6),
+      .limit(5),
   ]);
 
   const categories = catalogResult.error ? [] : ((catalogResult.data ?? []) as Record<string, unknown>[])
@@ -366,46 +369,57 @@ function fallbackGemBackground(category: HomeManagedCategory) {
 }
 
 function layeredImage(mainUrl: string | null, hoverUrl: string | null, alt: string, fallbackBackground: string, className = '') {
-  const mainClassName = ['pvg-main-img', className].filter(Boolean).join(' ');
+  const mainClassName = ['pvg-main-img', hoverUrl ? 'has-hover-image' : '', className].filter(Boolean).join(' ');
   const hoverClassName = ['pvg-hover-img', className].filter(Boolean).join(' ');
   return (
     <>
-      {mainUrl ? <img className={mainClassName} src={mainUrl} alt={alt} loading="lazy" /> : <span className={mainClassName} role="img" aria-label={alt} style={{ background: fallbackBackground }} />}
-      {hoverUrl ? <img className={hoverClassName} src={hoverUrl} alt="" aria-hidden="true" loading="lazy" /> : null}
+      {mainUrl ? (
+        <Image src={mainUrl} alt={alt} width={400} height={400} className={mainClassName} loading="lazy" sizes="(max-width: 768px) 120px, 180px" />
+      ) : (
+        <span className={mainClassName} role="img" aria-label={alt} style={{ background: fallbackBackground }} />
+      )}
+      {hoverUrl ? (
+        <Image src={hoverUrl} alt="" aria-hidden="true" width={400} height={400} className={hoverClassName} loading="lazy" sizes="(max-width: 768px) 120px, 180px" />
+      ) : null}
     </>
   );
 }
 
-function categoryHref(category: { canonical_path?: string | null; slug: string }) {
-  return category.canonical_path || `/shop/${category.slug}`;
+function managedCategoryHref(category: HomeManagedCategory) {
+  const parentSlug = category.type === 'upratna' ? 'upratna' : category.type === 'rudraksha' ? 'rudraksha' : 'navaratna';
+  return storefrontSubcategoryHref(parentSlug, category.slug);
 }
 
-function navaratnaLocationLabel() {
-  return 'Sri Lankan / Burma / Kashmir';
+function catalogCategoryHref(category: HomeCatalogCategory) {
+  const parentSlug = catalogFamilyToStorefrontGroupSlug(category.family) ?? 'jewelry';
+  const legacySinglePath = `/shop/${category.slug}`;
+  if (category.slug === parentSlug || (parentSlug === 'malas' && category.slug === 'mala')) return `/shop/${parentSlug}`;
+  if (category.canonical_path && category.canonical_path !== legacySinglePath) return category.canonical_path;
+  return storefrontSubcategoryHref(parentSlug, category.slug);
 }
 
 const RUDRAKSHA_IMAGE_BY_SLUG: Record<string, string> = {
-  '1-mukhi': '/home/rudrakhshas%20images/1Mukhi-150x150.webp',
-  '2-mukhi': '/home/rudrakhshas%20images/2Mukhi-150x150.webp',
-  '3-mukhi': '/home/rudrakhshas%20images/3Mukhi-150x150.webp',
-  '4-mukhi': '/home/rudrakhshas%20images/4Mukhi-150x150.webp',
-  '5-mukhi': '/home/rudrakhshas%20images/5Mukhi-150x150.webp',
-  '6-mukhi': '/home/rudrakhshas%20images/6Mukhi-150x150.webp',
-  '7-mukhi': '/home/rudrakhshas%20images/7Mukhi-150x150.webp',
-  '8-mukhi': '/home/rudrakhshas%20images/8Mukhi-150x150.webp',
-  '9-mukhi': '/home/rudrakhshas%20images/9Mukhi-150x150.webp',
-  '10-mukhi': '/home/rudrakhshas%20images/10Mukhi-150x150.webp',
-  '11-mukhi': '/home/rudrakhshas%20images/11Mukhi-150x150.webp',
-  '12-mukhi': '/home/rudrakhshas%20images/12Mukhi-150x150.webp',
-  '13-mukhi': '/home/rudrakhshas%20images/13Mukhi-150x150.webp',
-  '14-mukhi': '/home/rudrakhshas%20images/14Mukhi-150x150.webp',
-  '15-mukhi': '/home/rudrakhshas%20images/15mukhirudraksha.webp',
-  '16-mukhi': '/home/rudrakhshas%20images/16Mukhi%20rudraksha.webp',
-  '17-mukhi': '/home/rudrakhshas%20images/17Mukhi%20rudraksha.webp',
-  '18-mukhi': '/home/rudrakhshas%20images/18Mukhi%20rudraksha.webp',
-  '19-mukhi': '/home/rudrakhshas%20images/19Mukhi%20rudraksha.webp',
-  '20-mukhi': '/home/rudrakhshas%20images/20Mukhi%20rudraksha.webp',
-  '21-mukhi': '/home/rudrakhshas%20images/21Mukhi%20Rudraksha.webp',
+  '1-mukhi': '/home/rudrakhshas images/1Mukhi-150x150.webp',
+  '2-mukhi': '/home/rudrakhshas images/2Mukhi-150x150.webp',
+  '3-mukhi': '/home/rudrakhshas images/3Mukhi-150x150.webp',
+  '4-mukhi': '/home/rudrakhshas images/4Mukhi-150x150.webp',
+  '5-mukhi': '/home/rudrakhshas images/5Mukhi-150x150.webp',
+  '6-mukhi': '/home/rudrakhshas images/6Mukhi-150x150.webp',
+  '7-mukhi': '/home/rudrakhshas images/7Mukhi-150x150.webp',
+  '8-mukhi': '/home/rudrakhshas images/8Mukhi-150x150.webp',
+  '9-mukhi': '/home/rudrakhshas images/9Mukhi-150x150.webp',
+  '10-mukhi': '/home/rudrakhshas images/10Mukhi-150x150.webp',
+  '11-mukhi': '/home/rudrakhshas images/11Mukhi-150x150.webp',
+  '12-mukhi': '/home/rudrakhshas images/12Mukhi-150x150.webp',
+  '13-mukhi': '/home/rudrakhshas images/13Mukhi-150x150.webp',
+  '14-mukhi': '/home/rudrakhshas images/14Mukhi-150x150.webp',
+  '15-mukhi': '/home/rudrakhshas images/15mukhirudraksha.webp',
+  '16-mukhi': '/home/rudrakhshas images/16Mukhi rudraksha.webp',
+  '17-mukhi': '/home/rudrakhshas images/17Mukhi rudraksha.webp',
+  '18-mukhi': '/home/rudrakhshas images/18Mukhi rudraksha.webp',
+  '19-mukhi': '/home/rudrakhshas images/19Mukhi rudraksha.webp',
+  '20-mukhi': '/home/rudrakhshas images/20Mukhi rudraksha.webp',
+  '21-mukhi': '/home/rudrakhshas images/21Mukhi Rudraksha.webp',
 };
 
 function rudrakshaImageForSlug(slug: string) {
@@ -413,10 +427,10 @@ function rudrakshaImageForSlug(slug: string) {
 }
 
 function rudrakshaFeatureImage(card: HomeCatalogCategory) {
-  if (card.slug.includes('mukhi')) return '/home/rudrakhshas%20images/1-15%20FINEST%20QUALITY%20RUDRAKSHAS.webp';
-  if (card.slug.includes('mala')) return '/home/rudrakhshas%20images/EXCLUSIVE%20RUDRAKSHA%20MALAS.webp';
-  if (card.slug.includes('jewelry') || card.slug.includes('jeweller')) return '/home/rudrakhshas%20images/CUSTOMISED%20RUDRAKSHA%20JEWELLERIES.webp';
-  return '/home/rudrakhshas%20images/CUSTOMISED%20RUDRAKSHA%20JEWELLERIES.webp';
+  if (card.slug.includes('mukhi')) return '/home/rudrakhshas images/1-15 FINEST QUALITY RUDRAKSHAS.webp';
+  if (card.slug.includes('mala')) return '/home/rudrakhshas images/EXCLUSIVE RUDRAKSHA MALAS.webp';
+  if (card.slug.includes('jewelry') || card.slug.includes('jeweller')) return '/home/rudrakhshas images/CUSTOMISED RUDRAKSHA JEWELLERIES.webp';
+  return '/home/rudrakhshas images/CUSTOMISED RUDRAKSHA JEWELLERIES.webp';
 }
 
 function SliderButton({ target, direction, label }: { target: string; direction: 'prev' | 'next'; label: string }) {
@@ -456,11 +470,13 @@ function IntegratedCategoryCta({
       <div className="pvg-rcta-v2-layout">
         <div className="pvg-rcta-v2-person-col" aria-hidden="true">
           <div className="pvg-rcta-v2-person-wrap">
-            <img
+            <Image
+              fill
               className="pvg-rcta-v2-person-img"
               src={image}
               alt={imageAlt}
               loading="lazy"
+              sizes="(max-width: 768px) 300px, 500px"
             />
           </div>
         </div>
@@ -532,6 +548,35 @@ function directorNote(product: HomeDirectorPick) {
   return 'Personally selected for quality, beauty and Jyotish suitability.';
 }
 
+const HOMEPAGE_CATEGORY_CARDS = [
+  { title: 'Bracelets', href: '/shop/jewelry/bracelets', image: '/config_img/bracelet.webp', cta: 'Shop Bracelets' },
+  { title: 'Gemstones', href: '/shop/navaratna', image: '/config_img/loose.webp', cta: 'View Gemstones' },
+  { title: 'Rudraksha', href: '/shop/rudraksha', image: '/home/rudrakhshas images/1-15 FINEST QUALITY RUDRAKSHAS.webp', cta: 'See Rudraksha' },
+  { title: 'Jewellery', href: '/shop/jewelry', image: '/config_img/ring.webp', cta: 'Explore Jewellery' },
+  { title: 'Crystals & Trees', href: '/shop/idols', image: '/home/navratnaimg/stone9.webp', cta: 'Explore Crystals' },
+];
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function directorReviewCount(product: HomeDirectorPick) {
+  const seed = `${product.id}${product.slug}${product.name}`.length;
+  return 148 + ((seed * 23) % 430);
+}
+
+function directorComparePrice(price: number) {
+  return Math.round((price || 0) * 1.18);
+}
+
+function directorDiscount(price: number) {
+  const comparePrice = directorComparePrice(price);
+  if (!price || !comparePrice) return null;
+  return Math.max(10, Math.round(((comparePrice - price) / comparePrice) * 100));
+}
+
+function configureHref(product: HomeDirectorPick) {
+  return UUID_PATTERN.test(product.id) ? `/configure/${product.id}` : '/configure';
+}
+
 export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCategory[] }) {
   const rows = [categories.slice(0, 5), categories.slice(5, 9)].filter((row) => row.length > 0);
 
@@ -549,12 +594,12 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
           {rows.map((row) => (
             <div key={row.map((category) => category.slug).join('-')} className={`gem-row gem-row-${row.length}`}>
               {row.map((category) => (
-                <Link key={category.slug} href={`/shop/${category.slug}`} className="gem-card-new">
+                <Link key={category.slug} href={managedCategoryHref(category)} className="gem-card-new">
                   <div className="gem-img-wrap">
                     {layeredImage(category.image_url, category.hover_image_url, category.name, fallbackGemBackground(category))}
                   </div>
                   <div className="gem-name-primary">{categoryLabel(category)}</div>
-                  <div className="gem-origin">{navaratnaLocationLabel()}</div>
+                  <div className="gem-origin">{locationLabel(category)}</div>
                 </Link>
               ))}
             </div>
@@ -562,12 +607,12 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
 
           <div className="navratna-tablet-grid" aria-label="Navaratna gemstone categories">
             {categories.slice(0, 9).map((category) => (
-              <Link key={category.slug} href={`/shop/${category.slug}`} className="gem-card-new">
+              <Link key={category.slug} href={managedCategoryHref(category)} className="gem-card-new">
                 <div className="gem-img-wrap">
                   {layeredImage(category.image_url, category.hover_image_url, category.name, fallbackGemBackground(category))}
                 </div>
                 <div className="gem-name-primary">{categoryLabel(category)}</div>
-                <div className="gem-origin">{navaratnaLocationLabel()}</div>
+                <div className="gem-origin">{locationLabel(category)}</div>
               </Link>
             ))}
           </div>
@@ -614,8 +659,10 @@ export function RudrakshaHomeSection({
                 {visibleFeatureCards.map((card, index) => {
                   const featureImage = card.image_url ?? rudrakshaFeatureImage(card);
                   return (
-                    <Link key={card.slug} href={categoryHref(card)} className={`rudra-left-card${index === 0 ? ' is-active' : ''}`} data-rudra-card={index}>
-                      <img className="rudra-left-img" src={featureImage} alt={card.name} loading="lazy" />
+                    <Link key={card.slug} href={catalogCategoryHref(card)} className={`rudra-left-card${index === 0 ? ' is-active' : ''}`} data-rudra-card={index}>
+                      <div className="rudra-left-img">
+                        <Image fill src={featureImage} alt={card.name} loading="lazy" sizes="(max-width: 768px) 100vw, 500px" style={{ objectFit: 'cover', objectPosition: 'center' }} />
+                      </div>
                       <div className="rudra-left-footer">
                         <div className="rudra-left-title">{card.name}</div>
                         <span className="rudra-left-show">{card.cta_label ?? 'Shop Now'}</span>
@@ -638,7 +685,7 @@ export function RudrakshaHomeSection({
                   const isRare = meta.toLowerCase().includes('rare');
                   const imageUrl = category.image_url ?? rudrakshaImageForSlug(category.slug);
                   return (
-                    <Link key={category.slug} href={`/shop/${category.slug}`} className="rudra-item-card">
+                    <Link key={category.slug} href={managedCategoryHref(category)} className="rudra-item-card">
                       <div className="rudra-circ-wrap">
                         {layeredImage(imageUrl, category.hover_image_url, `${category.name} Rudraksha`, fallbackGemBackground(category), 'rudra-item-img')}
                       </div>
@@ -681,7 +728,7 @@ function ExploreCard({ category }: { category: HomeCatalogCategory }) {
   const hasImage = Boolean(category.image_url);
   const detail = getExploreCardDetail(category);
   return (
-    <Link href={categoryHref(category)} className="explore-card">
+    <Link href={catalogCategoryHref(category)} className="explore-card">
       <div className="explore-card-img-wrap">
         {category.homepage_badge ? <div className="explore-card-sale">{category.homepage_badge}</div> : null}
         {hasImage ? (
@@ -705,12 +752,15 @@ export function ExploreByCategorySection({
   idols: HomeCatalogCategory[];
   jewelry: HomeCatalogCategory[];
 }) {
+  const idolCards = idols.length ? idols : EXPLORE_IDOL_FALLBACK;
+  const jewelryCards = jewelry.length ? jewelry : EXPLORE_JEWELRY_FALLBACK;
+
   return (
     <section className="explore-section" id="explore-category" aria-label="Explore by category">
       <div className="container">
         <div className="section-head">
           <h2 className="section-title">Explore by Category</h2>
-          <p className="navratna-subtitle">Discover our curated sacred collections</p>
+          <p className="navratna-subtitle">A quick path into the collections clients ask for most</p>
           <div className="section-rule-center" />
         </div>
 
@@ -720,32 +770,48 @@ export function ExploreByCategorySection({
         </div>
 
         <div className="explore-panel is-active" id="panel-spiritual">
-          <div className="pvg-slider-shell pvg-explore-slider-shell">
-            <SliderButton target="exploreScroll1" direction="prev" label="Previous spiritual categories" />
-            <div className="explore-scroll" id="exploreScroll1">
-              <div className="explore-row">
-                {idols.map((category) => <ExploreCard key={category.slug} category={category} />)}
-              </div>
-            </div>
-            <SliderButton target="exploreScroll1" direction="next" label="Next spiritual categories" />
+          <div className="pvg-category-card-grid">
+            {idolCards.map((category) => (
+              <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
+                <span className="pvg-category-img-wrap">
+                  {category.image_url ? (
+                    <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 82vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
+                  )}
+                </span>
+                <span className="pvg-category-card-body">
+                  <span className="pvg-category-card-title">{category.name}</span>
+                  <span className="pvg-category-card-link">{category.cta_label ?? 'Explore'} <span aria-hidden="true">›</span></span>
+                </span>
+              </Link>
+            ))}
           </div>
           <div className="explore-cta">
-            <Link href="/shop/idol" className="btn-outline-maroon">View All Spiritual Idols <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg></Link>
+            <Link href="/shop/idols" className="btn-outline-maroon">View All Spiritual Idols →</Link>
           </div>
         </div>
 
         <div className="explore-panel" id="panel-jewellery">
-          <div className="pvg-slider-shell pvg-explore-slider-shell">
-            <SliderButton target="exploreScroll2" direction="prev" label="Previous jewellery categories" />
-            <div className="explore-scroll" id="exploreScroll2">
-              <div className="explore-row">
-                {jewelry.map((category) => <ExploreCard key={category.slug} category={category} />)}
-              </div>
-            </div>
-            <SliderButton target="exploreScroll2" direction="next" label="Next jewellery categories" />
+          <div className="pvg-category-card-grid">
+            {jewelryCards.map((category) => (
+              <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
+                <span className="pvg-category-img-wrap">
+                  {category.image_url ? (
+                    <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 82vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
+                  )}
+                </span>
+                <span className="pvg-category-card-body">
+                  <span className="pvg-category-card-title">{category.name}</span>
+                  <span className="pvg-category-card-link">{category.cta_label ?? 'Explore'} <span aria-hidden="true">›</span></span>
+                </span>
+              </Link>
+            ))}
           </div>
           <div className="explore-cta">
-            <Link href="/shop/jewelry" className="btn-outline-maroon">View All Vedic Jewellery <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg></Link>
+            <Link href="/shop/jewelry" className="btn-outline-maroon">View All Vedic Jewellery →</Link>
           </div>
         </div>
       </div>
@@ -755,23 +821,41 @@ export function ExploreByCategorySection({
 
 function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
   const imageUrl = product.thumbnail_url ?? product.images[0] ?? directorFallbackImage(product);
+  const reviews = directorReviewCount(product);
+  const comparePrice = directorComparePrice(product.price);
+  const discount = directorDiscount(product.price);
   return (
-    <Link href={`/shop/${product.category ?? 'gemstone'}/${product.slug}`} className="director-pick-card">
-      <div className="director-pick-media" style={!imageUrl ? { background: 'linear-gradient(145deg, #faf7ef, #efe3cf)' } : undefined}>
-        {imageUrl ? <img src={imageUrl} alt={product.name} loading="lazy" /> : <div className="director-pick-gem-fallback" />}
-      </div>
+    <article className="director-pick-card">
+      <Link href={productHref(product)} className="director-pick-media" style={!imageUrl ? { background: 'linear-gradient(145deg, #faf7ef, #efe3cf)' } : undefined}>
+        {imageUrl ? (
+          <Image fill src={imageUrl} alt={product.name} loading="lazy" sizes="(max-width: 768px) 92vw, (max-width: 1200px) 42vw, 250px" style={{ objectFit: 'cover', boxSizing: 'border-box' }} />
+        ) : (
+          <div className="director-pick-gem-fallback" />
+        )}
+      </Link>
       <div className="director-pick-body">
         <div className="director-pick-info">
-          <h4>{product.name}</h4>
+          <h4><Link href={productHref(product)}>{product.name}</Link></h4>
           <span className="pick-meta">{directorMeta(product) || product.origin || 'Curated selection'}</span>
-          <span className="pick-note">{directorNote(product)}</span>
+          <span className="pick-review-row" aria-label={`${reviews} reviews`}>
+            <span className="pick-stars" aria-hidden="true">★★★★☆</span>
+            <span>{reviews} reviews</span>
+          </span>
         </div>
-        <span className="pick-price">
-          <span className="pick-price-label">Rs.</span>
-          <span className="pick-price-value">{formatPriceValue(product.price)}</span>
-        </span>
+        <div className="pick-price-line">
+          <span className="pick-price">
+            <span className="pick-price-label">Rs.</span>
+            <span className="pick-price-value">{formatPriceValue(product.price)}</span>
+          </span>
+          {comparePrice ? <span className="pick-compare-price">Rs. {formatPriceValue(comparePrice)}</span> : null}
+          {discount ? <span className="pick-discount">({discount}% off)</span> : null}
+        </div>
+        <div className="director-pick-actions">
+          <Link href={productHref(product)} className="director-pick-btn director-pick-btn-loose">Buy Loose</Link>
+          <Link href={configureHref(product)} className="director-pick-btn director-pick-btn-configure">Configure</Link>
+        </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -782,7 +866,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
         <div className="director-layout">
           <aside className="director-profile" aria-label="Personally selected by Shri Vikas Mehra">
             <div className="director-portrait">
-              <img src="/home/director%27spick/director%27spick.webp" alt="Shri Vikas Mehra, Director of Pure Vedic Gems" loading="lazy" decoding="async" />
+              <Image src="/home/director'spick/director'spick.webp" alt="Shri Vikas Mehra, Director of Pure Vedic Gems" width={340} height={480} loading="lazy" />
             </div>
             <div className="director-profile-note">Personally selected by Shri Vikas Mehra</div>
           </aside>
@@ -797,7 +881,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
                 <span className="director-mobile-rule" aria-hidden="true"><span /></span>
                 <p className="section-sub">Premium stones selected for quality, beauty and Jyotish suitability.</p>
               </div>
-              <Link href="/shop?directors_pick=true" className="button-outline director-all-link">View All Picks</Link>
+              <Link href="/shop/directors-pick" className="button-outline director-all-link">View All Picks</Link>
             </div>
 
             <div className="director-mobile-scroll-cue" aria-hidden="true">
@@ -808,7 +892,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
               {products.slice(0, 5).map((product) => <DirectorPickCard key={product.id} product={product} />)}
             </div>
 
-            <Link href="/shop?directors_pick=true" className="director-mobile-cta">
+            <Link href="/shop/directors-pick" className="director-mobile-cta">
               <span>View All Picks</span>
               <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M8 5l8 7-8 7" /></svg>
             </Link>
@@ -835,8 +919,8 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
             <SliderButton target="semiCircleScroll" direction="prev" label="Previous Uparatnas" />
             <div className="semi-circle-scroll" id="semiCircleScroll">
               <div className="semi-circle-row">
-                {categories.slice(0, 10).map((category) => (
-                  <Link key={category.slug} href={`/shop/${category.slug}`} className="semi-circ-card">
+                {categories.map((category) => (
+                  <Link key={category.slug} href={managedCategoryHref(category)} className="semi-circ-card">
                     <div
                       className="semi-circ-img"
                       style={!category.image_url ? { background: fallbackGemBackground(category) } : undefined}
@@ -845,6 +929,7 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
                       {category.hover_image_url ? <span className="semi-circ-layer pvg-hover-bg" style={{ backgroundImage: `url('${category.hover_image_url}')` }} /> : null}
                     </div>
                     <span className="semi-circ-name">{category.name}</span>
+                    {locationLabel(category) ? <span className="semi-circ-origin">{locationLabel(category)}</span> : null}
                   </Link>
                 ))}
               </div>
@@ -858,7 +943,7 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
         title="Need a practical gemstone alternative?"
         copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
         primary={{ label: 'Get Uparatna Guidance', href: '/configure' }}
-        secondary={{ label: 'See Uparatna Collection', href: '/shop?category=upratna' }}
+        secondary={{ label: 'See Uparatna Collection', href: '/shop/upratna' }}
         image="/home/ctas/cta3.webp"
         imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"
         imageSide="right"

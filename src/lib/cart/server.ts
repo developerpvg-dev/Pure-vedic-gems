@@ -1,10 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Cart, CartItem } from '@/lib/types/cart';
 import type { CartItemInput } from '@/lib/validators/cart';
 import type { Json, Product, ServerCart, ServerCartItem } from '@/lib/types/database';
 
 const PRODUCT_SELECT = `
-  id, sku, tag_number, name, category, price, carat_weight, origin, images,
+  id, sku, slug, tag_number, name, category, price, carat_weight, origin, images,
   thumbnail_url, in_stock, stock_quantity, stock_status, availability_status,
   is_active, sold_individually, backorders_allowed, reserved_until,
   reserved_by_customer_id
@@ -16,6 +17,7 @@ type CartProduct = Pick<
   Product,
   | 'id'
   | 'sku'
+  | 'slug'
   | 'tag_number'
   | 'name'
   | 'category'
@@ -86,6 +88,21 @@ function assertProductCanBeAdded(product: CartProduct, customerId: string) {
   }
   if (product.availability_status === 'reserved' && isReservedForAnotherCustomer(product, customerId)) {
     throw new Error(`Product "${product.name}" is currently reserved.`);
+  }
+}
+
+function getAvailableQuantity(product: CartProduct) {
+  const stockQuantity = Math.max(0, Number(product.stock_quantity ?? 0));
+  return product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
+}
+
+function assertRequestedQuantityInStock(product: CartProduct, requestedQuantity: number) {
+  const availableQuantity = getAvailableQuantity(product);
+  if (availableQuantity <= 0) {
+    throw new Error(`Product "${product.name}" is currently out of stock.`);
+  }
+  if (requestedQuantity > availableQuantity) {
+    throw new Error(`Only ${availableQuantity} unit(s) of "${product.name}" are available.`);
   }
 }
 
@@ -170,6 +187,7 @@ export async function getCartResponse(cartId: string): Promise<Cart> {
       return {
         key: row.line_key,
         product_id: row.product_id,
+        slug: product?.slug ?? metadataString(row.metadata, 'slug'),
         sku: product?.sku ?? row.sku ?? '',
         tag_number: product?.tag_number ?? row.tag_number ?? null,
         name: product?.name ?? row.name_snapshot,
@@ -177,6 +195,11 @@ export async function getCartResponse(cartId: string): Promise<Cart> {
         image_url: getImageUrl(product, row.image_url_snapshot),
         price: Number(row.configuration_id ? row.price_snapshot : product?.price ?? row.price_snapshot ?? 0),
         quantity: row.quantity,
+        stock_quantity: product?.stock_quantity ?? null,
+        stock_status: product?.stock_status ?? null,
+        availability_status: product?.availability_status ?? null,
+        in_stock: product?.in_stock ?? null,
+        sold_individually: product?.sold_individually ?? null,
         carat_weight: product?.carat_weight ?? metadataNumber(row.metadata, 'carat_weight') ?? null,
         origin: product?.origin ?? metadataString(row.metadata, 'origin') ?? null,
         configuration_id: row.configuration_id ?? undefined,
@@ -205,7 +228,8 @@ export async function getCartResponse(cartId: string): Promise<Cart> {
 export async function upsertCustomerCartItem(
   customerId: string,
   input: CartItemInput,
-  guestSessionId?: string
+  guestSessionId?: string,
+  options: { notify?: boolean; capToStock?: boolean } = {}
 ) {
   const supabase = createAdminClient();
   const cart = await getOrCreateCustomerCart(customerId, guestSessionId);
@@ -254,9 +278,20 @@ export async function upsertCustomerCartItem(
     .maybeSingle();
   const existingItem = existing as ServerCartItem | null;
 
-  const quantity = Math.min(10, (existingItem?.quantity ?? 0) + input.quantity);
+  const previousQuantity = existingItem?.quantity ?? 0;
+  const requestedQuantity = previousQuantity + input.quantity;
+  const quantity = options.capToStock
+    ? Math.min(requestedQuantity, getAvailableQuantity(product))
+    : requestedQuantity;
+
+  assertRequestedQuantityInStock(product, quantity);
+  if (quantity <= previousQuantity) {
+    return getCartResponse(cart.id);
+  }
+
   const metadata = {
     carat_weight: input.carat_weight ?? product.carat_weight ?? null,
+    slug: product.slug,
     origin: input.origin ?? product.origin ?? null,
     configuration_summary: input.configuration_summary ?? null,
     configuration_snapshot: configurationSnapshot ?? null,
@@ -304,9 +339,14 @@ export async function upsertCustomerCartItem(
     guestSessionId,
     cartId: cart.id,
     productId: input.product_id,
-    eventType: 'cart_item_added',
+    eventType: existingItem ? 'cart_item_updated' : 'cart_item_added',
     quantity,
     value: verifiedUnitPrice * quantity,
+    metadata: {
+      notify: options.notify !== false,
+      previous_quantity: previousQuantity,
+      added_quantity: quantity - previousQuantity,
+    },
   });
 
   return getCartResponse(cart.id);
@@ -330,7 +370,18 @@ export async function updateCustomerCartItem(customerId: string, lineKey: string
   if (fetchError || !existing) throw new Error('Cart item not found.');
   const existingItem = existing as ServerCartItem;
 
-  const nextQuantity = Math.min(10, quantity);
+  const { data: productData, error: productError } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('id', existingItem.product_id)
+    .single();
+
+  if (productError || !productData) throw new Error('Product not found.');
+  const product = productData as CartProduct;
+  assertProductCanBeAdded(product, customerId);
+  assertRequestedQuantityInStock(product, quantity);
+
+  const nextQuantity = quantity;
   const { error } = await supabase
     .from('cart_items')
     .update({
@@ -402,7 +453,7 @@ export async function clearCustomerCart(customerId: string) {
 export async function mergeCustomerCart(customerId: string, items: CartItemInput[], guestSessionId?: string) {
   const cart = await getOrCreateCustomerCart(customerId, guestSessionId);
   for (const item of items) {
-    await upsertCustomerCartItem(customerId, item, guestSessionId);
+    await upsertCustomerCartItem(customerId, item, guestSessionId, { notify: false, capToStock: true }).catch(() => undefined);
   }
 
   const supabase = createAdminClient();
@@ -480,5 +531,37 @@ export async function logCartEvent({
         status: 'queued',
       })
       .then(null, () => undefined);
+  }
+
+  if (eventType === 'cart_item_added' && metadata.notify !== false) {
+    const { data: product } = productId
+      ? await supabase.from('products').select('name').eq('id', productId).single()
+      : { data: null };
+    const itemName = product?.name ?? 'an item';
+
+    await createInAppNotifications([
+      {
+        audience: 'admin',
+        recipientRole: 'sales',
+        type: (value ?? 0) >= HIGH_VALUE_CART_THRESHOLD ? 'high_value_cart_add' : 'cart_item_added',
+        title: (value ?? 0) >= HIGH_VALUE_CART_THRESHOLD ? 'High-value cart activity' : 'Item added to cart',
+        message: `${itemName} was added to a cart${value ? ` worth ₹${Number(value).toLocaleString('en-IN')}` : ''}.`,
+        href: '/admin',
+        entityType: 'cart',
+        entityId: cartId ?? null,
+        metadata: { customer_id: customerId ?? null, guest_session_id: guestSessionId ?? null, product_id: productId ?? null, value: value ?? null },
+      },
+      ...(customerId ? [{
+        audience: 'user' as const,
+        recipientUserId: customerId,
+        type: 'cart_item_added',
+        title: 'Added to cart',
+        message: `${itemName} is in your cart.`,
+        href: '/cart',
+        entityType: 'cart',
+        entityId: cartId ?? null,
+        metadata: { product_id: productId ?? null, value: value ?? null },
+      }] : []),
+    ]);
   }
 }

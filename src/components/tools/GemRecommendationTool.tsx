@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, Sparkles } from 'lucide-react';
 import { trackLeadEvent } from '@/lib/utils/analytics';
 
 type RecommendationResponse = {
-  recommendation: {
+  recommendation?: {
     rashi: string | null;
     primaryGemNames: string[];
     supportingGemNames: string[];
@@ -14,7 +14,22 @@ type RecommendationResponse = {
     advisory: string;
     notes: string[];
   };
+  error?: string;
 };
+
+type StoredHomeRecommendation = {
+  payload?: {
+    birthDate?: string;
+    birthTime?: string;
+    birthPlace?: string;
+    purpose?: string;
+  };
+  recommendation?: NonNullable<RecommendationResponse['recommendation']>;
+  createdAt?: number;
+};
+
+const homeRecommendationStorageKey = 'pvg_home_recommendation';
+const homeRecommendationTtlMs = 30 * 60 * 1000;
 
 const purposes = [
   { value: 'career growth', label: 'Career growth' },
@@ -30,26 +45,60 @@ export function GemRecommendationTool() {
   const [purpose, setPurpose] = useState('career growth');
   const [budgetMax, setBudgetMax] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<RecommendationResponse['recommendation'] | null>(null);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<NonNullable<RecommendationResponse['recommendation']> | null>(null);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem(homeRecommendationStorageKey);
+    if (!raw) return;
+
+    try {
+      const stored = JSON.parse(raw) as StoredHomeRecommendation;
+      if (!stored.createdAt || Date.now() - stored.createdAt > homeRecommendationTtlMs) {
+        sessionStorage.removeItem(homeRecommendationStorageKey);
+        return;
+      }
+
+      setBirthDate(stored.payload?.birthDate ?? '');
+      setBirthTime(stored.payload?.birthTime ?? '');
+      setBirthPlace(stored.payload?.birthPlace ?? '');
+      setPurpose(stored.payload?.purpose ?? 'career growth');
+      if (stored.recommendation) setResult(stored.recommendation);
+    } catch {
+      sessionStorage.removeItem(homeRecommendationStorageKey);
+    }
+  }, []);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
-    const response = await fetch('/api/recommendation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        birthDate: birthDate || undefined,
-        birthTime: birthTime || undefined,
-        birthPlace: birthPlace || undefined,
-        purpose,
-        budgetMax: budgetMax ? Number(budgetMax) : undefined,
-      }),
-    });
-    const data = (await response.json()) as RecommendationResponse;
-    setResult(data.recommendation);
-    setIsLoading(false);
-    trackLeadEvent('recommendation_tool', { purpose, has_birth_date: Boolean(birthDate) });
+    setError('');
+
+    try {
+      const response = await fetch('/api/recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          birthDate: birthDate || undefined,
+          birthTime: birthTime || undefined,
+          birthPlace: birthPlace || undefined,
+          purpose,
+          budgetMax: budgetMax ? Number(budgetMax) : undefined,
+        }),
+      });
+      const data = (await response.json()) as RecommendationResponse;
+
+      if (!response.ok || !data.recommendation) {
+        throw new Error(data.error || 'Unable to generate recommendation');
+      }
+
+      setResult(data.recommendation);
+      trackLeadEvent('recommendation_tool', { purpose, has_birth_date: Boolean(birthDate) });
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to generate recommendation. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,6 +145,7 @@ export function GemRecommendationTool() {
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Generate Shortlist
         </button>
+        {error ? <p className="mt-3 text-sm font-semibold text-red-700" role="status">{error}</p> : null}
       </form>
 
       <section className="border border-brand-border bg-brand-bg-alt p-5 md:p-7">

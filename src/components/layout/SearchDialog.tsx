@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatPrice } from '@/lib/utils/format';
+import { productHref } from '@/lib/categories/storefront';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import type { SearchResponse, SearchResult, SearchResultGroup, SearchResultType } from '@/lib/types/product';
 
@@ -97,7 +98,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   const getResultHref = (result: SearchResult) => {
     if (result.href) return result.href;
-    if (result.slug) return `/shop/${result.category}/${result.slug}`;
+    if (result.slug) return productHref({ category: result.category, slug: result.slug });
     return '/shop';
   };
 

@@ -366,14 +366,14 @@
   html {
     @apply font-body;
   }
-  /* Ensure DM Sans is used everywhere for body text — no system-font fallthrough */
+  /* Roboto is the only storefront/application font family. */
   body,
   body * {
-    font-family: var(--fb, var(--font-dm-sans)), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-roboto), 'Roboto', sans-serif;
   }
   h1, h2, h3, h4, h5, h6,
   .font-heading {
-    font-family: var(--fh, var(--font-playfair-display)), ui-serif, Georgia, serif;
+    font-family: var(--font-roboto), 'Roboto', sans-serif;
   }
   button, input, select, textarea {
     font-family: inherit;

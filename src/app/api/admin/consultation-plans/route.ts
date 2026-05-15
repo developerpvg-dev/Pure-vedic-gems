@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { consultationPlanSchema } from '@/lib/validators/consultation';
+import type { ConsultationPlanInsert, Json } from '@/lib/types/database';
 
 export async function GET() {
   const auth = await requireAdminAccess('leads.read');
@@ -42,9 +43,13 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+  const payload: ConsultationPlanInsert = {
+    ...parsed.data,
+    metadata: parsed.data.metadata as Json,
+  };
   const { data, error } = await admin
     .from('consultation_plans')
-    .insert(parsed.data)
+    .insert(payload)
     .select('*')
     .single();
 

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Search, ChevronLeft, ChevronRight, Archive, RotateCcw, Lock, Unlock, Star, Upload, Download } from 'lucide-react';
+import { Plus, Search, Archive, RotateCcw, Lock, Unlock, Star, Upload, Download, PackageCheck } from 'lucide-react';
+import { AdminPagination } from '@/components/admin/AdminPagination';
 
 interface AdminProduct {
   id: string;
@@ -18,6 +19,7 @@ interface AdminProduct {
   carat_weight: number | null;
   origin: string | null;
   in_stock: boolean;
+  stock_quantity: number;
   stock_status: string;
   availability_status: string;
   reserved_until: string | null;
@@ -31,6 +33,7 @@ interface AdminProduct {
 }
 
 const AVAILABILITY_OPTIONS = ['in_stock', 'reserved', 'sold', 'on_demand', 'out_of_stock', 'archived'];
+const PRODUCTS_PER_PAGE = 20;
 
 function label(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
@@ -45,16 +48,21 @@ export default function AdminProductsPage() {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
   const [availability, setAvailability] = useState('');
+  const [stock, setStock] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.search).get('stock') ?? '';
+  });
   const [loading, setLoading] = useState(true);
   const [busyProduct, setBusyProduct] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), per_page: '20' });
+    const params = new URLSearchParams({ page: String(page), per_page: String(PRODUCTS_PER_PAGE) });
     if (search) params.set('search', search);
     if (category) params.set('category', category);
     if (status) params.set('status', status);
     if (availability) params.set('availability_status', availability);
+    if (stock) params.set('stock', stock);
     const res = await fetch(`/api/admin/products?${params}`);
     if (res.ok) {
       const data = await res.json();
@@ -63,7 +71,7 @@ export default function AdminProductsPage() {
       setTotalPages(data.total_pages);
     }
     setLoading(false);
-  }, [page, search, category, status, availability]);
+  }, [page, search, category, status, availability, stock]);
 
   useEffect(() => {
     void Promise.resolve().then(fetchProducts);
@@ -94,6 +102,18 @@ export default function AdminProductsPage() {
   const handleArchive = async (id: string, name: string) => {
     if (!confirm(`Archive "${name}"? It will be hidden from shop and can be restored later.`)) return;
     await runOperation(id, { action: 'archive', note: 'Archived from product list' }, 'Failed to archive product');
+  };
+
+  const handleStockUpdate = async (product: AdminProduct) => {
+    const value = prompt(`Stock quantity for "${product.name}"`, String(product.stock_quantity ?? 0));
+    if (value === null) return;
+    const nextStock = Number(value);
+    if (!Number.isInteger(nextStock) || nextStock < 0) {
+      alert('Enter a whole stock quantity of 0 or more.');
+      return;
+    }
+    const note = prompt('Stock update note', 'Manual inventory correction') ?? undefined;
+    await runOperation(product.id, { action: 'stock_update', stock_quantity: nextStock, note }, 'Failed to update stock');
   };
 
   return (
@@ -129,31 +149,36 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Search */}
-      <form onSubmit={handleSearch} className="mt-6 grid gap-2 lg:grid-cols-[1fr_160px_160px_190px_auto]">
+      <form onSubmit={handleSearch} className="mt-6 grid gap-2 lg:grid-cols-[1fr_150px_145px_180px_150px_auto]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search SKU, tag, legacy ID, name, slug, category..."
             className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
           />
         </div>
         <input
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => { setCategory(e.target.value); setPage(1); }}
           placeholder="Category"
           className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500"
         />
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
+        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
           <option value="">All status</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
-        <select value={availability} onChange={(e) => setAvailability(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
+        <select value={availability} onChange={(e) => { setAvailability(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
           <option value="">All availability</option>
           {AVAILABILITY_OPTIONS.map((option) => <option key={option} value={option}>{label(option)}</option>)}
+        </select>
+        <select value={stock} onChange={(e) => { setStock(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
+          <option value="">All stock</option>
+          <option value="low">Low stock (&lt; 5)</option>
+          <option value="out">Out of stock</option>
         </select>
         <button type="submit" className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
           Search
@@ -170,17 +195,19 @@ export default function AdminProductsPage() {
               <th className="p-3 font-medium text-gray-600">Category</th>
               <th className="p-3 font-medium text-gray-600">Price</th>
               <th className="p-3 font-medium text-gray-600">Carat</th>
+              <th className="p-3 font-medium text-gray-600">Stock</th>
               <th className="p-3 font-medium text-gray-600">Availability</th>
               <th className="p-3 font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="p-8 text-center text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center text-gray-400">Loading...</td></tr>
             ) : products.length === 0 ? (
-              <tr><td colSpan={7} className="p-8 text-center text-gray-400">No products found. Add your first product!</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center text-gray-400">No products found. Add your first product!</td></tr>
             ) : products.map((p) => {
               const img = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
+              const isLowStock = p.stock_quantity < 5;
               return (
                 <tr key={p.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50">
                   <td className="p-3">
@@ -203,6 +230,16 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="p-3 font-medium text-gray-900">₹{p.price.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-gray-600">{p.carat_weight ?? '—'}</td>
+                  <td className="p-3">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${p.stock_quantity <= 0 ? 'bg-red-100 text-red-700' : isLowStock ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                      {p.stock_quantity} unit{p.stock_quantity === 1 ? '' : 's'}
+                    </span>
+                    {isLowStock && (
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
+                        {p.stock_quantity <= 0 ? 'Out of stock' : 'Low stock'}
+                      </p>
+                    )}
+                  </td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1.5">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -229,6 +266,13 @@ export default function AdminProductsPage() {
                       <Link href={`/admin/products/${p.id}`} className="text-amber-600 hover:underline text-sm">
                         Edit
                       </Link>
+                      <button
+                        onClick={() => handleStockUpdate(p)}
+                        disabled={busyProduct === p.id}
+                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                      >
+                        <PackageCheck className="h-3.5 w-3.5" /> Stock
+                      </button>
                       {p.availability_status === 'reserved' ? (
                         <button
                           onClick={() => runOperation(p.id, { action: 'release' }, 'Failed to release reservation')}
@@ -291,28 +335,13 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:opacity-40"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> Prev
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:opacity-40"
-            >
-              Next <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        perPage={PRODUCTS_PER_PAGE}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

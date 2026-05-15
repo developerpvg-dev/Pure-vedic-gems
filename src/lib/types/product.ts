@@ -202,6 +202,9 @@ export type ProductCard = Pick<
   | 'images'
   | 'thumbnail_url'
   | 'in_stock'
+  | 'stock_quantity'
+  | 'stock_status'
+  | 'sold_individually'
   | 'featured'
   | 'is_directors_pick'
   | 'treatment'
@@ -229,10 +232,17 @@ export interface ProductFilters {
   min_carat?: number;
   max_carat?: number;
   origin?: string;
+  shape?: string;
   planet?: string;
   certification?: string;
+  certificate_lab?: string;
+  quality_label?: string;
   treatment?: string;
+  price_mode?: PriceMode;
+  configurator_enabled?: boolean;
   q?: string;
+  featured?: boolean;
+  directors_pick?: boolean;
   sort_by?: 'price' | 'carat' | 'newest';
   sort_order?: 'asc' | 'desc';
   page?: number;

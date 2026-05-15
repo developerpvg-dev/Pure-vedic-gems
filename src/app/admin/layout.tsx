@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const NAV_GROUPS = [
   {
@@ -51,14 +52,17 @@ function NavContent({ pathname, setSidebarOpen }: { pathname: string; setSidebar
           <span className="block text-base font-bold text-gray-950">PVG Admin</span>
           <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-amber-700">Control Room</span>
         </Link>
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(false)}
-          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 lg:hidden"
-          aria-label="Close admin menu"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell variant="admin" />
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 lg:hidden"
+            aria-label="Close admin menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
         <div className="space-y-5 pb-5">
@@ -139,6 +143,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="h-5 w-5" />
           </button>
           <span className="text-sm font-bold text-gray-900">PVG Admin</span>
+          <div className="ml-auto">
+            <NotificationBell variant="admin" />
+          </div>
         </div>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">

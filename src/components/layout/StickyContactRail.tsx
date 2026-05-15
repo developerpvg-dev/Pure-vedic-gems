@@ -4,18 +4,20 @@ export function StickyContactRail() {
   const railStyle = {
     position: 'fixed',
     top: 'auto',
-    bottom: 'clamp(88px, 10vh, 120px)',
-    right: 'clamp(6px, 0.9vw, 12px)',
+    bottom: 'calc(env(safe-area-inset-bottom, 0px) + 22px)',
+    left: 'auto',
+    right: 'clamp(14px, 2vw, 24px)',
+    width: 'fit-content',
     transform: 'none',
     zIndex: 920,
     display: 'flex',
     flexDirection: 'column',
-    gap: 'clamp(6px, 0.8vw, 8px)',
-    padding: 'clamp(8px, 1vw, 10px) clamp(7px, 0.9vw, 8px)',
+    gap: '10px',
+    padding: 0,
     borderRadius: '999px',
-    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(249, 246, 240, 0.96) 100%)',
-    border: '1px solid rgba(226, 232, 240, 0.9)',
-    boxShadow: '0 12px 28px rgba(148, 163, 184, 0.18), 0 2px 8px rgba(255, 255, 255, 0.9) inset',
+    background: 'transparent',
+    border: 0,
+    boxShadow: 'none',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
   } as const;
@@ -24,8 +26,8 @@ export function StickyContactRail() {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 'clamp(28px, 2.2vw, 32px)',
-    height: 'clamp(42px, 3.4vw, 48px)',
+    width: '48px',
+    height: '48px',
     borderRadius: '999px',
     boxShadow: '0 10px 20px rgba(148, 163, 184, 0.16)',
     textDecoration: 'none',
@@ -50,8 +52,8 @@ export function StickyContactRail() {
   } as const;
 
   const iconStyle = {
-    width: 'clamp(12px, 1.1vw, 14px)',
-    height: 'clamp(12px, 1.1vw, 14px)',
+    width: '18px',
+    height: '18px',
     flex: '0 0 auto',
   } as const;
 
@@ -60,58 +62,63 @@ export function StickyContactRail() {
       <style>{`
         .pvg-sticky-contact-rail {
           top: auto !important;
-          bottom: clamp(88px, 10vh, 120px) !important;
-          right: 12px !important;
-          gap: 8px !important;
-          padding: 9px 8px !important;
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 22px) !important;
+          left: auto !important;
+          right: clamp(14px, 2vw, 24px) !important;
+          width: fit-content !important;
+          gap: 10px !important;
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
         }
 
         .pvg-sticky-contact-link {
-          width: 32px !important;
+          width: 48px !important;
           height: 48px !important;
           box-shadow: 0 10px 20px rgba(148, 163, 184, 0.16) !important;
         }
 
         .pvg-sticky-contact-link svg {
-          width: 14px !important;
-          height: 14px !important;
+          width: 18px !important;
+          height: 18px !important;
         }
 
         @media (max-width: 1024px) {
           .pvg-sticky-contact-rail {
-            bottom: clamp(80px, 9vh, 104px) !important;
-            right: 8px !important;
-            gap: 7px !important;
-            padding: 8px 7px !important;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
+            left: auto !important;
+            right: 12px !important;
+            gap: 9px !important;
           }
 
           .pvg-sticky-contact-link {
-            width: 28px !important;
-            height: 42px !important;
+            width: 46px !important;
+            height: 46px !important;
           }
 
           .pvg-sticky-contact-link svg {
-            width: 12px !important;
-            height: 12px !important;
+            width: 17px !important;
+            height: 17px !important;
           }
         }
 
         @media (max-width: 767px) {
           .pvg-sticky-contact-rail {
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 72px) !important;
-            right: 6px !important;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
+            left: auto !important;
+            right: calc(env(safe-area-inset-right, 0px) + 10px) !important;
             gap: 6px !important;
-            padding: 7px 6px !important;
           }
 
           .pvg-sticky-contact-link {
-            width: 24px !important;
-            height: 36px !important;
+            width: 46px !important;
+            height: 46px !important;
           }
 
           .pvg-sticky-contact-link svg {
-            width: 10px !important;
-            height: 10px !important;
+            width: 17px !important;
+            height: 17px !important;
           }
         }
       `}</style>

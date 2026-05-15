@@ -4,6 +4,7 @@ import { productCreateSchema } from '@/lib/validators/product';
 import type { ProductCreateInput } from '@/lib/validators/product';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
+import { LOW_STOCK_THRESHOLD, notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 
 type RelatedProductPayload = Pick<
   ProductCreateInput,
@@ -113,11 +114,12 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const status = searchParams.get('status');
   const availability = searchParams.get('availability_status');
+  const stock = searchParams.get('stock');
 
   const admin = createAdminClient();
   let query = admin
     .from('products')
-    .select('id, sku, tag_number, legacy_woo_id, name, slug, category, sub_category, price, carat_weight, origin, in_stock, stock_status, availability_status, reserved_until, reservation_note, is_active, featured, is_directors_pick, display_order, images, created_at', { count: 'exact' });
+    .select('id, sku, tag_number, legacy_woo_id, name, slug, category, sub_category, price, carat_weight, origin, in_stock, stock_quantity, stock_status, availability_status, reserved_until, reservation_note, is_active, featured, is_directors_pick, display_order, images, created_at', { count: 'exact' });
 
   if (search) {
     const searchClauses = [
@@ -138,6 +140,12 @@ export async function GET(request: NextRequest) {
   if (status === 'inactive') query = query.eq('is_active', false);
   if (availability && (AVAILABILITY_FILTERS as readonly string[]).includes(availability)) {
     query = query.eq('availability_status', availability as (typeof AVAILABILITY_FILTERS)[number]);
+  }
+  if (stock === 'low') {
+    query = query.lt('stock_quantity', LOW_STOCK_THRESHOLD).eq('is_active', true);
+  }
+  if (stock === 'out') {
+    query = query.eq('stock_quantity', 0);
   }
 
   query = query.order('created_at', { ascending: false });
@@ -214,6 +222,14 @@ export async function POST(request: NextRequest) {
     details: { sku: product.sku, name: product.name, price: product.price },
     ipAddress: getRequestIp(request),
   });
+
+  await notifyLowStockProduct({
+    id: product.id,
+    sku: product.sku,
+    name: product.name,
+    category: product.category,
+    stock_quantity: product.stock_quantity,
+  }, 'product_create');
 
   return NextResponse.json({ product }, { status: 201 });
 }

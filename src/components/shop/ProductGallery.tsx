@@ -27,7 +27,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
     <>
       <div className="flex flex-col gap-4">
         {/* ── Main image — full width on all screen sizes ── */}
-        <div className="relative overflow-hidden rounded-2xl border border-brand-border bg-brand-bg-alt">
+        <div className="relative overflow-hidden rounded-lg border border-brand-border bg-brand-bg-alt shadow-[0_18px_54px_rgba(61,43,31,0.08)]">
           {/* Responsive aspect ratio: 4:3 (landscape) on mobile/tablet;
               3:2 (wider landscape) on desktop for horizontal gem display */}
           <div className="relative aspect-4/3 w-full lg:aspect-3/2">
@@ -37,6 +37,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               fill
               className="object-cover transition-opacity duration-300"
               sizes="(min-width: 1024px) 50vw, 100vw"
+              priority={activeIdx === 0}
               loading="eager"
               fetchPriority="high"
             />
@@ -94,7 +95,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
             <button
               key={i}
               onClick={() => setActiveIdx(i)}
-              className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 hover:opacity-100 lg:h-20 lg:w-20"
+              className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 hover:opacity-100 lg:h-[88px] lg:w-[88px]"
               style={{
                 borderColor:
                   i === activeIdx ? 'var(--pvg-accent)' : 'var(--pvg-border)',

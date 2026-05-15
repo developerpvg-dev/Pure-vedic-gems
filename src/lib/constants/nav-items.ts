@@ -34,22 +34,22 @@ export const TOPBAR_ITEMS: readonly TopbarItem[] = [
 ] as const;
 
 export const GEMSTONE_NAV_LINKS = [
-  { label: 'Ruby', href: '/shop/ruby', swatch: '#c9142f', planet: 'Sun' },
-  { label: 'Blue Sapphire', href: '/shop/blue-sapphire', swatch: '#1e4f9d', planet: 'Saturn' },
-  { label: 'Emerald', href: '/shop/emerald', swatch: '#2e8b57', planet: 'Mercury' },
-  { label: 'Yellow Sapphire', href: '/shop/yellow-sapphire', swatch: '#d4a017', planet: 'Jupiter' },
-  { label: 'Hessonite', href: '/shop/hessonite', swatch: '#b7682c', planet: 'Rahu' },
-  { label: 'Amethyst', href: '/shop/amethyst', swatch: '#6a4fb3', planet: 'Upratna' },
-  { label: "Cat's Eye", href: '/shop/cats-eye', swatch: '#9c8b68', planet: 'Ketu' },
-  { label: 'Diamond', href: '/shop/diamond', swatch: '#d8d8d8', planet: 'Venus' },
-  { label: 'Red Coral', href: '/shop/red-coral', swatch: '#e15b3c', planet: 'Mars' },
+  { label: 'Ruby', href: '/shop/navaratna/ruby', swatch: '#c9142f', planet: 'Sun' },
+  { label: 'Blue Sapphire', href: '/shop/navaratna/blue-sapphire', swatch: '#1e4f9d', planet: 'Saturn' },
+  { label: 'Emerald', href: '/shop/navaratna/emerald', swatch: '#2e8b57', planet: 'Mercury' },
+  { label: 'Yellow Sapphire', href: '/shop/navaratna/yellow-sapphire', swatch: '#d4a017', planet: 'Jupiter' },
+  { label: 'Hessonite', href: '/shop/navaratna/hessonite', swatch: '#b7682c', planet: 'Rahu' },
+  { label: 'Amethyst', href: '/shop/upratna/amethyst', swatch: '#6a4fb3', planet: 'Upratna' },
+  { label: "Cat's Eye", href: '/shop/navaratna/cats-eye', swatch: '#9c8b68', planet: 'Ketu' },
+  { label: 'Diamond', href: '/shop/navaratna/diamond', swatch: '#d8d8d8', planet: 'Venus' },
+  { label: 'Red Coral', href: '/shop/navaratna/red-coral', swatch: '#e15b3c', planet: 'Mars' },
 ] as const;
 
 export const RUDRAKSHA_NAV_LINKS = [
-  { label: '1 Mukhi', href: '/shop/1-mukhi' },
-  { label: '5 Mukhi', href: '/shop/5-mukhi' },
-  { label: '7 Mukhi', href: '/shop/7-mukhi' },
-  { label: '14 Mukhi', href: '/shop/14-mukhi' },
+  { label: '1 Mukhi', href: '/shop/rudraksha/1-mukhi' },
+  { label: '5 Mukhi', href: '/shop/rudraksha/5-mukhi' },
+  { label: '7 Mukhi', href: '/shop/rudraksha/7-mukhi' },
+  { label: '14 Mukhi', href: '/shop/rudraksha/14-mukhi' },
   { label: 'Rudraksha Malas', href: '/shop/malas' },
   { label: 'View All Rudraksha', href: '/shop/rudraksha' },
 ] as const;
@@ -65,7 +65,7 @@ export const SERVICE_NAV_LINKS = [
 export type HeaderNavItem = {
   label: string;
   href: string;
-  dropdown?: 'gemstones' | 'rudraksha' | 'services';
+  dropdown?: 'gemstones' | 'rudraksha' | 'collections' | 'services';
 };
 
 export const HEADER_NAV_ITEMS: readonly HeaderNavItem[] = [

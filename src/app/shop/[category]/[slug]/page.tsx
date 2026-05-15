@@ -1,21 +1,26 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { cache } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BadgeCheck, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
+import { resolveShopCategoryPath } from '@/lib/categories/shop';
+import { productHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
+import { CategoryProductListing } from '@/components/shop/CategoryProductListing';
+import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { ProductGallery } from '@/components/shop/ProductGallery';
 import { ProductTabs, type ProductReview } from '@/components/shop/ProductTabs';
 import { PriceDisplay } from '@/components/shop/PriceDisplay';
 import { AddToCartBar } from '@/components/shop/AddToCartBar';
 import { ProductCard } from '@/components/shop/ProductCard';
-import { EmiCalculator } from '@/components/shop/EmiCalculator';
 import { RecentlyViewedProducts, type RecentlyViewedProduct } from '@/components/shop/RecentlyViewedProducts';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
 import { buildMetadata } from '@/lib/utils/seo';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -48,17 +53,29 @@ function formatDimensions(dimensions: Product['dimensions_mm']) {
   return `${parts.join(' x ')} ${dimensions.unit ?? 'mm'}`;
 }
 
+const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from('products')
+    .select('*')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  return data ? (data as unknown as Product) : null;
+});
+
 // ─── JSON-LD ─────────────────────────────────────────────────────────────────
 
 function ProductJsonLd({
   product,
-  slug,
-  category,
+  href,
   reviews,
 }: {
   product: Product;
-  slug: string;
-  category: string;
+  href: string;
   reviews: ProductReview[];
 }) {
   const images = extractImages(product.images);
@@ -80,7 +97,7 @@ function ProductJsonLd({
     brand: { '@type': 'Brand', name: 'PureVedicGems' },
     offers: {
       '@type': 'Offer',
-      url: `${siteUrl}/shop/${category}/${slug}`,
+      url: `${siteUrl}${href}`,
       priceCurrency: 'INR',
       price: product.price,
       availability: unavailable ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
@@ -113,26 +130,25 @@ export async function generateMetadata({
   params: Promise<{ category: string; slug: string }>;
 }): Promise<Metadata> {
   const { category, slug } = await params;
-  const supabase = createOptionalPublicClient();
-  if (!supabase) return {};
+  const categoryMeta = await resolveShopCategoryPath(category, slug);
+  if (categoryMeta) {
+    return buildMetadata({
+      title: `${categoryMeta.label} | PureVedicGems`,
+      description: categoryMeta.desc,
+      path: categoryMeta.canonicalPath,
+    });
+  }
 
-  const { data: productMeta } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single();
-
-  if (!productMeta) return {};
-
-  const product = productMeta as unknown as Product;
+  const product = await getProductBySlug(slug);
+  if (!product) return {};
   const images = extractImages((product.images as Json) ?? []);
   const imageUrl = product.thumbnail_url ?? images[0];
+  const href = productHref(product);
 
   return buildMetadata({
     title: product.meta_title ?? `${product.name} | PureVedicGems`,
     description: product.meta_description ?? product.short_desc ?? `Buy ${product.name} at PureVedicGems`,
-    path: `/shop/${category}/${slug}`,
+    path: href,
     image: imageUrl,
   });
 }
@@ -141,40 +157,180 @@ export async function generateMetadata({
 
 interface ProductDetailPageProps {
   params: Promise<{ category: string; slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
+function ProductCategoryCta({ product }: { product: Product }) {
+  const category = product.category?.toLowerCase() ?? '';
+  const variant =
+    category === 'rudraksha'
+      ? 'rudraksha'
+      : category === 'upratna' || category === 'uparatna'
+        ? 'uparatna'
+        : 'navaratna';
+  const config =
+    variant === 'rudraksha'
+      ? {
+          title: 'Not sure which Rudraksha is right for you?',
+          copy: 'Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy.',
+          image: '/home/ctas/cta2.webp',
+          imageAlt: 'Rudraksha expert offering personalised guidance',
+          primary: { label: 'Get Rudraksha Guidance', href: '/configure' },
+          secondary: { label: 'See Rudraksha Collection', href: '/shop/rudraksha' },
+          imageSide: 'left' as const,
+        }
+      : variant === 'uparatna'
+        ? {
+            title: 'Need a practical gemstone alternative?',
+            copy: 'Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget.',
+            image: '/home/ctas/cta3.webp',
+            imageAlt: 'Vedic astrologer reviewing semi-precious gemstone alternatives',
+            primary: { label: 'Get Uparatna Guidance', href: '/configure' },
+            secondary: { label: 'See Uparatna Collection', href: '/shop/upratna' },
+            imageSide: 'right' as const,
+          }
+        : {
+            title: 'Not sure which gemstone is good for you?',
+            copy: 'Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy.',
+            image: '/home/ctas/cta1.webp',
+            imageAlt: 'Vedic gemstone consultants preparing a horoscope recommendation',
+            primary: { label: 'Get Gem Recommendation', href: '/configure' },
+            secondary: { label: 'See Navaratna Collection', href: '/shop/navaratna' },
+            imageSide: 'right' as const,
+          };
+  const isReverse = config.imageSide === 'right';
+
+  return (
+    <div className="mt-12">
+      <section
+        className={`pvg-rcta-v2 pvg-rcta-v2-${variant}${isReverse ? ' pvg-rcta-v2-reverse' : ''}`}
+        aria-label={config.title}
+      >
+        <div className="pvg-rcta-v2-circle" aria-hidden="true" />
+
+        <div className="pvg-rcta-v2-layout">
+          <div className="pvg-rcta-v2-person-col" aria-hidden="true">
+            <div className="pvg-rcta-v2-person-wrap">
+              <Image
+                fill
+                className="pvg-rcta-v2-person-img"
+                src={config.image}
+                alt={config.imageAlt}
+                loading="lazy"
+                sizes="(max-width: 768px) 300px, 500px"
+              />
+            </div>
+          </div>
+
+          <div className="pvg-rcta-v2-card">
+            <div className="pvg-rcta-v2-top">
+              <h2 className="pvg-rcta-v2-heading">{config.title}</h2>
+            </div>
+
+            <div className="pvg-rcta-v2-bottom">
+              <p className="pvg-rcta-v2-copy">{config.copy}</p>
+
+              <div className="pvg-rcta-v2-btns">
+                <Link href={config.primary.href} className="pvg-rcta-v2-btn-chat">{config.primary.label}</Link>
+                <Link href={config.secondary.href} className="pvg-rcta-v2-btn-call">{config.secondary.label}</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="pvg-rcta-v2-mobile-actions">
+          <Link href={config.primary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary">{config.primary.label}</Link>
+          <Link href={config.secondary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-secondary">{config.secondary.label}</Link>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProductAssuranceStrip() {
+  const items = [
+    { icon: ShieldCheck, label: 'Lab Certified' },
+    { icon: BadgeCheck, label: 'Natural & Genuine' },
+    { icon: Sparkles, label: 'Vedic Energization' },
+    { icon: Truck, label: 'Insured Delivery' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-2 rounded-lg border border-brand-border bg-white/80 p-3 sm:grid-cols-4">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-center gap-2 rounded-md bg-[#fffaf2] px-3 py-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#7A1515]/10 text-[#7A1515]">
+            <item.icon className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-[12px] font-normal leading-4 text-brand-text">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default async function ProductDetailPage({ params, searchParams }: ProductDetailPageProps) {
   const { category, slug } = await params;
+  const rawSearchParams = await searchParams;
+  const nestedCategoryMeta = await resolveShopCategoryPath(category, slug);
+  const sParams = Object.fromEntries(
+    Object.entries(rawSearchParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : (value ?? '')])
+  ) as Record<string, string>;
+
+  if (nestedCategoryMeta) {
+    const currentPath = `/shop/${category}/${slug}`;
+    if (nestedCategoryMeta.canonicalPath !== currentPath) {
+      const query = new URLSearchParams(sParams).toString();
+      redirect(`${nestedCategoryMeta.canonicalPath}${query ? `?${query}` : ''}`);
+    }
+
+    return (
+      <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-32.5 md:px-6 lg:px-10">
+        <div className="mx-auto max-w-350">
+          <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-brand-muted">
+            <Link href="/" className="transition hover:text-brand-accent">Home</Link>
+            <span>/</span>
+            <Link href="/shop" className="transition hover:text-brand-accent">Shop</Link>
+            <span>/</span>
+            <span className="text-brand-primary">{nestedCategoryMeta.label}</span>
+          </nav>
+
+          <div className="flex gap-7">
+            <ShopSidebar />
+            <div className="min-w-0 flex-1">
+              <CategoryProductListing meta={nestedCategoryMeta} searchParams={sParams} basePath={nestedCategoryMeta.canonicalPath} />
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const supabase = createOptionalPublicClient();
   if (!supabase) {
     notFound();
   }
 
-  // Fetch primary product (by slug)
-  const { data: productData, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single();
-
-  if (error || !productData) {
+  const product = await getProductBySlug(slug);
+  if (!product) {
     notFound();
   }
+  const href = productHref(product);
+  const currentPath = `/shop/${category}/${slug}`;
+  if (href !== currentPath) {
+    redirect(href);
+  }
 
-  const product = productData as unknown as Product;
-
-  // Fetch related products (same category, different slug, limit 4)
-  const { data: relatedData } = await supabase
+  const relatedPromise = supabase
     .from('products')
-    .select('id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number')
+    .select('id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number')
     .eq('category', product.category)
     .eq('is_active', true)
     .eq('in_stock', true)
     .neq('slug', slug)
     .limit(6);
 
-  const { data: reviewData } = await supabase
+  const reviewPromise = supabase
     .from('reviews')
     .select('id, customer_name, customer_location, rating, title, review_text, is_verified, created_at')
     .eq('product_id', product.id)
@@ -182,44 +338,35 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     .order('created_at', { ascending: false })
     .limit(8);
 
-  // Fetch expert if set
-  let expert: {
-    id: string; name: string; title: string | null;
-    photo_url: string | null; specialty: string | null;
-    personal_quote: string | null;
-  } | null = null;
+  const expertPromise = product.expert_id
+    ? supabase
+        .from('experts')
+        .select('id, name, title, photo_url, specialty, personal_quote')
+        .eq('id', product.expert_id)
+        .maybeSingle()
+    : Promise.resolve({ data: null });
 
-  if (product.expert_id) {
-    const { data } = await supabase
-      .from('experts')
-      .select('*')
-      .eq('id', product.expert_id)
-      .single();
-    if (data) {
-      const row = data as unknown as {
-        id: string; name: string; title: string | null;
-        photo_url: string | null; specialty: string | null;
-        personal_quote: string | null;
-      };
-      expert = {
-        id: row.id,
-        name: row.name,
-        title: row.title,
-        photo_url: row.photo_url,
-        specialty: row.specialty,
-        personal_quote: row.personal_quote,
-      };
-    }
-  }
+  const [relatedResult, reviewResult, expertResult] = await Promise.all([
+    relatedPromise,
+    reviewPromise,
+    expertPromise,
+  ]);
 
   const images = extractImages(product.images as Json);
   const skuMeta = buildSKUMeta(product);
-  const related = (relatedData ?? []) as unknown as ProductCardType[];
-  const reviews = (reviewData ?? []) as unknown as ProductReview[];
+  const related = (relatedResult.data ?? []) as unknown as ProductCardType[];
+  const reviews = (reviewResult.data ?? []) as unknown as ProductReview[];
+  const expert = expertResult.data as {
+    id: string; name: string; title: string | null;
+    photo_url: string | null; specialty: string | null;
+    personal_quote: string | null;
+  } | null;
+  const parentCategoryHref = href.split('/').slice(0, 3).join('/');
+  const categoryListingHref = product.sub_category ? `${parentCategoryHref}/${product.sub_category}` : parentCategoryHref;
   const recentlyViewedProduct: RecentlyViewedProduct = {
     id: product.id,
     name: product.name,
-    href: `/shop/${product.category}/${product.slug}`,
+    href,
     imageUrl: product.thumbnail_url ?? images[0] ?? null,
     price: product.price,
     meta: skuMeta || null,
@@ -232,37 +379,37 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   return (
     <>
-      <ProductJsonLd product={product} slug={slug} category={category} reviews={reviews} />
+      <ProductJsonLd product={product} href={href} reviews={reviews} />
 
-      <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-[88px] md:px-6 md:pt-[110px] lg:px-8">
-        <div className="mx-auto max-w-[1280px]">
+      <main className="min-h-screen bg-[#fbf7ef] px-4 pb-24 pt-24 font-body md:px-6 md:pt-29 lg:px-8">
+        <div className="mx-auto max-w-340">
 
           {/* ── Breadcrumb ── */}
-          <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--pvg-muted)]">
-            <Link href="/" className="transition hover:text-[var(--pvg-accent)]">Home</Link>
+          <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[13px] font-medium text-brand-muted">
+            <Link href="/" className="transition hover:text-brand-accent">Home</Link>
             <span>/</span>
-            <Link href="/shop" className="transition hover:text-[var(--pvg-accent)]">Shop</Link>
+            <Link href="/shop" className="transition hover:text-brand-accent">Shop</Link>
             <span>/</span>
             <Link
-              href={`/shop/${category}`}
-              className="transition hover:text-[var(--pvg-accent)]"
+              href={categoryListingHref}
+              className="transition hover:text-brand-accent"
             >
               {categoryLabel}
             </Link>
             <span>/</span>
-            <span className="line-clamp-1 text-[var(--pvg-primary)]">{product.name}</span>
+            <span className="line-clamp-1 text-brand-primary">{product.name}</span>
           </nav>
 
           {/* ── Main Grid: Gallery | Info — true 50/50 on desktop ── */}
-          <div className="grid gap-6 md:gap-8 lg:grid-cols-2">
+          <div className="grid gap-7 md:gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1fr)]">
 
             {/* ─── Left: Gallery ─── */}
-            <div className="lg:sticky lg:top-[90px] lg:self-start">
+            <div className="lg:sticky lg:top-22.5 lg:self-start">
               <ProductGallery images={images} productName={product.name} />
 
               {/* Video if available */}
               {product.video_url && (
-                <div className="mt-4 overflow-hidden rounded-xl border border-[var(--pvg-border)]">
+                <div className="mt-4 overflow-hidden rounded-xl border border-brand-border">
                   <video
                     src={product.video_url}
                     controls
@@ -274,36 +421,33 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             </div>
 
             {/* ─── Right: Info panel ─── */}
-            <div className="space-y-5">
+            <div className="space-y-5 rounded-lg border border-brand-border bg-white p-5 shadow-[0_18px_54px_rgba(61,43,31,0.08)] md:p-6">
               {/* Product name + SKU */}
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-1.5">
                   {product.certification && (
-                    <span className="rounded border border-[var(--pvg-accent)] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[var(--pvg-accent)]">
+                    <span className="rounded border border-[#7A1515]/25 px-2 py-0.5 text-[10px] font-medium text-[#7A1515]">
                       {product.certification} Certified
                     </span>
                   )}
                   {product.treatment && product.treatment !== 'none' && (
-                    <span className="rounded bg-brand-gold-light px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--pvg-muted)]">
-                      {product.treatment}
+                    <span className="rounded bg-brand-gold-light px-2 py-0.5 text-[10px] font-medium text-brand-muted">
+                      {formatLabel(product.treatment)}
                     </span>
                   )}
                 </div>
 
-                <h1
-                  className="font-heading font-bold leading-tight text-[var(--pvg-primary)]"
-                  style={{ fontSize: 'clamp(20px, 2.6vw, 32px)' }}
-                >
+                <h1 className="text-[clamp(22px,2.5vw,34px)] font-normal leading-tight text-[#7A1515]">
                   {product.name}
                 </h1>
 
                 {skuMeta && (
-                  <p className="mt-1 text-[12px] font-medium text-[var(--pvg-muted)]">
+                  <p className="mt-2 text-[13px] font-normal text-brand-muted">
                     {skuMeta}
                   </p>
                 )}
 
-                <p className="mt-0.5 text-[10px] uppercase tracking-[2px] text-[var(--pvg-border)]">
+                <p className="mt-2 text-[12px] font-medium tracking-[0.08em] text-brand-muted">
                   SKU: {product.sku}
                 </p>
               </div>
@@ -316,10 +460,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 caratWeight={product.carat_weight}
               />
 
-              <EmiCalculator amount={product.price} compact />
+              <ProductAssuranceStrip />
 
               {/* Gemstone quick specs */}
-              <div className="grid grid-cols-3 gap-x-3 gap-y-3 rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-brand-border bg-brand-bg p-4 sm:grid-cols-3">
                 {[
                   { label: 'Tag', value: product.tag_number },
                   { label: 'Availability', value: formatLabel(product.availability_status) },
@@ -344,10 +488,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   .filter(({ value }) => !!value)
                   .map(({ label, value }) => (
                     <div key={label} className="min-w-0">
-                      <p className="text-[9px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-muted)]">
+                      <p className="text-[10px] font-normal text-brand-muted">
                         {label}
                       </p>
-                      <p className="truncate text-[12px] font-semibold text-[var(--pvg-text)]">{value}</p>
+                      <p className="mt-1 truncate text-[13px] font-normal text-brand-text">{value}</p>
                     </div>
                   ))}
               </div>
@@ -357,14 +501,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
               {/* Expert Note */}
               {(product.expert_note || expert) && (
-                <div className="rounded-xl border border-[var(--pvg-gold-light)] bg-brand-gold-light p-4">
-                  <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[2px] text-[var(--pvg-accent)]">
+                <div className="rounded-xl border border-brand-gold-light bg-brand-gold-light p-4">
+                  <p className="mb-2.5 text-[12px] font-medium text-brand-accent">
                     Expert Note
                   </p>
                   {expert && (
                     <div className="mb-2.5 flex items-start gap-3">
                       {expert.photo_url && (
-                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-[var(--pvg-accent)]">
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-brand-accent">
                           <Image
                             src={expert.photo_url}
                             alt={expert.name}
@@ -375,12 +519,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                         </div>
                       )}
                       <div>
-                        <p className="text-[13px] font-semibold text-[var(--pvg-primary)]">{expert.name}</p>
-                        <p className="text-[11px] text-[var(--pvg-muted)]">{expert.specialty ?? expert.title}</p>
+                        <p className="text-[13px] font-semibold text-brand-primary">{expert.name}</p>
+                        <p className="text-[11px] text-brand-muted">{expert.specialty ?? expert.title}</p>
                       </div>
                     </div>
                   )}
-                  <p className="text-[12px] italic leading-relaxed text-[var(--pvg-text)]">
+                  <p className="text-[12px] italic leading-relaxed text-brand-text">
                     &ldquo;{product.expert_note ?? expert?.personal_quote}&rdquo;
                   </p>
                 </div>
@@ -393,6 +537,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <ProductTabs product={product} reviews={reviews} />
           </div>
 
+          {/* ── Expert Guidance CTA — below the tabs ── */}
+          <ProductCategoryCta product={product} />
+
           <RecentlyViewedProducts current={recentlyViewedProduct} />
 
           {/* ── Related Products ── */}
@@ -400,14 +547,11 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <section className="mt-16">
               <OrnamentalDivider className="mb-6" />
               <div className="mb-5 text-center">
-                <p className="text-[9px] font-bold uppercase tracking-[4px] text-[var(--pvg-accent)]">
-                  You May Also Like
-                </p>
-                <h2 className="font-heading mt-1.5 text-xl font-semibold text-[var(--pvg-primary)]">
+                <h2 className="text-2xl font-medium text-[#7A1515]">
                   Related Gemstones
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 lg:gap-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {related.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}

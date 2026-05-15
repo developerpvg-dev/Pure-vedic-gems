@@ -4,6 +4,7 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 
 const VALID_STATUSES = [
   'pending_payment', 'placed', 'confirmed', 'processing',
@@ -93,6 +94,16 @@ export async function PUT(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
+  const { data: customerProfile } = current.customer_id
+    ? await supabase
+        .from('customer_profiles')
+        .select('full_name, email, phone')
+        .eq('id', current.customer_id)
+        .single()
+    : { data: null };
+  const customerEmail = current.guest_email || customerProfile?.email || null;
+  const customerName = current.guest_name || customerProfile?.full_name || customerProfile?.email || null;
+
   // Build update object — only include provided fields
   const updates: Record<string, unknown> = {};
   if (status !== undefined) updates.status = status;
@@ -147,10 +158,10 @@ export async function PUT(
   }
 
   let trackingEmailId: string | null = null;
-  if (notify_customer && current.guest_email) {
+  if (notify_customer && customerEmail) {
     trackingEmailId = await sendTrackingUpdateEmail({
-      to: current.guest_email,
-      customerName: current.guest_name,
+      to: customerEmail,
+      customerName,
       orderNumber: current.order_number,
       status: status || updatedOrder.status,
       carrier: carrier ?? null,
@@ -158,6 +169,42 @@ export async function PUT(
       trackingUrl: tracking_url ?? current.tracking_url ?? null,
       estimatedDelivery: estimated_delivery ?? null,
     });
+  }
+
+  if (trackingChanged || (status && status !== current.status)) {
+    await createInAppNotifications([
+      ...(current.customer_id ? [{
+        audience: 'user' as const,
+        recipientUserId: current.customer_id,
+        type: trackingChanged ? 'order_tracking_update' : 'order_status_update',
+        title: trackingChanged ? 'Tracking updated' : 'Order status updated',
+        message: `Order ${current.order_number} is now ${(status || updatedOrder.status).replace(/_/g, ' ')}.`,
+        href: '/account/orders',
+        entityType: 'order',
+        entityId: id,
+        metadata: {
+          order_number: current.order_number,
+          status: status || updatedOrder.status,
+          tracking_number: tracking_number ?? current.tracking_number ?? null,
+        },
+      }] : []),
+      {
+        audience: 'admin' as const,
+        recipientRole: trackingChanged ? 'fulfillment' : null,
+        type: trackingChanged ? 'order_tracking_update' : 'order_status_update',
+        title: trackingChanged ? 'Order tracking updated' : 'Order status changed',
+        message: `Order ${current.order_number} changed from ${current.status.replace(/_/g, ' ')} to ${(status || updatedOrder.status).replace(/_/g, ' ')}.`,
+        href: `/admin/orders/${id}`,
+        entityType: 'order',
+        entityId: id,
+        metadata: {
+          order_number: current.order_number,
+          previous_status: current.status,
+          status: status || updatedOrder.status,
+          tracking_number: tracking_number ?? current.tracking_number ?? null,
+        },
+      },
+    ]);
   }
 
   await logAdminAction({

@@ -6,6 +6,7 @@ import { verifyPaymentSignature } from '@/lib/razorpay/verify';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { sendConsultationBookingEmails } from '@/lib/resend/send-consultation-booking';
 import { consultationPaymentVerifySchema } from '@/lib/validators/consultation';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Consultation, Json } from '@/lib/types/database';
 
 export async function POST(request: NextRequest) {
@@ -18,10 +19,6 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   let body: unknown;
   try {
@@ -47,7 +44,11 @@ export async function POST(request: NextRequest) {
 
   const consultation = consultationRow as Consultation | null;
 
-  if (fetchError || !consultation || consultation.customer_id !== user.id) {
+  if (fetchError || !consultation) {
+    return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
+  }
+
+  if (consultation.customer_id && consultation.customer_id !== user?.id) {
     return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
   }
 
@@ -111,6 +112,19 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', consultation.id);
+    await createInAppNotifications([
+      {
+        audience: 'admin',
+        recipientRole: 'finance',
+        type: 'consultation_payment_review',
+        title: 'Consultation payment needs review',
+        message: `Consultation payment for ${consultation.full_name} did not match the expected amount.`,
+        href: '/admin/leads',
+        entityType: 'consultation',
+        entityId: consultation.id,
+        metadata: { consultation_id: consultation.id, expected_paise: expectedPaise },
+      },
+    ]);
     return NextResponse.json({ error: 'Payment amount mismatch. Our team will review this booking.' }, { status: 409 });
   }
 
@@ -201,6 +215,11 @@ export async function POST(request: NextRequest) {
       razorpay_payment_id: updated.razorpay_payment_id,
       preferred_date: updated.preferred_date,
       preferred_time: updated.preferred_time,
+      date_of_birth: updated.date_of_birth,
+      birth_time: updated.birth_time,
+      birth_place: updated.birth_place,
+      life_situation: updated.life_situation,
+      message: updated.message,
       status: updated.status,
     });
 
@@ -212,6 +231,33 @@ export async function POST(request: NextRequest) {
       await admin.from('consultations').update(emailUpdate).eq('id', updated.id);
     }
   }
+
+  await createInAppNotifications([
+    ...(updated.customer_id
+      ? [{
+          audience: 'user' as const,
+          recipientUserId: updated.customer_id,
+          type: 'consultation_confirmed',
+          title: 'Consultation confirmed',
+          message: `${updated.plan_title_snapshot ?? 'Your consultation'} is confirmed. Our team will coordinate the next steps.`,
+          href: '/account',
+          entityType: 'consultation',
+          entityId: updated.id,
+          metadata: { plan_title: updated.plan_title_snapshot, amount_inr: updated.amount_inr },
+        }]
+      : []),
+    {
+      audience: 'admin',
+      recipientRole: 'sales',
+      type: 'consultation_confirmed',
+      title: 'Consultation paid',
+      message: `${updated.full_name} paid for ${updated.plan_title_snapshot ?? 'a consultation'}.`,
+      href: '/admin/leads',
+      entityType: 'consultation',
+      entityId: updated.id,
+      metadata: { plan_title: updated.plan_title_snapshot, amount_inr: updated.amount_inr },
+    },
+  ]);
 
   return NextResponse.json({ success: true, consultation_id: updated.id, status: updated.status });
 }

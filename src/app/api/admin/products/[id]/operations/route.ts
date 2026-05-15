@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 
 const operationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('archive'), note: z.string().trim().max(500).optional() }),
@@ -11,6 +12,7 @@ const operationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('reserve'), note: z.string().trim().max(500).optional(), reserved_until: z.string().trim().optional(), quantity: z.coerce.number().int().positive().default(1) }),
   z.object({ action: z.literal('release') }),
   z.object({ action: z.literal('directors_pick'), enabled: z.coerce.boolean(), display_order: z.coerce.number().int().default(0), curator_note: z.string().trim().max(500).optional() }),
+  z.object({ action: z.literal('stock_update'), stock_quantity: z.coerce.number().int().min(0), note: z.string().trim().max(500).optional() }),
 ]);
 
 export async function POST(
@@ -61,9 +63,17 @@ export async function POST(
     updates.is_directors_pick = parsed.data.enabled;
     updates.display_order = parsed.data.display_order;
     updates.curator_note = parsed.data.curator_note ?? null;
+    if (parsed.data.enabled) updates.configurator_enabled = true;
+  } else if (parsed.data.action === 'stock_update') {
+    const stockQuantity = parsed.data.stock_quantity;
+    updates.stock_quantity = stockQuantity;
+    updates.in_stock = stockQuantity > 0;
+    updates.stock_status = stockQuantity > 0 ? 'in_stock' : 'out_of_stock';
+    updates.availability_status = stockQuantity > 0 ? 'in_stock' : 'out_of_stock';
+    updates.reservation_note = parsed.data.note ?? null;
   }
 
-  const { data, error } = await db.from('products').update(updates).eq('id', id).select('id, sku, name').single();
+  const { data, error } = await db.from('products').update(updates).eq('id', id).select('id, sku, name, category, stock_quantity').single();
   if (error || !data) return NextResponse.json({ error: 'Failed to update product workflow' }, { status: 500 });
 
   await logAdminAction({
@@ -74,6 +84,10 @@ export async function POST(
     details: { updates, product: data },
     ipAddress: getRequestIp(request),
   });
+
+  if (parsed.data.action === 'stock_update' || parsed.data.action === 'restore') {
+    await notifyLowStockProduct(data as { id: string; sku: string | null; name: string; category: string | null; stock_quantity: number | null }, `product_${parsed.data.action}`);
+  }
 
   return NextResponse.json({ success: true, product: data });
 }

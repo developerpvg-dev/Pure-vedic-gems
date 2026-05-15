@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { productHref } from '@/lib/categories/storefront';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 
@@ -77,7 +78,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         subtitle: 'Wishlist activity',
         status: null,
         created_at: item.created_at,
-        href: product ? `/shop/${product.category}/${product.slug}` : undefined,
+        href: product ? productHref(product) : undefined,
       };
     })),
     ...((notifications.data ?? []).map((log) => ({

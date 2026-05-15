@@ -39,13 +39,13 @@ function EmptyState() {
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link
           href="/shop"
-          className="rounded-lg bg-brand-primary px-5 py-2 text-xs font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition hover:bg-brand-accent hover:text-[var(--pvg-primary)]"
+          className="rounded-lg bg-[#7A1515] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#5f1010]"
         >
           Clear Filters
         </Link>
         <Link
           href="/consultation"
-          className="rounded-lg border border-[var(--pvg-primary)] px-5 py-2 text-xs font-bold uppercase tracking-[1.5px] text-[var(--pvg-primary)] transition hover:bg-brand-primary hover:text-[var(--pvg-bg)]"
+          className="rounded-lg border border-[#7A1515] px-5 py-2 text-xs font-semibold text-[#7A1515] transition hover:bg-[#7A1515] hover:text-white"
         >
           Ask an Expert
         </Link>
@@ -69,7 +69,7 @@ export function ProductGrid({
   skeletonCount = 12,
 }: ProductGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 lg:gap-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {loading
         ? Array.from({ length: skeletonCount }).map((_, i) => (
             <SkeletonCard key={i} />

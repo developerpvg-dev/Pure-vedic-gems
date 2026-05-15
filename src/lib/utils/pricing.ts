@@ -173,7 +173,10 @@ export async function recalculateOrderTotal(
     if (product.availability_status === 'reserved' && isReservationActive(product.reserved_until)) {
       throw new Error(`Product "${product.name}" is currently reserved`);
     }
-    if (!product.backorders_allowed && product.stock_quantity < item.quantity) {
+    if (product.sold_individually && item.quantity > 1) {
+      throw new Error(`Only 1 unit of "${product.name}" is available`);
+    }
+    if (product.stock_quantity < item.quantity) {
       throw new Error(`Only ${product.stock_quantity} unit(s) of "${product.name}" are available`);
     }
 

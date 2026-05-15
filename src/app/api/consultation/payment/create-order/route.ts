@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getRazorpayClient } from '@/lib/razorpay/client';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { consultationBookingCreateOrderSchema } from '@/lib/validators/consultation';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { ConsultationPlan } from '@/lib/types/database';
 
 interface RazorpayOrderResult {
@@ -20,10 +21,6 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Please login or create an account before booking.' }, { status: 401 });
-  }
 
   let body: unknown;
   try {
@@ -67,7 +64,7 @@ export async function POST(request: NextRequest) {
   const { data: consultation, error: insertError } = await admin
     .from('consultations')
     .insert({
-      customer_id: user.id,
+      customer_id: user?.id ?? null,
       plan_id: plan.id,
       plan_title_snapshot: plan.title,
       plan_description_snapshot: plan.description,
@@ -115,7 +112,7 @@ export async function POST(request: NextRequest) {
       notes: {
         consultation_id: consultation.id,
         plan_id: plan.id,
-        customer_id: user.id,
+        customer_id: user?.id ?? 'guest',
       },
     }) as RazorpayOrderResult;
   } catch (error) {
@@ -135,6 +132,33 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     })
     .eq('id', consultation.id);
+
+  await createInAppNotifications([
+    {
+      audience: 'admin',
+      recipientRole: 'sales',
+      type: 'consultation_created',
+      title: 'Consultation booking started',
+      message: `${parsed.data.full_name} started booking ${plan.title} for ₹${amountInr.toLocaleString('en-IN')}.`,
+      href: '/admin/leads',
+      entityType: 'consultation',
+      entityId: consultation.id,
+      metadata: { plan_id: plan.id, plan_title: plan.title, payment_status: 'pending' },
+    },
+    ...(user
+      ? [{
+          audience: 'user' as const,
+          recipientUserId: user.id,
+          type: 'consultation_pending_payment',
+          title: 'Consultation booking started',
+          message: `${plan.title} is waiting for payment confirmation.`,
+          href: '/account',
+          entityType: 'consultation',
+          entityId: consultation.id,
+          metadata: { plan_id: plan.id, plan_title: plan.title },
+        }]
+      : []),
+  ]);
 
   return NextResponse.json({
     consultation_id: consultation.id,

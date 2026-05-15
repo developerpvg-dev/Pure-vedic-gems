@@ -5,13 +5,19 @@ export const GuestSessionSchema = z.string().uuid();
 export const CartItemInputSchema = z.object({
   key: z.string().min(1).max(160).optional(),
   product_id: z.string().uuid('Invalid product ID'),
+  slug: z.string().max(240).optional(),
   sku: z.string().max(100).optional().default(''),
   tag_number: z.string().max(100).nullable().optional(),
   name: z.string().max(240).optional().default(''),
   category: z.string().max(100).optional().default(''),
   image_url: z.string().max(2000).optional().default(''),
   price: z.number().min(0).optional().default(0),
-  quantity: z.number().int().min(1).max(10),
+  quantity: z.number().int().min(1).max(99),
+  stock_quantity: z.number().int().min(0).nullable().optional(),
+  stock_status: z.string().max(40).nullable().optional(),
+  availability_status: z.string().max(40).nullable().optional(),
+  in_stock: z.boolean().nullable().optional(),
+  sold_individually: z.boolean().nullable().optional(),
   carat_weight: z.number().nullable().optional(),
   origin: z.string().nullable().optional(),
   configuration_id: z.string().uuid().nullable().optional(),
@@ -38,7 +44,7 @@ export const CartEventSchema = z.object({
 });
 
 export const CartUpdateSchema = z.object({
-  quantity: z.number().int().min(0).max(10),
+  quantity: z.number().int().min(0).max(99),
 });
 
 export type CartItemInput = z.infer<typeof CartItemInputSchema>;

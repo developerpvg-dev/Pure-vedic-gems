@@ -7,7 +7,7 @@ import type { ProductListResponse } from '@/lib/types/product';
 const CARD_SELECT = `
   id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price,
   carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url,
-  in_stock, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled,
+  in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled,
   product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number
 `;
 
@@ -85,6 +85,9 @@ export async function GET(request: NextRequest) {
     if (filters.featured !== undefined) {
       query = query.eq('featured', filters.featured);
     }
+    if (filters.directors_pick !== undefined) {
+      query = query.eq('is_directors_pick', filters.directors_pick);
+    }
 
     // Configurator-enabled filter
     const configuratorEnabled = searchParams.get('configurator_enabled');
@@ -93,14 +96,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Sorting
-    const sortColumn =
-      filters.sort_by === 'price'
-        ? 'price'
-        : filters.sort_by === 'carat'
-          ? 'carat_weight'
-          : 'created_at';
-    const ascending = filters.sort_order === 'asc';
-    query = query.order(sortColumn, { ascending });
+    if (filters.directors_pick && filters.sort_by === 'newest') {
+      query = query.order('display_order', { ascending: true }).order('created_at', { ascending: false });
+    } else {
+      const sortColumn =
+        filters.sort_by === 'price'
+          ? 'price'
+          : filters.sort_by === 'carat'
+            ? 'carat_weight'
+            : 'created_at';
+      const ascending = filters.sort_order === 'asc';
+      query = query.order(sortColumn, { ascending });
+    }
 
     // Pagination
     const page = filters.page;

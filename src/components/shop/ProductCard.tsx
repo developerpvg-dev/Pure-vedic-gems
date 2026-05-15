@@ -2,44 +2,14 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { ShoppingBag, Eye, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { formatPrice, formatCarats } from '@/lib/utils/format';
+import { productHref } from '@/lib/categories/storefront';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
-
-// ─── Badge resolver ──────────────────────────────────────────────────────────
-
-type Badge = { label: string; bg: string; text: string };
-
-function resolveBadge(product: ProductCardType): Badge | null {
-  if (product.is_directors_pick) {
-    return { label: "Director's Pick", bg: 'var(--pvg-primary)', text: 'var(--pvg-bg)' };
-  }
-  if (product.featured) {
-    return { label: 'Featured', bg: 'var(--pvg-accent)', text: '#fff' };
-  }
-  if (product.created_at) {
-    const created = new Date(product.created_at);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    if (created > cutoff) {
-      return { label: 'New', bg: '#2e7d32', text: '#fff' };
-    }
-  }
-  const treatment = product.treatment;
-  if (treatment && treatment !== 'none') {
-    const label =
-      treatment === 'unheated' ? 'Unheated' :
-      treatment === 'no_oil' ? 'No Oil' :
-      treatment === 'minor_oil' ? 'Minor Oil' : treatment;
-    return { label, bg: 'var(--pvg-muted)', text: '#fff' };
-  }
-  return null;
-}
 
 function getImageSrc(product: ProductCardType): string {
   if (product.thumbnail_url) return product.thumbnail_url;
@@ -70,14 +40,19 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const router = useRouter();
   const { addItem, isInCart } = useCart();
-  const badge = resolveBadge(product);
   const inCart = isInCart(product.id);
-  const href = `/shop/${product.category}/${product.slug}`;
+  const href = productHref(product);
   const imageSrc = getImageSrc(product);
+  const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
+  const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
   const isUnavailable =
-    !product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+    !product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+  const unavailableLabel = product.availability_status === 'reserved'
+    ? 'Reserved'
+    : product.availability_status === 'sold'
+    ? 'Sold'
+    : 'Out of stock';
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -88,8 +63,13 @@ export function ProductCard({ product }: ProductCardProps) {
       });
       return;
     }
+    if (inCart) {
+      toast.info('This product is already in your cart');
+      return;
+    }
     addItem({
       product_id: product.id,
+      slug: product.slug,
       sku: product.sku,
       tag_number: product.tag_number ?? null,
       name: product.name,
@@ -97,6 +77,11 @@ export function ProductCard({ product }: ProductCardProps) {
       image_url: imageSrc,
       price: product.price,
       quantity: 1,
+      stock_quantity: product.stock_quantity,
+      stock_status: product.stock_status,
+      availability_status: product.availability_status,
+      in_stock: product.in_stock,
+      sold_individually: product.sold_individually,
       carat_weight: product.carat_weight ?? null,
       origin: product.origin ?? null,
     });
@@ -112,10 +97,6 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
-  const openProduct = () => {
-    router.push(href);
-  };
-
   const meta = [
     product.carat_weight ? formatCarats(product.carat_weight) : null,
     product.origin,
@@ -125,131 +106,112 @@ export function ProductCard({ product }: ProductCardProps) {
     .join(' · ');
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(61,43,31,0.14)]">
-      {/* ── Image (5:6 portrait — compact) ── */}
-      <div
-        role="link"
-        tabIndex={0}
-        onClick={openProduct}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            openProduct();
-          }
-        }}
-        className="relative block cursor-pointer overflow-hidden"
-        style={{ paddingBottom: '120%' }}
-      >
-        <Image
-          src={imageSrc}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-107"
-          sizes="(min-width: 1536px) 17vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-        />
+    <div className="group relative flex flex-col overflow-hidden rounded-lg bg-white transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]">
+      {/* ── Image ── */}
+      <div className="relative overflow-hidden bg-[#f2f2f2]" style={{ paddingBottom: '115%' }}>
+        <Link href={href} className="absolute inset-0 block">
+          <Image
+            src={imageSrc}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            sizes="(min-width: 1536px) 20vw, (min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          />
+        </Link>
 
-        {/* Bottom gradient for text legibility on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {/* Wishlist heart — always visible top-right */}
+        <div className="absolute right-2 top-2 z-10">
+          <WishlistButton
+            productId={product.id}
+            productName={product.name}
+            className="h-8 w-8 rounded-full border-0 bg-white/90 shadow-sm hover:bg-white"
+            iconClassName="h-4 w-4"
+          />
+        </div>
 
-        {/* Action buttons — hover only (desktop), always hidden on mobile touch screens */}
-        <div className="absolute inset-x-0 bottom-0 hidden flex-col gap-2 p-3 opacity-0 md:flex md:translate-y-3 md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
-          <button
-            onClick={handleAddToCart}
-            disabled={isUnavailable}
-            className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:scale-[1.02] active:scale-95"
-            style={{ background: isUnavailable ? 'rgba(255,255,255,0.28)' : inCart ? '#2e7d32' : 'var(--pvg-accent)' }}
+        {/* Right-side quick-action icons — slide in on hover */}
+        <div className="absolute right-2 top-12 z-10 flex flex-col gap-1.5 translate-x-3 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+          <Link
+            href={href}
+            onClick={(e) => e.stopPropagation()}
+            title="Quick view"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm hover:bg-white"
           >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            {isUnavailable ? 'Unavailable' : inCart ? 'In Cart ✓' : 'Add to Cart'}
-          </button>
+            <Eye className="h-4 w-4 text-gray-700" />
+          </Link>
           {product.configurator_enabled && (
             <Link
               href={`/configure/${product.id}`}
               onClick={(e) => e.stopPropagation()}
-              onClickCapture={() => trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_card' })}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--pvg-accent)] py-2 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:bg-brand-accent"
+              onClickCapture={() =>
+                trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_card' })
+              }
+              title="Configure jewelry"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm hover:bg-white"
             >
-              <Settings2 className="h-3.5 w-3.5" />
-              Configure Jewelry
+              <Settings2 className="h-4 w-4 text-gray-700" />
             </Link>
           )}
-          <div className="flex gap-2">
-            <Link
-              href={href}
-              onClick={(e) => e.stopPropagation()}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/40 bg-white/15 py-2 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm transition hover:bg-white/25"
-            >
-              <Eye className="h-3 w-3" />
-              Quick View
-            </Link>
-            <WishlistButton
-              productId={product.id}
-              productName={product.name}
-              className="border-white/40 bg-white/15 px-3 py-2 text-white backdrop-blur-sm hover:bg-white/25"
-              iconClassName="h-3.5 w-3.5"
-            />
-          </div>
         </div>
 
-        {/* Category badge (top-left) */}
-        {badge && (
-          <span
-            className="absolute left-3 top-3 z-10 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-            style={{ background: badge.bg, color: badge.text }}
+        {/* Add to cart — slides up from bottom on hover */}
+        <div className="absolute inset-x-0 bottom-0 z-10 translate-y-full transition-transform duration-300 group-hover:translate-y-0">
+          <button
+            onClick={handleAddToCart}
+            disabled={isUnavailable || inCart}
+            className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium text-white transition-colors disabled:cursor-not-allowed"
+            style={{
+              background: isUnavailable
+                ? 'rgba(0,0,0,0.55)'
+                : inCart
+                ? '#2e7d32'
+                : '#111111',
+            }}
           >
-            {badge.label}
-          </span>
-        )}
-
-        {/* Certification badge (top-right) */}
-        {product.certification && (
-          <span className="absolute right-3 top-3 z-10 rounded border border-white/30 bg-white/90 px-2 py-0.5 text-[9px] font-black tracking-widest text-[var(--pvg-primary)] backdrop-blur-sm">
-            {product.certification}
-          </span>
-        )}
-
-        {isUnavailable && (
-          <span className="absolute bottom-3 left-3 z-10 rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[var(--pvg-primary)]">
-            {product.availability_status === 'reserved' ? 'Reserved' : product.availability_status === 'sold' ? 'Sold' : 'Unavailable'}
-          </span>
-        )}
+            <ShoppingBag className="h-4 w-4" />
+            {isUnavailable ? unavailableLabel : inCart ? 'In cart' : 'Add to cart'}
+          </button>
+        </div>
       </div>
 
-      {/* ── Card Info ── */}
-      <div className="flex flex-1 flex-col gap-1 p-2 lg:p-3">
-        {/* Origin · Weight · Shape */}
-        {meta && (
-          <p className="truncate text-[9px] font-semibold uppercase tracking-[1.8px] text-[var(--pvg-accent)]">
-            {meta}
-          </p>
-        )}
-
+      {/* ── Info Strip ── */}
+      <div className="flex flex-col px-3 pb-3 pt-2">
         {/* Name */}
         <Link
           href={href}
-          className="line-clamp-2 text-[12px] font-semibold leading-snug text-[var(--pvg-primary)] transition-colors hover:text-[var(--pvg-accent)] lg:text-[13px]"
+          className="line-clamp-1 text-[13px] font-semibold leading-snug text-gray-900 transition-colors hover:text-brand-accent"
         >
           {product.name}
         </Link>
 
-        {/* Price Row */}
-        <div className="mt-auto flex items-end justify-between pt-1">
-          <div>
-            <p className="text-[13px] font-bold leading-none text-[var(--pvg-primary)] lg:text-[15px]">
-              {formatPrice(product.price)}
-            </p>
-            {product.price_per_carat && (
-              <p className="mt-0.5 text-[9px] text-[var(--pvg-muted)]">
-                {formatPrice(product.price_per_carat)}/ct
-              </p>
-            )}
-          </div>
+        {/* Out of stock label */}
+        {isUnavailable && (
+          <p className="mt-0.5 text-[11px] font-medium text-red-500">{unavailableLabel}</p>
+        )}
+
+        {/* Price row */}
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-[14px] font-semibold text-gray-900">
+            {formatPrice(product.price)}
+          </span>
           {product.compare_price && product.compare_price > product.price && (
-            <p className="text-[10px] text-[var(--pvg-muted)] line-through">
+            <span className="text-[11px] text-gray-400 line-through">
               {formatPrice(product.compare_price)}
-            </p>
+            </span>
+          )}
+          {product.price_per_carat && (
+            <span className="ml-auto text-[10px] text-brand-muted">
+              {formatPrice(product.price_per_carat)}/ct
+            </span>
           )}
         </div>
+
+        {/* Carat · Origin · Shape */}
+        {meta && (
+          <p className="mt-0.5 truncate text-[10px] font-normal text-brand-muted">
+            {meta}
+          </p>
+        )}
       </div>
     </div>
   );

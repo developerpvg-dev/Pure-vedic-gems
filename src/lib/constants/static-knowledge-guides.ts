@@ -63,7 +63,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'confidence, authority, vitality, and father or leadership themes',
     quality: 'a lively red body color, good transparency, and disclosed treatment status',
     image: '/home/navratnaimg/stone1.webp',
-    shopHref: '/shop/ruby',
+    shopHref: '/shop/navaratna/ruby',
   },
   {
     name: 'Pearl',
@@ -76,7 +76,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'calmness, emotional steadiness, motherly support, and mental peace',
     quality: 'smooth surface, natural luster, roundness, and reliable origin disclosure',
     image: '/home/navratnaimg/stone2.webp',
-    shopHref: '/shop/pearl',
+    shopHref: '/shop/navaratna/pearl',
   },
   {
     name: 'Red Coral',
@@ -89,7 +89,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'courage, stamina, discipline, and decisive action',
     quality: 'uniform red to reddish-orange color, clean surface, and natural coral disclosure',
     image: '/home/navratnaimg/stone3.webp',
-    shopHref: '/shop/red-coral',
+    shopHref: '/shop/navaratna/red-coral',
   },
   {
     name: 'Emerald',
@@ -102,7 +102,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'communication, learning, trade, memory, and analytical clarity',
     quality: 'rich green color, visible but acceptable inclusions, and oil/treatment disclosure',
     image: '/home/navratnaimg/stone4.webp',
-    shopHref: '/shop/emerald',
+    shopHref: '/shop/navaratna/emerald',
   },
   {
     name: 'Yellow Sapphire',
@@ -115,7 +115,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'wisdom, prosperity, education, marriage guidance, and spiritual counsel',
     quality: 'clear yellow body color, strong brightness, origin notes, and heat treatment disclosure',
     image: '/home/navratnaimg/stone5.webp',
-    shopHref: '/shop/yellow-sapphire',
+    shopHref: '/shop/navaratna/yellow-sapphire',
   },
   {
     name: 'Diamond',
@@ -128,7 +128,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'comfort, refinement, relationships, aesthetics, and luxury-related prosperity',
     quality: 'cut quality, clarity, color, carat, fluorescence notes, and trusted certification',
     image: '/home/navratnaimg/stone6.webp',
-    shopHref: '/shop/diamond',
+    shopHref: '/shop/navaratna/diamond',
   },
   {
     name: 'Blue Sapphire',
@@ -141,7 +141,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'discipline, endurance, responsibility, and long-term career stability',
     quality: 'velvety blue color, high transparency, no surface-reaching damage, and strong lab documentation',
     image: '/home/navratnaimg/stone7.webp',
-    shopHref: '/shop/blue-sapphire',
+    shopHref: '/shop/navaratna/blue-sapphire',
   },
   {
     name: 'Hessonite',
@@ -154,7 +154,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'focus during uncertainty, public life, obsessive patterns, and Rahu-related remedies',
     quality: 'honey to cinnamon color, good transparency, and natural garnet certification',
     image: '/home/navratnaimg/stone8.webp',
-    shopHref: '/shop/hessonite',
+    shopHref: '/shop/navaratna/hessonite',
   },
   {
     name: "Cat's Eye",
@@ -167,7 +167,7 @@ const gemstoneSeeds: GemstoneSeed[] = [
     focus: 'detachment, intuition, sudden shifts, and Ketu-related protection practices',
     quality: 'sharp centered chatoyancy, even body color, cabochon symmetry, and certificate support',
     image: '/home/navratnaimg/stone9.webp',
-    shopHref: '/shop/cats-eye',
+    shopHref: '/shop/navaratna/cats-eye',
   },
 ];
 
@@ -297,7 +297,7 @@ export const RUDRAKSHA_GUIDES: StaticKnowledgeGuide[] = rudrakshaSeeds.map((rudr
   eyebrow: rudraksha.association,
   description: `A practical guide to ${rudraksha.mukhi} Mukhi Rudraksha, including traditional benefits, identification checks, wearing rules, quality notes, pricing factors, and shop links.`,
   heroImage: rudraksha.image,
-  shopHref: `/shop/${rudraksha.mukhi}-mukhi`,
+  shopHref: `/shop/rudraksha/${rudraksha.mukhi}-mukhi`,
   parentHref: '/knowledge/rudraksha',
   parentLabel: 'Rudraksha Guides',
   readingTime: 5,

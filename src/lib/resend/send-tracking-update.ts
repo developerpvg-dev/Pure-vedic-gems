@@ -1,6 +1,6 @@
 import { getResendClient } from '@/lib/resend/client';
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'PureVedicGems <orders@purevedicgems.com>';
+const FROM_EMAIL = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'PureVedicGems <orders@purevedicgems.com>';
 
 function escapeHtml(value: string | null | undefined) {
   return String(value ?? '')

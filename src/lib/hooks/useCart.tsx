@@ -15,6 +15,23 @@ import { useAuth } from '@/lib/hooks/useAuth';
 
 const STORAGE_KEY = 'pvg_cart';
 const GUEST_SESSION_KEY = 'pvg_guest_session_id';
+const DEFAULT_MAX_CART_QUANTITY = 99;
+
+function getMaxAvailableQuantity(item: Pick<CartItem, 'stock_quantity' | 'in_stock' | 'stock_status' | 'availability_status' | 'sold_individually'>) {
+  if (item.in_stock === false || item.stock_status === 'out_of_stock') return 0;
+  if (['sold', 'reserved', 'out_of_stock', 'archived'].includes(String(item.availability_status ?? ''))) return 0;
+
+  const stockQuantity = Number(item.stock_quantity);
+  const hasKnownStock = Number.isFinite(stockQuantity) && stockQuantity >= 0;
+  const availableStock = hasKnownStock ? stockQuantity : DEFAULT_MAX_CART_QUANTITY;
+  return item.sold_individually ? Math.min(1, availableStock) : availableStock;
+}
+
+function clampCartQuantity(item: CartItem, requestedQuantity: number) {
+  const maxQuantity = getMaxAvailableQuantity(item);
+  if (maxQuantity <= 0) return 0;
+  return Math.min(Math.max(1, requestedQuantity), maxQuantity);
+}
 
 // ─── Reducer ────────────────────────────────────────────────────────────────
 
@@ -26,13 +43,18 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
     case 'ADD_ITEM': {
       const existing = state.find((i) => i.key === action.payload.key);
       if (existing) {
+        const mergedItem = { ...existing, ...action.payload };
+        const quantity = clampCartQuantity(mergedItem, existing.quantity + action.payload.quantity);
+        if (quantity <= existing.quantity) return state;
         return state.map((i) =>
           i.key === action.payload.key
-            ? { ...i, quantity: i.quantity + action.payload.quantity }
+            ? { ...mergedItem, quantity }
             : i
         );
       }
-      return [...state, action.payload];
+      const quantity = clampCartQuantity(action.payload, action.payload.quantity);
+      if (quantity <= 0) return state;
+      return [...state, { ...action.payload, quantity }];
     }
 
     case 'REMOVE_ITEM':
@@ -41,7 +63,7 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
     case 'UPDATE_QTY':
       return state.map((i) =>
         i.key === action.payload.key
-          ? { ...i, quantity: Math.max(1, action.payload.quantity) }
+          ? { ...i, quantity: clampCartQuantity(i, action.payload.quantity) || i.quantity }
           : i
       );
 
@@ -184,7 +206,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (path: string, init: RequestInit, onServerCart?: (cart: Cart) => void) => {
       if (!user) return;
       void fetch(path, init)
-        .then(safeJsonCart)
+        .then(async (response) => {
+          const serverCart = await safeJsonCart(response);
+          if (serverCart) return serverCart;
+          return fetch('/api/cart').then(safeJsonCart).catch(() => null);
+        })
         .then((serverCart) => {
           if (serverCart) {
             onServerCart?.(serverCart);
@@ -202,7 +228,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ? `${rawItem.product_id}:cfg:${rawItem.configuration_id}`
           : rawItem.product_id
       );
-      const item = { ...rawItem, key };
+      const existing = items.find((cartItem) => cartItem.key === key);
+      const mergedItem = existing ? { ...existing, ...rawItem, key } : { ...rawItem, key };
+      const nextQuantity = clampCartQuantity(mergedItem, (existing?.quantity ?? 0) + rawItem.quantity);
+      const quantityToAdd = existing ? nextQuantity - existing.quantity : nextQuantity;
+      if (quantityToAdd <= 0) return;
+
+      const item = { ...mergedItem, quantity: quantityToAdd };
       dispatch({ type: 'ADD_ITEM', payload: item });
 
       if (user) {
@@ -216,10 +248,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           (serverCart) => dispatch({ type: 'HYDRATE', payload: serverCart.items })
         );
       } else {
-        sendGuestEvent('cart_item_added', item);
+        sendGuestEvent(existing ? 'cart_item_updated' : 'cart_item_added', item, nextQuantity);
       }
     },
-    [guestSessionId, sendGuestEvent, syncAuthenticatedCart, user]
+    [guestSessionId, items, sendGuestEvent, syncAuthenticatedCart, user]
   );
 
   const removeItem = useCallback((key: string) => {
@@ -239,10 +271,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQty = useCallback((key: string, quantity: number) => {
     const existing = items.find((item) => item.key === key);
+    const nextQuantity = existing ? clampCartQuantity(existing, quantity) : quantity;
     if (quantity <= 0) {
       dispatch({ type: 'REMOVE_ITEM', payload: { key } });
+    } else if (nextQuantity <= 0) {
+      return;
     } else {
-      dispatch({ type: 'UPDATE_QTY', payload: { key, quantity } });
+      dispatch({ type: 'UPDATE_QTY', payload: { key, quantity: nextQuantity } });
     }
 
     if (user) {
@@ -251,12 +286,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quantity }),
+          body: JSON.stringify({ quantity: nextQuantity }),
         },
         (serverCart) => dispatch({ type: 'HYDRATE', payload: serverCart.items })
       );
     } else if (existing) {
-      sendGuestEvent(quantity <= 0 ? 'cart_item_removed' : 'cart_item_updated', existing, quantity);
+      sendGuestEvent(quantity <= 0 ? 'cart_item_removed' : 'cart_item_updated', existing, nextQuantity);
     }
   }, [items, sendGuestEvent, syncAuthenticatedCart, user]);
 

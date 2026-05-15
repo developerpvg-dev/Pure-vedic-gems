@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, Search, UserRound } from 'lucide-react';
+import { AdminPagination } from '@/components/admin/AdminPagination';
 
 interface CustomerRow {
   id: string;
@@ -24,8 +25,13 @@ interface TimelineItem {
   href?: string;
 }
 
+const CUSTOMERS_PER_PAGE = 20;
+
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [search, setSearch] = useState('');
@@ -33,13 +39,17 @@ export default function AdminCustomersPage() {
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
-    const params = search ? `?search=${encodeURIComponent(search)}` : '';
-    const response = await fetch(`/api/admin/customers${params}`, { cache: 'no-store' });
-    const data = await response.json().catch(() => null) as { customers?: CustomerRow[] } | null;
-    setCustomers(data?.customers ?? []);
-    setSelectedId((current) => current ?? data?.customers?.[0]?.id ?? null);
+    const params = new URLSearchParams({ page: String(page), per_page: String(CUSTOMERS_PER_PAGE) });
+    if (search) params.set('search', search);
+    const response = await fetch(`/api/admin/customers?${params.toString()}`, { cache: 'no-store' });
+    const data = await response.json().catch(() => null) as { customers?: CustomerRow[]; total?: number; total_pages?: number } | null;
+    const nextCustomers = data?.customers ?? [];
+    setCustomers(nextCustomers);
+    setTotal(data?.total ?? 0);
+    setTotalPages(data?.total_pages ?? 1);
+    setSelectedId((current) => nextCustomers.some((customer) => customer.id === current) ? current : nextCustomers[0]?.id ?? null);
     setLoading(false);
-  }, [search]);
+  }, [page, search]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void fetchCustomers(); }, 0);
@@ -63,7 +73,7 @@ export default function AdminCustomersPage() {
       <div className="mb-4 flex gap-2">
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search customers..." className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm" />
+          <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search customers..." className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm" />
         </div>
       </div>
 
@@ -79,6 +89,9 @@ export default function AdminCustomersPage() {
               </div>
             </button>
           ))}
+          <div className="px-4 pb-4">
+            <AdminPagination page={page} totalPages={totalPages} total={total} perPage={CUSTOMERS_PER_PAGE} onPageChange={setPage} />
+          </div>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           {selectedId ? (

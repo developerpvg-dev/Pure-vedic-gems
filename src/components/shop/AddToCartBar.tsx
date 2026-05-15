@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, MessageCircle, Share2, ShieldCheck, Package, Zap, BadgeCheck, Gem, Phone } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Share2, Gem, Phone } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
@@ -27,8 +27,10 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const [localQty, setLocalQty] = useState(1);
   const inCart = isInCart(product.id);
   const cartQty = getItemQty(product.id);
+  const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
+  const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
   const isUnavailable =
-    !product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+    !product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
 
   // When item is in cart, the counter mirrors the cart quantity directly.
   // When not yet in cart, the counter is a local "how many to add" state.
@@ -44,10 +46,14 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   };
 
   const handleIncrease = () => {
+    if (isUnavailable || displayQty >= maxQuantity) {
+      toast.info(maxQuantity > 0 ? `Only ${maxQuantity} unit${maxQuantity > 1 ? 's' : ''} available` : 'This product is out of stock');
+      return;
+    }
     if (inCart) {
       updateQty(product.id, cartQty + 1);
     } else {
-      setLocalQty((q) => q + 1);
+      setLocalQty((q) => Math.min(maxQuantity, q + 1));
     }
   };
 
@@ -58,9 +64,15 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       });
       return;
     }
+    if (localQty > maxQuantity) {
+      toast.error(`Only ${maxQuantity} unit${maxQuantity > 1 ? 's' : ''} available`);
+      setLocalQty(Math.max(1, maxQuantity));
+      return;
+    }
 
     addItem({
       product_id: product.id,
+      slug: product.slug,
       sku: product.sku,
       tag_number: product.tag_number ?? null,
       name: product.name,
@@ -68,6 +80,11 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       image_url: getImageSrc(product),
       price: product.price,
       quantity: localQty,
+      stock_quantity: product.stock_quantity,
+      stock_status: product.stock_status,
+      availability_status: product.availability_status,
+      in_stock: product.in_stock,
+      sold_individually: product.sold_individually,
       carat_weight: product.carat_weight ?? null,
       origin: product.origin ?? null,
     });
@@ -82,7 +99,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       description: `${localQty} item${localQty > 1 ? 's' : ''} added.`,
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
-  }, [addItem, product, localQty, isUnavailable]);
+  }, [addItem, product, localQty, isUnavailable, maxQuantity]);
 
   const waLink = `https://wa.me/919871582404?text=${encodeURIComponent(
     `Hi, I'm interested in: ${product.name} (SKU: ${product.sku}). Please share more details.`
@@ -100,18 +117,18 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const configuratorEnabled = !!(product as Product & { configurator_enabled?: boolean }).configurator_enabled;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Stock status */}
       {!isUnavailable ? (
-        <div className="flex items-center gap-2 text-[12px] font-semibold text-green-700">
+        <div className="flex items-center gap-2 text-sm font-medium text-green-700">
           <span className="h-2 w-2 rounded-full bg-green-500" />
           {product.availability_status === 'on_demand' ? 'Available on Demand' : 'In Stock'}
-          {product.stock_quantity <= product.low_stock_threshold && (
+          {product.stock_quantity < 5 && (
             <span className="ml-1 text-amber-600">— Only {product.stock_quantity} left!</span>
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-2 text-[12px] font-semibold text-red-600">
+        <div className="flex items-center gap-2 text-sm font-medium text-red-600">
           <span className="h-2 w-2 rounded-full bg-red-500" />
           {product.availability_status === 'reserved' ? 'Reserved' : product.availability_status === 'sold' ? 'Sold' : 'Out of Stock'}
         </div>
@@ -133,6 +150,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           </span>
           <button
             onClick={handleIncrease}
+            disabled={isUnavailable || displayQty >= maxQuantity}
             className="flex h-10 w-9 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
             aria-label="Increase quantity"
           >
@@ -144,21 +162,21 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         <button
           onClick={inCart ? undefined : handleAdd}
           disabled={isUnavailable}
-          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[12px] font-bold uppercase tracking-[1.5px] transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
           style={{
             background: inCart
               ? '#2e7d32'
               : configuratorEnabled
-              ? 'var(--pvg-accent)'
-              : 'var(--pvg-primary)',
-            color: 'var(--pvg-bg)',
+              ? '#7A1515'
+              : '#7A1515',
+            color: '#fff',
             cursor: inCart ? 'default' : 'pointer',
           }}
         >
           {configuratorEnabled ? (
-            <><Gem className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In Cart ✓' : 'Buy Loose'}</>
+            <><Gem className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In cart' : 'Buy loose'}</>
           ) : (
-            <><ShoppingBag className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In Cart ✓' : 'Add to Cart'}</>
+            <><ShoppingBag className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In cart' : 'Add to cart'}</>
           )}
         </button>
 
@@ -182,14 +200,14 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         <Link
           href={`/configure/${product.id}`}
           onClick={() => trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_detail' })}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 py-2.5 text-[12px] font-bold uppercase tracking-[1.5px] transition-all hover:-translate-y-0.5 hover:shadow-md"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md"
           style={{
-            borderColor: 'var(--pvg-primary)',
-            color: 'var(--pvg-primary)',
+            borderColor: '#7A1515',
+            color: '#7A1515',
           }}
         >
           <Gem className="h-4 w-4" />
-          Configure in Jewelry
+          Configure in jewellery
         </Link>
       )}
 
@@ -212,26 +230,6 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           <Phone className="h-3.5 w-3.5" />
           Book Consultation
         </Link>
-      </div>
-
-      {/* Trust badges — compact 4-column row */}
-      <div className="grid grid-cols-4 gap-1.5 pt-0.5">
-        {[
-          { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: 'Lab Certified' },
-          { icon: <Package className="h-3.5 w-3.5" />, label: '100% Genuine' },
-          { icon: <Zap className="h-3.5 w-3.5" />, label: 'Vedic Energized' },
-          { icon: <BadgeCheck className="h-3.5 w-3.5" />, label: 'Since 1937' },
-        ].map((badge) => (
-          <div
-            key={badge.label}
-            className="flex flex-col items-center gap-1 rounded-lg border border-[var(--pvg-border)] bg-brand-surface px-1.5 py-2 text-center"
-          >
-            <span className="text-[var(--pvg-accent)]">{badge.icon}</span>
-            <span className="text-[9px] font-semibold uppercase leading-tight tracking-[0.5px] text-[var(--pvg-muted)]">
-              {badge.label}
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   );

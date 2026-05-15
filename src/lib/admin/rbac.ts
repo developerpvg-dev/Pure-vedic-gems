@@ -5,6 +5,7 @@ export const ADMIN_ROLE_OPTIONS = [
   'admin',
   'sales',
   'content',
+  'inventory',
   'finance',
   'fulfillment',
   'support',
@@ -35,6 +36,7 @@ export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
   admin: 'Admin',
   sales: 'Sales',
   content: 'Content',
+  inventory: 'Inventory',
   finance: 'Finance',
   fulfillment: 'Fulfillment',
   support: 'Support',
@@ -79,6 +81,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
   ],
   sales: ['dashboard.read', 'products.read', 'orders.read', 'orders.write', 'leads.read', 'leads.write'],
   content: ['dashboard.read', 'products.read', 'products.write', 'imports.write', 'content.manage'],
+  inventory: ['dashboard.read', 'products.read', 'products.write', 'imports.write'],
   finance: ['dashboard.read', 'orders.read', 'finance.read'],
   fulfillment: ['dashboard.read', 'products.read', 'orders.read', 'orders.write', 'orders.tracking'],
   support: ['dashboard.read', 'products.read', 'orders.read', 'orders.tracking', 'leads.read', 'leads.write'],
@@ -123,6 +126,8 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/finance')) return 'finance.read';
   if (pathname.startsWith('/admin/settings')) return 'settings.commerce';
   if (pathname.startsWith('/admin/products/import')) return 'imports.write';
+  if (pathname.startsWith('/admin/products/new')) return 'products.write';
+  if (/^\/admin\/products\/[^/]+$/.test(pathname)) return 'products.write';
   if (pathname.startsWith('/admin/products')) return 'products.read';
   if (pathname.startsWith('/admin/orders')) return 'orders.read';
   if (pathname.startsWith('/admin/customers')) return 'leads.read';

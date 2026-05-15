@@ -46,39 +46,39 @@ export function RecentlyViewedProducts({ current }: { current: RecentlyViewedPro
   return (
     <section className="mt-16">
       <div className="mb-5 text-center">
-        <p className="text-[9px] font-bold uppercase tracking-[4px] text-[var(--pvg-accent)]">
-          Recently Viewed
-        </p>
-        <h2 className="font-heading mt-1.5 text-xl font-semibold text-[var(--pvg-primary)]">
-          Continue Exploring
+        <h2 className="text-2xl font-medium" style={{ color: '#7A1515' }}>
+          Continue exploring
         </h2>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:gap-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {items.map((item) => (
           <Link
             key={item.id}
             href={item.href}
-            className="group overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface transition-all hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(61,43,31,0.12)]"
+            className="group relative flex flex-col overflow-hidden rounded-lg bg-white transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]"
           >
-            <div className="relative aspect-[5/6] bg-brand-bg-alt">
+            {/* Image — matches ProductCard 115% portrait ratio */}
+            <div className="relative overflow-hidden bg-[#f2f2f2]" style={{ paddingBottom: '115%' }}>
               {item.imageUrl ? (
                 <Image
                   src={item.imageUrl}
                   alt={item.name}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-[var(--pvg-accent)]">PVG</div>
+                <div className="absolute inset-0 flex items-center justify-center text-brand-accent">PVG</div>
               )}
             </div>
-            <div className="p-3">
-              <h3 className="line-clamp-2 text-[13px] font-semibold text-[var(--pvg-primary)]">
+            <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
+              <h3 className="line-clamp-1 text-[13px] font-semibold leading-snug text-gray-900">
                 {item.name}
               </h3>
-              {item.meta && <p className="mt-1 truncate text-[10px] text-[var(--pvg-muted)]">{item.meta}</p>}
-              <p className="mt-2 text-sm font-bold text-[var(--pvg-primary)]">{formatPrice(item.price)}</p>
+              {item.meta && (
+                <p className="mt-0.5 truncate text-[10px] font-normal text-brand-muted">{item.meta}</p>
+              )}
+              <p className="mt-1 text-[14px] font-semibold text-gray-900">{formatPrice(item.price)}</p>
             </div>
           </Link>
         ))}

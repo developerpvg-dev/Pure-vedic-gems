@@ -122,6 +122,21 @@ export default async function AccountConsultationsPage() {
                 <Info label="Completed" value={formatDate(consultation.completed_at)} />
               </div>
 
+              {(consultation.scheduled_date || consultation.scheduled_time || consultation.meeting_link || consultation.admin_schedule_notes) && (
+                <div className="mt-5 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-bg)' }}>
+                  <p className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Scheduled Consultation</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Info label="Date" value={consultation.scheduled_date || '-'} />
+                    <Info label="Time" value={consultation.scheduled_time?.slice(0, 5) || '-'} />
+                    <Info label="Mode" value={consultation.scheduled_mode?.replace('_', ' ') || '-'} />
+                    <Info label="Link / Venue" value={consultation.meeting_link || '-'} />
+                  </div>
+                  {consultation.admin_schedule_notes && (
+                    <p className="mt-3 text-xs leading-6" style={{ color: 'var(--pvg-muted)' }}>{consultation.admin_schedule_notes}</p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-5 grid gap-3 rounded-xl border px-4 py-3 text-xs sm:grid-cols-2" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-bg)' }}>
                 <div>
                   <span className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Razorpay Order:</span>{' '}

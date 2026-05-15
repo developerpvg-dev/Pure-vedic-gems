@@ -11,10 +11,10 @@ const TEXT_HREFS: Record<string, string> = {
   'View Collection': '/shop',
   'View All Gemstones': '/shop',
   'Shop All': '/shop/rudraksha',
-  'Shop Malas': '/shop/exclusive-rudraksha-malas',
-  'Shop Jewellery': '/shop/rudraksha-jewelry',
+  'Shop Malas': '/shop/malas/exclusive-rudraksha-malas',
+  'Shop Jewellery': '/shop/jewelry/rudraksha-jewelry',
   'Show All Rudrakshas': '/shop/rudraksha',
-  'View All Spiritual Idols': '/shop/idol',
+  'View All Spiritual Idols': '/shop/idols',
   'View All Vedic Jewellery': '/shop/jewelry',
   'View All Picks': '/shop?featured=true',
   'View & Buy': '/shop',
@@ -28,35 +28,36 @@ const TEXT_HREFS: Record<string, string> = {
   'Our Legacy': '#our-legacy',
   'About Us': '/about',
   Contact: '/contact',
-  'Rudraksha Malas': '/shop/exclusive-rudraksha-malas',
+  'Rudraksha Malas': '/shop/malas/exclusive-rudraksha-malas',
   'Certified Jewellery': '/shop/jewelry',
 };
 
 const PARTIAL_HREFS: Array<[RegExp, string]> = [
-  [/ruby|manik/i, '/shop/ruby'],
-  [/pearl|moti/i, '/shop/pearl'],
-  [/red coral|coral|moonga/i, '/shop/red-coral'],
-  [/emerald|panna/i, '/shop/emerald'],
-  [/yellow sapphire|pukhraj/i, '/shop/yellow-sapphire'],
-  [/blue sapphire|neelam/i, '/shop/blue-sapphire'],
-  [/hessonite|gomed/i, '/shop/hessonite'],
-  [/cat'?s eye|lehsun/i, '/shop/cats-eye'],
-  [/diamond|heera/i, '/shop/diamond'],
-  [/ganesh/i, '/shop/ganesha'],
-  [/shiva linga|shivling/i, '/shop/shivling'],
-  [/lakshmi/i, '/shop/lakshmi'],
-  [/hanuman/i, '/shop/hanuman'],
-  [/saraswati/i, '/shop/saraswati'],
-  [/durga/i, '/shop/durga-devi'],
-  [/vishnu/i, '/shop/vishnu'],
-  [/ring|kada/i, '/shop/ring'],
-  [/pendant/i, '/shop/pendant'],
-  [/bracelet/i, '/shop/bracelets'],
+  [/ruby|manik/i, '/shop/navaratna/ruby'],
+  [/pearl|moti/i, '/shop/navaratna/pearl'],
+  [/red coral|coral|moonga/i, '/shop/navaratna/red-coral'],
+  [/emerald|panna/i, '/shop/navaratna/emerald'],
+  [/yellow sapphire|pukhraj/i, '/shop/navaratna/yellow-sapphire'],
+  [/blue sapphire|neelam/i, '/shop/navaratna/blue-sapphire'],
+  [/hessonite|gomed/i, '/shop/navaratna/hessonite'],
+  [/cat'?s eye|lehsun/i, '/shop/navaratna/cats-eye'],
+  [/diamond|heera/i, '/shop/navaratna/diamond'],
+  [/ganesh/i, '/shop/idols/ganesha'],
+  [/shiva linga|shivling/i, '/shop/idols/shivling'],
+  [/lakshmi/i, '/shop/idols/lakshmi'],
+  [/hanuman/i, '/shop/idols/hanuman'],
+  [/saraswati/i, '/shop/idols/saraswati'],
+  [/durga/i, '/shop/idols/durga-devi'],
+  [/vishnu/i, '/shop/idols/vishnu'],
+  [/ring|kada/i, '/shop/jewelry/ring'],
+  [/pendant/i, '/shop/jewelry/pendant'],
+  [/bracelet/i, '/shop/jewelry/bracelets'],
   [/mukhi/i, '/shop/rudraksha'],
 ];
 
 type ScrollSequence = {
   section: HTMLElement;
+  lockTarget: HTMLElement;
   steps: HTMLElement[];
   currentIndex: number;
   setActive: (index: number, options?: { scrollStepIntoView?: boolean }) => void;
@@ -70,8 +71,8 @@ type LockableScrollSequence = ScrollSequence & {
   lastTouchY: number | null;
 };
 
-const LOCK_INTERSECTION_RATIO = 0.82;
-const MIN_LOCK_INTERSECTION_RATIO = 0.4;
+const LOCK_INTERSECTION_RATIO = 0.64;
+const MIN_LOCK_INTERSECTION_RATIO = 0.32;
 const STEP_COOLDOWN_MS = 520;
 const WHEEL_STEP_DELTA = 48;
 const TOUCH_STEP_DELTA = 42;
@@ -96,7 +97,11 @@ function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-function setupRotatingStack(selector: string, intervalMs: number) {
+function setupRotatingStack(
+  selector: string,
+  intervalMs: number,
+  options?: { pauseOnReducedMotion?: boolean }
+) {
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selector));
   if (cards.length <= 1) return undefined;
 
@@ -105,8 +110,8 @@ function setupRotatingStack(selector: string, intervalMs: number) {
   if (activeIndex < 0) activeIndex = cards.length - 1;
 
   let timer: number | null = null;
-  let isVisible = false;
-  const reduceMotion = prefersReducedMotion();
+  let isVisible = true;
+  const pauseOnReducedMotion = options?.pauseOnReducedMotion ?? true;
 
   const render = () => {
     cards.forEach((card, index) => {
@@ -123,7 +128,7 @@ function setupRotatingStack(selector: string, intervalMs: number) {
 
   const schedule = () => {
     stop();
-    if (!isVisible || reduceMotion || document.hidden) return;
+    if (!isVisible || document.hidden || (pauseOnReducedMotion && prefersReducedMotion())) return;
     timer = window.setTimeout(() => {
       activeIndex = (activeIndex + 1) % cards.length;
       render();
@@ -152,15 +157,37 @@ function setupRotatingStack(selector: string, intervalMs: number) {
   };
 }
 
-function setupAutoCarousel(cardSelector: string, dotSelector: string, intervalMs: number) {
+function setupAutoCarousel(
+  cardSelector: string,
+  dotSelector: string,
+  intervalMs: number,
+  options?: { pauseOnReducedMotion?: boolean }
+) {
   const cards = Array.from(document.querySelectorAll<HTMLElement>(cardSelector));
   const dots = Array.from(document.querySelectorAll<HTMLElement>(dotSelector));
   if (!cards.length) return undefined;
 
+  const carouselRoot = cards[0].parentElement;
+
   let currentIndex = Math.max(0, cards.findIndex((card) => card.classList.contains('is-active')));
   let timer: number | null = null;
   let isVisible = false;
-  const reduceMotion = prefersReducedMotion();
+  const pauseOnReducedMotion = options?.pauseOnReducedMotion ?? true;
+
+  const updateVisibility = () => {
+    if (!carouselRoot) {
+      isVisible = true;
+      schedule();
+      return;
+    }
+
+    const rect = carouselRoot.getBoundingClientRect();
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    isVisible = rect.bottom > 0 && rect.right > 0 && rect.top < viewportHeight && rect.left < viewportWidth;
+    schedule();
+  };
 
   const goTo = (nextIndex: number) => {
     cards[currentIndex]?.classList.remove('is-active');
@@ -177,7 +204,7 @@ function setupAutoCarousel(cardSelector: string, dotSelector: string, intervalMs
 
   const schedule = () => {
     stop();
-    if (!isVisible || reduceMotion || document.hidden) return;
+    if (!isVisible || document.hidden || (pauseOnReducedMotion && prefersReducedMotion())) return;
     timer = window.setTimeout(() => {
       goTo(currentIndex + 1);
       schedule();
@@ -193,7 +220,6 @@ function setupAutoCarousel(cardSelector: string, dotSelector: string, intervalMs
     return () => dot.removeEventListener('click', handler);
   });
 
-  const carouselRoot = cards[0].parentElement;
   const observer = new IntersectionObserver(
     ([entry]) => {
       isVisible = Boolean(entry?.isIntersecting);
@@ -207,11 +233,16 @@ function setupAutoCarousel(cardSelector: string, dotSelector: string, intervalMs
   goTo(currentIndex);
   if (carouselRoot) observer.observe(carouselRoot);
   document.addEventListener('visibilitychange', onVisibilityChange);
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  window.addEventListener('resize', updateVisibility);
+  updateVisibility();
 
   return () => {
     stop();
     observer.disconnect();
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('scroll', updateVisibility);
+    window.removeEventListener('resize', updateVisibility);
     dotCleanups.forEach((cleanup) => cleanup());
   };
 }
@@ -237,12 +268,14 @@ function setupScrollSequence(options: {
   imageSelector: string;
   stepKey: string;
   imageKey: string;
+  lockTargetSelector?: string;
 }): ScrollSequence | null {
   const section = document.querySelector<HTMLElement>(options.sectionSelector);
   const steps = Array.from(document.querySelectorAll<HTMLElement>(options.stepSelector));
   const images = Array.from(document.querySelectorAll<HTMLElement>(options.imageSelector));
 
   if (!section || !steps.length || !images.length) return null;
+  const lockTarget = options.lockTargetSelector ? section.querySelector<HTMLElement>(options.lockTargetSelector) ?? section : section;
 
   let currentIndex = -1;
   const stepCleanups: Array<() => void> = [];
@@ -290,6 +323,7 @@ function setupScrollSequence(options: {
 
   return {
     section,
+    lockTarget,
     steps,
     get currentIndex() {
       return currentIndex;
@@ -323,14 +357,26 @@ function getActiveLockedSequence(sequences: LockableScrollSequence[]) {
 
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
   return sequences
-    .filter((sequence) => sequence.isLockEligible)
+    .filter((sequence) => sequence.isLockEligible && isSectionReadyForScrollLock(sequence.lockTarget))
     .sort((left, right) => {
-      const leftRect = left.section.getBoundingClientRect();
-      const rightRect = right.section.getBoundingClientRect();
+      const leftRect = left.lockTarget.getBoundingClientRect();
+      const rightRect = right.lockTarget.getBoundingClientRect();
       const leftDistance = Math.abs(leftRect.top + leftRect.height / 2 - viewportHeight / 2);
       const rightDistance = Math.abs(rightRect.top + rightRect.height / 2 - viewportHeight / 2);
       return leftDistance - rightDistance;
     })[0] ?? null;
+}
+
+function isSectionReadyForScrollLock(section: HTMLElement) {
+  const rect = section.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const tolerance = 24;
+
+  if (rect.height <= viewportHeight) {
+    return rect.top >= -tolerance && rect.bottom <= viewportHeight + tolerance;
+  }
+
+  return rect.top <= tolerance && rect.bottom >= viewportHeight - tolerance;
 }
 
 function getLockThreshold(entry: IntersectionObserverEntry) {
@@ -345,6 +391,7 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
 
   const lockedSequences: LockableScrollSequence[] = sequences.map((sequence) => ({
     section: sequence.section,
+    lockTarget: sequence.lockTarget,
     steps: sequence.steps,
     get currentIndex() {
       return sequence.currentIndex;
@@ -360,7 +407,7 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        const sequence = lockedSequences.find((item) => item.section === entry.target);
+        const sequence = lockedSequences.find((item) => item.lockTarget === entry.target);
         if (!sequence) return;
         sequence.isLockEligible = entry.isIntersecting && entry.intersectionRatio >= getLockThreshold(entry);
         if (!sequence.isLockEligible) {
@@ -455,7 +502,7 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
     stepSequence(sequence, direction);
   };
 
-  lockedSequences.forEach((sequence) => observer.observe(sequence.section));
+  lockedSequences.forEach((sequence) => observer.observe(sequence.lockTarget));
   window.addEventListener('wheel', onWheel, { passive: false });
   window.addEventListener('touchstart', onTouchStart, { passive: true });
   window.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -693,9 +740,9 @@ export function PvgHomeInteractions() {
   useEffect(() => {
     const cleanups: Array<(() => void) | undefined> = [];
 
-    cleanups.push(setupRotatingStack('#aboutStack .about-stack-card', 4200));
-    cleanups.push(setupRotatingStack('#certStack .cert-stack-card', 4400));
-    cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200));
+    cleanups.push(setupRotatingStack('#aboutStack .about-stack-card', 2800, { pauseOnReducedMotion: false }));
+    cleanups.push(setupRotatingStack('#certStack .cert-stack-card', 3000, { pauseOnReducedMotion: false }));
+    cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200, { pauseOnReducedMotion: false }));
     cleanups.push(setupTrustRotation());
     cleanups.push(...setupTabs('.explore-tab', '.explore-panel', 'panel-', 'tab'));
     cleanups.push(...setupTabs('.khub-tab', '.khub-panel', 'khub-panel-', 'khub'));
@@ -716,6 +763,7 @@ export function PvgHomeInteractions() {
         imageSelector: '[data-legacy-image]',
         stepKey: 'legacyStep',
         imageKey: 'legacyImage',
+        lockTargetSelector: '.remedy-shell',
       }),
     ].filter((sequence): sequence is ScrollSequence => Boolean(sequence));
 

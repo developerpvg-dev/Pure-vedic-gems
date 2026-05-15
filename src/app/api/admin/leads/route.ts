@@ -21,7 +21,13 @@ async function requireAdmin() {
   return { user, role: m.role };
 }
 
-// GET: list all enquiries + consultations (combined leads)
+type CombinedLead = (Record<string, unknown> & { id: string; created_at: string; _type: 'enquiry' | 'consultation' });
+
+function cleanSearch(value: string) {
+  return value.replace(/[%,]/g, ' ').trim();
+}
+
+// GET: list enquiries + consultations (paginated combined leads)
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin();
   if ('error' in auth && auth.error) return auth.error;
@@ -29,14 +35,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type'); // 'enquiry' | 'consultation' | null (both)
   const status = searchParams.get('status');
+  const search = searchParams.get('search')?.trim();
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
   const perPage = Math.min(50, Math.max(1, parseInt(searchParams.get('per_page') || '20')));
   const offset = (page - 1) * perPage;
 
   const admin = createAdminClient();
-  const results: { enquiries?: unknown[]; consultations?: unknown[]; total: number } = { total: 0 };
+  const results: { enquiries?: unknown[]; consultations?: unknown[]; leads?: CombinedLead[]; total: number } = { total: 0 };
+  const searchTerm = search ? `%${cleanSearch(search)}%` : null;
 
-  // Fetch enquiries
   if (!type || type === 'enquiry') {
     let query = admin
       .from('enquiries')
@@ -44,7 +51,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (status) query = query.eq('status', status);
-    query = query.range(offset, offset + perPage - 1);
+    if (searchTerm) query = query.or(`name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},subject.ilike.${searchTerm}`);
+    query = query.range(type === 'enquiry' ? offset : 0, type === 'enquiry' ? offset + perPage - 1 : offset + perPage - 1);
 
     const { data, count, error } = await query;
     if (error) {
@@ -55,7 +63,6 @@ export async function GET(request: NextRequest) {
     results.total += count || 0;
   }
 
-  // Fetch consultations
   if (!type || type === 'consultation') {
     let query = admin
       .from('consultations')
@@ -63,12 +70,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (status) query = query.eq('status', status);
-    if (type === 'consultation') {
-      query = query.range(offset, offset + perPage - 1);
-    } else {
-      // When fetching both, limit consultations too
-      query = query.range(0, perPage - 1);
-    }
+    if (searchTerm) query = query.or(`full_name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},plan_title_snapshot.ilike.${searchTerm}`);
+    query = query.range(type === 'consultation' ? offset : 0, type === 'consultation' ? offset + perPage - 1 : offset + perPage - 1);
 
     const { data, count, error } = await query;
     if (error) {
@@ -79,5 +82,19 @@ export async function GET(request: NextRequest) {
     results.total += count || 0;
   }
 
-  return NextResponse.json({ ...results, page, per_page: perPage });
+  const combined: CombinedLead[] = [
+    ...(results.enquiries ?? []).map((lead) => ({ ...(lead as Record<string, unknown>), _type: 'enquiry' as const } as CombinedLead)),
+    ...(results.consultations ?? []).map((lead) => ({ ...(lead as Record<string, unknown>), _type: 'consultation' as const } as CombinedLead)),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  results.leads = type ? combined : combined.slice(offset, offset + perPage);
+  results.enquiries = results.leads.filter((lead) => lead._type === 'enquiry');
+  results.consultations = results.leads.filter((lead) => lead._type === 'consultation');
+
+  return NextResponse.json({
+    ...results,
+    page,
+    per_page: perPage,
+    total_pages: Math.ceil(results.total / perPage),
+  });
 }

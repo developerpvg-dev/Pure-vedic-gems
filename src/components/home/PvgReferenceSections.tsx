@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 /* eslint-disable react/no-unescaped-entities */
 import type { CSSProperties, ReactNode } from 'react';
+import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
 
 function toStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
@@ -192,19 +193,19 @@ export function PvgReferenceSections({
           <div className="about-img-stack" id="aboutStack" aria-label="Heritage photographs">
 
             <div className="about-stack-card" data-pos="3">
-              <img className="about-stack-img" src="/home/whoweare/1Heritage.webp" alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" decoding="async" />
+              <img className="about-stack-img" src="/home/whoweare/1Heritage.webp" alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" />
             </div>
 
             <div className="about-stack-card" data-pos="2">
-              <img className="about-stack-img" src="/home/whoweare/2Sourcing.webp" alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" decoding="async" />
+              <img className="about-stack-img" src="/home/whoweare/2Sourcing.webp" alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" />
             </div>
 
             <div className="about-stack-card" data-pos="1">
-              <img className="about-stack-img" src="/home/whoweare/3Certification.webp" alt="Pure Vedic Gems certification bodies" loading="lazy" decoding="async" />
+              <img className="about-stack-img" src="/home/whoweare/3Certification.webp" alt="Pure Vedic Gems certification bodies" loading="lazy" />
             </div>
 
             <div className="about-stack-card" data-pos="0">
-              <img className="about-stack-img" src="/home/whoweare/4Energization.webp" alt="Authentic Vedic gemstone energization ritual" loading="lazy" decoding="async" />
+              <img className="about-stack-img" src="/home/whoweare/4Energization.webp" alt="Authentic Vedic gemstone energization ritual" loading="lazy" />
             </div>
 
           </div>
@@ -255,7 +256,7 @@ export function PvgReferenceSections({
           </div>
 
           <div className="about-cta-row">
-            <a href="/about" className="btn-maroon">Our Full Story</a>
+            <a href="#" className="btn-maroon">Our Full Story</a>
           </div>
         </div>
 
@@ -282,16 +283,16 @@ export function PvgReferenceSections({
 
           <div className="cert-logos-wrap">
             <div className="cert-logos-grid">
-              <div className="cert-logo-item"><img src="/labslogo/GIA.webp" alt="GIA — Gemological Institute of America" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IGI.webp" alt="IGI — International Gemological Institute" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GRS.webp" alt="GRS — Gem Research Swisslab" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GUBELIN.webp" alt="Gübelin Gem Lab" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF" loading="lazy" decoding="async" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GIA.webp" alt="GIA — Gemological Institute of America" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IGI.webp" alt="IGI — International Gemological Institute" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GRS.webp" alt="GRS — Gem Research Swisslab" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GUBELIN.webp" alt="Gübelin Gem Lab" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO" /></div>
             </div>
           </div>
         </div>
@@ -302,25 +303,25 @@ export function PvgReferenceSections({
 
             <div className="cert-stack-card" data-pos="3">
               <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GIA (1).webp" alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GIA (1).webp" alt="GIA gemstone certificate sample" loading="lazy" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
               <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle IGI (1).webp" alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle IGI (1).webp" alt="IGI gemstone certificate sample" loading="lazy" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
               <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GII (1).webp" alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GII (1).webp" alt="GII gemstone certificate sample" loading="lazy" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="0">
               <div className="cert-card-inner">
-                <img className="cert-real-img cert-real-img-landscape" src="/home/certificates/1170x826 pixle copy (1).webp" alt="Multiple gemstone certification reports from global labs" loading="lazy" decoding="async" />
+                <img className="cert-real-img cert-real-img-landscape" src="/home/certificates/1170x826 pixle copy (1).webp" alt="Multiple gemstone certification reports from global labs" loading="lazy" />
               </div>
             </div>
 
@@ -626,128 +627,98 @@ export function PvgReferenceSections({
   )}
 
   
-  <section className="journey-section" id="configurator" aria-labelledby="journey-heading">
+  <section className="gem-cfg-section" id="configurator" aria-labelledby="config-heading">
     <div className="container">
 
-      {/* Header */}
-      <div className="journey-header">
-        <h2 id="journey-heading" className="journey-title">From Gem to Jewellery</h2>
-        <div className="journey-title-rule" aria-hidden="true" />
-        <p className="journey-subtitle">A story of transformation. From nature&apos;s rarest wonders to timeless treasures.</p>
+      {/* Heading */}
+      <div className="cfg-lin-head">
+        <h2 className="cfg-lin-title" id="config-heading">From Gem to Jewellery</h2>
+        <p className="cfg-lin-sub">A story of transformation. From nature&apos;s rarest wonders to timeless treasures.</p>
+        <div className="cfg-lin-rule"></div>
       </div>
 
-      {/* 6-Step Grid */}
-      <div className="journey-steps-grid">
+      {/* 6-step horizontal flow */}
+      <div className="cfg-lin-steps" role="list">
         {([
-          {
-            title: 'Select Gemstone',
-            desc: "Handpicked from nature\u2019s finest for its rarity and energy.",
-          },
-          {
-            title: 'Setting Type',
-            desc: 'Choose the setting that complements your style.',
-          },
-          {
-            title: 'Metal & Size',
-            desc: 'Select your preferred metal and the perfect size.',
-          },
-          {
-            title: 'Select Design',
-            desc: 'Bring your vision to life with a design that reflects you.',
-          },
-          {
-            title: 'Certification Lab',
-            desc: 'Tested and certified for authenticity and quality.',
-          },
-          {
-            title: 'Energization & Puja',
-            desc: 'Blessed with Vedic rituals for positive energy and protection.',
-          },
-        ] as Array<{ title: string; desc: string }>).map((step, i) => (
-          <div className="journey-step" key={i}>
-            <div className="journey-step-img-wrap">
-              <img src={`/home/configuratorsteps/step${i + 1}.webp`} alt={step.title} loading="lazy" decoding="async" className="journey-step-img" />
+          ['Select Gemstone',    "Handpicked from nature's finest for its rarity and energy."],
+          ['Setting Type',       'Choose the setting that complements your style.'],
+          ['Metal & Size',       'Select your preferred metal and the perfect size.'],
+          ['Select Design',      'Bring your vision to life with a design that reflects you.'],
+          ['Certification Lab',  'Tested and certified for authenticity and quality.'],
+          ['Energization & Puja','Blessed with Vedic rituals for positive energy and protection.'],
+        ] as [string, string][]).map(([label, desc], index) => (
+          <div key={label} className="cfg-lin-step" role="listitem">
+            <div className="cfg-lin-circle-wrap">
+              <div className="cfg-lin-circle">
+                <img className="cfg-lin-img" src={`/home/configuratorsteps/step${index + 1}.webp`} alt={label} loading="lazy" />
+              </div>
+              <span className="cfg-lin-badge" aria-hidden="true">{index + 1}</span>
             </div>
-            <div className="journey-step-num" aria-hidden="true">{i + 1}</div>
-            <div className="journey-step-title">{step.title.toUpperCase()}</div>
-            <p className="journey-step-desc">{step.desc}</p>
+            <div className="cfg-lin-label">{label}</div>
+            <p className="cfg-lin-desc">{desc}</p>
           </div>
         ))}
       </div>
 
       {/* CTA */}
-      <div className="journey-cta-wrap">
-        <a href="/configure" className="journey-cta-btn">Start Configuring</a>
+      <div className="cfg-lin-cta">
+        <a href="/configure" className="cfg-lin-btn">Start Configuring</a>
       </div>
 
-      {/* Trust Bar */}
-      <div className="journey-trust-bar">
-        {([
-          {
-            title: '100% Authentic',
-            sub: 'Certified Gemstones',
-            icon: (
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 2L4 8v9c0 7 5 11 12 13 7-2 12-6 12-13V8L16 2z"/><path d="M10 16l4 4 8-8"/>
-              </svg>
-            ),
-          },
-          {
-            title: 'Vedic Blessings',
-            sub: 'Energized & Protected',
-            icon: (
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 28s-8-5-8-13c0-4 3.6-7 8-7s8 3 8 7c0 8-8 13-8 13z"/><path d="M16 8c-2-3-7-6-7-6s2 4 4 8"/><path d="M16 8c2-3 7-6 7-6s-2 4-4 8"/>
-              </svg>
-            ),
-          },
-          {
-            title: 'Expert',
-            sub: 'Craftsmanship',
-            icon: (
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 4L4 13l12 15 12-15L16 4z"/><path d="M4 13h24"/>
-              </svg>
-            ),
-          },
-          {
-            title: 'Trusted By',
-            sub: '50,000+ Customers',
-            icon: (
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="9" r="4"/><circle cx="22" cy="9" r="3"/><path d="M4 28v-3c0-3 4-5 8-5s8 2 8 5v3"/><path d="M22 12c3 0 6 1.5 6 4v3"/>
-              </svg>
-            ),
-          },
-          {
-            title: 'Secure & Insured',
-            sub: 'Worldwide Delivery',
-            icon: (
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 2L4 8v9c0 7 5 11 12 13 7-2 12-6 12-13V8L16 2z"/><rect x="11" y="16" width="10" height="7" rx="1"/><path d="M13 16v-3a3 3 0 016 0v3"/>
-              </svg>
-            ),
-          },
-          {
-            title: 'Exquisite Packaging',
-            sub: 'Perfect for Gifting',
-            icon: (
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="4" y="12" width="24" height="4" rx="1"/><rect x="6" y="16" width="20" height="12" rx="1"/><path d="M16 12v16"/><path d="M16 12c0-2-2-6-4-6s-2 4 4 6"/><path d="M16 12c0-2 2-6 4-6s2 4-4 6"/>
-              </svg>
-            ),
-          },
-        ] as Array<{ title: string; sub: string; icon: ReactNode }>).map((badge, i) => (
-          <div className="journey-trust-item" key={i}>
-            <div className="journey-trust-icon">{badge.icon}</div>
-            <div>
-              <div className="journey-trust-label">{badge.title.toUpperCase()}</div>
-              <div className="journey-trust-sub">{badge.sub}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Trust strip */}
+      <div className="cfg-lin-trust" role="list">
 
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>100% Authentic</strong><span>Certified Gemstones</span></span>
+        </div>
+
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 6c0 3.3-2.7 6-6 6" strokeLinecap="round"/>
+            <path d="M12 6c0 3.3 2.7 6 6 6" strokeLinecap="round"/>
+            <path d="M12 18c0-3.3 2.7-6 6-6" strokeLinecap="round"/>
+            <path d="M12 18c0-3.3-2.7-6-6-6" strokeLinecap="round"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>Vedic Blessings</strong><span>Energized &amp; Protected</span></span>
+        </div>
+
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>Expert</strong><span>Craftsmanship</span></span>
+        </div>
+
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>Trusted By</strong><span>50,000+ Customers</span></span>
+        </div>
+
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>Secure &amp; Insured</strong><span>Worldwide Delivery</span></span>
+        </div>
+
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
+            <line x1="12" y1="22" x2="12" y2="7"/>
+            <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>Exquisite Packaging</strong><span>Perfect for Gifting</span></span>
+        </div>
+
+      </div>
     </div>
   </section>
 
@@ -871,15 +842,6 @@ export function PvgReferenceSections({
 
       <div className="scroll-hint">Swipe to read more <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
 
-      <div className="khub-scroll-controls" aria-label="Knowledge Hub carousel controls">
-        <button className="khub-scroll-btn" type="button" data-khub-direction="prev" aria-label="Previous Knowledge Hub articles">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
-        </button>
-        <button className="khub-scroll-btn" type="button" data-khub-direction="next" aria-label="Next Knowledge Hub articles">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
-        </button>
-      </div>
-
       <div className="khub-footer">
         <a href="#" className="btn-maroon">Explore All Articles</a>
       </div>
@@ -901,7 +863,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mr.%20Vikash%20Mehra.webp" alt="Mr. Vikas Mehra" loading="lazy" decoding="async" />
+              <img src="/our_expets_img/Mr. Vikash Mehra.webp" alt="Mr. Vikas Mehra" loading="lazy" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -922,7 +884,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mrs%20.%20Tanya%20Mehra.webp" alt="Mrs. Tanya Mehra" loading="lazy" decoding="async" />
+              <img src="/our_expets_img/Mrs . Tanya Mehra.webp" alt="Mrs. Tanya Mehra" loading="lazy" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -943,7 +905,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mr.%20Vrayas%20Mehra.webp" alt="Mr. Vrayas Mehra" loading="lazy" decoding="async" />
+              <img src="/our_expets_img/Mr. Vrayas Mehra.webp" alt="Mr. Vrayas Mehra" loading="lazy" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -979,7 +941,7 @@ export function PvgReferenceSections({
             { src: '/home/hero/pvgherobg3.webp', alt: 'Next generation platform milestone' },
           ].map((item, index) => (
             <div key={item.src} className={`remedy-image${index === 0 ? ' is-active' : ''}`} data-legacy-image={index}>
-              <img src={item.src} alt={item.alt} loading="lazy" decoding="async" />
+              <img src={item.src} alt={item.alt} loading="lazy" />
             </div>
           ))}
           <div className="remedy-showcase-copy">
@@ -1165,47 +1127,12 @@ export function PvgReferenceSections({
           <p className="reco-img-sub">Share your birth details and our Vedic experts will recommend the perfect gemstone aligned with your planetary chart.</p>
           <div className="reco-img-trust">
             <span className="reco-img-trust-pill">50K+ Clients Served</span>
-            <span className="reco-img-trust-pill">Free Consultation</span>
+            <span className="reco-img-trust-pill">Expert Review</span>
           </div>
         </div>
       </div>
 
-      <div className="reco-form-panel">
-        <div className="reco-form-grid">
-          <div className="reco-form-group">
-            <label className="reco-form-label" htmlFor="recoDob">Date of Birth</label>
-            <input className="reco-form-input" id="recoDob" type="date" name="dob" required />
-          </div>
-          <div className="reco-form-group">
-            <label className="reco-form-label" htmlFor="recoTob">Birth Time</label>
-            <input className="reco-form-input" id="recoTob" type="time" name="tob" />
-          </div>
-          <div className="reco-form-group">
-            <label className="reco-form-label" htmlFor="recoBirthPlace">Birth Place</label>
-            <input className="reco-form-input" id="recoBirthPlace" type="text" name="birthplace" placeholder="City" />
-          </div>
-          <div className="reco-form-group">
-            <label className="reco-form-label" htmlFor="recoName">Your Name</label>
-            <input className="reco-form-input" id="recoName" type="text" name="name" placeholder="Full Name" />
-          </div>
-          <div className="reco-form-group">
-            <label className="reco-form-label" htmlFor="recoPhone">Phone</label>
-            <input className="reco-form-input" id="recoPhone" type="tel" name="phone" placeholder="+91 XXXXX XXXXX" />
-          </div>
-          <div className="reco-form-group">
-            <label className="reco-form-label" htmlFor="recoPurpose">Purpose</label>
-            <select className="reco-form-input reco-form-select" id="recoPurpose" name="purpose" defaultValue="">
-              <option value="" disabled>Select Purpose</option>
-              <option>Career &amp; Finance</option>
-              <option>Health &amp; Wellbeing</option>
-              <option>Marriage &amp; Relationships</option>
-              <option>Spiritual Growth</option>
-              <option>General Wellbeing</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" className="reco-form-cta">Get Free Recommendation</button>
-      </div>
+      <PvgRecommendationForm />
 
     </div>
   </section>
@@ -1225,7 +1152,7 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service2.webp" alt="Vedic Astrology Consultation" loading="lazy" decoding="async" />
+            <img src="/home/ourservicesimg/service2.webp" alt="Vedic Astrology Consultation" loading="lazy" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Online Live &amp; Telephonic Horoscope Consultation by Genuine Vedic Astrologers</p>
@@ -1236,40 +1163,40 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service3.webp" alt="Gem & Rudraksha Jewellery Crafting" loading="lazy" decoding="async" />
+            <img src="/home/ourservicesimg/service3.webp" alt="Gem & Rudraksha Jewellery Crafting" loading="lazy" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Crafting Gemstones &amp; Rudrakshas into Authentic Astro-Rashi Jewellery</p>
-            <a href="/configure" className="svc-click-btn">Click Here</a>
+            <a href="/consultation" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service1.webp" alt="Vedic Energisation Prana Pratishtha" loading="lazy" decoding="async" />
+            <img src="/home/ourservicesimg/service1.webp" alt="Vedic Energisation Prana Pratishtha" loading="lazy" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Vedic Energisation (Prana Pratishtha) According to Your Gotra &amp; Rashi — Live &amp; Recorded</p>
-            <a href="/configure" className="svc-click-btn">Click Here</a>
+            <a href="/consultation" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service4.webp" alt="Safe Worldwide Shipping" loading="lazy" decoding="async" />
+            <img src="/home/ourservicesimg/service4.webp" alt="Safe Worldwide Shipping" loading="lazy" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">COD in Delhi-NCR &amp; Worldwide Safe, Insured Shipping Available</p>
-            <a href="/contact" className="svc-click-btn">Click Here</a>
+            <a href="/consultation" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service5.webp" alt="Ancient Vedic Remedies" loading="lazy" decoding="async" />
+            <img src="/home/ourservicesimg/service5.webp" alt="Ancient Vedic Remedies" loading="lazy" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Ancient Vedic Remedies — Mantra, Yagya, Yantra, Rudraksha &amp; Ratna Dharana</p>
@@ -1280,11 +1207,11 @@ export function PvgReferenceSections({
         
         <div className="svc-card-v2">
           <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service6.webp" alt="Online & Offline Gem Retail" loading="lazy" decoding="async" />
+            <img src="/home/ourservicesimg/service6.webp" alt="Online & Offline Gem Retail" loading="lazy" />
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Online &amp; Offline Retail — Vedic Gems, Rudrakshas, Yagya Research &amp; Energising Centre</p>
-            <a href="/shop" className="svc-click-btn">Click Here</a>
+            <a href="/consultation" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
@@ -1299,197 +1226,7 @@ export function PvgReferenceSections({
     </div>
   </section>
 
-  
-  <footer className="pvg-footer" id="footer" role="contentinfo">
-    <div className="pvg-footer-main">
-      <div className="container">
-        <div className="pvg-footer-brand-strip">
-          <div>
-            <div className="pvg-footer-brand-row">
-              <img
-                src="/PVG NEW LOGO DESIGN.webp"
-                alt="Pure Vedic Gems emblem"
-                className="pvg-footer-logo-img" />
-              <div style={toStyle("display:flex;flex-direction:column;align-items:flex-start;margin-left:10px;")}>
-                <img
-                  src="/Algerian.webp"
-                  alt="Pure Vedic Gems"
-                  className="pvg-footer-logo-wordmark" />
-                <span style={toStyle("display:none;font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold-light);letter-spacing:0.05em;")}>PURE VEDIC GEMS®</span>
-                <span className="pvg-footer-logo-since">Since 1937</span>
-              </div>
-            </div>
-            <p className="pvg-footer-about">For over 87 years and four generations, we have been the most trusted source of authentic, lab-certified Jyotish gemstones and sacred Rudrakshas — serving seekers across 40+ countries.</p>
-          </div>
-          <div className="pvg-footer-socials" aria-label="Social media links">
-            <a href="#" className="pvg-social-icon" aria-label="Facebook">
-              <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-            </a>
-            <a href="#" className="pvg-social-icon" aria-label="Instagram">
-              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-            </a>
-            <a href="#" className="pvg-social-icon" aria-label="YouTube">
-              <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02"/></svg>
-            </a>
-            <a href="#" className="pvg-social-icon" aria-label="LinkedIn">
-              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-            </a>
-          </div>
-        </div>
 
-        <div className="pvg-footer-directory">
-          {([
-            {
-              title: 'Company',
-              links: [
-                ['Home', '/'],
-                ['About Us', '/about'],
-                ['Our Experts', '/about/experts'],
-                ['Our Stores', '/about/stores'],
-                ['Contact Us', '/contact'],
-                ['Track Order', '/track-order'],
-              ],
-            },
-            {
-              title: 'Shop',
-              links: [
-                ['All Gemstones', '/shop'],
-                ['Navaratna Gemstones', '/shop/navaratna'],
-                ['Rudraksha Beads', '/shop/rudraksha'],
-                ['Semi-Precious Gemstones', '/shop?category=upratna'],
-                ['Director\'s Pick', '/shop?directors_pick=true'],
-                ['Cart', '/cart'],
-              ],
-            },
-            {
-              title: 'Navaratna Gems',
-              links: [
-                ['Ruby', '/shop/ruby'],
-                ['Pearl', '/shop/pearl'],
-                ['Red Coral', '/shop/red-coral'],
-                ['Emerald', '/shop/emerald'],
-                ['Yellow Sapphire', '/shop/yellow-sapphire'],
-                ['Blue Sapphire', '/shop/blue-sapphire'],
-                ['Hessonite', '/shop/hessonite'],
-                ['Cat\'s Eye', '/shop/cats-eye'],
-                ['Diamond', '/shop/diamond'],
-              ],
-            },
-            {
-              title: 'Services',
-              links: [
-                ['Consultation', '/consultation'],
-                ['Gem-to-Jewellery Configurator', '/configure'],
-                ['Gem Recommendation Tool', '/tools/recommendation'],
-                ['Carat to Ratti Converter', '/tools/carat-to-ratti'],
-                ['Ring Size Guide', '/tools/ring-size-guide'],
-                ['Buying Guides', '/knowledge/buying-guides'],
-              ],
-            },
-            {
-              title: 'Knowledge',
-              links: [
-                ['Knowledge Hub', '/knowledge'],
-                ['Gemstone Guides', '/knowledge/gemstones'],
-                ['Rudraksha Guides', '/knowledge/rudraksha'],
-                ['Astrology', '/knowledge/astrology'],
-                ['Blog', '/blog'],
-                ['Account', '/account'],
-              ],
-            },
-            {
-              title: 'Policies',
-              links: [
-                ['Privacy Policy', '/policies/privacy'],
-                ['Terms of Service', '/policies/terms'],
-                ['Shipping Policy', '/policies/shipping'],
-                ['Returns Policy', '/policies/returns'],
-                ['My Orders', '/account/orders'],
-                ['Saved Items', '/account/saved'],
-              ],
-            },
-          ] as Array<{ title: string; links: Array<[string, string]> }>).map((group) => (
-            <div className="pvg-footer-link-group" key={group.title}>
-              <div className="pvg-footer-col-title">{group.title}</div>
-              {group.links.map(([label, href]) => (
-                <a key={`${group.title}-${href}-${label}`} href={href} className="pvg-footer-link">{label}</a>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <div className="pvg-footer-service-strip">
-          <div>
-            <div className="pvg-footer-col-title">Our Locations</div>
-            <div className="pvg-footer-loc-list">
-              <div className="pvg-footer-loc">
-                <div className="pvg-footer-loc-flag">IN</div>
-                <div>
-                  <span className="pvg-footer-loc-city">Delhi - Saket</span>
-                  <span className="pvg-footer-loc-addr">M-24, GF, Select Citywalk Mall, Saket, New Delhi - 110017</span>
-                </div>
-              </div>
-
-              <div className="pvg-footer-loc">
-                <div className="pvg-footer-loc-flag">IN</div>
-                <div>
-                  <span className="pvg-footer-loc-city">Noida - Sector 49</span>
-                  <span className="pvg-footer-loc-addr">H 65, Sector 49, Noida - 201301, Uttar Pradesh</span>
-                </div>
-              </div>
-
-              <div className="pvg-footer-loc">
-                <div className="pvg-footer-loc-flag">UK</div>
-                <div>
-                  <span className="pvg-footer-loc-city">London - Hounslow</span>
-                  <span className="pvg-footer-loc-addr">219 Staines Rd, Hounslow, London TW3 3JQ, United Kingdom</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="pvg-footer-col-title">Contact &amp; Hours</div>
-            <a className="pvg-footer-contact-item" href="tel:+919310172512">
-              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.9.7 2.81a2 2 0 0 1-.45 2.11L10.91 17a16 16 0 0 0 6.09 6.09l.32-.32a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 21.92z"/></svg>
-              +91-9310172512 (India)
-            </a>
-            <a className="pvg-footer-contact-item" href="tel:+919871582404">
-              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.9.7 2.81a2 2 0 0 1-.45 2.11L10.91 17a16 16 0 0 0 6.09 6.09l.32-.32a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 21.92z"/></svg>
-              +91-9871582404 (India)
-            </a>
-            <a className="pvg-footer-contact-item" href="tel:+447831491778">
-              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.9.7 2.81a2 2 0 0 1-.45 2.11L10.91 17a16 16 0 0 0 6.09 6.09l.32-.32a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 21.92z"/></svg>
-              +44 7831 491778 (UK)
-            </a>
-
-            <p className="pvg-footer-hours">Open Mon, Tue, Thu - Sun: 11am - 8pm<br />Closed on Wednesdays</p>
-
-            <a href="https://wa.me/919310172512" target="_blank" rel="noopener noreferrer" className="pvg-footer-wa">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-              WhatsApp Us
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="pvg-footer-bottom">
-      <div className="container pvg-footer-bottom-inner">
-        <div className="pvg-footer-copy">&copy; 2026 Pure Vedic Gems Pvt. Ltd. All rights reserved. Registered Trademark.</div>
-        <div className="pvg-footer-cert-badges">
-          <span className="pvg-footer-cert-badge">GIA</span>
-          <span className="pvg-footer-cert-badge">IGI</span>
-          <span className="pvg-footer-cert-badge">GRS</span>
-          <span className="pvg-footer-cert-badge">Gubelin</span>
-          <span className="pvg-footer-cert-badge">GII</span>
-          <span className="pvg-footer-cert-badge">IIGJ</span>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  
   <button className="pvg-scroll-top" id="pvgScrollTop" aria-label="Back to top">
     <svg viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
   </button>

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
+import { catalogFamilyToStorefrontGroupSlug, storefrontSubcategoryHref } from '@/lib/categories/storefront';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 
@@ -62,6 +64,32 @@ function schemaMessage(table: 'gem_categories' | 'product_categories') {
     ? 'supabase/week12_homepage_section_admin.sql adds is_rare and featured_on_homepage to gem_categories.'
     : 'supabase/week12_homepage_section_admin.sql adds homepage fields to product_categories.';
   return `Database schema is out of date. Please run ${migration}`;
+}
+
+function revalidateCategorySurfaces(category?: Record<string, unknown> | null, source?: Source | null) {
+  revalidatePath('/');
+  revalidatePath('/shop');
+  const slug = category?.slug ? String(category.slug) : '';
+  if (!slug) return;
+
+  revalidatePath(`/shop/${slug}`);
+  if (typeof category?.canonical_path === 'string' && category.canonical_path.startsWith('/shop/')) {
+    revalidatePath(category.canonical_path);
+  }
+
+  if (source === 'gem' && isGemType(category?.type)) {
+    const parentSlug = category.type === 'upratna' ? 'upratna' : category.type === 'rudraksha' ? 'rudraksha' : 'navaratna';
+    revalidatePath(storefrontSubcategoryHref(parentSlug, slug));
+  }
+
+  if (source === 'catalog' && isCatalogFamily(category?.family)) {
+    revalidatePath(defaultCatalogPath(category.family, slug));
+  }
+}
+
+function defaultCatalogPath(family: CatalogFamily, slug: string) {
+  const parentSlug = catalogFamilyToStorefrontGroupSlug(family) ?? 'jewelry';
+  return storefrontSubcategoryHref(parentSlug, slug);
 }
 
 async function runGemQuery(db: AdminDb) {
@@ -183,7 +211,7 @@ async function buildCatalogPayload(db: AdminDb, body: Record<string, unknown>, p
 
   const parentId = await resolveParentId(db, body.parent_slug);
   const homepageSlot = stringOrNull(body.homepage_slot) ?? defaultHomepageSlot(family);
-  const canonicalPath = stringOrNull(body.canonical_path) ?? `/shop/${base.slug}`;
+  const canonicalPath = stringOrNull(body.canonical_path) ?? defaultCatalogPath(family, base.slug);
 
   const payload: Record<string, unknown> = {
     name: base.name,
@@ -274,6 +302,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
   }
 
+  revalidateCategorySurfaces(data as Record<string, unknown> | null, body.source);
   return NextResponse.json({ category: data }, { status: 201 });
 }
 
@@ -321,6 +350,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to update category' }, { status: 500 });
   }
 
+  revalidateCategorySurfaces(data as Record<string, unknown> | null, body.source);
   return NextResponse.json({ category: data });
 }
 
@@ -336,6 +366,11 @@ export async function DELETE(request: NextRequest) {
 
   const table = source === 'gem' ? 'gem_categories' : 'product_categories';
   const db = createAdminClient() as AdminDb;
+  const { data: existing } = await (db.from(table) as any)
+    .select(source === 'gem' ? 'slug, type' : 'slug, family, canonical_path')
+    .eq('id', id)
+    .single();
+
   const { error } = await (db.from(table) as any)
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq('id', id);
@@ -345,5 +380,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to deactivate category' }, { status: 500 });
   }
 
+  revalidateCategorySurfaces(existing as Record<string, unknown> | null, source);
   return NextResponse.json({ success: true });
 }

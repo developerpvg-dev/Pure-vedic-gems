@@ -49,7 +49,7 @@ function VedicRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
     <div className="flex items-start gap-3 border-b border-brand-border py-3 last:border-0">
-      <span className="min-w-35 text-[12px] font-semibold uppercase tracking-[1.5px] text-brand-muted">
+      <span className="min-w-35 text-[12px] font-normal text-brand-muted">
         {label}
       </span>
       <span className="text-[14px] text-brand-text">{value}</span>
@@ -87,7 +87,7 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
           <button
             key={tab.key}
             onClick={() => setActive(tab.key)}
-            className="flex shrink-0 items-center gap-1.5 px-4 py-3 text-[12px] font-semibold uppercase tracking-[1.5px] transition-all md:px-5"
+            className="flex shrink-0 items-center gap-1.5 px-4 py-3 text-[12px] font-medium transition-all md:px-5"
             style={{
               color: active === tab.key ? 'var(--pvg-primary)' : 'var(--pvg-muted)',
               borderBottom:
@@ -195,7 +195,7 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
                 href={product.certificate_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-[13px] font-bold uppercase tracking-wider text-brand-bg transition hover:bg-brand-accent"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#7A1515] px-5 py-2.5 text-[13px] font-medium text-white transition hover:bg-[#5f1010]"
               >
                 <Shield className="h-4 w-4" />
                 View Certificate

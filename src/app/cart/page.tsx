@@ -8,6 +8,7 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2 
 import { useCart } from '@/lib/hooks/useCart';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { productHref } from '@/lib/categories/storefront';
 import { formatPrice } from '@/lib/utils/format';
 
 // ─── Cart item row ────────────────────────────────────────────────────────────
@@ -21,11 +22,13 @@ function CartItemRow({
   onRemove: (key: string) => void;
   onUpdate: (key: string, qty: number) => void;
 }) {
+  const itemHref = productHref({ category: item.category, slug: item.slug ?? item.product_id });
+
   return (
     <div className="flex items-start gap-4 border-b border-[var(--pvg-border)] py-6 last:border-0">
       {/* Thumbnail */}
       <Link
-        href={`/shop/${item.category}/${item.product_id}`}
+        href={itemHref}
         className="relative h-[90px] w-[72px] shrink-0 overflow-hidden rounded-lg border border-[var(--pvg-border)] bg-brand-bg-alt"
       >
         <Image
@@ -40,7 +43,7 @@ function CartItemRow({
       {/* Info */}
       <div className="flex flex-1 flex-col gap-1">
         <Link
-          href={`/shop/${item.category}/${item.product_id}`}
+          href={itemHref}
           className="font-heading text-[15px] font-semibold leading-snug text-[var(--pvg-primary)] transition hover:text-[var(--pvg-accent)]"
         >
           {item.name}

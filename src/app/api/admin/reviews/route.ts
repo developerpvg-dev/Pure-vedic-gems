@@ -26,5 +26,11 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await query;
   if (error) return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
 
-  return NextResponse.json({ reviews: data ?? [], total: count ?? 0, page, limit });
+  return NextResponse.json({
+    reviews: data ?? [],
+    total: count ?? 0,
+    page,
+    limit,
+    total_pages: Math.ceil((count ?? 0) / limit),
+  });
 }

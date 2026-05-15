@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Search, Phone, Mail, MessageSquare, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { AdminPagination } from '@/components/admin/AdminPagination';
 
 interface Enquiry {
   id: string;
@@ -35,6 +36,14 @@ interface Consultation {
   mode: string | null;
   preferred_date: string | null;
   preferred_time: string | null;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  scheduled_mode: string | null;
+  meeting_link: string | null;
+  admin_schedule_notes: string | null;
+  scheduled_at: string | null;
+  scheduled_email_sent_at: string | null;
+  scheduled_notification_sent_at: string | null;
   message: string | null;
   amount_inr: number | null;
   amount_paise: number | null;
@@ -58,6 +67,7 @@ type Lead = (Enquiry & { _type: 'enquiry' }) | (Consultation & { _type: 'consult
 
 const STATUS_OPTIONS = ['new', 'contacted', 'resolved', 'closed'];
 const CONSULT_STATUS_OPTIONS = ['pending_payment', 'pending', 'confirmed', 'payment_review', 'completed', 'cancelled'];
+const LEADS_PER_PAGE = 20;
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-700',
@@ -81,70 +91,69 @@ function formatMoney(amount: number | null, currency = 'INR') {
   return `${currency} ${amount.toLocaleString('en-IN')}`;
 }
 
+function timeInputValue(value: string | null) {
+  return value ? value.slice(0, 5) : '';
+}
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'enquiry' | 'consultation'>('all');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ page: String(page), per_page: String(LEADS_PER_PAGE) });
     if (filter !== 'all') params.set('type', filter);
     if (statusFilter) params.set('status', statusFilter);
+    if (search) params.set('search', search);
 
     try {
       const res = await fetch(`/api/admin/leads?${params}`);
       if (!res.ok) throw new Error();
-      const data = await res.json();
-
-      const combined: Lead[] = [];
-      if (data.enquiries) {
-        data.enquiries.forEach((e: Enquiry) => combined.push({ ...e, _type: 'enquiry' }));
-      }
-      if (data.consultations) {
-        data.consultations.forEach((c: Consultation) => combined.push({ ...c, _type: 'consultation' }));
-      }
-      // Sort combined by created_at desc
-      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setLeads(combined);
+      const data = await res.json() as { leads?: Lead[]; total?: number; total_pages?: number };
+      setLeads(data.leads ?? []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.total_pages ?? 1);
     } catch {
       setLeads([]);
+      setTotal(0);
+      setTotalPages(1);
     }
     setLoading(false);
-  }, [filter, statusFilter]);
+  }, [filter, page, search, statusFilter]);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
-  const filtered = leads.filter((lead) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    const name = lead._type === 'enquiry' ? lead.name : lead.full_name;
-    return (
-      name.toLowerCase().includes(q) ||
-      lead.email.toLowerCase().includes(q) ||
-      (lead.phone && lead.phone.includes(q))
-    );
-  });
-
   async function updateLead(id: string, type: string, updates: Record<string, unknown>) {
     setSaving(id);
+    setError(null);
     try {
-      await fetch(`/api/admin/leads/${id}`, {
+      const res = await fetch(`/api/admin/leads/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, ...updates }),
       });
-      fetchLeads();
-    } catch { /* ignore */ }
+      if (!res.ok) {
+        const data = await res.json().catch(() => null) as { error?: string } | null;
+        throw new Error(data?.error || 'Unable to update lead');
+      }
+      await fetchLeads();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Unable to update lead');
+    }
     setSaving(null);
   }
 
   const stats = {
-    total: leads.length,
+    total,
     newCount: leads.filter((l) => l.status === 'new' || l.status === 'pending').length,
     enquiries: leads.filter((l) => l._type === 'enquiry').length,
     consultations: leads.filter((l) => l._type === 'consultation').length,
@@ -156,6 +165,12 @@ export default function LeadsPage() {
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Leads & Enquiries</h1>
         <p className="mt-1 text-sm text-gray-500">Manage customer enquiries and consultation bookings</p>
       </div>
+
+      {error && (
+        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -176,14 +191,14 @@ export default function LeadsPage() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2">
           {(['all', 'enquiry', 'consultation'] as const).map((t) => (
-            <button key={t} onClick={() => setFilter(t)}
+            <button key={t} onClick={() => { setFilter(t); setPage(1); }}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 filter === t ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}>
               {t === 'all' ? 'All' : t === 'enquiry' ? 'Enquiries' : 'Consultations'}
             </button>
           ))}
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs">
             <option value="">All Status</option>
             {(filter === 'consultation' ? CONSULT_STATUS_OPTIONS : STATUS_OPTIONS).map((s) => (
@@ -193,7 +208,7 @@ export default function LeadsPage() {
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, phone..."
+          <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search name, email, phone..."
             className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm sm:w-64" />
         </div>
       </div>
@@ -203,14 +218,14 @@ export default function LeadsPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : leads.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white py-16 text-center">
           <MessageSquare className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm text-gray-500">No leads found</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((lead) => {
+          {leads.map((lead) => {
             const isEnquiry = lead._type === 'enquiry';
             const name = isEnquiry ? lead.name : lead.full_name;
             const expanded = expandedId === lead.id;
@@ -278,6 +293,15 @@ export default function LeadsPage() {
                             {lead.consultation_type && <div><span className="font-medium text-gray-700">Type:</span> <span className="text-gray-600 capitalize">{lead.consultation_type}</span></div>}
                             {lead.mode && <div><span className="font-medium text-gray-700">Mode:</span> <span className="text-gray-600 capitalize">{lead.mode.replace('_', ' ')}</span></div>}
                             {lead.preferred_date && <div><span className="font-medium text-gray-700">Preferred Date:</span> <span className="text-gray-600">{lead.preferred_date}</span></div>}
+                            {lead.preferred_time && <div><span className="font-medium text-gray-700">Preferred Time:</span> <span className="text-gray-600">{lead.preferred_time}</span></div>}
+                            {lead.scheduled_date && <div><span className="font-medium text-gray-700">Scheduled Date:</span> <span className="text-gray-600">{lead.scheduled_date}</span></div>}
+                            {lead.scheduled_time && <div><span className="font-medium text-gray-700">Scheduled Time:</span> <span className="text-gray-600">{lead.scheduled_time}</span></div>}
+                            {lead.scheduled_mode && <div><span className="font-medium text-gray-700">Scheduled Mode:</span> <span className="text-gray-600 capitalize">{lead.scheduled_mode.replace('_', ' ')}</span></div>}
+                            {lead.meeting_link && <div><span className="font-medium text-gray-700">Meeting Link / Venue:</span> <span className="break-all text-gray-600">{lead.meeting_link}</span></div>}
+                            {lead.admin_schedule_notes && <div><span className="font-medium text-gray-700">Schedule Notes:</span><p className="mt-1 text-gray-600">{lead.admin_schedule_notes}</p></div>}
+                            {lead.scheduled_at && <div><span className="font-medium text-gray-700">Scheduled At:</span> <span className="text-gray-600">{new Date(lead.scheduled_at).toLocaleString('en-IN')}</span></div>}
+                            {lead.scheduled_email_sent_at && <div><span className="font-medium text-gray-700">Schedule Email:</span> <span className="text-gray-600">Sent {new Date(lead.scheduled_email_sent_at).toLocaleString('en-IN')}</span></div>}
+                            {lead.scheduled_notification_sent_at && <div><span className="font-medium text-gray-700">Schedule Notification:</span> <span className="text-gray-600">Sent {new Date(lead.scheduled_notification_sent_at).toLocaleString('en-IN')}</span></div>}
                             {lead.date_of_birth && <div><span className="font-medium text-gray-700">DOB:</span> <span className="text-gray-600">{lead.date_of_birth}</span></div>}
                             {lead.birth_time && <div><span className="font-medium text-gray-700">Birth Time:</span> <span className="text-gray-600">{lead.birth_time}</span></div>}
                             {lead.birth_place && <div><span className="font-medium text-gray-700">Birth Place:</span> <span className="text-gray-600">{lead.birth_place}</span></div>}
@@ -312,6 +336,59 @@ export default function LeadsPage() {
                           </div>
                         )}
 
+                        {!isEnquiry && (
+                          <form
+                            className="rounded-xl border border-amber-100 bg-amber-50/40 p-3"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              const formData = new FormData(event.currentTarget);
+                              const field = (key: string) => {
+                                const value = formData.get(key);
+                                return typeof value === 'string' && value.trim() ? value.trim() : null;
+                              };
+                              updateLead(lead.id, lead._type, {
+                                scheduled_date: field('scheduled_date'),
+                                scheduled_time: field('scheduled_time'),
+                                scheduled_mode: field('scheduled_mode'),
+                                meeting_link: field('meeting_link'),
+                                admin_schedule_notes: field('admin_schedule_notes'),
+                              });
+                            }}
+                          >
+                            <p className="mb-3 text-xs font-semibold text-amber-800">Schedule Consultation</p>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="text-xs font-medium text-gray-500">
+                                Date
+                                <input name="scheduled_date" type="date" defaultValue={lead.scheduled_date || ''} required className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+                              </label>
+                              <label className="text-xs font-medium text-gray-500">
+                                Time
+                                <input name="scheduled_time" type="time" defaultValue={timeInputValue(lead.scheduled_time)} required className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+                              </label>
+                            </div>
+                            <label className="mt-2 block text-xs font-medium text-gray-500">
+                              Mode
+                              <select name="scheduled_mode" defaultValue={lead.scheduled_mode || lead.mode || 'video'} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                                <option value="video">Video</option>
+                                <option value="phone">Phone</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="in_person">In Person</option>
+                              </select>
+                            </label>
+                            <label className="mt-2 block text-xs font-medium text-gray-500">
+                              Meeting Link / Venue
+                              <input name="meeting_link" defaultValue={lead.meeting_link || ''} placeholder="Zoom/Meet link or venue" className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+                            </label>
+                            <label className="mt-2 block text-xs font-medium text-gray-500">
+                              Customer Notes
+                              <textarea name="admin_schedule_notes" defaultValue={lead.admin_schedule_notes || ''} rows={3} placeholder="Any details to include in the customer email" className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+                            </label>
+                            <button type="submit" disabled={saving === lead.id} className="mt-3 w-full rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60">
+                              Save Schedule & Notify Customer
+                            </button>
+                          </form>
+                        )}
+
                         <div>
                           <label className="mb-1 block text-xs font-medium text-gray-500">Internal Notes</label>
                           <textarea defaultValue={lead.internal_notes || ''} rows={3} placeholder="Add notes..."
@@ -341,6 +418,7 @@ export default function LeadsPage() {
               </div>
             );
           })}
+          <AdminPagination page={page} totalPages={totalPages} total={total} perPage={LEADS_PER_PAGE} onPageChange={setPage} />
         </div>
       )}
     </div>

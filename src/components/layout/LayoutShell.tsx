@@ -20,7 +20,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <StickyContactRail />
-      {!isHome ? <Footer /> : null}
+      <Footer />
       {!isHome ? <ThemeSwitcher /> : null}
     </>
   );

@@ -54,7 +54,7 @@ export default async function ConfigureProductPage({ params }: Props) {
   const { data: product } = await supabase
     .from('products')
     .select(
-      'id, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, featured, is_directors_pick, treatment, planet, created_at'
+      'id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at'
     )
     .eq('id', productId)
     .eq('is_active', true)

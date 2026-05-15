@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
+import { productHref } from '@/lib/categories/storefront';
 import { getAllBlogPosts, getAllKnowledgeArticles } from '@/lib/sanity/queries';
 import { searchQuerySchema } from '@/lib/validators/product';
 import type { SearchResponse, SearchResult, SearchResultGroup } from '@/lib/types/product';
@@ -130,7 +131,7 @@ export async function GET(request: NextRequest) {
         productResults = (results ?? []).map((result) => ({
           ...result,
           type: 'product' as const,
-          href: `/shop/${result.category}/${result.slug}`,
+          href: productHref(result),
           categoryLabel: 'Product',
           description: null,
         }));

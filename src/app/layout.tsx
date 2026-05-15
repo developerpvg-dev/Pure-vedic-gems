@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Roboto, Playfair_Display, Montserrat } from 'next/font/google';
+import { Roboto } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/lib/theme-context';
 import { CartProvider } from '@/lib/hooks/useCart';
@@ -18,21 +18,6 @@ const roboto = Roboto({
   display: 'swap',
 });
 
-const playfairDisplay = Playfair_Display({
-  variable: '--font-playfair',
-  subsets: ['latin'],
-  weight: ['500', '700'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
-
-const montserrat = Montserrat({
-  variable: '--font-montserrat',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
   title: {
     default: 'PureVedicGems — Heritage Vedic Gemstones Since 1937',
@@ -44,7 +29,7 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   ),
   icons: {
-    icon: '/PVG NEW LOGO DESIGN.PNG',
+    icon: '/favicon.ico',
     apple: '/PVG NEW LOGO DESIGN.PNG',
   },
   openGraph: {
@@ -72,7 +57,7 @@ export default function RootLayout({
       data-palette="1"
       data-font="1"
       data-scroll-behavior="smooth"
-      className={`${roboto.variable} ${playfairDisplay.variable} ${montserrat.variable} h-full antialiased`}
+      className={`${roboto.variable} h-full antialiased`}
     >
       <head>
         {/* Preload the first hero image (LCP element) for both desktop and mobile */}

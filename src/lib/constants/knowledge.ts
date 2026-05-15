@@ -20,7 +20,7 @@ export const FALLBACK_KNOWLEDGE_ARTICLES: SanityKnowledgeArticle[] = [
     mainImage: 'https://images.unsplash.com/photo-1551122089-4e3e72477432?w=1200&h=800&fit=crop&q=85',
     publishedAt: '2026-04-20T00:00:00.000Z',
     estimatedReadingTime: 4,
-    relatedProductCategoryHref: '/shop/yellow-sapphire',
+    relatedProductCategoryHref: '/shop/navaratna/yellow-sapphire',
     body: [
       block('ys-h2-1', 'h2', 'What to verify first'),
       block('ys-p-1', 'normal', 'Check natural origin, treatment disclosure, certificate details, carat weight, ratti weight, price basis, and whether the stone is suitable for loose purchase or jewellery configuration.'),

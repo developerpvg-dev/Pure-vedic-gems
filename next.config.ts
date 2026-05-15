@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    qualities: [75, 85, 90],
+    qualities: [75, 85, 90, 95],
     minimumCacheTTL: 86400, // 1 day for Next.js optimized images
     formats: ['image/webp'],
     remotePatterns: [

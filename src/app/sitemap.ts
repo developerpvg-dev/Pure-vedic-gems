@@ -3,6 +3,7 @@ import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { FALLBACK_KNOWLEDGE_ARTICLES } from '@/lib/constants/knowledge';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
 import { getAllBlogCategorySlugs, getAllBlogPostSlugs, getAllKnowledgeArticleSlugs } from '@/lib/sanity/queries';
+import { productHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
 
@@ -34,7 +35,7 @@ async function getProductEntries(): Promise<MetadataRoute.Sitemap> {
 
   return data
     .filter((product) => product.slug && product.category)
-    .map((product) => entry(`/shop/${product.category}/${product.slug}`, {
+    .map((product) => entry(productHref(product), {
       lastModified: new Date(product.updated_at ?? product.created_at ?? Date.now()),
       changeFrequency: 'daily',
       priority: 0.74,
