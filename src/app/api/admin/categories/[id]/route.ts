@@ -71,7 +71,8 @@ export async function PUT(
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('gem_categories')
-    .update(update)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(update as any)
     .eq('id', id)
     .select()
     .single();
