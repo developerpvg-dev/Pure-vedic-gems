@@ -206,6 +206,24 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
     );
   }
 
+  if (item.dropdown === 'knowledge') {
+    const knowledgeLinks = [
+      { label: 'Knowledge Hub', href: '/knowledge' },
+      { label: 'Navratnas', href: '/knowledge/gemstones' },
+      { label: 'Treatments', href: '/knowledge/treatments' },
+      { label: 'Energized Gems', href: '/knowledge/energized-gems' },
+      { label: 'Gem Care', href: '/knowledge/gems-care' },
+      { label: "Rudraksha Library", href: '/knowledge/rudraksha' },
+      { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
+      { label: 'Vedic Astrology', href: '/knowledge/astrology' },
+    ] as const;
+    return (
+      <div style={{ ...dropStyle, minWidth: '240px', padding: '8px 0' }}>
+        <SimpleLinkDropdown links={knowledgeLinks} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ ...dropStyle, minWidth: '230px', padding: '8px 0' }}>
       <SimpleLinkDropdown links={SERVICE_NAV_LINKS} />
@@ -476,7 +494,7 @@ export function SiteHeader() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30} priority
                   style={{ width: '150px', height: '30px', objectFit: 'contain', display: 'block' }} />
-                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#B8861E', marginTop: '3px', paddingLeft: '2px' }}>
+                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '3px', paddingLeft: '2px' }}>
                   Since 1937
                 </span>
               </div>
@@ -528,7 +546,7 @@ export function SiteHeader() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority
                   style={{ width: '120px', height: '24px', objectFit: 'contain', display: 'block' }} />
-                <span style={{ fontSize: '8px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#B8861E', marginTop: '2px', paddingLeft: '2px' }}>Since 1937</span>
+                <span style={{ fontSize: '8px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '2px', paddingLeft: '2px' }}>Since 1937</span>
               </div>
             </Link>
             <div style={{ flex: 1 }} />
@@ -538,9 +556,8 @@ export function SiteHeader() {
                 <SearchSvg />
               </button>
               <Suspense fallback={<span style={{ width: '40px', height: '40px' }} />}>
-                <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
+                <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" showNotificationsInDropdown />
               </Suspense>
-              <NotificationBell />
               <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
                 style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A' }}>
                 <CartSvg />

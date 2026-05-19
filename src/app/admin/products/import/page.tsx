@@ -82,7 +82,7 @@ export default function ProductImportPage() {
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Import file</span>
             <input
               type="file"
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"
             />
@@ -122,7 +122,7 @@ export default function ProductImportPage() {
               </div>
             ))}
           </div>
-          <div className="max-h-[520px] overflow-auto">
+          <div className="max-h-130 overflow-auto">
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-gray-50 text-xs font-semibold text-gray-500">
                 <tr>

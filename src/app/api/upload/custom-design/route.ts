@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { CUSTOM_UPLOAD_MAX_BYTES, CUSTOM_UPLOAD_MIME_TYPES, isAllowedUploadSignature, isCustomUploadMimeType } from '@/lib/security/file-validation';
 import { rateLimit } from '@/lib/utils/rate-limit';
 
 const BUCKET = 'custom-uploads';
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
 async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   const { data } = await admin.storage.getBucket(BUCKET);
@@ -12,8 +11,8 @@ async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   if (!data) {
     const { error } = await admin.storage.createBucket(BUCKET, {
       public: true,
-      fileSizeLimit: MAX_FILE_SIZE,
-      allowedMimeTypes: ALLOWED_TYPES,
+      fileSizeLimit: CUSTOM_UPLOAD_MAX_BYTES,
+      allowedMimeTypes: [...CUSTOM_UPLOAD_MIME_TYPES],
     });
 
     if (error) {
@@ -39,14 +38,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
   }
 
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!isCustomUploadMimeType(file.type)) {
     return NextResponse.json(
       { error: 'Please upload a JPG, PNG, WebP, or PDF file.' },
       { status: 400 }
     );
   }
 
-  if (file.size > MAX_FILE_SIZE) {
+  if (file.size > CUSTOM_UPLOAD_MAX_BYTES) {
     return NextResponse.json(
       { error: 'File size must be under 10MB.' },
       { status: 400 }
@@ -63,6 +62,14 @@ export async function POST(request: NextRequest) {
     const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${safeName}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    if (!isAllowedUploadSignature(file.type, bytes)) {
+      return NextResponse.json(
+        { error: 'File content does not match the selected upload type.' },
+        { status: 400 }
+      );
+    }
+
     const { error } = await admin.storage.from(BUCKET).upload(path, arrayBuffer, {
       contentType: file.type,
       upsert: false,

@@ -104,19 +104,23 @@ function splitImages(value: string) {
 
 async function parseImportFile(file: File) {
   const name = file.name.toLowerCase();
-  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) return [];
-    const sheet = workbook.Sheets[sheetName];
-    return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' }).map((row) => {
-      const normalized: Record<string, string> = {};
-      Object.entries(row).forEach(([key, value]) => {
-        normalized[normalizeHeader(key)] = String(value ?? '');
-      });
-      return normalized;
-    });
+  if (name.endsWith('.xlsx')) {
+    const { readSheet } = await import('read-excel-file/browser');
+    const rows = await readSheet(await file.arrayBuffer());
+    if (rows.length === 0) return [];
+
+    const headers = rows[0].map((value) => normalizeHeader(String(value ?? '')));
+    return rows.slice(1)
+      .filter((row) => row.some((value) => String(value ?? '').trim() !== ''))
+      .map((row) => Object.fromEntries(headers.map((header, index) => [header, String(row[index] ?? '')])));
+  }
+
+  if (name.endsWith('.xls')) {
+    throw new Error('Legacy .xls files are not supported. Please export the sheet as CSV or XLSX.');
+  }
+
+  if (!name.endsWith('.csv')) {
+    throw new Error('Only CSV and XLSX import files are supported.');
   }
 
   return parseCsv(await file.text());
@@ -239,7 +243,16 @@ export async function POST(request: NextRequest) {
   const commit = form.get('commit') === 'true';
   if (!(file instanceof File)) return NextResponse.json({ error: 'Import file is required' }, { status: 400 });
 
-  const records = await parseImportFile(file);
+  let records: Record<string, unknown>[];
+  try {
+    records = await parseImportFile(file);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unable to parse import file' },
+      { status: 400 }
+    );
+  }
+
   const preview = await buildPreview(records);
   if (!commit) return NextResponse.json({ ...preview, mode: 'preview' });
   if (preview.summary.invalid > 0) return NextResponse.json({ error: 'Fix row errors before import', ...preview }, { status: 400 });

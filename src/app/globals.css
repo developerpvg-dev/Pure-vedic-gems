@@ -76,7 +76,7 @@
 :root,
 [data-palette='1'] {
   --pvg-primary: #3D2B1F;
-  --pvg-accent: #C9A84C;
+  --pvg-accent: #8A6400;
   --pvg-bg: #FDF7EE;
   --pvg-bg-alt: #F4EADB;
   --pvg-text: #261A10;
@@ -100,13 +100,13 @@
   --secondary-foreground: #3D2B1F;
   --muted: #F4EADB;
   --muted-foreground: #7A6250;
-  --accent: #C9A84C;
+  --accent: #8A6400;
   --accent-foreground: #FFFFFF;
   --destructive: oklch(0.577 0.245 27.325);
   --border: rgba(61, 43, 31, 0.12);
   --input: rgba(61, 43, 31, 0.12);
-  --ring: #C9A84C;
-  --chart-1: #C9A84C;
+  --ring: #8A6400;
+  --chart-1: #8A6400;
   --chart-2: #3D2B1F;
   --chart-3: #7A6250;
   --chart-4: #F4EADB;
@@ -362,6 +362,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: clip;
   }
   html {
     @apply font-body;
@@ -549,4 +550,370 @@ body::after {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* GemsMantra-inspired document theme for internal informational pages. */
+.pvg-reference-theme {
+  --pvg-primary: #1f1b16;
+  --pvg-accent: #7a4f19;
+  --pvg-bg: #fbf3e8;
+  --pvg-bg-alt: #f1e5d4;
+  --pvg-text: #14110e;
+  --pvg-muted: #3d332b;
+  --pvg-surface: #fffaf2;
+  --pvg-border: rgba(31, 27, 22, 0.14);
+  --pvg-gold-light: rgba(122, 79, 25, 0.1);
+  --background: #fbf3e8;
+  --foreground: #14110e;
+  --card: #fffaf2;
+  --card-foreground: #14110e;
+  --secondary: #f1e5d4;
+  --secondary-foreground: #1f1b16;
+  --muted: #f1e5d4;
+  --muted-foreground: #3d332b;
+  --accent: #7a4f19;
+  --accent-foreground: #fffaf2;
+  --border: rgba(31, 27, 22, 0.14);
+  --input: rgba(31, 27, 22, 0.18);
+  --ring: #7a4f19;
+  background: #fbf3e8;
+  color: #14110e;
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
+}
+
+.pvg-reference-theme,
+.pvg-reference-theme * {
+  font-family: var(--font-roboto), 'Roboto', sans-serif !important;
+}
+
+.pvg-reference-theme :is(.bg-background, .bg-brand-bg, .bg-secondary\/30, .bg-\[\#FDFAF5\], .bg-white, .pvg-simple-page) {
+  background-color: #fbf3e8 !important;
+}
+
+.pvg-reference-theme > :is(section, main, div),
+.pvg-reference-theme .pvg-simple-page {
+  background: #fbf3e8 !important;
+}
+
+.pvg-reference-theme > section:first-child,
+.pvg-reference-theme > main:first-child,
+.pvg-reference-theme > div:first-child,
+.pvg-reference-theme .pvg-simple-page > section:first-child {
+  padding-top: clamp(9.75rem, 11vw, 11.75rem) !important;
+}
+
+.pvg-reference-theme :is(h1, h2, h3, h4, h5, h6) {
+  color: #1f1b16 !important;
+  letter-spacing: 0;
+}
+
+.pvg-reference-theme h1 {
+  font-size: clamp(1.75rem, 2.35vw, 2.55rem) !important;
+  font-weight: 500 !important;
+  line-height: 1.22 !important;
+}
+
+.pvg-reference-theme h2 {
+  font-size: clamp(1.12rem, 1.24vw, 1.38rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.32 !important;
+}
+
+.pvg-reference-theme h3 {
+  font-size: clamp(0.98rem, 1vw, 1.1rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+.pvg-reference-theme :is(p, li, td, th, label, input, textarea, select, summary) {
+  color: #14110e;
+}
+
+.pvg-reference-theme :is(p, li, td) {
+  font-size: clamp(0.95rem, 0.98vw, 1.08rem);
+  line-height: 1.72;
+}
+
+.pvg-reference-theme :is(a:not([class*='bg-']), button:not([class*='bg-'])) {
+  color: #7a4f19;
+}
+
+.pvg-reference-theme :is(article, form, aside, details, table, .rounded-xl, .rounded-2xl, .rounded-3xl) {
+  border-color: rgba(31, 27, 22, 0.14) !important;
+}
+
+.pvg-reference-theme :is(.rounded-xl, .rounded-2xl, .rounded-3xl) {
+  border-radius: 0.5rem !important;
+}
+
+.pvg-reference-theme :is(.shadow-sm, [class*='shadow-[']) {
+  box-shadow: none !important;
+}
+
+.pvg-reference-theme :is(input, textarea, select) {
+  background-color: #fffaf2 !important;
+  border-color: rgba(31, 27, 22, 0.18) !important;
+  color: #14110e !important;
+}
+
+.pvg-reference-theme :is(table) {
+  background: #fffaf2;
+}
+
+.pvg-reference-theme :is(thead tr, .bg-secondary, .bg-brand-bg-alt) {
+  background-color: #f1e5d4 !important;
+}
+
+.pvg-reference-theme .pvg-simple-page > section:first-child,
+.pvg-reference-theme .pvg-simple-page > section.bg-\[\#2c0404\] {
+  color: #14110e !important;
+}
+
+.pvg-reference-theme .pvg-simple-page > section:first-child > .absolute,
+.pvg-reference-theme .pvg-simple-page > section.bg-\[\#2c0404\] {
+  background: #fbf3e8 !important;
+}
+
+.pvg-reference-theme .text-brand-muted,
+.pvg-reference-theme .text-muted-foreground,
+.pvg-reference-theme [class*='text-\[\#6B5B4E\]'],
+.pvg-reference-theme [class*='text-\[\#6b5b4e\]'] {
+  color: #3d332b !important;
+}
+
+.pvg-reference-theme [class*='tracking-['] {
+  letter-spacing: 0.06em;
+}
+
+.pvg-policy-theme > section:first-child {
+  padding: clamp(9.75rem, 12vw, 12rem) 1.5rem 1.75rem !important;
+  background: #fbf3e8 !important;
+}
+
+.pvg-policy-theme > section:first-child span.font-body,
+.pvg-policy-theme > section:first-child .max-w-sm,
+.pvg-policy-theme > section:first-child p {
+  display: none !important;
+}
+
+.pvg-policy-theme > section:first-child h1 {
+  margin-top: 0 !important;
+}
+
+.pvg-policy-theme > section:nth-child(2) {
+  padding-top: 1.5rem !important;
+  background: #fbf3e8 !important;
+}
+
+.pvg-policy-theme > section:nth-child(2) > div {
+  max-width: min(86rem, calc(100vw - 2rem)) !important;
+}
+
+.pvg-policy-theme > section:nth-child(2) :is(article, .rounded-sm:not(.overflow-hidden)) {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-left-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.pvg-policy-theme > section:nth-child(2) :is(h2, h3) {
+  margin-top: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.pvg-policy-theme > section:nth-child(2) :is(ul, ol) {
+  padding-left: 1.3rem;
+}
+
+.pvg-policy-theme > section:nth-child(2) :is(li) {
+  margin-top: 0.45rem;
+}
+
+.pvg-policy-theme > section:nth-child(2) :is(table) {
+  border: 1px solid rgba(31, 27, 22, 0.14);
+}
+
+.pvg-info-page > section {
+  background: #fbf3e8 !important;
+}
+
+.pvg-reference-theme .pvg-info-page > section:first-child {
+  border-bottom: 1px solid rgba(31, 27, 22, 0.12);
+  padding-top: clamp(1.5rem, 3vw, 2.25rem) !important;
+  padding-bottom: clamp(2.5rem, 5vw, 4rem) !important;
+}
+
+.pvg-info-page > section:first-child > .absolute {
+  display: none !important;
+}
+
+.pvg-info-page > section:first-child > .mx-auto {
+  align-items: start !important;
+  gap: clamp(1.25rem, 3vw, 2.5rem) !important;
+}
+
+.pvg-info-page > section:first-child > .mx-auto > * {
+  align-self: start !important;
+}
+
+.pvg-info-page :is(h1, h2, h3) {
+  max-width: 58rem;
+}
+
+.pvg-info-page :is(h1, h2, h3, p, li) {
+  color: #14110e !important;
+}
+
+.pvg-info-page :is(section.bg-\[\#2c0404\], .bg-\[\#2c0404\]) {
+  background: #fbf3e8 !important;
+}
+
+.pvg-info-page :is([class*='bg-white\/'], [class*='bg-\[\#fff'], [class*='bg-\[\#fbf7ef\]']) {
+  background-color: #fffaf2 !important;
+}
+
+.pvg-info-page :is([class*='border-white\/'], [class*='border-\[\#ead7ad\]'], [class*='border-\[\#e2d3b6\]']) {
+  border-color: rgba(31, 27, 22, 0.14) !important;
+}
+
+.pvg-info-page a[class*='bg-\[\#7a1515\]'],
+.pvg-info-page a[class*='bg-\[\#d4a843\]'],
+.pvg-info-page button[class*='bg-\[\#7a1515\]'] {
+  border-radius: 0.5rem !important;
+  font-size: 0.82rem !important;
+  min-height: 2.8rem !important;
+}
+
+.pvg-info-page a[class*='bg-\[\#7a1515\]'],
+.pvg-info-page button[class*='bg-\[\#7a1515\]'] {
+  color: #fffaf2 !important;
+}
+
+.pvg-info-page a[class*='bg-\[\#d4a843\]'] {
+  color: #14110e !important;
+}
+
+.pvg-info-page .grid.grid-cols-2.gap-3 {
+  max-width: 34rem;
+}
+
+.pvg-info-page :is(article, form, aside, [class*='rounded-3xl'], [class*='rounded-2xl']) {
+  box-shadow: none !important;
+}
+
+.pvg-loader-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: clamp(7rem, 12vw, 10rem) 1.5rem 4rem;
+  background: #fbf3e8;
+  color: #14110e;
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
+}
+
+.pvg-loader-card {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  width: min(100%, 28rem);
+  text-align: center;
+}
+
+.pvg-loader-orbit {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 1px solid rgba(61, 36, 36, 0.18);
+  border-radius: 999px;
+}
+
+.pvg-loader-orbit::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  border-top-color: #7a1515;
+  border-right-color: #b8861e;
+  animation: pvg-loader-spin 900ms linear infinite;
+}
+
+.pvg-loader-gem {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+  background: linear-gradient(135deg, #7a1515, #d4a843);
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow: 0 0 0 0.45rem rgba(122, 21, 21, 0.06);
+}
+
+.pvg-loader-title {
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pvg-loader-line {
+  width: min(12rem, 70vw);
+  height: 0.2rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(61, 36, 36, 0.12);
+}
+
+.pvg-loader-line::before {
+  content: '';
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7a1515, #d4a843);
+  animation: pvg-loader-line 1.15s ease-in-out infinite;
+}
+
+@keyframes pvg-loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pvg-loader-line {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(260%); }
+}
+
+@media (max-width: 767px) {
+  .pvg-reference-theme h1 {
+    font-size: clamp(1.55rem, 6.6vw, 2rem) !important;
+  }
+
+  .pvg-reference-theme :is(p, li, td) {
+    font-size: 0.96rem;
+    line-height: 1.68;
+  }
+
+  .pvg-reference-theme > section:first-child,
+  .pvg-reference-theme > main:first-child,
+  .pvg-reference-theme > div:first-child,
+  .pvg-reference-theme .pvg-simple-page > section:first-child,
+  .pvg-policy-theme > section:first-child {
+    padding-top: 9.25rem !important;
+  }
+
+  .pvg-info-page > section {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .pvg-reference-theme .pvg-info-page > section:first-child {
+    padding-top: 1.5rem !important;
+  }
 }

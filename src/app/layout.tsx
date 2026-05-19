@@ -7,6 +7,7 @@ import { AuthProvider } from '@/lib/hooks/useAuth';
 import { SavedItemsProvider } from '@/lib/hooks/useSavedItems';
 import { LayoutShell } from '@/components/layout/LayoutShell';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
+import { CookieConsentBanner } from '@/components/privacy/CookieConsentBanner';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { organizationJsonLd } from '@/lib/utils/seo';
 import './globals.css';
@@ -85,6 +86,7 @@ export default function RootLayout({
               <CartProvider>
                 <LayoutShell>{children}</LayoutShell>
                 <Toaster richColors position="top-right" />
+                <CookieConsentBanner />
               </CartProvider>
             </SavedItemsProvider>
           </AuthProvider>

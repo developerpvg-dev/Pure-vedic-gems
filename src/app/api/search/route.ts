@@ -4,6 +4,7 @@ import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
 import { productHref } from '@/lib/categories/storefront';
 import { getAllBlogPosts, getAllKnowledgeArticles } from '@/lib/sanity/queries';
+import { rateLimit } from '@/lib/utils/rate-limit';
 import { searchQuerySchema } from '@/lib/validators/product';
 import type { SearchResponse, SearchResult, SearchResultGroup } from '@/lib/types/product';
 import type { SanityBlogPost } from '@/lib/types/blog';
@@ -92,6 +93,11 @@ function toGroups(groups: SearchResultGroup[]) {
 
 export async function GET(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (!rateLimit(`search:${ip}`, 120, 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many searches. Please wait a minute and try again.' }, { status: 429 });
+    }
+
     const { searchParams } = request.nextUrl;
     const rawParams = Object.fromEntries(searchParams.entries());
 

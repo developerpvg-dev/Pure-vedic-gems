@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { PrivacyRequestForm } from '@/components/privacy/PrivacyRequestForm';
 
 export const metadata: Metadata = {
-  title: 'Disclaimer & Privacy Policy',
+  title: 'Privacy Policy & Data Rights',
   description:
-    'PureVedicGems privacy policy and disclaimer — how we protect your personal data, our stance on Vedic astrology, and your rights.',
+    'PureVedicGems privacy policy, cookie consent, data rights, birth-detail handling, and spiritual guidance disclaimer.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -19,11 +20,11 @@ export default function PrivacyPolicyPage() {
               Policies
             </span>
             <h1 className="mt-3 font-heading text-3xl font-bold text-primary md:text-4xl lg:text-5xl">
-              Disclaimer &amp; Privacy Policy
+              Privacy Policy &amp; Data Rights
             </h1>
             <OrnamentalDivider className="mx-auto mt-3 max-w-sm" />
             <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">
-              Your privacy, data protection, and trust matter to us.
+              Your privacy, birth details, consent choices, and order data are handled with clear controls.
             </p>
           </ScrollReveal>
         </div>
@@ -135,9 +136,27 @@ export default function PrivacyPolicyPage() {
                   Cookies &amp; Analytics
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Our website may use cookies and analytical tools to enhance your browsing experience. These help us understand how visitors interact with our site so we can improve our services. You can disable cookies in your browser settings, though some site features may not function optimally.
+                  Essential cookies support cart, checkout, account security, and fraud prevention. Analytics cookies are loaded only after consent. You can change your choice by clearing the cookie named <strong className="text-primary">pvg_cookie_consent</strong> and revisiting the site.
                 </p>
               </div>
+            </ScrollReveal>
+
+            <ScrollReveal>
+              <div className="rounded-sm border border-border bg-card p-6 shadow-sm">
+                <h2 className="font-heading text-lg font-semibold text-primary">
+                  Your Data Rights
+                </h2>
+                <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted-foreground">
+                  <li>• Request a copy of your account, order, consultation, saved-item, and notification data.</li>
+                  <li>• Ask us to correct inaccurate personal, billing, or birth-detail information.</li>
+                  <li>• Request deletion where retention is not legally required for invoices, tax, fraud prevention, or disputes.</li>
+                  <li>• Withdraw marketing, WhatsApp, or analytics consent without affecting essential order communication.</li>
+                </ul>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal>
+              <PrivacyRequestForm />
             </ScrollReveal>
 
             {/* Contact */}

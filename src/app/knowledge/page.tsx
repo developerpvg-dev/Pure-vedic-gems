@@ -16,10 +16,28 @@ export const revalidate = 3600;
 
 const pathwayCards = [
   {
-    title: 'Gemstone Encyclopedia',
-    copy: 'Nine Navaratna guides with quality, pricing, wearing, and consultation checkpoints.',
+    title: 'Navratnas',
+    copy: 'A complete guide to the nine Vedic gems, planetary associations, wearing rules, mantras, substitutes, and buying checks.',
     href: '/knowledge/gemstones',
-    stat: '9 guides',
+    stat: '9 Vedic gems',
+  },
+  {
+    title: 'Treatments',
+    copy: 'Heating, oiling, dyeing, filling, diffusion, HPHT, lasering, and other gemstone treatment disclosures explained clearly.',
+    href: '/knowledge/treatments',
+    stat: 'Disclosure guide',
+  },
+  {
+    title: 'Energized Gems',
+    copy: 'Legacy guidance on gemstone purification, Prana Pratishta pooja, Vedic mantra energization, and aura-focused preparation.',
+    href: '/knowledge/energized-gems',
+    stat: 'Prana pratishta',
+  },
+  {
+    title: 'Gem Care',
+    copy: 'Cleaning, care, maintenance, and gemstone-specific handling notes carried forward from the old Pure Vedic Gems library.',
+    href: '/knowledge/gems-care',
+    stat: 'Care chart',
   },
   {
     title: 'Rudraksha Library',
@@ -71,7 +89,7 @@ export default async function KnowledgePage() {
               The Vedic Gem Library
             </h1>
             <p className="mt-5 max-w-3xl text-base leading-8 text-[#6B5B4E] md:text-lg">
-              Static launch-ready guides for Navaratna gemstones and Rudraksha beads, plus editorial buying safety content from Sanity when available.
+              Static launch-ready guides for Navaratna gemstones, gemstone energization, gem care, Rudraksha beads, and editorial buying safety content from Sanity when available.
             </p>
           </div>
           <div className="grid grid-cols-3 border border-[#DDD0B4] bg-white text-center">
@@ -84,13 +102,13 @@ export default async function KnowledgePage() {
               <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B5B4E]">Rudraksha</p>
             </div>
             <div className="p-4">
-              <p className="text-3xl font-black text-[#7A1515]">30</p>
+              <p className="text-3xl font-black text-[#7A1515]">32</p>
               <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#6B5B4E]">Static pages</p>
             </div>
           </div>
         </section>
 
-        <section className="mt-10 grid gap-5 md:grid-cols-3">
+        <section className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {pathwayCards.map((card) => (
             <Link key={card.href} href={card.href} className="group border border-[#DDD0B4] bg-white p-6 transition hover:-translate-y-1 hover:shadow-[0_16px_44px_rgba(61,43,31,0.12)]">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#B8861E]">{card.stat}</p>
@@ -120,7 +138,7 @@ export default async function KnowledgePage() {
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#B8861E]">Featured Static Guides</p>
               <h2 className="mt-2 text-3xl font-black text-[#4D0A0A]">Magazine-style launch pages</h2>
             </div>
-            <Link href="/knowledge/gemstones" className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7A1515]">View all guides</Link>
+            <Link href="/knowledge/gemstones" className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7A1515]">View Navratnas</Link>
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {featuredStaticGuides.map((guide) => guide ? (

@@ -181,7 +181,7 @@ export const NAVARATNA_GUIDES: StaticKnowledgeGuide[] = gemstoneSeeds.map((gem) 
   heroImage: gem.image,
   shopHref: gem.shopHref,
   parentHref: '/knowledge/gemstones',
-  parentLabel: 'Gemstone Guides',
+  parentLabel: 'Navratnas',
   readingTime: 6,
   updatedAt: '2026-05-06',
   stats: [

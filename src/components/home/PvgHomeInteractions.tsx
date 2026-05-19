@@ -59,10 +59,13 @@ type ScrollSequence = {
   section: HTMLElement;
   lockTarget: HTMLElement;
   steps: HTMLElement[];
+  scrollLockMode: ScrollLockMode;
   currentIndex: number;
   setActive: (index: number, options?: { scrollStepIntoView?: boolean }) => void;
   cleanup: () => void;
 };
+
+type ScrollLockMode = 'fit-or-cover' | 'fully-visible';
 
 type LockableScrollSequence = ScrollSequence & {
   isLockEligible: boolean;
@@ -76,6 +79,10 @@ const MIN_LOCK_INTERSECTION_RATIO = 0.32;
 const STEP_COOLDOWN_MS = 520;
 const WHEEL_STEP_DELTA = 48;
 const TOUCH_STEP_DELTA = 42;
+const SCROLL_LOCK_EDGE_PADDING = 24;
+const SCROLL_LOCK_TOP_INSET = 112;
+const SCROLL_LOCK_ALIGN_TOLERANCE = 18;
+const SCROLL_LOCK_SNAP_DISTANCE = 160;
 
 function normalizeLabel(value: string | null | undefined) {
   return (value ?? '').replace(/[\u2192\u25be]/g, '').replace(/\s+/g, ' ').trim();
@@ -269,6 +276,7 @@ function setupScrollSequence(options: {
   stepKey: string;
   imageKey: string;
   lockTargetSelector?: string;
+  scrollLockMode?: ScrollLockMode;
 }): ScrollSequence | null {
   const section = document.querySelector<HTMLElement>(options.sectionSelector);
   const steps = Array.from(document.querySelectorAll<HTMLElement>(options.stepSelector));
@@ -276,6 +284,7 @@ function setupScrollSequence(options: {
 
   if (!section || !steps.length || !images.length) return null;
   const lockTarget = options.lockTargetSelector ? section.querySelector<HTMLElement>(options.lockTargetSelector) ?? section : section;
+  const scrollLockMode = options.scrollLockMode ?? 'fit-or-cover';
 
   let currentIndex = -1;
   const stepCleanups: Array<() => void> = [];
@@ -325,6 +334,7 @@ function setupScrollSequence(options: {
     section,
     lockTarget,
     steps,
+    scrollLockMode,
     get currentIndex() {
       return currentIndex;
     },
@@ -352,12 +362,27 @@ function stepSequence(sequence: LockableScrollSequence, direction: number) {
   sequence.wheelDelta = 0;
 }
 
+function canSectionFitFullyVisible(section: HTMLElement) {
+  const rect = section.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  return rect.height <= viewportHeight - SCROLL_LOCK_EDGE_PADDING * 2;
+}
+
+function getScrollLockTargetTop(section: HTMLElement, scrollLockMode: ScrollLockMode) {
+  if (scrollLockMode !== 'fully-visible') return SCROLL_LOCK_EDGE_PADDING;
+
+  const rect = section.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const extraSpace = viewportHeight - rect.height;
+  return clamp(extraSpace / 2, SCROLL_LOCK_EDGE_PADDING, SCROLL_LOCK_TOP_INSET);
+}
+
 function getActiveLockedSequence(sequences: LockableScrollSequence[]) {
   if (prefersReducedMotion()) return null;
 
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
   return sequences
-    .filter((sequence) => sequence.isLockEligible && isSectionReadyForScrollLock(sequence.lockTarget))
+    .filter((sequence) => sequence.isLockEligible && isSectionReadyForScrollLock(sequence.lockTarget, sequence.scrollLockMode))
     .sort((left, right) => {
       const leftRect = left.lockTarget.getBoundingClientRect();
       const rightRect = right.lockTarget.getBoundingClientRect();
@@ -367,16 +392,66 @@ function getActiveLockedSequence(sequences: LockableScrollSequence[]) {
     })[0] ?? null;
 }
 
-function isSectionReadyForScrollLock(section: HTMLElement) {
+function isSectionFullyVisible(section: HTMLElement) {
+  if (!canSectionFitFullyVisible(section)) return false;
+
+  const rect = section.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const topInset = getScrollLockTargetTop(section, 'fully-visible');
+  const bottomInset = Math.max(SCROLL_LOCK_EDGE_PADDING, viewportHeight - rect.height - topInset);
+
+  return rect.top >= topInset - SCROLL_LOCK_ALIGN_TOLERANCE && rect.bottom <= viewportHeight - bottomInset + SCROLL_LOCK_ALIGN_TOLERANCE;
+}
+
+function isSectionReadyForScrollLock(section: HTMLElement, scrollLockMode: ScrollLockMode) {
+  if (scrollLockMode === 'fully-visible') return isSectionFullyVisible(section);
+
   const rect = section.getBoundingClientRect();
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
   const tolerance = 24;
 
   if (rect.height <= viewportHeight) {
-    return rect.top >= -tolerance && rect.bottom <= viewportHeight + tolerance;
+    return isSectionFullyVisible(section);
   }
 
   return rect.top <= tolerance && rect.bottom >= viewportHeight - tolerance;
+}
+
+function getApproachingLockedSequence(sequences: LockableScrollSequence[], direction: number) {
+  if (prefersReducedMotion()) return null;
+
+  return sequences
+    .filter((sequence) => sequence.isLockEligible && sequence.scrollLockMode === 'fully-visible')
+    .filter((sequence) => canSectionFitFullyVisible(sequence.lockTarget))
+    .filter((sequence) => !isSectionReadyForScrollLock(sequence.lockTarget, sequence.scrollLockMode))
+    .map((sequence) => {
+      const rect = sequence.lockTarget.getBoundingClientRect();
+      const targetTop = getScrollLockTargetTop(sequence.lockTarget, sequence.scrollLockMode);
+      return {
+        sequence,
+        rect,
+        targetTop,
+        deltaToTarget: rect.top - targetTop,
+      };
+    })
+    .filter(({ deltaToTarget }) => Math.abs(deltaToTarget) <= SCROLL_LOCK_SNAP_DISTANCE)
+    .filter(({ rect, targetTop }) => {
+      if (direction > 0) return rect.top >= targetTop - SCROLL_LOCK_ALIGN_TOLERANCE;
+      return rect.top <= targetTop + SCROLL_LOCK_ALIGN_TOLERANCE;
+    })
+    .sort((left, right) => Math.abs(left.deltaToTarget) - Math.abs(right.deltaToTarget))[0]?.sequence ?? null;
+}
+
+function alignSequenceForScrollLock(sequence: LockableScrollSequence) {
+  const rect = sequence.lockTarget.getBoundingClientRect();
+  const targetTop = getScrollLockTargetTop(sequence.lockTarget, sequence.scrollLockMode);
+  const deltaToTarget = rect.top - targetTop;
+  if (Math.abs(deltaToTarget) <= 1) return false;
+
+  window.scrollTo({ top: Math.max(0, window.scrollY + deltaToTarget), behavior: 'auto' });
+  sequence.wheelDelta = 0;
+  sequence.lastTouchY = null;
+  return true;
 }
 
 function getLockThreshold(entry: IntersectionObserverEntry) {
@@ -393,6 +468,7 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
     section: sequence.section,
     lockTarget: sequence.lockTarget,
     steps: sequence.steps,
+    scrollLockMode: sequence.scrollLockMode,
     get currentIndex() {
       return sequence.currentIndex;
     },
@@ -420,11 +496,19 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
   );
 
   const onWheel = (event: WheelEvent) => {
-    const sequence = getActiveLockedSequence(lockedSequences);
-    if (!sequence || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-
     const deltaY = normalizeWheelDelta(event);
+    if (Math.abs(deltaY) <= Math.abs(event.deltaX)) return;
+
     const direction = deltaY > 0 ? 1 : -1;
+    const sequence = getActiveLockedSequence(lockedSequences);
+
+    if (!sequence) {
+      const approachingSequence = getApproachingLockedSequence(lockedSequences, direction);
+      if (approachingSequence && alignSequenceForScrollLock(approachingSequence)) {
+        event.preventDefault();
+      }
+      return;
+    }
 
     if (!canStep(sequence, direction)) {
       sequence.wheelDelta = 0;
@@ -447,14 +531,43 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
   };
 
   const onTouchStart = (event: TouchEvent) => {
+    const touchY = event.touches[0]?.clientY ?? null;
+    if (touchY === null) return;
+
     const sequence = getActiveLockedSequence(lockedSequences);
-    if (!sequence) return;
-    sequence.lastTouchY = event.touches[0]?.clientY ?? null;
+    if (sequence) {
+      sequence.lastTouchY = touchY;
+      return;
+    }
+
+    lockedSequences.forEach((item) => {
+      item.lastTouchY = touchY;
+    });
   };
 
   const onTouchMove = (event: TouchEvent) => {
     const sequence = getActiveLockedSequence(lockedSequences);
-    if (!sequence || sequence.lastTouchY === null || !event.touches.length) return;
+    if (!event.touches.length) return;
+
+    if (!sequence) {
+      const fallbackSequence = lockedSequences.find((item) => item.lastTouchY !== null) ?? null;
+      const lastTouchY = fallbackSequence?.lastTouchY ?? event.touches[0].clientY;
+      const currentTouchY = event.touches[0].clientY;
+      const deltaY = lastTouchY - currentTouchY;
+      if (Math.abs(deltaY) < 8) return;
+
+      const direction = deltaY > 0 ? 1 : -1;
+      const approachingSequence = getApproachingLockedSequence(lockedSequences, direction);
+      if (approachingSequence && alignSequenceForScrollLock(approachingSequence)) {
+        event.preventDefault();
+        lockedSequences.forEach((item) => {
+          item.lastTouchY = currentTouchY;
+        });
+      }
+      return;
+    }
+
+    if (sequence.lastTouchY === null) return;
 
     const currentTouchY = event.touches[0].clientY;
     const deltaY = sequence.lastTouchY - currentTouchY;
@@ -764,6 +877,7 @@ export function PvgHomeInteractions() {
         stepKey: 'legacyStep',
         imageKey: 'legacyImage',
         lockTargetSelector: '.remedy-shell',
+        scrollLockMode: 'fully-visible',
       }),
     ].filter((sequence): sequence is ScrollSequence => Boolean(sequence));
 

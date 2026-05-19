@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { formatPrice } from '@/lib/utils/format';
 import { SHIPPING_METHODS, type ShippingMethodId } from '@/lib/validators/order';
 import type { CartItem } from '@/lib/types/cart';
+import { estimateClientTax } from '@/lib/utils/tax';
 
 interface CheckoutOrderSummaryProps {
   items: CartItem[];
@@ -13,7 +14,7 @@ interface CheckoutOrderSummaryProps {
 export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.cost ?? 0;
-  const gst = Math.round(subtotal * 0.03);
+  const gst = estimateClientTax(items, shipping);
   const total = subtotal + shipping + gst;
 
   return (
@@ -78,7 +79,7 @@ export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSum
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-[var(--pvg-muted)]">GST (3%)</span>
+          <span className="text-[var(--pvg-muted)]">Estimated GST/IGST</span>
           <span className="text-[var(--pvg-text)]">{formatPrice(gst)}</span>
         </div>
       </div>
@@ -102,6 +103,9 @@ export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSum
           Or from {formatPrice(Math.ceil(total / 12))}/month × 12 with EMI
         </p>
       )}
+      <p className="mt-3 text-center text-[11px] leading-relaxed text-[var(--pvg-muted)]">
+        Final HSN, GST split, and invoice eligibility are recalculated securely before payment.
+      </p>
     </div>
   );
 }

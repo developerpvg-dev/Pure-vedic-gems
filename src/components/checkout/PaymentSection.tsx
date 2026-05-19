@@ -9,6 +9,7 @@ import type {
   EnergizationFields,
   ShippingMethodId,
 } from '@/lib/validators/order';
+import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
 
 // ─── Razorpay Checkout Types ────────────────────────────────────────────────
 
@@ -83,6 +84,9 @@ export function PaymentSection({
 }: PaymentSectionProps) {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'idle' | 'creating_order' | 'creating_payment' | 'paying' | 'verifying'>('idle');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [returnsAccepted, setReturnsAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   // ── Load Razorpay script dynamically ──────────────────────────────────
   const loadRazorpayScript = useCallback((): Promise<boolean> => {
@@ -108,6 +112,10 @@ export function PaymentSection({
   // ── Main payment flow ─────────────────────────────────────────────────
   const handlePayNow = useCallback(async () => {
     if (isProcessing) return;
+    if (!termsAccepted || !returnsAccepted) {
+      setError('Please accept the checkout terms, privacy policy, and return policy before payment.');
+      return;
+    }
     setError(null);
     setIsProcessing(true);
 
@@ -139,6 +147,13 @@ export function PaymentSection({
           shipping_method: shippingMethod,
           energization,
           special_instructions: specialInstructions,
+          checkout_consent: {
+            terms_accepted: true,
+            privacy_accepted: true,
+            return_policy_accepted: true,
+            marketing_consent: marketingConsent,
+            policy_version: TAX_POLICY_VERSION,
+          },
         }),
       });
 
@@ -267,6 +282,9 @@ export function PaymentSection({
     energization,
     specialInstructions,
     isProcessing,
+    termsAccepted,
+    returnsAccepted,
+    marketingConsent,
     setIsProcessing,
     onOrderCreated,
     onPaymentSuccess,
@@ -320,6 +338,44 @@ export function PaymentSection({
         </div>
       )}
 
+      <div className="mb-4 space-y-3 rounded-lg border border-brand-border bg-brand-bg p-4 text-xs text-brand-muted">
+        <label className="flex gap-3">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(event) => setTermsAccepted(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            I agree to the{' '}
+            <a href="/policies/terms" className="underline hover:text-brand-accent">Terms of Service</a>{' '}
+            and{' '}
+            <a href="/policies/privacy" className="underline hover:text-brand-accent">Privacy Policy</a>.
+          </span>
+        </label>
+        <label className="flex gap-3">
+          <input
+            type="checkbox"
+            checked={returnsAccepted}
+            onChange={(event) => setReturnsAccepted(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            I understand the{' '}
+            <a href="/policies/returns" className="underline hover:text-brand-accent">Returns and Refund Policy</a>, including custom jewellery and certificate fee exclusions.
+          </span>
+        </label>
+        <label className="flex gap-3">
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(event) => setMarketingConsent(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>Send me care guidance, wearing reminders, and service updates by email or WhatsApp. Optional.</span>
+        </label>
+      </div>
+
       {/* Processing status */}
       {isProcessing && step !== 'idle' && (
         <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-center gap-2 text-sm text-amber-700">
@@ -331,9 +387,9 @@ export function PaymentSection({
       {/* Pay button */}
       <button
         onClick={handlePayNow}
-        disabled={isProcessing}
+        disabled={isProcessing || !termsAccepted || !returnsAccepted}
         className={`w-full py-4 rounded-lg font-semibold text-base flex items-center justify-center gap-2 transition-all ${
-          isProcessing
+          isProcessing || !termsAccepted || !returnsAccepted
             ? 'bg-brand-muted text-white cursor-wait'
             : 'bg-brand-accent text-white hover:brightness-105 hover:shadow-lg'
         }`}
@@ -352,14 +408,7 @@ export function PaymentSection({
       </button>
 
       <p className="text-center text-xs text-brand-muted mt-3">
-        By proceeding, you agree to our{' '}
-        <a href="/policies/terms" className="underline hover:text-brand-accent">
-          Terms of Service
-        </a>{' '}
-        and{' '}
-        <a href="/policies/privacy" className="underline hover:text-brand-accent">
-          Privacy Policy
-        </a>
+        Payment and tax totals are verified on our server before Razorpay opens.
       </p>
     </div>
   );

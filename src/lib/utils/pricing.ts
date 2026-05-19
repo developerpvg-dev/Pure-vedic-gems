@@ -8,8 +8,9 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SHIPPING_METHODS } from '@/lib/validators/order';
-import type { ShippingMethodId } from '@/lib/validators/order';
+import type { ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { Coupon, ShippingMethod } from '@/lib/types/database';
+import { buildTaxBreakdown, calculateGstComponent, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,11 @@ export interface PricingBreakdown {
     carat_weight: number | null;
     origin: string | null;
     sold_individually: boolean;
+    hsn_code: string | null;
+    gst_rate: number | null;
+    tax_status: string | null;
+    tax_class: string | null;
+    tax_rate_percent: number;
     unit_price: number;
     quantity: number;
     line_total: number;
@@ -42,17 +48,15 @@ export interface PricingBreakdown {
   shipping_cost: number;
   discount: number;
   gst_amount: number;
+  tax_breakdown: ReturnType<typeof taxBreakdownToJson>;
   total: number;
 }
-
-// ─── GST Rate (Gemstones: 3% is standard for precious stones in India) ──────
-const GST_RATE = 0.03;
 
 const PRODUCT_SELECT = `
   id, sku, tag_number, name, category, price, carat_weight, origin, images,
   thumbnail_url, in_stock, stock_quantity, stock_status, availability_status,
   is_active, sold_individually, backorders_allowed, reserved_until,
-  reserved_by_customer_id
+  reserved_by_customer_id, tax_status, tax_class, hsn_code, gst_rate
 `;
 
 type ProductForPricing = {
@@ -75,6 +79,10 @@ type ProductForPricing = {
   backorders_allowed: boolean;
   reserved_until: string | null;
   reserved_by_customer_id: string | null;
+  tax_status: string | null;
+  tax_class: string | null;
+  hsn_code: string | null;
+  gst_rate: number | null;
 };
 
 function getProductImage(product: ProductForPricing) {
@@ -136,7 +144,8 @@ export async function recalculateOrderTotal(
   items: OrderItemForPricing[],
   shippingMethod: ShippingMethodId = 'standard',
   couponCode?: string,
-  energizationType?: string
+  energizationType?: string,
+  shippingAddress?: Pick<ShippingAddress, 'state'>
 ): Promise<PricingBreakdown> {
   const supabase = createAdminClient();
 
@@ -180,6 +189,8 @@ export async function recalculateOrderTotal(
       throw new Error(`Only ${product.stock_quantity} unit(s) of "${product.name}" are available`);
     }
 
+    const productTax = resolveProductTax(product);
+
     pricedItems.push({
       product_id: item.product_id,
       sku: product.sku,
@@ -190,6 +201,11 @@ export async function recalculateOrderTotal(
       carat_weight: product.carat_weight,
       origin: product.origin,
       sold_individually: product.sold_individually,
+      hsn_code: productTax.hsn_code,
+      gst_rate: product.gst_rate,
+      tax_status: product.tax_status,
+      tax_class: productTax.tax_class,
+      tax_rate_percent: productTax.rate_percent,
       unit_price: product.price,
       quantity: item.quantity,
       line_total: product.price * item.quantity,
@@ -309,9 +325,27 @@ export async function recalculateOrderTotal(
   }
 
   // ── 6. GST calculation ────────────────────────────────────────────────
+  const itemDiscountRatio = subtotal > 0 ? Math.min(discount / subtotal, 1) : 0;
+  const productTaxComponents = pricedItems.map((item) => calculateGstComponent({
+    label: item.name,
+    component: 'product',
+    amount: item.line_total * (1 - itemDiscountRatio),
+    ratePercent: item.tax_rate_percent,
+    hsnCode: item.hsn_code,
+    destinationState: shippingAddress?.state,
+  }));
+  const taxBreakdown = buildTaxBreakdown(shippingAddress?.state, [
+    ...productTaxComponents,
+    calculateGstComponent({ label: 'Metal value', component: 'metal', amount: metalCharges, ratePercent: 3, hsnCode: '7113', destinationState: shippingAddress?.state }),
+    calculateGstComponent({ label: 'Making and custom design charges', component: 'making_charge', amount: jewelryCharges, ratePercent: 5, hsnCode: null, destinationState: shippingAddress?.state }),
+    calculateGstComponent({ label: 'Certification charges', component: 'certification', amount: certificationCharges, ratePercent: 18, hsnCode: null, destinationState: shippingAddress?.state }),
+    calculateGstComponent({ label: 'Energization and ritual services', component: 'energization', amount: energizationCharges, ratePercent: 18, hsnCode: null, destinationState: shippingAddress?.state }),
+    calculateGstComponent({ label: 'Shipping, insurance, and handling', component: 'shipping', amount: shippingCost, ratePercent: 18, hsnCode: '9968', destinationState: shippingAddress?.state }),
+  ]);
+  const gstAmount = Math.round(taxBreakdown.totals.gst_amount);
+
   const taxableAmount =
     subtotal + jewelryCharges + metalCharges + certificationCharges + energizationCharges - discount;
-  const gstAmount = Math.round(taxableAmount * GST_RATE);
 
   // ── 7. Final total ───────────────────────────────────────────────────
   const total = taxableAmount + gstAmount + shippingCost;
@@ -326,6 +360,7 @@ export async function recalculateOrderTotal(
     shipping_cost: shippingCost,
     discount,
     gst_amount: gstAmount,
+    tax_breakdown: taxBreakdownToJson(taxBreakdown),
     total: Math.max(total, 0), // Safety: total should never be negative
   };
 }

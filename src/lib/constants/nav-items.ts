@@ -65,14 +65,13 @@ export const SERVICE_NAV_LINKS = [
 export type HeaderNavItem = {
   label: string;
   href: string;
-  dropdown?: 'gemstones' | 'rudraksha' | 'collections' | 'services';
+  dropdown?: 'gemstones' | 'rudraksha' | 'collections' | 'services' | 'knowledge';
 };
 
 export const HEADER_NAV_ITEMS: readonly HeaderNavItem[] = [
   { label: 'Gemstones', href: '/shop', dropdown: 'gemstones' },
   { label: 'Rudraksha', href: '/shop/rudraksha', dropdown: 'rudraksha' },
-  { label: 'Knowledge', href: '/knowledge' },
-  { label: 'Astrology', href: '/knowledge/astrology' },
+  { label: 'Knowledge', href: '/knowledge', dropdown: 'knowledge' },
   { label: 'Blog', href: '/blog' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact', href: '/contact' },
@@ -82,7 +81,6 @@ export const NAV_ITEMS = [
   { label: 'Gemstones', href: '/shop' },
   { label: 'Rudraksha', href: '/shop/rudraksha' },
   { label: 'Knowledge', href: '/knowledge' },
-  { label: 'Astrology', href: '/knowledge/astrology' },
   { label: 'Blog', href: '/blog' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact', href: '/contact' },

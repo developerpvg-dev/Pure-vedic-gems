@@ -15,15 +15,18 @@ const contentSecurityPolicy = [
     isProduction ? '' : "'unsafe-eval'",
     'https://checkout.razorpay.com',
     'https://*.razorpay.com',
+    'https://www.googletagmanager.com',
   ]
     .filter(Boolean)
     .join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com",
+  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://www.purevedicgems.com",
   "media-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io",
-  "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://*.api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com",
+  "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://*.api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://cdn.jsdelivr.net",
   isProduction ? 'upgrade-insecure-requests' : '',
 ]
   .filter(Boolean)
@@ -84,7 +87,31 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.purevedicgems.com',
+        pathname: '/wp-content/**',
+      },
     ],
+  },
+
+  async redirects() {
+    return [
+      { source: '/energized-gems', destination: '/knowledge/energized-gems', permanent: true },
+      { source: '/energized-gems/', destination: '/knowledge/energized-gems', permanent: true },
+      { source: '/gems-care', destination: '/knowledge/gems-care', permanent: true },
+      { source: '/gems-care/', destination: '/knowledge/gems-care', permanent: true },
+      { source: '/terms-and-conditions', destination: '/policies/terms', permanent: true },
+      { source: '/terms-and-conditions/', destination: '/policies/terms', permanent: true },
+      { source: '/returns-policy', destination: '/policies/returns', permanent: true },
+      { source: '/returns-policy/', destination: '/policies/returns', permanent: true },
+      { source: '/shipping-policy', destination: '/policies/shipping', permanent: true },
+      { source: '/shipping-policy/', destination: '/policies/shipping', permanent: true },
+      { source: '/privacy-policy', destination: '/policies/privacy', permanent: true },
+      { source: '/privacy-policy/', destination: '/policies/privacy', permanent: true },
+      { source: '/disclaimer', destination: '/policies/legal-notice', permanent: true },
+      { source: '/disclaimer/', destination: '/policies/legal-notice', permanent: true },
+    ];
   },
 
   async headers() {
@@ -136,6 +163,8 @@ const nextConfig: NextConfig = {
               ]
             : []),
           { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-DNS-Prefetch-Control', value: 'off' },
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '0' },
           {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // ─── Phone regex — Indian mobiles (+91 prefix optional) ─────────────────────
 const PHONE_REGEX = /^\+?[1-9]\d{9,14}$/;
+const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 // ─── Indian pincode (6-digit) ───────────────────────────────────────────────
 const PINCODE_REGEX = /^[1-9]\d{5}$/;
@@ -21,6 +22,27 @@ export const ContactInfoSchema = z.object({
   phone: z
     .string()
     .regex(PHONE_REGEX, 'Please enter a valid phone number'),
+  business_name: z
+    .string()
+    .trim()
+    .max(220, 'Business name is too long')
+    .optional()
+    .default(''),
+  billing_gstin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .optional()
+    .default('')
+    .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid GSTIN'),
+});
+
+export const CheckoutConsentSchema = z.object({
+  terms_accepted: z.literal(true, { error: 'Terms must be accepted' }),
+  privacy_accepted: z.literal(true, { error: 'Privacy policy must be accepted' }),
+  return_policy_accepted: z.literal(true, { error: 'Return policy must be accepted' }),
+  marketing_consent: z.boolean().default(false),
+  policy_version: z.string().trim().default('2026-05-16'),
 });
 
 // ─── Shipping Address ───────────────────────────────────────────────────────
@@ -103,6 +125,7 @@ export const OrderCreateSchema = z.object({
   energization: EnergizationFieldsSchema.optional(),
   special_instructions: z.string().max(1000).trim().optional(),
   coupon_code: z.string().max(50).trim().optional(),
+  checkout_consent: CheckoutConsentSchema,
 });
 
 // ─── Payment Verification ───────────────────────────────────────────────────
@@ -121,6 +144,7 @@ export const PaymentCreateOrderSchema = z.object({
 // ─── Type exports ───────────────────────────────────────────────────────────
 export type ContactInfo = z.infer<typeof ContactInfoSchema>;
 export type ShippingAddress = z.infer<typeof ShippingAddressSchema>;
+export type CheckoutConsent = z.infer<typeof CheckoutConsentSchema>;
 export type OrderItem = z.infer<typeof OrderItemSchema>;
 export type EnergizationFields = z.infer<typeof EnergizationFieldsSchema>;
 export type OrderCreate = z.infer<typeof OrderCreateSchema>;

@@ -143,6 +143,30 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
           </Link>
         ))}
 
+        {/* Knowledge sub-links */}
+        <div style={{ paddingTop: '6px', paddingBottom: '6px', borderBottom: '1px solid #EDE6D5' }}>
+          <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7A1515', padding: '10px 0 6px' }}>Knowledge</p>
+          {[
+            { label: 'Navratnas', href: '/knowledge/gemstones' },
+            { label: 'Treatments', href: '/knowledge/treatments' },
+            { label: 'Energized Gems', href: '/knowledge/energized-gems' },
+            { label: 'Gem Care', href: '/knowledge/gems-care' },
+            { label: "Rudraksha Library", href: '/knowledge/rudraksha' },
+            { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
+            { label: 'Vedic Astrology', href: '/knowledge/astrology' },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={onClose}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0 10px 8px', fontSize: '12px', fontWeight: 600, color: '#3A3A3A', textDecoration: 'none', borderTop: '1px solid #EDE6D5' }}
+            >
+              {link.label}
+              <span style={{ color: '#7A1515', fontSize: '14px', lineHeight: 1 }}>›</span>
+            </Link>
+          ))}
+        </div>
+
         <div style={{ marginTop: '20px' }}>
           {categoryGroups.map((group) => (
             <div key={group.slug} style={{ marginBottom: '18px' }}>

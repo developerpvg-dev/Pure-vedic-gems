@@ -20,9 +20,9 @@ export const KNOWLEDGE_CATEGORY_CONFIG: Record<KnowledgeCategoryKey, {
   categories: string[];
 }> = {
   gemstones: {
-    title: 'Gemstone Guides',
-    eyebrow: 'Gemstones',
-    description: 'Buying and verification guidance for Jyotish gemstones, quality checks, certification, treatment disclosure, and suitability.',
+    title: 'Navratnas',
+    eyebrow: 'The Nine Vedic Gems',
+    description: 'A complete guide to the nine Vedic gems, planetary associations, wearing guidance, mantras, substitutes, and quality checks.',
     categories: ['Gemstone Guide'],
   },
   rudraksha: {
@@ -74,22 +74,22 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 
   return (
-    <main className="min-h-screen bg-brand-bg px-4 pb-20 pt-[130px] md:px-8">
-      <div className="mx-auto max-w-[1200px]">
-        <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-[var(--pvg-muted)]">
-          <Link href="/" className="hover:text-[var(--pvg-accent)]">Home</Link>
+    <main className="min-h-screen bg-brand-bg px-4 pb-20 pt-32.5 md:px-8">
+      <div className="mx-auto max-w-300">
+        <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-brand-muted">
+          <Link href="/" className="hover:text-brand-accent">Home</Link>
           <span>/</span>
-          <Link href="/knowledge" className="hover:text-[var(--pvg-accent)]">Knowledge</Link>
+          <Link href="/knowledge" className="hover:text-brand-accent">Knowledge</Link>
           <span>/</span>
-          <span className="text-[var(--pvg-primary)]">{config.eyebrow}</span>
+          <span className="text-brand-primary">{config.eyebrow}</span>
         </nav>
 
-        <header className="mb-10 border-b border-[var(--pvg-border)] pb-8">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-[var(--pvg-accent)]">{config.eyebrow}</p>
-          <h1 className="font-heading text-[var(--pvg-primary)]" style={{ fontSize: 'clamp(32px, 5vw, 58px)' }}>
+        <header className="mb-10 border-b border-brand-border pb-8">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-brand-accent">{config.eyebrow}</p>
+          <h1 className="font-heading text-brand-primary" style={{ fontSize: 'clamp(32px, 5vw, 58px)' }}>
             {config.title}
           </h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--pvg-muted)] md:text-base">
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-muted md:text-base">
             {config.description}
           </p>
         </header>
@@ -98,28 +98,28 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
           <section className="mb-12">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-[var(--pvg-accent)]">Static Library</p>
-                <h2 className="mt-2 font-heading text-2xl text-[var(--pvg-primary)]">
+                <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-brand-accent">Static Library</p>
+                <h2 className="mt-2 font-heading text-2xl text-brand-primary">
                   {categoryKey === 'gemstones' ? '9 Navaratna Guides' : '21 Rudraksha Guides'}
                 </h2>
               </div>
-              <p className="text-sm text-[var(--pvg-muted)]">Complete Week 4 static guide set</p>
+              <p className="text-sm text-brand-muted">Complete Week 4 static guide set</p>
             </div>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {staticGuides.map((guide) => (
                 <Link
                   key={guide.slug}
                   href={`${guide.parentHref}/${guide.slug}`}
-                  className="group overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface transition-all hover:-translate-y-1 hover:shadow-[0_16px_44px_rgba(61,43,31,0.12)]"
+                  className="group overflow-hidden rounded-xl border border-brand-border bg-brand-surface transition-all hover:-translate-y-1 hover:shadow-[0_16px_44px_rgba(61,43,31,0.12)]"
                 >
-                  <div className="relative aspect-[4/3] bg-brand-bg-alt">
+                  <div className="relative aspect-4/3 bg-brand-bg-alt">
                     <Image src={guide.heroImage} alt={guide.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 100vw, 33vw" />
                   </div>
                   <div className="p-5">
-                    <p className="text-[10px] font-bold uppercase tracking-[2px] text-[var(--pvg-accent)]">{guide.eyebrow}</p>
-                    <h3 className="mt-2 font-heading text-lg font-semibold text-[var(--pvg-primary)]">{guide.shortTitle}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-[var(--pvg-muted)]">{guide.description}</p>
-                    <p className="mt-4 text-[10px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-primary)]">Open Static Guide</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[2px] text-brand-accent">{guide.eyebrow}</p>
+                    <h3 className="mt-2 font-heading text-lg font-semibold text-brand-primary">{guide.shortTitle}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-brand-muted">{guide.description}</p>
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-[1.5px] text-brand-primary">Open Static Guide</p>
                   </div>
                 </Link>
               ))}
@@ -130,8 +130,8 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
         {articles.length ? (
           <section>
             {staticGuides.length ? (
-              <div className="mb-5 border-t border-[var(--pvg-border)] pt-8">
-                <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-[var(--pvg-accent)]">Editorial Articles</p>
+              <div className="mb-5 border-t border-brand-border pt-8">
+                <p className="text-[10px] font-bold uppercase tracking-[2.5px] text-brand-accent">Editorial Articles</p>
               </div>
             ) : null}
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -141,18 +141,18 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
                 <Link
                   key={article._id}
                   href={`/knowledge/${article.slug.current}`}
-                  className="group overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface transition-all hover:-translate-y-1 hover:shadow-[0_16px_44px_rgba(61,43,31,0.12)]"
+                  className="group overflow-hidden rounded-xl border border-brand-border bg-brand-surface transition-all hover:-translate-y-1 hover:shadow-[0_16px_44px_rgba(61,43,31,0.12)]"
                 >
                   {imageUrl && (
-                    <div className="relative aspect-[4/3] bg-brand-bg-alt">
+                    <div className="relative aspect-4/3 bg-brand-bg-alt">
                       <Image src={imageUrl} alt={article.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 768px) 100vw, 33vw" />
                     </div>
                   )}
                   <div className="p-5">
-                    <p className="text-[10px] font-bold uppercase tracking-[2px] text-[var(--pvg-accent)]">{article.category}</p>
-                    <h2 className="mt-2 font-heading text-lg font-semibold text-[var(--pvg-primary)]">{article.title}</h2>
-                    {article.excerpt && <p className="mt-2 text-sm leading-relaxed text-[var(--pvg-muted)]">{article.excerpt}</p>}
-                    <p className="mt-4 text-[10px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-primary)]">Read Guide</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[2px] text-brand-accent">{article.category}</p>
+                    <h2 className="mt-2 font-heading text-lg font-semibold text-brand-primary">{article.title}</h2>
+                    {article.excerpt && <p className="mt-2 text-sm leading-relaxed text-brand-muted">{article.excerpt}</p>}
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-[1.5px] text-brand-primary">Read Guide</p>
                   </div>
                 </Link>
               );
@@ -160,12 +160,12 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
             </div>
           </section>
         ) : (
-          !staticGuides.length ? <div className="rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-8 text-center">
-            <h2 className="font-heading text-2xl text-[var(--pvg-primary)]">Guides are being prepared</h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-[var(--pvg-muted)]">
+          !staticGuides.length ? <div className="rounded-xl border border-brand-border bg-brand-surface p-8 text-center">
+            <h2 className="font-heading text-2xl text-brand-primary">Guides are being prepared</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-brand-muted">
               Editors can publish this category from Sanity Studio. Until then, use the main Knowledge Hub for available guides.
             </p>
-            <Link href="/knowledge" className="mt-5 inline-flex rounded-lg border border-[var(--pvg-primary)] px-5 py-2 text-xs font-bold uppercase tracking-[1.5px] text-[var(--pvg-primary)]">
+            <Link href="/knowledge" className="mt-5 inline-flex rounded-lg border border-brand-primary px-5 py-2 text-xs font-bold uppercase tracking-[1.5px] text-brand-primary">
               All Knowledge Guides
             </Link>
           </div> : null

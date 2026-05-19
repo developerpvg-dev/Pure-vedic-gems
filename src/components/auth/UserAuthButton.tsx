@@ -6,16 +6,19 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { UserCircle, LogOut, Package, Heart, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface UserAuthButtonProps {
   /** Match icon size used in the navbar */
   iconSize?: number;
   className?: string;
+  showNotificationsInDropdown?: boolean;
 }
 
 export function UserAuthButton({
   iconSize = 18,
   className = '',
+  showNotificationsInDropdown = false,
 }: UserAuthButtonProps) {
   const { user, profile, isLoading, signOut } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
@@ -66,7 +69,7 @@ export function UserAuthButton({
     // Skeleton placeholder — prevents layout shift
     return (
       <div
-        className={`h-[18px] w-[18px] rounded-full animate-pulse ${className}`}
+        className={`h-4.5 w-4.5 rounded-full animate-pulse ${className}`}
         style={{ background: 'var(--pvg-border)' }}
         aria-hidden="true"
       />
@@ -80,7 +83,7 @@ export function UserAuthButton({
         <button
           onClick={() => setModalOpen(true)}
           aria-label="Sign in"
-          className={`transition-colors hover:text-[var(--pvg-accent)] ${className}`}
+          className={`transition-colors hover:text-brand-accent ${className}`}
           style={{ color: 'var(--pvg-muted)' }}
         >
           <UserCircle
@@ -117,7 +120,7 @@ export function UserAuthButton({
         }}
         aria-label="Account menu"
         aria-expanded={dropdownOpen}
-        className="flex items-center gap-1.5 transition-colors hover:text-[var(--pvg-accent)]"
+        className="flex items-center gap-1.5 transition-colors hover:text-brand-accent"
         style={{ color: 'var(--pvg-text)' }}
       >
         {/* Avatar circle */}
@@ -135,7 +138,7 @@ export function UserAuthButton({
       {/* Dropdown */}
       {dropdownOpen && (
         <div
-          className="absolute right-0 top-full z-[1100] mt-2 min-w-[200px] overflow-hidden rounded-xl shadow-xl"
+          className="absolute right-0 top-full z-1100 mt-2 min-w-50 overflow-visible rounded-xl shadow-xl"
           style={{
             background: 'var(--pvg-surface)',
             border: '1px solid var(--pvg-border)',
@@ -160,6 +163,26 @@ export function UserAuthButton({
               {user.email ?? user.phone ?? ''}
             </p>
           </div>
+
+          {showNotificationsInDropdown ? (
+            <div
+              className="flex items-center justify-between gap-3 px-4 py-3"
+              style={{ borderBottom: '1px solid var(--pvg-border)' }}
+            >
+              <div>
+                <p
+                  className="text-[11px] font-semibold uppercase tracking-[0.12em]"
+                  style={{ color: 'var(--pvg-muted)' }}
+                >
+                  Notifications
+                </p>
+                <p className="mt-0.5 text-[12px]" style={{ color: 'var(--pvg-text)' }}>
+                  View latest updates
+                </p>
+              </div>
+              <NotificationBell />
+            </div>
+          ) : null}
 
           {/* Menu items */}
           {[

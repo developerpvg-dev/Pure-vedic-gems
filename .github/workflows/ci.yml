@@ -11,8 +11,11 @@ jobs:
   verify:
     name: Verify Next.js app
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
+    permissions:
+      contents: read
     env:
+      CI: true
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -49,6 +52,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm run test
+
       - name: Validate build environment
         run: |
           required=(NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY)
@@ -65,3 +71,15 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Route smoke, accessibility, and performance budgets
+        run: npm run test:e2e -- --project=chromium
+        env:
+          PLAYWRIGHT_SKIP_BUILD: '1'
+
+      - name: Dependency audit report
+        run: npm run security:audit
+        continue-on-error: true

@@ -8,6 +8,7 @@ import { rateLimit } from '@/lib/utils/rate-limit';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/order-status';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Json } from '@/lib/types/database';
+import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
 
 function createGuestOrderToken() {
   const token = crypto.randomBytes(32).toString('hex');
@@ -115,6 +116,7 @@ export async function POST(req: NextRequest) {
     energization,
     special_instructions,
     coupon_code,
+    checkout_consent,
   } = parsed.data;
 
   // ── Get authenticated user (if logged in) ────────────────────────────
@@ -140,7 +142,8 @@ export async function POST(req: NextRequest) {
       })),
       shipping_method,
       coupon_code,
-      energization?.energization_type
+      energization?.energization_type,
+      shipping_address
     );
   } catch (err) {
     const message =
@@ -194,9 +197,24 @@ export async function POST(req: NextRequest) {
       discount: pricing.discount,
       coupon_code: coupon_code?.toUpperCase() ?? null,
       gst_amount: pricing.gst_amount,
+      tax_breakdown: pricing.tax_breakdown,
       total: pricing.total,
       shipping_address,
       shipping_method,
+      buyer_business_name: contact.business_name || null,
+      buyer_gstin: contact.billing_gstin || null,
+      billing_address: shipping_address,
+      tax_invoice_required: Boolean(contact.billing_gstin),
+      invoice_status: contact.billing_gstin ? 'pending' : 'not_required',
+      policy_acceptance: {
+        ...checkout_consent,
+        accepted_at: new Date().toISOString(),
+        tax_policy_version: TAX_POLICY_VERSION,
+      } as Json,
+      compliance_flags: {
+        gst_invoice_requested: Boolean(contact.billing_gstin),
+        high_value_manual_review: pricing.total >= 200000,
+      } as Json,
       special_instructions: special_instructions ?? null,
       include_energization: energization?.include_energization ?? false,
       energization_type: energization?.energization_type ?? null,
@@ -273,6 +291,7 @@ export async function POST(req: NextRequest) {
       shipping_cost: pricing.shipping_cost,
       discount: pricing.discount,
       gst_amount: pricing.gst_amount,
+      tax_breakdown: pricing.tax_breakdown,
       total: pricing.total,
     },
   });

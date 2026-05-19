@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { sendRecommendationRequestEmails } from '@/lib/resend/send-recommendation-request';
+import { rateLimit } from '@/lib/utils/rate-limit';
 import { buildGemRecommendation } from '@/lib/utils/rashi-calculator';
 
 const recommendationSchema = z.object({
@@ -19,6 +20,11 @@ const recommendationSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!rateLimit(`recommendation:${ip}`, 12, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many recommendation requests. Please wait a minute and try again.' }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = recommendationSchema.safeParse(body);
 

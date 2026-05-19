@@ -38,6 +38,7 @@ Run these before shipping infrastructure or security changes:
 ```bash
 npm run lint
 npm run typecheck
+npm run test
 npm run build
 ```
 
@@ -46,6 +47,35 @@ The combined CI-equivalent command is:
 ```bash
 npm run ci
 ```
+
+## Week 13 QA And Launch Hardening
+
+Fast checks:
+
+```bash
+npm run test
+npm run test:smoke
+npm run test:a11y
+npm run test:perf
+```
+
+`npm run test:e2e` builds a fresh production app, starts `next start`, and runs Chromium plus mobile-browser route checks. Use `PLAYWRIGHT_PORT=3101` if port `3001` is already busy. In CI, `PLAYWRIGHT_SKIP_BUILD=1` reuses the already-created production build before the Playwright suite starts.
+
+The browser suite currently covers public route smoke checks, `/api/health`, serious/critical axe accessibility issues, and route performance budgets for homepage, shop, checkout, and policy pages.
+
+## Health, Security, And Incident Checks
+
+Use `/api/health` for uptime monitoring. It returns no secret values; it reports whether required and optional service groups are configured and responds with `503` only when launch-critical public Supabase configuration is missing.
+
+Security hardening includes centralized rate-limit tests, search/recommendation rate limits, CSP/permission headers in `next.config.ts`, GitHub dependency review, npm audit reporting, and magic-byte validation for custom-design uploads.
+
+Incident triage flow:
+
+1. Check `/api/health` and the Vercel deployment status.
+2. Check Sentry for server/client errors around the incident window.
+3. Run `npm run test:smoke` against preview/staging for route regressions.
+4. Run `npm run test:a11y` and `npm run test:perf` before approving visual or layout fixes.
+5. Roll back to the previous Vercel deployment if checkout, payment, admin login, or product pages are critically broken.
 
 ## Supabase Foundation
 

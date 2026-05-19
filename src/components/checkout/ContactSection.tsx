@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Phone, ChevronDown, Pencil } from 'lucide-react';
+import { User, Mail, Phone, ChevronDown, Pencil, Building2 } from 'lucide-react';
 import { ContactInfoSchema, type ContactInfo } from '@/lib/validators/order';
 
 interface ContactSectionProps {
@@ -27,6 +27,9 @@ export function ContactSection({
   const [fullName, setFullName] = useState(savedData?.full_name ?? defaultValues.full_name ?? '');
   const [email, setEmail] = useState(savedData?.email ?? defaultValues.email ?? '');
   const [phone, setPhone] = useState(savedData?.phone ?? defaultValues.phone ?? '');
+  const [businessName, setBusinessName] = useState(savedData?.business_name ?? defaultValues.business_name ?? '');
+  const [billingGstin, setBillingGstin] = useState(savedData?.billing_gstin ?? defaultValues.billing_gstin ?? '');
+  const [businessBilling, setBusinessBilling] = useState(Boolean(savedData?.billing_gstin || defaultValues.billing_gstin));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Auto-fill from profile when it loads
@@ -48,7 +51,13 @@ export function ContactSection({
     e.preventDefault();
     setErrors({});
 
-    const result = ContactInfoSchema.safeParse({ full_name: fullName, email, phone });
+    const result = ContactInfoSchema.safeParse({
+      full_name: fullName,
+      email,
+      phone,
+      business_name: businessBilling ? businessName : '',
+      billing_gstin: businessBilling ? billingGstin : '',
+    });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       for (const [key, msgs] of Object.entries(result.error.flatten().fieldErrors)) {
@@ -85,6 +94,7 @@ export function ContactSection({
         <div className="text-sm text-[var(--pvg-muted)] space-y-1 ml-8">
           <p>{savedData.full_name}</p>
           <p>{savedData.email} · {savedData.phone}</p>
+          {savedData.billing_gstin && <p>GST invoice: {savedData.business_name || 'Business'} · {savedData.billing_gstin}</p>}
         </div>
       </div>
     );
@@ -196,6 +206,58 @@ export function ContactSection({
           <p className="text-xs text-[var(--pvg-muted)] mt-1">
             We&apos;ll send shipping updates to this number via WhatsApp
           </p>
+        </div>
+
+        <div className="rounded-lg border border-[var(--pvg-border)] bg-brand-bg p-4">
+          <label className="flex items-start gap-3 text-sm text-[var(--pvg-text)]">
+            <input
+              type="checkbox"
+              checked={businessBilling}
+              onChange={(e) => setBusinessBilling(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              I need a GST tax invoice for a business purchase.
+              <span className="mt-1 block text-xs text-[var(--pvg-muted)]">
+                GSTIN is stored on the order and printed on the invoice only after payment verification.
+              </span>
+            </span>
+          </label>
+
+          {businessBilling && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-[var(--pvg-text)] mb-1.5">Business Name</label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--pvg-muted)]" />
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Registered business name"
+                    className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-surface placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
+                      errors.business_name ? 'border-red-400' : 'border-[var(--pvg-border)]'
+                    }`}
+                  />
+                </div>
+                {errors.business_name && <p className="text-xs text-red-500 mt-1">{errors.business_name}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--pvg-text)] mb-1.5">GSTIN</label>
+                <input
+                  type="text"
+                  value={billingGstin}
+                  onChange={(e) => setBillingGstin(e.target.value.toUpperCase())}
+                  placeholder="07ABCDE1234F1Z5"
+                  maxLength={15}
+                  className={`w-full px-4 py-3 rounded-lg border text-sm text-[var(--pvg-text)] bg-brand-surface placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] ${
+                    errors.billing_gstin ? 'border-red-400' : 'border-[var(--pvg-border)]'
+                  }`}
+                />
+                {errors.billing_gstin && <p className="text-xs text-red-500 mt-1">{errors.billing_gstin}</p>}
+              </div>
+            </div>
+          )}
         </div>
 
         <button

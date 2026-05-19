@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const NAV_GROUPS = [
@@ -39,6 +39,7 @@ const NAV_GROUPS = [
       { href: '/admin/reviews', label: 'Reviews', icon: Star },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell },
       { href: '/admin/finance', label: 'Finance', icon: IndianRupee },
+      { href: '/admin/compliance', label: 'Compliance', icon: Scale },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
     ],
   },
