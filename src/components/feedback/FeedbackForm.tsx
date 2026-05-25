@@ -138,7 +138,7 @@ export function FeedbackForm() {
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#f36b5b] text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#e45d4e] disabled:opacity-60"
+        className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#7a5230] text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#5f3d24] disabled:opacity-60"
       >
         {saving ? 'Submitting…' : 'Submit Feedback'} <Send className="h-4 w-4" />
       </button>

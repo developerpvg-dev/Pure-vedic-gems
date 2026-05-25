@@ -194,99 +194,115 @@ export default function ContactPage() {
   }
 
   return (
-    <main className="pvg-simple-page pvg-info-page bg-[#fbfaf7] font-body text-[#15110d]">
-      <section className="px-4 pb-12 pt-28 sm:px-6 lg:pb-16 lg:pt-36">
-        <div className="flex justify-center mb-10">
-          <ScrollReveal>
-            <h1 className="text-center text-4xl font-black tracking-tight sm:text-5xl">How can we help?</h1>
-          </ScrollReveal>
-        </div>
-        <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen bg-[#faf8f4] font-body text-[#15110d]">
 
-          <div className="grid gap-12 lg:grid-cols-[0.52fr_0.48fr] lg:items-start">
-            <ScrollReveal>
-              <form onSubmit={handleSubmit} className="grid gap-3">
-                  <input
-                    required
-                    maxLength={200}
-                    placeholder="Name"
-                    value={formState.name}
-                    onChange={(event) => setFormState({ ...formState, name: event.target.value })}
-                    className="h-12 w-full border border-[#d9d4cb] bg-transparent px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654] focus:bg-white/60"
-                  />
-                  <input
-                    required
-                    type="email"
-                    maxLength={255}
-                    placeholder="Email"
-                    value={formState.email}
-                    onChange={(event) => setFormState({ ...formState, email: event.target.value })}
-                    className="h-12 w-full border border-[#d9d4cb] bg-transparent px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654] focus:bg-white/60"
-                  />
-                  <div className="grid grid-cols-[140px_1fr] gap-2">
-                    <div className="relative">
-                      <select
-                        value={formState.countryCode}
-                        onChange={(event) => setFormState({ ...formState, countryCode: event.target.value })}
-                        className="h-12 w-full appearance-none border border-[#d9d4cb] bg-transparent pl-3 pr-8 text-sm text-[#15110d] outline-none focus:border-[#b86654]"
-                      >
-                        {COUNTRY_CODES.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.flag} {c.dial} {c.name}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9e9892]">▾</span>
-                    </div>
-                    <input
-                      maxLength={20}
-                      placeholder="Phone number"
-                      value={formState.phone}
-                      onChange={(event) => setFormState({ ...formState, phone: event.target.value })}
-                      className="h-12 w-full border border-[#d9d4cb] bg-transparent px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654] focus:bg-white/60"
-                    />
-                  </div>
-                  <textarea
-                    required
-                    rows={8}
-                    maxLength={5000}
-                    placeholder="Comments"
-                    value={formState.message}
-                    onChange={(event) => setFormState({ ...formState, message: event.target.value })}
-                    className="w-full resize-y border border-[#d9d4cb] bg-transparent px-4 py-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654] focus:bg-white/60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={status === 'sending'}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#f36b5b] text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#e45d4e] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {status === 'sending' ? 'Sending...' : 'Submit'} <Send className="h-4 w-4" />
-                  </button>
-                  {status === 'sent' ? <p className="text-center text-sm font-bold text-[#4f7f54]">Message sent. We will get back to you shortly.</p> : null}
-                  {status === 'error' ? <p className="text-center text-sm font-bold text-[#b53a2f]">Could not send right now. Please call or email us directly.</p> : null}
-                </form>
-            </ScrollReveal>
-
-            <ScrollReveal direction="right">
-              <div className="space-y-8 text-center">
-                {PRIMARY_ADDRESSES.map((address) => (
-                  <div key={address.title}>
-                    <span className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#f4eadb]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={address.flag} alt="" width={22} height={15} aria-hidden="true" style={{ borderRadius: '2px', objectFit: 'cover' }} />
-                    </span>
-                    <h2 className="mt-4 text-lg font-black uppercase tracking-[0.05em]">{address.title}</h2>
-                    <div className="mt-2 space-y-1 text-base leading-7 text-[#15110d]">
-                      {address.lines.map((line) => <p key={line}>{line}</p>)}
-                    </div>
-                    <a href={address.mapUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-base font-medium text-[#f36b5b] hover:underline">
-                      Get Directions <ArrowRight className="h-4 w-4" />
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </ScrollReveal>
+      {/* ── Header Section ──────────────────────────────────── */}
+      <section className="px-4 pb-4 pt-10 sm:px-6 lg:pt-14" style={{ paddingTop: '7rem' }}>
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="flex flex-col items-center justify-center mb-0">
+            <h1 className="section-title">How can we help?</h1>
+            <p className="navratna-subtitle text-[#5a5043]!" style={{ margin: 0 }}>
+              Reach out to us — our team will respond within 24 hours.
+            </p>
           </div>
+        </div>
+      </section>
+
+      {/* ── Contact Form + Addresses ─────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-4 sm:px-8 mb-14">
+        <div className="grid gap-16 lg:grid-cols-[0.55fr_0.45fr] lg:items-start">
+
+          {/* Form */}
+          <div className="border border-[#e0d6c8] px-6 py-8 sm:px-8" style={{ backgroundColor: '#ffffff' }}>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-[#2c0a04] tracking-tight">Send Us a Message</h2>
+            </div>
+            <form onSubmit={handleSubmit} className="grid gap-3">
+              <input
+                required
+                maxLength={200}
+                placeholder="Name *"
+                value={formState.name}
+                onChange={(event) => setFormState({ ...formState, name: event.target.value })}
+                className="h-11 w-full border border-[#d9d4cb] px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
+                style={{ backgroundColor: '#ffffff' }}
+              />
+              <input
+                required
+                type="email"
+                maxLength={255}
+                placeholder="Email *"
+                value={formState.email}
+                onChange={(event) => setFormState({ ...formState, email: event.target.value })}
+                className="h-11 w-full border border-[#d9d4cb] px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
+                style={{ backgroundColor: '#ffffff' }}
+              />
+              <div className="grid grid-cols-[140px_1fr] gap-2">
+                <div className="relative">
+                  <select
+                    value={formState.countryCode}
+                    onChange={(event) => setFormState({ ...formState, countryCode: event.target.value })}
+                    className="h-11 w-full appearance-none border border-[#d9d4cb] pl-3 pr-8 text-sm text-[#15110d] outline-none focus:border-[#b86654]"
+                    style={{ backgroundColor: '#ffffff' }}
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.flag} {c.dial} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9e9892]">▾</span>
+                </div>
+                <input
+                  maxLength={20}
+                  placeholder="Phone number"
+                  value={formState.phone}
+                  onChange={(event) => setFormState({ ...formState, phone: event.target.value })}
+                  className="h-11 w-full border border-[#d9d4cb] px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
+                  style={{ backgroundColor: '#ffffff' }}
+                />
+              </div>
+              <textarea
+                required
+                rows={6}
+                maxLength={5000}
+                placeholder="Comments *"
+                value={formState.message}
+                onChange={(event) => setFormState({ ...formState, message: event.target.value })}
+                className="w-full resize-y border border-[#d9d4cb] px-4 py-3 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
+                style={{ backgroundColor: '#ffffff' }}
+              />
+              <button
+                type="submit"
+                disabled={status === 'sending'}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#7a5230] text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#5f3d24] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {status === 'sending' ? 'Sending...' : 'Submit'} <Send className="h-4 w-4" />
+              </button>
+              {status === 'sent' && <p className="text-center text-sm font-bold text-[#4f7f54]">Message sent. We will get back to you shortly.</p>}
+              {status === 'error' && <p className="text-center text-sm font-bold text-[#b53a2f]">Could not send right now. Please call or email us directly.</p>}
+            </form>
+          </div>
+
+          {/* Addresses */}
+          <div className="space-y-10 pt-2">
+            {PRIMARY_ADDRESSES.map((address) => (
+              <div key={address.title}>
+                <span className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#f4eadb]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={address.flag} alt="" width={22} height={15} aria-hidden="true" style={{ borderRadius: '2px', objectFit: 'cover' }} />
+                </span>
+                <h2 className="mt-3 text-lg font-black uppercase tracking-[0.05em]">{address.title}</h2>
+                <div className="mt-2 space-y-0.5 text-[15px] leading-7 text-[#15110d]">
+                  {address.lines.map((line) => <p key={line}>{line}</p>)}
+                </div>
+                <a href={address.mapUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[15px] font-medium text-[#b86654] hover:underline">
+                  Get Directions <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 

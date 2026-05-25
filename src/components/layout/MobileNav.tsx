@@ -152,6 +152,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             { label: 'Energized Gems', href: '/knowledge/energized-gems' },
             { label: 'Gem Care', href: '/knowledge/gems-care' },
             { label: "Rudraksha Library", href: '/knowledge/rudraksha' },
+            { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
             { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
             { label: 'Vedic Astrology', href: '/knowledge/astrology' },
           ].map((link) => (

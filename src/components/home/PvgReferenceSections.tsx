@@ -3,7 +3,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import type { CSSProperties, ReactNode } from 'react';
 import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
-import { TestimonialCard } from '@/components/testimonials/TestimonialCard';
 import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
 
 function toStyle(value: string): CSSProperties {
