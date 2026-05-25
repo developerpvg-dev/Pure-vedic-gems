@@ -138,6 +138,7 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/consultation-plans')) return 'leads.read';
   if (pathname.startsWith('/admin/leads')) return 'leads.read';
   if (pathname.startsWith('/admin/reviews')) return 'content.manage';
+  if (pathname.startsWith('/admin/testimonials')) return 'content.manage';
   if (pathname.startsWith('/admin/notifications')) return 'leads.read';
   if (
     pathname.startsWith('/admin/categories') ||

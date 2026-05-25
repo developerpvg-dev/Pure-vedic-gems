@@ -1135,6 +1135,289 @@ export interface Database {
         };
         Relationships: [];
       };
+      event_video_categories: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          description: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      event_videos: {
+        Row: {
+          id: string;
+          category_id: string;
+          title: string;
+          slug: string;
+          youtube_url: string;
+          youtube_id: string;
+          legacy_url: string | null;
+          description: string | null;
+          sort_order: number;
+          is_featured: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          category_id: string;
+          title: string;
+          slug: string;
+          youtube_url: string;
+          youtube_id: string;
+          legacy_url?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_featured?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          category_id?: string;
+          title?: string;
+          slug?: string;
+          youtube_url?: string;
+          youtube_id?: string;
+          legacy_url?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_featured?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'event_videos_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'event_video_categories';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      lab_certificates: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          lab_name: string | null;
+          certificate_url: string;
+          thumbnail_url: string | null;
+          description: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          lab_name?: string | null;
+          certificate_url: string;
+          thumbnail_url?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          lab_name?: string | null;
+          certificate_url?: string;
+          thumbnail_url?: string | null;
+          description?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      feedback_submissions: {
+        Row: {
+          id: string;
+          name: string;
+          email: string | null;
+          phone: string | null;
+          location: string | null;
+          rating: number;
+          subject: string | null;
+          message: string;
+          allow_display: boolean;
+          status: string;
+          is_featured: boolean;
+          admin_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          email?: string | null;
+          phone?: string | null;
+          location?: string | null;
+          rating?: number;
+          subject?: string | null;
+          message: string;
+          allow_display?: boolean;
+          status?: string;
+          is_featured?: boolean;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string | null;
+          phone?: string | null;
+          location?: string | null;
+          rating?: number;
+          subject?: string | null;
+          message?: string;
+          allow_display?: boolean;
+          status?: string;
+          is_featured?: boolean;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      feedback_replies: {
+        Row: {
+          id: string;
+          feedback_id: string;
+          name: string;
+          email: string;
+          message: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          feedback_id: string;
+          name: string;
+          email: string;
+          message: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          feedback_id?: string;
+          name?: string;
+          email?: string;
+          message?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'feedback_replies_feedback_id_fkey';
+            columns: ['feedback_id'];
+            isOneToOne: false;
+            referencedRelation: 'feedback_submissions';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      testimonials: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          location: string | null;
+          rating: number;
+          title: string | null;
+          message: string;
+          proof_image_url: string | null;
+          proof_alt: string | null;
+          source_url: string | null;
+          status: string;
+          is_active: boolean;
+          show_on_homepage: boolean;
+          sort_order: number;
+          published_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          location?: string | null;
+          rating?: number;
+          title?: string | null;
+          message: string;
+          proof_image_url?: string | null;
+          proof_alt?: string | null;
+          source_url?: string | null;
+          status?: string;
+          is_active?: boolean;
+          show_on_homepage?: boolean;
+          sort_order?: number;
+          published_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          location?: string | null;
+          rating?: number;
+          title?: string | null;
+          message?: string;
+          proof_image_url?: string | null;
+          proof_alt?: string | null;
+          source_url?: string | null;
+          status?: string;
+          is_active?: boolean;
+          show_on_homepage?: boolean;
+          sort_order?: number;
+          published_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       product_configurations: {
         Row: {
           id: string;
@@ -1989,6 +2272,12 @@ export type ConsultationPlanInsert = Database['public']['Tables']['consultation_
 export type JewelryDesign = Database['public']['Tables']['jewelry_designs']['Row'];
 export type EnergizationOption = Database['public']['Tables']['energization_options']['Row'];
 export type CertificationLab = Database['public']['Tables']['certification_labs']['Row'];
+export type EventVideoCategory = Database['public']['Tables']['event_video_categories']['Row'];
+export type EventVideo = Database['public']['Tables']['event_videos']['Row'];
+export type LabCertificate = Database['public']['Tables']['lab_certificates']['Row'];
+export type FeedbackSubmission = Database['public']['Tables']['feedback_submissions']['Row'];
+export type FeedbackReply = Database['public']['Tables']['feedback_replies']['Row'];
+export type Testimonial = Database['public']['Tables']['testimonials']['Row'];
 export type ProductConfiguration = Database['public']['Tables']['product_configurations']['Row'];
 export type Consultation = Database['public']['Tables']['consultations']['Row'];
 export type Enquiry = Database['public']['Tables']['enquiries']['Row'];

@@ -3,6 +3,8 @@
 /* eslint-disable react/no-unescaped-entities */
 import type { CSSProperties, ReactNode } from 'react';
 import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
+import { TestimonialCard } from '@/components/testimonials/TestimonialCard';
+import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
 
 function toStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
@@ -24,7 +26,54 @@ type PvgReferenceSectionsProps = {
   semipreciousSection: ReactNode;
   exploreSection: ReactNode;
   directorsPickSection: ReactNode;
+  testimonials: HomeTestimonial[];
 };
+
+export type HomeTestimonial = {
+  id: string;
+  name: string;
+  location: string | null;
+  rating: number;
+  title: string | null;
+  message: string;
+  proof_image_url?: string | null;
+  proof_alt?: string | null;
+};
+
+const FALLBACK_TESTIMONIALS: HomeTestimonial[] = [
+  {
+    id: 'fallback-baljit-bains',
+    name: 'Baljit Bains',
+    location: 'South Australia',
+    rating: 5,
+    title: 'Yellow Sapphire & Coral',
+    message: 'I bought two gemstones from Pure Vedic Gems. Vikas Ji gave me valuable advice and the team answered all my questions patiently. They helped me on every step of this process. I will highly recommend Pure Vedic Gems especially to overseas clients.',
+  },
+  {
+    id: 'fallback-m-bakeer',
+    name: 'M. Bakeer',
+    location: 'Ontario, Canada',
+    rating: 5,
+    title: 'Custom Ring',
+    message: 'The team walked me through the whole process up to delivery. The stone was very good quality and well energized, and I felt the difference as soon as I started wearing it. The craftsmanship of the ring was great as well.',
+  },
+  {
+    id: 'fallback-anagha',
+    name: 'Anagha',
+    location: 'Portland, USA',
+    rating: 5,
+    title: 'Blue Sapphire',
+    message: 'As recommended by the astrologer, I purchased the gemstones. After three months of wearing them, they guided me in the right direction and gave me strength in my convictions.',
+  },
+  {
+    id: 'fallback-tran-thi-yen-van',
+    name: 'Tran Thi Yen Van',
+    location: 'Ho Chi Minh City, Vietnam',
+    rating: 5,
+    title: 'Ruby - Manik',
+    message: 'The staff guided me slowly, clearly, and removed all my doubts. The products are very good and have given me positive results till now. I will highly recommend Pure Vedic Gems.',
+  },
+];
 
 export function PvgReferenceSections({
   navaratnaSection,
@@ -32,8 +81,10 @@ export function PvgReferenceSections({
   semipreciousSection,
   exploreSection,
   directorsPickSection,
+  testimonials,
 }: PvgReferenceSectionsProps) {
   const renderLegacyFallback = false;
+  const featuredTestimonials = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS;
 
   return (
     <>
@@ -982,138 +1033,18 @@ export function PvgReferenceSections({
 
 
   
-  <section className="testimonials-section" id="testimonials" aria-labelledby="testi-heading">
-    <div className="container">
-      <div className="section-head">
+  
+  <section className="bg-[#faf8f4] relative overflow-hidden" id="testimonials" aria-labelledby="testi-heading">
+    <div className="absolute top-0 left-[-20px] text-[420px] font-black leading-none text-[#7a1515] opacity-5 pointer-events-none select-none" aria-hidden="true">&ldquo;</div>
 
+    <div className="max-w-[1200px] mx-auto px-1 md:px-4">
+      <div className="section-head mb-2 md:mb-6 -mt-4 md:mt-0">
         <h2 className="section-title" id="testi-heading">What Our Clients Say</h2>
-        <p className="navratna-subtitle">Real experiences from clients across 40+ countries who chose Jyotish-certified gems.</p>
+        <p className="navratna-subtitle !text-[#5a5043]">Real experiences from clients across 40+ countries who chose Jyotish-certified gems.</p>
         <div className="section-rule-center"></div>
       </div>
 
-      <div className="testi-wrap-v2">
-        <div className="testi-track-v2" id="testiTrackV2">
-
-          <div className="testi-card-v2">
-            <div className="testi-stars-v2" aria-label="5 out of 5 stars">
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-            </div>
-            <p className="testi-quote-v2">"After wearing the Yellow Sapphire and Coral recommended by Pure Vedic Gems, I noticed significant positive changes within weeks. The gems were beautifully set and arrived with full GIA documentation."</p>
-            <div className="testi-meta-v2">
-              <div>
-                <div className="testi-name-v2">Baljit Bains</div>
-                <div className="testi-loc-v2">South Australia, Australia</div>
-              </div>
-              <span className="testi-badge-v2">Yellow Sapphire &amp; Coral</span>
-            </div>
-          </div>
-
-          <div className="testi-card-v2">
-            <div className="testi-stars-v2" aria-label="5 out of 5 stars">
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-            </div>
-            <p className="testi-quote-v2">"The custom ring crafted with my chosen gem exceeded all expectations. The craftsmanship is superb and the Vedic energisation ceremony was a truly sacred experience. Highly recommend!"</p>
-            <div className="testi-meta-v2">
-              <div>
-                <div className="testi-name-v2">M. Bakeer</div>
-                <div className="testi-loc-v2">Ontario, Canada</div>
-              </div>
-              <span className="testi-badge-v2">Custom Ring</span>
-            </div>
-          </div>
-
-          <div className="testi-card-v2">
-            <div className="testi-stars-v2" aria-label="5 out of 5 stars">
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-            </div>
-            <p className="testi-quote-v2">"Consulted about Blue Sapphire for career growth. The expert gave me detailed guidance based on my birth chart and the gem has truly brought clarity and focus to my professional life."</p>
-            <div className="testi-meta-v2">
-              <div>
-                <div className="testi-name-v2">Anagha</div>
-                <div className="testi-loc-v2">Portland, USA</div>
-              </div>
-              <span className="testi-badge-v2">Blue Sapphire</span>
-            </div>
-          </div>
-
-          <div className="testi-card-v2">
-            <div className="testi-stars-v2" aria-label="5 out of 5 stars">
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-            </div>
-            <p className="testi-quote-v2">"I ordered an Emerald for my daughter and the quality was exceptional. The live energisation ritual was performed as per our Gotra and we received the video recording. Truly authentic!"</p>
-            <div className="testi-meta-v2">
-              <div>
-                <div className="testi-name-v2">Bibi Hazra</div>
-                <div className="testi-loc-v2">Mauritius</div>
-              </div>
-              <span className="testi-badge-v2">Emerald — Panna</span>
-            </div>
-          </div>
-
-          <div className="testi-card-v2">
-            <div className="testi-stars-v2" aria-label="5 out of 5 stars">
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-            </div>
-            <p className="testi-quote-v2">"Purchased a Yellow Sapphire set in gold. The stone was exactly as described — natural, no heat treatment, with GRS certificate. The setting quality and delivery to UK was perfect."</p>
-            <div className="testi-meta-v2">
-              <div>
-                <div className="testi-name-v2">Nitin</div>
-                <div className="testi-loc-v2">United Kingdom</div>
-              </div>
-              <span className="testi-badge-v2">Yellow Sapphire</span>
-            </div>
-          </div>
-
-          <div className="testi-card-v2">
-            <div className="testi-stars-v2" aria-label="5 out of 5 stars">
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-              <svg className="testi-star-v2" viewBox="0 0 20 20"><path d="M10 1l2.4 7.4H20l-6.2 4.5 2.4 7.4L10 16l-6.2 4.3 2.4-7.4L0 8.4h7.6z"/></svg>
-            </div>
-            <p className="testi-quote-v2">"I consulted from Vietnam and received a Ruby stone for my husband. The gem quality is outstanding and the personalised Vedic recommendation was so precise. Will order again!"</p>
-            <div className="testi-meta-v2">
-              <div>
-                <div className="testi-name-v2">Tran Thi Yen Van</div>
-                <div className="testi-loc-v2">Ho Chi Minh City, Vietnam</div>
-              </div>
-              <span className="testi-badge-v2">Ruby — Manik</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div className="testi-nav-v2">
-        <button className="testi-arr-v2" id="testiPrevV2" aria-label="Previous testimonials">
-          <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <button className="testi-arr-v2" id="testiNextV2" aria-label="Next testimonials">
-          <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-      </div>
-
+      <HomeTestimonialSlider testimonials={featuredTestimonials} />
     </div>
   </section>
 

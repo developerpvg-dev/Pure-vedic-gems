@@ -906,14 +906,14 @@
     /* ============================================================
        RESET & BASE
     ============================================================ */
-    .pvg-react-home-root,
-    .pvg-react-home-root *,
-    .pvg-react-home-root *::before,
-    .pvg-react-home-root *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    
+    @layer base {
+  :where(.pvg-react-home-root, .pvg-react-home-root *, .pvg-react-home-root *::before, .pvg-react-home-root *::after) {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
 
     html { scroll-behavior: smooth; }
 
@@ -3915,8 +3915,8 @@
       display: flex; gap: 20px;
       transition: transform 0.5s cubic-bezier(0.19,1,0.22,1); will-change: transform;
     }
-    .testi-card-v2 {
-      flex: 0 0 calc(33.333% - 14px); min-width: 0;
+    .testi-card-v2 { scroll-snap-align: start;
+      flex: 0 0 calc(50% - 14px); min-width: 0;
       background: var(--white); border: 1px solid var(--border-light); border-radius: 4px;
       padding: 32px 28px; position: relative; overflow: hidden;
     }
@@ -3943,6 +3943,7 @@
     .testi-nav-v2 {
       display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 36px;
     }
+    .testi-view-all-wrap { display: flex; justify-content: center; margin-top: 18px; }
     .testi-arr-v2 {
       width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center; cursor: pointer;
@@ -4256,7 +4257,7 @@
       .pvg-tl-left { display: none; }
       .pvg-tl-right { text-align: left; }
       .testimonials-section { padding: 64px 0; }
-      .testi-card-v2 { flex: 0 0 calc(90% - 10px); }
+      .testi-card-v2 { scroll-snap-align: start; flex: 0 0 calc(90% - 10px); }
       .reco-section { padding: 0; }
       .reco-split { grid-template-columns: 1fr; }
       .reco-copy-panel { min-height: 220px; padding: 34px 24px 26px; }
@@ -7400,7 +7401,7 @@
     margin-top: 26px !important;
   }
 
-  .pvg-react-home-root .testi-card-v2 {
+  .pvg-react-home-root .testi-card-v2 { scroll-snap-align: start;
     padding: 24px 22px !important;
   }
 
@@ -8734,7 +8735,7 @@ a.pvg-footer-link:hover {
   background: linear-gradient(90deg, transparent, #f0c96a, transparent) !important;
 }
 
-.pvg-react-home-root .testi-card-v2 {
+.pvg-react-home-root .testi-card-v2 { scroll-snap-align: start;
   border-color: rgba(240, 201, 106, 0.26) !important;
   background: rgba(255, 251, 242, 0.9) !important;
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.22) !important;
@@ -9292,21 +9293,16 @@ a.pvg-footer-link:hover {
   text-shadow: 0 1px 14px rgba(255, 255, 255, 0.82) !important;
 }
 
-.pvg-react-home-root .testi-card-v2 {
-  border-color: rgba(255, 255, 255, 0.48) !important;
-  background: rgba(255, 255, 255, 0.54) !important;
-  box-shadow: 0 18px 42px rgba(44, 4, 4, 0.12) !important;
-  backdrop-filter: blur(8px) saturate(1.05) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(1.05) !important;
-}
-
-.pvg-react-home-root .testi-quote-v2,
-.pvg-react-home-root .testi-loc-v2 {
-  color: rgba(44, 4, 4, 0.72) !important;
-}
-
-.pvg-react-home-root .testi-name-v2 {
-  color: #2c0404 !important;
+/* testi-card-v2 is now a transparent flex-width wrapper; the torn-paper card
+   (TestimonialCard) handles its own visuals via the cardbg.png image. */
+.pvg-react-home-root .testi-card-v2 { scroll-snap-align: start;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -9659,3 +9655,202 @@ a.pvg-footer-link:hover {
   }
 }
 
+
+
+/* ============================================================
+   TESTIMONIALS SECTION (Homepage) - Layout Overrides
+   ============================================================ */
+
+#testimonials {
+  padding-top: 40px;
+  padding-bottom: 30px;
+}
+@media (min-width: 768px) {
+  #testimonials {
+    padding-top: 80px;
+    padding-bottom: 60px;
+  }
+}
+
+#testimonials .pvg-testi-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  position: relative;
+  z-index: 10;
+}
+
+@media (min-width: 640px) {
+  #testimonials .pvg-testi-inner {
+    padding: 0 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  #testimonials .pvg-testi-inner {
+    padding: 0 48px;
+  }
+}
+
+#testimonials .pvg-testi-header {
+  max-width: 56rem;
+  margin: 0 auto 64px;
+  text-align: center;
+}
+
+#testimonials .pvg-testi-eyebrow {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #a68252;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+#testimonials .pvg-testi-eyebrow-line {
+  height: 1px;
+  width: 48px;
+  background: rgba(166, 130, 82, 0.3);
+  display: block;
+  flex-shrink: 0;
+}
+
+#testimonials .pvg-testi-heading {
+  margin-top: 12px;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  font-weight: 500;
+  color: #222;
+  letter-spacing: -0.02em;
+}
+
+#testimonials .pvg-testi-heading-accent {
+  color: #a68252;
+  font-style: italic;
+}
+
+#testimonials .pvg-testi-subtitle {
+  margin: 24px auto 0;
+  max-width: 42rem;
+  font-size: 15px;
+  font-weight: 500;
+  color: #5a5043;
+  text-align: center;
+}
+
+#testimonials .pvg-testi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: 40px;
+  row-gap: 64px;
+  padding-bottom: 48px;
+}
+
+@media (min-width: 768px) {
+  #testimonials .pvg-testi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+#testimonials .pvg-testi-cta-wrap {
+  max-width: 64rem;
+  margin: 24px auto 0;
+}
+
+#testimonials .pvg-testi-cta-box {
+  background: #f2efe9;
+  border-radius: 16px;
+  padding: 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #e8dfd1;
+}
+
+@media (min-width: 640px) {
+  #testimonials .pvg-testi-cta-box {
+    flex-direction: row;
+    padding: 24px 40px;
+  }
+}
+
+#testimonials .pvg-testi-cta-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  z-index: 10;
+}
+
+#testimonials .pvg-testi-cta-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+#testimonials .pvg-testi-cta-icon-inner {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 2px solid #a68252;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+}
+
+#testimonials .pvg-testi-cta-icon-dot {
+  width: 12px;
+  height: 12px;
+  background: #a68252;
+  transform: rotate(-45deg);
+}
+
+#testimonials .pvg-testi-cta-text {
+  color: #3d3326;
+  font-weight: 500;
+  font-size: 15px;
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+#testimonials .pvg-testi-cta-btn {
+  z-index: 10;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #8a602c;
+  padding: 14px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  text-decoration: none;
+  transition: background 0.2s;
+  border-radius: 2px;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#testimonials .pvg-testi-cta-btn:hover {
+  background: #6c481d;
+}
+
+#testimonials .pvg-testi-cta-btn svg {
+  flex-shrink: 0;
+}

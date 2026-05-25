@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Legacy Pure Vedic Gems care guide covering cleaning, maintenance, handling precautions, and gemstone-specific care techniques.',
 };
 
-const CARE_IMAGE = 'https://www.purevedicgems.com/wp-content/uploads/2015/11/care.jpg';
+const CARE_IMAGE = '/legacy/knowledge/gemstone-care.jpg';
 
 const CARE_SECTIONS = [
   {

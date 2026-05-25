@@ -1,5 +1,6 @@
 import { PvgHeroSection } from '@/components/home/PvgHeroSection';
 import { PvgHomeInteractions } from '@/components/home/PvgHomeInteractions';
+import { createClient } from '@/lib/supabase/server';
 import {
   DirectorsPickSection,
   ExploreByCategorySection,
@@ -9,14 +10,30 @@ import {
   RudrakshaHomeSection,
   SemipreciousHomeSection,
 } from '@/components/home/PvgManagedCategorySections';
-import { PvgReferenceSections } from '@/components/home/PvgReferenceSections';
+import { PvgReferenceSections, type HomeTestimonial } from '@/components/home/PvgReferenceSections';
 
 export const revalidate = 300;
 
+async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('testimonials')
+    .select('id, name, location, rating, title, message, proof_image_url, proof_alt')
+    .eq('status', 'approved')
+    .eq('is_active', true)
+    .eq('show_on_homepage', true)
+    .order('sort_order', { ascending: true })
+    .order('published_at', { ascending: false })
+    .limit(8);
+
+  return (data ?? []) as HomeTestimonial[];
+}
+
 export default async function HomePage() {
-  const [categories, sectionCatalog] = await Promise.all([
+  const [categories, sectionCatalog, testimonials] = await Promise.all([
     getHomeManagedCategories(),
     getHomeSectionCatalog(),
+    getHomeTestimonials(),
   ]);
 
   return (
@@ -29,6 +46,7 @@ export default async function HomePage() {
         semipreciousSection={<SemipreciousHomeSection categories={categories.upratna} />}
         exploreSection={<ExploreByCategorySection idols={sectionCatalog.exploreIdols} jewelry={sectionCatalog.exploreJewelry} />}
         directorsPickSection={<DirectorsPickSection products={sectionCatalog.directorPicks} />}
+        testimonials={testimonials}
       />
       <PvgHomeInteractions />
     </div>

@@ -21,12 +21,12 @@ const contentSecurityPolicy = [
     .join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://www.purevedicgems.com",
+  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://img.youtube.com https://i.ytimg.com",
   "media-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io",
-  "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com",
+  "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://*.api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://cdn.jsdelivr.net",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://*.api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com",
   isProduction ? 'upgrade-insecure-requests' : '',
 ]
   .filter(Boolean)
@@ -87,20 +87,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'www.purevedicgems.com',
-        pathname: '/wp-content/**',
-      },
     ],
   },
 
   async redirects() {
     return [
-      { source: '/energized-gems', destination: '/knowledge/energized-gems', permanent: true },
-      { source: '/energized-gems/', destination: '/knowledge/energized-gems', permanent: true },
-      { source: '/gems-care', destination: '/knowledge/gems-care', permanent: true },
-      { source: '/gems-care/', destination: '/knowledge/gems-care', permanent: true },
       { source: '/terms-and-conditions', destination: '/policies/terms', permanent: true },
       { source: '/terms-and-conditions/', destination: '/policies/terms', permanent: true },
       { source: '/returns-policy', destination: '/policies/returns', permanent: true },

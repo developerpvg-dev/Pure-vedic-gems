@@ -105,6 +105,7 @@ const LOCATIONS = [
     city: 'Saket, New Delhi',
     image: '/home/hero/pvgheropc2.webp',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi',
+    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi&z=15&output=embed',
     copy: 'FF-32, MGF Metropolitan Mall, Opposite Saket Court, District Centre Saket. Retail, wholesale, and export hub for Pure Vedic Gems Pvt. Ltd.',
   },
   {
@@ -112,6 +113,7 @@ const LOCATIONS = [
     city: 'Sector 49, Noida',
     image: '/home/whoweare/4Energization.webp',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20Sector%2049%20Noida',
+    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida&z=15&output=embed',
     copy: 'Gems, Rudraksha, yagya, healing therapy, Vedic astrology, research, and energizing centre for deeper remedy work and consultation.',
   },
   {
@@ -119,6 +121,7 @@ const LOCATIONS = [
     city: 'Hounslow, London',
     image: '/home/hero/pvgheropc1.webp',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20Hounslow%20London',
+    embedUrl: 'https://maps.google.com/maps?hl=en&q=95%20Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK&z=14&output=embed',
     copy: 'Appointment-based support for overseas clients, coordinated through Pure Vedic Gems UK channels and official listed addresses.',
   },
 ] as const;
@@ -612,6 +615,16 @@ export default function AboutPage() {
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-[#8a6400]">{location.city}</p>
                     </div>
                     <p className="mt-4 flex-1 text-sm leading-7 text-[#5a4a3a]">{location.copy}</p>
+                    <div className="mt-5 overflow-hidden rounded-2xl border border-[#e8d5a3] bg-white">
+                      <iframe
+                        title={`${location.title} map`}
+                        src={location.embedUrl}
+                        className="h-48 w-full"
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
                     <a
                       href={location.mapUrl}
                       target="_blank"

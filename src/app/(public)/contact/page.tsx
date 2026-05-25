@@ -144,16 +144,16 @@ const WORKING_TIMINGS = [
 const LOCATION_MAPS = [
   {
     title: 'Delhi Store',
-    routeImage: 'https://www.purevedicgems.com/wp-content/themes/purevedicgems/images/location-map.jpg',
+    routeImage: '/legacy/contact/delhi-location-map.jpg',
     routeAlt: 'Route map to Pure Vedic Gems Delhi outlet in MGF Metropolitan Mall',
-    embedUrl: 'https://www.google.com/maps?q=Certified%20Gemstones%20Seller%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi&output=embed',
+    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi&z=15&output=embed',
     mapUrl: PRIMARY_ADDRESSES[0].mapUrl,
   },
   {
     title: 'Noida Research Centre',
-    routeImage: 'https://www.purevedicgems.com/wp-content/uploads/2020/09/noida-location-map.jpg',
+    routeImage: '/legacy/contact/noida-location-map.jpg',
     routeAlt: 'Route map to Pure Vedic Science and Research Centre Noida',
-    embedUrl: 'https://www.google.com/maps?q=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida&output=embed',
+    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida&z=15&output=embed',
     mapUrl: PRIMARY_ADDRESSES[1].mapUrl,
   },
 ] as const;
@@ -376,6 +376,7 @@ export default function ContactPage() {
                     src={location.embedUrl}
                     className="h-96 w-full border border-[#ece5db]"
                     loading="lazy"
+                    allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 </div>
