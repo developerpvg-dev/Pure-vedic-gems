@@ -1,3 +1,4 @@
+import type { SanityImageSource } from '@sanity/image-url';
 import { sanityFetch } from './client';
 
 // ── Blog Queries ─────────────────────────────────────────────────────
@@ -161,16 +162,16 @@ export async function getKhubCategoriesWithPosts(postsPerCategory = 3) {
     Array<{
       _id: string;
       title: string;
-      slug: { current: string };
+      slug: { _type: 'slug'; current: string };
       posts: Array<{
         _id: string;
-        _type: string;
+        _type: 'blogPost';
         title: string;
-        slug: { current: string };
+        slug: { _type: 'slug'; current: string };
         excerpt?: string;
-        mainImage?: unknown;
+        mainImage?: SanityImageSource;
         publishedAt: string;
-        category?: { _id: string; title: string; slug: { current: string } };
+        category?: { _id: string; title: string; slug: { _type: 'slug'; current: string } };
         estimatedReadingTime?: number;
       }>;
     }>
