@@ -64,6 +64,7 @@ interface PaymentSectionProps {
   shippingMethod: ShippingMethodId;
   energization?: EnergizationFields;
   specialInstructions?: string;
+  rewardPointsToRedeem?: number;
   isProcessing: boolean;
   setIsProcessing: (v: boolean) => void;
   onOrderCreated: (orderId: string) => void;
@@ -77,6 +78,7 @@ export function PaymentSection({
   shippingMethod,
   energization,
   specialInstructions,
+  rewardPointsToRedeem = 0,
   isProcessing,
   setIsProcessing,
   onOrderCreated,
@@ -147,6 +149,7 @@ export function PaymentSection({
           shipping_method: shippingMethod,
           energization,
           special_instructions: specialInstructions,
+          reward_points_to_redeem: rewardPointsToRedeem,
           checkout_consent: {
             terms_accepted: true,
             privacy_accepted: true,
@@ -281,6 +284,7 @@ export function PaymentSection({
     shippingMethod,
     energization,
     specialInstructions,
+    rewardPointsToRedeem,
     isProcessing,
     termsAccepted,
     returnsAccepted,

@@ -11,6 +11,7 @@ import { SHIPPING_METHODS } from '@/lib/validators/order';
 import type { ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { Coupon, ShippingMethod } from '@/lib/types/database';
 import { buildTaxBreakdown, calculateGstComponent, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
+import { quoteRewardRedemption } from '@/lib/rewards/service';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,9 @@ export interface PricingBreakdown {
   energization_charges: number;
   shipping_cost: number;
   discount: number;
+  coupon_discount: number;
+  reward_points_redeemed: number;
+  reward_discount: number;
   gst_amount: number;
   tax_breakdown: ReturnType<typeof taxBreakdownToJson>;
   total: number;
@@ -145,7 +149,8 @@ export async function recalculateOrderTotal(
   shippingMethod: ShippingMethodId = 'standard',
   couponCode?: string,
   energizationType?: string,
-  shippingAddress?: Pick<ShippingAddress, 'state'>
+  shippingAddress?: Pick<ShippingAddress, 'state'>,
+  rewardOptions?: { customerId: string | null; pointsToRedeem?: number | null }
 ): Promise<PricingBreakdown> {
   const supabase = createAdminClient();
 
@@ -268,7 +273,7 @@ export async function recalculateOrderTotal(
   const shippingCost = shippingConfig.cost;
 
   // ── 5. Coupon discount ────────────────────────────────────────────────
-  let discount = 0;
+  let couponDiscount = 0;
   if (couponCode) {
     const rawResult = await supabase
       .from('coupons')
@@ -315,14 +320,23 @@ export async function recalculateOrderTotal(
     }
 
     if (coupon.discount_type === 'percentage') {
-      discount = Math.round(eligibleSubtotal * (coupon.discount_value / 100));
+      couponDiscount = Math.round(eligibleSubtotal * (coupon.discount_value / 100));
       if (coupon.max_discount) {
-        discount = Math.min(discount, coupon.max_discount);
+        couponDiscount = Math.min(couponDiscount, coupon.max_discount);
       }
     } else {
-      discount = Math.min(coupon.discount_value, eligibleSubtotal);
+      couponDiscount = Math.min(coupon.discount_value, eligibleSubtotal);
     }
   }
+
+  const rewardQuote = await quoteRewardRedemption({
+    customerId: rewardOptions?.customerId ?? null,
+    requestedPoints: rewardOptions?.pointsToRedeem ?? 0,
+    eligibleAmount: Math.max(0, subtotal - couponDiscount),
+  });
+  const rewardDiscount = rewardQuote?.discount_amount ?? 0;
+  const rewardPointsRedeemed = rewardQuote?.points_to_redeem ?? 0;
+  const discount = couponDiscount + rewardDiscount;
 
   // ── 6. GST calculation ────────────────────────────────────────────────
   const itemDiscountRatio = subtotal > 0 ? Math.min(discount / subtotal, 1) : 0;
@@ -359,6 +373,9 @@ export async function recalculateOrderTotal(
     energization_charges: energizationCharges,
     shipping_cost: shippingCost,
     discount,
+    coupon_discount: couponDiscount,
+    reward_points_redeemed: rewardPointsRedeemed,
+    reward_discount: rewardDiscount,
     gst_amount: gstAmount,
     tax_breakdown: taxBreakdownToJson(taxBreakdown),
     total: Math.max(total, 0), // Safety: total should never be negative

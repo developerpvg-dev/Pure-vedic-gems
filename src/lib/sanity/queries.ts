@@ -142,10 +142,45 @@ export async function getAllBlogPostSlugs() {
   );
 }
 
-/** All category slugs — for generateStaticParams */
+/** All blog category slugs — for generateStaticParams */
 export async function getAllBlogCategorySlugs() {
   return sanityFetch<{ slug: { current: string } }[]>(
     `*[_type == "blogCategory"]{slug}`,
+    undefined,
+    []
+  );
+}
+
+/**
+ * All blog categories that have at least one published post,
+ * each with their latest 3 posts — used on the homepage Knowledge Hub tabs.
+ */
+export async function getKhubCategoriesWithPosts(postsPerCategory = 3) {
+  return sanityFetch<
+    Array<{
+      _id: string;
+      title: string;
+      slug: { current: string };
+      posts: Array<{
+        _id: string;
+        title: string;
+        slug: { current: string };
+        excerpt?: string;
+        mainImage?: unknown;
+        publishedAt: string;
+        category?: { _id: string; title: string; slug: { current: string } };
+        estimatedReadingTime?: number;
+      }>;
+    }>
+  >(
+    `*[_type == "blogCategory" && count(*[_type == "blogPost" && category._ref == ^._id && !(_id in path("drafts.**"))]) > 0] | order(title asc) {
+      _id,
+      title,
+      slug,
+      "posts": *[_type == "blogPost" && category._ref == ^._id && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...${postsPerCategory}] {
+        ${BLOG_POST_FIELDS}
+      }
+    }`,
     undefined,
     []
   );

@@ -3,18 +3,18 @@
 export function StickyContactRail() {
   const railStyle = {
     position: 'fixed',
-    top: 'auto',
-    bottom: 'calc(env(safe-area-inset-bottom, 0px) + 22px)',
+    top: '50%',
+    bottom: 'auto',
     left: 'auto',
-    right: 'clamp(14px, 2vw, 24px)',
+    right: '0px',
     width: 'fit-content',
-    transform: 'none',
+    transform: 'translateY(-50%)',
     zIndex: 920,
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
     padding: 0,
-    borderRadius: '999px',
+    borderRadius: '14px 0 0 14px',
     background: 'transparent',
     border: 0,
     boxShadow: 'none',
@@ -28,7 +28,7 @@ export function StickyContactRail() {
     justifyContent: 'center',
     width: '48px',
     height: '48px',
-    borderRadius: '999px',
+    borderRadius: '12px 0 0 12px',
     boxShadow: '0 10px 20px rgba(148, 163, 184, 0.16)',
     textDecoration: 'none',
     border: '1px solid rgba(226, 232, 240, 0.95)',
@@ -37,18 +37,18 @@ export function StickyContactRail() {
 
   const callStyle = {
     ...buttonStyle,
-    background: 'linear-gradient(180deg, #f8fbff 0%, #edf5ff 100%)',
-    borderColor: 'rgba(191, 219, 254, 0.95)',
-    boxShadow: '0 10px 20px rgba(59, 130, 246, 0.14)',
-    color: '#111111',
+    background: '#A746F4',
+    borderColor: '#A746F4',
+    boxShadow: '0 12px 24px rgba(167, 70, 244, 0.28)',
+    color: '#ffffff',
   } as const;
 
   const whatsappStyle = {
     ...buttonStyle,
-    background: 'linear-gradient(180deg, #f6fff8 0%, #ebfff1 100%)',
-    borderColor: 'rgba(187, 247, 208, 0.95)',
-    boxShadow: '0 10px 20px rgba(34, 197, 94, 0.14)',
-    color: '#111111',
+    background: '#25D366',
+    borderColor: '#25D366',
+    boxShadow: '0 12px 24px rgba(37, 211, 102, 0.28)',
+    color: '#ffffff',
   } as const;
 
   const iconStyle = {
@@ -61,11 +61,12 @@ export function StickyContactRail() {
     <>
       <style>{`
         .pvg-sticky-contact-rail {
-          top: auto !important;
-          bottom: calc(env(safe-area-inset-bottom, 0px) + 22px) !important;
+          top: 50% !important;
+          bottom: auto !important;
           left: auto !important;
-          right: clamp(14px, 2vw, 24px) !important;
+          right: 0 !important;
           width: fit-content !important;
+          transform: translateY(-50%) !important;
           gap: 10px !important;
           padding: 0 !important;
           border: 0 !important;
@@ -76,6 +77,7 @@ export function StickyContactRail() {
         .pvg-sticky-contact-link {
           width: 48px !important;
           height: 48px !important;
+          border-radius: 12px 0 0 12px !important;
           box-shadow: 0 10px 20px rgba(148, 163, 184, 0.16) !important;
         }
 
@@ -86,9 +88,10 @@ export function StickyContactRail() {
 
         @media (max-width: 1024px) {
           .pvg-sticky-contact-rail {
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
+            top: 50% !important;
+            bottom: auto !important;
             left: auto !important;
-            right: 12px !important;
+            right: 0 !important;
             gap: 9px !important;
           }
 
@@ -105,9 +108,11 @@ export function StickyContactRail() {
 
         @media (max-width: 767px) {
           .pvg-sticky-contact-rail {
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
+            top: 50% !important;
+            bottom: auto !important;
             left: auto !important;
-            right: calc(env(safe-area-inset-right, 0px) + 10px) !important;
+            right: env(safe-area-inset-right, 0px) !important;
+            transform: translateY(-50%) !important;
             gap: 6px !important;
           }
 
@@ -139,7 +144,7 @@ export function StickyContactRail() {
           aria-label="Chat on WhatsApp"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" style={iconStyle}>
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+            <path d="M20.52 3.48A11.8 11.8 0 0 0 12.13 0C5.58 0 .25 5.34.25 11.9c0 2.09.55 4.14 1.58 5.94L0 24l6.34-1.66a11.9 11.9 0 0 0 5.79 1.48h.01c6.55 0 11.88-5.34 11.88-11.9 0-3.17-1.23-6.14-3.5-8.44ZM12.13 21.8h-.01a9.9 9.9 0 0 1-5.04-1.38l-.36-.22-3.76.99 1-3.67-.24-.38a9.86 9.86 0 0 1-1.52-5.24c0-5.46 4.44-9.9 9.91-9.9 2.64 0 5.11 1.03 6.98 2.91a9.82 9.82 0 0 1 2.9 6.99c0 5.46-4.44 9.9-9.9 9.9Zm5.43-7.42c-.3-.15-1.77-.87-2.05-.97-.27-.1-.47-.15-.67.15-.19.3-.76.97-.93 1.17-.17.19-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.88-.79-1.48-1.77-1.65-2.06-.18-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.19.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.08-.79.38-.28.29-1.04 1.01-1.04 2.47s1.06 2.88 1.21 3.08c.15.19 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.72.22 1.37.19 1.89.11.57-.08 1.77-.72 2.02-1.42.25-.69.25-1.28.18-1.41-.08-.12-.28-.19-.57-.34Z" />
           </svg>
         </a>
       </div>

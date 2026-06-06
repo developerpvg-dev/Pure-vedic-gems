@@ -148,9 +148,17 @@ export function faqJsonLd(faqs: Array<{ question: string; answer: string }>): Js
 }
 
 export function productJsonLd(product: Product | ProductCard, path: string): JsonLd {
-  const availability = product.in_stock === false || product.availability_status === 'out_of_stock'
-    ? 'https://schema.org/OutOfStock'
-    : 'https://schema.org/InStock';
+  const isOnRequest =
+    product.price_mode === 'on_demand' ||
+    product.price_mode === 'quote_required' ||
+    !product.price ||
+    product.price <= 0;
+  const availability = isOnRequest
+    ? 'https://schema.org/LimitedAvailability'
+    : product.in_stock === false || product.availability_status === 'out_of_stock'
+      ? 'https://schema.org/OutOfStock'
+      : 'https://schema.org/InStock';
+  const hasStructuredPrice = typeof product.price === 'number' && (product.price > 0 || product.price_mode === 'free');
 
   return {
     '@context': 'https://schema.org',
@@ -167,7 +175,7 @@ export function productJsonLd(product: Product | ProductCard, path: string): Jso
           '@type': 'Offer',
           url: absoluteUrl(path),
           priceCurrency: (product as Product).currency || 'INR',
-          price: product.price,
+          price: hasStructuredPrice ? product.price : undefined,
           availability,
           itemCondition: 'https://schema.org/NewCondition',
         }

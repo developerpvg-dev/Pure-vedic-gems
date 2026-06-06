@@ -4,6 +4,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
 import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
+import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySections';
+import type { SanityBlogPost } from '@/lib/types/blog';
+import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 
 function toStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
@@ -19,6 +22,13 @@ function toStyle(value: string): CSSProperties {
   return style as CSSProperties;
 }
 
+type KhubCategory = {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  posts: SanityBlogPost[];
+};
+
 type PvgReferenceSectionsProps = {
   navaratnaSection: ReactNode;
   rudrakshaSection: ReactNode;
@@ -26,6 +36,7 @@ type PvgReferenceSectionsProps = {
   exploreSection: ReactNode;
   directorsPickSection: ReactNode;
   testimonials: HomeTestimonial[];
+  knowledgeBlogCategories?: KhubCategory[];
 };
 
 export type HomeTestimonial = {
@@ -74,6 +85,46 @@ const FALLBACK_TESTIMONIALS: HomeTestimonial[] = [
   },
 ];
 
+const KHUB_GRADIENTS = [
+  'linear-gradient(145deg, #2A0202, #4A0808)',
+  'linear-gradient(145deg, #061022, #0E1E50)',
+  'linear-gradient(145deg, #031208, #061E0C)',
+  'linear-gradient(145deg, #1A0E02, #2E1804)',
+  'linear-gradient(145deg, #1A0800, #3D1A05)',
+  'linear-gradient(145deg, #1a0635, #4B0082)',
+  'linear-gradient(145deg, #0A0E1A, #101840)',
+  'linear-gradient(145deg, #1E0606, #3A0808)',
+] as const;
+
+function KhubBlogCard({ post, gradient }: { post: SanityBlogPost; gradient: string }) {
+  const imgUrl =
+    post.mainImage && isSanityConfigured
+      ? (() => {
+          try {
+            return urlFor(post.mainImage).width(480).height(240).quality(80).auto('format').url();
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+  return (
+    <article className="khub-article">
+      <div className="khub-article-img" style={imgUrl ? { backgroundImage: `url(${imgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: gradient }}>
+        {!imgUrl && <div className="khub-article-cat">{post.category?.title ?? 'Article'}</div>}
+        {imgUrl && <div className="khub-article-cat">{post.category?.title ?? 'Article'}</div>}
+      </div>
+      <div className="khub-article-body">
+        <div className="khub-article-title">{post.title}</div>
+        {post.excerpt && <div className="khub-article-excerpt">{post.excerpt}</div>}
+        <a href={`/blog/${post.slug.current}`} className="khub-article-link">
+          Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </article>
+  );
+}
+
 export function PvgReferenceSections({
   navaratnaSection,
   rudrakshaSection,
@@ -81,6 +132,7 @@ export function PvgReferenceSections({
   exploreSection,
   directorsPickSection,
   testimonials,
+  knowledgeBlogCategories,
 }: PvgReferenceSectionsProps) {
   const renderLegacyFallback = false;
   const featuredTestimonials = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS;
@@ -260,8 +312,7 @@ export function PvgReferenceSections({
 
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <div className="about-exp-num">87+</div>
-            <div className="about-exp-label">Years<br />Legacy</div>
+            <img className="about-exp-img" src="/home/whoweare/87yeara.png" alt="" loading="lazy" />
           </div>
         </div>
 
@@ -376,9 +427,8 @@ export function PvgReferenceSections({
             </div>
 
           </div>
-          <div className="about-exp-badge" style={toStyle("background: var(--gold); border-color: var(--white); bottom: 0; right: -14px;")} aria-hidden="true">
-            <div className="about-exp-num" style={toStyle("font-size: 13px; color: var(--maroon-deepest);")}>6+</div>
-            <div className="about-exp-label" style={toStyle("color: rgba(0,0,0,0.55);")}>Global<br />Labs</div>
+          <div className="cert-exp-badge" aria-hidden="true">
+            <img className="cert-exp-img" src="/home/certificates/6globallabs.png?v=20260528c" alt="6+ Global Labs" loading="lazy" />
           </div>
         </div>
 
@@ -776,124 +826,139 @@ export function PvgReferenceSections({
   <section className="khub-section" id="knowledge-hub" aria-labelledby="khub-heading">
     <div className="container">
       <div className="section-head">
-
         <h2 className="section-title" id="khub-heading">Knowledge Hub</h2>
         <p className="navratna-subtitle">Ancient wisdom, modern understanding. Explore our comprehensive guides.</p>
         <div className="section-rule-center"></div>
       </div>
 
-      <div className="khub-tabs" role="tablist">
-        <button className="khub-tab is-active" data-khub="gemstones" role="tab" aria-selected="true">Gemstones</button>
-        <button className="khub-tab" data-khub="astrology" role="tab" aria-selected="false">Astrology</button>
-        <button className="khub-tab" data-khub="rudraksha" role="tab" aria-selected="false">Rudraksha</button>
-      </div>
+      {knowledgeBlogCategories && knowledgeBlogCategories.length > 0 ? (
+        <>
+          {/* Dynamic tabs from Sanity categories */}
+          <div className="khub-tabs" role="tablist">
+            {knowledgeBlogCategories.map((cat, i) => (
+              <button
+                key={cat._id}
+                className={`khub-tab${i === 0 ? ' is-active' : ''}`}
+                data-khub={cat.slug.current}
+                role="tab"
+                aria-selected={i === 0 ? 'true' : 'false'}
+              >
+                {cat.title}
+              </button>
+            ))}
+          </div>
 
-      
-      <div className="khub-panel is-active" id="khub-panel-gemstones" role="tabpanel">
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #2A0202, #4A0808);")}>
-            <div className="khub-article-cat">Gemstone Guides</div>
+          {/* Dynamic panels — one per category */}
+          {knowledgeBlogCategories.map((cat, i) => (
+            <div
+              key={cat._id}
+              className={`khub-panel${i === 0 ? ' is-active' : ''}`}
+              id={`khub-panel-${cat.slug.current}`}
+              role="tabpanel"
+            >
+              {cat.posts.map((post, j) => (
+                <KhubBlogCard
+                  key={post._id}
+                  post={post}
+                  gradient={KHUB_GRADIENTS[j % KHUB_GRADIENTS.length]}
+                />
+              ))}
+            </div>
+          ))}
+        </>
+      ) : (
+        /* Static fallback when Sanity has no published posts */
+        <>
+          <div className="khub-tabs" role="tablist">
+            <button className="khub-tab is-active" data-khub="gemstones" role="tab" aria-selected="true">Gemstones</button>
+            <button className="khub-tab" data-khub="astrology" role="tab" aria-selected="false">Astrology</button>
+            <button className="khub-tab" data-khub="rudraksha" role="tab" aria-selected="false">Rudraksha</button>
           </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">How to Choose the Right Ruby: Jyotish vs Market Quality</div>
-            <div className="khub-article-excerpt">Not all rubies are equal — learn the 7 quality parameters that Vedic astrologers use to select a truly effective Manik.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+          <div className="khub-panel is-active" id="khub-panel-gemstones" role="tabpanel">
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #2A0202, #4A0808);")}><div className="khub-article-cat">Gemstone Guides</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">How to Choose the Right Ruby: Jyotish vs Market Quality</div>
+                <div className="khub-article-excerpt">Not all rubies are equal — learn the 7 quality parameters that Vedic astrologers use to select a truly effective Manik.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #061022, #0E1E50);")}><div className="khub-article-cat">Gemstone Guides</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">Blue Sapphire: The Most Powerful &mdash; and Most Dangerous &mdash; Gem</div>
+                <div className="khub-article-excerpt">Neelam is known to give instant results — good and bad. Here is how to test it safely before wearing.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #031208, #061E0C);")}><div className="khub-article-cat">Gemstone Guides</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">Colombian vs Zambian Emerald: Which is Better for Vedic Use?</div>
+                <div className="khub-article-excerpt">Origin, color, clarity and treatments — our gemologists break down the differences for Jyotish purposes.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
           </div>
-        </article>
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #061022, #0E1E50);")}>
-            <div className="khub-article-cat">Gemstone Guides</div>
+          <div className="khub-panel" id="khub-panel-astrology" role="tabpanel">
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1A0E02, #2E1804);")}><div className="khub-article-cat">Vedic Astrology</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">What is Your Lagna Lord and Why it Determines Your Gemstone</div>
+                <div className="khub-article-excerpt">The Ascendant lord is the single most important factor in gemstone prescription — more than Sun sign or Moon sign.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #0A100A, #101810);")}><div className="khub-article-cat">Vedic Astrology</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">Dasha &amp; Antardasha: When Wearing a Gem is Most Effective</div>
+                <div className="khub-article-excerpt">Timing matters in Jyotish gemstone therapy. Wearing a gem during a planet's Mahadasha amplifies its effect dramatically.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1E0606, #3A0808);")}><div className="khub-article-cat">Vedic Astrology</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">Navamsa Chart: Why Your D9 Chart Changes Everything</div>
+                <div className="khub-article-excerpt">Experienced Vedic astro-gemologists always examine the Navamsa (D9) chart before confirming a gem recommendation.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
           </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">Blue Sapphire: The Most Powerful &mdash; and Most Dangerous &mdash; Gem</div>
-            <div className="khub-article-excerpt">Neelam is known to give instant results — good and bad. Here is how to test it safely before wearing.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+          <div className="khub-panel" id="khub-panel-rudraksha" role="tabpanel">
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1A0800, #3D1A05);")}><div className="khub-article-cat">Rudraksha Science</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">The Science of Rudraksha: Mukhi Variations &amp; Their Spiritual Properties</div>
+                <div className="khub-article-excerpt">Understanding mukhi variations and their spiritual properties — and how to choose the right Rudraksha for your birth chart.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1a0635, #4B0082);")}><div className="khub-article-cat">Rudraksha Science</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">Authenticating Genuine Beads: How to Identify Real Rudraksha</div>
+                <div className="khub-article-excerpt">How to identify real Rudraksha through X-ray and testing — spotting the differences between Nepal and Java origin beads.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
+            <article className="khub-article">
+              <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #0A0E1A, #101840);")}><div className="khub-article-cat">Rudraksha Science</div></div>
+              <div className="khub-article-body">
+                <div className="khub-article-title">Wearing Rudraksha Correctly: Vedic Rituals &amp; Guidelines</div>
+                <div className="khub-article-excerpt">Vedic rituals and guidelines for maximum spiritual benefit — including energization mantras and metal capping rules.</div>
+                <a href="/blog" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
+              </div>
+            </article>
           </div>
-        </article>
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #031208, #061E0C);")}>
-            <div className="khub-article-cat">Gemstone Guides</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">Colombian vs Zambian Emerald: Which is Better for Vedic Use?</div>
-            <div className="khub-article-excerpt">Origin, color, clarity and treatments — our gemologists break down the differences for Jyotish purposes.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-      </div>
-
-      
-      <div className="khub-panel" id="khub-panel-astrology" role="tabpanel">
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1A0E02, #2E1804);")}>
-            <div className="khub-article-cat">Vedic Astrology</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">What is Your Lagna Lord and Why it Determines Your Gemstone</div>
-            <div className="khub-article-excerpt">The Ascendant lord is the single most important factor in gemstone prescription — more than Sun sign or Moon sign.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #0A100A, #101810);")}>
-            <div className="khub-article-cat">Vedic Astrology</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">Dasha &amp; Antardasha: When Wearing a Gem is Most Effective</div>
-            <div className="khub-article-excerpt">Timing matters in Jyotish gemstone therapy. Wearing a gem during a planet's Mahadasha amplifies its effect dramatically.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1E0606, #3A0808);")}>
-            <div className="khub-article-cat">Vedic Astrology</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">Navamsa Chart: Why Your D9 Chart Changes Everything</div>
-            <div className="khub-article-excerpt">Experienced Vedic astro-gemologists always examine the Navamsa (D9) chart before confirming a gem recommendation.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-      </div>
-
-      
-      <div className="khub-panel" id="khub-panel-rudraksha" role="tabpanel">
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1A0800, #3D1A05);")}>
-            <div className="khub-article-cat">Rudraksha Science</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">The Science of Rudraksha: Mukhi Variations &amp; Their Spiritual Properties</div>
-            <div className="khub-article-excerpt">Understanding mukhi variations and their spiritual properties — and how to choose the right Rudraksha for your birth chart.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #1a0635, #4B0082);")}>
-            <div className="khub-article-cat">Rudraksha Science</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">Authenticating Genuine Beads: How to Identify Real Rudraksha</div>
-            <div className="khub-article-excerpt">How to identify real Rudraksha through X-ray and testing — spotting the differences between Nepal and Java origin beads.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-        <article className="khub-article">
-          <div className="khub-article-img" style={toStyle("background: linear-gradient(145deg, #0A0E1A, #101840);")}>
-            <div className="khub-article-cat">Rudraksha Science</div>
-          </div>
-          <div className="khub-article-body">
-            <div className="khub-article-title">Wearing Rudraksha Correctly: Vedic Rituals &amp; Guidelines</div>
-            <div className="khub-article-excerpt">Vedic rituals and guidelines for maximum spiritual benefit — including energization mantras and metal capping rules.</div>
-            <a href="#" className="khub-article-link">Read More <svg viewBox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4"/></svg></a>
-          </div>
-        </article>
-      </div>
+        </>
+      )}
 
       <div className="scroll-hint">Swipe to read more <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
 
       <div className="khub-footer">
-        <a href="#" className="btn-maroon">Explore All Articles</a>
+        <a href="/blog" className="btn-maroon">Explore All Articles</a>
       </div>
     </div>
   </section>
@@ -976,6 +1041,17 @@ export function PvgReferenceSections({
       </div>
     </div>
   </section>
+
+  <IntegratedCategoryCta
+    variant="rudraksha"
+    title="Need a Vedic Yagya guided by trusted experts?"
+    copy="Book a personalized Vedic Yagya service aligned to your birth chart, life goals, and current planetary periods with guidance from our in-house experts."
+    primary={{ label: 'Explore Vedic Yagyas Service', href: '/vedic-yagyas-service' }}
+    secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas' }}
+    image="/home/ctas/cta4.webp?v=1"
+    imageAlt="Vedic yagyas guidance from Pure Vedic Gems experts"
+    imageSide="left"
+  />
 
   
   <section className="remedy-section" id="our-legacy" aria-labelledby="remedy-heading">
@@ -1097,7 +1173,7 @@ export function PvgReferenceSections({
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Crafting Gemstones &amp; Rudrakshas into Authentic Astro-Rashi Jewellery</p>
-            <a href="/consultation" className="svc-click-btn">Click Here</a>
+            <a href="/configure" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
@@ -1108,7 +1184,7 @@ export function PvgReferenceSections({
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Vedic Energisation (Prana Pratishtha) According to Your Gotra &amp; Rashi — Live &amp; Recorded</p>
-            <a href="/consultation" className="svc-click-btn">Click Here</a>
+            <a href="/knowledge/energized-gems" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
@@ -1119,7 +1195,7 @@ export function PvgReferenceSections({
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">COD in Delhi-NCR &amp; Worldwide Safe, Insured Shipping Available</p>
-            <a href="/consultation" className="svc-click-btn">Click Here</a>
+            <a href="/policies/shipping" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
@@ -1130,7 +1206,7 @@ export function PvgReferenceSections({
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Ancient Vedic Remedies — Mantra, Yagya, Yantra, Rudraksha &amp; Ratna Dharana</p>
-            <a href="/consultation" className="svc-click-btn">Click Here</a>
+            <a href="/vedic-yagyas-service" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 
@@ -1141,7 +1217,7 @@ export function PvgReferenceSections({
           </div>
           <div className="svc-body-v2">
             <p className="svc-title-v2">Online &amp; Offline Retail — Vedic Gems, Rudrakshas, Yagya Research &amp; Energising Centre</p>
-            <a href="/consultation" className="svc-click-btn">Click Here</a>
+            <a href="/contact" className="svc-click-btn">Click Here</a>
           </div>
         </div>
 

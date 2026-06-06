@@ -4,6 +4,7 @@ import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import type { Json, Order, PaymentEvent } from '@/lib/types/database';
+import { awardOrderRewardPoints, cancelRewardRedemption, confirmRewardRedemption } from '@/lib/rewards/service';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -165,6 +166,8 @@ export async function markOrderPaymentFailed(order: Order, reason: string, razor
       .eq('reservation_note', `Payment hold for ${order.order_number}`)
       .then(null, () => undefined);
   }
+
+  await cancelRewardRedemption(order.id);
 }
 
 async function updateInventoryForCapturedOrder(order: Order) {
@@ -230,7 +233,8 @@ async function updateInventoryForCapturedOrder(order: Order) {
 }
 
 async function markCouponRedeemed(order: Order) {
-  if (!order.coupon_code || !order.discount || order.discount <= 0) return;
+  const couponDiscount = order.coupon_discount || Math.max(0, Number(order.discount ?? 0) - Number(order.reward_discount ?? 0));
+  if (!order.coupon_code || couponDiscount <= 0) return;
   const supabase = createAdminClient();
   const { data: coupon } = await supabase
     .from('coupons')
@@ -245,7 +249,7 @@ async function markCouponRedeemed(order: Order) {
     order_id: order.id,
     customer_id: order.customer_id,
     guest_email_hash: emailHash(order.guest_email),
-    discount_amount: order.discount,
+    discount_amount: couponDiscount,
   });
 
   if (!redemptionError) {
@@ -409,6 +413,9 @@ export async function finalizeCapturedPayment({
     await updateInventoryForCapturedOrder(order);
     await markCouponRedeemed(order);
   }
+
+  await confirmRewardRedemption(order.id);
+  await awardOrderRewardPoints(order);
 
   await sendVerifiedOrderNotifications(order);
 

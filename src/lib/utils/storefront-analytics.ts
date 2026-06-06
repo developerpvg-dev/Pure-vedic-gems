@@ -13,6 +13,7 @@ export type StorefrontEventName =
   | 'blog_share'
   | 'consultation_booking_submitted'
   | 'consultation_payment_success'
+  | 'yagya_payment_success'
   | 'knowledge_category_view';
 
 type StorefrontPayload = Record<string, string | number | boolean | null | undefined>;

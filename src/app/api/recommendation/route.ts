@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { sendRecommendationRequestEmails } from '@/lib/resend/send-recommendation-request';
+import type { Json } from '@/lib/types/database';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { buildGemRecommendation } from '@/lib/utils/rashi-calculator';
 
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
 
   const recommendation = buildGemRecommendation(parsed.data);
   let enquiryId: string | null = null;
+  let adminClient: ReturnType<typeof createAdminClient> | null = null;
 
   if (parsed.data.email) {
     const customerName = parsed.data.name || 'Gemstone Seeker';
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const admin = createAdminClient();
+      adminClient = admin;
       const { data: enquiry, error } = await admin
         .from('enquiries')
         .insert({
@@ -101,6 +104,37 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       console.error('[Recommendation] Lead side effects failed:', error);
+    }
+  }
+
+  if (parsed.data.email) {
+    try {
+      const admin = adminClient ?? createAdminClient();
+      const { error } = await admin
+        .from('recommendation_requests')
+        .insert({
+          name: parsed.data.name || null,
+          email: parsed.data.email,
+          phone: parsed.data.phone || null,
+          birth_date: parsed.data.birthDate || null,
+          birth_time: parsed.data.birthTime || null,
+          birth_place: parsed.data.birthPlace || null,
+          rashi: parsed.data.rashi || recommendation.rashi || null,
+          purpose: parsed.data.purpose || null,
+          budget_min: parsed.data.budgetMin ?? null,
+          budget_max: parsed.data.budgetMax ?? null,
+          recommendation: recommendation as unknown as Json,
+          source: 'homepage_recommendation',
+          status: 'new',
+          enquiry_id: enquiryId,
+          legacy_data: {
+            request: parsed.data,
+          },
+        });
+
+      if (error) console.error('[Recommendation] Failed to store recommendation request:', error);
+    } catch (error) {
+      console.error('[Recommendation] Recommendation request persistence failed:', error);
     }
   }
 

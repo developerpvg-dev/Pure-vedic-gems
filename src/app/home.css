@@ -1,6 +1,6 @@
 ﻿
     /* ============================================================
-       CSS CUSTOM PROPERTIES â€” JYOTISH ATELIER PALETTE
+       CSS CUSTOM PROPERTIES — JYOTISH ATELIER PALETTE
     ============================================================ */
     .pvg-react-home-root {
       --maroon-deepest:  #1A0202;
@@ -499,9 +499,9 @@
 
 
 
-/* ─────────────────────────────────────────────────────────
-   FROM GEM TO JEWELLERY — JOURNEY SECTION
-   ───────────────────────────────────────────────────────── */
+/* ---------------------------------------------------------
+   FROM GEM TO JEWELLERY � JOURNEY SECTION
+   --------------------------------------------------------- */
 
 .pvg-react-home-root .journey-section {
   font-family: var(--font-display);
@@ -515,7 +515,7 @@
   max-width: 1400px;
 }
 
-/* ── Header ── */
+/* -- Header -- */
 .pvg-react-home-root .journey-header {
   max-width: 920px;
   text-align: center;
@@ -552,7 +552,7 @@
   text-align: center;
 }
 
-/* ── Step Grid ── */
+/* -- Step Grid -- */
 .pvg-react-home-root .journey-steps-grid {
   --journey-circle-size: clamp(150px, 11vw, 182px);
   --journey-step-gap: clamp(18px, 1.5vw, 28px);
@@ -578,7 +578,7 @@
 }
 
 /*
- * Dotted gold connector — runs from right edge of one circle to left edge of next.
+ * Dotted gold connector � runs from right edge of one circle to left edge of next.
  * Width accounts for the remaining cell width plus the grid gap.
  */
 .pvg-react-home-root .journey-step:not(:last-child)::after {
@@ -664,7 +664,7 @@
   margin: 0 auto;
 }
 
-/* ── CTA ── */
+/* -- CTA -- */
 .pvg-react-home-root .journey-cta-wrap {
   text-align: center;
   margin: 0 auto 40px;
@@ -698,7 +698,7 @@
   box-shadow: 0 18px 34px rgba(122, 21, 21, 0.22);
 }
 
-/* ── Trust Bar ── */
+/* -- Trust Bar -- */
 .pvg-react-home-root .journey-trust-bar {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -754,7 +754,7 @@
   line-height: 1.4;
 }
 
-/* ── Responsive ── */
+/* -- Responsive -- */
 @media (max-width: 1200px) {
   .pvg-react-home-root .journey-section {
     padding: 92px 0 76px;
@@ -931,7 +931,7 @@
     .pvg-react-home-root img { display: block; max-width: 100%; }
 
     /* ============================================================
-       TOP INFORMATION BAR â€” SCROLLING MARQUEE
+       TOP INFORMATION BAR — SCROLLING MARQUEE
     ============================================================ */
     .topbar {
       background: linear-gradient(135deg, #5B2E2E 0%, #8B4545 100%);
@@ -1716,10 +1716,10 @@
       to { transform: rotate(360deg); }
     }
 
-    /* ---- Scroll hint â€” removed ---- */
+    /* ---- Scroll hint — removed ---- */
 
     /* ============================================================
-       TRUST SECTION â€” CHAKRA CARDS
+       TRUST SECTION — CHAKRA CARDS
     ============================================================ */
     .trust-section {
       position: relative;
@@ -1802,7 +1802,7 @@
     }
 
     /* ============================================================
-       WHO WE ARE â€” OUR STORY LAYOUT
+       WHO WE ARE — OUR STORY LAYOUT
     ============================================================ */
     .who-section {
       background: var(--white);
@@ -1826,7 +1826,7 @@
       align-items: stretch;
     }
 
-    /* ---- Image Column â€” Cycling Stack ---- */
+    /* ---- Image Column — Cycling Stack ---- */
     .about-img-wrap {
       position: relative;
       padding-bottom: 24px;
@@ -2231,7 +2231,7 @@
     .btn-outline-maroon:hover { background: var(--maroon); color: var(--white); }
 
     /* ============================================================
-       RUDRAKSHA BEADS SECTION â€” 2-COLUMN LAYOUT
+       RUDRAKSHA BEADS SECTION — 2-COLUMN LAYOUT
     ============================================================ */
     .rudraksha-section {
       background: #F2E8D4;
@@ -2585,7 +2585,7 @@
     }
 
     .semiprecious-section::before {
-      content: 'à¤‰à¤ªà¤°à¤¤à¥à¤¨';
+      content: 'उपरत्न';
       font-family: var(--font-body);
       font-size: 200px; font-weight: 600;
       position: absolute;
@@ -2597,7 +2597,7 @@
       line-height: 1; z-index: 0;
     }
 
-    /* Bento grid â€” 4 col Ã— 2 row with tall/wide spans */
+    /* Bento grid — 4 col × 2 row with tall/wide spans */
     .semi-bento {
       display: grid;
       grid-template-columns: 1.3fr 1fr 1fr 1.3fr;
@@ -2608,12 +2608,12 @@
     }
 
     /* Grid placement:
-       Col1 tall = Amethyst (rows 1â€“2)
-       Col2â€“3 wide row1 = Lapis Lazuli
+       Col1 tall = Amethyst (rows 1–2)
+       Col2–3 wide row1 = Lapis Lazuli
        Col4 row1 = Moonstone
        Col2 row2 = Peridot
        Col3 row2 = Rose Quartz
-       Col4 tall = Citrine (rows 1â€“2)  â† placed via grid-column/row explicitly
+       Col4 tall = Citrine (rows 1–2)  ← placed via grid-column/row explicitly
     */
     .semi-tile {
       position: relative;
@@ -3028,7 +3028,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
     /* ============================================================
-       HOMEPAGE REFINEMENTS — CONTENT, SLIDERS, CTAS
+       HOMEPAGE REFINEMENTS � CONTENT, SLIDERS, CTAS
     ============================================================ */
     .pvg-welcome-section {
       background: var(--white);
@@ -3548,7 +3548,7 @@
 
     .config-start-btn { margin-top: 24px; align-self: flex-start; }
 
-    /* Right circular visual â€” arc + image */
+    /* Right circular visual — arc + image */
     .cfg-visual-wrap {
       display: flex; align-items: center; justify-content: center; position: relative;
     }
@@ -3559,7 +3559,7 @@
       position: absolute; inset: 0; width: 100%; height: 100%;
       overflow: visible;
     }
-    /* Image clip centered exactly at SVG center (200,200) â†’ CSS 50%/50% */
+    /* Image clip centered exactly at SVG center (200,200) → CSS 50%/50% */
     .cfg-img-clip {
       position: absolute;
       left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -3700,7 +3700,7 @@
     }
     .expert-book-btn:hover { background: var(--maroon-dark); }
 
-    /* â”€â”€ Responsive: Configurator, Knowledge Hub, Experts â”€â”€ */
+    /* ── Responsive: Configurator, Knowledge Hub, Experts ── */
     @media (max-width: 1024px) {
       .gem-cfg-grid { gap: 40px; }
       .cfg-arc-wrap { width: 280px; height: 280px; }
@@ -3797,7 +3797,7 @@
     }
 
     /* ============================================================
-       15. OUR LEGACY â€” TIMELINE
+       15. OUR LEGACY — TIMELINE
     ============================================================ */
     .legacy-section {
       background: #FDFAF5; padding: 0; position: relative; overflow: hidden;
@@ -3953,7 +3953,7 @@
     .testi-arr-v2 svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
 
     /* ============================================================
-       17. NOT SURE WHICH GEM? â€” RECOMMENDATION
+       17. NOT SURE WHICH GEM? — RECOMMENDATION
     ============================================================ */
     .reco-section {
       position: relative;
@@ -4186,7 +4186,7 @@
     .pvg-scroll-top:hover { background: var(--maroon-dark); }
     .pvg-scroll-top svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none; }
 
-    /* â”€â”€ Sticky Call Icon â”€â”€ */
+    /* ── Sticky Call Icon ── */
     .pvg-call-float {
       position: fixed; bottom: 160px; right: 22px; z-index: 300;
       width: 52px; height: 52px; border-radius: 50%;
@@ -4206,7 +4206,7 @@
       }
     }
 
-    /* â”€â”€ Services Show All Button â”€â”€ */
+    /* ── Services Show All Button ── */
     .svc-show-all-wrap {
       text-align: center; margin-top: 28px; display: none;
     }
@@ -4223,7 +4223,7 @@
     .svc-show-all-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; fill: none; transition: transform 0.25s; }
     .svc-show-all-btn.expanded svg { transform: rotate(180deg); }
 
-    /* â”€â”€ Scroll Indicator (mobile swipe hint) â”€â”€ */
+    /* ── Scroll Indicator (mobile swipe hint) ── */
     .scroll-hint {
       display: none; text-align: center; padding: 10px 0 0;
       font-family: var(--font-ui); font-size: 10px; font-weight: 600;
@@ -4239,7 +4239,7 @@
       .scroll-hint { display: block; }
     }
 
-    /* Responsive â€” new sections */
+    /* Responsive — new sections */
     @media (max-width: 1024px) {
       .pvg-footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
       .legacy-split { grid-template-columns: 1fr 1fr; }
@@ -4991,14 +4991,14 @@
 
       .pvg-cta-navaratna .pvg-cta-inner {
         min-height: 248px;
-        /* Single column — the floating visual is absolutely positioned, not in flow */
+        /* Single column � the floating visual is absolutely positioned, not in flow */
         grid-template-columns: 1fr;
       }
 
       /* Floating visual: anchored at bottom-right, then shifted UP by 40% of its own
          height so the couple's heads/upper-body floats above the section boundary.
-         image 1536×898 → at 560px wide ≈ 327px tall → translateY(-40%) ≈ 131px up
-         → ~96px of the image (faces/heads) extends above the section top edge. */
+         image 1536�898 ? at 560px wide � 327px tall ? translateY(-40%) � 131px up
+         ? ~96px of the image (faces/heads) extends above the section top edge. */
       .pvg-cta-navaratna .pvg-cta-floating-visual {
         display: block;
         position: absolute;
@@ -5095,7 +5095,7 @@
     }
 
     /* ============================================================
-       RUDRAKSHA CTA V2 — person floating left, frosted card right
+       RUDRAKSHA CTA V2 � person floating left, frosted card right
        Reference: light lavender-pink section, blue deco circle,
        portrait person pops above section top, white card with
        features + chat/call buttons
@@ -5213,7 +5213,7 @@
       order: 1;
     }
 
-    /* Left column: empty spacer — person is absolutely positioned inside */
+    /* Left column: empty spacer � person is absolutely positioned inside */
     .pvg-rcta-v2-person-col {
       position: relative;
       align-self: stretch;
@@ -5225,8 +5225,8 @@
     }
 
     /* Person wrapper: anchored at section bottom, 90px above section top.
-       image 1024×1442 → at 360px wide ≈ 507px tall
-       object-fit: contain; object-position: bottom → scales to fit 507px height
+       image 1024�1442 ? at 360px wide � 507px tall
+       object-fit: contain; object-position: bottom ? scales to fit 507px height
        with 360px column width the image is 253px wide (507 * 1024/1442)
        The 90px top extension makes the head/face pop above the section */
     .pvg-rcta-v2-person-wrap {
@@ -5234,7 +5234,7 @@
       bottom: 10px;
       left: -12px;
       width: 100%;
-      height: calc(100% + 96px);
+      height: calc(95% + 91px);
       pointer-events: none;
       z-index: 2;
     }
@@ -5461,7 +5461,7 @@
       .pvg-rcta-v2-heading { font-size: 32px; }
       .pvg-rcta-v2-circle { border-radius: 132px 0 0 0; }
       .pvg-rcta-v2-reverse .pvg-rcta-v2-circle { border-radius: 0 132px 0 0; }
-      .pvg-rcta-v2-person-wrap { left: -4px; bottom: 8px; height: calc(100% + 82px); }
+      .pvg-rcta-v2-person-wrap { left: -4px; bottom: 8px; height: calc(95% + 78px); }
       .pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap { left: auto; right: -4px; }
       .pvg-rcta-v2-person-img { transform: translateX(-4px) scale(0.98); }
       .pvg-rcta-v2-reverse .pvg-rcta-v2-person-img { transform: translateX(4px) scale(0.98); }
@@ -6220,7 +6220,7 @@
   }
 
   .pick-note::before {
-    content: '✦';
+    content: '?';
     color: var(--gold-light);
     margin-right: 8px;
   }
@@ -7423,13 +7423,13 @@
   font-family: var(--font-ui, sans-serif);
 }
 
-/* ── Main Padding ──────────────────────────────────────────── */
+/* -- Main Padding -------------------------------------------- */
 
 .pvg-footer-main {
   padding: 56px 0 44px;
 }
 
-/* ── Brand Strip ───────────────────────────────────────────── */
+/* -- Brand Strip --------------------------------------------- */
 
 .pvg-footer-brand-strip {
   display: flex;
@@ -7472,7 +7472,7 @@
   max-width: 560px;
 }
 
-/* ── Social Icons ──────────────────────────────────────────── */
+/* -- Social Icons -------------------------------------------- */
 
 .pvg-footer-socials {
   display: flex; gap: 8px; flex-shrink: 0;
@@ -7495,7 +7495,7 @@
   width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.7; fill: none;
 }
 
-/* ── Link Directory ────────────────────────────────────────── */
+/* -- Link Directory ------------------------------------------ */
 
 .pvg-footer-directory {
   display: grid;
@@ -7529,7 +7529,7 @@ a.pvg-footer-link:hover {
   color: #8b1a1a; text-decoration: underline; padding-left: 0;
 }
 
-/* ── Service Strip ─────────────────────────────────────────── */
+/* -- Service Strip ------------------------------------------- */
 
 .pvg-footer-service-strip {
   display: grid;
@@ -7601,7 +7601,7 @@ a.pvg-footer-link:hover {
 
 .pvg-footer-wa svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
 
-/* ── Copyright Bar ─────────────────────────────────────────── */
+/* -- Copyright Bar ------------------------------------------- */
 
 .pvg-footer-bottom {
   background: #efe8e0;
@@ -7627,7 +7627,7 @@ a.pvg-footer-link:hover {
   padding: 3px 10px; border-radius: 3px;
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* -- Responsive ---------------------------------------------- */
 
 @media (max-width: 1280px) {
   .pvg-footer-directory {
@@ -8466,7 +8466,7 @@ a.pvg-footer-link:hover {
 }
 
 /* ============================================================
-   LINEAR CONFIGURATOR — FROM GEM TO JEWELLERY
+   LINEAR CONFIGURATOR � FROM GEM TO JEWELLERY
    Replaces the two-column arc layout to match the approved design
 ============================================================ */
 .pvg-react-home-root .cfg-lin-head {
@@ -8682,7 +8682,7 @@ a.pvg-footer-link:hover {
 }
 
 /* ============================================================
-   ABOUT & CERT STACKS — Restore rotation transforms at all viewports
+   ABOUT & CERT STACKS � Restore rotation transforms at all viewports
    The @media(max-width:768px) block inside pvg-react-home-root
    sets transform:none which kills the stacking visual effect.
    These higher-specificity rules restore the animation.
@@ -9853,4 +9853,10 @@ a.pvg-footer-link:hover {
 
 #testimonials .pvg-testi-cta-btn svg {
   flex-shrink: 0;
+}
+
+/* Semi-Precious section side padding */
+.pvg-react-home-root .semiprecious-section .container {
+  padding-left: 96px !important;
+  padding-right: 96px !important;
 }

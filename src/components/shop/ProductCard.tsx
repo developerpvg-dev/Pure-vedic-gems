@@ -14,8 +14,12 @@ import type { ProductCard as ProductCardType } from '@/lib/types/product';
 function getImageSrc(product: ProductCardType): string {
   if (product.thumbnail_url) return product.thumbnail_url;
   const images = product.images;
-  if (Array.isArray(images) && images.length > 0 && typeof images[0] === 'string') {
-    return images[0];
+  if (Array.isArray(images) && images.length > 0) {
+    const first = images[0];
+    if (typeof first === 'string') return first;
+    if (first && typeof first === 'object' && 'url' in first && typeof (first as { url: unknown }).url === 'string') {
+      return (first as { url: string }).url;
+    }
   }
   // Fallback per category
   const fallbacks: Record<string, string> = {
@@ -46,8 +50,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageSrc = getImageSrc(product);
   const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
   const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
+  const isOnRequest =
+    product.price_mode === 'on_demand' ||
+    product.price_mode === 'quote_required' ||
+    !product.price ||
+    product.price <= 0;
   const isUnavailable =
-    !product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+    !isOnRequest &&
+    (!product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
   const unavailableLabel = product.availability_status === 'reserved'
     ? 'Reserved'
     : product.availability_status === 'sold'
@@ -119,6 +129,18 @@ export function ProductCard({ product }: ProductCardProps) {
           />
         </Link>
 
+        {/* Status badges — prominent top-left overlay */}
+        {isUnavailable && (
+          <div className="absolute left-2 top-2 z-10 rounded-md bg-red-600/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+            {unavailableLabel}
+          </div>
+        )}
+        {!isUnavailable && isOnRequest && (
+          <div className="absolute left-2 top-2 z-10 rounded-md bg-[#7A1515]/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+            On Request
+          </div>
+        )}
+
         {/* Wishlist heart — always visible top-right */}
         <div className="absolute right-2 top-2 z-10">
           <WishlistButton
@@ -156,21 +178,33 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Add to cart — slides up from bottom on hover */}
         <div className="absolute inset-x-0 bottom-0 z-10 translate-y-full transition-transform duration-300 group-hover:translate-y-0">
-          <button
-            onClick={handleAddToCart}
-            disabled={isUnavailable || inCart}
-            className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium text-white transition-colors disabled:cursor-not-allowed"
-            style={{
-              background: isUnavailable
-                ? 'rgba(0,0,0,0.55)'
-                : inCart
-                ? '#2e7d32'
-                : '#111111',
-            }}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {isUnavailable ? unavailableLabel : inCart ? 'In cart' : 'Add to cart'}
-          </button>
+          {isOnRequest ? (
+            <Link
+              href={href}
+              onClick={(e) => e.stopPropagation()}
+              className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium text-white transition-colors"
+              style={{ background: '#7A1515' }}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Enquire Now
+            </Link>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              disabled={isUnavailable || inCart}
+              className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium text-white transition-colors disabled:cursor-not-allowed"
+              style={{
+                background: isUnavailable
+                  ? 'rgba(0,0,0,0.55)'
+                  : inCart
+                  ? '#2e7d32'
+                  : '#111111',
+              }}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              {isUnavailable ? unavailableLabel : inCart ? 'In cart' : 'Add to cart'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -191,18 +225,24 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Price row */}
         <div className="mt-1 flex items-center gap-2">
-          <span className="text-[14px] font-semibold text-gray-900">
-            {formatPrice(product.price)}
-          </span>
-          {product.compare_price && product.compare_price > product.price && (
-            <span className="text-[11px] text-gray-400 line-through">
-              {formatPrice(product.compare_price)}
-            </span>
-          )}
-          {product.price_per_carat && (
-            <span className="ml-auto text-[10px] text-brand-muted">
-              {formatPrice(product.price_per_carat)}/ct
-            </span>
+          {isOnRequest ? (
+            <span className="text-[14px] font-semibold text-[#7A1515]">Price on Request</span>
+          ) : (
+            <>
+              <span className="text-[14px] font-semibold text-gray-900">
+                {formatPrice(product.price)}
+              </span>
+              {product.compare_price && product.compare_price > product.price && (
+                <span className="text-[11px] text-gray-400 line-through">
+                  {formatPrice(product.compare_price)}
+                </span>
+              )}
+              {product.price_per_carat && (
+                <span className="ml-auto text-[10px] text-brand-muted">
+                  {formatPrice(product.price_per_carat)}/ct
+                </span>
+              )}
+            </>
           )}
         </div>
 

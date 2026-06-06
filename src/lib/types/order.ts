@@ -42,6 +42,10 @@ export interface OrderRecord {
   shipping_cost: number;
   discount: number;
   coupon_code: string | null;
+  coupon_discount?: number;
+  reward_points_redeemed?: number;
+  reward_discount?: number;
+  reward_points_earned?: number;
   gst_amount: number;
   total: number;
   shipping_address: {

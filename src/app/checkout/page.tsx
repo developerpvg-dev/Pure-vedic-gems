@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Truck } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
@@ -10,6 +10,7 @@ import { ContactSection } from '@/components/checkout/ContactSection';
 import { ShippingSection } from '@/components/checkout/ShippingSection';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
+import { RewardPointsRedemption, type CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
 import { EnergizationFieldsForm } from '@/components/checkout/EnergizationFields';
 import { EmiCalculator } from '@/components/shop/EmiCalculator';
 import Link from 'next/link';
@@ -33,6 +34,9 @@ export default function CheckoutPage() {
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [rewardInfo, setRewardInfo] = useState<CheckoutRewardState | null>(null);
+  const [rewardLoading, setRewardLoading] = useState(false);
+  const [rewardPointsToRedeem, setRewardPointsToRedeem] = useState(0);
 
   // ── Check if any cart item needs energization ────────────────────────
   const hasEnergizationItem = useMemo(() => {
@@ -46,6 +50,37 @@ export default function CheckoutPage() {
   // ── Step completion checks ───────────────────────────────────────────
   const isContactComplete = contactData !== null;
   const isShippingComplete = shippingData !== null;
+  const cartSubtotal = useMemo(() => cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart.items]);
+
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setRewardInfo(null);
+      setRewardPointsToRedeem(0);
+      return () => { active = false; };
+    }
+
+    setRewardLoading(true);
+    fetch('/api/account/rewards')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (!active || !data?.balance || !data?.settings) return;
+        setRewardInfo({
+          available_points: data.balance.available_points ?? 0,
+          point_value_inr: data.settings.point_value_inr ?? 1,
+          min_redeem_points: data.settings.min_redeem_points ?? 1,
+          max_redeem_points_per_order: data.settings.max_redeem_points_per_order ?? 0,
+          max_redeem_percent: data.settings.max_redeem_percent ?? 0,
+          earn_points_per_order: data.settings.earn_points_per_order ?? 0,
+          is_active: Boolean(data.settings.is_active),
+        });
+      })
+      .finally(() => {
+        if (active) setRewardLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [user]);
 
   // ── Pre-fill from profile if logged in ───────────────────────────────
   const defaultContact: Partial<ContactInfo> = useMemo(() => {
@@ -208,18 +243,29 @@ export default function CheckoutPage() {
 
             {/* Step 3: Payment */}
             {currentStep === 'payment' && contactData && shippingData && (
-              <PaymentSection
-                cartItems={cart.items}
-                contact={contactData}
-                shippingAddress={shippingData}
-                shippingMethod={shippingMethod}
-                energization={hasEnergizationItem ? energizationData : undefined}
-                specialInstructions={specialInstructions}
-                isProcessing={isProcessing}
-                setIsProcessing={setIsProcessing}
-                onOrderCreated={setOrderId}
-                onPaymentSuccess={handlePaymentSuccess}
-              />
+              <>
+                <RewardPointsRedemption
+                  userSignedIn={!!user}
+                  loading={rewardLoading}
+                  rewards={rewardInfo}
+                  subtotal={cartSubtotal}
+                  pointsToRedeem={rewardPointsToRedeem}
+                  onChange={setRewardPointsToRedeem}
+                />
+                <PaymentSection
+                  cartItems={cart.items}
+                  contact={contactData}
+                  shippingAddress={shippingData}
+                  shippingMethod={shippingMethod}
+                  energization={hasEnergizationItem ? energizationData : undefined}
+                  specialInstructions={specialInstructions}
+                  rewardPointsToRedeem={rewardPointsToRedeem}
+                  isProcessing={isProcessing}
+                  setIsProcessing={setIsProcessing}
+                  onOrderCreated={setOrderId}
+                  onPaymentSuccess={handlePaymentSuccess}
+                />
+              </>
             )}
           </div>
 
@@ -229,6 +275,8 @@ export default function CheckoutPage() {
               <CheckoutOrderSummary
                 items={cart.items}
                 shippingMethod={shippingMethod}
+                rewardPointsToRedeem={rewardPointsToRedeem}
+                rewards={rewardInfo}
               />
               <div className="mt-6">
                 <EmiCalculator amount={cart.subtotal} />

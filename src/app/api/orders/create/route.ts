@@ -9,6 +9,7 @@ import { ORDER_STATUS_LABELS } from '@/lib/constants/order-status';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Json } from '@/lib/types/database';
 import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
+import { cancelRewardRedemption, reserveRewardRedemption } from '@/lib/rewards/service';
 
 function createGuestOrderToken() {
   const token = crypto.randomBytes(32).toString('hex');
@@ -116,6 +117,7 @@ export async function POST(req: NextRequest) {
     energization,
     special_instructions,
     coupon_code,
+    reward_points_to_redeem,
     checkout_consent,
   } = parsed.data;
 
@@ -143,7 +145,8 @@ export async function POST(req: NextRequest) {
       shipping_method,
       coupon_code,
       energization?.energization_type,
-      shipping_address
+      shipping_address,
+      { customerId, pointsToRedeem: reward_points_to_redeem }
     );
   } catch (err) {
     const message =
@@ -195,7 +198,11 @@ export async function POST(req: NextRequest) {
       energization_charges: pricing.energization_charges,
       shipping_cost: pricing.shipping_cost,
       discount: pricing.discount,
+      coupon_discount: pricing.coupon_discount,
       coupon_code: coupon_code?.toUpperCase() ?? null,
+      reward_points_redeemed: pricing.reward_points_redeemed,
+      reward_discount: pricing.reward_discount,
+      reward_points_earned: 0,
       gst_amount: pricing.gst_amount,
       tax_breakdown: pricing.tax_breakdown,
       total: pricing.total,
@@ -238,6 +245,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (customerId && pricing.reward_points_redeemed > 0) {
+    try {
+      await reserveRewardRedemption({
+        customerId,
+        orderId: order.id,
+        points: pricing.reward_points_redeemed,
+        discountAmount: pricing.reward_discount,
+      });
+    } catch (error) {
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          payment_status: 'cancelled',
+          payment_failure_reason: 'Reward point reservation failed before payment.',
+        })
+        .eq('id', order.id);
+      const message = error instanceof Error ? error.message : 'Unable to reserve reward points.';
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+  }
+
   try {
     await reserveUniquePhysicalProducts({
       orderId: order.id,
@@ -247,6 +276,7 @@ export async function POST(req: NextRequest) {
       items: pricing.items,
     });
   } catch (error) {
+    await cancelRewardRedemption(order.id);
     const message = error instanceof Error ? error.message : 'Unable to reserve products.';
     return NextResponse.json({ error: message }, { status: 409 });
   }
@@ -290,6 +320,9 @@ export async function POST(req: NextRequest) {
       energization_charges: pricing.energization_charges,
       shipping_cost: pricing.shipping_cost,
       discount: pricing.discount,
+      coupon_discount: pricing.coupon_discount,
+      reward_points_redeemed: pricing.reward_points_redeemed,
+      reward_discount: pricing.reward_discount,
       gst_amount: pricing.gst_amount,
       tax_breakdown: pricing.tax_breakdown,
       total: pricing.total,

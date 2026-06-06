@@ -29,8 +29,14 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const cartQty = getItemQty(product.id);
   const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
   const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
+  const isOnRequest =
+    product.price_mode === 'on_demand' ||
+    product.price_mode === 'quote_required' ||
+    !product.price ||
+    product.price <= 0;
   const isUnavailable =
-    !product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+    !isOnRequest &&
+    (!product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
 
   // When item is in cart, the counter mirrors the cart quantity directly.
   // When not yet in cart, the counter is a local "how many to add" state.
@@ -119,7 +125,12 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   return (
     <div className="space-y-4">
       {/* Stock status */}
-      {!isUnavailable ? (
+      {isOnRequest ? (
+        <div className="flex items-center gap-2 text-sm font-medium text-[#7A1515]">
+          <span className="h-2 w-2 rounded-full bg-[#7A1515]" />
+          Available on Request
+        </div>
+      ) : !isUnavailable ? (
         <div className="flex items-center gap-2 text-sm font-medium text-green-700">
           <span className="h-2 w-2 rounded-full bg-green-500" />
           {product.availability_status === 'on_demand' ? 'Available on Demand' : 'In Stock'}
@@ -134,6 +145,29 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         </div>
       )}
 
+      {isOnRequest ? (
+        <div className="flex flex-col gap-2">
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            style={{ background: '#25D366' }}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Enquire on WhatsApp
+          </a>
+          <Link
+            href="/contact?type=enquiry"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md"
+            style={{ borderColor: '#7A1515', color: '#7A1515' }}
+          >
+            <Phone className="h-4 w-4" />
+            Request a Quote
+          </Link>
+        </div>
+      ) : (
+      <>
       {/* Primary action row — quantity + main CTA */}
       <div className="flex gap-2">
         {/* Quantity selector */}
@@ -209,6 +243,8 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           <Gem className="h-4 w-4" />
           Configure in jewellery
         </Link>
+      )}
+      </>
       )}
 
       {/* WhatsApp + Book Consultation */}

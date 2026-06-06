@@ -1,38 +1,52 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { NAV_ITEMS } from '@/lib/constants/nav-items';
+import { findStorefrontGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
+import { BLOG_CATEGORY_LINKS } from '@/lib/constants/nav-items';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
-import type { StorefrontSubCategory } from '@/lib/categories/storefront';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface MobileNavProps {
   open: boolean;
   onClose: () => void;
 }
 
-function MobileCategoryThumb({ link }: { link: StorefrontSubCategory }) {
-  const shellStyle = {
-    width: '26px',
-    height: '26px',
-    borderRadius: '8px',
-    flexShrink: 0,
-    overflow: 'hidden',
-  };
+const KNOWLEDGE_LINKS = [
+  { label: 'Knowledge Hub', href: '/knowledge' },
+  { label: 'Navratnas', href: '/knowledge/gemstones' },
+  { label: 'Treatments', href: '/knowledge/treatments' },
+  { label: 'Energized Gems', href: '/knowledge/energized-gems' },
+  { label: 'Gem Care', href: '/knowledge/gems-care' },
+  { label: 'Rudraksha Library', href: '/knowledge/rudraksha' },
+  { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
+  { label: 'Gems Qualities', href: '/knowledge/gem-qualities' },
+  { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
+  { label: 'Vedic Astrology', href: '/knowledge/astrology' },
+] as const;
 
+const DIRECT_LINKS = [
+  { label: 'About Us', href: '/about' },
+  { label: 'Contact', href: '/contact' },
+] as const;
+
+function MobileCategoryThumb({ link }: { link: StorefrontSubCategory }) {
   if (link.image) {
     return (
-      <span style={shellStyle} aria-hidden="true">
-        <Image src={link.image} alt="" width={26} height={26} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <span
+        style={{ width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        aria-hidden="true"
+      >
+        <Image src={link.image} alt="" width={28} height={28} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }
-
   return (
     <span
       style={{
-        ...shellStyle,
+        width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0, overflow: 'hidden',
         background: `radial-gradient(circle at 35% 30%, #fff 0 12%, ${link.swatch || '#D4A843'} 13% 62%, #5B2E14 100%)`,
       }}
       aria-hidden="true"
@@ -40,26 +54,100 @@ function MobileCategoryThumb({ link }: { link: StorefrontSubCategory }) {
   );
 }
 
+function AccordionChevron({ open: isOpen }: { open: boolean }) {
+  return (
+    <span
+      style={{
+        fontSize: '11px', fontWeight: 700, color: '#7A1515',
+        display: 'inline-block',
+        transition: 'transform 0.22s',
+        transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+      }}
+    >
+      ▶
+    </span>
+  );
+}
+
+function AccordionTrigger({ label, isOpen, onToggle }: { label: string; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: '100%', padding: '14px 20px',
+        fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+        color: '#3A3A3A', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+      }}
+    >
+      {label}
+      <AccordionChevron open={isOpen} />
+    </button>
+  );
+}
+
 export function MobileNav({ open, onClose }: MobileNavProps) {
+  const [expanded, setExpanded] = useState<'gemstones' | 'rudraksha' | 'knowledge' | 'blog' | null>(null);
   const categoryGroups = useStorefrontCategories();
+  const { user } = useAuth();
+
+  const navaratna = findStorefrontGroup(categoryGroups, 'navaratna');
+  const upratna = findStorefrontGroup(categoryGroups, 'upratna');
+  const rudraksha = findStorefrontGroup(categoryGroups, 'rudraksha');
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) setExpanded(null);
+  }, [open]);
+
+  const toggle = (key: 'gemstones' | 'rudraksha' | 'knowledge' | 'blog') =>
+    setExpanded((prev) => (prev === key ? null : key));
+
+  const GemGrid = ({ items }: { items: StorefrontSubCategory[] }) => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0 8px' }}>
+      {items.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          onClick={onClose}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', textDecoration: 'none' }}
+        >
+          <MobileCategoryThumb link={link} />
+          <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#1C1C1C', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {link.label}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+
+  const SectionHead = ({ label, href }: { label: string; href: string }) => (
+    <Link
+      href={href}
+      onClick={onClose}
+      style={{
+        display: 'block', padding: '6px 0 8px',
+        fontSize: '10px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase',
+        color: '#7A1515', textDecoration: 'none', borderBottom: '1px solid #EDE6D5',
+      }}
+    >
+      {label}
+    </Link>
+  );
 
   return (
     <>
-      {/* Overlay — matching static .mob-overlay */}
+      {/* Overlay */}
       <div
         aria-hidden="true"
         onClick={onClose}
         style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1100,
+          position: 'fixed', inset: 0, zIndex: 1100,
           background: 'rgba(0,0,0,0.5)',
           opacity: open ? 1 : 0,
           pointerEvents: open ? 'auto' : 'none',
@@ -67,7 +155,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
         }}
       />
 
-      {/* Drawer — matching static .mob-drawer */}
+      {/* Drawer */}
       <div
         id="mobDrawer"
         role="dialog"
@@ -75,172 +163,224 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
         aria-label="Navigation menu"
         aria-hidden={!open}
         style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          width: 'min(300px, 88vw)',
-          height: '100%',
-          background: '#fff',
-          zIndex: 1110,
+          position: 'fixed', top: 0, right: 0,
+          width: 'min(300px, 88vw)', height: '100%',
+          background: '#fff', zIndex: 1110,
           transform: open ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
           visibility: open ? 'visible' : 'hidden',
           pointerEvents: open ? 'auto' : 'none',
           overflowY: 'auto',
-          padding: '72px 20px 40px',
           borderLeft: '3px solid #7A1515',
+          display: 'flex', flexDirection: 'column',
         }}
       >
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close menu"
-          style={{
-            position: 'absolute',
-            top: '18px',
-            right: '18px',
-            width: '36px',
-            height: '36px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            background: '#F5F0E8',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '16px',
-            color: '#3A3A3A',
-          }}
-        >
-          ✕
-        </button>
-
-        {/* Nav links — matching static .mob-link */}
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
+        {/* Sticky header bar */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 10, background: '#fff',
+          padding: '14px 20px', borderBottom: '2px solid #7A1515',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#7A1515' }}>
+            Menu
+          </span>
+          <button
+            type="button"
             onClick={onClose}
-            className="pvg-mob-link"
+            aria-label="Close menu"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 0',
-              fontSize: '13px',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#3A3A3A',
-              borderBottom: '1px solid #EDE6D5',
-              transition: 'color 0.2s',
-              textDecoration: 'none',
+              width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '50%', background: '#F5F0E8', border: 'none', cursor: 'pointer',
+              fontSize: '15px', color: '#3A3A3A',
             }}
           >
-            {item.label}
-            <span style={{ color: '#7A1515', fontSize: '16px', lineHeight: 1 }}>›</span>
-          </Link>
-        ))}
-
-        {/* Knowledge sub-links */}
-        <div style={{ paddingTop: '6px', paddingBottom: '6px', borderBottom: '1px solid #EDE6D5' }}>
-          <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7A1515', padding: '10px 0 6px' }}>Knowledge</p>
-          {[
-            { label: 'Navratnas', href: '/knowledge/gemstones' },
-            { label: 'Treatments', href: '/knowledge/treatments' },
-            { label: 'Energized Gems', href: '/knowledge/energized-gems' },
-            { label: 'Gem Care', href: '/knowledge/gems-care' },
-            { label: "Rudraksha Library", href: '/knowledge/rudraksha' },
-            { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
-            { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
-            { label: 'Vedic Astrology', href: '/knowledge/astrology' },
-          ].map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={onClose}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0 10px 8px', fontSize: '12px', fontWeight: 600, color: '#3A3A3A', textDecoration: 'none', borderTop: '1px solid #EDE6D5' }}
-            >
-              {link.label}
-              <span style={{ color: '#7A1515', fontSize: '14px', lineHeight: 1 }}>›</span>
-            </Link>
-          ))}
+            ✕
+          </button>
         </div>
 
-        <div style={{ marginTop: '20px' }}>
-          {categoryGroups.map((group) => (
-            <div key={group.slug} style={{ marginBottom: '18px' }}>
-              <Link
-                href={group.href}
-                onClick={onClose}
-                style={{
-                  display: 'block',
-                  padding: '0 0 8px',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: '#7A1515',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid #EDE6D5',
-                }}
-              >
-                {group.label}
-              </Link>
-              <div style={{ display: 'grid', gridTemplateColumns: group.slug === 'idols' || group.slug === 'jewelry' || group.slug === 'malas' ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: '6px 8px', paddingTop: '8px' }}>
-                {group.subcategories.slice(0, 8).map((link) => (
+        {/* Nav */}
+        <nav style={{ flex: 1 }}>
+
+          {/* GEMSTONES accordion */}
+          <div style={{ borderBottom: '1px solid #EDE6D5' }}>
+            <AccordionTrigger label="Gemstones" isOpen={expanded === 'gemstones'} onToggle={() => toggle('gemstones')} />
+            {expanded === 'gemstones' && (
+              <div style={{ padding: '0 20px 16px', background: '#FDFCF9' }}>
+                <SectionHead label="Navaratna Gems" href="/shop/navaratna" />
+                <div style={{ paddingTop: '6px' }}><GemGrid items={navaratna.subcategories} /></div>
+                <div style={{ marginTop: '12px' }}>
+                  <SectionHead label="Upratna Gems" href="/shop/upratna" />
+                  <div style={{ paddingTop: '6px' }}><GemGrid items={upratna.subcategories} /></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RUDRAKSHA accordion */}
+          <div style={{ borderBottom: '1px solid #EDE6D5' }}>
+            <AccordionTrigger label="Rudraksha" isOpen={expanded === 'rudraksha'} onToggle={() => toggle('rudraksha')} />
+            {expanded === 'rudraksha' && (
+              <div style={{ padding: '0 20px 16px', background: '#FDFCF9' }}>
+                <GemGrid items={rudraksha.subcategories} />
+              </div>
+            )}
+          </div>
+
+          {/* KNOWLEDGE accordion */}
+          <div style={{ borderBottom: '1px solid #EDE6D5' }}>
+            <AccordionTrigger label="Knowledge" isOpen={expanded === 'knowledge'} onToggle={() => toggle('knowledge')} />
+            {expanded === 'knowledge' && (
+              <div style={{ padding: '0 0 8px', background: '#FDFCF9' }}>
+                {KNOWLEDGE_LINKS.map((link) => (
                   <Link
-                    key={`${group.slug}-${link.href}-${link.label}`}
+                    key={link.href}
                     href={link.href}
                     onClick={onClose}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '7px',
-                      minWidth: 0,
-                      padding: '7px 0',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: '#3A3A3A',
-                      textDecoration: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 20px',
+                      fontSize: '12.5px', fontWeight: 600, color: '#3A3A3A',
+                      textDecoration: 'none', borderTop: '1px solid #F5F0E8',
                     }}
                   >
-                    <MobileCategoryThumb link={link} />
-                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link.label}</span>
+                    {link.label}
+                    <span style={{ color: '#7A1515', fontSize: '14px' }}>›</span>
                   </Link>
                 ))}
               </div>
-            </div>
+            )}
+          </div>
+
+          {/* Blog accordion */}
+          <div style={{ borderBottom: '1px solid #EDE6D5' }}>
+            <AccordionTrigger label="Blog" isOpen={expanded === 'blog'} onToggle={() => toggle('blog')} />
+            {expanded === 'blog' && (
+              <div style={{ padding: '0 20px 12px' }}>
+                {BLOG_CATEGORY_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={onClose}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 0',
+                      fontSize: '12.5px', fontWeight: 600, color: '#3A3A3A',
+                      textDecoration: 'none', borderTop: '1px solid #F5F0E8',
+                    }}
+                  >
+                    {link.label}
+                    <span style={{ color: '#7A1515', fontSize: '14px' }}>›</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Direct links */}
+          {DIRECT_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 20px',
+                fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: '#3A3A3A', borderBottom: '1px solid #EDE6D5', textDecoration: 'none',
+              }}
+            >
+              {item.label}
+              <span style={{ color: '#7A1515', fontSize: '16px' }}>›</span>
+            </Link>
           ))}
-        </div>
 
-        {/* Consultation CTA — matching static .mob-consult */}
-        <Link
-          href="/consultation"
-          onClick={onClose}
-          style={{
-            display: 'block',
-            marginTop: '24px',
-            padding: '14px',
-            background: '#7A1515',
-            color: '#fff',
-            textAlign: 'center',
-            fontSize: '11.5px',
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            borderRadius: '2px',
-            textDecoration: 'none',
-          }}
-        >
-          Book Consultation
-        </Link>
+          {/* Account + notifications (phone options moved here) */}
+          <div style={{ borderBottom: '1px solid #EDE6D5' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 20px',
+                borderBottom: '1px solid #F5F0E8',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: '#3A3A3A',
+                }}
+              >
+                Account
+              </span>
+              <NotificationBell />
+            </div>
+
+            <Link
+              href={user ? '/account' : '/shop?auth=login&next=/account'}
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 20px',
+                fontSize: '12.5px', fontWeight: 600, color: '#3A3A3A',
+                textDecoration: 'none', borderTop: '1px solid #F5F0E8',
+              }}
+            >
+              My Dashboard
+              <span style={{ color: '#7A1515', fontSize: '16px' }}>›</span>
+            </Link>
+
+            <Link
+              href={user ? '/account/orders' : '/shop?auth=login&next=/account/orders'}
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 20px',
+                fontSize: '12.5px', fontWeight: 600, color: '#3A3A3A',
+                textDecoration: 'none', borderTop: '1px solid #F5F0E8',
+              }}
+            >
+              My Orders
+              <span style={{ color: '#7A1515', fontSize: '16px' }}>›</span>
+            </Link>
+
+            <Link
+              href={user ? '/account/saved' : '/shop?auth=login&next=/account/saved'}
+              onClick={onClose}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 20px',
+                fontSize: '12.5px', fontWeight: 600, color: '#3A3A3A',
+                textDecoration: 'none', borderTop: '1px solid #F5F0E8',
+              }}
+            >
+              Saved Gems
+              <span style={{ color: '#7A1515', fontSize: '16px' }}>›</span>
+            </Link>
+          </div>
+
+          {/* Consultation CTA */}
+          <div style={{ padding: '20px' }}>
+            <Link
+              href="/consultation"
+              onClick={onClose}
+              style={{
+                display: 'block', padding: '14px',
+                background: '#7A1515', color: '#fff',
+                textAlign: 'center', fontSize: '11.5px', fontWeight: 700,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                borderRadius: '2px', textDecoration: 'none',
+              }}
+            >
+              Book Consultation
+            </Link>
+          </div>
+        </nav>
       </div>
-
-      <style>{`
-        .pvg-mob-link:hover { color: #7A1515 !important; }
-      `}</style>
     </>
   );
 }

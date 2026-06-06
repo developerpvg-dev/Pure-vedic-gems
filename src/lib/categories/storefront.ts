@@ -120,6 +120,7 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     href: '/shop/upratna',
     subcategories: [
       { slug: 'opal', label: 'Opal', href: '/shop/opal', swatch: '#FBBFB4' },
+      { slug: 'pitambari', label: 'Pitambari', href: '/shop/pitambari', swatch: '#E0B84C' },
       { slug: 'turquoise', label: 'Turquoise (Firoza)', href: '/shop/turquoise', swatch: '#3CB2B2' },
       { slug: 'amethyst', label: 'Amethyst', href: '/shop/amethyst', swatch: '#9B59B6' },
       { slug: 'moonstone', label: 'Moonstone', href: '/shop/moonstone', swatch: '#C8D8E8' },

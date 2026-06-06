@@ -11,6 +11,8 @@ import {
   SemipreciousHomeSection,
 } from '@/components/home/PvgManagedCategorySections';
 import { PvgReferenceSections, type HomeTestimonial } from '@/components/home/PvgReferenceSections';
+import { HomeVideosSection } from '@/components/home/HomeVideosSection';
+import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
 
 export const revalidate = 300;
 
@@ -30,10 +32,11 @@ async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
 }
 
 export default async function HomePage() {
-  const [categories, sectionCatalog, testimonials] = await Promise.all([
+  const [categories, sectionCatalog, testimonials, khubCategories] = await Promise.all([
     getHomeManagedCategories(),
     getHomeSectionCatalog(),
     getHomeTestimonials(),
+    getKhubCategoriesWithPosts(3),
   ]);
 
   return (
@@ -47,7 +50,9 @@ export default async function HomePage() {
         exploreSection={<ExploreByCategorySection idols={sectionCatalog.exploreIdols} jewelry={sectionCatalog.exploreJewelry} />}
         directorsPickSection={<DirectorsPickSection products={sectionCatalog.directorPicks} />}
         testimonials={testimonials}
+        knowledgeBlogCategories={khubCategories}
       />
+      <HomeVideosSection />
       <PvgHomeInteractions />
     </div>
   );

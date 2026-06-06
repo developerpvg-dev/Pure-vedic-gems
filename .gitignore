@@ -44,3 +44,9 @@ next-env.d.ts
 # agent customization folders
 .agents/
 .claude/
+
+# legacy import local cache (raw SQL extracts and downloaded media)
+/scripts/legacy-import/_raw/
+
+# Legacy blog migration image upload cache
+scripts/legacy-import/blogs/.image-cache.json

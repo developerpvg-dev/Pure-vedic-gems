@@ -6,6 +6,7 @@ interface PriceDisplayProps {
   pricePerCarat?: number | null;
   caratWeight?: number | null;
   showEMI?: boolean;
+  priceMode?: string | null;
 }
 
 export function PriceDisplay({
@@ -14,7 +15,25 @@ export function PriceDisplay({
   pricePerCarat,
   caratWeight,
   showEMI = true,
+  priceMode,
 }: PriceDisplayProps) {
+  const isOnRequest = priceMode === 'on_demand' || priceMode === 'quote_required' || !price || price <= 0;
+
+  if (isOnRequest) {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap items-end gap-3">
+          <span className="text-2xl font-medium leading-none tracking-tight text-[#7A1515] md:text-3xl">
+            Price on Request
+          </span>
+        </div>
+        <p className="text-[13px] text-brand-muted">
+          Contact us for a personalized quote on this premium gemstone.
+        </p>
+      </div>
+    );
+  }
+
   const discount =
     comparePrice && comparePrice > price
       ? Math.round(((comparePrice - price) / comparePrice) * 100)

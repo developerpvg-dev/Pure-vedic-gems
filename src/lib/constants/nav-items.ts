@@ -65,14 +65,14 @@ export const SERVICE_NAV_LINKS = [
 export type HeaderNavItem = {
   label: string;
   href: string;
-  dropdown?: 'gemstones' | 'rudraksha' | 'collections' | 'services' | 'knowledge';
+  dropdown?: 'gemstones' | 'rudraksha' | 'collections' | 'services' | 'knowledge' | 'blog';
 };
 
 export const HEADER_NAV_ITEMS: readonly HeaderNavItem[] = [
   { label: 'Gemstones', href: '/shop', dropdown: 'gemstones' },
   { label: 'Rudraksha', href: '/shop/rudraksha', dropdown: 'rudraksha' },
   { label: 'Knowledge', href: '/knowledge', dropdown: 'knowledge' },
-  { label: 'Blog', href: '/blog' },
+  { label: 'Blog', href: '/blog', dropdown: 'blog' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ] as const;
@@ -84,6 +84,15 @@ export const NAV_ITEMS = [
   { label: 'Blog', href: '/blog' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact', href: '/contact' },
+] as const;
+
+/** Blog category dropdown shown on hover over the "Blog" nav item. */
+export const BLOG_CATEGORY_LINKS = [
+  { label: 'All Blogs', href: '/blog' },
+  { label: 'Navratnas', href: '/blog/category/navratnas' },
+  { label: 'Spirituality', href: '/blog/category/spirituality' },
+  { label: 'Astrology', href: '/blog/category/astrology' },
+  { label: 'Our Products', href: '/blog/category/our-products' },
 ] as const;
 
 export const SOCIAL_LINKS = {

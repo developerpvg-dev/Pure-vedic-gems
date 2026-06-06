@@ -91,10 +91,10 @@ export function RudrakshaQualitiesContent() {
                   Shop Authentic Rudraksha
                 </Link>
                 <Link
-                  href="/consult"
+                  href="/consultation"
                   className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
                 >
-                  Free Recommendation
+                  Get Recommendation
                 </Link>
               </div>
             </div>
@@ -464,7 +464,7 @@ export function RudrakshaQualitiesContent() {
               Shop Rudraksha
             </Link>
             <Link
-              href="/consult"
+              href="/consultation"
               className="inline-flex items-center justify-center rounded-md border-2 border-white/80 bg-transparent px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:bg-white/10"
             >
               Free Consultation

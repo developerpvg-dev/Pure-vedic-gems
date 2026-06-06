@@ -164,6 +164,10 @@ CREATE TABLE orders (
     shipping_cost   DECIMAL(10,2) DEFAULT 0,
     discount        DECIMAL(10,2) DEFAULT 0,
     coupon_code     VARCHAR(50),
+    coupon_discount DECIMAL(10,2) DEFAULT 0,
+    reward_points_redeemed INTEGER DEFAULT 0,
+    reward_discount DECIMAL(10,2) DEFAULT 0,
+    reward_points_earned INTEGER DEFAULT 0,
     gst_amount      DECIMAL(10,2) DEFAULT 0,
     total           DECIMAL(12,2) NOT NULL,
 
@@ -212,6 +216,50 @@ CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_payment ON orders(payment_status);
 CREATE INDEX idx_orders_number ON orders(order_number);
 CREATE INDEX idx_orders_date ON orders(created_at DESC);
+
+-- ═══════════════════════════════════════════════════
+-- TABLE 4A: REWARD POINTS
+-- ═══════════════════════════════════════════════════
+CREATE TABLE reward_settings (
+    id              VARCHAR(40) PRIMARY KEY DEFAULT 'default',
+    is_active       BOOLEAN DEFAULT TRUE,
+    earn_points_per_order INTEGER DEFAULT 500,
+    point_value_inr DECIMAL(10,2) DEFAULT 1,
+    min_redeem_points INTEGER DEFAULT 1,
+    max_redeem_points_per_order INTEGER DEFAULT 5000,
+    max_redeem_percent DECIMAL(5,2) DEFAULT 20,
+    expiry_days     INTEGER,
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_by      UUID
+);
+
+CREATE TABLE reward_point_transactions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    order_id        UUID REFERENCES orders(id) ON DELETE SET NULL,
+    type            VARCHAR(40) NOT NULL CHECK (type IN ('earned', 'redeemed', 'adjustment', 'expired', 'refund', 'migration')),
+    status          VARCHAR(30) DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+    points          INTEGER NOT NULL CHECK (points <> 0),
+    amount_inr      DECIMAL(12,2) DEFAULT 0,
+    description     TEXT,
+    expires_at      TIMESTAMPTZ,
+    legacy_reward_id BIGINT,
+    legacy_wp_user_id BIGINT,
+    legacy_order_id BIGINT,
+    checkpoint      VARCHAR(80),
+    metadata        JSONB DEFAULT '{}',
+    created_by      UUID,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_reward_transactions_customer ON reward_point_transactions(customer_id, created_at DESC);
+CREATE INDEX idx_reward_transactions_order ON reward_point_transactions(order_id) WHERE order_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_reward_transactions_legacy_reward ON reward_point_transactions(legacy_reward_id) WHERE legacy_reward_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_reward_transactions_order_earned ON reward_point_transactions(order_id) WHERE type = 'earned' AND order_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_reward_transactions_order_redeemed ON reward_point_transactions(order_id) WHERE type = 'redeemed' AND order_id IS NOT NULL;
 
 -- ═══════════════════════════════════════════════════
 -- TABLE 5: JEWELRY DESIGNS
@@ -432,6 +480,14 @@ CREATE TABLE team_members (
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE reward_settings
+    ADD CONSTRAINT reward_settings_updated_by_fkey
+    FOREIGN KEY (updated_by) REFERENCES team_members(id) ON DELETE SET NULL;
+
+ALTER TABLE reward_point_transactions
+    ADD CONSTRAINT reward_point_transactions_created_by_fkey
+    FOREIGN KEY (created_by) REFERENCES team_members(id) ON DELETE SET NULL;
+
 -- ═══════════════════════════════════════════════════
 -- TABLE 16: GOLD RATE CACHE
 -- ═══════════════════════════════════════════════════
@@ -501,6 +557,23 @@ CREATE POLICY "Admin full access to orders"
     );
 CREATE POLICY "Guest can insert orders"
     ON orders FOR INSERT WITH CHECK (true);
+
+-- Rewards: users read own, admins manage all
+ALTER TABLE reward_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Reward settings publicly viewable"
+    ON reward_settings FOR SELECT USING (is_active = true);
+CREATE POLICY "Admin full access to reward settings"
+    ON reward_settings FOR ALL USING (
+        EXISTS (SELECT 1 FROM team_members WHERE id = auth.uid() AND is_active = true)
+    );
+
+ALTER TABLE reward_point_transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users view own rewards"
+    ON reward_point_transactions FOR SELECT USING (auth.uid() = customer_id);
+CREATE POLICY "Admin full access to rewards"
+    ON reward_point_transactions FOR ALL USING (
+        EXISTS (SELECT 1 FROM team_members WHERE id = auth.uid() AND is_active = true)
+    );
 
 -- Jewelry designs: publicly readable
 ALTER TABLE jewelry_designs ENABLE ROW LEVEL SECURITY;
@@ -644,6 +717,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER customer_profiles_updated_at BEFORE UPDATE ON customer_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER reward_settings_updated_at BEFORE UPDATE ON reward_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER reward_point_transactions_updated_at BEFORE UPDATE ON reward_point_transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER consultations_updated_at BEFORE UPDATE ON consultations FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER configs_updated_at BEFORE UPDATE ON product_configurations FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER enquiries_updated_at BEFORE UPDATE ON enquiries FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -665,11 +740,11 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER orders_auto_number BEFORE INSERT ON orders FOR EACH ROW EXECUTE FUNCTION generate_order_number();
 
--- Auto-calculate ratti weight from carat
+-- Auto-calculate ratti weight from carat when no explicit value is provided.
 CREATE OR REPLACE FUNCTION auto_ratti_weight()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.carat_weight IS NOT NULL THEN
+    IF NEW.ratti_weight IS NULL AND NEW.carat_weight IS NOT NULL THEN
         NEW.ratti_weight = ROUND(NEW.carat_weight * 1.1, 2);
     END IF;
     RETURN NEW;

@@ -142,6 +142,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   const addr  = o.shipping_address ?? {};
   const items: OrderItemRecord[] = Array.isArray(o.items) ? o.items : [];
+  const rewardDiscount = Number(o.reward_discount ?? 0);
+  const couponDiscount = Number(o.coupon_discount ?? Math.max(0, Number(o.discount ?? 0) - rewardDiscount));
 
   // Fetch full configurations for all items that have a configuration_id
   const configIds = items
@@ -188,8 +190,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
     { label: 'Shipping',              value: o.shipping_cost,         sign: 1  },
     { label: 'GST (3%)',              value: o.gst_amount,            sign: 1  },
     {
-      label: o.coupon_code ? `Discount (${o.coupon_code})` : 'Discount',
-      value: o.discount,
+      label: o.coupon_code ? `Coupon (${o.coupon_code})` : 'Coupon Discount',
+      value: couponDiscount,
+      sign: -1,
+    },
+    {
+      label: `Reward Points (${Number(o.reward_points_redeemed ?? 0).toLocaleString('en-IN')} pts)`,
+      value: rewardDiscount,
       sign: -1,
     },
   ].filter(l => (l.value ?? 0) !== 0);

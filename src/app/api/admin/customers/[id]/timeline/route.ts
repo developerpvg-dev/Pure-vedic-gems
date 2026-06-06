@@ -12,7 +12,7 @@ type SavedItemWithProduct = {
 
 type TimelineItem = {
   id: string;
-  type: 'order' | 'consultation' | 'review' | 'saved_item' | 'notification';
+  type: 'order' | 'consultation' | 'review' | 'saved_item' | 'notification' | 'reward';
   title: string;
   subtitle: string | null;
   status: string | null;
@@ -35,12 +35,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   if (!profile) return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
 
-  const [orders, consultations, reviews, savedItems, notifications] = await Promise.all([
+  const [orders, consultations, reviews, savedItems, notifications, rewards] = await Promise.all([
     admin.from('orders').select('id, order_number, status, total, created_at').eq('customer_id', id).order('created_at', { ascending: false }).limit(20),
     admin.from('consultations').select('id, consultation_type, status, preferred_date, created_at').eq('customer_id', id).order('created_at', { ascending: false }).limit(20),
     admin.from('reviews').select('id, product_id, title, rating, is_approved, created_at').eq('customer_id', id).order('created_at', { ascending: false }).limit(20),
     admin.from('saved_items').select('id, product_id, created_at, products(name, slug, category)').eq('customer_id', id).order('created_at', { ascending: false }).limit(20),
     admin.from('notification_log').select('id, type, template, status, recipient, created_at').or(`recipient.eq.${profile.email ?? ''},recipient.eq.${profile.phone ?? ''},recipient.eq.${profile.whatsapp ?? ''}`).order('created_at', { ascending: false }).limit(20),
+    admin.from('reward_point_transactions').select('id, type, status, points, amount_inr, description, created_at').eq('customer_id', id).order('created_at', { ascending: false }).limit(20),
   ]);
 
   const timeline: TimelineItem[] = [
@@ -88,6 +89,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       subtitle: log.recipient,
       status: log.status,
       created_at: log.created_at,
+    }))),
+    ...((rewards.data ?? []).map((reward) => ({
+      id: reward.id,
+      type: 'reward' as const,
+      title: reward.description ?? reward.type.replace(/_/g, ' '),
+      subtitle: `${reward.points >= 0 ? '+' : ''}${reward.points.toLocaleString('en-IN')} point(s) · ₹${Number(reward.amount_inr ?? 0).toLocaleString('en-IN')}`,
+      status: reward.status,
+      created_at: reward.created_at,
+      href: '/admin/rewards',
     }))),
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 

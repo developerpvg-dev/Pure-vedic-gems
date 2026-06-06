@@ -125,6 +125,7 @@ export const OrderCreateSchema = z.object({
   energization: EnergizationFieldsSchema.optional(),
   special_instructions: z.string().max(1000).trim().optional(),
   coupon_code: z.string().max(50).trim().optional(),
+  reward_points_to_redeem: z.coerce.number().int().min(0).max(1000000).optional().default(0),
   checkout_consent: CheckoutConsentSchema,
 });
 

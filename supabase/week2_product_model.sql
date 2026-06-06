@@ -319,6 +319,7 @@ CREATE INDEX IF NOT EXISTS idx_product_categories_family ON product_categories(f
 CREATE INDEX IF NOT EXISTS idx_product_categories_legacy_names ON product_categories USING GIN (legacy_names);
 CREATE INDEX IF NOT EXISTS idx_product_collections_active ON product_collections(is_active, sort_order);
 CREATE INDEX IF NOT EXISTS idx_product_option_rules_enabled ON product_option_rules(certificate_enabled, energization_enabled, jewelry_design_enabled);
+CREATE INDEX IF NOT EXISTS idx_product_redirect_sources_active ON product_redirect_sources(source_url) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_product_redirect_sources_slug ON product_redirect_sources(source_slug) WHERE source_slug IS NOT NULL;
 
 -- ============================================================================

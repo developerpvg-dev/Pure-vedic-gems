@@ -8,6 +8,7 @@ import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 
 const STORAGE_KEY = 'pvg_recently_viewed_products';
 const MAX_ITEMS = 8;
+const LEGACY_WORDPRESS_UPLOAD_RE = /^https?:\/\/(?:www\.)?purevedicgems\.(?:com|in)\/wp-content\/uploads\//i;
 
 export interface RecentlyViewedProduct {
   id: string;
@@ -29,16 +30,24 @@ function readStoredProducts(): RecentlyViewedProduct[] {
   }
 }
 
+function sanitizeProduct(item: RecentlyViewedProduct): RecentlyViewedProduct {
+  if (!item.imageUrl || !LEGACY_WORDPRESS_UPLOAD_RE.test(item.imageUrl)) return item;
+  return { ...item, imageUrl: null };
+}
+
 export function RecentlyViewedProducts({ current }: { current: RecentlyViewedProduct }) {
   const [items, setItems] = useState<RecentlyViewedProduct[]>([]);
 
   useEffect(() => {
-    const stored = readStoredProducts().filter((item) => item.id !== current.id);
+    const safeCurrent = sanitizeProduct(current);
+    const stored = readStoredProducts()
+      .map(sanitizeProduct)
+      .filter((item) => item.id !== safeCurrent.id);
     startTransition(() => setItems(stored.slice(0, 4)));
 
-    const next = [current, ...stored].slice(0, MAX_ITEMS);
+    const next = [safeCurrent, ...stored].slice(0, MAX_ITEMS);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    trackStorefrontEvent('product_view', { product_id: current.id, product_name: current.name });
+    trackStorefrontEvent('product_view', { product_id: safeCurrent.id, product_name: safeCurrent.name });
   }, [current]);
 
   if (items.length === 0) return null;

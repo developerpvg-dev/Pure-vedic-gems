@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   HEADER_NAV_ITEMS,
   SERVICE_NAV_LINKS,
+  BLOG_CATEGORY_LINKS,
 } from '@/lib/constants/nav-items';
 import { findStorefrontGroup, type StorefrontCategoryGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
 import { useCart } from '@/lib/hooks/useCart';
@@ -89,9 +90,9 @@ function CalendarSvg() {
 
 function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
   const shellStyle: React.CSSProperties = {
-    width: '34px',
-    height: '34px',
-    borderRadius: '9px',
+    width: '48px',
+    height: '48px',
+    borderRadius: '10px',
     flexShrink: 0,
     overflow: 'hidden',
   };
@@ -99,7 +100,7 @@ function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
   if (link.image) {
     return (
       <span style={shellStyle} aria-hidden="true">
-        <Image src={link.image} alt="" width={34} height={34} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <Image src={link.image} alt="" width={48} height={48} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }
@@ -127,12 +128,12 @@ function CategoryMenuSection({ group, columns = 1 }: { group: StorefrontCategory
             key={`${group.slug}-${link.href}-${link.label}`}
             href={link.href}
             className="pvg-mega-item"
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '2px', borderLeft: '2px solid transparent', transition: 'background 0.2s, border-color 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '2px', borderLeft: '2px solid transparent', transition: 'background 0.2s, border-color 0.2s' }}
           >
             <CategoryThumb link={link} />
             <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.2, fontFamily: "'Roboto', sans-serif" }}>{link.label}</span>
-              {link.meta ? <span style={{ fontSize: '11px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif" }}>{link.meta}</span> : null}
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.2, fontFamily: "'Roboto', sans-serif" }}>{link.label}</span>
+              {link.meta ? <span style={{ fontSize: '11.5px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif" }}>{link.meta}</span> : null}
             </span>
           </Link>
         ))}
@@ -174,8 +175,8 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
     const navaratna = findStorefrontGroup(categoryGroups, 'navaratna');
     const upratna = findStorefrontGroup(categoryGroups, 'upratna');
     return (
-      <div style={{ ...dropStyle, width: '720px', padding: '22px 24px 18px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '22px' }}>
+      <div style={{ ...dropStyle, width: '1240px', maxWidth: 'calc(100vw - 160px)', padding: '24px 28px 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '28px' }}>
           <CategoryMenuSection group={navaratna} columns={2} />
           <CategoryMenuSection group={upratna} columns={2} />
         </div>
@@ -215,12 +216,21 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
       { label: 'Gem Care', href: '/knowledge/gems-care' },
       { label: "Rudraksha Library", href: '/knowledge/rudraksha' },
       { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
+      { label: 'Gems Qualities', href: '/knowledge/gem-qualities' },
       { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
       { label: 'Vedic Astrology', href: '/knowledge/astrology' },
     ] as const;
     return (
       <div style={{ ...dropStyle, minWidth: '240px', padding: '8px 0' }}>
         <SimpleLinkDropdown links={knowledgeLinks} />
+      </div>
+    );
+  }
+
+  if (item.dropdown === 'blog') {
+    return (
+      <div style={{ ...dropStyle, minWidth: '230px', padding: '8px 0' }}>
+        <SimpleLinkDropdown links={BLOG_CATEGORY_LINKS} />
       </div>
     );
   }
@@ -234,6 +244,7 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
 
 function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categoryGroups: StorefrontCategoryGroup[] }) {
   const hasDropdown = Boolean(item.dropdown);
+  const isWide = item.dropdown === 'gemstones' || item.dropdown === 'collections';
   return (
     <li
       className="pvg-nav-item"
@@ -257,9 +268,11 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
       {hasDropdown ? (
         <div
           className="pvg-nav-drop"
+          data-align={isWide ? 'left' : undefined}
           style={{
-            position: 'absolute', top: '100%', left: '50%',
-            transform: 'translateX(-50%) translateY(-8px)',
+            position: 'absolute', top: '100%',
+            left: isWide ? '-130px' : '50%',
+            transform: isWide ? 'translateY(-8px)' : 'translateX(-50%) translateY(-8px)',
             opacity: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: 1200,
             transition: 'opacity 0.26s ease, transform 0.26s ease, visibility 0s linear 0.26s',
           }}
@@ -275,30 +288,17 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
 function TopbarMarqueeItems() {
   return (
     <>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '7px',
-        paddingRight: '32px', fontSize: '12.5px', fontWeight: 700,
-        color: '#D4A843', letterSpacing: '0.04em', textTransform: 'uppercase',
-        whiteSpace: 'nowrap', fontFamily: "'Roboto', sans-serif",
-      }}>
+      <span className="pvg-topbar-item pvg-topbar-item-delivery">
         <TruckSvg />
         Worldwide Safe &amp; Insured Delivery
       </span>
-      <span style={{ color: 'rgba(255,255,255,0.3)', paddingRight: '24px', fontSize: '11px' }}>◆</span>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '8px',
-        paddingRight: '32px', fontSize: '13px', fontWeight: 600,
-        color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', fontFamily: "'Roboto', sans-serif",
-      }}>
+      <span className="pvg-topbar-dot">◆</span>
+      <span className="pvg-topbar-item pvg-topbar-item-phone">
         <FlagIN />
         +91-9310172512
       </span>
-      <span style={{ color: 'rgba(255,255,255,0.3)', paddingRight: '24px', fontSize: '11px' }}>◆</span>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '8px',
-        paddingRight: '64px', fontSize: '13px', fontWeight: 600,
-        color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', fontFamily: "'Roboto', sans-serif",
-      }}>
+      <span className="pvg-topbar-dot">◆</span>
+      <span className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last">
         <FlagGB />
         +447831491778
       </span>
@@ -353,9 +353,13 @@ export function SiteHeader() {
       {/* Hover-state CSS matching static HTML exactly */}
       <style>{`
         .pvg-nav-link:hover { color: #7A1515 !important; border-bottom-color: #B8861E !important; }
-        .pvg-nav-item:hover .pvg-nav-drop {
+        .pvg-nav-item:hover .pvg-nav-drop:not([data-align="left"]) {
           opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
           transform: translateX(-50%) translateY(0) !important; transition-delay: 0s !important;
+        }
+        .pvg-nav-item:hover .pvg-nav-drop[data-align="left"] {
+          opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
+          transform: translateY(0) !important; transition-delay: 0s !important;
         }
         .pvg-dd-item:hover { background: #F5F0E8 !important; color: #7A1515 !important; padding-left: 24px !important; border-left-color: #7A1515 !important; }
         .pvg-mega-item:hover { background: #F5F0E8 !important; border-left-color: #7A1515 !important; }
@@ -363,6 +367,131 @@ export function SiteHeader() {
         .pvg-nav-icon:hover { background: #F5F0E8 !important; color: #7A1515 !important; }
         .pvg-btn-consult:hover { background: #4D0A0A !important; box-shadow: 0 4px 16px rgba(122,21,21,0.35) !important; transform: translateY(-1px) !important; }
         .pvg-ham:hover { background: #F5F0E8 !important; }
+
+        .pvg-action-cluster {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+        .pvg-action-divider {
+          width: 1px;
+          height: 34px;
+          background: #ddd6ca;
+        }
+        .pvg-action-icon-btn {
+          width: 40px;
+          height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: #3a3a3a;
+          cursor: pointer;
+          transition: background 0.2s ease, color 0.2s ease;
+        }
+        .pvg-action-icon-btn:hover {
+          background: #f5f0e8;
+          color: #7a1515;
+        }
+        .pvg-action-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0;
+          padding: 0 8px;
+          height: 46px;
+          border: 1px solid #d9d4c9;
+          border-radius: 999px;
+          background: #f7f7f6;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        }
+        .pvg-action-pill-divider {
+          width: 1px;
+          height: 26px;
+          background: #d2ccc0;
+          margin: 0 4px;
+        }
+        .pvg-action-pill .relative > button {
+          width: 40px !important;
+          height: 40px !important;
+          border: 0 !important;
+          background: transparent !important;
+          color: #3a3a3a !important;
+          box-shadow: none !important;
+        }
+        .pvg-action-pill .relative > button:hover {
+          background: #f5f0e8 !important;
+          color: #7a1515 !important;
+        }
+        .pvg-action-pill .relative > button span {
+          right: 2px !important;
+          top: 1px !important;
+        }
+        .pvg-account-shell {
+          display: inline-flex;
+          align-items: center;
+          min-height: 42px;
+          padding: 0 2px;
+        }
+
+        .pvg-mob-action-cluster {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+        .pvg-mob-action-divider {
+          width: 1px;
+          height: 28px;
+          background: #ddd6ca;
+        }
+        .pvg-mob-icon-btn {
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: #3a3a3a;
+          cursor: pointer;
+        }
+        .pvg-mob-action-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0;
+          padding: 0 6px;
+          height: 40px;
+          border: 1px solid #d9d4c9;
+          border-radius: 999px;
+          background: #f7f7f6;
+        }
+        .pvg-mob-action-pill-divider {
+          width: 1px;
+          height: 22px;
+          background: #d2ccc0;
+          margin: 0 2px;
+        }
+        .pvg-mob-action-pill .relative > button {
+          width: 34px !important;
+          height: 34px !important;
+          border: 0 !important;
+          background: transparent !important;
+          color: #3a3a3a !important;
+          box-shadow: none !important;
+        }
+        .pvg-mob-action-pill .relative > button span {
+          right: 0 !important;
+          top: -1px !important;
+        }
+        .pvg-mob-account-shell {
+          display: inline-flex;
+          align-items: center;
+          min-height: 36px;
+        }
 
         /* Desktop nav at ≥1024px; phone + tablet use hamburger */
         .pvg-desk-nav { display: none; }
@@ -374,27 +503,167 @@ export function SiteHeader() {
 
         /* Topbar: desktop = static layout, mobile/tablet = marquee */
         .pvg-topbar-desktop { display: flex; width: 100%; height: 100%; align-items: center; justify-content: space-between; }
-        .pvg-topbar-mobile  { display: none; height: 100%; overflow: hidden; align-items: center; flex: 1; }
+        .pvg-topbar-mobile  {
+          display: none;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          align-items: center;
+          justify-content: flex-start;
+          flex: 1;
+          position: relative;
+        }
+        .pvg-topbar-shell {
+          height: 38px;
+          overflow: hidden;
+          background: linear-gradient(90deg, #3D1212 0%, #6B2020 40%, #7A2828 60%, #3D1212 100%);
+          border-bottom: 1px solid rgba(212,168,67,0.45);
+        }
         .pvg-topbar-phone-link { text-decoration: none; transition: color 0.2s; }
         .pvg-topbar-phone-link:hover { color: #F0C96A !important; }
+
+        .pvg-topbar-item {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          white-space: nowrap;
+          font-family: 'Roboto', sans-serif;
+          line-height: 1.05;
+          transform: translateY(0.5px);
+        }
+        .pvg-topbar-item-delivery {
+          gap: 7px;
+          padding-right: 32px;
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #D4A843;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+        .pvg-topbar-item-phone {
+          gap: 8px;
+          padding-right: 32px;
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.95);
+        }
+        .pvg-topbar-item-phone-last {
+          padding-right: 64px;
+        }
+        .pvg-topbar-dot {
+          color: rgba(255,255,255,0.3);
+          padding-right: 24px;
+          font-size: 11px;
+          line-height: 1;
+          display: inline-flex;
+          align-items: center;
+          height: 100%;
+          transform: translateY(0.5px);
+        }
 
         /* Seamless marquee: content is duplicated, animate by -50% of total width */
         @keyframes pvg-topbar-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .pvg-topbar-marquee-inner {
           display: inline-flex;
           align-items: center;
+          justify-content: flex-start;
+          height: 100%;
+          min-width: max-content;
           white-space: nowrap;
           will-change: transform;
           animation: pvg-topbar-marquee 24s linear infinite;
+          line-height: 1.05;
         }
         .pvg-topbar-marquee-inner:hover { animation-play-state: paused; }
 
         @media (max-width: 1023px) {
           .pvg-topbar-desktop { display: none !important; }
           .pvg-topbar-mobile  { display: flex !important; }
+          .pvg-topbar-shell { height: 32px; }
+          .pvg-topbar-marquee-inner { animation-duration: 21s; }
+          .pvg-topbar-item-delivery {
+            gap: 6px;
+            padding-right: 20px;
+            font-size: 10.5px;
+            letter-spacing: 0.03em;
+          }
+          .pvg-topbar-item-phone {
+            gap: 6px;
+            padding-right: 20px;
+            font-size: 11px;
+          }
+          .pvg-topbar-item-phone-last { padding-right: 40px; }
+          .pvg-topbar-dot {
+            padding-right: 14px;
+            font-size: 9px;
+          }
+        }
+        @media (max-width: 767px) {
+          .pvg-topbar-shell { height: 28px; }
+          .pvg-topbar-marquee-inner { animation-duration: 18s; }
+          .pvg-topbar-item-delivery {
+            gap: 5px;
+            padding-right: 14px;
+            font-size: 9px;
+            letter-spacing: 0.02em;
+          }
+          .pvg-topbar-item-phone {
+            gap: 5px;
+            padding-right: 14px;
+            font-size: 9.8px;
+          }
+          .pvg-topbar-item-phone-last { padding-right: 30px; }
+          .pvg-topbar-dot {
+            padding-right: 10px;
+            font-size: 8px;
+          }
+          .pvg-topbar-item img {
+            width: 18px !important;
+            height: 12px !important;
+          }
+          .pvg-topbar-item svg {
+            width: 13px !important;
+            height: 13px !important;
+          }
+        }
+        @media (max-width: 1279px) {
+          .pvg-action-cluster { gap: 8px; }
+          .pvg-action-divider { height: 30px; }
+          .pvg-action-pill { height: 44px; }
+          .pvg-action-pill .relative > button { width: 38px !important; height: 38px !important; }
+        }
+        @media (max-width: 639px) {
+          .pvg-mob-action-cluster { gap: 5px; }
+          .pvg-mob-action-divider { height: 24px; }
+          .pvg-mob-icon-btn { width: 34px; height: 34px; }
+          .pvg-mob-action-pill { height: 38px; padding: 0 5px; }
+          .pvg-mob-action-pill .relative > button { width: 32px !important; height: 32px !important; }
+        }
+        @media (max-width: 767px) {
+          .pvg-mob-action-divider,
+          .pvg-mob-action-pill-divider {
+            display: none !important;
+          }
+          .pvg-mob-notify-wrap {
+            display: none !important;
+          }
+          .pvg-mob-account-shell {
+            display: none !important;
+          }
+          .pvg-ham {
+            flex-shrink: 0 !important;
+            margin-left: 2px !important;
+          }
+          .pvg-mob-action-cluster {
+            gap: 4px;
+          }
+          .pvg-mob-action-pill {
+            padding: 0 3px;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
-          .pvg-topbar-marquee-inner { animation: none !important; overflow-x: auto; }
+          .pvg-topbar-marquee-inner { animation-duration: 30s !important; }
         }
       `}</style>
 
@@ -410,14 +679,10 @@ export function SiteHeader() {
       >
         {/* ── Topbar ── */}
         <div
+          className="pvg-topbar-shell"
           role="complementary"
           aria-label="Locations and contact"
-          style={{
-            background: 'linear-gradient(90deg, #3D1212 0%, #6B2020 40%, #7A2828 60%, #3D1212 100%)',
-            borderBottom: '1px solid rgba(212,168,67,0.45)',
-            height: '38px',
-            overflow: 'hidden',
-          }}
+          style={{}}
         >
           {/* Desktop static layout (visible ≥1024px) */}
           <div className="pvg-topbar-desktop" style={{
@@ -511,28 +776,53 @@ export function SiteHeader() {
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            <div className="pvg-action-cluster">
               <button type="button" onClick={openSearch} aria-label="Search"
-                className="pvg-nav-icon"
-                style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A', background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.2s, color 0.2s' }}>
+                className="pvg-action-icon-btn"
+                style={{}}>
                 <SearchSvg />
               </button>
-              <Suspense fallback={<span style={{ width: '40px', height: '40px', display: 'flex' }} />}>
-                <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
-              </Suspense>
-              <NotificationBell />
-              <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
-                className="pvg-nav-icon"
-                style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A', transition: 'background 0.2s, color 0.2s' }}>
-                <CartSvg />
-                <span aria-hidden="true" style={{ position: 'absolute', top: '5px', right: '5px', width: '15px', height: '15px', background: '#7A1515', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                  {cartCount > 9 ? '9+' : cartCount}
-                </span>
-              </Link>
-              <div aria-hidden="true" style={{ width: '1px', height: '26px', background: '#E2D9C8', margin: '0 6px' }} />
-              <Link href="/consultation"
-                className="pvg-btn-consult"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 22px', background: '#7A1515', color: '#fff', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'Roboto', sans-serif", borderRadius: '2px', textDecoration: 'none', whiteSpace: 'nowrap', transition: 'background 0.22s, box-shadow 0.22s, transform 0.15s' }}>
+              <div aria-hidden="true" className="pvg-action-divider" />
+              <div className="pvg-action-pill" aria-label="Notifications and cart">
+                <NotificationBell />
+                <span aria-hidden="true" className="pvg-action-pill-divider" />
+                <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
+                  className="pvg-action-icon-btn"
+                  style={{ position: 'relative', textDecoration: 'none' }}>
+                  <CartSvg />
+                  <span aria-hidden="true" style={{ position: 'absolute', top: '5px', right: '5px', minWidth: '15px', height: '15px', padding: '0 4px', background: '#cf1f1f', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                </Link>
+              </div>
+              <div aria-hidden="true" className="pvg-action-divider" />
+              <div className="pvg-account-shell">
+                <Suspense fallback={<span style={{ width: '64px', height: '40px', display: 'inline-flex' }} />}>
+                  <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
+                </Suspense>
+              </div>
+              <Link
+                href="/consultation"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '7px 13px',
+                  background: '#7A1515',
+                  color: '#fff',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  borderRadius: '2px',
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  marginLeft: '10px',
+                  transition: 'background 0.18s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#a01c1c'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#7A1515'; }}
+              >
                 <CalendarSvg />
                 Book Consultation
               </Link>
@@ -551,23 +841,35 @@ export function SiteHeader() {
               </div>
             </Link>
             <div style={{ flex: 1 }} />
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="pvg-mob-action-cluster">
               <button type="button" onClick={openSearch} aria-label="Search"
-                style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A', background: 'none', border: 'none', cursor: 'pointer' }}>
+                className="pvg-mob-icon-btn"
+                style={{}}>
                 <SearchSvg />
               </button>
-              <Suspense fallback={<span style={{ width: '40px', height: '40px' }} />}>
-                <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" showNotificationsInDropdown />
-              </Suspense>
-              <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
-                style={{ position: 'relative', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#3A3A3A' }}>
-                <CartSvg />
-                {cartCount > 0 ? (
-                  <span aria-hidden="true" style={{ position: 'absolute', top: '5px', right: '5px', width: '15px', height: '15px', background: '#7A1515', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                ) : null}
-              </Link>
+              <div aria-hidden="true" className="pvg-mob-action-divider" />
+              <div className="pvg-mob-action-pill" aria-label="Notifications and cart">
+                <div className="pvg-mob-notify-wrap">
+                  <NotificationBell />
+                </div>
+                <span aria-hidden="true" className="pvg-mob-action-pill-divider" />
+                <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
+                  className="pvg-mob-icon-btn"
+                  style={{ position: 'relative', textDecoration: 'none' }}>
+                  <CartSvg />
+                  {cartCount > 0 ? (
+                    <span aria-hidden="true" style={{ position: 'absolute', top: '3px', right: '3px', minWidth: '15px', height: '15px', padding: '0 4px', background: '#cf1f1f', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                      {cartCount > 9 ? '9+' : cartCount}
+                    </span>
+                  ) : null}
+                </Link>
+              </div>
+              <div aria-hidden="true" className="pvg-mob-action-divider" />
+              <div className="pvg-mob-account-shell">
+                <Suspense fallback={<span style={{ width: '38px', height: '38px' }} />}>
+                  <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" showNotificationsInDropdown />
+                </Suspense>
+              </div>
               {/* Custom 3-line hamburger matching static HTML */}
               <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open menu" aria-expanded={mobileOpen} aria-controls="mobDrawer"
                 className="pvg-ham"

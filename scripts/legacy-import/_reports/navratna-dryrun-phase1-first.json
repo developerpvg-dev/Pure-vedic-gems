@@ -1,0 +1,553 @@
+{
+  "label": "phase1-first",
+  "generated_at": "2026-05-28T20:57:39.797Z",
+  "host": "db.gsrbscmpivnwvydvfplx.supabase.co",
+  "totals": {
+    "products": 1734,
+    "redirects": 16075,
+    "media_total": 3786,
+    "products_with_any_warning": 1725
+  },
+  "by_sub_category": [
+    {
+      "sub_category": "red-coral",
+      "n": 296
+    },
+    {
+      "sub_category": "ruby",
+      "n": 276
+    },
+    {
+      "sub_category": "emerald",
+      "n": 252
+    },
+    {
+      "sub_category": "pearl",
+      "n": 250
+    },
+    {
+      "sub_category": "yellow-sapphire",
+      "n": 247
+    },
+    {
+      "sub_category": "blue-sapphire",
+      "n": 167
+    },
+    {
+      "sub_category": "white-sapphire",
+      "n": 88
+    },
+    {
+      "sub_category": "hessonite",
+      "n": 80
+    },
+    {
+      "sub_category": "cats-eye",
+      "n": 78
+    }
+  ],
+  "by_quality_label": [
+    {
+      "ql": "Luxury",
+      "n": 388
+    },
+    {
+      "ql": "Exclusive",
+      "n": 343
+    },
+    {
+      "ql": "Super Premium",
+      "n": 246
+    },
+    {
+      "ql": "Good",
+      "n": 229
+    },
+    {
+      "ql": "Premium",
+      "n": 211
+    },
+    {
+      "ql": "Economy",
+      "n": 135
+    },
+    {
+      "ql": "Super Luxury",
+      "n": 129
+    },
+    {
+      "ql": "(none)",
+      "n": 34
+    },
+    {
+      "ql": "Best",
+      "n": 5
+    },
+    {
+      "ql": "Economi",
+      "n": 5
+    },
+    {
+      "ql": "Best Quality",
+      "n": 2
+    },
+    {
+      "ql": "Laxury",
+      "n": 2
+    },
+    {
+      "ql": "Econoy",
+      "n": 1
+    },
+    {
+      "ql": "Luxur",
+      "n": 1
+    },
+    {
+      "ql": "Super Laxury",
+      "n": 1
+    },
+    {
+      "ql": "Super Lucury",
+      "n": 1
+    },
+    {
+      "ql": "Super Premiu",
+      "n": 1
+    }
+  ],
+  "by_stock_status": [
+    {
+      "stock_status": "in_stock",
+      "n": 1030
+    },
+    {
+      "stock_status": "out_of_stock",
+      "n": 704
+    }
+  ],
+  "price_stats": {
+    "total": 1734,
+    "missing_price": 343,
+    "min_price": 860,
+    "max_price": 652765,
+    "avg_price": 38079.6865564342,
+    "with_discount": 1391
+  },
+  "media": {
+    "url_map_status": [
+      {
+        "download_status": "ok",
+        "n": 1959
+      },
+      {
+        "download_status": "pending",
+        "n": 1827
+      }
+    ],
+    "per_product_coverage": {
+      "total_products": 1734,
+      "products_with_ok_image": 1035,
+      "products_with_failed_image": 0,
+      "products_with_unmapped_attachment": 0
+    }
+  },
+  "warnings_by_code": [
+    {
+      "code": null,
+      "n": 2074
+    }
+  ],
+  "redirects_by_source": [
+    {
+      "source_label": "product_root",
+      "n": 6430
+    },
+    {
+      "source_label": "shop_navratan",
+      "n": 6430
+    },
+    {
+      "source_label": "product_category_navratan",
+      "n": 3215
+    }
+  ],
+  "duplicates": {
+    "sku": [],
+    "slug": []
+  },
+  "vs_canonical": {
+    "exists": false
+  },
+  "samples": {
+    "red-coral": [
+      {
+        "legacy_woo_id": 47518,
+        "sku": "X803..",
+        "name": "Japanese Red Coral 12.48ct.@8757 per. ct.",
+        "slug": "japanese-red-coral-12-48ct-8757-per-ct",
+        "price": "109375.00",
+        "compare_price": "112875.00",
+        "carat_weight": "12.480",
+        "quality_label": "Good",
+        "in_stock": true,
+        "image_count": 2,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 47548,
+        "sku": "Z179..",
+        "name": "Japanese Red Coral 11.44ct.@8754per. ct.",
+        "slug": "japanese-red-coral-11-44ct-8754per-ct",
+        "price": "100146.00",
+        "compare_price": "103646.00",
+        "carat_weight": "11.440",
+        "quality_label": "Good",
+        "in_stock": true,
+        "image_count": 2,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 47516,
+        "sku": "U108..",
+        "name": "Japanese Red Coral 10.49ct.@8756 per. ct.",
+        "slug": "japanese-red-coral-10-49ct-8756-per-ct",
+        "price": "91855.00",
+        "compare_price": "95355.00",
+        "carat_weight": "10.490",
+        "quality_label": "Good",
+        "in_stock": true,
+        "image_count": 2,
+        "warning_count": 1
+      }
+    ],
+    "ruby": [
+      {
+        "legacy_woo_id": 37016,
+        "sku": "X576..",
+        "name": "African Ruby 25.33ct.@25750 per. ct. (Luxury)",
+        "slug": "african-ruby-25-33ct-25750-per-ct-luxury-natura-gemstone",
+        "price": "652765.00",
+        "compare_price": "656265.00",
+        "carat_weight": "25.330",
+        "quality_label": "Luxury",
+        "in_stock": true,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 45683,
+        "sku": "M732..",
+        "name": "African Ruby 10.40ct.@48924per. ct. (Super Luxury)",
+        "slug": "african-ruby-10-40ct-48924per-ct-super-luxury-natural-gemstone",
+        "price": "508810.00",
+        "compare_price": "512310.00",
+        "carat_weight": "10.400",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 2,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 46679,
+        "sku": "E942...",
+        "name": "African Ruby 10.36ct.@38625 per. ct. (Super Luxury)",
+        "slug": "african-ruby-10-36ct-38625-per-ct-super-luxury-natural-gemstone",
+        "price": "400155.00",
+        "compare_price": "403655.00",
+        "carat_weight": "10.360",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 2,
+        "warning_count": 1
+      }
+    ],
+    "emerald": [
+      {
+        "legacy_woo_id": 46395,
+        "sku": "F931...",
+        "name": "Emerald 4.93ct.@50747per. ct.(Super Luxury)",
+        "slug": "emerald-4-93ct-50747-per-ct-super-luxury-natural-gemstone",
+        "price": "250187.00",
+        "compare_price": "253687.00",
+        "carat_weight": "4.930",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 42557,
+        "sku": "E424..",
+        "name": "Emerald 5.50ct.@36705 per. ct.(Super Luxury)",
+        "slug": "emerald-5-50ct-36705-per-ct-super-luxury-natural-gemstone",
+        "price": "201880.00",
+        "compare_price": "205380.00",
+        "carat_weight": "5.500",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 46397,
+        "sku": "X734..",
+        "name": "Emerald 4.83ct.@41423 per. ct.(Super Luxury)",
+        "slug": "emerald-4-83ct-41423-per-ct-super-luxury-natural-gemstone",
+        "price": "200077.00",
+        "compare_price": "203577.00",
+        "carat_weight": "4.830",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 3,
+        "warning_count": 1
+      }
+    ],
+    "pearl": [
+      {
+        "legacy_woo_id": 31245,
+        "sku": "I248..",
+        "name": "Keshi Pearl 15.93ct@978 per. ct. (Luxury)",
+        "slug": "keshi-pearl-15-93ct978-per-ct-luxury-natural-gemstone",
+        "price": "15575.00",
+        "compare_price": "18630.00",
+        "carat_weight": "15.930",
+        "quality_label": "Luxury",
+        "in_stock": false,
+        "image_count": 1,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 31249,
+        "sku": "J908..",
+        "name": "Keshi Pearl 14.17ct@977 per. ct. (Luxury)",
+        "slug": "keshi-pearl-14-17ct977-per-ct-luxury-natural-gemstone",
+        "price": "13845.00",
+        "compare_price": "16460.00",
+        "carat_weight": "14.170",
+        "quality_label": "Luxury",
+        "in_stock": true,
+        "image_count": 1,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 23112,
+        "sku": "G133.",
+        "name": "Keshi Pearl 14.56ct@950 per. ct. (Luxury)",
+        "slug": "keshi-pearl-14-56ct950-per-ct-luxury-natural-gemstone",
+        "price": "13830.00",
+        "compare_price": "17330.00",
+        "carat_weight": "14.560",
+        "quality_label": "Luxury",
+        "in_stock": false,
+        "image_count": 1,
+        "warning_count": 1
+      }
+    ],
+    "yellow-sapphire": [
+      {
+        "legacy_woo_id": 47054,
+        "sku": "G654.",
+        "name": "Yellow Sapphire 8.90ct.@27292per. ct. (Super Luxury)",
+        "slug": "yellow-sapphire-8-90ct-27292per-ct-super-luxury-natural-gemstone",
+        "price": "242904.00",
+        "compare_price": "246404.00",
+        "carat_weight": "8.900",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 43528,
+        "sku": "V894..",
+        "name": "Yellow Sapphire 6.20ct.@33260per. ct.(Super Luxury)",
+        "slug": "yellow-sapphire-6-20ct-33260-per-ct-super-laxury-natural-gemstone",
+        "price": "206200.00",
+        "compare_price": "209000.00",
+        "carat_weight": "6.200",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 27279,
+        "sku": "Q478.",
+        "name": "Yellow Sapphire 8.30ct.@23650 per. ct. (Super Luxury)",
+        "slug": "yellow-sapphire-8-30ct-23650-per-ct-super-luxury-natural-gemstone",
+        "price": "196300.00",
+        "compare_price": "200030.00",
+        "carat_weight": "8.300",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 3,
+        "warning_count": 1
+      }
+    ],
+    "blue-sapphire": [
+      {
+        "legacy_woo_id": 40866,
+        "sku": "A758..",
+        "name": "Blue Sapphire 15.55ct.@25765 per. ct. (Luxury)",
+        "slug": "blue-sapphire-15-55ct-25765-per-ct-luxury-natural-gemstone",
+        "price": "400650.00",
+        "compare_price": "405160.00",
+        "carat_weight": "15.550",
+        "quality_label": "Luxury",
+        "in_stock": true,
+        "image_count": 4,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 35581,
+        "sku": "K239..",
+        "name": "Blue Sapphire 8.16ct.@38620 per. ct. (Super Luxury)",
+        "slug": "blue-sapphire-8-16ct-38620-per-ct-super-luxury-natural-gemstone",
+        "price": "315140.00",
+        "compare_price": "415150.00",
+        "carat_weight": "8.160",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 34550,
+        "sku": "I820..",
+        "name": "Blue Sapphire 7.50ct.@37600 per. ct. (Super Luxury)",
+        "slug": "blue-sapphire-7-50ct-37600-per-ct-super-luxury-natural-gemstone",
+        "price": "282000.00",
+        "compare_price": "285500.00",
+        "carat_weight": "7.500",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 3,
+        "warning_count": 1
+      }
+    ],
+    "white-sapphire": [
+      {
+        "legacy_woo_id": 34498,
+        "sku": "O720..",
+        "name": "White Sapphire 5.66ct.@45490per. ct.(Super Luxury)",
+        "slug": "white-sapphire-5-66ct-45490per-ct-super-luxury-natural-gemstone",
+        "price": "257470.00",
+        "compare_price": "260970.00",
+        "carat_weight": "5.660",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 1614,
+        "sku": "O898",
+        "name": "White Sapphire 6.99ct.@27200 per. ct. (Super Luxury)",
+        "slug": "white-sapphire-6-99ct-27200-per-ct-natural-gemstone",
+        "price": "190130.00",
+        "compare_price": "193630.00",
+        "carat_weight": "6.990",
+        "quality_label": "Super Luxury",
+        "in_stock": false,
+        "image_count": 3,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 33241,
+        "sku": "B394...",
+        "name": "White Sapphire 8.44ct.@21357 per. ct. (Luxury)",
+        "slug": "white-sapphire-8-44ct-21357-per-ct-luxury-natural-gemstone",
+        "price": "180250.00",
+        "compare_price": "183750.00",
+        "carat_weight": "8.440",
+        "quality_label": "Luxury",
+        "in_stock": true,
+        "image_count": 3,
+        "warning_count": 1
+      }
+    ],
+    "hessonite": [
+      {
+        "legacy_woo_id": 48225,
+        "sku": "W853..",
+        "name": "Hessonite 13.72ct.@1855per. ct. (Super Luxury)",
+        "slug": "hessonite-13-72ct-1855per-ct-super-luxury-natural-gemstone",
+        "price": "25451.00",
+        "compare_price": "28000.00",
+        "carat_weight": "13.720",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 1,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 48221,
+        "sku": "P506..",
+        "name": "Hessonite 13.10ct.@1854per. ct. (Super Luxury)",
+        "slug": "hessonite-13-10ct-1854per-ct-super-luxury-natural-gemstone",
+        "price": "24297.00",
+        "compare_price": "27000.00",
+        "carat_weight": "13.100",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 1,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 48223,
+        "sku": "S146..",
+        "name": "Hessonite 12.60ct.@1853per. ct. (Super Luxury)",
+        "slug": "hessonite-12-60ct-1853per-ct-super-luxury-natural-gemstone",
+        "price": "23360.00",
+        "compare_price": "26000.00",
+        "carat_weight": "12.600",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 1,
+        "warning_count": 1
+      }
+    ],
+    "cats-eye": [
+      {
+        "legacy_woo_id": 4357,
+        "sku": "D408",
+        "name": "Catseye 9.57ct.@12600 per. ct. (Luxury)",
+        "slug": "catseye-9-57ct-12600-per-ct-luxury-natural-gemstone",
+        "price": "120580.00",
+        "compare_price": "125250.00",
+        "carat_weight": "9.570",
+        "quality_label": "Luxury",
+        "in_stock": true,
+        "image_count": 4,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 37874,
+        "sku": "L204...",
+        "name": "Catseye 6.83ct.@16996 per. ct. (Super Luxury)",
+        "slug": "catseye-6-83ct-16996-per-ct-super-luxury-natural-gemstone",
+        "price": "116080.00",
+        "compare_price": "119580.00",
+        "carat_weight": "6.830",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 2,
+        "warning_count": 1
+      },
+      {
+        "legacy_woo_id": 35601,
+        "sku": "G736..",
+        "name": "Catseye 5.20ct.@19565 per. ct. (Super Luxury)",
+        "slug": "catseye-5-20ct-19565-per-ct-super-luxury-natural-gemstone",
+        "price": "101740.00",
+        "compare_price": "105240.00",
+        "carat_weight": "5.200",
+        "quality_label": "Super Luxury",
+        "in_stock": true,
+        "image_count": 5,
+        "warning_count": 1
+      }
+    ]
+  }
+}

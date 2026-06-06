@@ -26,7 +26,15 @@ export const revalidate = 300;
 
 function extractImages(images: Json): string[] {
   if (!Array.isArray(images)) return [];
-  return images.filter((img): img is string => typeof img === 'string');
+  const urls: string[] = [];
+  for (const item of images) {
+    if (typeof item === 'string') {
+      urls.push(item);
+    } else if (item && typeof item === 'object' && 'url' in item && typeof (item as { url: unknown }).url === 'string') {
+      urls.push((item as { url: string }).url);
+    }
+  }
+  return urls;
 }
 
 function buildSKUMeta(product: Product): string {
@@ -80,8 +88,15 @@ function ProductJsonLd({
 }) {
   const images = extractImages(product.images);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com';
+  const isOnRequest =
+    product.price_mode === 'on_demand' ||
+    product.price_mode === 'quote_required' ||
+    !product.price ||
+    product.price <= 0;
   const unavailable =
-    !product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+    !isOnRequest &&
+    (!product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
+  const hasStructuredPrice = typeof product.price === 'number' && (product.price > 0 || product.price_mode === 'free');
   const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
   const averageRating = ratedReviews.length > 0
     ? ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
@@ -99,8 +114,12 @@ function ProductJsonLd({
       '@type': 'Offer',
       url: `${siteUrl}${href}`,
       priceCurrency: 'INR',
-      price: product.price,
-      availability: unavailable ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+      price: hasStructuredPrice ? product.price : undefined,
+      availability: isOnRequest
+        ? 'https://schema.org/LimitedAvailability'
+        : unavailable
+        ? 'https://schema.org/OutOfStock'
+        : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'PureVedicGems' },
     },
     ...(averageRating != null
@@ -175,7 +194,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
           copy: 'Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy.',
           image: '/home/ctas/cta2.webp',
           imageAlt: 'Rudraksha expert offering personalised guidance',
-          primary: { label: 'Get Rudraksha Guidance', href: '/configure' },
+          primary: { label: 'Get Rudraksha Guidance', href: '/consultation' },
           secondary: { label: 'See Rudraksha Collection', href: '/shop/rudraksha' },
           imageSide: 'left' as const,
         }
@@ -185,7 +204,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
             copy: 'Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget.',
             image: '/home/ctas/cta3.webp',
             imageAlt: 'Vedic astrologer reviewing semi-precious gemstone alternatives',
-            primary: { label: 'Get Uparatna Guidance', href: '/configure' },
+            primary: { label: 'Get Uparatna Guidance', href: '/consultation' },
             secondary: { label: 'See Uparatna Collection', href: '/shop/upratna' },
             imageSide: 'right' as const,
           }
@@ -194,7 +213,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
             copy: 'Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy.',
             image: '/home/ctas/cta1.webp',
             imageAlt: 'Vedic gemstone consultants preparing a horoscope recommendation',
-            primary: { label: 'Get Gem Recommendation', href: '/configure' },
+            primary: { label: 'Get Gem Recommendation', href: '/consultation' },
             secondary: { label: 'See Navaratna Collection', href: '/shop/navaratna' },
             imageSide: 'right' as const,
           };
@@ -321,14 +340,25 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     redirect(href);
   }
 
-  const relatedPromise = supabase
-    .from('products')
-    .select('id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number')
-    .eq('category', product.category)
-    .eq('is_active', true)
-    .eq('in_stock', true)
-    .neq('slug', slug)
-    .limit(6);
+  const relatedSelect = 'id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number';
+  const relatedPromise = product.sub_category
+    ? supabase
+        .from('products')
+        .select(relatedSelect)
+        .eq('category', product.category)
+        .eq('sub_category', product.sub_category)
+        .eq('is_active', true)
+        .neq('slug', slug)
+        .order('in_stock', { ascending: false })
+        .limit(8)
+    : supabase
+        .from('products')
+        .select(relatedSelect)
+        .eq('category', product.category)
+        .eq('is_active', true)
+        .neq('slug', slug)
+        .order('in_stock', { ascending: false })
+        .limit(8);
 
   const reviewPromise = supabase
     .from('reviews')
@@ -374,14 +404,20 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
   const categoryLabel =
     product.sub_category
-      ? product.sub_category.split('-').map((w: string) => w[0].toUpperCase() + w.slice(1)).join(' ')
-      : product.category.charAt(0).toUpperCase() + product.category.slice(1) + 's';
+      ? product.sub_category
+          .split('-')
+          .filter(Boolean)
+          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ')
+      : product.category
+        ? product.category.charAt(0).toUpperCase() + product.category.slice(1) + 's'
+        : 'Shop';
 
   return (
     <>
       <ProductJsonLd product={product} href={href} reviews={reviews} />
 
-      <main className="min-h-screen bg-[#fbf7ef] px-4 pb-24 pt-24 font-body md:px-6 md:pt-29 lg:px-8">
+      <main className="min-h-screen bg-[#fbf7ef] px-4 pb-24 pt-28 font-body md:px-6 md:pt-32 lg:px-8">
         <div className="mx-auto max-w-340">
 
           {/* ── Breadcrumb ── */}
@@ -405,19 +441,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
             {/* ─── Left: Gallery ─── */}
             <div className="lg:sticky lg:top-22.5 lg:self-start">
-              <ProductGallery images={images} productName={product.name} />
-
-              {/* Video if available */}
-              {product.video_url && (
-                <div className="mt-4 overflow-hidden rounded-xl border border-brand-border">
-                  <video
-                    src={product.video_url}
-                    controls
-                    className="w-full"
-                    preload="metadata"
-                  />
-                </div>
-              )}
+              <ProductGallery images={images} productName={product.name} videoUrl={product.video_url} />
             </div>
 
             {/* ─── Right: Info panel ─── */}
@@ -458,6 +482,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                 comparePrice={product.compare_price}
                 pricePerCarat={product.price_per_carat}
                 caratWeight={product.carat_weight}
+                priceMode={product.price_mode}
               />
 
               <ProductAssuranceStrip />

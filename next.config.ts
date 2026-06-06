@@ -87,21 +87,227 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
     ],
+  },
+
+  async rewrites() {
+    return [
+      // Legacy WP product-category URLs map to current shop routes (no redirect — keep old URLs working)
+      // /product-category/navratan/<gem>           -> listing  /shop/<gem>
+      // /product-category/navratan/<gem>/<product> -> PDP      /shop/navaratna/<product>
+      // Legacy slug variants first (catseye -> cats-eye)
+      { source: '/product-category/navratan/catseye/:path*', destination: '/shop/cats-eye/:path*' },
+      { source: '/shop/navratan/catseye/:path*', destination: '/shop/cats-eye/:path*' },
+      { source: '/product-category/navratan/catseye', destination: '/shop/cats-eye' },
+      { source: '/shop/navratan/catseye', destination: '/shop/cats-eye' },
+      { source: '/product-category/navratan/:slug', destination: '/shop/:slug' },
+      { source: '/product-category/navratan/:slug/', destination: '/shop/:slug' },
+      { source: '/product-category/navratan/:slug/:product', destination: '/shop/navaratna/:product' },
+      { source: '/product-category/navratan/:slug/:product/', destination: '/shop/navaratna/:product' },
+      // Legacy WP "shop" subcategory URLs
+      { source: '/shop/navratan/:slug', destination: '/shop/:slug' },
+      { source: '/shop/navratan/:slug/', destination: '/shop/:slug' },
+      { source: '/shop/navratan/:slug/:product', destination: '/shop/navaratna/:product' },
+      { source: '/shop/navratan/:slug/:product/', destination: '/shop/navaratna/:product' },
+      // Legacy WP direct product permalinks
+      { source: '/product/:slug', destination: '/shop/navaratna/:slug' },
+      { source: '/product/:slug/', destination: '/shop/navaratna/:slug' },
+    ];
   },
 
   async redirects() {
     return [
-      { source: '/terms-and-conditions', destination: '/policies/terms', permanent: true },
-      { source: '/terms-and-conditions/', destination: '/policies/terms', permanent: true },
-      { source: '/returns-policy', destination: '/policies/returns', permanent: true },
-      { source: '/returns-policy/', destination: '/policies/returns', permanent: true },
-      { source: '/shipping-policy', destination: '/policies/shipping', permanent: true },
-      { source: '/shipping-policy/', destination: '/policies/shipping', permanent: true },
-      { source: '/privacy-policy', destination: '/policies/privacy', permanent: true },
-      { source: '/privacy-policy/', destination: '/policies/privacy', permanent: true },
-      { source: '/disclaimer', destination: '/policies/legal-notice', permanent: true },
-      { source: '/disclaimer/', destination: '/policies/legal-notice', permanent: true },
+      { source: '/terms-and-conditions', destination: '/policies/terms', statusCode: 301 },
+      { source: '/terms-and-conditions/', destination: '/policies/terms', statusCode: 301 },
+      { source: '/returns-policy', destination: '/policies/returns', statusCode: 301 },
+      { source: '/returns-policy/', destination: '/policies/returns', statusCode: 301 },
+      { source: '/shipping-policy', destination: '/policies/shipping', statusCode: 301 },
+      { source: '/shipping-policy/', destination: '/policies/shipping', statusCode: 301 },
+      { source: '/privacy-policy', destination: '/policies/privacy', statusCode: 301 },
+      { source: '/privacy-policy/', destination: '/policies/privacy', statusCode: 301 },
+      { source: '/disclaimer', destination: '/policies/legal-notice', statusCode: 301 },
+      { source: '/disclaimer/', destination: '/policies/legal-notice', statusCode: 301 },
+
+      // Legacy yagya / pooja payment & landing pages -> migrated yagya pages.
+      // Each source has a trailing-slash variant because old WP URLs ended with "/".
+      ...[
+        // Budh
+        ['/budha-shanti-yagya-by-beej-mantra-payment-page', '/vedic-yagyas/budh-shanti-yagya-by-beej-mantra'],
+        ['/budha-shanti-yagya-payment-page', '/vedic-yagyas/budh-shanti-yagya'],
+        // Chandra
+        ['/chandra-shanti-yagya-by-beej-mantra-payment-page', '/vedic-yagyas/chandra-shanti-yagya-with-beej-mantra'],
+        // Durga Saptashati family
+        ['/durga-homam', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/durga-saptshati-path-bhaint-prasad-offering-maa-kamakhya-temple-payment', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/durga-saptshati-path-bhaint-prasad-offering-maa-kamakhya-temple', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/durga-saptshati-path-bhaint-prasad-offering-maa-vaishno-devi-darbar-payment', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/durga-saptshati-path-bhaint-prasad-offering-maa-vaishno-devi-darbar', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/durgasapshati-sankalpa-path-and-yagya', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/navratre-special-sankalpa', '/vedic-yagyas/durga-saptashati-yagya'],
+        ['/group-navratri-puja-21st-september-29th-september', '/vedic-yagyas-service'],
+        // Guru
+        ['/guru-shanti-yagya-payment-page', '/vedic-yagyas/vedic-guru-shanti-yagya'],
+        // Ketu
+        ['/ketu-shanti-yagya-by-beej-mantra-payment-page', '/vedic-yagyas/ketu-shanti-yagya-beej-mantra'],
+        // MahaMrityunjay
+        ['/mahamrityunjay-yagya-pooja-payment-page-11000-jaap', '/vedic-yagyas/mahamritunjay-yagya-pooja11000-jaap'],
+        ['/mahamrityunjay-yagya-pooja-payment-page-31000-jaap', '/vedic-yagyas/mahamritunjay-yagya-pooja-31000-jaap'],
+        ['/mahamrityunjay-yagya-pooja-payment-page-51000-jaap', '/vedic-yagyas/mahamritunjay-yagya-pooja-51000-jaap'],
+        ['/mahamrityunjay-yagya-pooja-payment-page', '/vedic-yagyas/mahamritunjay-yagya-pooja'],
+        // Shukra
+        ['/shukra-shanti-yagya', '/vedic-yagyas/shukra-shanti-yagya-2'],
+        // Surya
+        ['/vedic-surya-shanti-yagya', '/vedic-yagyas/surya-shanti-yagya'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
+      // Legacy Pearl (Moti) SEO landing pages -> newly rebuilt Pearl quality guide.
+      ...[
+        '/astrological-pearls-gemstone-in-the-philippines',
+        '/authenticity-well-being-and-lunar-charm-of-pearl-gemstone-in-switzerland',
+        '/buy-100-authentic-pearls-online-in-canada',
+        '/buy-100-authentic-pearls-online-in-uk',
+        '/buy-100-natural-pearls-online-in-london',
+        '/pearl-gemstone-complete-guide-for-people-in-australia',
+        '/why-wear-pearl-moon-gemstone-astrological-benefits-healing-and-prosperity',
+      ].flatMap((source) => [
+        { source, destination: '/knowledge/gem-qualities/pearl', statusCode: 301 },
+        { source: `${source}/`, destination: '/knowledge/gem-qualities/pearl', statusCode: 301 },
+      ]),
+
+      // Legacy geo-targeted / duplicate gemstone SEO landing pages and editorial
+      // gem articles -> the single canonical quality guide for that gem.
+      // (301 consolidation preserves link equity without thin doorway duplicates.)
+      ...[
+        // Blue Sapphire (Neelam)
+        ['/astrological-blue-sapphire-gemstone-in-philippines', 'blue-sapphire'],
+        ['/blue-sapphire-gemstone-a-complete-guide-for-people-in-australia', 'blue-sapphire'],
+        ['/blue-sapphire-gemstone-in-dubai-significance-strength-and-fortune', 'blue-sapphire'],
+        ['/blue-sapphire-gemstone-in-switzerland-a-gemstone-of-wisdom-grace-and-strength', 'blue-sapphire'],
+        ['/blue-sapphire-gemstone-in-usa', 'blue-sapphire'],
+        ['/buy-100-authentic-blue-sapphire-online-in-london', 'blue-sapphire'],
+        ['/buy-authentic-blue-sapphire-online-in-canada', 'blue-sapphire'],
+        ['/discover-the-irresistible-and-incredible-magic-of-authentic-astrological-blue-sapphire-gemstone-in-uk', 'blue-sapphire'],
+        // Yellow Sapphire (Pukhraj)
+        ['/astrological-yellow-sapphire-gemstone-in-switzerland', 'yellow-sapphire'],
+        ['/authentic-yellow-sapphire-online-in-canada', 'yellow-sapphire'],
+        ['/buy-100-authentic-yellow-sapphire-online-in-london', 'yellow-sapphire'],
+        ['/buy-authentic-yellow-sapphire-online-in-uk', 'yellow-sapphire'],
+        ['/harness-the-celestial-power-of-yellow-sapphire-gemstone-in-the-usa', 'yellow-sapphire'],
+        ['/unlocking-prosperity-and-wisdom-the-significance-of-the-yellow-sapphire-gemstone-in-dubai', 'yellow-sapphire'],
+        ['/yellow-sapphire-gemstone-guide-in-australia', 'yellow-sapphire'],
+        ['/yellow-sapphire-gemstone-in-the-philippines', 'yellow-sapphire'],
+        // White Sapphire (Safed Pukhraj) — also legacy diamond page
+        ['/buy-100-authentic-white-sapphire-in-canada', 'white-sapphire'],
+        ['/buy-100-authentic-white-sapphire-online-in-london', 'white-sapphire'],
+        ['/buy-100-authentic-white-sapphire-online-in-uk', 'white-sapphire'],
+        ['/diamond', 'white-sapphire'],
+        ['/harness-the-celestial-power-of-white-sapphire-gemstone-in-the-usa', 'white-sapphire'],
+        ['/white-sapphire-gemstone-benefits-astrology-healing-and-complete-buying-guide-in-philippines', 'white-sapphire'],
+        ['/white-sapphire-gemstone-guide-for-beginners-in-australia', 'white-sapphire'],
+        ['/why-wear-white-sapphire-gemstone-venus-gemstone-astrological-benefits-healing-and-prosperity', 'white-sapphire'],
+        // Emerald (Panna)
+        ['/astrological-emerald-gemstone-in-philippines', 'emerald'],
+        ['/buy-100-authentic-emerald-online-in-canada', 'emerald'],
+        ['/buy-100-authentic-emerald-online-in-london', 'emerald'],
+        ['/buy-100-authentic-emerald-online-in-uk', 'emerald'],
+        ['/emerald-gemstone-guide-for-beginners-in-australia', 'emerald'],
+        ['/emerald-gemstone-panna-the-astrological-gem-of-mercury-and-its-profound-benefits', 'emerald'],
+        ['/the-emerald-gemstone-panna-switzerlands-green-portal-to-wisdom-calm-and-expression', 'emerald'],
+        // Ruby (Manik)
+        ['/astrological-ruby-gemstone-in-philippines', 'ruby'],
+        ['/buy-100-authentic-ruby-gemstone-online-in-london', 'ruby'],
+        ['/buy-100-authentic-ruby-online-in-canada', 'ruby'],
+        ['/buy-authentic-ruby-online-in-uk', 'ruby'],
+        ['/ruby-gemstone-for-australian-gemstone-lovers', 'ruby'],
+        ['/ruby-manikya-gemstone-wearing-solar-gemstone', 'ruby'],
+        ['/solar-brilliance-swiss-ruby-gemstones-certification-and-well-being', 'ruby'],
+        // Red Coral (Moonga)
+        ['/buy-100-authentic-red-coral-online-in-canada', 'red-coral'],
+        ['/buy-100-authentic-red-coral-online-in-london', 'red-coral'],
+        ['/buy-100-authentic-red-coral-online-in-uk', 'red-coral'],
+        ['/red-coral-gemstone-in-the-philippines', 'red-coral'],
+        ['/red-coral-moonga-gemstone-of-mars', 'red-coral'],
+        ['/red-coral-stone-moonga-the-comprehensive-benefits-of-wearing-the-gem-of-mars', 'red-coral'],
+        // Hessonite (Gomed / Rahu)
+        ['/astrological-hessonite-gemstone-in-philippines-benefits-healing-and-buying-guide', 'hessonite'],
+        ['/buy-100-authentic-hessonite-online-in-canada', 'hessonite'],
+        ['/buy-100-authentic-hessonite-online-in-london', 'hessonite'],
+        ['/buy-100-authentic-hessonite-online-in-uk', 'hessonite'],
+        ['/hessonite-gemstone-complete-and-simple-guide-for-people-in-australia', 'hessonite'],
+        ['/hessonite-gemstone-switzerlands-astrological-treasure', 'hessonite'],
+        ['/hessonite-in-the-usa-an-overview', 'hessonite'],
+        ['/unveiling-mystical-energy-signification-of-the-hessonite-gemstone-in-dubai', 'hessonite'],
+        // Cat's Eye (Lehsunia / Ketu)
+        ['/astrological-catseye-gemstone-in-switzerland', 'catseye'],
+        ['/buy-100-authentic-cats-eye-in-london', 'catseye'],
+        ['/buy-100-authentic-cats-eye-online-in-uk', 'catseye'],
+        ['/cats-eye-gemstone-lehsunia-in-canada', 'catseye'],
+        ['/catseye-gemstone-complete-guide-for-people-in-australia', 'catseye'],
+        ['/harness-the-celestial-power-of-catseye-gemstone-in-the-usa', 'catseye'],
+        ['/the-gemstone-of-ketu-protection-intuition-spiritual-power-in-dubai', 'catseye'],
+        // Opal (Upala / Venus)
+        ['/astrological-opal-gemstone-in-philippines', 'opal'],
+        ['/opal-gemstone-complete-guide-for-people-in-australia', 'opal'],
+        ['/opal-gemstone-in-switzerland-a-gemstone-of-love-light-and-creative-energy', 'opal'],
+        ['/opal-upal-gemstone-venus-gemstone-ring', 'opal'],
+      ].flatMap(([source, gem]) => [
+        { source, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
+        { source: `${source}/`, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
+      ]),
+
+      // Legacy Rudraksha geo guides -> canonical Rudraksha qualities page.
+      ...[
+        '/rudraksha-an-astrological-and-healing-bead-in-switzerland',
+        '/rudraksha-complete-guide-for-people-in-australia',
+      ].flatMap((source) => [
+        { source, destination: '/knowledge/rudraksha-qualities', statusCode: 301 },
+        { source: `${source}/`, destination: '/knowledge/rudraksha-qualities', statusCode: 301 },
+      ]),
+
+      // Remaining legacy editorial / brand / misc pages -> closest relevant section.
+      ...[
+        ['/astrological-gemstone-recommendation-for-success-in-various-areas-of-life', '/tools/recommendation'],
+        ['/best-astrologer', '/consultation'],
+        ['/health-benefits-of-yoga', '/blog'],
+        ['/mantra-for-confidence-and-inner-strength', '/blog'],
+        ['/pure-vedic-gems-vedic-sciences', '/about'],
+        ['/pure-vedic-science', '/about'],
+        ['/pvg-rewards-points', '/'],
+        ['/unveiling-the-mystical-connection-between-gemstones-rudrakshas-and-the-nine-forms-of-goddess-durga', '/vedic-yagyas/durga-saptashati-yagya'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
+      // Legacy obsolete / internal pages (thank-you, old forms, sitemap, job post)
+      // -> safe destinations to avoid dead 404s for any stray inbound links.
+      ...[
+        ['/certificate-banner', '/lab-certificate'],
+        ['/gemstone-recommendation-old-form', '/tools/recommendation'],
+        ['/thank-you-for-gems-recommendation', '/tools/recommendation'],
+        ['/thank-you-pure-vedic-science-and-research-centre', '/about'],
+        ['/thank-you-pure-vedic-science', '/about'],
+        ['/telecaller-telesales-executive-pure-vedic-gems-pvt-ltd', '/contact'],
+        ['/data-base-integration-of-enquiry-with-downloadable-excel-file', '/'],
+        ['/thank-you', '/'],
+        ['/thankyou-for-enquirys', '/'],
+        ['/thank-you-for-enquiry', '/'],
+        ['/sitemap', '/'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
     ];
   },
 

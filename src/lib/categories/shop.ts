@@ -102,6 +102,7 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, { category: 'navaratna' | '
   'blue-sapphire': { category: 'navaratna', label: 'Blue Sapphire (Neelam)', desc: 'Certified Blue Sapphire gemstones for Shani, with expert consultation recommended.' },
   hessonite: { category: 'navaratna', label: 'Hessonite (Gomed)', desc: 'Natural Hessonite gemstones for Rahu, with lab and origin disclosure where available.' },
   'cats-eye': { category: 'navaratna', label: "Cat's Eye (Lehsunia)", desc: 'Natural Cat Eye gemstones for Ketu, selected with careful Jyotish guidance.' },
+  'white-sapphire': { category: 'navaratna', label: 'White Sapphire (Shvet Pukhraj)', desc: 'Certified White Sapphire gemstones, the traditional Vedic substitute for Diamond aligned with Shukra (Venus).' },
   amethyst: { category: 'upratna', label: 'Amethyst', desc: 'Semi-precious Amethyst gemstones and Vedic alternatives.' },
   'lapis-lazuli': { category: 'upratna', label: 'Lapis Lazuli', desc: 'Semi-precious Lapis Lazuli gemstones and spiritual jewellery options.' },
   moonstone: { category: 'upratna', label: 'Moonstone', desc: 'Moonstone gemstones and Chandra-aligned semi-precious alternatives.' },
@@ -114,7 +115,7 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, { category: 'navaratna' | '
   'tiger-eye': { category: 'upratna', label: 'Tiger Eye', desc: 'Tiger Eye semi-precious gemstones and bracelets.' },
   malachite: { category: 'upratna', label: 'Malachite', desc: 'Malachite semi-precious gemstones and spiritual accessories.' },
   opal: { category: 'upratna', label: 'Opal', desc: 'Opal semi-precious gemstones and Venus-aligned alternatives.' },
-  'white-sapphire': { category: 'upratna', label: 'White Sapphire', desc: 'White Sapphire semi-precious alternatives and certified gemstone options.' },
+  pitambari: { category: 'upratna', label: 'Pitambari', desc: 'Pitambari (Pitambari Neelam) semi-precious gemstones and Vedic alternatives.' },
   tanzanite: { category: 'upratna', label: 'Tanzanite', desc: 'Tanzanite semi-precious gemstones and Vedic alternatives.' },
 };
 

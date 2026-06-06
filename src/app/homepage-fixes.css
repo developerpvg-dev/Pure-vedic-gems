@@ -1,0 +1,194 @@
+/* Focused homepage visual fixes requested for the live hero/category sections. */
+.pvg-react-home-root a.btn-maroon,
+.pvg-react-home-root .btn-maroon,
+.pvg-react-home-root a.btn-consult,
+.pvg-react-home-root .btn-consult,
+.pvg-react-home-root a.mob-consult,
+.pvg-react-home-root .mob-consult,
+.pvg-react-home-root a.expert-book-btn,
+.pvg-react-home-root .expert-book-btn,
+.pvg-react-home-root a.cfg-lin-btn,
+.pvg-react-home-root .cfg-lin-btn,
+.pvg-react-home-root a.reco-form-cta,
+.pvg-react-home-root .reco-form-cta,
+.pvg-react-home-root a.svc-click-btn,
+.pvg-react-home-root .svc-click-btn {
+  color: #ffffff !important;
+}
+
+.pvg-react-home-root .about-exp-badge {
+  position: absolute !important;
+  right: -32px !important;
+  bottom: -26px !important;
+  z-index: 5 !important;
+  display: block !important;
+  width: clamp(108px, 10vw, 146px) !important;
+  aspect-ratio: 3 / 2 !important;
+  height: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.pvg-react-home-root .about-exp-img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 14px 26px rgba(122, 21, 21, 0.28));
+}
+
+.pvg-react-home-root .cert-exp-badge {
+  position: absolute;
+  right: -14px;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 82px;
+  height: 82px;
+  background: var(--gold);
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(122, 21, 21, 0.4);
+}
+
+.pvg-react-home-root .pvg-slider-shell {
+  padding-right: 64px !important;
+  padding-left: 64px !important;
+}
+
+.pvg-react-home-root .pvg-semi-slider-shell {
+  padding-right: 36px !important;
+  padding-left: 36px !important;
+}
+
+/* Break semi-precious slider out of the container max-width to fill the viewport. */
+.pvg-react-home-root .semiprecious-section .pvg-semi-slider-shell {
+  width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  padding-left: clamp(72px, 6vw, 110px) !important;
+  padding-right: clamp(72px, 6vw, 110px) !important;
+}
+
+.pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-prev,
+.pvg-react-home-root .pvg-semi-slider-shell .pvg-slider-btn-prev {
+  left: 8px !important;
+}
+
+.pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-next,
+.pvg-react-home-root .pvg-semi-slider-shell .pvg-slider-btn-next {
+  right: 8px !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-navaratna.pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap {
+  right: -32px !important;
+  width: min(48vw, 570px) !important;
+  height: min(36vw, 465px) !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-navaratna.pvg-rcta-v2-reverse .pvg-rcta-v2-person-img {
+  object-fit: contain !important;
+  object-position: right bottom !important;
+  transform: none !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-uparatna,
+.pvg-react-home-root .pvg-cta-uparatna {
+  --pvg-rcta-mobile-title: var(--maroon-deep);
+  --pvg-rcta-mobile-copy: #6b4c33;
+  --pvg-rcta-mobile-arch: linear-gradient(96deg, #9c1e1e 0%, #7a1515 38%, #4d0a0a 64%, #2c0404 100%);
+  --pvg-rcta-mobile-primary-bg: #8f1f1f;
+  --pvg-rcta-mobile-primary-border: #8f1f1f;
+  --pvg-rcta-mobile-primary-fg: #ffffff;
+  --pvg-rcta-mobile-primary-shadow: rgba(122, 21, 21, 0.24);
+  --pvg-rcta-mobile-secondary-bg: #d8ae49;
+  --pvg-rcta-mobile-secondary-border: #d8ae49;
+  --pvg-rcta-mobile-secondary-fg: #2c0404;
+  background: radial-gradient(circle, rgba(122, 21, 21, 0.07) 1px, transparent 1px), linear-gradient(180deg, #fdf8f4 0%, #fbf1e6 44%, #f2dfcb 100%) !important;
+  background-size: 22px 22px, 100% 100% !important;
+  background-position: right top, center !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-circle {
+  background: linear-gradient(96deg, #9c1e1e 0%, #7a1515 38%, #4d0a0a 64%, #2c0404 100%) !important;
+  box-shadow: inset 0 18px 42px rgba(247, 237, 208, 0.12) !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-heading {
+  color: var(--maroon-deep) !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-chat {
+  color: var(--maroon) !important;
+  box-shadow: 0 8px 20px rgba(44, 4, 4, 0.12) !important;
+}
+
+.pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-call {
+  background: #d4a843 !important;
+  color: #261a10 !important;
+  border-color: #d4a843 !important;
+}
+
+@media (max-width: 767px) {
+  .pvg-react-home-root .about-exp-badge {
+    right: -18px !important;
+    bottom: -18px !important;
+    width: clamp(88px, 25vw, 116px) !important;
+  }
+
+  .pvg-react-home-root .cert-exp-badge {
+    right: -10px;
+    width: 74px;
+    height: 74px;
+  }
+
+  .pvg-react-home-root .pvg-slider-shell {
+    padding-right: 42px !important;
+    padding-left: 42px !important;
+  }
+
+  .pvg-react-home-root .pvg-semi-slider-shell {
+    padding-right: 36px !important;
+    padding-left: 36px !important;
+  }
+
+  .pvg-react-home-root .semiprecious-section .pvg-semi-slider-shell {
+    margin-left: -20px !important;
+    margin-right: -20px !important;
+    padding-left: 44px !important;
+    padding-right: 44px !important;
+  }
+
+  .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-prev,
+  .pvg-react-home-root .pvg-semi-slider-shell .pvg-slider-btn-prev {
+    left: 0 !important;
+  }
+
+  .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-next,
+  .pvg-react-home-root .pvg-semi-slider-shell .pvg-slider-btn-next {
+    right: 0 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-navaratna.pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap {
+    right: auto !important;
+    width: min(66vw, 293px) !important;
+    height: min(57vw, 263px) !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-uparatna {
+    background: linear-gradient(180deg, #fdf8f4 0%, #fbf1e6 54%, #f7ebde 100%) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .pvg-react-home-root .pvg-slider-shell,
+  .pvg-react-home-root .pvg-semi-slider-shell {
+    padding-right: 44px !important;
+    padding-left: 44px !important;
+  }
+}

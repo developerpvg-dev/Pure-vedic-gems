@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
 
 import { MediaUploader } from '@/components/admin/MediaUploader';
+import { productCategoryToStorefrontGroupSlug } from '@/lib/categories/storefront';
 import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
 import {
   CharCounter,
@@ -88,6 +89,22 @@ function parsePositiveNumber(value: string) {
 function parsePositiveInteger(value: string) {
   const parsed = parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function stripHtml(value: string) {
+  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function truncateText(value: string, max: number) {
+  const text = value.replace(/\s+/g, ' ').trim();
+  if (text.length <= max) return text;
+  return text.slice(0, max - 1).trimEnd();
+}
+
+function productCanonicalUrl(category: string, productSlug: string) {
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com').replace(/\/$/, '');
+  const groupSlug = productCategoryToStorefrontGroupSlug(category) ?? category;
+  return `${siteUrl}/shop/${groupSlug}/${productSlug}`;
 }
 
 function get<T = unknown>(p: Record<string, unknown> | null | undefined, key: string): T | undefined {
@@ -226,7 +243,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [isDirectorsPick, setIsDirectorsPick] = useState(Boolean(get(initialProduct, 'is_directors_pick') ?? directorsPickPreset));
   const [displayOrder, setDisplayOrder] = useState(String(get<number>(initialProduct, 'display_order') ?? 0));
   const [isActive, setIsActive] = useState(get<boolean>(initialProduct, 'is_active') ?? true);
-  const [configuratorEnabled, setConfiguratorEnabled] = useState(Boolean(get(initialProduct, 'configurator_enabled') ?? directorsPickPreset));
+  const configuratorPreset = directorsPickPreset || config.kind === 'navratna';
+  const [configuratorEnabled, setConfiguratorEnabled] = useState(Boolean(get(initialProduct, 'configurator_enabled') ?? configuratorPreset));
 
   // ── SEO / AEO / GEO ───────────────────────────────────
   const initialSeoData = (get<Record<string, unknown>>(initialProduct, 'seo_data')) ?? {};
@@ -353,6 +371,14 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     const images = mediaFiles.filter((f) => f.type === 'image').map((f) => f.url);
     const videos = mediaFiles.filter((f) => f.type === 'video').map((f) => f.url);
     const isGemKind = config.kind === 'navratna' || config.kind === 'upratna';
+    const trimmedName = name.trim();
+    const trimmedSlug = slug.trim();
+    const defaultMetaTitle = truncateText(`${trimmedName} | PureVedicGems`, 70);
+    const defaultMetaDescription = truncateText(
+      stripHtml(shortDesc || description || `Buy ${trimmedName} from PureVedicGems with expert guidance and secure checkout.`),
+      160,
+    );
+    const defaultCanonicalUrl = productCanonicalUrl(config.category, trimmedSlug);
     const effectiveOrigin = config.kind === 'rudraksha' ? rudrakshaOrigin || undefined : origin || undefined;
     const stockQuantity = parsePositiveInteger(stockQty) ?? 0;
     const effectiveAvailabilityStatus = stockQuantity <= 0 && availabilityStatus === 'in_stock'
@@ -369,12 +395,13 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       target_geos: targetGeos,
       schema_type: schemaType || 'Product',
       form_kind: config.kind,
+      canonical_path: new URL(canonicalUrl || defaultCanonicalUrl).pathname,
     };
 
     const body: Record<string, unknown> = {
-      name: name.trim(),
+      name: trimmedName,
       sku: sku.trim(),
-      slug: slug.trim(),
+      slug: trimmedSlug,
       category: config.category,
       sub_category: subCategory || undefined,
       product_type: config.productType,
@@ -469,10 +496,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       configurator_enabled: effectiveConfiguratorEnabled,
 
       // SEO / AEO / GEO
-      meta_title: metaTitle || undefined,
-      meta_description: metaDescription || undefined,
+      meta_title: metaTitle || defaultMetaTitle,
+      meta_description: metaDescription || defaultMetaDescription,
       meta_keywords: metaKeywords.length ? metaKeywords : undefined,
-      canonical_url: canonicalUrl || undefined,
+      canonical_url: canonicalUrl || defaultCanonicalUrl,
       og_image: ogImage || images[0] || undefined,
       seo_data,
 
@@ -493,7 +520,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         jewelry_design_enabled: effectiveConfiguratorEnabled,
         metal_enabled: effectiveConfiguratorEnabled,
         ring_size_enabled: effectiveConfiguratorEnabled,
-        allowed_setting_types: effectiveConfiguratorEnabled ? ['ring', 'pendant', 'bracelet'] : [],
+        allowed_setting_types: effectiveConfiguratorEnabled ? ['ring', 'pendant', 'bracelet', 'loose'] : [],
         allowed_metals: [],
         allowed_ring_size_systems:
           effectiveConfiguratorEnabled || ringSizeSystem ? ['india', 'us', 'uk_au', 'eu'] : [],

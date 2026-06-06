@@ -12,6 +12,8 @@ import {
   Shield,
   MessageSquare,
   CalendarClock,
+  Flame,
+  Gift,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
@@ -32,6 +34,12 @@ const QUICK_LINKS = [
     icon: Package,
     label: 'My Orders',
     desc: 'Track & view order history',
+  },
+  {
+    href: '/account/rewards',
+    icon: Gift,
+    label: 'Reward Points',
+    desc: 'Balance and ledger',
   },
   {
     href: '/account/saved',
@@ -68,6 +76,12 @@ const QUICK_LINKS = [
     icon: CalendarClock,
     label: 'My Consultations',
     desc: 'Bookings & payment status',
+  },
+  {
+    href: '/account/yagyas',
+    icon: Flame,
+    label: 'My Yagyas',
+    desc: 'Bookings & service status',
   },
   {
     href: '/consultation',

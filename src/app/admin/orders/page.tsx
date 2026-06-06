@@ -11,6 +11,8 @@ interface Order {
   guest_email: string | null;
   guest_phone: string | null;
   total: number;
+  reward_points_redeemed: number;
+  reward_discount: number;
   status: string;
   payment_status: string;
   created_at: string;
@@ -257,6 +259,11 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                     </td>
                     <td className="px-4 py-3 font-semibold text-brand-text">
                       ₹{(order.total ?? 0).toLocaleString('en-IN')}
+                      {(order.reward_discount ?? 0) > 0 && (
+                        <p className="mt-0.5 text-xs font-medium text-green-700">
+                          {order.reward_points_redeemed.toLocaleString('en-IN')} pts redeemed
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span

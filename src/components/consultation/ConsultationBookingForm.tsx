@@ -373,7 +373,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
 
   return (
     <div className="bg-[#fbf7ef]">
-      <div className="mx-auto max-w-7xl px-4 pb-16 pt-32 sm:px-6 lg:px-10 lg:pt-36">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 lg:px-10 lg:pt-14">
         <div className="text-center">
           <h1 className="text-2xl font-semibold leading-snug text-slate-800 sm:text-3xl">Book a Vedic Consultation</h1>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">Choose the exact consultation service, add your birth and contact details, then confirm the booking with secure Razorpay payment.</p>

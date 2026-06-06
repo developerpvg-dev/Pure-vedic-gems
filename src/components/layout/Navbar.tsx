@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu } from 'lucide-react';
-import { NAV_ITEMS, SITE_CONFIG } from '@/lib/constants/nav-items';
+import { Menu, ChevronDown } from 'lucide-react';
+import { NAV_ITEMS, BLOG_CATEGORY_LINKS, SITE_CONFIG } from '@/lib/constants/nav-items';
 import { MobileNav } from './MobileNav';
 
 export function Navbar() {
@@ -23,6 +23,42 @@ export function Navbar() {
   const linkCls =
     'relative text-[13px] font-medium uppercase tracking-[1.5px] text-[var(--pvg-muted)] transition-colors hover:text-[var(--pvg-primary)] after:absolute after:-bottom-0.5 after:left-0 after:h-[1.5px] after:w-0 after:bg-brand-accent after:transition-all hover:after:w-full';
 
+  const renderNavItem = (item: { label: string; href: string }) => {
+    // "Blog" gets a hover dropdown listing all blog categories.
+    if (item.label === 'Blog') {
+      return (
+        <li key={item.href} className="group relative">
+          <Link href={item.href} className={`${linkCls} inline-flex items-center gap-1`}>
+            {item.label}
+            <ChevronDown className="h-3 w-3 transition-transform group-hover:rotate-180" aria-hidden />
+          </Link>
+          {/* Hover dropdown — appears below the Blog link */}
+          <div className="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+            <ul className="min-w-50 overflow-hidden rounded-md border border-brand-border bg-brand-bg py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+              {BLOG_CATEGORY_LINKS.map((cat) => (
+                <li key={cat.href}>
+                  <Link
+                    href={cat.href}
+                    className="block px-4 py-2 text-[12px] font-medium uppercase tracking-[1.5px] text-brand-muted transition-colors hover:bg-brand-accent/10 hover:text-brand-primary"
+                  >
+                    {cat.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </li>
+      );
+    }
+    return (
+      <li key={item.href}>
+        <Link href={item.href} className={linkCls}>
+          {item.label}
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <>
       {/*
@@ -39,13 +75,7 @@ export function Navbar() {
 
           {/* -- LEFT LINKS (desktop) -- */}
           <ul className="hidden flex-1 list-none items-center gap-6 lg:flex">
-            {leftLinks.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className={linkCls}>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {leftLinks.map(renderNavItem)}
           </ul>
 
           {/* -- HAMBURGER (mobile) -- */}
@@ -114,18 +144,12 @@ export function Navbar() {
           </div>
 
           {/* -- RIGHT LINKS + CTA (desktop) -- */}
-          <ul className="hidden flex-1 list-none items-center justify-end gap-6 lg:flex">
-            {rightLinks.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className={linkCls}>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-            <li>
+          <ul className="hidden flex-1 list-none items-center justify-end gap-3 xl:gap-5 lg:flex">
+            {rightLinks.map(renderNavItem)}
+            <li className="ml-1">
               <Link
                 href="/consultation"
-                className="rounded bg-brand-primary px-4 py-2 text-[12px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:bg-brand-accent hover:text-[var(--pvg-primary)] hover:-translate-y-0.5"
+                className="rounded bg-brand-primary px-3 py-1.5 text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition-all hover:bg-brand-accent hover:text-[var(--pvg-primary)] hover:-translate-y-0.5 whitespace-nowrap"
               >
                 Book Consultation
               </Link>

@@ -156,8 +156,8 @@ export function PortableText({ value }: { value: unknown[] | undefined | null })
 
         const block = item as Block;
 
-        // Image block
-        if (block._type === 'image' && block.asset) {
+        // Image block (both inline 'image' and named 'imageBlock' shapes)
+        if ((block._type === 'image' || block._type === 'imageBlock') && block.asset) {
           const src = urlFor(block as unknown as Parameters<typeof urlFor>[0])
             .width(800)
             .quality(80)

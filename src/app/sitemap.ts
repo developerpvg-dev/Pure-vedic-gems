@@ -3,7 +3,13 @@ import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { FALLBACK_KNOWLEDGE_ARTICLES } from '@/lib/constants/knowledge';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
 import { getAllBlogCategorySlugs, getAllBlogPostSlugs, getAllKnowledgeArticleSlugs } from '@/lib/sanity/queries';
-import { productHref } from '@/lib/categories/storefront';
+import {
+  catalogFamilyToStorefrontGroupSlug,
+  normalizeStorefrontGroupSlug,
+  productHref,
+  storefrontGroupHref,
+  storefrontSubcategoryHref,
+} from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
 
@@ -42,12 +48,85 @@ async function getProductEntries(): Promise<MetadataRoute.Sitemap> {
     }));
 }
 
+async function getVideoEntries(): Promise<MetadataRoute.Sitemap> {
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('videos')
+    .select('slug, updated_at, created_at, published_at')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .limit(2000);
+
+  if (error || !data) return [];
+
+  return data
+    .filter((video) => video.slug)
+    .map((video) => entry(`/videos/${encodeURIComponent(video.slug)}`, {
+      lastModified: new Date(video.updated_at ?? video.published_at ?? video.created_at ?? Date.now()),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    }));
+}
+
+async function getCategoryEntries(): Promise<MetadataRoute.Sitemap> {
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return [];
+
+  const [gemCategories, productCategories] = await Promise.all([
+    supabase
+      .from('gem_categories')
+      .select('slug, type, updated_at, created_at')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('product_categories')
+      .select('slug, family, parent_id, updated_at, created_at')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
+  ]);
+
+  const entries: MetadataRoute.Sitemap = [];
+
+  if (!gemCategories.error && gemCategories.data) {
+    gemCategories.data.forEach((category) => {
+      const groupSlug = normalizeStorefrontGroupSlug(category.type);
+      if (!groupSlug || !category.slug) return;
+      entries.push(entry(storefrontSubcategoryHref(groupSlug, category.slug), {
+        lastModified: new Date(category.updated_at ?? category.created_at ?? Date.now()),
+        changeFrequency: 'weekly',
+        priority: 0.72,
+      }));
+    });
+  }
+
+  if (!productCategories.error && productCategories.data) {
+    productCategories.data.forEach((category) => {
+      const groupSlug = catalogFamilyToStorefrontGroupSlug(category.family);
+      if (!groupSlug || !category.slug) return;
+      const href = category.parent_id
+        ? storefrontSubcategoryHref(groupSlug, category.slug)
+        : storefrontGroupHref(groupSlug);
+      entries.push(entry(href, {
+        lastModified: new Date(category.updated_at ?? category.created_at ?? Date.now()),
+        changeFrequency: 'weekly',
+        priority: category.parent_id ? 0.7 : 0.82,
+      }));
+    });
+  }
+
+  return entries;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [blogSlugs, blogCategorySlugs, knowledgeSlugs, productEntries] = await Promise.all([
+  const [blogSlugs, blogCategorySlugs, knowledgeSlugs, productEntries, categoryEntries, videoEntries] = await Promise.all([
     getAllBlogPostSlugs(),
     getAllBlogCategorySlugs(),
     getAllKnowledgeArticleSlugs(),
     getProductEntries(),
+    getCategoryEntries(),
+    getVideoEntries(),
   ]);
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -90,6 +169,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/tools/recommendation', { priority: 0.72 }),
     entry('/tools/carat-to-ratti', { priority: 0.68 }),
     entry('/tools/ring-size-guide', { priority: 0.68 }),
+    entry('/videos', { changeFrequency: 'weekly', priority: 0.7 }),
+    entry('/events-and-seminars', { changeFrequency: 'weekly', priority: 0.6 }),
     ...SEO_LANDING_PAGES.map((page) => entry(page.href, { priority: 0.76 })),
     ...(blogSlugs ?? []).map((item) => entry(`/blog/${item.slug.current}`, { priority: 0.62 })),
     ...(blogCategorySlugs ?? []).map((item) => entry(`/blog/category/${item.slug.current}`, { priority: 0.52 })),
@@ -97,6 +178,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const unique = new Map<string, SitemapEntry>();
-  [...staticPages, ...productEntries].forEach((item) => unique.set(item.url, item));
+  [...staticPages, ...categoryEntries, ...productEntries, ...videoEntries].forEach((item) => unique.set(item.url, item));
   return Array.from(unique.values());
 }

@@ -128,6 +128,7 @@ export function hasAdminPermission(
 export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/finance')) return 'finance.read';
   if (pathname.startsWith('/admin/compliance')) return 'compliance.manage';
+  if (pathname.startsWith('/admin/rewards')) return 'settings.commerce';
   if (pathname.startsWith('/admin/settings')) return 'settings.commerce';
   if (pathname.startsWith('/admin/products/import')) return 'imports.write';
   if (pathname.startsWith('/admin/products/new')) return 'products.write';

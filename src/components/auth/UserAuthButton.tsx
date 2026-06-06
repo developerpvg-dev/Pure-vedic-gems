@@ -112,7 +112,7 @@ export function UserAuthButton({
     : user.email?.[0]?.toUpperCase() ?? 'U';
 
   return (
-    <div className={`relative ${className}`}>
+    <div className="relative" style={{ display: 'flex', alignItems: 'center' }}>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -120,8 +120,8 @@ export function UserAuthButton({
         }}
         aria-label="Account menu"
         aria-expanded={dropdownOpen}
-        className="flex items-center gap-1.5 transition-colors hover:text-brand-accent"
-        style={{ color: 'var(--pvg-text)' }}
+        className="flex items-center gap-1.5 rounded-[18px] bg-transparent px-2 py-1 transition-colors hover:bg-[#F5F0E8] hover:text-[#7A1515]"
+        style={{ border: 'none', cursor: 'pointer', color: 'var(--pvg-text)' }}
       >
         {/* Avatar circle */}
         <span

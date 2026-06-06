@@ -181,7 +181,7 @@
 
 @media (max-width: 640px) {
   .pvg-semi-slider-shell {
-    padding: 0;
+    padding: 0 34px;
   }
 
   .semi-circle-scroll {
@@ -1589,17 +1589,20 @@
 
     .about-exp-badge {
       position: absolute;
-      bottom: 0; right: -14px;
+      bottom: -26px; right: -32px;
       z-index: 5;
-      width: 82px; height: 82px;
-      border-radius: 50%;
-      background: var(--maroon);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 8px 24px rgba(122,21,21,0.4);
-      border: 3px solid var(--white);
+      width: clamp(108px, 10vw, 146px); height: auto;
+      border-radius: 0;
+      background: transparent;
+      display: block;
+      box-shadow: none;
+      border: 0;
+    }
+
+    .about-exp-img {
+      display: block;
+      width: 100%; height: auto;
+      filter: drop-shadow(0 14px 26px rgba(122,21,21,0.28));
     }
 
     .about-exp-num {
@@ -1711,7 +1714,7 @@
       gap: 10px;
       padding: 13px 28px;
       background: var(--maroon);
-      color: var(--white);
+      color: #ffffff !important;
       font-family: var(--font-ui);
       font-size: 11px; font-weight: 700;
       letter-spacing: 0.13em; text-transform: uppercase;
@@ -2942,6 +2945,7 @@
     .pvg-slider-shell {
       position: relative;
       z-index: 1;
+      padding: 0 64px;
     }
     .pvg-slider-btn {
       position: absolute;
@@ -2974,8 +2978,8 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-    .pvg-slider-btn-prev { left: -22px; }
-    .pvg-slider-btn-next { right: -22px; }
+    .pvg-slider-btn-prev { left: 8px; }
+    .pvg-slider-btn-next { right: 8px; }
     .semi-circle-scroll,
     .explore-scroll {
       scrollbar-width: none;
@@ -3125,8 +3129,8 @@
       .rudra-item-name { font-size: 15px; }
       .cert-img-wrap { position: relative; top: auto; right: auto; transform: none; width: 100%; height: auto; opacity: 1; pointer-events: auto; }
       .cert-img-stack { min-height: 520px; }
-      .pvg-slider-btn-prev { left: -10px; }
-      .pvg-slider-btn-next { right: -10px; }
+      .pvg-slider-btn-prev { left: 0; }
+      .pvg-slider-btn-next { right: 0; }
       .pvg-cta-inner { grid-template-columns: 1fr; min-height: auto; }
       .pvg-cta-copy { padding: 38px 0 0; }
       .pvg-cta-visual { min-height: 150px; }
@@ -3144,8 +3148,8 @@
       .cert-img-stack { min-height: 420px; }
       .semi-bg-text { font-size: 112px; }
       .pvg-slider-btn { width: 38px; height: 38px; }
-      .pvg-slider-btn-prev { left: -6px; }
-      .pvg-slider-btn-next { right: -6px; }
+      .pvg-slider-btn-prev { left: 0; }
+      .pvg-slider-btn-next { right: 0; }
       .pvg-cta-copy h2 { font-size: 28px; }
       .pvg-cta-copy p { font-size: 14.5px; }
       .pvg-cta-actions { gap: 12px; }
@@ -3373,7 +3377,7 @@
       display: block; font-family: var(--font-ui); font-size: 10px; font-weight: 700;
       letter-spacing: 0.1em; text-transform: uppercase;
       padding: 13px 20px; border-radius: 2px;
-      background: var(--maroon); color: var(--white); transition: background 0.22s;
+      background: var(--maroon); color: #ffffff !important; transition: background 0.22s;
     }
     .expert-book-btn:hover { background: var(--maroon-dark); }
 
@@ -4978,8 +4982,8 @@
 
     .pvg-rcta-v2-uparatna {
       background:
-        radial-gradient(circle, rgba(23, 63, 59, 0.07) 1px, transparent 1px),
-        linear-gradient(180deg, #f8fcfa 0%, #eff7f3 44%, #dfeae4 100%);
+        radial-gradient(circle, rgba(122, 21, 21, 0.07) 1px, transparent 1px),
+        linear-gradient(180deg, #fff9f2 0%, #fbf1e6 44%, #f2dfcb 100%);
       background-size: 22px 22px, 100% 100%;
       background-position: right top, center;
     }
@@ -5007,8 +5011,8 @@
     }
 
     .pvg-rcta-v2-uparatna .pvg-rcta-v2-circle {
-      background: linear-gradient(96deg, #3d726d 0%, #2e5d58 38%, #214a45 64%, #173a35 100%);
-      box-shadow: inset 0 18px 42px rgba(229, 245, 239, 0.14);
+      background: linear-gradient(96deg, #9c1e1e 0%, #7a1515 38%, #4d0a0a 64%, #2c0404 100%);
+      box-shadow: inset 0 18px 42px rgba(247, 237, 208, 0.12);
     }
 
     .pvg-rcta-v2-reverse .pvg-rcta-v2-circle {
@@ -5061,7 +5065,10 @@
 
     .pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap {
       left: auto;
-      right: -12px;
+      right: 18px;
+      bottom: 0;
+      width: min(86%, 360px);
+      height: calc(100% + 40px);
     }
 
     .pvg-rcta-v2-person-img {
@@ -5076,7 +5083,7 @@
 
     .pvg-rcta-v2-reverse .pvg-rcta-v2-person-img {
       object-position: right bottom;
-      transform: translateX(8px) scale(1.01);
+      transform: none;
     }
 
     .pvg-rcta-v2-card {
@@ -5131,7 +5138,7 @@
     }
 
     .pvg-rcta-v2-uparatna .pvg-rcta-v2-heading {
-      color: #143731;
+      color: var(--maroon-deep);
     }
 
     .pvg-rcta-v2-copy {
@@ -5208,15 +5215,15 @@
 
     .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-chat {
       background: #ffffff;
-      color: #173f3b;
+      color: var(--maroon);
       border-color: #ffffff;
-      box-shadow: 0 8px 20px rgba(23, 63, 59, 0.12);
+      box-shadow: 0 8px 20px rgba(122, 21, 21, 0.12);
     }
 
     .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-call {
-      background: #c0a15b;
-      color: #17201d;
-      border-color: #c0a15b;
+      background: #d4a843;
+      color: #2c0404;
+      border-color: #d4a843;
     }
 
     .pvg-rcta-v2-btn-chat:hover { transform: translateY(-2px); }
@@ -5243,9 +5250,9 @@
       .pvg-rcta-v2-circle { border-radius: 132px 0 0 0; }
       .pvg-rcta-v2-reverse .pvg-rcta-v2-circle { border-radius: 0 132px 0 0; }
       .pvg-rcta-v2-person-wrap { left: -4px; bottom: 8px; height: calc(100% + 82px); }
-      .pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap { left: auto; right: -4px; }
+      .pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap { left: auto; right: 6px; bottom: 0; width: min(82%, 310px); height: calc(100% + 26px); }
       .pvg-rcta-v2-person-img { transform: translateX(-4px) scale(0.98); }
-      .pvg-rcta-v2-reverse .pvg-rcta-v2-person-img { transform: translateX(4px) scale(0.98); }
+      .pvg-rcta-v2-reverse .pvg-rcta-v2-person-img { transform: none; }
       .pvg-rcta-v2-btn-chat,
       .pvg-rcta-v2-btn-call { min-width: max-content; font-size: 12px; padding: 0 20px; }
     }
@@ -5270,8 +5277,8 @@
       }
       .pvg-rcta-v2-person-wrap {
         position: relative;
-        width: min(72vw, 260px);
-        height: min(72vw, 260px);
+        width: min(84%, 300px);
+        height: min(58vw, 252px);
         margin: 0 auto;
         border-radius: 50%;
         overflow: hidden;
@@ -5362,7 +5369,7 @@
 }
 
 @media (max-width: 640px) {
-  .pvg-semi-slider-shell { padding: 0; }
+  .pvg-semi-slider-shell { padding: 0 42px; }
   .semi-circle-scroll { padding: 4px 0 12px; }
   .semi-circle-row { gap: 12px; }
   .semi-circ-card {
@@ -5580,7 +5587,7 @@
 }
 
 @media (max-width: 767px) {
-  .pvg-semi-slider-shell { padding: 0; }
+  .pvg-semi-slider-shell { padding: 0 42px; }
   .semi-circle-scroll { padding: 4px 0 12px; }
   .semi-circle-row { gap: 12px; }
   .semi-circ-card {

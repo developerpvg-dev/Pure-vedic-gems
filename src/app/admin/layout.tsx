@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2 } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const NAV_GROUPS = [
@@ -16,7 +16,10 @@ const NAV_GROUPS = [
     links: [
       { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
       { href: '/admin/customers', label: 'Customers', icon: Users },
+      { href: '/admin/rewards', label: 'Rewards', icon: Gift },
       { href: '/admin/products', label: 'Products', icon: Package },
+      { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame },
+      { href: '/admin/yagya-bookings', label: 'Yagya Bookings', icon: Flame },
       { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud },
     ],
   },
@@ -47,6 +50,7 @@ const NAV_GROUPS = [
     label: 'Content Pages',
     links: [
       { href: '/admin/events', label: 'Events & Videos', icon: Video },
+      { href: '/admin/videos', label: 'Video Library', icon: Video },
       { href: '/admin/lab-certificates', label: 'Lab Certificates', icon: FileBadge2 },
       { href: '/admin/testimonials', label: 'Testimonials', icon: Star },
       { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare },

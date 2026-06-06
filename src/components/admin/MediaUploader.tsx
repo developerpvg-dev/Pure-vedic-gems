@@ -140,14 +140,16 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Or paste an image/video URL and press Enter..."
+          placeholder="Or paste an image / video / YouTube / Vimeo URL and press Enter..."
           className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               const input = e.currentTarget;
               const url = input.value.trim();
               if (url) {
-                const isVideo = /\.(mp4|webm|mov)$/i.test(url);
+                const isVideo =
+                  /\.(mp4|webm|mov|m4v)$/i.test(url) ||
+                  /(youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com)/i.test(url);
                 onChange([...value, {
                   url,
                   name: url.split('/').pop() || 'external',

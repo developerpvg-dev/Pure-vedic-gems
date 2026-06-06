@@ -5,6 +5,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./home.css";
+@import "./homepage-fixes.css";
 
 @custom-variant dark (&:is(.dark *));
 

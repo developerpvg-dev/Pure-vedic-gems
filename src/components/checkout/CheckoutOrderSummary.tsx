@@ -5,17 +5,22 @@ import { formatPrice } from '@/lib/utils/format';
 import { SHIPPING_METHODS, type ShippingMethodId } from '@/lib/validators/order';
 import type { CartItem } from '@/lib/types/cart';
 import { estimateClientTax } from '@/lib/utils/tax';
+import type { CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
+import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemption';
 
 interface CheckoutOrderSummaryProps {
   items: CartItem[];
   shippingMethod: ShippingMethodId;
+  rewardPointsToRedeem?: number;
+  rewards?: CheckoutRewardState | null;
 }
 
-export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSummaryProps) {
+export function CheckoutOrderSummary({ items, shippingMethod, rewardPointsToRedeem = 0, rewards = null }: CheckoutOrderSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.cost ?? 0;
+  const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
   const gst = estimateClientTax(items, shipping);
-  const total = subtotal + shipping + gst;
+  const total = Math.max(0, subtotal - rewardDiscount + shipping + gst);
 
   return (
     <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
@@ -77,6 +82,13 @@ export function CheckoutOrderSummary({ items, shippingMethod }: CheckoutOrderSum
             {shipping === 0 ? 'FREE' : formatPrice(shipping)}
           </span>
         </div>
+
+        {rewardDiscount > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--pvg-muted)]">Reward points</span>
+            <span className="font-medium text-green-700">-{formatPrice(rewardDiscount)}</span>
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <span className="text-[var(--pvg-muted)]">Estimated GST/IGST</span>
