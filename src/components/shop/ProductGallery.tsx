@@ -27,9 +27,9 @@ function ytThumb(url: string): string | null {
 export function ProductGallery({ images, productName, videoUrl }: ProductGalleryProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setPortalTarget(document.body); }, []);
 
   // ── Zoom-modal state ──
   const [zoomScale, setZoomScale] = useState(1);
@@ -295,7 +295,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
       </div>
 
       {/* ── Zoom Lightbox (rendered via portal to escape sticky stacking context) ── */}
-      {mounted && zoomOpen && createPortal(
+      {portalTarget && zoomOpen && createPortal(
         <div
           className="fixed inset-0 flex flex-col bg-black"
           style={{ zIndex: 99999, top: 0, left: 0, right: 0, bottom: 0 }}
@@ -428,7 +428,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
               : 'Drag to pan · Scroll / pinch to zoom · Click % to reset'}
           </p>
         </div>,
-        document.body
+        portalTarget
       )}
     </>
   );

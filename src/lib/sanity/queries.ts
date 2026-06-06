@@ -4,6 +4,7 @@ import { sanityFetch } from './client';
 
 const BLOG_POST_FIELDS = `
   _id,
+  _type,
   title,
   slug,
   excerpt,
@@ -163,6 +164,7 @@ export async function getKhubCategoriesWithPosts(postsPerCategory = 3) {
       slug: { current: string };
       posts: Array<{
         _id: string;
+        _type: string;
         title: string;
         slug: { current: string };
         excerpt?: string;
