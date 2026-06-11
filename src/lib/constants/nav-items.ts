@@ -58,7 +58,7 @@ export const SERVICE_NAV_LINKS = [
   { label: 'Vedic Consultation', href: '/consultation' },
   { label: 'Gem Energization', href: '/configure' },
   { label: 'Ring & Pendant Making', href: '/configure' },
-  { label: 'Gem Lab Testing', href: '/knowledge/buying-guides' },
+  { label: 'Gem Lab Testing', href: '/lab-certificate' },
   { label: 'Custom Jewellery', href: '/configure' },
 ] as const;
 

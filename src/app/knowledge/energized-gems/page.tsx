@@ -18,8 +18,8 @@ export default function EnergizedGemsPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 
   return (
-    <>
-      <section className="bg-secondary/30 py-10 md:py-12">
+    <div className="pvg-knowledge-page">
+      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
           <ScrollReveal>
             <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
@@ -36,7 +36,7 @@ export default function EnergizedGemsPage() {
         </div>
       </section>
 
-      <section className="bg-background py-8 md:py-10">
+      <section className="py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="space-y-6">
             <ScrollReveal>
@@ -98,6 +98,6 @@ export default function EnergizedGemsPage() {
           }),
         }}
       />
-    </>
+    </div>
   );
 }

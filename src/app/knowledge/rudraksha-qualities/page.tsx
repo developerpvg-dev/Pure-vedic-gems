@@ -6,9 +6,9 @@ export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title:
-    'Rudraksha Qualities – Genuine vs Fake, Mukhi Guide & FAQs | PureVedicGems',
+    'Buy Certified Natural Rudraksha Beads in Delhi NCR/India | Buy Astrological Rudrakshas Online | Lab Certified Rudraksha Delhi NCR, India: Purevedicgems',
   description:
-    'Learn how to identify authentic Rudraksha beads. Compare High, Medium and Lower quality. Full table of mukhis (1–21), presiding deities, ruling planets and beej mantras. Trusted since 1937.',
+    'Oldest & most trusted genuine Rudraksha seller in India. Learn how to identify authentic Rudraksha quality, compare genuine vs fake beads, mukhi types, ruling deities, planets, mantras and FAQs. Certified since 1937.',
   alternates: {
     canonical: absoluteUrl('/knowledge/rudraksha-qualities'),
   },

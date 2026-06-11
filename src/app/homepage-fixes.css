@@ -39,21 +39,56 @@
   filter: drop-shadow(0 14px 26px rgba(122, 21, 21, 0.28));
 }
 
-.pvg-react-home-root .cert-exp-badge {
-  position: absolute;
-  right: -14px;
-  bottom: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 82px;
-  height: 82px;
-  background: var(--gold);
-  border: 3px solid var(--white);
-  border-radius: 50%;
-  box-shadow: 0 8px 24px rgba(122, 21, 21, 0.4);
+.pvg-react-home-root .cert-section .cert-stack-card,
+.pvg-react-home-root .cert-section .cert-stack-card:nth-child(1),
+.pvg-react-home-root .cert-section .cert-stack-card:nth-child(2),
+.pvg-react-home-root .cert-section .cert-stack-card:nth-child(3),
+.pvg-react-home-root .cert-section .cert-stack-card:nth-child(4) {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+}
+
+.pvg-react-home-root .cert-section .cert-stack-frame {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 18px !important;
+  background: #ffffff !important;
+}
+
+.pvg-react-home-root .cert-section .cert-stack-img {
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: #ffffff !important;
+}
+
+.pvg-react-home-root .cert-section .cert-stack-card[data-pos="3"],
+.pvg-react-home-root .cert-section .cert-stack-card[data-pos="2"],
+.pvg-react-home-root .cert-section .cert-stack-card[data-pos="1"],
+.pvg-react-home-root .cert-section .cert-stack-card[data-pos="0"] {
+  filter: none !important;
+}
+
+.pvg-react-home-root .cert-section .about-img-wrap {
+  display: flex !important;
+  justify-content: center !important;
+  align-self: center !important;
+  justify-self: center !important;
+  width: 100% !important;
+  margin-inline: auto !important;
+}
+
+.pvg-react-home-root .cert-section .about-img-stack {
+  width: min(100%, 520px) !important;
+  margin-inline: auto !important;
 }
 
 .pvg-react-home-root .pvg-slider-shell {
@@ -66,13 +101,21 @@
   padding-left: 36px !important;
 }
 
-/* Break semi-precious slider out of the container max-width to fill the viewport. */
-.pvg-react-home-root .semiprecious-section .pvg-semi-slider-shell {
-  width: 100vw !important;
-  margin-left: calc(50% - 50vw) !important;
-  margin-right: calc(50% - 50vw) !important;
-  padding-left: clamp(72px, 6vw, 110px) !important;
-  padding-right: clamp(72px, 6vw, 110px) !important;
+.pvg-react-home-root .pvg-explore-slider-shell,
+.pvg-react-home-root .pvg-videos-slider-shell {
+  padding-right: 36px !important;
+  padding-left: 36px !important;
+}
+
+/* Break semi-precious slider out of the container max-width to fill the viewport (desktop). */
+@media (min-width: 768px) {
+  .pvg-react-home-root .semiprecious-section .pvg-semi-slider-shell {
+    width: 100vw !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
+    padding-left: clamp(72px, 6vw, 110px) !important;
+    padding-right: clamp(72px, 6vw, 110px) !important;
+  }
 }
 
 .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-prev,
@@ -99,16 +142,16 @@
 
 .pvg-react-home-root .pvg-rcta-v2-uparatna,
 .pvg-react-home-root .pvg-cta-uparatna {
-  --pvg-rcta-mobile-title: var(--maroon-deep);
-  --pvg-rcta-mobile-copy: #6b4c33;
+  --pvg-rcta-mobile-title: #3a0b0b;
+  --pvg-rcta-mobile-copy: #6a302f;
   --pvg-rcta-mobile-arch: linear-gradient(96deg, #9c1e1e 0%, #7a1515 38%, #4d0a0a 64%, #2c0404 100%);
-  --pvg-rcta-mobile-primary-bg: #8f1f1f;
-  --pvg-rcta-mobile-primary-border: #8f1f1f;
-  --pvg-rcta-mobile-primary-fg: #ffffff;
-  --pvg-rcta-mobile-primary-shadow: rgba(122, 21, 21, 0.24);
-  --pvg-rcta-mobile-secondary-bg: #d8ae49;
-  --pvg-rcta-mobile-secondary-border: #d8ae49;
-  --pvg-rcta-mobile-secondary-fg: #2c0404;
+  --pvg-rcta-mobile-primary-bg: #ffffff;
+  --pvg-rcta-mobile-primary-border: #ffffff;
+  --pvg-rcta-mobile-primary-fg: #7a1515;
+  --pvg-rcta-mobile-primary-shadow: rgba(44, 4, 4, 0.12);
+  --pvg-rcta-mobile-secondary-bg: #d4a843;
+  --pvg-rcta-mobile-secondary-border: #d4a843;
+  --pvg-rcta-mobile-secondary-fg: #261a10;
   background: radial-gradient(circle, rgba(122, 21, 21, 0.07) 1px, transparent 1px), linear-gradient(180deg, #fdf8f4 0%, #fbf1e6 44%, #f2dfcb 100%) !important;
   background-size: 22px 22px, 100% 100% !important;
   background-position: right top, center !important;
@@ -123,15 +166,24 @@
   color: var(--maroon-deep) !important;
 }
 
-.pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-chat {
-  color: var(--maroon) !important;
-  box-shadow: 0 8px 20px rgba(44, 4, 4, 0.12) !important;
+.pvg-react-home-root .pvg-rcta-v2-navaratna {
+  --pvg-rcta-mobile-primary-bg: #ffffff;
+  --pvg-rcta-mobile-primary-border: #ffffff;
+  --pvg-rcta-mobile-primary-fg: #7a1515;
+  --pvg-rcta-mobile-primary-shadow: rgba(44, 4, 4, 0.12);
+  --pvg-rcta-mobile-secondary-bg: #d4a843;
+  --pvg-rcta-mobile-secondary-border: #d4a843;
+  --pvg-rcta-mobile-secondary-fg: #261a10;
 }
 
-.pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-call {
-  background: #d4a843 !important;
-  color: #261a10 !important;
-  border-color: #d4a843 !important;
+.pvg-react-home-root .pvg-rcta-v2-rudraksha {
+  --pvg-rcta-mobile-primary-bg: #1d8b5a;
+  --pvg-rcta-mobile-primary-border: #1d8b5a;
+  --pvg-rcta-mobile-primary-fg: #ffffff;
+  --pvg-rcta-mobile-primary-shadow: rgba(29, 139, 90, 0.16);
+  --pvg-rcta-mobile-secondary-bg: #ffc640;
+  --pvg-rcta-mobile-secondary-border: #ffc640;
+  --pvg-rcta-mobile-secondary-fg: #261a10;
 }
 
 @media (max-width: 767px) {
@@ -141,36 +193,23 @@
     width: clamp(88px, 25vw, 116px) !important;
   }
 
-  .pvg-react-home-root .cert-exp-badge {
-    right: -10px;
-    width: 74px;
-    height: 74px;
-  }
-
   .pvg-react-home-root .pvg-slider-shell {
     padding-right: 42px !important;
     padding-left: 42px !important;
   }
 
-  .pvg-react-home-root .pvg-semi-slider-shell {
-    padding-right: 36px !important;
-    padding-left: 36px !important;
+  .pvg-react-home-root .pvg-semi-slider-shell,
+  .pvg-react-home-root .pvg-explore-slider-shell,
+  .pvg-react-home-root .pvg-videos-slider-shell {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
   }
 
-  .pvg-react-home-root .semiprecious-section .pvg-semi-slider-shell {
-    margin-left: -20px !important;
-    margin-right: -20px !important;
-    padding-left: 44px !important;
-    padding-right: 44px !important;
-  }
-
-  .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-prev,
-  .pvg-react-home-root .pvg-semi-slider-shell .pvg-slider-btn-prev {
+  .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-prev {
     left: 0 !important;
   }
 
-  .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-next,
-  .pvg-react-home-root .pvg-semi-slider-shell .pvg-slider-btn-next {
+  .pvg-react-home-root .pvg-slider-shell .pvg-slider-btn-next {
     right: 0 !important;
   }
 
@@ -183,11 +222,57 @@
   .pvg-react-home-root .pvg-rcta-v2-uparatna {
     background: linear-gradient(180deg, #fdf8f4 0%, #fbf1e6 54%, #f7ebde 100%) !important;
   }
+
+  .pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-person-wrap {
+    transform: translateX(-28px) !important;
+  }
+
+  /* Mobile CTA buttons — match desktop colors on all variants */
+  .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-mobile-primary {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #7a1515 !important;
+    box-shadow: 0 8px 20px rgba(44, 4, 4, 0.12) !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-mobile-secondary {
+    background: #d4a843 !important;
+    border-color: #d4a843 !important;
+    color: #261a10 !important;
+    box-shadow: none !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-mobile-primary {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #7a1515 !important;
+    box-shadow: 0 8px 20px rgba(44, 4, 4, 0.12) !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-uparatna .pvg-rcta-v2-btn-mobile-secondary {
+    background: #d4a843 !important;
+    border-color: #d4a843 !important;
+    color: #261a10 !important;
+    box-shadow: none !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-mobile-primary {
+    background: #1d8b5a !important;
+    border-color: #1d8b5a !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(29, 139, 90, 0.16) !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-mobile-secondary {
+    background: #ffc640 !important;
+    border-color: #ffc640 !important;
+    color: #261a10 !important;
+    box-shadow: none !important;
+  }
 }
 
 @media (max-width: 520px) {
-  .pvg-react-home-root .pvg-slider-shell,
-  .pvg-react-home-root .pvg-semi-slider-shell {
+  .pvg-react-home-root .pvg-slider-shell {
     padding-right: 44px !important;
     padding-left: 44px !important;
   }

@@ -99,21 +99,19 @@ export default async function VideoLibraryPage({
             <>
               <div className="space-y-12">
                 {categories.map((category: CategoryWithVideos) => (
-                  <ScrollReveal key={category.id}>
-                    <section>
-                      <div className="mb-5 border-b border-border pb-4">
-                        <h2 className="font-heading text-xl font-semibold text-primary md:text-2xl">{category.title}</h2>
-                        {category.description && (
-                          <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {category.videos.map((video) => (
-                          <VideoCard key={video.id} video={video} />
-                        ))}
-                      </div>
-                    </section>
-                  </ScrollReveal>
+                  <section key={category.id}>
+                    <div className="mb-5 border-b border-border pb-4">
+                      <h2 className="font-heading text-xl font-semibold text-primary md:text-2xl">{category.title}</h2>
+                      {category.description && (
+                        <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {category.videos.map((video) => (
+                        <VideoCard key={video.id} video={video} />
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
 

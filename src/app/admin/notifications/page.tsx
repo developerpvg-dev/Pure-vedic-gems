@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, Megaphone, RefreshCw, Send } from 'lucide-react';
 import type { NOTIFICATION_TEMPLATE_LIBRARY } from '@/lib/constants/notification-templates';
 
 interface NotificationLogRow {
@@ -14,14 +14,42 @@ interface NotificationLogRow {
   created_at: string;
 }
 
+interface BroadcastRow {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  href: string | null;
+  is_active: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
+
 type TemplateRow = (typeof NOTIFICATION_TEMPLATE_LIBRARY)[number];
+
+const BROADCAST_TYPES = [
+  { value: 'announcement', label: 'Announcement' },
+  { value: 'offer', label: 'Special Offer' },
+  { value: 'update', label: 'Site Update' },
+] as const;
 
 export default function AdminNotificationsPage() {
   const [logs, setLogs] = useState<NotificationLogRow[]>([]);
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
+  const [broadcasts, setBroadcasts] = useState<BroadcastRow[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [broadcastLoading, setBroadcastLoading] = useState(true);
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastForm, setBroadcastForm] = useState({
+    title: '',
+    message: '',
+    href: '',
+    type: 'announcement',
+    expiresAt: '',
+  });
+  const [broadcastMessage, setBroadcastMessage] = useState('');
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -33,10 +61,60 @@ export default function AdminNotificationsPage() {
     setLoading(false);
   }, [status]);
 
+  const fetchBroadcasts = useCallback(async () => {
+    setBroadcastLoading(true);
+    const response = await fetch('/api/admin/broadcast-notifications', { cache: 'no-store' });
+    const data = await response.json().catch(() => null) as { broadcasts?: BroadcastRow[] } | null;
+    setBroadcasts(data?.broadcasts ?? []);
+    setBroadcastLoading(false);
+  }, []);
+
   useEffect(() => {
-    const timer = window.setTimeout(() => { void fetchLogs(); }, 0);
+    const timer = window.setTimeout(() => {
+      void fetchLogs();
+      void fetchBroadcasts();
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, [fetchLogs]);
+  }, [fetchLogs, fetchBroadcasts]);
+
+  async function sendBroadcast(event: React.FormEvent) {
+    event.preventDefault();
+    setSendingBroadcast(true);
+    setBroadcastMessage('');
+
+    const response = await fetch('/api/admin/broadcast-notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: broadcastForm.title,
+        message: broadcastForm.message,
+        href: broadcastForm.href || null,
+        type: broadcastForm.type,
+        expiresAt: broadcastForm.expiresAt || null,
+      }),
+    });
+
+    const data = await response.json().catch(() => null) as { error?: string } | null;
+    setSendingBroadcast(false);
+
+    if (!response.ok) {
+      setBroadcastMessage(data?.error ?? 'Failed to send broadcast.');
+      return;
+    }
+
+    setBroadcastForm({ title: '', message: '', href: '', type: 'announcement', expiresAt: '' });
+    setBroadcastMessage('Broadcast sent. It is now visible to all visitors in the notification bell.');
+    void fetchBroadcasts();
+  }
+
+  async function toggleBroadcast(id: string, isActive: boolean) {
+    await fetch('/api/admin/broadcast-notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, isActive }),
+    });
+    void fetchBroadcasts();
+  }
 
   async function retry(id: string) {
     setRetryingId(id);
@@ -59,6 +137,115 @@ export default function AdminNotificationsPage() {
           <option value="failed">Failed</option>
         </select>
       </div>
+
+      <section className="mb-8 rounded-xl border border-amber-200 bg-amber-50/40 p-5">
+        <div className="mb-4 flex items-start gap-3">
+          <div className="rounded-lg bg-amber-100 p-2 text-amber-800">
+            <Megaphone className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">In-App Broadcasts</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Send announcements, offers, and updates to everyone through the site notification bell — logged in or not.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={sendBroadcast} className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 lg:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-gray-700">Title</span>
+            <input
+              value={broadcastForm.title}
+              onChange={(event) => setBroadcastForm((current) => ({ ...current, title: event.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2"
+              placeholder="Festive Sale Live"
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-gray-700">Type</span>
+            <select
+              value={broadcastForm.type}
+              onChange={(event) => setBroadcastForm((current) => ({ ...current, type: event.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2"
+            >
+              {BROADCAST_TYPES.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm lg:col-span-2">
+            <span className="mb-1 block font-medium text-gray-700">Message</span>
+            <textarea
+              value={broadcastForm.message}
+              onChange={(event) => setBroadcastForm((current) => ({ ...current, message: event.target.value }))}
+              className="min-h-24 w-full rounded-lg border border-gray-200 px-3 py-2"
+              placeholder="Get 10% off on certified Navaratna gems this week."
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-gray-700">Optional link</span>
+            <input
+              value={broadcastForm.href}
+              onChange={(event) => setBroadcastForm((current) => ({ ...current, href: event.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2"
+              placeholder="/shop/navaratna"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-gray-700">Expires on (optional)</span>
+            <input
+              type="datetime-local"
+              value={broadcastForm.expiresAt}
+              onChange={(event) => setBroadcastForm((current) => ({ ...current, expiresAt: event.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2"
+            />
+          </label>
+          <div className="flex items-center gap-3 lg:col-span-2">
+            <button
+              type="submit"
+              disabled={sendingBroadcast}
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-800 disabled:opacity-60"
+            >
+              {sendingBroadcast ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Send to Everyone
+            </button>
+            {broadcastMessage ? <p className="text-sm text-gray-600">{broadcastMessage}</p> : null}
+          </div>
+        </form>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Recent Broadcasts
+          </div>
+          {broadcastLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-amber-600" /></div>
+          ) : broadcasts.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-gray-500">No broadcasts sent yet.</div>
+          ) : (
+            broadcasts.map((broadcast) => (
+              <div key={broadcast.id} className="grid gap-3 border-b border-gray-100 px-4 py-3 text-sm last:border-0 md:grid-cols-[1.2fr_1.6fr_auto_auto] md:items-center">
+                <div>
+                  <p className="font-semibold text-gray-900">{broadcast.title}</p>
+                  <p className="mt-1 text-xs uppercase tracking-wide text-amber-700">{broadcast.type}</p>
+                </div>
+                <p className="text-gray-600">{broadcast.message}</p>
+                <span className={`text-xs font-semibold uppercase ${broadcast.is_active ? 'text-emerald-700' : 'text-gray-400'}`}>
+                  {broadcast.is_active ? 'Active' : 'Hidden'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => toggleBroadcast(broadcast.id, !broadcast.is_active)}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  {broadcast.is_active ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
 
       <section className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {templates.map((template) => (

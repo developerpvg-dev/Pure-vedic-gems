@@ -5,11 +5,17 @@ interface VideoCardProps {
   video: LibraryVideo;
 }
 
+function videoPath(slug: string) {
+  return `/videos/${encodeURIComponent(slug)}`;
+}
+
 export function VideoCard({ video }: VideoCardProps) {
+  const href = videoPath(video.slug);
+
   return (
     <Link
-      href={`/videos/${encodeURIComponent(video.slug)}`}
-      className="group flex flex-col overflow-hidden rounded-sm border border-border bg-background transition-shadow hover:shadow-md"
+      href={href}
+      className="group relative z-0 flex flex-col overflow-hidden rounded-sm border border-border bg-background transition-shadow hover:z-10 hover:shadow-md"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-black">
         {/* eslint-disable-next-line @next/next/no-img-element */}

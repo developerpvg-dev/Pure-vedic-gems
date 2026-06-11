@@ -10,6 +10,7 @@ const reviewCreateSchema = z.object({
   title: z.string().trim().min(2).max(120),
   review_text: z.string().trim().min(10).max(1200),
   customer_location: z.string().trim().max(80).optional().nullable(),
+  images: z.array(z.string().url()).max(6).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       rating: parsed.data.rating,
       title: parsed.data.title,
       review_text: parsed.data.review_text,
-      images: [],
+      images: parsed.data.images ?? [],
       is_verified: true,
       is_approved: false,
       is_featured: false,

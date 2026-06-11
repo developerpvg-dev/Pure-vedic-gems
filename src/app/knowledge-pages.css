@@ -1,0 +1,292 @@
+/* Knowledge library — light, professional editorial palette */
+
+.pvg-knowledge-page {
+  --kv-bg: #faf9f7;
+  --kv-surface: #ffffff;
+  --kv-accent-surface: #f7f2ea;
+  --kv-border: #e8e0d4;
+  --kv-heading: #5c3d3d;
+  --kv-text: #4a4238;
+  --kv-muted: #6f6559;
+  --kv-gold: #a67c2e;
+  --kv-maroon: #7a3a3a;
+  --kv-maroon-hover: #8f4545;
+  /* Fixed SiteHeader clearance — keep in sync with .pvg-header-spacer in home.css */
+  --kv-header-offset: 98px;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding-top: calc(var(--kv-header-offset) + 6px);
+  overflow-x: clip;
+  color: var(--kv-text);
+  background-color: var(--kv-bg);
+}
+
+@media (min-width: 768px) {
+  .pvg-knowledge-page {
+    --kv-header-offset: 110px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pvg-knowledge-page {
+    --kv-header-offset: 112px;
+  }
+}
+
+/* Anchor / in-page jump targets sit below the fixed header */
+.pvg-knowledge-page :target,
+.pvg-knowledge-page [id] {
+  scroll-margin-top: calc(var(--kv-header-offset) + 12px);
+}
+
+/* Responsive media & tables */
+.pvg-knowledge-page img,
+.pvg-knowledge-page video,
+.pvg-knowledge-page iframe {
+  max-width: 100%;
+}
+
+.pvg-knowledge-page table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pvg-knowledge-page :is(h1, h2, h3, h4, h5, h6) {
+  letter-spacing: -0.01em;
+  color: var(--kv-heading);
+}
+
+.pvg-knowledge-page p,
+.pvg-knowledge-page li {
+  color: var(--kv-text);
+}
+
+.pvg-knowledge-page .text-muted-foreground {
+  color: var(--kv-muted);
+}
+
+/* Highlight panels — light cream card with gold accent (replaces dark maroon blocks) */
+.pvg-knowledge-on-dark {
+  background: var(--kv-accent-surface) !important;
+  border: 1px solid var(--kv-border) !important;
+  border-left: 4px solid var(--kv-gold) !important;
+  color: var(--kv-text);
+  box-shadow: 0 1px 3px rgba(92, 61, 61, 0.06);
+}
+
+.pvg-knowledge-on-dark :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--kv-heading) !important;
+}
+
+.pvg-knowledge-on-dark :is(p, li, span, td, th) {
+  color: var(--kv-text);
+}
+
+.pvg-knowledge-on-dark .pvg-knowledge-on-dark-muted {
+  color: var(--kv-muted);
+}
+
+.pvg-knowledge-on-dark .pvg-knowledge-mantra {
+  background: var(--kv-surface) !important;
+  border: 1px solid var(--kv-border) !important;
+  border-left: 3px solid var(--kv-maroon) !important;
+}
+
+.pvg-knowledge-on-dark .pvg-knowledge-mantra p:last-child {
+  color: var(--kv-heading);
+  font-weight: 600;
+}
+
+/* Bottom CTA — clean light card, not dark gradient */
+.pvg-knowledge-cta {
+  background: var(--kv-surface) !important;
+  border: 1px solid var(--kv-border) !important;
+  box-shadow: 0 4px 24px rgba(92, 61, 61, 0.07);
+  color: var(--kv-text);
+}
+
+.pvg-knowledge-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(247, 242, 234, 0.9) 0%, rgba(255, 253, 248, 0.4) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.pvg-knowledge-cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+.pvg-knowledge-cta :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--kv-heading) !important;
+}
+
+.pvg-knowledge-cta p {
+  color: var(--kv-muted);
+}
+
+.pvg-knowledge-cta .pvg-knowledge-cta-eyebrow {
+  color: var(--kv-gold);
+}
+
+/* Table header — soft cream row */
+.pvg-knowledge-table-head {
+  background: var(--kv-accent-surface) !important;
+  color: var(--kv-heading);
+  border-bottom: 1px solid var(--kv-border) !important;
+}
+
+.pvg-knowledge-table-head :is(th, td, span) {
+  color: var(--kv-heading) !important;
+}
+
+/* Shared button styles */
+.pvg-knowledge-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  background: var(--kv-maroon);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  transition: background-color 0.2s;
+}
+
+.pvg-knowledge-btn-primary:hover {
+  background: var(--kv-maroon-hover);
+}
+
+.pvg-knowledge-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1.5px solid var(--kv-maroon);
+  background: var(--kv-surface);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--kv-maroon);
+  transition: background-color 0.2s;
+}
+
+.pvg-knowledge-btn-outline:hover {
+  background: var(--kv-accent-surface);
+}
+
+/*
+ * Home-page category CTAs embedded on knowledge pages.
+ * Knowledge typography rules override home.css — re-apply exact home CTA colors here.
+ */
+
+/* Navaratna (gem quality pages) */
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna {
+  --maroon-deep: #2c0404;
+  --maroon: #7a1515;
+  --pvg-rcta-mobile-primary-bg: #ffffff;
+  --pvg-rcta-mobile-primary-border: #ffffff;
+  --pvg-rcta-mobile-primary-fg: #7a1515;
+  --pvg-rcta-mobile-primary-shadow: rgba(44, 4, 4, 0.12);
+  --pvg-rcta-mobile-secondary-bg: #d4a843;
+  --pvg-rcta-mobile-secondary-border: #d4a843;
+  --pvg-rcta-mobile-secondary-fg: #261a10;
+  background:
+    radial-gradient(circle, rgba(122, 21, 21, 0.07) 1px, transparent 1px),
+    linear-gradient(180deg, #fdf8f4 0%, #fbf1e6 44%, #f2dfcb 100%) !important;
+  background-size: 22px 22px, 100% 100% !important;
+  background-position: right top, center !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-circle {
+  background: linear-gradient(96deg, #9c1e1e 0%, #7a1515 38%, #4d0a0a 64%, #2c0404 100%) !important;
+  box-shadow: inset 0 18px 42px rgba(247, 237, 208, 0.12) !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-heading {
+  color: #2c0404 !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-copy,
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-copy p {
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-chat {
+  background: #ffffff !important;
+  color: #7a1515 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(44, 4, 4, 0.12) !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-call {
+  background: #d4a843 !important;
+  color: #261a10 !important;
+  border-color: #d4a843 !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-chat:hover {
+  box-shadow: 0 10px 22px rgba(122, 21, 21, 0.22) !important;
+}
+
+/* Rudraksha (rudraksha knowledge pages) */
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-heading {
+  color: #2d160b !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-copy,
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-copy p {
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-chat {
+  background: #1d8b5a !important;
+  color: #ffffff !important;
+  border-color: #1d8b5a !important;
+  box-shadow: 0 8px 20px rgba(29, 139, 90, 0.16) !important;
+}
+
+.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-call {
+  background: #ffc640 !important;
+  color: #261a10 !important;
+  border-color: #ffc640 !important;
+}
+
+@media (max-width: 767px) {
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-mobile-primary {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #7a1515 !important;
+    box-shadow: 0 8px 20px rgba(44, 4, 4, 0.12) !important;
+  }
+
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-mobile-secondary {
+    background: #d4a843 !important;
+    border-color: #d4a843 !important;
+    color: #261a10 !important;
+  }
+
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-mobile-primary {
+    background: #1d8b5a !important;
+    border-color: #1d8b5a !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(29, 139, 90, 0.16) !important;
+  }
+
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-mobile-secondary {
+    background: #ffc640 !important;
+    border-color: #ffc640 !important;
+    color: #261a10 !important;
+  }
+}

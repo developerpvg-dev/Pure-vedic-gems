@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
+import { syncApprovedReviewToCategoryPool } from '@/lib/reviews/sync';
 
 const reviewActionSchema = z.object({
   action: z.enum(['approve', 'reject', 'feature', 'unfeature']),
@@ -34,6 +35,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .single();
 
   if (error || !data) return NextResponse.json({ error: 'Failed to update review' }, { status: 500 });
+
+  if (parsed.data.action === 'approve' || parsed.data.action === 'feature') {
+    await syncApprovedReviewToCategoryPool(admin, data as {
+      id: string;
+      product_id: string;
+      customer_id: string | null;
+      customer_name: string;
+      customer_location: string | null;
+      rating: number | null;
+      title: string | null;
+      review_text: string | null;
+      images: unknown;
+      is_verified: boolean;
+    });
+  }
 
   void logAdminAction({
     userId: auth.user.id,

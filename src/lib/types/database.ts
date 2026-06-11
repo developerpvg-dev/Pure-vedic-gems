@@ -2302,6 +2302,75 @@ export interface Database {
         };
         Relationships: [];
       };
+      category_reviews: {
+        Row: {
+          id: string;
+          category: string;
+          sub_category: string;
+          customer_name: string;
+          customer_location: string | null;
+          rating: number | null;
+          title: string | null;
+          review_text: string;
+          images: Json;
+          is_verified: boolean;
+          is_approved: boolean;
+          is_active: boolean;
+          is_featured: boolean;
+          source: string;
+          source_review_id: string | null;
+          source_product_id: string | null;
+          source_customer_id: string | null;
+          testimonial_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          category: string;
+          sub_category: string;
+          customer_name: string;
+          customer_location?: string | null;
+          rating?: number | null;
+          title?: string | null;
+          review_text: string;
+          images?: Json;
+          is_verified?: boolean;
+          is_approved?: boolean;
+          is_active?: boolean;
+          is_featured?: boolean;
+          source?: string;
+          source_review_id?: string | null;
+          source_product_id?: string | null;
+          source_customer_id?: string | null;
+          testimonial_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          category?: string;
+          sub_category?: string;
+          customer_name?: string;
+          customer_location?: string | null;
+          rating?: number | null;
+          title?: string | null;
+          review_text?: string;
+          images?: Json;
+          is_verified?: boolean;
+          is_approved?: boolean;
+          is_active?: boolean;
+          is_featured?: boolean;
+          source?: string;
+          source_review_id?: string | null;
+          source_product_id?: string | null;
+          source_customer_id?: string | null;
+          testimonial_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       coupons: {
         Row: {
           id: string;

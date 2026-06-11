@@ -1,3 +1,5 @@
+import { RUDRAKSHA_MUKHI_IMAGE_BY_SLUG } from '@/lib/constants/rudraksha-category-images';
+
 export type StorefrontCategoryGroupSlug = 'navaratna' | 'upratna' | 'rudraksha' | 'idols' | 'jewelry' | 'malas';
 
 export type CatalogFamily = 'idol' | 'jewelry' | 'mala' | 'rudraksha';
@@ -136,22 +138,15 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     slug: 'rudraksha',
     label: 'Rudraksha',
     href: '/shop/rudraksha',
-    subcategories: [
-      { slug: '1-mukhi', label: '1 Mukhi', href: '/shop/1-mukhi', image: '/home/rudrakhshas images/1Mukhi-150x150.webp' },
-      { slug: '2-mukhi', label: '2 Mukhi', href: '/shop/2-mukhi', image: '/home/rudrakhshas images/2Mukhi-150x150.webp' },
-      { slug: '3-mukhi', label: '3 Mukhi', href: '/shop/3-mukhi', image: '/home/rudrakhshas images/3Mukhi-150x150.webp' },
-      { slug: '4-mukhi', label: '4 Mukhi', href: '/shop/4-mukhi', image: '/home/rudrakhshas images/4Mukhi-150x150.webp' },
-      { slug: '5-mukhi', label: '5 Mukhi', href: '/shop/5-mukhi', image: '/home/rudrakhshas images/5Mukhi-150x150.webp' },
-      { slug: '6-mukhi', label: '6 Mukhi', href: '/shop/6-mukhi', image: '/home/rudrakhshas images/6Mukhi-150x150.webp' },
-      { slug: '7-mukhi', label: '7 Mukhi', href: '/shop/7-mukhi', image: '/home/rudrakhshas images/7Mukhi-150x150.webp' },
-      { slug: '8-mukhi', label: '8 Mukhi', href: '/shop/8-mukhi', image: '/home/rudrakhshas images/8Mukhi-150x150.webp' },
-      { slug: '9-mukhi', label: '9 Mukhi', href: '/shop/9-mukhi', image: '/home/rudrakhshas images/9Mukhi-150x150.webp' },
-      { slug: '10-mukhi', label: '10 Mukhi', href: '/shop/10-mukhi', image: '/home/rudrakhshas images/10Mukhi-150x150.webp' },
-      { slug: '11-mukhi', label: '11 Mukhi', href: '/shop/11-mukhi', image: '/home/rudrakhshas images/11Mukhi-150x150.webp' },
-      { slug: '12-mukhi', label: '12 Mukhi', href: '/shop/12-mukhi', image: '/home/rudrakhshas images/12Mukhi-150x150.webp' },
-      { slug: '13-mukhi', label: '13 Mukhi', href: '/shop/13-mukhi', image: '/home/rudrakhshas images/13Mukhi-150x150.webp' },
-      { slug: '14-mukhi', label: '14 Mukhi', href: '/shop/14-mukhi', image: '/home/rudrakhshas images/14Mukhi-150x150.webp' },
-    ],
+    subcategories: Object.entries(RUDRAKSHA_MUKHI_IMAGE_BY_SLUG).map(([slug, image]) => {
+      const n = slug.replace('-mukhi', '');
+      return {
+        slug,
+        label: `${n} Mukhi`,
+        href: `/shop/${slug}`,
+        image,
+      };
+    }),
   },
   {
     slug: 'idols',
@@ -207,7 +202,15 @@ export function normalizeStorefrontGroups(input: unknown): StorefrontCategoryGro
         label: item.label,
         href: storefrontGroupHref(item.slug),
         subcategories: item.subcategories
-          .filter((sub): sub is StorefrontSubCategory => Boolean(sub?.slug && sub?.label && sub?.href)),
+          .filter((sub): sub is StorefrontSubCategory => Boolean(sub?.slug && sub?.label && sub?.href))
+          .map((sub) => ({
+            slug: sub.slug,
+            label: sub.label,
+            href: sub.href,
+            swatch: sub.swatch ?? null,
+            image: sub.image ?? null,
+            meta: item.slug === 'upratna' ? null : sub.meta ?? null,
+          })),
       };
     })
     .filter((group): group is StorefrontCategoryGroup => Boolean(group));

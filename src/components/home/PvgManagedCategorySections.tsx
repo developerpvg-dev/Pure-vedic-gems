@@ -3,6 +3,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { catalogFamilyToStorefrontGroupSlug, productHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
+import {
+  RUDRAKSHA_FEATURE_IMAGES,
+  rudrakshaMukhiImage,
+} from '@/lib/constants/rudraksha-category-images';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 
 export type HomeManagedCategory = {
@@ -398,42 +402,22 @@ function catalogCategoryHref(category: HomeCatalogCategory) {
   return storefrontSubcategoryHref(parentSlug, category.slug);
 }
 
-const RUDRAKSHA_IMAGE_BY_SLUG: Record<string, string> = {
-  '1-mukhi': '/home/rudrakhshas images/1Mukhi-150x150.webp',
-  '2-mukhi': '/home/rudrakhshas images/2Mukhi-150x150.webp',
-  '3-mukhi': '/home/rudrakhshas images/3Mukhi-150x150.webp',
-  '4-mukhi': '/home/rudrakhshas images/4Mukhi-150x150.webp',
-  '5-mukhi': '/home/rudrakhshas images/5Mukhi-150x150.webp',
-  '6-mukhi': '/home/rudrakhshas images/6Mukhi-150x150.webp',
-  '7-mukhi': '/home/rudrakhshas images/7Mukhi-150x150.webp',
-  '8-mukhi': '/home/rudrakhshas images/8Mukhi-150x150.webp',
-  '9-mukhi': '/home/rudrakhshas images/9Mukhi-150x150.webp',
-  '10-mukhi': '/home/rudrakhshas images/10Mukhi-150x150.webp',
-  '11-mukhi': '/home/rudrakhshas images/11Mukhi-150x150.webp',
-  '12-mukhi': '/home/rudrakhshas images/12Mukhi-150x150.webp',
-  '13-mukhi': '/home/rudrakhshas images/13Mukhi-150x150.webp',
-  '14-mukhi': '/home/rudrakhshas images/14Mukhi-150x150.webp',
-  '15-mukhi': '/home/rudrakhshas images/15mukhirudraksha.webp',
-  '16-mukhi': '/home/rudrakhshas images/16Mukhi rudraksha.webp',
-  '17-mukhi': '/home/rudrakhshas images/17Mukhi rudraksha.webp',
-  '18-mukhi': '/home/rudrakhshas images/18Mukhi rudraksha.webp',
-  '19-mukhi': '/home/rudrakhshas images/19Mukhi rudraksha.webp',
-  '20-mukhi': '/home/rudrakhshas images/20Mukhi rudraksha.webp',
-  '21-mukhi': '/home/rudrakhshas images/21Mukhi Rudraksha.webp',
-};
-
 function rudrakshaImageForSlug(slug: string) {
-  return RUDRAKSHA_IMAGE_BY_SLUG[slug] ?? null;
+  return rudrakshaMukhiImage(slug);
 }
 
 function rudrakshaFeatureImage(card: HomeCatalogCategory) {
-  if (card.slug.includes('mukhi')) return '/home/rudrakhshas images/1-15 FINEST QUALITY RUDRAKSHAS.webp';
-  if (card.slug.includes('mala')) return '/home/rudrakhshas images/EXCLUSIVE RUDRAKSHA MALAS.webp';
-  if (card.slug.includes('jewelry') || card.slug.includes('jeweller')) return '/home/rudrakhshas images/CUSTOMISED RUDRAKSHA JEWELLERIES.webp';
-  return '/home/rudrakhshas images/CUSTOMISED RUDRAKSHA JEWELLERIES.webp';
+  if (card.slug.includes('mukhi') || card.slug.includes('collection')) {
+    return RUDRAKSHA_FEATURE_IMAGES.collection;
+  }
+  if (card.slug.includes('mala')) return RUDRAKSHA_FEATURE_IMAGES.malas;
+  if (card.slug.includes('jewelry') || card.slug.includes('jeweller')) {
+    return RUDRAKSHA_FEATURE_IMAGES.jewellery;
+  }
+  return RUDRAKSHA_FEATURE_IMAGES.jewellery;
 }
 
-function SliderButton({ target, direction, label }: { target: string; direction: 'prev' | 'next'; label: string }) {
+export function SliderButton({ target, direction, label }: { target: string; direction: 'prev' | 'next'; label: string }) {
   return (
     <button type="button" className={`pvg-slider-btn pvg-slider-btn-${direction}`} data-slider-target={target} data-slider-direction={direction} aria-label={label}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d={direction === 'prev' ? 'M15 18l-6-6 6-6' : 'M9 6l6 6-6 6'} /></svg>
@@ -552,7 +536,7 @@ function directorNote(product: HomeDirectorPick) {
 const HOMEPAGE_CATEGORY_CARDS = [
   { title: 'Bracelets', href: '/shop/jewelry/bracelets', image: '/config_img/bracelet.webp', cta: 'Shop Bracelets' },
   { title: 'Gemstones', href: '/shop/navaratna', image: '/config_img/loose.webp', cta: 'View Gemstones' },
-  { title: 'Rudraksha', href: '/shop/rudraksha', image: '/home/rudrakhshas images/1-15 FINEST QUALITY RUDRAKSHAS.webp', cta: 'See Rudraksha' },
+  { title: 'Rudraksha', href: '/shop/rudraksha', image: RUDRAKSHA_FEATURE_IMAGES.collection, cta: 'See Rudraksha' },
   { title: 'Jewellery', href: '/shop/jewelry', image: '/config_img/ring.webp', cta: 'Explore Jewellery' },
   { title: 'Crystals & Trees', href: '/shop/idols', image: '/home/navratnaimg/stone9.webp', cta: 'Explore Crystals' },
 ];
@@ -771,22 +755,26 @@ export function ExploreByCategorySection({
         </div>
 
         <div className="explore-panel is-active" id="panel-spiritual">
-          <div className="pvg-category-card-grid">
-            {idolCards.map((category) => (
-              <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
-                <span className="pvg-category-img-wrap">
-                  {category.image_url ? (
-                    <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 82vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
-                  )}
-                </span>
-                <span className="pvg-category-card-body">
-                  <span className="pvg-category-card-title">{category.name}</span>
-                  <span className="pvg-category-card-link">{category.cta_label ?? 'Explore'} <span aria-hidden="true">›</span></span>
-                </span>
-              </Link>
-            ))}
+          <div className="pvg-slider-shell pvg-explore-slider-shell">
+            <SliderButton target="exploreSpiritualScroll" direction="prev" label="Previous spiritual idols" />
+            <div className="pvg-category-card-grid" id="exploreSpiritualScroll">
+              {idolCards.map((category) => (
+                <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
+                  <span className="pvg-category-img-wrap">
+                    {category.image_url ? (
+                      <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 58vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
+                    )}
+                  </span>
+                  <span className="pvg-category-card-body">
+                    <span className="pvg-category-card-title">{category.name}</span>
+                    <span className="pvg-category-card-link">{category.cta_label ?? 'Explore'} <span aria-hidden="true">›</span></span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <SliderButton target="exploreSpiritualScroll" direction="next" label="Next spiritual idols" />
           </div>
           <div className="explore-cta">
             <Link href="/shop/idols" className="btn-outline-maroon">View All Spiritual Idols →</Link>
@@ -794,22 +782,26 @@ export function ExploreByCategorySection({
         </div>
 
         <div className="explore-panel" id="panel-jewellery">
-          <div className="pvg-category-card-grid">
-            {jewelryCards.map((category) => (
-              <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
-                <span className="pvg-category-img-wrap">
-                  {category.image_url ? (
-                    <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 82vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
-                  )}
-                </span>
-                <span className="pvg-category-card-body">
-                  <span className="pvg-category-card-title">{category.name}</span>
-                  <span className="pvg-category-card-link">{category.cta_label ?? 'Explore'} <span aria-hidden="true">›</span></span>
-                </span>
-              </Link>
-            ))}
+          <div className="pvg-slider-shell pvg-explore-slider-shell">
+            <SliderButton target="exploreJewelleryScroll" direction="prev" label="Previous vedic jewellery" />
+            <div className="pvg-category-card-grid" id="exploreJewelleryScroll">
+              {jewelryCards.map((category) => (
+                <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
+                  <span className="pvg-category-img-wrap">
+                    {category.image_url ? (
+                      <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 58vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
+                    )}
+                  </span>
+                  <span className="pvg-category-card-body">
+                    <span className="pvg-category-card-title">{category.name}</span>
+                    <span className="pvg-category-card-link">{category.cta_label ?? 'Explore'} <span aria-hidden="true">›</span></span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <SliderButton target="exploreJewelleryScroll" direction="next" label="Next vedic jewellery" />
           </div>
           <div className="explore-cta">
             <Link href="/shop/jewelry" className="btn-outline-maroon">View All Vedic Jewellery →</Link>

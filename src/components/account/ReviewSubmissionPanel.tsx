@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, Star } from 'lucide-react';
+import Image from 'next/image';
+import { Loader2, Star, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface ReviewEligibleItem {
@@ -19,10 +20,30 @@ export function ReviewSubmissionPanel({ items }: { items: ReviewEligibleItem[] }
   const [title, setTitle] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [location, setLocation] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [submittedIds, setSubmittedIds] = useState<Set<string>>(() => new Set());
 
   const activeItem = items.find((item) => item.product_id === activeId);
+
+  async function uploadImage(file: File) {
+    if (images.length >= 6) {
+      toast.error('You can attach up to 6 images');
+      return;
+    }
+    setIsUploading(true);
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch('/api/reviews/upload', { method: 'POST', body }).catch(() => null);
+    const data = await response?.json().catch(() => null) as { url?: string; error?: string } | null;
+    setIsUploading(false);
+    if (!response?.ok || !data?.url) {
+      toast.error(data?.error ?? 'Image upload failed');
+      return;
+    }
+    setImages((current) => [...current, data.url!]);
+  }
 
   async function submitReview(event: React.FormEvent) {
     event.preventDefault();
@@ -38,6 +59,7 @@ export function ReviewSubmissionPanel({ items }: { items: ReviewEligibleItem[] }
         title,
         review_text: reviewText,
         customer_location: location,
+        images,
       }),
     }).catch(() => null);
     setIsSubmitting(false);
@@ -52,6 +74,7 @@ export function ReviewSubmissionPanel({ items }: { items: ReviewEligibleItem[] }
     setTitle('');
     setReviewText('');
     setLocation('');
+    setImages([]);
     setRating(5);
     toast.success('Review submitted for moderation');
   }
@@ -113,8 +136,45 @@ export function ReviewSubmissionPanel({ items }: { items: ReviewEligibleItem[] }
             <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--pvg-muted)]">Location</span>
             <input value={location} onChange={(event) => setLocation(event.target.value)} maxLength={80} placeholder="City, country" className="w-full rounded-lg border border-[var(--pvg-border)] bg-brand-bg px-3 py-2.5 text-sm outline-none focus:border-[var(--pvg-accent)]" />
           </label>
+          <div>
+            <div className="mb-2 flex items-center gap-3">
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--pvg-muted)]">Photos (optional)</span>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--pvg-border)] px-3 py-2 text-xs font-semibold text-[var(--pvg-primary)]">
+                <Upload className="h-3.5 w-3.5" />
+                Add image
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadImage(file);
+                    event.currentTarget.value = '';
+                  }}
+                />
+              </label>
+              {isUploading && <Loader2 className="h-4 w-4 animate-spin text-[var(--pvg-accent)]" />}
+            </div>
+            {images.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {images.map((url) => (
+                  <div key={url} className="relative h-16 w-16 overflow-hidden rounded-lg border border-[var(--pvg-border)]">
+                    <Image src={url} alt="Review upload preview" fill className="object-cover" sizes="64px" />
+                    <button
+                      type="button"
+                      onClick={() => setImages((current) => current.filter((item) => item !== url))}
+                      className="absolute right-0 top-0 rounded-bl bg-black/60 p-1 text-white"
+                      aria-label="Remove image"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <button type="submit" disabled={!activeItem || isSubmitting} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-[var(--pvg-bg)] transition hover:bg-brand-accent disabled:cursor-wait disabled:opacity-70">
+        <button type="submit" disabled={!activeItem || isSubmitting || isUploading} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-[var(--pvg-bg)] transition hover:bg-brand-accent disabled:cursor-wait disabled:opacity-70">
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           Submit for moderation
         </button>

@@ -171,6 +171,26 @@ const nextConfig: NextConfig = {
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
 
+      // Retired knowledge section -> hub.
+      ...['/knowledge/buying-guides'].flatMap((source) => [
+        { source, destination: '/knowledge', statusCode: 301 },
+        { source: `${source}/`, destination: '/knowledge', statusCode: 301 },
+      ]),
+
+      // Legacy gem quality / buy-online pages -> rebuilt knowledge guides.
+      ...[
+        ['/buy-online-blue-sapphire-gemstone', '/knowledge/gem-qualities/blue-sapphire'],
+        ['/buy-online-yellow-sapphire-gemstone', '/knowledge/gem-qualities/yellow-sapphire'],
+        ['/buy-online-ruby-gemstone', '/knowledge/gem-qualities/ruby'],
+        ['/buy-online-emerald-gemstone', '/knowledge/gem-qualities/emerald'],
+        ['/red-coral-qualities', '/knowledge/gem-qualities/red-coral'],
+        ['/buy-online-catseye-gemstone', '/knowledge/gem-qualities/catseye'],
+        ['/hessonite-qualites', '/knowledge/gem-qualities/hessonite'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
       // Legacy Pearl (Moti) SEO landing pages -> newly rebuilt Pearl quality guide.
       ...[
         '/astrological-pearls-gemstone-in-the-philippines',
@@ -275,6 +295,20 @@ const nextConfig: NextConfig = {
         { source: `${source}/`, destination: '/knowledge/rudraksha-qualities', statusCode: 301 },
       ]),
 
+      // Legacy high-Mukhi Rudraksha editorial pages -> rebuilt knowledge guides.
+      ...[
+        ['/fifteen-15-mukhi-rudraksha', '/knowledge/rudraksha/15-mukhi'],
+        ['/sixteen-mukhi-rudraksha', '/knowledge/rudraksha/16-mukhi'],
+        ['/seventeen-mukhi-rudraksha', '/knowledge/rudraksha/17-mukhi'],
+        ['/eighteen-18-mukhi-rudraksha', '/knowledge/rudraksha/18-mukhi'],
+        ['/nineteen-19-mukhi-rudraksha', '/knowledge/rudraksha/19-mukhi'],
+        ['/twenty-20-mukhi-rudraksha', '/knowledge/rudraksha/20-mukhi'],
+        ['/twenty-one-mukhi-rudraksha', '/knowledge/rudraksha/21-mukhi'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
       // Remaining legacy editorial / brand / misc pages -> closest relevant section.
       ...[
         ['/astrological-gemstone-recommendation-for-success-in-various-areas-of-life', '/tools/recommendation'],
@@ -314,6 +348,18 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Long-lived cache for all static assets in /public
+      {
+        source: '/rudraksha-knowledge/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/gems-knowledge/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' },
+        ],
+      },
       {
         source: '/home/:path*',
         headers: [

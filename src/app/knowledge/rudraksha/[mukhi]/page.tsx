@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { RudrakshaGuideArticle } from '@/components/knowledge/RudrakshaGuideArticle';
+import { RudrakshaLegacyGuideArticle } from '@/components/knowledge/RudrakshaLegacyGuideArticle';
 import {
   RUDRAKSHA_RICH_GUIDES,
   getRichRudrakshaGuide,
@@ -55,10 +56,9 @@ export default async function RudrakshaGuidePage({
   const guide = getRichRudrakshaGuide(mukhi);
   if (!guide) notFound();
 
-  return (
-    <RudrakshaGuideArticle
-      guide={guide}
-      pathname={`/knowledge/rudraksha/${guide.slug}`}
-    />
-  );
+  const pathname = `/knowledge/rudraksha/${guide.slug}`;
+  const Article =
+    guide.mukhi >= 15 ? RudrakshaLegacyGuideArticle : RudrakshaGuideArticle;
+
+  return <Article guide={guide} pathname={pathname} />;
 }

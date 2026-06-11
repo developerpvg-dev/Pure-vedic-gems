@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import { Star, Shield, Book, Gem, MessageSquare } from 'lucide-react';
 import type { Product } from '@/lib/types/product';
 
 interface ProductTabsProps {
   product: Product;
   reviews?: ProductReview[];
+  reviewPoolLabel?: string | null;
 }
 
 export interface ProductReview {
@@ -16,9 +18,12 @@ export interface ProductReview {
   rating: number | null;
   title: string | null;
   review_text: string | null;
+  images?: string[];
   is_verified: boolean;
   created_at: string;
 }
+
+const REVIEWS_PAGE_SIZE = 8;
 
 type TabKey = 'description' | 'vedic' | 'certificate' | 'wearing' | 'reviews';
 
@@ -62,9 +67,10 @@ function formatLabel(value?: string | null) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
+export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: ProductTabsProps) {
   const [active, setActive] = useState<TabKey>('description');
   const [reviewFilter, setReviewFilter] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(REVIEWS_PAGE_SIZE);
 
   const benefits = Array.isArray(product.benefits) ? (product.benefits as string[]) : [];
   const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
@@ -75,9 +81,14 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
     rating,
     count: ratedReviews.filter((review) => Math.round(review.rating ?? 0) === rating).length,
   }));
-  const visibleReviews = reviewFilter
-    ? reviews.filter((review) => Math.round(review.rating ?? 0) === reviewFilter)
-    : reviews;
+  const filteredReviews = useMemo(
+    () => (reviewFilter
+      ? reviews.filter((review) => Math.round(review.rating ?? 0) === reviewFilter)
+      : reviews),
+    [reviewFilter, reviews],
+  );
+  const visibleReviews = filteredReviews.slice(0, visibleCount);
+  const hasMoreReviews = visibleCount < filteredReviews.length;
 
   return (
     <div>
@@ -270,7 +281,10 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
                       <button
                         key={rating}
                         type="button"
-                        onClick={() => setReviewFilter(reviewFilter === rating ? null : rating)}
+                        onClick={() => {
+                          setReviewFilter(reviewFilter === rating ? null : rating);
+                          setVisibleCount(REVIEWS_PAGE_SIZE);
+                        }}
                         className="grid w-full grid-cols-[48px_minmax(0,1fr)_32px] items-center gap-3 text-left text-xs text-brand-muted"
                       >
                         <span>{rating} star</span>
@@ -284,7 +298,9 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
                       </button>
                     ))}
                     <p className="pt-2 text-[13px] leading-relaxed text-brand-muted">
-                      Reviews shown here are approved customer submissions. Verified purchase badges appear only when linked to an order.
+                      {reviewPoolLabel
+                        ? `Showing buyer experiences from the ${reviewPoolLabel} collection. Order may vary by product, but every review is category-specific and moderated.`
+                        : 'Reviews shown here are approved customer submissions. Verified purchase badges appear only when linked to an order.'}
                     </p>
                   </div>
                 </div>
@@ -292,7 +308,7 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
                 {reviewFilter && (
                   <button
                     type="button"
-                    onClick={() => setReviewFilter(null)}
+                    onClick={() => { setReviewFilter(null); setVisibleCount(REVIEWS_PAGE_SIZE); }}
                     className="rounded-full border border-brand-border px-3 py-1 text-xs font-semibold text-brand-primary transition hover:border-brand-accent"
                   >
                     Clear {reviewFilter}-star filter
@@ -318,8 +334,33 @@ export function ProductTabs({ product, reviews = [] }: ProductTabsProps) {
                         &ldquo;{review.review_text}&rdquo;
                       </p>
                     )}
+                    {review.images && review.images.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {review.images.map((imageUrl) => (
+                          <a
+                            key={imageUrl}
+                            href={imageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="relative h-20 w-20 overflow-hidden rounded-lg border border-brand-border"
+                          >
+                            <Image src={imageUrl} alt={`${review.customer_name} review photo`} fill className="object-cover" sizes="80px" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
+
+                {hasMoreReviews && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((count) => count + REVIEWS_PAGE_SIZE)}
+                    className="w-full rounded-lg border border-brand-border px-4 py-3 text-sm font-semibold text-brand-primary transition hover:border-brand-accent"
+                  >
+                    Load more reviews ({filteredReviews.length - visibleCount} remaining)
+                  </button>
+                )}
               </>
             ) : (
               <div className="rounded-xl border border-brand-border bg-brand-bg-alt/50 p-6 text-center">

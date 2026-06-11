@@ -3,7 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { GEM_QUALITIES, GEM_QUALITY_FAQS } from '@/lib/constants/gem-qualities';
+import { GEM_QUALITY_FAQS, type GemQuality } from '@/lib/constants/gem-qualities';
+
+export type GemQualityIndexItem = GemQuality & { cardImage: string };
 
 const ROBOTO = "'Roboto', 'Roboto Fallback', system-ui, -apple-system, sans-serif";
 
@@ -14,7 +16,7 @@ const PILLARS = [
   { title: 'Since 1937', desc: 'Four generations of trusted Vedic gem expertise.' },
 ];
 
-export function GemsQualitiesIndexContent() {
+export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[] }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const faqJsonLd = {
@@ -29,7 +31,7 @@ export function GemsQualitiesIndexContent() {
 
   return (
     <main
-      className="min-h-screen bg-[#FDFAF5] pb-20 pt-28 md:pt-32"
+      className="pvg-knowledge-page pb-20"
       style={{ fontFamily: ROBOTO }}
     >
       <script
@@ -65,7 +67,7 @@ export function GemsQualitiesIndexContent() {
             <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-[#3B2F26] md:text-lg">
               The authoritative Vedic reference on identifying natural, untreated Jyotish
               gemstones — Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite,
-              Cat&apos;s Eye, White Sapphire and Opal. Trusted since 1937.
+              Cat&apos;s Eye, White Sapphire and Pearl. Trusted since 1937.
             </p>
 
             <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -122,7 +124,7 @@ export function GemsQualitiesIndexContent() {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {GEM_QUALITIES.map((gem) => (
+          {gems.map((gem) => (
             <Link
               key={gem.slug}
               href={`/knowledge/gem-qualities/${gem.slug}`}
@@ -130,10 +132,10 @@ export function GemsQualitiesIndexContent() {
             >
               <div className="relative aspect-4/3 bg-[#FDF6E8]">
                 <Image
-                  src={gem.heroImage}
+                  src={gem.cardImage}
                   alt={`${gem.name} — ${gem.hindiName}`}
                   fill
-                  className="object-cover transition duration-500 group-hover:scale-105"
+                  className="object-contain p-4 transition duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
                 <div
@@ -231,7 +233,7 @@ export function GemsQualitiesIndexContent() {
                   <span
                     className={
                       'flex h-7 w-7 flex-none items-center justify-center rounded-full text-lg font-bold transition ' +
-                      (isOpen ? 'bg-[#4D0A0A] text-white' : 'bg-[#FDF6E8] text-[#4D0A0A]')
+                      (isOpen ? 'bg-[#f7f2ea] text-[#5c3d3d]' : 'bg-[#faf9f7] text-[#7a3a3a]')
                     }
                     aria-hidden
                   >
@@ -251,15 +253,8 @@ export function GemsQualitiesIndexContent() {
 
       {/* CTA */}
       <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
-        <div
-          className="relative overflow-hidden rounded-2xl px-6 py-14 text-center text-white md:px-12 md:py-20"
-          style={{
-            background: 'linear-gradient(135deg, #4D0A0A 0%, #7A1515 55%, #4D0A0A 100%)',
-          }}
-        >
-          <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-[#B8861E]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-[#D4A843]/20 blur-3xl" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#E6C36F]">
+        <div className="pvg-knowledge-cta relative overflow-hidden rounded-2xl px-6 py-14 text-center md:px-12 md:py-20">
+          <p className="pvg-knowledge-cta-eyebrow text-[11px] font-bold uppercase tracking-[0.28em]">
             Authentic · Energised · Certified
           </p>
           <h2
@@ -268,28 +263,22 @@ export function GemsQualitiesIndexContent() {
           >
             Find the right Vedic gemstone for your kundali
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-[#F7EAD0]/85 md:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
             Speak with our senior astrologers and astro-gemologists for a free chart-based
             gemstone recommendation — backed by lab certification and Vedic energisation.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/shop"
-              className="inline-flex items-center justify-center rounded-md bg-[#B8861E] px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition hover:bg-[#D4A843]"
-            >
+            <Link href="/shop" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
               Shop Gemstones
             </Link>
-            <Link
-              href="/consultation"
-              className="inline-flex items-center justify-center rounded-md border-2 border-white/80 bg-transparent px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:bg-white/10"
-            >
+            <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
               Free Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-md bg-white px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+              className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm"
             >
               WhatsApp Astrologer
             </a>

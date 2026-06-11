@@ -80,7 +80,7 @@ export function RudrakshaGuideArticle({
 
   return (
     <main
-      className="min-h-screen bg-[#FDFAF5] pb-20 pt-28 md:pt-32"
+      className="pvg-knowledge-page pb-20"
       style={{ fontFamily: ROBOTO }}
     >
       {schemas.map((schema, i) => (
@@ -205,7 +205,7 @@ export function RudrakshaGuideArticle({
               </h3>
               <div className="mt-3 h-0.75 w-12 rounded-full bg-[#B8861E]" />
               <ul className="mt-5 space-y-3">
-                {group.points.map((p, idx) => (
+                {(group.points ?? []).map((p, idx) => (
                   <li key={idx} className="flex gap-3 text-sm leading-7 text-[#3B2F26]">
                     <span
                       aria-hidden
@@ -250,22 +250,22 @@ export function RudrakshaGuideArticle({
       {/* How to wear */}
       <section className="mx-auto mt-16 max-w-6xl px-4 md:px-8">
         <div className="grid items-stretch gap-6 md:grid-cols-[1.2fr_1fr]">
-          <div className="rounded-2xl border border-[#4D0A0A]/15 bg-[#4D0A0A] p-7 text-[#F7EAD0] md:p-10">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#E6C36F]">
+          <div className="pvg-knowledge-on-dark rounded-2xl p-7 md:p-10">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#a67c2e]">
               Vedic Ritual
             </p>
             <h2 className="mt-3 text-2xl font-bold md:text-3xl">
               How to Wear {guide.shortTitle}
             </h2>
-            <p className="mt-5 text-sm leading-8 text-[#F7EAD0]/90 md:text-base md:leading-8">
+            <p className="pvg-knowledge-on-dark-muted mt-5 text-sm leading-8 md:text-base md:leading-8">
               {guide.howToWear}
             </p>
             {guide.poojaMantra && (
-              <div className="mt-5 rounded-lg border border-[#B8861E]/40 bg-[#3A0707] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#E6C36F]">
+              <div className="pvg-knowledge-mantra mt-5 rounded-lg p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#a67c2e]">
                   Pooja Mantra
                 </p>
-                <p className="mt-2 text-sm font-semibold tracking-wide text-white md:text-base">
+                <p className="mt-2 text-sm font-semibold tracking-wide md:text-base">
                   {guide.poojaMantra}
                 </p>
               </div>
@@ -304,16 +304,8 @@ export function RudrakshaGuideArticle({
 
       {/* Big CTA (homepage style) */}
       <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
-        <div
-          className="relative overflow-hidden rounded-2xl px-6 py-14 text-center text-white md:px-12 md:py-20"
-          style={{
-            background:
-              'linear-gradient(135deg, #4D0A0A 0%, #7A1515 55%, #4D0A0A 100%)',
-          }}
-        >
-          <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-[#B8861E]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-[#D4A843]/20 blur-3xl" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#E6C36F]">
+        <div className="pvg-knowledge-cta relative overflow-hidden rounded-2xl px-6 py-14 text-center md:px-12 md:py-20">
+          <p className="pvg-knowledge-cta-eyebrow text-[11px] font-bold uppercase tracking-[0.28em]">
             Authentic · Energised · Certified
           </p>
           <h2
@@ -322,28 +314,22 @@ export function RudrakshaGuideArticle({
           >
             Bring the divine power of {guide.shortTitle} into your life
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-[#F7EAD0]/85 md:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
             Get a free chart-based recommendation from our Vedic astrologers and discover
             the bead that resonates with your karmic blueprint.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href={guide.shopHref}
-              className="inline-flex items-center justify-center rounded-md bg-[#B8861E] px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition hover:bg-[#D4A843]"
-            >
+            <Link href={guide.shopHref} className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
               Shop {guide.shortTitle}
             </Link>
-            <Link
-              href="/consultation"
-              className="inline-flex items-center justify-center rounded-md border-2 border-white/80 bg-transparent px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:bg-white/10"
-            >
+            <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
               Free Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-md bg-white px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+              className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm"
             >
               WhatsApp Astrologer
             </a>

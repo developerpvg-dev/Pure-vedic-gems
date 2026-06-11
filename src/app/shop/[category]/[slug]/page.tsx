@@ -19,6 +19,7 @@ import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
 import { buildMetadata } from '@/lib/utils/seo';
+import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
 
 export const revalidate = 300;
 
@@ -360,13 +361,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         .order('in_stock', { ascending: false })
         .limit(8);
 
-  const reviewPromise = supabase
-    .from('reviews')
-    .select('id, customer_name, customer_location, rating, title, review_text, is_verified, created_at')
-    .eq('product_id', product.id)
-    .eq('is_approved', true)
-    .order('created_at', { ascending: false })
-    .limit(8);
+  const reviewPromise = getDisplayReviewsForProduct(supabase, product);
 
   const expertPromise = product.expert_id
     ? supabase
@@ -376,7 +371,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         .maybeSingle()
     : Promise.resolve({ data: null });
 
-  const [relatedResult, reviewResult, expertResult] = await Promise.all([
+  const [relatedResult, reviews, expertResult] = await Promise.all([
     relatedPromise,
     reviewPromise,
     expertPromise,
@@ -385,7 +380,6 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   const images = extractImages(product.images as Json);
   const skuMeta = buildSKUMeta(product);
   const related = (relatedResult.data ?? []) as unknown as ProductCardType[];
-  const reviews = (reviewResult.data ?? []) as unknown as ProductReview[];
   const expert = expertResult.data as {
     id: string; name: string; title: string | null;
     photo_url: string | null; specialty: string | null;
@@ -559,7 +553,13 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
           {/* ── Tabs: Description, Vedic, Certificate, Wearing, Reviews ── */}
           <div className="mt-16">
-            <ProductTabs product={product} reviews={reviews} />
+            <ProductTabs
+              product={product}
+              reviews={reviews}
+              reviewPoolLabel={
+                usesCategoryReviewPool(product.category, product.sub_category) ? categoryLabel : null
+              }
+            />
           </div>
 
           {/* ── Expert Guidance CTA — below the tabs ── */}

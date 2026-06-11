@@ -11,7 +11,7 @@ import {
 import { getKnowledgeArticlesByCategory } from '@/lib/sanity/queries';
 import type { SanityKnowledgeArticle } from '@/lib/types/content';
 
-export type KnowledgeCategoryKey = 'gemstones' | 'rudraksha' | 'astrology' | 'buying-guides';
+export type KnowledgeCategoryKey = 'gemstones' | 'rudraksha' | 'astrology';
 
 export const KNOWLEDGE_CATEGORY_CONFIG: Record<KnowledgeCategoryKey, {
   title: string;
@@ -36,12 +36,6 @@ export const KNOWLEDGE_CATEGORY_CONFIG: Record<KnowledgeCategoryKey, {
     eyebrow: 'Astrology',
     description: 'Traditional Navagraha and gemstone context written with clear disclaimers and careful product-selection guidance.',
     categories: ['Vedic Astrology'],
-  },
-  'buying-guides': {
-    title: 'Buying Safety Guides',
-    eyebrow: 'Buying Guides',
-    description: 'Checklists for certificates, photos, tag numbers, treatment disclosure, returns, care, and pre-purchase expert review.',
-    categories: ['Buying Safety', 'Care Guide'],
   },
 };
 
@@ -74,7 +68,7 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 
   return (
-    <main className="min-h-screen bg-brand-bg px-4 pb-20 pt-32.5 md:px-8">
+    <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
       <div className="mx-auto max-w-300">
         <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-brand-muted">
           <Link href="/" className="hover:text-brand-accent">Home</Link>

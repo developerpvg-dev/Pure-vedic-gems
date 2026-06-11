@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
-import { absoluteUrl } from '@/lib/utils/seo';
+import { getHomeManagedCategories } from '@/components/home/PvgManagedCategorySections';
 import { GemsQualitiesIndexContent } from '@/components/knowledge/GemsQualitiesIndexContent';
+import { gemQualityCardImage } from '@/lib/categories/gem-quality-images';
+import { GEM_QUALITIES } from '@/lib/constants/gem-qualities';
+import { absoluteUrl } from '@/lib/utils/seo';
 
-export const revalidate = 86400;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title:
@@ -15,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Gem Qualities Library | PureVedicGems',
     description:
-      'Identify natural Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite, Cat’s Eye, White Sapphire and Opal — Vedic authenticity guide.',
+      'Identify natural Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite, Cat’s Eye, White Sapphire and Pearl — Vedic authenticity guide.',
     type: 'website',
     url: absoluteUrl('/knowledge/gem-qualities'),
     images: [
@@ -29,6 +32,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function GemQualitiesIndexPage() {
-  return <GemsQualitiesIndexContent />;
+export default async function GemQualitiesIndexPage() {
+  const managedCategories = await getHomeManagedCategories();
+  const gems = GEM_QUALITIES.filter((gem) => gem.slug !== 'opal').map((gem) => ({
+    ...gem,
+    cardImage: gemQualityCardImage(
+      gem.slug,
+      managedCategories.navaratna,
+      gem.heroImage,
+    ),
+  }));
+
+  return <GemsQualitiesIndexContent gems={gems} />;
 }

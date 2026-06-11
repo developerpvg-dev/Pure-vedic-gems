@@ -2,9 +2,13 @@
 // Sourced and adapted from the legacy PureVedicGems site (now retired)
 // so the new app does not depend on any old-site URLs.
 
+import { RUDRAKSHA_LEGACY_GUIDES_15_21 } from './rudraksha-legacy-15-21';
+import { rudrakshaMukhiImageByNumber } from './rudraksha-category-images';
+
 export type MukhiBenefitGroup = {
   title: string;
-  points: string[];
+  points?: string[];
+  paragraphs?: string[];
 };
 
 export type MukhiRichGuide = {
@@ -25,10 +29,16 @@ export type MukhiRichGuide = {
   howToWear: string;
   closing: string; // short closing about authenticity / buying note
   shopHref: string;
+  /** Uppercase H1 matching the legacy WordPress page (15–21 Mukhi guides). */
+  legacyH1?: string;
+  /** Full "where to buy" paragraph from the legacy page. */
+  whereToBuy?: string;
+  /** Optional conclusion paragraph shown after where-to-buy (e.g. 16 Mukhi). */
+  conclusion?: string;
 };
 
 const HERO = (n: number) => `/rudraksha-knowledge/m${n}-hero.png`;
-const THUMB = (file: string) => `/home/rudrakhshas images/${file}`;
+const cardImg = (mukhi: number) => rudrakshaMukhiImageByNumber(mukhi)!;
 
 export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
   {
@@ -36,8 +46,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '1-mukhi',
     title: 'One (1) Mukhi Rudraksha',
     shortTitle: '1 Mukhi Rudraksha',
-    heroImage: THUMB('1Mukhi-150x150.webp'),
-    thumbImage: THUMB('1Mukhi-150x150.webp'),
+    heroImage: cardImg(1),
+    thumbImage: cardImg(1),
     deity: 'Lord Shiva',
     planet: 'Sun',
     chakra: 'Sahasrara (Crown Chakra)',
@@ -82,8 +92,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '2-mukhi',
     title: 'Two (2) Mukhi Rudraksha',
     shortTitle: '2 Mukhi Rudraksha',
-    heroImage: THUMB('2Mukhi-150x150.webp'),
-    thumbImage: THUMB('2Mukhi-150x150.webp'),
+    heroImage: cardImg(2),
+    thumbImage: cardImg(2),
     deity: 'Ardhanarishwar (Shiva-Shakti)',
     planet: 'Moon',
     chakra: 'Anahata (Heart Chakra)',
@@ -128,8 +138,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '3-mukhi',
     title: 'Three (3) Mukhi Rudraksha',
     shortTitle: '3 Mukhi Rudraksha',
-    heroImage: THUMB('3Mukhi-150x150.webp'),
-    thumbImage: THUMB('3Mukhi-150x150.webp'),
+    heroImage: cardImg(3),
+    thumbImage: cardImg(3),
     deity: 'Agni (Fire God)',
     planet: 'Mars',
     chakra: 'Manipura (Solar Plexus)',
@@ -172,8 +182,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '4-mukhi',
     title: 'Four (4) Mukhi Rudraksha',
     shortTitle: '4 Mukhi Rudraksha',
-    heroImage: THUMB('4Mukhi-150x150.webp'),
-    thumbImage: THUMB('4Mukhi-150x150.webp'),
+    heroImage: cardImg(4),
+    thumbImage: cardImg(4),
     deity: 'Lord Brahma',
     planet: 'Mercury',
     chakra: 'Vishuddha (Throat)',
@@ -215,8 +225,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '5-mukhi',
     title: 'Five (5) Mukhi Rudraksha',
     shortTitle: '5 Mukhi Rudraksha',
-    heroImage: THUMB('5Mukhi-150x150.webp'),
-    thumbImage: THUMB('5Mukhi-150x150.webp'),
+    heroImage: cardImg(5),
+    thumbImage: cardImg(5),
     deity: 'Kalagni Rudra (Lord Shiva)',
     planet: 'Jupiter',
     chakra: 'Vishuddha (Throat)',
@@ -260,8 +270,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '6-mukhi',
     title: 'Six (6) Mukhi Rudraksha',
     shortTitle: '6 Mukhi Rudraksha',
-    heroImage: THUMB('6Mukhi-150x150.webp'),
-    thumbImage: THUMB('6Mukhi-150x150.webp'),
+    heroImage: cardImg(6),
+    thumbImage: cardImg(6),
     deity: 'Lord Kartikeya',
     planet: 'Venus',
     chakra: 'Svadhisthana (Sacral)',
@@ -303,8 +313,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '7-mukhi',
     title: 'Seven (7) Mukhi Rudraksha',
     shortTitle: '7 Mukhi Rudraksha',
-    heroImage: THUMB('7Mukhi-150x150.webp'),
-    thumbImage: THUMB('7Mukhi-150x150.webp'),
+    heroImage: cardImg(7),
+    thumbImage: cardImg(7),
     deity: 'Goddess Mahalakshmi',
     planet: 'Saturn',
     chakra: 'Svadhisthana (Sacral)',
@@ -346,8 +356,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '8-mukhi',
     title: 'Eight (8) Mukhi Rudraksha',
     shortTitle: '8 Mukhi Rudraksha',
-    heroImage: THUMB('8Mukhi-150x150.webp'),
-    thumbImage: THUMB('8Mukhi-150x150.webp'),
+    heroImage: cardImg(8),
+    thumbImage: cardImg(8),
     deity: 'Lord Ganesha',
     planet: 'Rahu',
     chakra: 'Muladhara (Root)',
@@ -389,8 +399,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '9-mukhi',
     title: 'Nine (9) Mukhi Rudraksha',
     shortTitle: '9 Mukhi Rudraksha',
-    heroImage: THUMB('9Mukhi-150x150.webp'),
-    thumbImage: THUMB('9Mukhi-150x150.webp'),
+    heroImage: cardImg(9),
+    thumbImage: cardImg(9),
     deity: 'Goddess Durga',
     planet: 'Ketu',
     chakra: 'Manipura (Solar Plexus)',
@@ -432,8 +442,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '10-mukhi',
     title: 'Ten (10) Mukhi Rudraksha',
     shortTitle: '10 Mukhi Rudraksha',
-    heroImage: THUMB('10Mukhi-150x150.webp'),
-    thumbImage: THUMB('10Mukhi-150x150.webp'),
+    heroImage: cardImg(10),
+    thumbImage: cardImg(10),
     deity: 'Lord Vishnu',
     planet: 'No specific planet — pacifies all nine',
     chakra: 'All Chakras',
@@ -476,8 +486,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '11-mukhi',
     title: 'Eleven (11) Mukhi Rudraksha',
     shortTitle: '11 Mukhi Rudraksha',
-    heroImage: THUMB('11Mukhi-150x150.webp'),
-    thumbImage: THUMB('11Mukhi-150x150.webp'),
+    heroImage: cardImg(11),
+    thumbImage: cardImg(11),
     deity: 'Lord Hanuman / Ekadash Rudra',
     planet: 'Meditative protection',
     chakra: 'Vishuddha (Throat)',
@@ -520,8 +530,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '12-mukhi',
     title: 'Twelve (12) Mukhi Rudraksha',
     shortTitle: '12 Mukhi Rudraksha',
-    heroImage: THUMB('12Mukhi-150x150.webp'),
-    thumbImage: THUMB('12Mukhi-150x150.webp'),
+    heroImage: cardImg(12),
+    thumbImage: cardImg(12),
     deity: 'Surya Dev (Sun God)',
     planet: 'Sun',
     chakra: 'Manipura (Solar Plexus)',
@@ -563,8 +573,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '13-mukhi',
     title: 'Thirteen (13) Mukhi Rudraksha',
     shortTitle: '13 Mukhi Rudraksha',
-    heroImage: THUMB('13Mukhi-150x150.webp'),
-    thumbImage: THUMB('13Mukhi-150x150.webp'),
+    heroImage: cardImg(13),
+    thumbImage: cardImg(13),
     deity: 'Indra & Kamadeva',
     planet: 'Venus',
     chakra: 'Ajna (Third Eye)',
@@ -606,8 +616,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
     slug: '14-mukhi',
     title: 'Fourteen (14) Mukhi Rudraksha',
     shortTitle: '14 Mukhi Rudraksha',
-    heroImage: THUMB('14Mukhi-150x150.webp'),
-    thumbImage: THUMB('14Mukhi-150x150.webp'),
+    heroImage: cardImg(14),
+    thumbImage: cardImg(14),
     deity: 'Lord Hanuman / Devmani',
     planet: 'Saturn & Mars traditions',
     chakra: 'Ajna (Third Eye)',
@@ -644,390 +654,8 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       '14 Mukhi (Devmani) is extremely rare and very valuable — only buy with full X-ray and lab verification.',
     shopHref: '/shop/rudraksha/14-mukhi',
   },
-  // --- 15-21 are sourced directly from the old site's long-form content ---
-  {
-    mukhi: 15,
-    slug: '15-mukhi',
-    title: 'Fifteen (15) Mukhi Rudraksha',
-    shortTitle: '15 Mukhi Rudraksha',
-    heroImage: HERO(15),
-    thumbImage: THUMB('15Mukhi--150x150.webp'),
-    deity: 'Lord Pashupatinath',
-    planet: 'Jupiter',
-    beejMantra: 'Om Hreem Namah',
-    intro:
-      'The Lord of Fifteen (15) Mukhi Rudraksha is Lord Pashupatinath, the form of Lord Shiva, and the controlling planet is Jupiter. Blessed by Lord Shiva in his incarnation as Pashupati, the bead carries all the virtues of the 14 Mukhi Rudraksha and additionally offers luck in acquiring wealth. Pashupati — the lord of animals — gives life to all beings and takes it back at His will.',
-    benefitGroups: [
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'The wearer finds happiness in elevating themselves from worldly attachments and focuses on knowledge, success and spiritual growth.',
-          'Awakens the full potential of the sixth sense — the mind — making the wearer a master of perception.',
-          'Believed to increase visualisation and decision-making, growing wealth and good prospects.',
-          'Helps channel thoughts in the right direction with tremendous clarity of purpose.',
-          'Brings great calmness of mind that affects every sphere of life.',
-          'Supports abstract and lateral thinking — useful in adverse situations.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Ruled by Pashupatinath Shiva, it detaches the wearer from desires and frees them from misery, pain and fear of loss.',
-          'Sublimates animal tendencies in humans, helping them reach higher spiritual realms.',
-          'Develops intuitive powers — the wearer often senses outcomes and acts at the right time.',
-          'Shows the path towards Super-Consciousness, granting profound wisdom and knowledge.',
-          'Aids dhyana / meditation and supports spiritual attainments.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Helps regulate blood pressure and control anger.',
-          'Provides a profound sense of calm that reduces stress drastically.',
-          'Said to support cardiovascular health, asthma and respiratory illness.',
-          'Useful in allergies, fever, mental stability and overall body health.',
-        ],
-      },
-    ],
-    howToWear:
-      'Wear Fifteen (15) Mukhi Rudraksha around the neck or alternatively keep it in the place of worship. Chant "Om Namah Shivaya" nine (or 108) times before wearing.',
-    closing:
-      'Pure Vedic Gems has over four generations of experience sourcing authentic, energised Rudrakshas directly from origin. Every bead is supplied with a reputed lab certificate and is purified through traditional Vedic rituals.',
-    shopHref: '/shop/rudraksha/15-mukhi',
-  },
-  {
-    mukhi: 16,
-    slug: '16-mukhi',
-    title: 'Sixteen (16) Mukhi Rudraksha',
-    shortTitle: '16 Mukhi Rudraksha',
-    heroImage: HERO(16),
-    thumbImage: THUMB('16Mukhi rudraksha.webp'),
-    deity: 'Lord Ram (also revered as Mahakaal)',
-    planet: 'Rahu (and Moon traditions)',
-    chakra: 'Swadhisthana',
-    beejMantra: 'Om Hreem Hum Namah',
-    poojaMantra: 'Om Haum Joom Sah',
-    intro:
-      'The presiding Deity of the 16 Mukhi Rudraksha is Lord Ram and the controlling planet is Rahu. The bead is also considered a form of Lord Mahakaal — the Lord of Time. The wearer is said to triumph over time, fire, theft and ill fortune; homes blessed with this bead are believed to be safe from house fires, robbery and major calamities.',
-    benefitGroups: [
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'Known as the Jai Rudraksha — said to grant victory in court cases, legal entanglements and over adversaries.',
-          'Brings respect and fame and helps overcome opponents.',
-          'Excellent for those in import-export, pharmaceutical, chemical, aviation and travel industries.',
-          'Particularly powerful for lawyers, litigants and those settled abroad.',
-          'Believed to negate the malefic effects of Rahu.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Strengthens the Swadhisthana (sacral) chakra, the seat of the water element.',
-          'Helps face the ups and downs of life with courage, calmness and fortitude.',
-          'Supports a balanced life — fulfilling worldly duties while progressing spiritually.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Said to help with kidney, intestine, uterus, ulcer and lower-back issues.',
-          'Useful for urogenital diseases and chronic ailments.',
-          'Provides relief from stomach, chest and gum problems and from water-borne diseases.',
-        ],
-      },
-      {
-        title: 'Power of 16 Mukhi Rudraksha',
-        points: [
-          'Frees the wearer from the anxiety of theft, injury, fire and accidental death.',
-          'Said to bring the blessings even of Lord Yama (Lord of Death).',
-          'Brings the benefit of regularly chanting the Maha Mrityunjaya Mantra.',
-          'Carries the blessings of Lord Ram and victory in every endeavour.',
-          'Spreads positive energy, harmony and prosperity in the home where it is installed.',
-        ],
-      },
-    ],
-    whoCanWear: [
-      'Those facing long-running legal cases or disputes.',
-      'People exposed to high-risk environments — travel, fire, theft.',
-      'Anyone seeking to win over fears of loss, illness or death.',
-      'Devotees of Lord Ram and seekers wanting victory in every field.',
-    ],
-    howToWear:
-      'Wash the bead in Gangajal. On a Monday morning, bathe, wear clean clothes and sit facing east. Chant "Om Hreem Hoom Namah" or "Om Haum Joom Sah" 108 times with full focus. Wear in wool or silk thread, or capped in silver or gold around the neck or as a bracelet — or keep at the worship altar.',
-    closing:
-      '16 Mukhi may be worn singly or with other beads, in order to overcome adversaries and fear of death. Always purchase from a reputable, experienced seller — Pure Vedic Gems has been dealing in authentic Rudrakshas since 1937 and provides lab-certified, energised beads.',
-    shopHref: '/shop/rudraksha/16-mukhi',
-  },
-  {
-    mukhi: 17,
-    slug: '17-mukhi',
-    title: 'Seventeen (17) Mukhi Rudraksha',
-    shortTitle: '17 Mukhi Rudraksha',
-    heroImage: HERO(17),
-    thumbImage: THUMB('17Mukhi rudraksha.webp'),
-    deity: 'Lord Vishwakarma (and Lord Mahamritunjaya)',
-    planet: 'Saturn',
-    chakra: 'Ajna (Third Eye)',
-    beejMantra: 'Om Kaam Kaam Katyayani Swaha',
-    poojaMantra: 'Aum Hreem Hoom Hoom Naham',
-    intro:
-      'The presiding Deity of the 17 Mukhi Rudraksha is Lord Vishwakarma and Lord Mahamritunjaya, with Saturn as the controlling planet. The bead is also said to be inhabited by Goddess Katyayani — the sixth of the Navadurga — and is considered a boon especially for women, fulfilling wishes in regard to marriage, children, fortune and happiness. It is well known for removing the effects of Sade Sati.',
-    benefitGroups: [
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'Brings sudden wealth and luxury — useful for new ventures and expansion.',
-          'Helps acquire property, vehicles and physical assets.',
-          'Brings name and fame in society.',
-          'Releases tension, grief, anger and emotional depression.',
-          'Destroys past karma and limited beliefs.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Like Lord Vishwakarma the divine architect, the wearer becomes master of their fate.',
-          'Said to grant Siddhis — intuition, telepathy, creative intelligence.',
-          'Blessings of Lord Maha Mrityunjaya are said to destroy past karmas and free one from fear of death.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Helps with memory lapses and bodily disorders.',
-          'Cures respiratory issues, asthma and bronchial concerns.',
-          'Provides relief from headaches, sinusitis and ENT related diseases.',
-          'Useful for bone-related ailments and prostate health in males.',
-        ],
-      },
-      {
-        title: 'Chakra Activation',
-        points: [
-          'Associated with the Ajna Chakra (Third Eye / Brow centre).',
-          'Helps cleanse and awaken the chakra for futuristic insight.',
-        ],
-      },
-    ],
-    howToWear:
-      'Energise the bead before wearing. On a Saturday morning, bathe and sit facing east. With focused mind chant "Aum Kama Kam Katyayani Swaha" and "Aum Hreem Hoom Hoom Naham" 108 times each. Apply sandalwood paste and kumkum, then wear in wool or silk thread or capped in silver or gold.',
-    closing:
-      'Genuine 17 Mukhi is rare. Pure Vedic Gems supplies authentic, lab-certified beads with traditional in-house energisation.',
-    shopHref: '/shop/rudraksha/17-mukhi',
-  },
-  {
-    mukhi: 18,
-    slug: '18-mukhi',
-    title: 'Eighteen (18) Mukhi Rudraksha',
-    shortTitle: '18 Mukhi Rudraksha',
-    heroImage: HERO(18),
-    thumbImage: THUMB('18Mukhi rudraksha.webp'),
-    deity: 'Bhumi Devi (Mother Earth)',
-    planet: 'Mars',
-    chakra: 'Mooladhara (Root)',
-    beejMantra: 'Om Hreem Shreem Vasudhaaiye Swaha',
-    intro:
-      'The presiding Deity of 18 Mukhi Rudraksha is Bhumi Devi and the controlling planet is Mars. The wearer is believed to become healthy, strong, intelligent, disease-free and wealthy. Also referred to as the "Bhumi" Rudraksha, it is said to protect against landslides, earthquakes and other earth-related calamities.',
-    benefitGroups: [
-      {
-        title: 'Importance and Benefits',
-        points: [
-          'Increases connection with Bhumi Devi — granting penance, patience, stamina, balance and tolerance.',
-          'Brings stability and grounded thinking, expression and behaviour.',
-          'Highly beneficial for those involved in land, property and real estate.',
-          'Recommended for civil engineers and builders.',
-          'Removes dullness, obesity and laziness.',
-          'Pacifies imbalance of the earth element and Kapha dosha.',
-          'Considered very beneficial for expecting mothers.',
-        ],
-      },
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'Keeps the wearer wealthy and centred.',
-          'Ideal for launching major projects or business expansion.',
-          'Brings a tremendous boost in energy and willpower.',
-          'Mars, the ruling planet, grants the drive for action and the ability to command.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Opens, cleanses and stabilises the Mooladhara (Root) Chakra.',
-          'Helps Yogic practices by keeping the body fit and supple.',
-          'Strengthens and balances the Manipura Chakra when combined with Gayatri Mantra chanting.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Said to be a blessing for women who have faced miscarriage and fear recurrence.',
-          'Believed to support healthy pregnancy and child-birth.',
-          'Reduces symptoms related to obesity, piles, knees, feet and bone pain.',
-          'Good for the musculoskeletal system and mental balance.',
-        ],
-      },
-    ],
-    howToWear:
-      'Buy with your own money. Keep the bead in Gangajal for one day. On a Monday morning, sit facing east and chant "Aum Hreem Shreem Vasudhaya Swaha" 108 times. Wear around the neck or keep at the worship altar.',
-    closing:
-      'Always energise the bead before first use. Pure Vedic Gems provides lab-certified, naturally formed 18 Mukhi Rudrakshas with full in-house Vedic energisation.',
-    shopHref: '/shop/rudraksha/18-mukhi',
-  },
-  {
-    mukhi: 19,
-    slug: '19-mukhi',
-    title: 'Nineteen (19) Mukhi Rudraksha',
-    shortTitle: '19 Mukhi Rudraksha',
-    heroImage: HERO(19),
-    thumbImage: THUMB('19Mukhi rudraksha.webp'),
-    deity: 'Lord Vishnu (Narayana form)',
-    planet: 'Sun',
-    beejMantra: 'Om Vam Vishnave Ksheershanyaiye Swaha',
-    poojaMantra: 'Om Hreem Hoom Namah',
-    intro:
-      'The presiding Deity of the Nineteen (19) Mukhi Rudraksha is Lord Vishnu in his Narayana form resting on the Ksheer Sagar, with the controlling planet being the Sun. The bead is also called the Janardana Rudraksha — Janardana being a name of Lord Vishnu meaning "He to whom all devotees pray for worldly success and liberation."',
-    benefitGroups: [
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'Ushers in good luck and fulfils material desires; sharpens business acumen.',
-          'Helps execute large tasks — politics, philanthropy, social activity — without stress.',
-          'Excellent for diversified businesses, large establishments and law firms.',
-          'Brings name, fame, authority and stronger leadership.',
-          'Considered ideal for politicians, doctors, lawyers, chartered accountants, administrators and film actors.',
-          'Reduces malefic effects of the Sun and amplifies its positive influence.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Cleanses, balances and aligns all the chakras.',
-          'Grants the ability to manage multiple tasks gracefully — material and spiritual.',
-          'Carries the blessings of Lord Narayana and Goddess Laxmi.',
-          'Brings promotions for service holders and profits for businessmen.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Strengthens internal organs and the heart.',
-          'Boosts circulation and improves eyesight.',
-          'Provides relief from stomach ailments and stress-related issues.',
-          'Helps with heart-related conditions like palpitations and high blood pressure.',
-        ],
-      },
-      {
-        title: 'Who can wear it',
-        points: [
-          'Those seeking a compatible married partner.',
-          'Couples desiring obedient and well-behaved children.',
-          'Entrepreneurs starting a new venture or willing to take risks.',
-          'Professionals in the service sector for financial growth and promotion.',
-        ],
-      },
-    ],
-    howToWear:
-      'Wake up early on a Sunday morning, bathe and clean your puja place. Place Gangajal on the bead and wash it gently. Chant "Om Hreem Hoom Namah" 108 times and wear in white silk or wool thread.',
-    closing:
-      'Pure Vedic Gems is one of the oldest and most experienced sellers of authentic Rudrakshas — sourcing directly from origin, with lab certification and traditional energisation.',
-    shopHref: '/shop/rudraksha/19-mukhi',
-  },
-  {
-    mukhi: 20,
-    slug: '20-mukhi',
-    title: 'Twenty (20) Mukhi Rudraksha',
-    shortTitle: '20 Mukhi Rudraksha',
-    heroImage: HERO(20),
-    thumbImage: THUMB('20Mukhi rudraksha.webp'),
-    deity: 'Lord Brahma (with Vishnu & Mahesh)',
-    planet: 'Moon',
-    beejMantra:
-      'Brahmatve Srujate Vishwam Sthitau Palayate Punah | Rudraroopaay Kalpante Namastubhyam Trimurtaye ||',
-    poojaMantra: 'Om Hreem Hreem Hoom Hoom Brahmane Namah',
-    intro:
-      'The presiding Deity of the 20 Mukhi Rudraksha is Lord Brahma with the controlling planet being the Moon. This is one of the rarest of all Rudrakshas. Its power encompasses the positive aspects of all nine planets — Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu and Ketu — and also the eight Dikpalas (Kubera, Yama, Indra, Varuna, Ishana, Agni, Vayu and Nirrti). The bead is believed to be endowed with the powers of Brahma, Vishnu and Mahesh — the Tridev.',
-    benefitGroups: [
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'Brings quick decision-making and single-minded focus.',
-          'Grants knowledge, powers of visualisation, mental stability and supreme confidence.',
-          'Excellent for researchers, scientists, meta-physicists and seekers of profound knowledge.',
-          'Excellent for intuitive creativity and lasting stability of wealth across generations.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Aligns the wearer with the power of the Creator.',
-          'Expands mind, intellect and consciousness toward Param Brahman.',
-          'Brings a tranquil state of mind — essential for sadhana and meditation.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Provides relief from coughs, colds and chest problems.',
-          'Said to stabilise emotional states — useful in schizophrenia, bipolar disorder, paranoia, dementia and psychosis.',
-          'Believed to help in cases of autism, paralysis, knee pain, arthritis and rheumatism.',
-        ],
-      },
-    ],
-    howToWear:
-      'Energise the bead before wearing. On a Monday morning, bathe, sit facing east, and chant "Om Hreem Hreem Hoom Hoom Brahmane Namah" 108 times. Apply sandalwood paste and roli and then wear.',
-    closing:
-      '20 Mukhi is extremely rare. Pure Vedic Gems is the only company with a complete in-house Vedic setup for purification (shudhikaran) and energisation (pranpratishtha) as per the authentic ancient rituals.',
-    shopHref: '/shop/rudraksha/20-mukhi',
-  },
-  {
-    mukhi: 21,
-    slug: '21-mukhi',
-    title: 'Twenty-One (21) Mukhi Rudraksha',
-    shortTitle: '21 Mukhi Rudraksha',
-    heroImage: HERO(21),
-    thumbImage: THUMB('21Mukhi Rudraksha.webp'),
-    deity: 'Lord Kubera',
-    planet: 'Venus',
-    beejMantra:
-      'Om Yakshaya Kuberaya Vaishravanaya Dhana-dhanyadhipataye Dhana Dhanya Samriddhim Me Dapaya Dapaya Swaha',
-    poojaMantra: 'Om Kuberaye Namah / Om Namah Shivaye',
-    intro:
-      'The presiding Deity of the Twenty-One (21) Mukhi Rudraksha is Lord Kubera and the controlling planet is Venus. Lord Kubera is the treasurer of the gods and guardian of wealth. The wearer is believed to enjoy abundant wealth and material luxury, while gaining the self-confidence and self-esteem to use that abundance wisely. This bead grants benefits on the spiritual, physical and mental levels.',
-    benefitGroups: [
-      {
-        title: 'Beneficial for Success',
-        points: [
-          'Known as the Kubera Rudraksha — said to bring enormous wealth that lasts across generations.',
-          'Even a poor or penniless person is believed to rise to prosperity through the blessing of Lord Kubera.',
-          'Mahalakshmi’s blessings flow only with Kubera’s consent — making this bead an essential supplement to Lakshmi sadhana.',
-          'Most powerful bead for charging a person’s charisma and brightening their aura.',
-        ],
-      },
-      {
-        title: 'Beneficial for Spirituality',
-        points: [
-          'Said to host Lord Brahma, Lord Vishnu and Lord Mahesh.',
-          'Associated with Lord Dhanvantari — the physician of the gods and patron of Ayurveda.',
-          'Believed to protect from black magic and evil tantric kriyas.',
-          'Makes the wearer a successful practitioner of Tantric Yoga and attracts Siddhis.',
-        ],
-      },
-      {
-        title: 'Beneficial for Health',
-        points: [
-          'Powerful cure for diseases of the sexual and reproductive organs.',
-          'Said to revitalise the prostate gland in males and prevent malignant growth.',
-          'The wearer is believed to enjoy the pleasures of youth even in old age.',
-        ],
-      },
-    ],
-    howToWear:
-      'Wash with Gangajal. Energise either yourself or through a learned pundit. Chant "Om Namah Shivaye" or "Om Kuberaye Namah" 108 times. Wear in white silk or wool thread around the neck, as a bracelet, or keep at the place of worship.',
-    closing:
-      '21 Mukhi is the rarest, most prestigious bead — typically a once-in-a-lifetime acquisition. Always insist on lab and X-ray verification. Pure Vedic Gems provides full provenance, lab certificates and in-house energisation.',
-    shopHref: '/shop/rudraksha/21-mukhi',
-  },
+  ...RUDRAKSHA_LEGACY_GUIDES_15_21,
+
 ];
 
 export function getRichRudrakshaGuide(slug: string): MukhiRichGuide | null {
@@ -1078,29 +706,28 @@ export type RudrakshaTypeRow = {
   slug?: string; // links to /knowledge/rudraksha/<slug>
 };
 
+/** Mukhi reference table — matches legacy rudraksha-qualities page exactly. */
 export const RUDRAKSHA_TYPE_TABLE: RudrakshaTypeRow[] = [
-  { mukhi: '1 Mukhi', deity: 'Shiva', planet: 'Sun', mantra: 'Om Hreem Namah', slug: '1-mukhi' },
-  { mukhi: '2 Mukhi', deity: 'Ardhanareeshwar', planet: 'Moon', mantra: 'Om Namah', slug: '2-mukhi' },
-  { mukhi: '3 Mukhi', deity: 'Agni', planet: 'Mars', mantra: 'Om Kleem Namah', slug: '3-mukhi' },
-  { mukhi: '4 Mukhi', deity: 'Brahma', planet: 'Mercury', mantra: 'Om Hreem Namah', slug: '4-mukhi' },
-  { mukhi: '5 Mukhi', deity: 'Kalaagni Rudra', planet: 'Jupiter', mantra: 'Om Hreem Namah', slug: '5-mukhi' },
-  { mukhi: '6 Mukhi', deity: 'Kartikeya', planet: 'Venus', mantra: 'Om Hreem Hum Namah', slug: '6-mukhi' },
-  { mukhi: '7 Mukhi', deity: 'Mahalakshmi', planet: 'Saturn', mantra: 'Om Hum Namah', slug: '7-mukhi' },
-  { mukhi: '8 Mukhi', deity: 'Ganesha', planet: 'Rahu', mantra: 'Om Hum Namah', slug: '8-mukhi' },
-  { mukhi: '9 Mukhi', deity: 'Durga', planet: 'Ketu', mantra: 'Om Hreem Hum Namah', slug: '9-mukhi' },
-  { mukhi: '10 Mukhi', deity: 'Vishnu', planet: '—', mantra: 'Om Hreem Namah', slug: '10-mukhi' },
-  { mukhi: '11 Mukhi', deity: 'Hanuman / Ekadash Rudra', planet: '—', mantra: 'Om Hreem Hum Namah', slug: '11-mukhi' },
-  { mukhi: '12 Mukhi', deity: 'Sun god', planet: 'Sun', mantra: 'Aum Kraum Sraum Raum Surya Namah', slug: '12-mukhi' },
-  { mukhi: '13 Mukhi', deity: 'Indra & Kamadeva', planet: 'Venus', mantra: 'Om Hreem Namah', slug: '13-mukhi' },
-  { mukhi: '14 Mukhi', deity: 'Hanuman / Devmani', planet: 'Saturn', mantra: 'Om Namah', slug: '14-mukhi' },
-  { mukhi: '15 Mukhi', deity: 'Pashupatinath', planet: 'Jupiter', mantra: 'Om Hreem Namah', slug: '15-mukhi' },
-  { mukhi: '16 Mukhi', deity: 'Lord Ram', planet: 'Rahu', mantra: 'Om Hreem Shivaya', slug: '16-mukhi' },
-  { mukhi: '17 Mukhi', deity: 'Vishwakarma', planet: 'Saturn', mantra: 'Om Namah Shivaya', slug: '17-mukhi' },
-  { mukhi: '18 Mukhi', deity: 'Bhumi Devi', planet: 'Mars', mantra: 'Om Hreem Shreem Vasudhaiye Swaha', slug: '18-mukhi' },
-  { mukhi: '19 Mukhi', deity: 'Lord Narayana', planet: 'Sun', mantra: 'Om Namah Shivaya', slug: '19-mukhi' },
-  { mukhi: '20 Mukhi', deity: 'Vishwasu Sadhu & Narayan', planet: 'Moon', mantra: 'Om Namah Shivaya', slug: '20-mukhi' },
-  { mukhi: '21 Mukhi', deity: 'EkAlakh Niranjan / Omkar & Narayan', planet: 'Venus', mantra: 'Om Namah Shivaya', slug: '21-mukhi' },
-  { mukhi: 'Gauri Shankar', deity: 'Shiva & Parvati', planet: '—', mantra: 'Om Namah Shivaya' },
+  { mukhi: '#1 Mukhi', deity: 'Shiva', planet: 'Sun', mantra: 'Om Hreem Namah', slug: '1-mukhi' },
+  { mukhi: '#2 Mukhi', deity: 'Ardhnareeshwar', planet: 'Moon', mantra: 'Om Namah', slug: '2-mukhi' },
+  { mukhi: '#3 Mukhi', deity: 'Agni', planet: 'Mars', mantra: 'Om Kleem Namah', slug: '3-mukhi' },
+  { mukhi: '#4 Mukhi', deity: 'Brahma', planet: 'Mercury', mantra: 'Om Hreem Namah', slug: '4-mukhi' },
+  { mukhi: '#5 Mukhi', deity: 'Kalaagni Rudra', planet: 'Jupiter', mantra: 'Om Hreem Namah', slug: '5-mukhi' },
+  { mukhi: '#6 Mukhi', deity: 'Kartikeya', planet: 'Venus', mantra: 'Om Hreem Hum Namah', slug: '6-mukhi' },
+  { mukhi: '#7 Mukhi', deity: 'Mahalaxmi', planet: 'Saturn', mantra: 'Om Hum Namah', slug: '7-mukhi' },
+  { mukhi: '#8 Mukhi', deity: 'Ganesh', planet: 'Rahu', mantra: 'Om Hum Namah', slug: '8-mukhi' },
+  { mukhi: '#9 Mukhi', deity: 'Durga', planet: 'Ketu', mantra: 'Om Hreem Hum Namah', slug: '9-mukhi' },
+  { mukhi: '#10 Mukhi', deity: 'Vishnu', planet: 'None', mantra: 'Om Hreem Namah', slug: '10-mukhi' },
+  { mukhi: '#11 Mukhi', deity: 'Hanuman', planet: 'None', mantra: 'Om Hreem Hum Namah', slug: '11-mukhi' },
+  { mukhi: '#12 Mukhi', deity: 'Sun god', planet: 'Sun', mantra: 'Aum Kraum Sraum Raum Surya Namah', slug: '12-mukhi' },
+  { mukhi: '#13 Mukhi', deity: 'Indra', planet: 'Venus', mantra: 'Om Hreem Namah', slug: '13-mukhi' },
+  { mukhi: '#14 Mukhi', deity: 'Hanuman', planet: 'Saturn', mantra: 'Om Namah', slug: '14-mukhi' },
+  { mukhi: '#16 Mukhi', deity: 'Lord Ram', planet: 'None', mantra: 'Om Hreem Shivaya', slug: '16-mukhi' },
+  { mukhi: '#17 Mukhi', deity: 'Vishvakarma', planet: 'None', mantra: 'Om Namah Shivaya', slug: '17-mukhi' },
+  { mukhi: '#19 Mukhi', deity: 'Lord Narayana', planet: 'None', mantra: 'Om Namah Shivaya', slug: '19-mukhi' },
+  { mukhi: '#20 Mukhi', deity: 'Vishwasu Sadhu & Narayan', planet: 'None', mantra: 'Om Namah Shivaya', slug: '20-mukhi' },
+  { mukhi: '#21 Mukhi', deity: 'EkAlakh Niranjan that is Omkar & Narayan', planet: 'None', mantra: 'Om Namah Shivaya', slug: '21-mukhi' },
+  { mukhi: '#Gauri Shankar', deity: 'Shiva & Parvati', planet: 'None', mantra: 'Om Namah Shivaya' },
 ];
 
 export type RudrakshaFaq = { question: string; answer: string };
@@ -1109,66 +736,86 @@ export const RUDRAKSHA_FAQS: RudrakshaFaq[] = [
   {
     question: 'What is rudraksha?',
     answer:
-      'Rudraksha is the seed of a tree known as Elaeocarpus Ganitrus. It has been a significant part of human life since its origin. Rudrakshas are considered the tears of Lord Shiva. Each bead is associated with a planet, and wearing a specific bead as per one’s birth chart — under the guidance of a knowledgeable astrologer — is believed to provide benefits in career, health, relationships and spiritual life.',
+      'Rudraksha is a popular seed of a tree known as Elaeocarpus Ganitrus. It has been a significant part of human life since its origin. Rudrakshas are considered as tears of God Shiva. These beads are not only used as jewellery but also as a sacred astrological remedy. As per Vedic astrology, each rudraksha bead is associated with a planet, and wearing a specific bead as per their birth chart analysis under the guidance of a knowledgeable astrologer provides various benefits such as better career opportunities, health, healthy relationships, and so on.',
   },
   {
     question: 'What is natural rudraksha?',
     answer:
-      'Natural rudrakshas are those which are neither chemically treated nor enhanced. They are mostly found in the Himalayan region — Nepal, Indonesia, Malaysia and so on. Nepal-origin rudrakshas are considered the best for healing purposes. Always consult a certified astro-gemologist before buying.',
+      'Natural rudrakshas are those rudrakshas which are neither treated nor chemically enhanced. These are mostly found in the Himalayan region, such as Nepal, Indonesia, Malaysia, and so on. Nepal origin rudrakshas are considered best for healing purposes. Before buying rudrakshas, one should contact a certified astro gemologist to choose natural quality rudrakshas.',
   },
   {
     question: 'How do I identify authentic quality rudrakshas?',
     answer:
-      'Consider origin, colour, shape, size and weight. Recognising originals can be difficult due to fakes in the market — so it is important to consult a qualified astro-gemologist and rely on lab (preferably X-ray) verification.',
+      'In order to identify natural quality rudrakshas, one should consider their origin, colour, shape, size, weight, and so on. Nowadays, recognising an original rudraksha is a challenging task because of the availability of manufactured and fake ones in the market. That is why it is important to consult a qualified astro gemologist to choose the best quality of rudraksha beads.',
   },
   {
     question: 'What are the prices of natural quality rudraksha in India?',
     answer:
-      'Prices depend on origin, quality, number of mukhis, colour, shape and size. In India they range from a few hundred rupees for common mukhis to several lakhs for rare beads.',
+      'The prices of natural quality rudraksha depend on their origin, quality, number of Mukhis, colour, shape, size, and so on. The prices of rudrakshas in India range from some rupees to lakhs, depending on their quality.',
   },
   {
     question: 'Who can wear rudrakshas?',
     answer:
-      'Anyone can wear a rudraksha, whether for healing or jewellery. For optimum healing benefit, consult an astrologer for a chart-based recommendation and a qualified astro-gemologist for an authentic bead. Vedic purification and energisation are also recommended.',
+      'Anyone can wear rudraksha, whether you are looking for healing purposes or want to wear it as jewellery. However, to get an optimum healing result, one should consult an astrologer to analyse their birth chart to choose the most suitable Mukhi. Besides, you should also take help of astrogemologst to recognise the natural quality of the rudrakshas. In addition to this, you can also get the support of learned pandits to conduct Vedic rituals before wearing a rudraksha to get optimum benefits. We at Pure Vedic Gems always ensure to provide the best quality rudrakshas at a reasonable price.',
   },
   {
     question: 'Which country produces the best quality natural rudrakshas?',
     answer:
-      'Nepal-origin rudrakshas are considered the best in the world. Indonesia, Malaysia and India also produce rudraksha beads.',
+      'Nepal origin rudrakshas are considered the best quality in the world. Indonesia, Malaysia, and India are also the countries where Rudraksha beads are found.',
   },
   {
-    question: 'How many types of rudrakshas are available in the market?',
+    question: 'How many types of rudrakshas available in the market?',
     answer:
-      'Rudraksha beads range from 1 to 21 mukhi, with special types such as Gauri Shankar, Ganesh, Garbh-Gauri and Nir Mukhi. Each bead has unique significance in healing therapy.',
+      'Rudraksha beads range from 1 to 21 Mukhi. Each bead has its own significance in healing therapy. However, if you want optimum healing power from these sacred beads, you should conduct purification and energisation rituals under the guidance of a Vedic priest (pandit). We at Pure Vedic Gems can help you in conducting authentic Vedic rituals before wearing a rudraksha.',
   },
   {
     question: 'Why should I not wear broken rudraksha beads?',
     answer:
-      'To experience the healing effects, always wear a non-tampered, intact bead. Incomplete or broken beads are not considered effective as a remedy in Vedic astrology.',
+      'In order to get the healing effects of rudraksha beads, one should always wear a non-tempered bead. As per Vedic astrology, incomplete beads are not effective as a healing remedy.',
   },
   {
     question: 'Why is rudraksha a popular astrological remedy?',
     answer:
-      'Each rudraksha bead is associated with a specific planet, making it a powerful planetary remedy. The beads are also considered protective against negative energies. Analyse your birth chart with a knowledgeable astrologer for the most suitable mukhi.',
+      'According to Vedic astrology, each rudraksha bead is associated with a specific planet, which is one of the significant factors to become a popular choice in astrology. These are considered as powerful protective remedies against negative energies. In order to get optimum astrological benefit from this remedy, one must analyse their birth chart with a knowledgeable astrologer to know the best suitable Mukhi and consult with an astro gemologist to choose a natural quality rudraksha.',
   },
   {
     question: 'Does rudraksha have any medicinal use?',
     answer:
-      'Rudrakshas have traditionally been considered useful in managing conditions like blood pressure, anxiety, sleep disorders and skin problems — but this should always be done under the guidance of an expert. Today they are mostly used for spiritual and astrological purposes.',
+      'Rudrakshas are considered as an effective treatment for diseases like blood pressure, anxiety, sleep disorders, skin problems, and many others. However, it is crucial to take it under the guidance of an expert to get its benefits. Nowadays, rudrakshas are mostly used for spiritual and astrological purposes.',
+  },
+  {
+    question: 'Does rudraksha cause any harmful effects?',
+    answer:
+      'As per Vedic astrology, natural rudrakshas are a kind of Ayurvedic herb which does not harm. However, someone who has an allergy to metal or the thread in which it is built should consider it under the guidance of experts.',
   },
   {
     question: 'How should I wear rudrakshas?',
     answer:
-      'Consult a knowledgeable astrologer to choose the most suitable mukhi as per your birth chart. Take help from an astro-gemologist for selecting an authentic bead. Energise and purify under Vedic priests to harness its full potency.',
+      'In order to get optimum benefits from this remedy, you should consult a knowledgeable astrologer to choose the most suitable Mukhi as per your birth chart. You should get help from an astro gemologist to choose a natural quality rudraksh. Besides, one should also energise and purify rudrakshas under the guidance of Vedic priests (pandit) to harness its full potency.',
+  },
+  {
+    question: 'How much time does it take to provide the results of wearing rudraksha?',
+    answer:
+      'It depends on individual to individual because each person has a specific planetary position in their birth chart. It is always recommended to consult a Vedic astrologer while wearing rudraksha for maximum healing benefits.',
   },
   {
     question: 'Can I share my rudrakshas with others?',
     answer:
-      'Rudrakshas absorb and carry the energy of the wearer, building a personal connection over time. Hence wearing someone else’s used rudraksha is not recommended in Vedic tradition.',
+      'As per Vedic astrology, rudrakshas absorb and carry the energies of the wearer because these beads tend to build personal connections with the wearer over time. Hence, wearing used rudraksha is prohibited in astrology.',
+  },
+  {
+    question: 'How do I choose the best online store for rudraksha ?',
+    answer:
+      'While choosing the best online store for rudraksha, you should consider previous customer reviews and testimonials, images of rudraksha beads, refund and return policy, payment options, secured delivery, and so on.',
+  },
+  {
+    question: 'How can I find a government certified rudraksha shop in delhi?',
+    answer:
+      'There is no government certified rudraksha shop in Delhi. However, you can find many companies which offer natural rudrakshas certified from government organisations. You should always prefer one of the oldest rudraksha sellers to ensure the quality. We at Pure Vedic Gems always ensure high quality natural rudrakshas at reasonable prices. You can shop natural quality rudrakshas at our Delhi outlet.',
   },
   {
     question: 'Where to buy original rudraksha online?',
     answer:
-      'Pure Vedic Gems is one of the oldest rudraksha sellers in the market — a family business since 1937 dealing only in authentic, certified and energised rudrakshas at fair prices.',
+      'Pure Vedic Gems is one of the oldest rudraksha sellers in the market. We are a premium organisation, dedicated to delivery quality products. You can get the best quality Nepali rudrakshas from our online store at reasonable prices.',
   },
 ];

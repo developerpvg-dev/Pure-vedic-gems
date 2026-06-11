@@ -116,30 +116,43 @@ function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
   );
 }
 
-function CategoryMenuSection({ group, columns = 1 }: { group: StorefrontCategoryGroup; columns?: 1 | 2 | 3 }) {
+function CategoryMenuSection({
+  group,
+  columns = 1,
+  showMeta = true,
+  maxItems,
+}: {
+  group: StorefrontCategoryGroup;
+  columns?: 1 | 2 | 3 | 4;
+  showMeta?: boolean;
+  maxItems?: number;
+}) {
+  const visibleItems = maxItems != null ? group.subcategories.slice(0, maxItems) : group.subcategories;
+  const hasMore = maxItems != null && group.subcategories.length > maxItems;
+
   return (
     <div>
       <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7A1515', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid #EDE6D5', fontFamily: "'Roboto', sans-serif" }}>
         {group.label}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0,1fr))`, gap: '2px' }}>
-        {group.subcategories.map((link) => (
+        {visibleItems.map((link) => (
           <Link
             key={`${group.slug}-${link.href}-${link.label}`}
             href={link.href}
             className="pvg-mega-item"
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '2px', borderLeft: '2px solid transparent', transition: 'background 0.2s, border-color 0.2s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '2px', borderLeft: '2px solid transparent', transition: 'background 0.2s, border-color 0.2s', minWidth: 0 }}
           >
             <CategoryThumb link={link} />
-            <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.2, fontFamily: "'Roboto', sans-serif" }}>{link.label}</span>
-              {link.meta ? <span style={{ fontSize: '11.5px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif" }}>{link.meta}</span> : null}
+            <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.3, fontFamily: "'Roboto', sans-serif", whiteSpace: 'normal', wordBreak: 'break-word' }}>{link.label}</span>
+              {showMeta && link.meta ? <span style={{ fontSize: '11.5px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif", marginTop: '2px' }}>{link.meta}</span> : null}
             </span>
           </Link>
         ))}
       </div>
       <Link href={group.href} style={{ display: 'block', padding: '10px 0 0', marginTop: '8px', borderTop: '1px solid #EDE6D5', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7A1515', fontFamily: "'Roboto', sans-serif" }}>
-        View All {group.label} →
+        {hasMore ? `Show All ${group.label} →` : `View All ${group.label} →`}
       </Link>
     </div>
   );
@@ -176,9 +189,9 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
     const upratna = findStorefrontGroup(categoryGroups, 'upratna');
     return (
       <div style={{ ...dropStyle, width: '1240px', maxWidth: 'calc(100vw - 160px)', padding: '24px 28px 20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '28px' }}>
-          <CategoryMenuSection group={navaratna} columns={2} />
-          <CategoryMenuSection group={upratna} columns={2} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '28px' }}>
+          <CategoryMenuSection group={navaratna} columns={2} showMeta />
+          <CategoryMenuSection group={upratna} columns={3} showMeta={false} maxItems={15} />
         </div>
       </div>
     );
@@ -186,8 +199,8 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
 
   if (item.dropdown === 'rudraksha') {
     return (
-      <div style={{ ...dropStyle, width: '360px', padding: '18px 20px 16px' }}>
-        <CategoryMenuSection group={findStorefrontGroup(categoryGroups, 'rudraksha')} columns={2} />
+      <div style={{ ...dropStyle, width: '720px', maxWidth: 'calc(100vw - 160px)', padding: '18px 20px 16px' }}>
+        <CategoryMenuSection group={findStorefrontGroup(categoryGroups, 'rudraksha')} columns={4} maxItems={20} />
       </div>
     );
   }
@@ -217,7 +230,6 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
       { label: "Rudraksha Library", href: '/knowledge/rudraksha' },
       { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
       { label: 'Gems Qualities', href: '/knowledge/gem-qualities' },
-      { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
       { label: 'Vedic Astrology', href: '/knowledge/astrology' },
     ] as const;
     return (
@@ -645,9 +657,6 @@ export function SiteHeader() {
           .pvg-mob-action-pill-divider {
             display: none !important;
           }
-          .pvg-mob-notify-wrap {
-            display: none !important;
-          }
           .pvg-mob-account-shell {
             display: none !important;
           }
@@ -760,7 +769,7 @@ export function SiteHeader() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30} priority
                   style={{ width: '150px', height: '30px', objectFit: 'contain', display: 'block' }} />
-                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '3px', paddingLeft: '2px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '4px', paddingLeft: '16px' }}>
                   Since 1937
                 </span>
               </div>
@@ -837,7 +846,7 @@ export function SiteHeader() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority
                   style={{ width: '120px', height: '24px', objectFit: 'contain', display: 'block' }} />
-                <span style={{ fontSize: '8px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '2px', paddingLeft: '2px' }}>Since 1937</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '3px', paddingLeft: '12px' }}>Since 1937</span>
               </div>
             </Link>
             <div style={{ flex: 1 }} />
@@ -867,7 +876,7 @@ export function SiteHeader() {
               <div aria-hidden="true" className="pvg-mob-action-divider" />
               <div className="pvg-mob-account-shell">
                 <Suspense fallback={<span style={{ width: '38px', height: '38px' }} />}>
-                  <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" showNotificationsInDropdown />
+                  <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
                 </Suspense>
               </div>
               {/* Custom 3-line hamburger matching static HTML */}

@@ -1,4 +1,6 @@
-﻿export type StaticGuideStat = {
+﻿import { rudrakshaMukhiImageByNumber } from './rudraksha-category-images';
+
+export type StaticGuideStat = {
   label: string;
   value: string;
 };
@@ -262,31 +264,30 @@ type RudrakshaSeed = {
   focus: string;
   deity: string;
   association: string;
-  image: string;
 };
 
 const rudrakshaSeeds: RudrakshaSeed[] = [
-  { mukhi: 1, focus: 'deep spiritual focus, leadership, and single-pointed devotion', deity: 'Lord Shiva', association: 'Sun', image: '/home/rudrakhshas images/1Mukhi-150x150.webp' },
-  { mukhi: 2, focus: 'harmony, partnership, and emotional balance', deity: 'Ardhanarishvara', association: 'Moon', image: '/home/rudrakhshas images/2Mukhi-150x150.webp' },
-  { mukhi: 3, focus: 'confidence, release from past burden, and active energy', deity: 'Agni', association: 'Mars', image: '/home/rudrakhshas images/3Mukhi-150x150.webp' },
-  { mukhi: 4, focus: 'learning, communication, and structured thinking', deity: 'Lord Brahma', association: 'Mercury', image: '/home/rudrakhshas images/4Mukhi-150x150.webp' },
-  { mukhi: 5, focus: 'daily discipline, calmness, and regular spiritual practice', deity: 'Kalagni Rudra', association: 'Jupiter', image: '/home/rudrakhshas images/5Mukhi-150x150.webp' },
-  { mukhi: 6, focus: 'discipline, courage, and self-control', deity: 'Kartikeya', association: 'Venus', image: '/home/rudrakhshas images/6Mukhi-150x150.webp' },
-  { mukhi: 7, focus: 'stability, responsibility, and prosperity discipline', deity: 'Mahalakshmi', association: 'Saturn', image: '/home/rudrakhshas images/7Mukhi-150x150.webp' },
-  { mukhi: 8, focus: 'obstacle clearing, resilience, and Rahu-related support', deity: 'Lord Ganesha', association: 'Rahu', image: '/home/rudrakhshas images/8Mukhi-150x150.webp' },
-  { mukhi: 9, focus: 'strength, protection, and devotional energy', deity: 'Goddess Durga', association: 'Ketu', image: '/home/rudrakhshas images/9Mukhi-150x150.webp' },
-  { mukhi: 10, focus: 'directional protection and steadiness during external pressure', deity: 'Lord Vishnu', association: 'All planets', image: '/home/rudrakhshas images/10Mukhi-150x150.webp' },
-  { mukhi: 11, focus: 'discipline, courage, and devotional strength', deity: 'Ekadash Rudra', association: 'Meditative protection', image: '/home/rudrakhshas images/11Mukhi-150x150.webp' },
-  { mukhi: 12, focus: 'radiance, authority, and self-belief', deity: 'Surya', association: 'Sun', image: '/home/rudrakhshas images/12Mukhi-150x150.webp' },
-  { mukhi: 13, focus: 'attraction, refinement, and wish-fulfilment traditions', deity: 'Indra and Kamadeva', association: 'Venus', image: '/home/rudrakhshas images/13Mukhi-150x150.webp' },
-  { mukhi: 14, focus: 'intuition, decision-making, and deep protection practice', deity: 'Lord Shiva', association: 'Saturn and Mars traditions', image: '/home/rudrakhshas images/14Mukhi-150x150.webp' },
-  { mukhi: 15, focus: 'emotional healing, heart-led clarity, and steady devotion', deity: 'Pashupatinath', association: 'Inner balance', image: '/home/rudrakhshas images/15Mukhi--150x150.webp' },
-  { mukhi: 16, focus: 'protection, courage, and resilience in difficult periods', deity: 'Mahamrityunjaya Shiva', association: 'Moon traditions', image: '/home/rudrakhshas images/16Mukhi rudraksha.webp' },
-  { mukhi: 17, focus: 'prosperity, achievement, and long-range effort', deity: 'Vishwakarma', association: 'Material growth', image: '/home/rudrakhshas images/17Mukhi rudraksha.webp' },
-  { mukhi: 18, focus: 'grounding, stability, and connection with the earth element', deity: 'Bhumi Devi', association: 'Earth element', image: '/home/rudrakhshas images/18Mukhi rudraksha.webp' },
-  { mukhi: 19, focus: 'abundance, protection, and balanced leadership', deity: 'Lord Narayana', association: 'Prosperity traditions', image: '/home/rudrakhshas images/19Mukhi rudraksha.webp' },
-  { mukhi: 20, focus: 'spiritual discipline, protection, and broad wisdom', deity: 'Brahma, Vishnu, and Mahesh', association: 'Higher guidance', image: '/home/rudrakhshas images/20Mukhi rudraksha.webp' },
-  { mukhi: 21, focus: 'rare all-round spiritual and material prosperity traditions', deity: 'Kubera', association: 'Rare prosperity bead', image: '/home/rudrakhshas images/21Mukhi Rudraksha.webp' },
+  { mukhi: 1, focus: 'deep spiritual focus, leadership, and single-pointed devotion', deity: 'Lord Shiva', association: 'Sun' },
+  { mukhi: 2, focus: 'harmony, partnership, and emotional balance', deity: 'Ardhanarishvara', association: 'Moon' },
+  { mukhi: 3, focus: 'confidence, release from past burden, and active energy', deity: 'Agni', association: 'Mars' },
+  { mukhi: 4, focus: 'learning, communication, and structured thinking', deity: 'Lord Brahma', association: 'Mercury' },
+  { mukhi: 5, focus: 'daily discipline, calmness, and regular spiritual practice', deity: 'Kalagni Rudra', association: 'Jupiter' },
+  { mukhi: 6, focus: 'discipline, courage, and self-control', deity: 'Kartikeya', association: 'Venus' },
+  { mukhi: 7, focus: 'stability, responsibility, and prosperity discipline', deity: 'Mahalakshmi', association: 'Saturn' },
+  { mukhi: 8, focus: 'obstacle clearing, resilience, and Rahu-related support', deity: 'Lord Ganesha', association: 'Rahu' },
+  { mukhi: 9, focus: 'strength, protection, and devotional energy', deity: 'Goddess Durga', association: 'Ketu' },
+  { mukhi: 10, focus: 'directional protection and steadiness during external pressure', deity: 'Lord Vishnu', association: 'All planets' },
+  { mukhi: 11, focus: 'discipline, courage, and devotional strength', deity: 'Ekadash Rudra', association: 'Meditative protection' },
+  { mukhi: 12, focus: 'radiance, authority, and self-belief', deity: 'Surya', association: 'Sun' },
+  { mukhi: 13, focus: 'attraction, refinement, and wish-fulfilment traditions', deity: 'Indra and Kamadeva', association: 'Venus' },
+  { mukhi: 14, focus: 'intuition, decision-making, and deep protection practice', deity: 'Lord Shiva', association: 'Saturn and Mars traditions' },
+  { mukhi: 15, focus: 'emotional healing, heart-led clarity, and steady devotion', deity: 'Pashupatinath', association: 'Inner balance' },
+  { mukhi: 16, focus: 'protection, courage, and resilience in difficult periods', deity: 'Mahamrityunjaya Shiva', association: 'Moon traditions' },
+  { mukhi: 17, focus: 'prosperity, achievement, and long-range effort', deity: 'Vishwakarma', association: 'Material growth' },
+  { mukhi: 18, focus: 'grounding, stability, and connection with the earth element', deity: 'Bhumi Devi', association: 'Earth element' },
+  { mukhi: 19, focus: 'abundance, protection, and balanced leadership', deity: 'Lord Narayana', association: 'Prosperity traditions' },
+  { mukhi: 20, focus: 'spiritual discipline, protection, and broad wisdom', deity: 'Brahma, Vishnu, and Mahesh', association: 'Higher guidance' },
+  { mukhi: 21, focus: 'rare all-round spiritual and material prosperity traditions', deity: 'Kubera', association: 'Rare prosperity bead' },
 ];
 
 export const RUDRAKSHA_GUIDES: StaticKnowledgeGuide[] = rudrakshaSeeds.map((rudraksha) => ({
@@ -296,7 +297,7 @@ export const RUDRAKSHA_GUIDES: StaticKnowledgeGuide[] = rudrakshaSeeds.map((rudr
   category: 'Rudraksha Guide',
   eyebrow: rudraksha.association,
   description: `A practical guide to ${rudraksha.mukhi} Mukhi Rudraksha, including traditional benefits, identification checks, wearing rules, quality notes, pricing factors, and shop links.`,
-  heroImage: rudraksha.image,
+  heroImage: rudrakshaMukhiImageByNumber(rudraksha.mukhi)!,
   shopHref: `/shop/rudraksha/${rudraksha.mukhi}-mukhi`,
   parentHref: '/knowledge/rudraksha',
   parentLabel: 'Rudraksha Guides',

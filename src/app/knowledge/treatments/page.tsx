@@ -205,9 +205,9 @@ export default function GemstoneTreatmentsPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 
   return (
-    <>
+    <div className="pvg-knowledge-page">
       {/* ── Hero + Intro ── */}
-      <section className="bg-secondary/30 py-8 md:py-10">
+      <section className="border-b border-[#e8e0d4] bg-white py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
           <ScrollReveal>
             <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
@@ -222,7 +222,7 @@ export default function GemstoneTreatmentsPage() {
       </section>
 
       {/* ── Content ── */}
-      <section className="bg-background py-8 md:py-10">
+      <section className="py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="space-y-6">
 
@@ -376,6 +376,6 @@ export default function GemstoneTreatmentsPage() {
           }),
         }}
       />
-    </>
+    </div>
   );
 }

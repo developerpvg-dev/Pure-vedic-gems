@@ -12,20 +12,21 @@ export const revalidate = 300;
 
 type Props = { params: Promise<{ slug: string }> };
 
-async function loadVideo(slug: string) {
+async function loadVideo(rawSlug: string) {
   const supabase = await createClient();
+  const slug = decodeURIComponent(rawSlug);
   const { data } = await supabase
     .from('videos')
     .select('*')
     .eq('slug', slug)
     .eq('is_active', true)
-    .single();
+    .maybeSingle();
   return (data ?? null) as LibraryVideo | null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const video = await loadVideo(decodeURIComponent(slug));
+  const video = await loadVideo(slug);
   if (!video) return { title: 'Video Not Found' };
 
   const description =
@@ -54,7 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function VideoDetailPage({ params }: Props) {
   const { slug } = await params;
-  const video = await loadVideo(decodeURIComponent(slug));
+  const video = await loadVideo(slug);
   if (!video) notFound();
 
   const supabase = await createClient();
@@ -159,16 +160,14 @@ export default async function VideoDetailPage({ params }: Props) {
       {related.length > 0 && (
         <section className="bg-secondary/20 py-12 md:py-16">
           <div className="mx-auto max-w-5xl px-6">
-            <ScrollReveal>
-              <h2 className="mb-6 font-heading text-xl font-semibold text-primary md:text-2xl">
-                More from {category?.title ?? 'this category'}
-              </h2>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {related.map((item) => (
-                  <VideoCard key={item.id} video={item} />
-                ))}
-              </div>
-            </ScrollReveal>
+            <h2 className="mb-6 font-heading text-xl font-semibold text-primary md:text-2xl">
+              More from {category?.title ?? 'this category'}
+            </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {related.map((item) => (
+                <VideoCard key={item.id} video={item} />
+              ))}
+            </div>
           </div>
         </section>
       )}

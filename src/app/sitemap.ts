@@ -138,7 +138,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     entry('/shop', { changeFrequency: 'daily', priority: 0.9 }),
     entry('/knowledge', { priority: 0.82 }),
-    ...['gemstones', 'treatments', 'energized-gems', 'gems-care', 'rudraksha', 'astrology', 'buying-guides'].map((category) => entry(`/knowledge/${category}`, { priority: 0.7 })),
+    ...['gemstones', 'treatments', 'energized-gems', 'gems-care', 'rudraksha', 'astrology'].map((category) => entry(`/knowledge/${category}`, { priority: 0.7 })),
     ...NAVARATNA_GUIDES.map((guide) => ({
       url: absoluteUrl(`/knowledge/gemstones/${guide.slug}`),
       lastModified: new Date(guide.updatedAt),

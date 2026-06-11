@@ -26,7 +26,7 @@ export function GemQualityContent({ slug }: { slug: string }) {
 
   return (
     <main
-      className="min-h-screen bg-[#FDFAF5] pb-20 pt-28 md:pt-32"
+      className="pvg-knowledge-page pb-20"
       style={{ fontFamily: ROBOTO }}
     >
       <script
@@ -175,20 +175,20 @@ export function GemQualityContent({ slug }: { slug: string }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#DDD0B4] bg-[#4D0A0A] p-7 text-[#F7EAD0] md:p-9">
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#E6C36F]">
+          <div className="pvg-knowledge-on-dark rounded-2xl p-7 md:p-9">
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#a67c2e]">
               Astrological Benefits
             </p>
-            <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">
+            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
               Why Wear {gem.hindiName}?
             </h2>
             <ul className="mt-6 space-y-4">
               {gem.benefits.map((b, i) => (
                 <li key={i} className="flex gap-4">
-                  <span className="mt-1 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#B8861E] text-sm font-bold text-white">
+                  <span className="mt-1 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#a67c2e] text-sm font-bold text-white">
                     {i + 1}
                   </span>
-                  <span className="text-sm leading-7 text-[#F7EAD0]/90 md:text-base">{b}</span>
+                  <span className="text-sm leading-7 md:text-base">{b}</span>
                 </li>
               ))}
             </ul>
@@ -326,11 +326,11 @@ export function GemQualityContent({ slug }: { slug: string }) {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#DDD0B4] bg-[#4D0A0A] p-7 text-[#F7EAD0] md:p-9">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#E6C36F]">
+          <div className="pvg-knowledge-on-dark rounded-2xl p-7 md:p-9">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#a67c2e]">
               Why Pure Vedic Gems
             </p>
-            <h3 className="mt-2 text-2xl font-bold text-white">
+            <h3 className="mt-2 text-2xl font-bold">
               Authenticity, Backed by Heritage
             </h3>
             <ul className="mt-6 space-y-5">
@@ -341,12 +341,12 @@ export function GemQualityContent({ slug }: { slug: string }) {
                 { title: 'Free Recommendation', desc: 'Birth-chart-based guidance from senior Vedic astrologers.' },
               ].map((f) => (
                 <li key={f.title} className="flex gap-4">
-                  <span className="mt-1 inline-flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#B8861E] text-base font-bold text-white">
+                  <span className="mt-1 inline-flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#a67c2e] text-base font-bold text-white">
                     ✓
                   </span>
                   <div>
-                    <p className="text-base font-bold text-white">{f.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-[#F7EAD0]/85">{f.desc}</p>
+                    <p className="text-base font-bold">{f.title}</p>
+                    <p className="pvg-knowledge-on-dark-muted mt-1 text-sm leading-6">{f.desc}</p>
                   </div>
                 </li>
               ))}
@@ -408,7 +408,7 @@ export function GemQualityContent({ slug }: { slug: string }) {
                   <span
                     className={
                       'flex h-7 w-7 flex-none items-center justify-center rounded-full text-lg font-bold transition ' +
-                      (isOpen ? 'bg-[#4D0A0A] text-white' : 'bg-[#FDF6E8] text-[#4D0A0A]')
+                      (isOpen ? 'bg-[#f7f2ea] text-[#5c3d3d]' : 'bg-[#faf9f7] text-[#7a3a3a]')
                     }
                     aria-hidden
                   >
@@ -456,15 +456,8 @@ export function GemQualityContent({ slug }: { slug: string }) {
 
       {/* Big CTA */}
       <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
-        <div
-          className="relative overflow-hidden rounded-2xl px-6 py-14 text-center text-white md:px-12 md:py-20"
-          style={{
-            background: 'linear-gradient(135deg, #4D0A0A 0%, #7A1515 55%, #4D0A0A 100%)',
-          }}
-        >
-          <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-[#B8861E]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-[#D4A843]/20 blur-3xl" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#E6C36F]">
+        <div className="pvg-knowledge-cta relative overflow-hidden rounded-2xl px-6 py-14 text-center md:px-12 md:py-20">
+          <p className="pvg-knowledge-cta-eyebrow text-[11px] font-bold uppercase tracking-[0.28em]">
             Authentic · Energised · Certified
           </p>
           <h2
@@ -473,28 +466,22 @@ export function GemQualityContent({ slug }: { slug: string }) {
           >
             Find the perfect {gem.name} for your karmic blueprint
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-[#F7EAD0]/85 md:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
             Speak with our Vedic astrologers and astro-gemologists for a free chart-based
             {' '}{gem.name} recommendation — backed by lab certification and Vedic energisation.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/shop"
-              className="inline-flex items-center justify-center rounded-md bg-[#B8861E] px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition hover:bg-[#D4A843]"
-            >
+            <Link href="/shop" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
               Shop {gem.name}
             </Link>
-            <Link
-              href="/consultation"
-              className="inline-flex items-center justify-center rounded-md border-2 border-white/80 bg-transparent px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:bg-white/10"
-            >
+            <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
               Free Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-md bg-white px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+              className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm"
             >
               WhatsApp Astrologer
             </a>

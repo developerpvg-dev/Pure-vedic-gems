@@ -45,7 +45,6 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
       { label: 'Gem Recommendation Tool', href: '/tools/recommendation' },
       { label: 'Carat to Ratti Converter', href: '/tools/carat-to-ratti' },
       { label: 'Ring Size Guide', href: '/tools/ring-size-guide' },
-      { label: 'Buying Guides', href: '/knowledge/buying-guides' },
     ],
   },
   {
@@ -58,7 +57,6 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
       { label: 'Treatments', href: '/knowledge/treatments' },
       { label: 'Energized Gems', href: '/knowledge/energized-gems' },
       { label: 'Gems Care', href: '/knowledge/gems-care' },
-      { label: 'Buying Guides', href: '/knowledge/buying-guides' },
       { label: 'Blog', href: '/blog' },
       { label: 'Account', href: '/account' },
     ],

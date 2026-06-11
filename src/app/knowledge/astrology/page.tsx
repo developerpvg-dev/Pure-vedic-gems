@@ -25,8 +25,8 @@ const PLANET_GEMS = [
 
 export default function AboutVedicAstrologyPage() {
   return (
-    <>
-      <section className="bg-secondary/30 py-12 md:py-14 lg:py-16">
+    <div className="pvg-knowledge-page">
+      <section className="border-b border-[#e8e0d4] bg-white py-12 md:py-14 lg:py-16">
         <div className="mx-auto max-w-7xl px-6 text-center">
           <ScrollReveal>
             <h1 className="font-heading text-3xl font-bold text-primary md:text-4xl lg:text-5xl">
@@ -47,7 +47,7 @@ export default function AboutVedicAstrologyPage() {
         </div>
       </section>
 
-      <section className="bg-background pt-4 pb-16 md:pt-6 md:pb-20">
+      <section className="pt-4 pb-16 md:pt-6 md:pb-20">
         <div className="mx-auto max-w-screen-2xl px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="space-y-12 md:space-y-14">
             <ScrollReveal>
@@ -295,6 +295,6 @@ export default function AboutVedicAstrologyPage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

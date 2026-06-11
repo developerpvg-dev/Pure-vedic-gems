@@ -68,7 +68,7 @@ function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
     href: storefrontSubcategoryHref(parentSlug, category.slug),
     swatch: category.color,
     image: category.image_url,
-    meta: category.planet ?? category.display_locations ?? null,
+    meta: category.type === 'navaratna' ? category.planet ?? null : null,
   };
 }
 

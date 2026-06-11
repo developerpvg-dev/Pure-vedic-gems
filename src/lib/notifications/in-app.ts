@@ -1,7 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { buildBroadcastMetadata } from '@/lib/notifications/broadcasts';
 
-export type NotificationAudience = 'user' | 'admin';
+export type NotificationAudience = 'user' | 'admin' | 'public';
 
 export type InAppNotificationInput = {
   audience: NotificationAudience;
@@ -14,11 +15,13 @@ export type InAppNotificationInput = {
   metadata?: Record<string, unknown>;
   recipientUserId?: string | null;
   recipientRole?: string | null;
+  isActive?: boolean;
+  expiresAt?: string | null;
 };
 
 function toPayload(input: InAppNotificationInput) {
   return {
-    audience: input.audience,
+    audience: input.audience === 'public' ? 'user' : input.audience,
     type: input.type,
     title: input.title,
     message: input.message,
@@ -37,23 +40,43 @@ export async function createInAppNotification(input: InAppNotificationInput) {
 
   if (error) {
     console.error('[in-app-notifications] Create error:', error);
+    return { error };
   }
+
+  return { error: null };
 }
 
 export async function createInAppNotifications(inputs: InAppNotificationInput[]) {
-  if (!inputs.length) return;
+  if (!inputs.length) return { error: null };
   const db = asUntypedSupabase(createAdminClient());
   const { error } = await db.from('in_app_notifications').insert(inputs.map(toPayload));
 
   if (error) {
     console.error('[in-app-notifications] Bulk create error:', error);
+    return { error };
   }
+
+  return { error: null };
 }
 
 export async function notifyUser(input: Omit<InAppNotificationInput, 'audience' | 'recipientRole'> & { recipientUserId: string }) {
-  await createInAppNotification({ ...input, audience: 'user' });
+  return createInAppNotification({ ...input, audience: 'user' });
 }
 
 export async function notifyAdmins(input: Omit<InAppNotificationInput, 'audience' | 'recipientUserId'>) {
-  await createInAppNotification({ ...input, audience: 'admin' });
+  return createInAppNotification({ ...input, audience: 'admin' });
+}
+
+export async function notifyPublic(input: Omit<InAppNotificationInput, 'audience' | 'recipientUserId' | 'recipientRole'>) {
+  return createInAppNotification({
+    ...input,
+    audience: 'user',
+    recipientUserId: null,
+    recipientRole: null,
+    metadata: buildBroadcastMetadata({
+      expiresAt: input.expiresAt ?? null,
+      isActive: input.isActive ?? true,
+      metadata: input.metadata,
+    }),
+  });
 }

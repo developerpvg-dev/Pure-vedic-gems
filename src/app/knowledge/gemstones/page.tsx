@@ -322,9 +322,9 @@ export default async function NavratnasKnowledgePage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 
   return (
-    <>
+    <div className="pvg-knowledge-page">
       {/* ── Hero + Intro ── */}
-      <section className="bg-secondary/30 py-10 md:py-12">
+      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
           <ScrollReveal>
             <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
@@ -339,7 +339,7 @@ export default async function NavratnasKnowledgePage() {
       </section>
 
       {/* ── Content ── */}
-      <section className="bg-background py-10 md:py-12">
+      <section className="py-10 md:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="space-y-8">
 
@@ -471,7 +471,7 @@ export default async function NavratnasKnowledgePage() {
 
             {/* CTA */}
             <ScrollReveal>
-              <div className="rounded-sm border-l-4 border-accent bg-secondary/30 p-6">
+              <div className="rounded-lg border border-[#e8e0d4] bg-white p-6 shadow-sm">
                 <h2 className="font-heading text-lg font-semibold text-primary">
                   Need Help Choosing a Navratna?
                 </h2>
@@ -518,6 +518,6 @@ export default async function NavratnasKnowledgePage() {
           }),
         }}
       />
-    </>
+    </div>
   );
 }

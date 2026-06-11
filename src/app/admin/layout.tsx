@@ -39,7 +39,8 @@ const NAV_GROUPS = [
     links: [
       { href: '/admin/leads', label: 'Leads', icon: MessageSquare },
       { href: '/admin/consultation-plans', label: 'Consultation Plans', icon: CalendarClock },
-      { href: '/admin/reviews', label: 'Reviews', icon: Star },
+      { href: '/admin/reviews', label: 'Product Reviews', icon: Star },
+      { href: '/admin/category-reviews', label: 'Category Reviews', icon: Star },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell },
       { href: '/admin/finance', label: 'Finance', icon: IndianRupee },
       { href: '/admin/compliance', label: 'Compliance', icon: Scale },

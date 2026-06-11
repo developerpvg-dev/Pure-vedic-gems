@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
       revalidatePath('/knowledge/gemstones');
       revalidatePath('/knowledge/rudraksha');
       revalidatePath('/knowledge/astrology');
-      revalidatePath('/knowledge/buying-guides');
       revalidated.push('/knowledge/category-pages');
       break;
 

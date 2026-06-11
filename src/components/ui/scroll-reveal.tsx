@@ -30,19 +30,50 @@ export function ScrollReveal({
     const el = ref.current;
     if (!el) return;
 
+    const reveal = () => {
+      el.style.opacity = '1';
+      el.style.transform = 'translate(0)';
+    };
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      reveal();
+      return;
+    }
+
+    const isInViewport = () => {
+      const rect = el.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    };
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.style.opacity = '1';
-          el.style.transform = 'translate(0)';
+          reveal();
           observer.unobserve(el);
         }
       },
-      { threshold }
+      { threshold: Math.min(threshold, 0.05), rootMargin: '0px 0px 0px 0px' }
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+
+    // Elements already on screen when the page loads may never cross the observer threshold.
+    const syncVisible = () => {
+      if (isInViewport()) {
+        reveal();
+        observer.unobserve(el);
+      }
+    };
+
+    syncVisible();
+    const raf = window.requestAnimationFrame(syncVisible);
+    window.addEventListener('resize', syncVisible, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener('resize', syncVisible);
+      observer.disconnect();
+    };
   }, [threshold]);
 
   return (

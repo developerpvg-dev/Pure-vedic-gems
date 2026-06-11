@@ -854,7 +854,7 @@ export function PvgHomeInteractions() {
     const cleanups: Array<(() => void) | undefined> = [];
 
     cleanups.push(setupRotatingStack('#aboutStack .about-stack-card', 2800, { pauseOnReducedMotion: false }));
-    cleanups.push(setupRotatingStack('#certStack .cert-stack-card', 3000, { pauseOnReducedMotion: false }));
+    cleanups.push(setupRotatingStack('#certStack .cert-stack-card', 2800, { pauseOnReducedMotion: false }));
     cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200, { pauseOnReducedMotion: false }));
     cleanups.push(setupTrustRotation());
     cleanups.push(...setupTabs('.explore-tab', '.explore-panel', 'panel-', 'tab'));

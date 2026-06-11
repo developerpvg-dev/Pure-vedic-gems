@@ -12,6 +12,7 @@ import {
 } from '@/components/home/PvgManagedCategorySections';
 import { PvgReferenceSections, type HomeTestimonial } from '@/components/home/PvgReferenceSections';
 import { HomeVideosSection } from '@/components/home/HomeVideosSection';
+import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
 import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
 
 export const revalidate = 300;
@@ -53,6 +54,7 @@ export default async function HomePage() {
         knowledgeBlogCategories={khubCategories}
       />
       <HomeVideosSection />
+      <WhyChooseUsSection />
       <PvgHomeInteractions />
     </div>
   );

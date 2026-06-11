@@ -7,6 +7,11 @@ import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
 import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySections';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
+import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
+
+const WHO_WE_ARE_IMG_VERSION = '20260609';
+const CONFIGURATOR_STEPS_IMG_VERSION = '20260611b';
+const CERT_STACK_IMG_VERSION = '20260611';
 
 function toStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
@@ -278,7 +283,7 @@ export function PvgReferenceSections({
       <div className="pvg-welcome-panel">
         <div className="pvg-welcome-copy">
           <p>
-            PureVedicGems brings together <strong>ancient Indian Vedic science</strong>, <strong>natural certified gemstones</strong>, <strong>genuine Rudrakshas</strong>, <strong>purification rituals</strong>, and <strong>mantra-based energization</strong> so every remedy is chosen, prepared, and worn with the right purpose. We focus on <strong>pure, untreated, correctly identified pieces</strong> at fair global prices, supported by generations of family experience in gems, jewellery, sourcing, and spiritual remedy preparation, while helping clients avoid <strong>fake, tampered, treated, or low-quality remedies</strong> because in Vedic tradition <strong>purity, authenticity, accurate recommendation, and proper energization</strong> matter just as much as the gemstone, Rudraksha, or talisman itself.
+            PureVedicGems brings the wisdom of <strong>ancient Indian Vedic healing sciences</strong> in the most authentic way, having its own <strong>Vedic Research Centre</strong> to provide purest and most effective knowledge of complete Vedic healing through <strong>planetary gemstones</strong>, finest quality <strong>Rudrakshas</strong>, Authentic Vedic path (Sacred chanting) and <strong>Yagyas</strong> (Ancient Fire ritual), Mantra, Meditation, Yoga, Chakra and Ayurvedic healing sciences. Designing the customized unique talismans as per <strong>sacred geometry</strong> (using the recommended Gems, Rudrakshas, Crystals and Yantras) and then purifying, energizing and wearing them as per the genuine ancient Vedic rituals. We focus on <strong>pure, untreated, correctly identified gem pieces</strong> at fair global prices, supported by generations of family experience in gems, jewellery, sourcing, and spiritual remedy preparation, while helping clients avoid <strong>fake, tampered, treated, or low-quality remedies and fraudster healers</strong> because in Vedic tradition <strong>purity, authenticity, sacred yogic and saatvik mindset, accurate recommendation, and proper energization</strong> is most important.
           </p>
         </div>
       </div>
@@ -295,24 +300,24 @@ export function PvgReferenceSections({
           <div className="about-img-stack" id="aboutStack" aria-label="Heritage photographs">
 
             <div className="about-stack-card" data-pos="3">
-              <img className="about-stack-img" src="/home/whoweare/1Heritage.webp" alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/1Heritage.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" />
             </div>
 
             <div className="about-stack-card" data-pos="2">
-              <img className="about-stack-img" src="/home/whoweare/2Sourcing.webp" alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/2Sourcing.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" />
             </div>
 
             <div className="about-stack-card" data-pos="1">
-              <img className="about-stack-img" src="/home/whoweare/3Certification.webp" alt="Pure Vedic Gems certification bodies" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/3Certification.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Pure Vedic Gems certification bodies" loading="lazy" />
             </div>
 
             <div className="about-stack-card" data-pos="0">
-              <img className="about-stack-img" src="/home/whoweare/4Energization.webp" alt="Authentic Vedic gemstone energization ritual" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/4Energization.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Authentic Vedic gemstone energization ritual" loading="lazy" />
             </div>
 
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src="/home/whoweare/87yeara.png" alt="" loading="lazy" />
+            <img className="about-exp-img" src={`/home/whoweare/87yeara.png?v=${WHO_WE_ARE_IMG_VERSION}`} alt="" loading="lazy" />
           </div>
         </div>
 
@@ -399,36 +404,36 @@ export function PvgReferenceSections({
         </div>
 
         
-        <div className="cert-img-wrap">
-          <div className="cert-img-stack" id="certStack">
+        <div className="about-img-wrap">
+          <div className="about-img-stack" id="certStack" aria-label="Certificate samples">
 
             <div className="cert-stack-card" data-pos="3">
-              <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GIA (1).webp" alt="GIA gemstone certificate sample" loading="lazy" />
+              <div className="cert-stack-frame">
+                <img className="cert-stack-img" src={`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`} alt="GIA gemstone certificate sample" loading="lazy" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
-              <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle IGI (1).webp" alt="IGI gemstone certificate sample" loading="lazy" />
+              <div className="cert-stack-frame">
+                <img className="cert-stack-img" src={`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`} alt="IGI gemstone certificate sample" loading="lazy" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
-              <div className="cert-card-inner">
-                <img className="cert-real-img" src="/home/certificates/1116x1676 pixle GII (1).webp" alt="GII gemstone certificate sample" loading="lazy" />
+              <div className="cert-stack-frame">
+                <img className="cert-stack-img" src={`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`} alt="GII gemstone certificate sample" loading="lazy" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="0">
-              <div className="cert-card-inner">
-                <img className="cert-real-img cert-real-img-landscape" src="/home/certificates/1170x826 pixle copy (1).webp" alt="Multiple gemstone certification reports from global labs" loading="lazy" />
+              <div className="cert-stack-frame">
+                <img className="cert-stack-img" src={`/home/certificates/certi4.png?v=${CERT_STACK_IMG_VERSION}`} alt="Multiple gemstone certification reports from global labs" loading="lazy" />
               </div>
             </div>
 
           </div>
-          <div className="cert-exp-badge" aria-hidden="true">
-            <img className="cert-exp-img" src="/home/certificates/6globallabs.png?v=20260528c" alt="6+ Global Labs" loading="lazy" />
+          <div className="about-exp-badge" aria-hidden="true">
+            <img className="about-exp-img" src="/home/certificates/6globallabs.png?v=20260528c" alt="6+ Global Labs" loading="lazy" />
           </div>
         </div>
 
@@ -750,7 +755,13 @@ export function PvgReferenceSections({
           <div key={label} className="cfg-lin-step" role="listitem">
             <div className="cfg-lin-circle-wrap">
               <div className="cfg-lin-circle">
-                <img className="cfg-lin-img" src={`/home/configuratorsteps/step${index + 1}.webp`} alt={label} loading="lazy" />
+                <img
+                  className="cfg-lin-img"
+                  src={`/home/configuratorsteps/step${index + 1}.webp?v=${CONFIGURATOR_STEPS_IMG_VERSION}`}
+                  alt={label}
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <span className="cfg-lin-badge" aria-hidden="true">{index + 1}</span>
             </div>
@@ -1154,73 +1165,26 @@ export function PvgReferenceSections({
       </div>
 
       <div className="services-grid-v2">
-
-        
-        <div className="svc-card-v2">
-          <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service2.webp" alt="Vedic Astrology Consultation" loading="lazy" />
+        {HOME_SERVICES.map((service) => (
+          <div className="svc-card-v2" key={service.slug}>
+            <div className="svc-img-area">
+              <img
+                src={homeServiceImageSrc(service.slug)}
+                alt={service.imageAlt}
+                width={640}
+                height={443}
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <div className="svc-body-v2">
+              <p className="svc-title-v2">{service.title}</p>
+              <a href={service.href} className="svc-click-btn">
+                Click Here
+              </a>
+            </div>
           </div>
-          <div className="svc-body-v2">
-            <p className="svc-title-v2">Online Live &amp; Telephonic Horoscope Consultation by Genuine Vedic Astrologers</p>
-            <a href="/consultation" className="svc-click-btn">Click Here</a>
-          </div>
-        </div>
-
-        
-        <div className="svc-card-v2">
-          <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service3.webp" alt="Gem & Rudraksha Jewellery Crafting" loading="lazy" />
-          </div>
-          <div className="svc-body-v2">
-            <p className="svc-title-v2">Crafting Gemstones &amp; Rudrakshas into Authentic Astro-Rashi Jewellery</p>
-            <a href="/configure" className="svc-click-btn">Click Here</a>
-          </div>
-        </div>
-
-        
-        <div className="svc-card-v2">
-          <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service1.webp" alt="Vedic Energisation Prana Pratishtha" loading="lazy" />
-          </div>
-          <div className="svc-body-v2">
-            <p className="svc-title-v2">Vedic Energisation (Prana Pratishtha) According to Your Gotra &amp; Rashi — Live &amp; Recorded</p>
-            <a href="/knowledge/energized-gems" className="svc-click-btn">Click Here</a>
-          </div>
-        </div>
-
-        
-        <div className="svc-card-v2">
-          <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service4.webp" alt="Safe Worldwide Shipping" loading="lazy" />
-          </div>
-          <div className="svc-body-v2">
-            <p className="svc-title-v2">COD in Delhi-NCR &amp; Worldwide Safe, Insured Shipping Available</p>
-            <a href="/policies/shipping" className="svc-click-btn">Click Here</a>
-          </div>
-        </div>
-
-        
-        <div className="svc-card-v2">
-          <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service5.webp" alt="Ancient Vedic Remedies" loading="lazy" />
-          </div>
-          <div className="svc-body-v2">
-            <p className="svc-title-v2">Ancient Vedic Remedies — Mantra, Yagya, Yantra, Rudraksha &amp; Ratna Dharana</p>
-            <a href="/vedic-yagyas-service" className="svc-click-btn">Click Here</a>
-          </div>
-        </div>
-
-        
-        <div className="svc-card-v2">
-          <div className="svc-img-area">
-            <img src="/home/ourservicesimg/service6.webp" alt="Online & Offline Gem Retail" loading="lazy" />
-          </div>
-          <div className="svc-body-v2">
-            <p className="svc-title-v2">Online &amp; Offline Retail — Vedic Gems, Rudrakshas, Yagya Research &amp; Energising Centre</p>
-            <a href="/contact" className="svc-click-btn">Click Here</a>
-          </div>
-        </div>
-
+        ))}
       </div>
 
       <div className="svc-show-all-wrap">

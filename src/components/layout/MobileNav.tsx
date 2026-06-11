@@ -23,7 +23,6 @@ const KNOWLEDGE_LINKS = [
   { label: 'Rudraksha Library', href: '/knowledge/rudraksha' },
   { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
   { label: 'Gems Qualities', href: '/knowledge/gem-qualities' },
-  { label: "Buyer's Guide", href: '/knowledge/buying-guides' },
   { label: 'Vedic Astrology', href: '/knowledge/astrology' },
 ] as const;
 
@@ -108,23 +107,62 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
   const toggle = (key: 'gemstones' | 'rudraksha' | 'knowledge' | 'blog') =>
     setExpanded((prev) => (prev === key ? null : key));
 
-  const GemGrid = ({ items }: { items: StorefrontSubCategory[] }) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0 8px' }}>
-      {items.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          onClick={onClose}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', textDecoration: 'none' }}
-        >
-          <MobileCategoryThumb link={link} />
-          <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#1C1C1C', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {link.label}
-          </span>
-        </Link>
-      ))}
-    </div>
-  );
+  const GemGrid = ({
+    items,
+    columns = 2,
+    maxItems,
+    viewAllHref,
+    viewAllLabel = 'Show All →',
+  }: {
+    items: StorefrontSubCategory[];
+    columns?: 2 | 3 | 4;
+    maxItems?: number;
+    viewAllHref?: string;
+    viewAllLabel?: string;
+  }) => {
+    const visibleItems = maxItems != null ? items.slice(0, maxItems) : items;
+    const hasMore = maxItems != null && items.length > maxItems;
+
+    return (
+      <>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: '0 8px' }}>
+          {visibleItems.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={onClose}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', textDecoration: 'none', minWidth: 0 }}
+            >
+              <MobileCategoryThumb link={link} />
+              <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#1C1C1C', lineHeight: 1.3, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                {link.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+        {hasMore && viewAllHref ? (
+          <Link
+            href={viewAllHref}
+            onClick={onClose}
+            style={{
+              display: 'block',
+              marginTop: '10px',
+              paddingTop: '8px',
+              borderTop: '1px solid #EDE6D5',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: '#7A1515',
+              textDecoration: 'none',
+            }}
+          >
+            {viewAllLabel}
+          </Link>
+        ) : null}
+      </>
+    );
+  };
 
   const SectionHead = ({ label, href }: { label: string; href: string }) => (
     <Link
@@ -211,7 +249,15 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                 <div style={{ paddingTop: '6px' }}><GemGrid items={navaratna.subcategories} /></div>
                 <div style={{ marginTop: '12px' }}>
                   <SectionHead label="Upratna Gems" href="/shop/upratna" />
-                  <div style={{ paddingTop: '6px' }}><GemGrid items={upratna.subcategories} /></div>
+                  <div style={{ paddingTop: '6px' }}>
+                    <GemGrid
+                      items={upratna.subcategories}
+                      columns={2}
+                      maxItems={15}
+                      viewAllHref="/shop/upratna"
+                      viewAllLabel="Show All Upratna Gems →"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -222,7 +268,13 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             <AccordionTrigger label="Rudraksha" isOpen={expanded === 'rudraksha'} onToggle={() => toggle('rudraksha')} />
             {expanded === 'rudraksha' && (
               <div style={{ padding: '0 20px 16px', background: '#FDFCF9' }}>
-                <GemGrid items={rudraksha.subcategories} />
+                <GemGrid
+                  items={rudraksha.subcategories}
+                  columns={3}
+                  maxItems={20}
+                  viewAllHref="/shop/rudraksha"
+                  viewAllLabel="Show All Rudraksha →"
+                />
               </div>
             )}
           </div>

@@ -16,7 +16,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     '/consultation',
     '/configure',
     '/tools',
-    '/knowledge',
     '/blog',
     '/about',
     '/contact',

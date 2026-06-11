@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { getPublicNotificationReadIds, markPublicNotificationsRead } from '@/lib/notifications/public-reads';
 
 type NotificationBellVariant = 'site' | 'admin';
 
@@ -15,10 +16,22 @@ type NotificationRow = {
   href: string | null;
   read_at: string | null;
   created_at: string;
+  scope?: 'public' | 'user';
 };
 
+function isUnread(notification: NotificationRow) {
+  if (notification.scope === 'public') {
+    return !getPublicNotificationReadIds().has(notification.id);
+  }
+  return !notification.read_at;
+}
+
+function countUnread(notifications: NotificationRow[]) {
+  return notifications.filter(isUnread).length;
+}
+
 export function NotificationBell({ variant = 'site' }: { variant?: NotificationBellVariant }) {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -26,18 +39,21 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
   const endpoint = variant === 'admin' ? '/api/admin/in-app-notifications' : '/api/notifications';
 
   const loadNotifications = useCallback(async () => {
-    if (!user) return;
-    const response = await fetch(`${endpoint}?limit=20`, { cache: 'no-store' });
-    if (!response.ok) return;
-    const data = await response.json();
-    setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
-    setUnreadCount(Number(data.unreadCount ?? 0));
-  }, [endpoint, user]);
+    if (variant === 'admin' && !user) return;
+    try {
+      const response = await fetch(`${endpoint}?limit=20`, { cache: 'no-store' });
+      if (!response.ok) return;
+      const data = await response.json();
+      const rows = Array.isArray(data.notifications) ? (data.notifications as NotificationRow[]) : [];
+      setNotifications(rows);
+      setUnreadCount(variant === 'admin' ? Number(data.unreadCount ?? 0) : countUnread(rows));
+    } catch {
+      // The dev server can drop polling requests during restarts/HMR. Keep the bell quiet.
+    }
+  }, [endpoint, user, variant]);
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
+    if (variant === 'admin' && !user) return;
 
     const initial = window.setTimeout(loadNotifications, 0);
     const interval = window.setInterval(loadNotifications, 30000);
@@ -45,7 +61,7 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
       window.clearTimeout(initial);
       window.clearInterval(interval);
     };
-  }, [loadNotifications, user]);
+  }, [loadNotifications, user, variant]);
 
   useEffect(() => {
     function onDocumentClick(event: MouseEvent) {
@@ -57,15 +73,32 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
   }, []);
 
   async function markRead(ids?: string[]) {
-    await fetch(endpoint, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(ids?.length ? { ids } : { all: true }),
-    });
+    const targetIds = ids?.length ? ids : notifications.map((notification) => notification.id);
+    const publicIds = targetIds.filter((id) => notifications.find((notification) => notification.id === id)?.scope === 'public');
+    const userIds = targetIds.filter((id) => notifications.find((notification) => notification.id === id)?.scope !== 'public');
+
+    if (publicIds.length) markPublicNotificationsRead(publicIds);
+
+    if (user) {
+      const shouldPatchAll = !ids?.length;
+      const patchIds = userIds.length ? userIds : variant === 'admin' ? targetIds : [];
+      if (shouldPatchAll || patchIds.length) {
+        try {
+          await fetch(endpoint, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(shouldPatchAll ? { all: true } : { ids: patchIds }),
+          });
+        } catch {
+          // Ignore transient failures; the next poll will refresh state.
+        }
+      }
+    }
+
     await loadNotifications();
   }
 
-  if (isLoading || !user) return null;
+  if (variant === 'admin' && !user) return null;
 
   const buttonClass = variant === 'admin'
     ? 'relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-950'
@@ -106,10 +139,11 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
 
           <div className="max-h-105 overflow-y-auto">
             {notifications.length ? notifications.map((notification) => {
+              const unread = isUnread(notification);
               const content = (
-                <div className={`block border-b border-gray-100 px-4 py-3 text-left transition hover:bg-gray-50 ${notification.read_at ? 'bg-white' : 'bg-amber-50/65'}`}>
+                <div className={`block border-b border-gray-100 px-4 py-3 text-left transition hover:bg-gray-50 ${unread ? 'bg-amber-50/65' : 'bg-white'}`}>
                   <div className="flex items-start gap-3">
-                    <span className={`mt-1 h-2 w-2 rounded-full ${notification.read_at ? 'bg-gray-300' : 'bg-amber-600'}`} />
+                    <span className={`mt-1 h-2 w-2 rounded-full ${unread ? 'bg-amber-600' : 'bg-gray-300'}`} />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-bold text-gray-950">{notification.title}</span>
                       <span className="mt-1 block text-xs leading-5 text-gray-600">{notification.message}</span>
@@ -125,7 +159,7 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
                   href={notification.href}
                   onClick={() => {
                     setOpen(false);
-                    if (!notification.read_at) markRead([notification.id]);
+                    if (unread) markRead([notification.id]);
                   }}
                 >
                   {content}
@@ -136,7 +170,7 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
                   key={notification.id}
                   className="w-full"
                   onClick={() => {
-                    if (!notification.read_at) markRead([notification.id]);
+                    if (unread) markRead([notification.id]);
                   }}
                 >
                   {content}

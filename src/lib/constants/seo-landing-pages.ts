@@ -174,7 +174,7 @@ const rashiPages: SeoLandingPage[] = [
       { question: 'Which gemstones are associated with Libra?', answer: 'Diamond, White Sapphire, and Opal are commonly discussed for Venus-aligned Libra themes.' },
       { question: 'Should Venus stones be worn casually?', answer: 'For astrological use, Venus stones should be chosen after reviewing the full chart and quality details.' },
     ],
-    relatedKnowledge: [{ label: 'Buying guide', href: '/knowledge/buying-guides' }],
+    relatedKnowledge: [{ label: 'Gem qualities guide', href: '/knowledge/gem-qualities' }],
   },
   {
     kind: 'rashi',
@@ -289,7 +289,7 @@ const planetPages: SeoLandingPage[] = [
   ['mars', 'Mars', 'Red Coral (Moonga)', ['red-coral'], ['Ruby', 'Garnet'], 'Mangal guidance for courage, stamina, initiative, and disciplined action.', '/knowledge/gemstones/red-coral-moonga-guide'],
   ['mercury', 'Mercury', 'Emerald (Panna)', ['emerald'], ['Peridot'], 'Budh guidance for communication, trade, learning, and analytical clarity.', '/knowledge/gemstones/emerald-panna-guide'],
   ['jupiter', 'Jupiter', 'Yellow Sapphire (Pukhraj)', ['yellow-sapphire'], ['Citrine'], 'Guru guidance for wisdom, prosperity, learning, counsel, and dharma.', '/knowledge/gemstones/yellow-sapphire-pukhraj-guide'],
-  ['venus', 'Venus', 'Diamond, Opal, White Sapphire', ['diamond', 'opal', 'white-sapphire'], ['Rose Quartz'], 'Shukra guidance for refinement, relationships, art, beauty, and comforts.', '/knowledge/buying-guides'],
+  ['venus', 'Venus', 'Diamond, Opal, White Sapphire', ['diamond', 'opal', 'white-sapphire'], ['Rose Quartz'], 'Shukra guidance for refinement, relationships, art, beauty, and comforts.', '/knowledge/gem-qualities'],
   ['saturn', 'Saturn', 'Blue Sapphire (Neelam)', ['blue-sapphire', 'amethyst'], ['Iolite'], 'Shani guidance for discipline, endurance, structure, and responsibility.', '/knowledge/gemstones/blue-sapphire-neelam-guide'],
   ['rahu', 'Rahu', 'Hessonite (Gomed)', ['hessonite'], ['Lapis Lazuli'], 'Rahu guidance for focus during complexity, ambition, and unconventional paths.', '/knowledge/gemstones/hessonite-gomed-guide'],
   ['ketu', 'Ketu', "Cat's Eye (Lehsunia)", ['cats-eye'], ['Tiger Eye'], 'Ketu guidance for detachment, intuition, protection, and spiritual insight.', '/knowledge/gemstones/cats-eye-lehsunia-guide'],
@@ -333,7 +333,7 @@ const purposePages: SeoLandingPage[] = [
       { question: 'Which gemstone helps career growth?', answer: 'Emerald, Yellow Sapphire, and Ruby are often discussed for communication, guidance, and leadership respectively, but chart fit is essential.' },
       { question: 'Can one gemstone solve career issues?', answer: 'No. Gemstones are traditionally used as supportive remedies alongside effort, timing, and practical decisions.' },
     ],
-    relatedKnowledge: [{ label: 'Gemstone buying guide', href: '/knowledge/buying-guides' }],
+    relatedKnowledge: [{ label: 'Gem qualities guide', href: '/knowledge/gem-qualities' }],
   },
   {
     kind: 'purpose',

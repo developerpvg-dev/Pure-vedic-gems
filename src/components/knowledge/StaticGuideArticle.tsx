@@ -55,7 +55,7 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
   const schemas = getStaticGuideSchemas(guide, pathname, siteUrl);
 
   return (
-    <main className="min-h-screen bg-[#FDFAF5] px-4 pb-20 pt-32.5 md:px-8">
+    <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
       <article className="mx-auto max-w-295">
         <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]">
           <Link href="/" className="hover:text-[#7A1515]">Home</Link>
@@ -176,10 +176,10 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
               </div>
             </section>
 
-            <section id="expert-corner" className="scroll-mt-32 bg-[#4D0A0A] p-6 text-white">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#D4A843]">Expert&apos;s Corner</p>
+            <section id="expert-corner" className="pvg-knowledge-on-dark scroll-mt-32 rounded-sm p-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#a67c2e]">Expert&apos;s Corner</p>
               <h2 className="mt-3 text-3xl font-black">PureVedicGems buying note</h2>
-              <p className="mt-4 text-base leading-8 text-white/80">{guide.expertCorner}</p>
+              <p className="pvg-knowledge-on-dark-muted mt-4 text-base leading-8">{guide.expertCorner}</p>
             </section>
 
             <section id="faqs" className="scroll-mt-32">

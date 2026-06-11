@@ -122,23 +122,23 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
     : null;
 
   return (
-    <main className="min-h-screen bg-brand-bg px-4 pb-20 pt-[130px] md:px-8">
+    <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
       <article className="mx-auto max-w-[1120px]">
-        <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-[var(--pvg-muted)]">
-          <Link href="/" className="hover:text-[var(--pvg-accent)]">Home</Link>
+        <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B5B4E]">
+          <Link href="/" className="hover:text-[#B8861E]">Home</Link>
           <span>/</span>
-          <Link href="/knowledge" className="hover:text-[var(--pvg-accent)]">Knowledge</Link>
+          <Link href="/knowledge" className="hover:text-[#B8861E]">Knowledge</Link>
           <span>/</span>
-          <span className="text-[var(--pvg-primary)]">{article.category}</span>
+          <span className="text-[#5c3d3d]">{article.category}</span>
         </nav>
 
-        <header className="border-b border-[var(--pvg-border)] pb-8">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-[var(--pvg-accent)]">{article.category}</p>
-          <h1 className="font-heading text-[var(--pvg-primary)]" style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
+        <header className="border-b border-[#e8e0d4] pb-8">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-[#a67c2e]">{article.category}</p>
+          <h1 className="font-heading" style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
             {article.title}
           </h1>
-          {article.excerpt && <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--pvg-muted)]">{article.excerpt}</p>}
-          <div className="mt-5 flex flex-wrap gap-3 text-xs text-[var(--pvg-muted)]">
+          {article.excerpt && <p className="mt-4 max-w-3xl text-base leading-8 text-[#5a4a3a]">{article.excerpt}</p>}
+          <div className="mt-5 flex flex-wrap gap-3 text-xs text-[#6B5B4E]">
             {article.estimatedReadingTime ? <span>{article.estimatedReadingTime} min read</span> : null}
             {article.author?.name ? <span>Reviewed by {article.author.name}</span> : null}
           </div>
@@ -153,11 +153,11 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
         <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
           <aside className="hidden lg:block">
             {headings.length > 0 && (
-              <div className="sticky top-32 rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-4">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-[2px] text-[var(--pvg-accent)]">In this guide</p>
+              <div className="sticky top-32 rounded-xl border border-[#DDD0B4] bg-brand-surface p-4">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-[2px] text-[#B8861E]">In this guide</p>
                 <nav className="space-y-2">
                   {headings.map((heading) => (
-                    <a key={heading.href} href={heading.href} className={`block text-xs leading-5 text-[var(--pvg-muted)] hover:text-[var(--pvg-primary)] ${heading.level === 'h3' ? 'pl-3' : ''}`}>
+                    <a key={heading.href} href={heading.href} className={`block text-xs leading-5 text-[#6B5B4E] hover:text-[#4D0A0A] ${heading.level === 'h3' ? 'pl-3' : ''}`}>
                       {heading.text}
                     </a>
                   ))}
@@ -167,39 +167,39 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
           </aside>
 
           <div>
-            <div className="rounded-xl border border-[var(--pvg-border)] bg-brand-bg p-5 md:p-8">
+            <div className="rounded-xl border border-[#DDD0B4] bg-brand-bg p-5 md:p-8">
               <PortableText value={article.body} />
             </div>
 
             {article.faqs?.length ? (
-              <section className="mt-8 rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-5 md:p-6">
-                <h2 className="font-heading text-2xl text-[var(--pvg-primary)]">Frequently Asked Questions</h2>
+              <section className="mt-8 rounded-xl border border-[#DDD0B4] bg-brand-surface p-5 md:p-6">
+                <h2 className="font-heading text-2xl text-[#4D0A0A]">Frequently Asked Questions</h2>
                 <div className="mt-4 space-y-3">
                   {article.faqs.map((faq) => (
-                    <details key={faq.question} className="rounded-lg border border-[var(--pvg-border)] bg-brand-bg p-4">
-                      <summary className="cursor-pointer text-sm font-semibold text-[var(--pvg-primary)]">{faq.question}</summary>
-                      <p className="mt-3 text-sm leading-7 text-[var(--pvg-muted)]">{faq.answer}</p>
+                    <details key={faq.question} className="rounded-lg border border-[#DDD0B4] bg-brand-bg p-4">
+                      <summary className="cursor-pointer text-sm font-semibold text-[#4D0A0A]">{faq.question}</summary>
+                      <p className="mt-3 text-sm leading-7 text-[#5a4a3a]">{faq.answer}</p>
                     </details>
                   ))}
                 </div>
               </section>
             ) : null}
 
-            <div className="mt-8 rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-5">
-              <p className="text-sm leading-relaxed text-[var(--pvg-muted)]">
+            <div className="mt-8 rounded-xl border border-[#DDD0B4] bg-brand-surface p-5">
+              <p className="text-sm leading-relaxed text-[#5a4a3a]">
                 Need help applying this to a real product? Browse the catalog or request a consultation with product SKUs and tag numbers ready.
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Link href={article.relatedProductCategoryHref ?? '/shop'} className="rounded-lg bg-brand-primary px-5 py-2 text-xs font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)]">
+                <Link href={article.relatedProductCategoryHref ?? '/shop'} className="pvg-knowledge-btn-primary px-5 py-2 text-xs">
                   Browse Catalog
                 </Link>
-                <Link href="/consultation" className="rounded-lg border border-[var(--pvg-primary)] px-5 py-2 text-xs font-bold uppercase tracking-[1.5px] text-[var(--pvg-primary)]">
+                <Link href="/consultation" className="pvg-knowledge-btn-outline px-5 py-2 text-xs">
                   Book Consultation
                 </Link>
               </div>
             </div>
 
-            <p className="mt-5 text-xs leading-6 text-[var(--pvg-muted)]">
+            <p className="mt-5 text-xs leading-6 text-[#6B5B4E]">
               Gemstone use for astrological purposes is a traditional practice. This content is educational and should not be treated as medical, legal, financial, or emergency advice.
             </p>
           </div>

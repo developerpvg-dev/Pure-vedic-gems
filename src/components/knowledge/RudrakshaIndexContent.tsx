@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { rudrakshaMukhiImage } from '@/lib/constants/rudraksha-category-images';
 import {
   RUDRAKSHA_RICH_GUIDES,
   RUDRAKSHA_FAQS,
@@ -33,7 +34,7 @@ const PILLARS = [
 export function RudrakshaIndexContent() {
   return (
     <main
-      className="min-h-screen bg-[#FDFAF5] pb-20 pt-28 md:pt-32"
+      className="pvg-knowledge-page pb-20"
       style={{ fontFamily: ROBOTO }}
     >
       {/* Hero */}
@@ -184,7 +185,7 @@ export function RudrakshaIndexContent() {
               </div>
               <div className="relative aspect-4/3 bg-linear-to-br from-[#FDF6E8] to-[#F4E7CC]">
                 <Image
-                  src={g.thumbImage}
+                  src={rudrakshaMukhiImage(g.slug) ?? g.thumbImage}
                   alt={g.shortTitle}
                   fill
                   className="object-contain p-6 transition group-hover:scale-105"
@@ -235,7 +236,7 @@ export function RudrakshaIndexContent() {
                 {f.question}
                 <span
                   aria-hidden
-                  className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#FDF6E8] text-lg font-bold text-[#4D0A0A] transition group-open:bg-[#4D0A0A] group-open:text-white"
+                  className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#faf9f7] text-lg font-bold text-[#7a3a3a] transition group-open:bg-[#f7f2ea] group-open:text-[#5c3d3d]"
                 >
                   +
                 </span>
@@ -258,16 +259,8 @@ export function RudrakshaIndexContent() {
 
       {/* Big CTA */}
       <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
-        <div
-          className="relative overflow-hidden rounded-2xl px-6 py-14 text-center text-white md:px-12 md:py-20"
-          style={{
-            background:
-              'linear-gradient(135deg, #4D0A0A 0%, #7A1515 55%, #4D0A0A 100%)',
-          }}
-        >
-          <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-[#B8861E]/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-[#D4A843]/20 blur-3xl" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#E6C36F]">
+        <div className="pvg-knowledge-cta relative overflow-hidden rounded-2xl px-6 py-14 text-center md:px-12 md:py-20">
+          <p className="pvg-knowledge-cta-eyebrow text-[11px] font-bold uppercase tracking-[0.28em]">
             Authentic · Energised · Certified
           </p>
           <h2
@@ -280,29 +273,23 @@ export function RudrakshaIndexContent() {
           >
             Find the Rudraksha that resonates with your karmic blueprint
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-[#F7EAD0]/85 md:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
             Speak with our Vedic astrologers for a free chart-based Rudraksha
             recommendation. Every bead is lab-certified and Vedic-energised
             in-house.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/shop/rudraksha"
-              className="inline-flex items-center justify-center rounded-md bg-[#B8861E] px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition hover:bg-[#D4A843]"
-            >
+            <Link href="/shop/rudraksha" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
               Shop Rudraksha
             </Link>
-            <Link
-              href="/consultation"
-              className="inline-flex items-center justify-center rounded-md border-2 border-white/80 bg-transparent px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:bg-white/10"
-            >
+            <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
               Get Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-md bg-white px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+              className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm"
             >
               WhatsApp Astrologer
             </a>
