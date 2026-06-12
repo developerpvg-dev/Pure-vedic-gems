@@ -12,6 +12,7 @@ import {
 } from '@/lib/utils/configurator-rules';
 import type { ConfigurationDeliveryEta, SettingType } from '@/lib/types/configurator';
 import type { Json } from '@/lib/types/database';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 
 const ConfigurationSchema = z.object({
   product_id: z.string().uuid(),
@@ -277,16 +278,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Product is not available for configuration' }, { status: 400 });
   }
 
+  const configuratorActive = isGemConfiguratorEnabled(product.category, product.configurator_enabled);
+
   let rules = normalizeConfiguratorRules(rulesResult.data);
   if (!rules.product_id) {
     rules = {
       ...rules,
       product_id: product.id,
       certificate_enabled: product.certificate_display_enabled || rules.certificate_enabled,
-      jewelry_design_enabled: product.configurator_enabled,
-      metal_enabled: product.configurator_enabled,
-      ring_size_enabled: product.configurator_enabled,
-      allowed_setting_types: product.configurator_enabled ? rules.allowed_setting_types : ['loose'],
+      jewelry_design_enabled: configuratorActive,
+      metal_enabled: configuratorActive,
+      ring_size_enabled: configuratorActive,
+      allowed_setting_types: configuratorActive ? rules.allowed_setting_types : ['loose'],
     };
   }
 

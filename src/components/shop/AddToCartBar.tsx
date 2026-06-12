@@ -8,6 +8,7 @@ import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { toast } from 'sonner';
 import type { Product } from '@/lib/types/product';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 
 interface AddToCartBarProps {
   product: Product;
@@ -120,7 +121,10 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
     }
   };
 
-  const configuratorEnabled = !!(product as Product & { configurator_enabled?: boolean }).configurator_enabled;
+  const configuratorEnabled = isGemConfiguratorEnabled(
+    product.category,
+    (product as Product & { configurator_enabled?: boolean }).configurator_enabled,
+  );
 
   return (
     <div className="product-cart-bar space-y-2 sm:space-y-4">

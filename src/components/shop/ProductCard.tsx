@@ -10,6 +10,7 @@ import { formatPrice, formatCarats } from '@/lib/utils/format';
 import { productHref } from '@/lib/categories/storefront';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 
 function getImageSrc(product: ProductCardType): string {
   if (product.thumbnail_url) return product.thumbnail_url;
@@ -107,6 +108,8 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
+  const configuratorEnabled = isGemConfiguratorEnabled(product.category, product.configurator_enabled);
+
   const meta = [
     product.carat_weight ? formatCarats(product.carat_weight) : null,
     product.origin,
@@ -161,7 +164,7 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             <Eye className="h-4 w-4 text-gray-700" />
           </Link>
-          {product.configurator_enabled && (
+          {configuratorEnabled && (
             <Link
               href={`/configure/${product.id}`}
               onClick={(e) => e.stopPropagation()}

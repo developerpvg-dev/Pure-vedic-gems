@@ -5,6 +5,7 @@ import {
   normalizeConfiguratorRules,
   type ConfiguratorOptionRules,
 } from '@/lib/utils/configurator-rules';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 
 const QuerySchema = z.object({
   product_id: z.string().uuid(),
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   const [productResult, rulesResult] = await Promise.all([
     supabase
       .from('products')
-      .select('id, configurator_enabled, certificate_display_enabled')
+      .select('id, category, configurator_enabled, certificate_display_enabled')
       .eq('id', productId)
       .eq('is_active', true)
       .maybeSingle(),
@@ -41,9 +42,12 @@ export async function GET(request: NextRequest) {
 
   const product = productResult.data as {
     id: string;
+    category: string;
     configurator_enabled: boolean;
     certificate_display_enabled: boolean;
   };
+  const configuratorActive = isGemConfiguratorEnabled(product.category, product.configurator_enabled);
+
   let rules: ConfiguratorOptionRules = normalizeConfiguratorRules(rulesResult.data);
 
   if (!rules.product_id) {
@@ -51,10 +55,10 @@ export async function GET(request: NextRequest) {
       ...rules,
       product_id: product.id,
       certificate_enabled: product.certificate_display_enabled || rules.certificate_enabled,
-      jewelry_design_enabled: product.configurator_enabled,
-      metal_enabled: product.configurator_enabled,
-      ring_size_enabled: product.configurator_enabled,
-      allowed_setting_types: product.configurator_enabled
+      jewelry_design_enabled: configuratorActive,
+      metal_enabled: configuratorActive,
+      ring_size_enabled: configuratorActive,
+      allowed_setting_types: configuratorActive
         ? rules.allowed_setting_types
         : ['loose'],
     };

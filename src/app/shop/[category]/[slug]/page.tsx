@@ -20,6 +20,7 @@ import type { Product, ProductCard as ProductCardType } from '@/lib/types/produc
 import type { Json } from '@/lib/types/database';
 import { buildMetadata } from '@/lib/utils/seo';
 import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 
 export const revalidate = 300;
 
@@ -479,8 +480,6 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                 priceMode={product.price_mode}
               />
 
-              <ProductAssuranceStrip />
-
               {/* Gemstone quick specs */}
               <div className="product-spec-grid grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-brand-border bg-brand-bg p-2.5 sm:grid-cols-3 sm:gap-3 sm:p-4">
                 {[
@@ -502,7 +501,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                   { label: 'Rashi', value: product.rashi },
                   { label: 'Vedic Name', value: product.vedic_name },
                   { label: 'Energization', value: product.energization_eligible ? 'Eligible' : null },
-                  { label: 'Jewellery', value: product.configurator_enabled ? 'Configurable' : null },
+                  { label: 'Jewellery', value: isGemConfiguratorEnabled(product.category, product.configurator_enabled) ? 'Configurable' : null },
                 ]
                   .filter(({ value }) => !!value)
                   .map(({ label, value }) => (
@@ -517,6 +516,8 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
               {/* Add to Cart */}
               <AddToCartBar product={product} />
+
+              <ProductAssuranceStrip />
 
               {/* Expert Note */}
               {(product.expert_note || expert) && (
