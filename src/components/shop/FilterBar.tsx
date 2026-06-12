@@ -358,11 +358,132 @@ export function FilterBar({
 
   const sortValue = get('sort') || `${get('sort_by') || 'newest'}-${get('sort_order') || 'desc'}`;
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (get('q')) count += 1;
+    for (const definition of visibleDefinitions) {
+      if (get(definition.key)) count += 1;
+    }
+    return count;
+  }, [get, visibleDefinitions]);
+
+  const filterSheetContent = (
+    <>
+      <div className="lg:hidden">
+        <p className="mb-2 text-[11px] font-medium text-brand-muted">Browse</p>
+        <MobileCategoryNav />
+        <div className="my-5 border-t border-brand-border" />
+      </div>
+      <div className="grid gap-4">
+        {visibleDefinitions.map((definition) => (
+          <div key={definition.key}>
+            <p className="mb-2 text-[11px] font-medium text-brand-muted">
+              {definition.label}
+            </p>
+            <FilterSelect
+              definition={definition}
+              value={get(definition.key)}
+              onChange={(nextValue) => updateDefinition(definition, nextValue)}
+            />
+          </div>
+        ))}
+        <div>
+          <p className="mb-2 text-[11px] font-medium text-brand-muted">Sort by</p>
+          <Select
+            value={sortValue}
+            onValueChange={(nextValue) => {
+              const selectedSort = nextValue ?? 'newest-desc';
+              const [sortBy, sortOrder] = selectedSort.split('-');
+              updateParam({ sort: selectedSort, sort_by: sortBy ?? 'newest', sort_order: sortOrder ?? 'desc' });
+            }}
+          >
+            <SelectTrigger className="h-10 w-full rounded-md border-brand-border bg-white text-[12px] font-medium text-brand-text shadow-none">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          clearAll();
+          setSheetOpen(false);
+        }}
+        className="mt-6 w-full rounded-md border border-brand-border py-2.5 text-[12px] font-medium text-brand-muted transition hover:border-brand-primary hover:text-brand-primary"
+      >
+        Clear filters
+      </button>
+    </>
+  );
+
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-brand-border bg-white px-3 py-3 shadow-[0_10px_26px_rgba(61,43,31,0.06)]">
-        <div className="flex items-center gap-2 overflow-x-auto lg:overflow-visible" style={{ scrollbarWidth: 'none' }}>
-          <form onSubmit={submitSearch} className="relative min-w-60 flex-1 lg:min-w-72">
+        {/* Mobile: search + Filter button */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <form onSubmit={submitSearch} className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted" />
+            <input
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="Search products, SKU, tag..."
+              className="h-10 w-full rounded-md border border-brand-border bg-brand-bg/60 pl-9 pr-9 text-[13px] text-brand-text outline-none transition focus:border-brand-accent"
+            />
+            {searchText ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchText('');
+                  updateParam({ q: '' });
+                }}
+                className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-brand-muted transition hover:bg-brand-gold-light hover:text-brand-primary"
+                aria-label="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </form>
+
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger className="relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md border border-brand-border bg-white px-3 text-[12px] font-semibold text-brand-primary transition hover:border-brand-accent hover:text-brand-accent">
+              <SlidersHorizontal className="h-4 w-4" />
+              Filter
+              {activeFilterCount > 0 ? (
+                <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#7A1515] px-1 text-[9px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[92vw] max-w-md overflow-y-auto border-brand-border bg-brand-bg px-5 pb-8 pt-5">
+              <SheetHeader className="px-0 pb-2 pt-0">
+                <SheetTitle className="text-lg text-brand-primary">Filters</SheetTitle>
+              </SheetHeader>
+              {filterSheetContent}
+              <button
+                type="button"
+                onClick={() => setSheetOpen(false)}
+                className="mt-4 w-full rounded-md bg-[#7A1515] py-2.5 text-[12px] font-semibold text-white transition hover:bg-[#5f1010]"
+              >
+                Show results{total != null ? ` (${total.toLocaleString('en-IN')})` : ''}
+              </button>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {total != null ? (
+          <p className="mt-2 text-[11px] text-brand-muted lg:hidden">
+            {total.toLocaleString('en-IN')} item{total === 1 ? '' : 's'}
+          </p>
+        ) : null}
+
+        {/* Desktop: inline filters */}
+        <div className="hidden items-center gap-2 lg:flex">
+          <form onSubmit={submitSearch} className="relative min-w-72 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted" />
             <input
               value={searchText}
@@ -404,11 +525,6 @@ export function FilterBar({
                 <SheetHeader className="px-0 pb-2 pt-0">
                   <SheetTitle className="text-lg text-brand-primary">More filters</SheetTitle>
                 </SheetHeader>
-                <div className="lg:hidden">
-                  <p className="mb-2 text-[11px] font-medium text-brand-muted">Browse</p>
-                  <MobileCategoryNav />
-                  <div className="my-5 border-t border-brand-border" />
-                </div>
                 <div className="grid gap-4">
                   {moreDefinitions.map((definition) => (
                     <div key={definition.key}>

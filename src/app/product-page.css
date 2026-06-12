@@ -1,0 +1,112 @@
+/* Product detail page — mobile / tablet responsiveness */
+.pvg-product-page {
+  overflow-x: clip;
+}
+
+.pvg-product-page .product-info-panel,
+.pvg-product-page .product-info-panel * {
+  min-width: 0;
+}
+
+/* Thin horizontal scrollbar — gallery thumbs only */
+.pvg-product-page .product-gallery > div:last-child {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 21, 21, 0.28) transparent;
+}
+
+.pvg-product-page .product-gallery > div:last-child::-webkit-scrollbar {
+  height: 2px;
+}
+
+.pvg-product-page .product-gallery > div:last-child::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(122, 21, 21, 0.28);
+}
+
+.pvg-product-page .product-gallery > div:last-child::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Phone: hide native tab scrollbar (thick gray track); swipe still works */
+@media (max-width: 639px) {
+  .pvg-product-page .product-tabs-nav {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
+  .pvg-product-page .product-tabs-nav::-webkit-scrollbar {
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .pvg-product-page .product-tabs-nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(122, 21, 21, 0.35) transparent;
+  }
+
+  .pvg-product-page .product-tabs-nav::-webkit-scrollbar {
+    height: 2px;
+  }
+
+  .pvg-product-page .product-tabs-nav::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(122, 21, 21, 0.35);
+  }
+
+  .pvg-product-page .product-tabs-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@media (max-width: 767px) {
+  .pvg-product-page .product-tabs-nav {
+    border-bottom-width: 1px;
+  }
+
+  .pvg-product-page .product-tabs-trigger {
+    min-height: 34px;
+  }
+
+  .pvg-product-page .product-assurance-strip {
+    margin-top: -2px;
+  }
+
+  .pvg-product-page .product-spec-grid {
+    max-height: none;
+  }
+
+  .pvg-product-page .product-cart-bar {
+    margin-top: 2px;
+  }
+
+  .pvg-product-page .pvg-react-home-root .pvg-rcta-v2 {
+    border-radius: 12px;
+  }
+
+  .pvg-product-page .pvg-react-home-root .pvg-rcta-v2-layout {
+    padding: 0 12px !important;
+  }
+
+  .pvg-product-page .pvg-react-home-root .pvg-rcta-v2-mobile-actions {
+    padding: 0 12px !important;
+  }
+
+  .pvg-product-page .pvg-react-home-root .pvg-rcta-v2-heading {
+    font-size: clamp(22px, 6.2vw, 28px) !important;
+    line-height: 1.18 !important;
+  }
+
+  .pvg-product-page .pvg-react-home-root .pvg-rcta-v2-btn-mobile {
+    font-size: 11px !important;
+    padding: 12px 10px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .pvg-product-page .prose {
+    overflow-wrap: anywhere;
+  }
+}

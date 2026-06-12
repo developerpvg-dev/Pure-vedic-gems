@@ -119,7 +119,7 @@ function ShopSkeleton() {
   return (
     <div className="space-y-6">
       <div className="h-14 w-full animate-pulse rounded-xl bg-brand-border" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {Array.from({ length: 9 }).map((_, i) => (
           <div key={i} className="overflow-hidden rounded-xl border border-brand-border">
             <div className="relative w-full animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />

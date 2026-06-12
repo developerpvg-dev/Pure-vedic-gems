@@ -54,7 +54,7 @@ function VedicRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
     <div className="flex items-start gap-3 border-b border-brand-border py-3 last:border-0">
-      <span className="min-w-35 text-[12px] font-normal text-brand-muted">
+      <span className="min-w-24 shrink-0 text-[12px] font-normal text-brand-muted sm:min-w-35">
         {label}
       </span>
       <span className="text-[14px] text-brand-text">{value}</span>
@@ -91,23 +91,26 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
   const hasMoreReviews = visibleCount < filteredReviews.length;
 
   return (
-    <div>
+    <div className="product-tabs">
       {/* Tab Navigation */}
-      <div className="flex overflow-x-auto border-b border-brand-border" style={{ gap: 0 }}>
+      <div
+        className="product-tabs-nav -mx-1 flex overflow-x-auto border-b border-brand-border px-1 max-sm:scrollbar-hide"
+        style={{ gap: 0 }}
+      >
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActive(tab.key)}
-            className="flex shrink-0 items-center gap-1.5 px-4 py-3 text-[12px] font-medium transition-all md:px-5"
+            className="product-tabs-trigger flex shrink-0 items-center gap-1 px-2.5 py-2 text-[10px] font-medium transition-all sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-[12px] md:px-5 md:py-3"
             style={{
               color: active === tab.key ? 'var(--pvg-primary)' : 'var(--pvg-muted)',
               borderBottom:
                 active === tab.key
-                  ? '2px solid var(--pvg-accent)'
-                  : '2px solid transparent',
+                  ? '1px solid var(--pvg-accent)'
+                  : '1px solid transparent',
             }}
           >
-            {tab.icon}
+            <span className="[&_svg]:h-3 [&_svg]:w-3 sm:[&_svg]:h-3.5 sm:[&_svg]:w-3.5">{tab.icon}</span>
             <span className="hidden sm:inline">{tab.label}</span>
             <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
           </button>
@@ -115,7 +118,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
       </div>
 
       {/* Tab Content */}
-      <div className="py-6">
+      <div className="py-4 sm:py-6">
         {/* Description */}
         {active === 'description' && (
           <div className="space-y-4">

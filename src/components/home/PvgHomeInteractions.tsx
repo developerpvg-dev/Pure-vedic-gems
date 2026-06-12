@@ -637,12 +637,12 @@ function setupTrustRotation() {
   const trustCards = Array.from(document.querySelectorAll<HTMLElement>('.trust-card'));
   if (!trustCards.length) return undefined;
 
-  let groupIndex = 0;
-  let cardsPerTrustGroup = 0;
+  let startIndex = 0;
+  let visibleCount = 0;
   let timer: number | null = null;
   let resizeFrame = 0;
 
-  const getCardsPerTrustGroup = () => {
+  const getVisibleCount = () => {
     const width = window.innerWidth;
     if (width <= 767) return 2;
     if (width <= 1024) return 3;
@@ -651,30 +651,30 @@ function setupTrustRotation() {
 
   const clearTrustGroups = () => trustCards.forEach((card) => card.classList.remove('trust-hidden'));
 
-  const showGroup = () => {
-    if (!cardsPerTrustGroup || trustCards.length <= cardsPerTrustGroup) {
+  const showWindow = () => {
+    if (!visibleCount || trustCards.length <= visibleCount) {
       clearTrustGroups();
       return;
     }
 
-    const totalGroups = Math.ceil(trustCards.length / cardsPerTrustGroup);
-    groupIndex %= totalGroups;
     trustCards.forEach((card, index) => {
-      card.classList.toggle('trust-hidden', Math.floor(index / cardsPerTrustGroup) !== groupIndex);
+      const inWindow = index >= startIndex && index < startIndex + visibleCount;
+      card.classList.toggle('trust-hidden', !inWindow);
     });
   };
 
   const restart = () => {
     if (timer) window.clearInterval(timer);
     timer = null;
-    cardsPerTrustGroup = getCardsPerTrustGroup();
-    groupIndex = 0;
-    showGroup();
-    if (!prefersReducedMotion() && cardsPerTrustGroup && trustCards.length > cardsPerTrustGroup) {
+    visibleCount = getVisibleCount();
+    startIndex = 0;
+    showWindow();
+    if (!prefersReducedMotion() && visibleCount && trustCards.length > visibleCount) {
       timer = window.setInterval(() => {
-        groupIndex += 1;
-        showGroup();
-      }, 3200);
+        const maxStart = trustCards.length - visibleCount;
+        startIndex = startIndex >= maxStart ? 0 : startIndex + 1;
+        showWindow();
+      }, 3500);
     }
   };
 

@@ -123,23 +123,23 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const configuratorEnabled = !!(product as Product & { configurator_enabled?: boolean }).configurator_enabled;
 
   return (
-    <div className="space-y-4">
+    <div className="product-cart-bar space-y-2 sm:space-y-4">
       {/* Stock status */}
       {isOnRequest ? (
-        <div className="flex items-center gap-2 text-sm font-medium text-[#7A1515]">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-[#7A1515] sm:gap-2 sm:text-sm">
           <span className="h-2 w-2 rounded-full bg-[#7A1515]" />
           Available on Request
         </div>
       ) : !isUnavailable ? (
-        <div className="flex items-center gap-2 text-sm font-medium text-green-700">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-green-700 sm:gap-2 sm:text-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500 sm:h-2 sm:w-2" />
           {product.availability_status === 'on_demand' ? 'Available on Demand' : 'In Stock'}
           {product.stock_quantity < 5 && (
-            <span className="ml-1 text-amber-600">— Only {product.stock_quantity} left!</span>
+            <span className="text-amber-600">— Only {product.stock_quantity} left!</span>
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 sm:gap-2 sm:text-sm">
           <span className="h-2 w-2 rounded-full bg-red-500" />
           {product.availability_status === 'reserved' ? 'Reserved' : product.availability_status === 'sold' ? 'Sold' : 'Out of Stock'}
         </div>
@@ -151,52 +151,50 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg sm:gap-2 sm:px-5 sm:py-3 sm:text-sm"
             style={{ background: '#25D366' }}
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Enquire on WhatsApp
           </a>
           <Link
             href="/contact?type=enquiry"
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 py-2.5 text-xs font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md sm:gap-2 sm:py-3 sm:text-sm"
             style={{ borderColor: '#7A1515', color: '#7A1515' }}
           >
-            <Phone className="h-4 w-4" />
+            <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Request a Quote
           </Link>
         </div>
       ) : (
       <>
-      {/* Primary action row — quantity + main CTA */}
-      <div className="flex gap-2">
-        {/* Quantity selector */}
-        <div className="flex items-center rounded-lg border border-[var(--pvg-border)] bg-brand-surface">
+      {/* Primary action row — compact single line on mobile */}
+      <div className="flex items-stretch gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center rounded-md border border-[var(--pvg-border)] bg-brand-surface sm:rounded-lg">
           <button
             onClick={handleDecrease}
-            className="flex h-10 w-9 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
+            className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] sm:h-10 sm:w-9"
             aria-label="Decrease quantity"
           >
             −
           </button>
-          <span className="w-7 text-center text-[14px] font-semibold text-[var(--pvg-primary)]">
+          <span className="w-6 text-center text-[13px] font-semibold text-[var(--pvg-primary)] sm:w-7 sm:text-[14px]">
             {displayQty}
           </span>
           <button
             onClick={handleIncrease}
             disabled={isUnavailable || displayQty >= maxQuantity}
-            className="flex h-10 w-9 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
+            className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] sm:h-10 sm:w-9"
             aria-label="Increase quantity"
           >
             +
           </button>
         </div>
 
-        {/* Main CTA: Buy Loose (if configurator) or Add to Cart */}
         <button
           onClick={inCart ? undefined : handleAdd}
           disabled={isUnavailable}
-          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:rounded-lg sm:px-5 sm:py-3 sm:text-sm"
           style={{
             background: inCart
               ? '#2e7d32'
@@ -208,24 +206,24 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           }}
         >
           {configuratorEnabled ? (
-            <><Gem className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In cart' : 'Buy loose'}</>
+            <><Gem className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /><span className="truncate">{isUnavailable ? 'Unavailable' : inCart ? 'In cart' : 'Buy loose'}</span></>
           ) : (
-            <><ShoppingBag className="h-4 w-4" />{isUnavailable ? 'Unavailable' : inCart ? 'In cart' : 'Add to cart'}</>
+            <><ShoppingBag className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /><span className="truncate">{isUnavailable ? 'Unavailable' : inCart ? 'In cart' : 'Add to cart'}</span></>
           )}
         </button>
 
         <WishlistButton
           productId={product.id}
           productName={product.name}
-          className="h-10 w-10"
+          className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
           stopPropagation={false}
         />
         <button
           onClick={handleShare}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--pvg-border)] text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--pvg-border)] text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)] sm:rounded-lg sm:h-10 sm:w-10"
           aria-label="Share"
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </button>
       </div>
 
@@ -234,13 +232,13 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         <Link
           href={`/configure/${product.id}`}
           onClick={() => trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_detail' })}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border-2 py-2 text-xs font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md sm:gap-2 sm:rounded-lg sm:py-3 sm:text-sm"
           style={{
             borderColor: '#7A1515',
             color: '#7A1515',
           }}
         >
-          <Gem className="h-4 w-4" />
+          <Gem className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           Configure in jewellery
         </Link>
       )}
@@ -248,23 +246,23 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       )}
 
       {/* WhatsApp + Book Consultation */}
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-1.5 sm:flex sm:gap-2">
         <a
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-[11px] font-semibold transition hover:opacity-80"
+          className="flex items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-[10px] font-semibold transition hover:opacity-80 sm:rounded-lg sm:gap-1.5 sm:px-4 sm:py-2 sm:text-[11px]"
           style={{ borderColor: '#25D366', color: '#25D366' }}
         >
-          <MessageCircle className="h-3.5 w-3.5" />
+          <MessageCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           WhatsApp
         </a>
         <Link
           href="/contact?type=consultation"
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--pvg-border)] px-3 py-2 text-[11px] font-semibold text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)]"
+          className="flex items-center justify-center gap-1 rounded-md border border-[var(--pvg-border)] px-2 py-1.5 text-[10px] font-semibold text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)] sm:gap-1.5 sm:px-3 sm:py-2 sm:text-[11px]"
         >
-          <Phone className="h-3.5 w-3.5" />
-          Book Consultation
+          <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+          <span className="truncate">Book Consultation</span>
         </Link>
       </div>
     </div>

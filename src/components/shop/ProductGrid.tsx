@@ -8,15 +8,14 @@ import type { ProductCard as ProductCardType } from '@/lib/types/product';
 
 function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--pvg-border)]">
-      {/* 5:6 image skeleton */}
-      <div className="relative w-full" style={{ paddingBottom: '120%' }}>
+    <div className="min-w-0 overflow-hidden rounded-lg border border-black/[0.06] shadow-[0_2px_10px_rgba(61,43,31,0.06)]">
+      <div className="relative w-full" style={{ paddingBottom: '115%' }}>
         <Skeleton className="absolute inset-0" />
       </div>
-      <div className="space-y-2 p-3">
+      <div className="space-y-1.5 p-2 sm:space-y-2 sm:p-3">
         <Skeleton className="h-3 w-2/3 rounded" />
-        <Skeleton className="h-4 w-full rounded" />
-        <Skeleton className="h-5 w-2/5 rounded" />
+        <Skeleton className="h-3.5 w-full rounded sm:h-4" />
+        <Skeleton className="h-4 w-2/5 rounded sm:h-5" />
       </div>
     </div>
   );
@@ -69,7 +68,7 @@ export function ProductGrid({
   skeletonCount = 12,
 }: ProductGridProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {loading
         ? Array.from({ length: skeletonCount }).map((_, i) => (
             <SkeletonCard key={i} />

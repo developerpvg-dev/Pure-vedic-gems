@@ -175,10 +175,10 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        {/* ── Main image — full width on all screen sizes ── */}
-        <div className="group relative overflow-hidden rounded-lg border border-brand-border bg-brand-bg-alt shadow-[0_18px_54px_rgba(61,43,31,0.08)]">
-          <div className="relative aspect-4/3 w-full lg:aspect-[5/4]">
+      <div className="product-gallery flex flex-col gap-2 lg:gap-4">
+        {/* ── Main image — portrait card on mobile (matches Continue exploring), wider on desktop ── */}
+        <div className="group relative overflow-hidden rounded-lg bg-[#f2f2f2] max-lg:shadow-none lg:border lg:border-brand-border lg:bg-brand-bg-alt lg:shadow-[0_18px_54px_rgba(61,43,31,0.08)]">
+          <div className="relative aspect-[100/115] w-full lg:aspect-[5/4]">
             {isVideoActive && embedUrl ? (
               <iframe
                 src={embedUrl}
@@ -194,7 +194,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
                 src={imgs[activeIdx]}
                 alt={`${productName} — image ${activeIdx + 1}`}
                 fill
-                className="object-contain"
+                className="object-cover lg:object-contain"
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 priority={activeIdx === 0}
                 loading="eager"
@@ -207,7 +207,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
           {!isVideoActive && (
             <button
               onClick={openZoom}
-              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white"
+              className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white lg:right-3 lg:top-3 lg:h-9 lg:w-9"
               aria-label="View full size image"
             >
               <Maximize2 className="h-4 w-4" />
@@ -219,28 +219,28 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
             <>
               <button
                 onClick={prevImg}
-                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white"
+                className="absolute left-2 top-1/2 z-10 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white lg:left-3 lg:h-9 lg:w-9"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={nextImg}
-                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white"
+                className="absolute right-2 top-1/2 z-10 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-brand-primary shadow-md backdrop-blur-sm transition hover:bg-brand-accent hover:text-white lg:right-3 lg:h-9 lg:w-9"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
 
               {/* Dot indicators */}
-              <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+              <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1 lg:bottom-3 lg:gap-1.5">
                 {Array.from({ length: totalSlides }).map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveIdx(i)}
-                    className="h-1.5 rounded-full transition-all duration-200"
+                    className="h-1 rounded-full transition-all duration-200 lg:h-1.5"
                     style={{
-                      width: i === activeIdx ? '24px' : '6px',
+                      width: i === activeIdx ? '16px' : '5px',
                       background: i === activeIdx ? 'var(--pvg-accent)' : 'rgba(255,255,255,0.6)',
                     }}
                     aria-label={`Go to slide ${i + 1}`}
@@ -251,13 +251,13 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
           )}
         </div>
 
-        {/* ── Thumbnails ── */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        {/* ── Thumbnails — compact on mobile ── */}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 lg:gap-2 lg:pb-1">
           {imgs.map((src, i) => (
             <button
               key={i}
               onClick={() => setActiveIdx(i)}
-              className="relative h-18 w-18 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 hover:opacity-100 lg:h-22 lg:w-22"
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border transition-all duration-200 hover:opacity-100 sm:h-14 sm:w-14 lg:h-22 lg:w-22 lg:rounded-lg lg:border-2"
               style={{
                 borderColor: i === activeIdx ? 'var(--pvg-accent)' : 'var(--pvg-border)',
                 opacity: i === activeIdx ? 1 : 0.6,
@@ -276,7 +276,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
           {videoUrl && (
             <button
               onClick={() => setActiveIdx(videoIdx)}
-              className="relative h-18 w-18 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 hover:opacity-100 lg:h-22 lg:w-22"
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border transition-all duration-200 hover:opacity-100 sm:h-14 sm:w-14 lg:h-22 lg:w-22 lg:rounded-lg lg:border-2"
               style={{
                 borderColor: isVideoActive ? 'var(--pvg-accent)' : 'var(--pvg-border)',
                 opacity: isVideoActive ? 1 : 0.6,

@@ -221,7 +221,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
   const isReverse = config.imageSide === 'right';
 
   return (
-    <div className="mt-12">
+    <div className="pvg-react-home-root mt-12 overflow-x-clip">
       <section
         className={`pvg-rcta-v2 pvg-rcta-v2-${variant}${isReverse ? ' pvg-rcta-v2-reverse' : ''}`}
         aria-label={config.title}
@@ -276,13 +276,13 @@ function ProductAssuranceStrip() {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-lg border border-brand-border bg-white/80 p-3 sm:grid-cols-4">
+    <div className="product-assurance-strip grid grid-cols-2 gap-1.5 rounded-lg border border-brand-border bg-white/80 p-2 sm:grid-cols-4 sm:gap-2 sm:p-3">
       {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-2 rounded-md bg-[#fffaf2] px-3 py-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#7A1515]/10 text-[#7A1515]">
-            <item.icon className="h-3.5 w-3.5" />
+        <div key={item.label} className="flex min-w-0 items-center gap-1.5 rounded-md bg-[#fffaf2] px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#7A1515]/10 text-[#7A1515] sm:h-7 sm:w-7">
+            <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           </span>
-          <span className="text-[12px] font-normal leading-4 text-brand-text">{item.label}</span>
+          <span className="min-w-0 text-[10px] font-normal leading-tight text-brand-text sm:text-[12px] sm:leading-4">{item.label}</span>
         </div>
       ))}
     </div>
@@ -411,11 +411,11 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     <>
       <ProductJsonLd product={product} href={href} reviews={reviews} />
 
-      <main className="min-h-screen bg-[#fbf7ef] px-4 pb-24 pt-28 font-body md:px-6 md:pt-32 lg:px-8">
-        <div className="mx-auto max-w-340">
+      <main className="pvg-product-page min-h-screen overflow-x-clip bg-[#fbf7ef] px-3 pb-24 pt-28 font-body sm:px-4 md:px-6 md:pt-32 lg:px-8">
+        <div className="mx-auto min-w-0 max-w-340">
 
           {/* ── Breadcrumb ── */}
-          <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[13px] font-medium text-brand-muted">
+          <nav className="mb-3 flex flex-wrap items-center gap-1 text-[11px] font-medium text-brand-muted sm:mb-6 sm:gap-1.5 sm:text-[13px]">
             <Link href="/" className="transition hover:text-brand-accent">Home</Link>
             <span>/</span>
             <Link href="/shop" className="transition hover:text-brand-accent">Shop</Link>
@@ -431,18 +431,18 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           </nav>
 
           {/* ── Main Grid: Gallery | Info — true 50/50 on desktop ── */}
-          <div className="grid gap-7 md:gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1fr)]">
+          <div className="grid min-w-0 gap-3 sm:gap-6 md:gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,0.95fr)_minmax(420px,1fr)]">
 
             {/* ─── Left: Gallery ─── */}
-            <div className="lg:sticky lg:top-22.5 lg:self-start">
+            <div className="min-w-0 lg:sticky lg:top-22.5 lg:self-start">
               <ProductGallery images={images} productName={product.name} videoUrl={product.video_url} />
             </div>
 
             {/* ─── Right: Info panel ─── */}
-            <div className="space-y-5 rounded-lg border border-brand-border bg-white p-5 shadow-[0_18px_54px_rgba(61,43,31,0.08)] md:p-6">
+            <div className="product-info-panel min-w-0 space-y-3 rounded-lg border-0 bg-transparent p-0 shadow-none sm:space-y-4 sm:border sm:border-brand-border sm:bg-white sm:p-5 sm:shadow-[0_18px_54px_rgba(61,43,31,0.08)] md:p-6 lg:space-y-5">
               {/* Product name + SKU */}
               <div>
-                <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <div className="mb-1 flex flex-wrap items-center gap-1 sm:mb-2 sm:gap-1.5">
                   {product.certification && (
                     <span className="rounded border border-[#7A1515]/25 px-2 py-0.5 text-[10px] font-medium text-[#7A1515]">
                       {product.certification} Certified
@@ -455,17 +455,17 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                   )}
                 </div>
 
-                <h1 className="text-[clamp(22px,2.5vw,34px)] font-normal leading-tight text-[#7A1515]">
+                <h1 className="break-words text-[clamp(18px,4.8vw,34px)] font-normal leading-snug text-[#7A1515] sm:leading-tight">
                   {product.name}
                 </h1>
 
                 {skuMeta && (
-                  <p className="mt-2 text-[13px] font-normal text-brand-muted">
+                  <p className="mt-1 text-[12px] font-normal text-brand-muted sm:mt-2 sm:text-[13px]">
                     {skuMeta}
                   </p>
                 )}
 
-                <p className="mt-2 text-[12px] font-medium tracking-[0.08em] text-brand-muted">
+                <p className="mt-1 text-[11px] font-medium tracking-[0.06em] text-brand-muted sm:mt-2 sm:text-[12px] sm:tracking-[0.08em]">
                   SKU: {product.sku}
                 </p>
               </div>
@@ -482,7 +482,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
               <ProductAssuranceStrip />
 
               {/* Gemstone quick specs */}
-              <div className="grid grid-cols-2 gap-3 rounded-lg border border-brand-border bg-brand-bg p-4 sm:grid-cols-3">
+              <div className="product-spec-grid grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-brand-border bg-brand-bg p-2.5 sm:grid-cols-3 sm:gap-3 sm:p-4">
                 {[
                   { label: 'Tag', value: product.tag_number },
                   { label: 'Availability', value: formatLabel(product.availability_status) },
@@ -507,10 +507,10 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                   .filter(({ value }) => !!value)
                   .map(({ label, value }) => (
                     <div key={label} className="min-w-0">
-                      <p className="text-[10px] font-normal text-brand-muted">
+                      <p className="text-[9px] font-normal text-brand-muted sm:text-[10px]">
                         {label}
                       </p>
-                      <p className="mt-1 truncate text-[13px] font-normal text-brand-text">{value}</p>
+                      <p className="product-spec-value mt-0.5 break-words text-[11px] font-normal leading-snug text-brand-text sm:mt-1 sm:text-[13px]">{value}</p>
                     </div>
                   ))}
               </div>
@@ -520,8 +520,8 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
               {/* Expert Note */}
               {(product.expert_note || expert) && (
-                <div className="rounded-xl border border-brand-gold-light bg-brand-gold-light p-4">
-                  <p className="mb-2.5 text-[12px] font-medium text-brand-accent">
+                <div className="rounded-lg border border-brand-gold-light bg-brand-gold-light p-3 sm:rounded-xl sm:p-4">
+                  <p className="mb-2 text-[11px] font-medium text-brand-accent sm:mb-2.5 sm:text-[12px]">
                     Expert Note
                   </p>
                   {expert && (
@@ -552,7 +552,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           </div>
 
           {/* ── Tabs: Description, Vedic, Certificate, Wearing, Reviews ── */}
-          <div className="mt-16">
+          <div className="product-tabs-section mt-8 sm:mt-16">
             <ProductTabs
               product={product}
               reviews={reviews}
@@ -569,14 +569,14 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
           {/* ── Related Products ── */}
           {related.length > 0 && (
-            <section className="mt-16">
-              <OrnamentalDivider className="mb-6" />
-              <div className="mb-5 text-center">
-                <h2 className="text-2xl font-medium text-[#7A1515]">
+            <section className="mt-10 sm:mt-16">
+              <OrnamentalDivider className="mb-4 sm:mb-6" />
+              <div className="mb-3 text-center sm:mb-5">
+                <h2 className="text-xl font-medium text-[#7A1515] sm:text-2xl">
                   Related Gemstones
                 </h2>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {related.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}

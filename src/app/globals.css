@@ -6,6 +6,7 @@
 @import "shadcn/tailwind.css";
 @import "./home.css";
 @import "./homepage-fixes.css";
+@import "./product-page.css";
 @import "./knowledge-pages.css";
 
 @custom-variant dark (&:is(.dark *));

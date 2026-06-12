@@ -116,7 +116,7 @@ export function ProductCard({ product }: ProductCardProps) {
     .join(' · ');
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg bg-white transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]">
+    <div className="group relative flex min-w-0 flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)] transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]">
       {/* ── Image ── */}
       <div className="relative overflow-hidden bg-[#f2f2f2]" style={{ paddingBottom: '115%' }}>
         <Link href={href} className="absolute inset-0 block">
@@ -125,29 +125,29 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            sizes="(min-width: 1536px) 20vw, (min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            sizes="(min-width: 1536px) 20vw, (min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 46vw"
           />
         </Link>
 
         {/* Status badges — prominent top-left overlay */}
         {isUnavailable && (
-          <div className="absolute left-2 top-2 z-10 rounded-md bg-red-600/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+          <div className="absolute left-1.5 top-1.5 z-10 rounded bg-red-600/95 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-md sm:left-2 sm:top-2 sm:rounded-md sm:px-2.5 sm:py-1 sm:text-[10px]">
             {unavailableLabel}
           </div>
         )}
         {!isUnavailable && isOnRequest && (
-          <div className="absolute left-2 top-2 z-10 rounded-md bg-[#7A1515]/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+          <div className="absolute left-1.5 top-1.5 z-10 rounded bg-[#7A1515]/95 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-md sm:left-2 sm:top-2 sm:rounded-md sm:px-2.5 sm:py-1 sm:text-[10px]">
             On Request
           </div>
         )}
 
         {/* Wishlist heart — always visible top-right */}
-        <div className="absolute right-2 top-2 z-10">
+        <div className="absolute right-1.5 top-1.5 z-10 sm:right-2 sm:top-2">
           <WishlistButton
             productId={product.id}
             productName={product.name}
-            className="h-8 w-8 rounded-full border-0 bg-white/90 shadow-sm hover:bg-white"
-            iconClassName="h-4 w-4"
+            className="h-7 w-7 rounded-full border-0 bg-white/90 shadow-sm hover:bg-white sm:h-8 sm:w-8"
+            iconClassName="h-3.5 w-3.5 sm:h-4 sm:w-4"
           />
         </div>
 
@@ -209,36 +209,36 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* ── Info Strip ── */}
-      <div className="flex flex-col px-3 pb-3 pt-2">
+      <div className="flex min-w-0 flex-col px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
         {/* Name */}
         <Link
           href={href}
-          className="line-clamp-1 text-[13px] font-semibold leading-snug text-gray-900 transition-colors hover:text-brand-accent"
+          className="line-clamp-2 min-h-8 text-[11px] font-semibold leading-snug text-gray-900 transition-colors hover:text-brand-accent sm:line-clamp-1 sm:min-h-0 sm:text-[13px]"
         >
           {product.name}
         </Link>
 
         {/* Out of stock label */}
         {isUnavailable && (
-          <p className="mt-0.5 text-[11px] font-medium text-red-500">{unavailableLabel}</p>
+          <p className="mt-0.5 text-[10px] font-medium text-red-500 sm:text-[11px]">{unavailableLabel}</p>
         )}
 
         {/* Price row */}
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           {isOnRequest ? (
-            <span className="text-[14px] font-semibold text-[#7A1515]">Price on Request</span>
+            <span className="text-[11px] font-semibold text-[#7A1515] sm:text-[14px]">Price on Request</span>
           ) : (
             <>
-              <span className="text-[14px] font-semibold text-gray-900">
+              <span className="text-[12px] font-semibold text-gray-900 sm:text-[14px]">
                 {formatPrice(product.price)}
               </span>
               {product.compare_price && product.compare_price > product.price && (
-                <span className="text-[11px] text-gray-400 line-through">
+                <span className="text-[10px] text-gray-400 line-through sm:text-[11px]">
                   {formatPrice(product.compare_price)}
                 </span>
               )}
               {product.price_per_carat && (
-                <span className="ml-auto text-[10px] text-brand-muted">
+                <span className="w-full text-[9px] text-brand-muted sm:ml-auto sm:w-auto sm:text-[10px]">
                   {formatPrice(product.price_per_carat)}/ct
                 </span>
               )}
@@ -248,7 +248,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Carat · Origin · Shape */}
         {meta && (
-          <p className="mt-0.5 truncate text-[10px] font-normal text-brand-muted">
+          <p className="mt-0.5 truncate text-[9px] font-normal text-brand-muted sm:text-[10px]">
             {meta}
           </p>
         )}

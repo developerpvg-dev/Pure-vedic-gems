@@ -43,7 +43,7 @@ export function PriceDisplay({
     <div className="space-y-1.5">
       {/* Main price row */}
       <div className="flex flex-wrap items-end gap-3">
-        <span className="text-3xl font-medium leading-none tracking-tight text-[#111111] md:text-4xl">
+        <span className="text-[clamp(24px,7vw,36px)] font-medium leading-none tracking-tight text-[#111111] md:text-4xl">
           {formatPrice(price)}
         </span>
 
