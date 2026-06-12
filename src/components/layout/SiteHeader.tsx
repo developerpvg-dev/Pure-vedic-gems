@@ -9,6 +9,7 @@ import {
   BLOG_CATEGORY_LINKS,
 } from '@/lib/constants/nav-items';
 import { findStorefrontGroup, type StorefrontCategoryGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
+import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
 import { useCart } from '@/lib/hooks/useCart';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { UserAuthButton } from '@/components/auth/UserAuthButton';
@@ -89,6 +90,7 @@ function CalendarSvg() {
 
 
 function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
+  const thumbImage = resolveRudrakshaNavImage(link.slug, link.image);
   const shellStyle: React.CSSProperties = {
     width: '48px',
     height: '48px',
@@ -97,10 +99,10 @@ function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
     overflow: 'hidden',
   };
 
-  if (link.image) {
+  if (thumbImage) {
     return (
       <span style={shellStyle} aria-hidden="true">
-        <Image src={link.image} alt="" width={48} height={48} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <Image src={thumbImage} alt="" width={48} height={48} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }

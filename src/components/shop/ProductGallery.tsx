@@ -178,7 +178,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
       <div className="flex flex-col gap-4">
         {/* ── Main image — full width on all screen sizes ── */}
         <div className="group relative overflow-hidden rounded-lg border border-brand-border bg-brand-bg-alt shadow-[0_18px_54px_rgba(61,43,31,0.08)]">
-          <div className="relative aspect-4/3 w-full lg:aspect-3/2">
+          <div className="relative aspect-4/3 w-full lg:aspect-[5/4]">
             {isVideoActive && embedUrl ? (
               <iframe
                 src={embedUrl}
@@ -194,7 +194,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
                 src={imgs[activeIdx]}
                 alt={`${productName} — image ${activeIdx + 1}`}
                 fill
-                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-[1.07]"
+                className="object-contain"
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 priority={activeIdx === 0}
                 loading="eager"

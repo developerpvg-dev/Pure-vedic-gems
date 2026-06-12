@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { findStorefrontGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
+import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
 import { BLOG_CATEGORY_LINKS } from '@/lib/constants/nav-items';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -32,13 +33,14 @@ const DIRECT_LINKS = [
 ] as const;
 
 function MobileCategoryThumb({ link }: { link: StorefrontSubCategory }) {
-  if (link.image) {
+  const thumbImage = resolveRudrakshaNavImage(link.slug, link.image);
+  if (thumbImage) {
     return (
       <span
         style={{ width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         aria-hidden="true"
       >
-        <Image src={link.image} alt="" width={28} height={28} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <Image src={thumbImage} alt="" width={28} height={28} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }

@@ -75,6 +75,14 @@ export function KnowledgeHubPage({ siteUrl }: { siteUrl: string }) {
               <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#5a4a3a] md:text-[15px]">
                 Curated reference guides on gemstones, Rudraksha, astrology, and safe buying — from Pure Vedic Gems since 1937.
               </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Link href="/consultation" className="pvg-knowledge-btn-primary px-5 py-2.5 text-[11px]">
+                  Book Consultation
+                </Link>
+                <Link href="/tools/recommendation" className="pvg-knowledge-btn-outline px-5 py-2.5 text-[11px]">
+                  Get Recommendation
+                </Link>
+              </div>
             </div>
           </ScrollReveal>
         </div>
@@ -125,9 +133,14 @@ export function KnowledgeHubPage({ siteUrl }: { siteUrl: string }) {
               <p className="text-sm leading-7 text-[#6f6559]">
                 Need a gemstone matched to your birth chart? Speak with our Vedic experts before you buy.
               </p>
-              <Link href="/consultation" className="pvg-knowledge-btn-primary shrink-0 px-5 py-2.5 text-[11px]">
-                Book Consultation
-              </Link>
+              <div className="flex shrink-0 flex-wrap gap-3">
+                <Link href="/consultation" className="pvg-knowledge-btn-primary px-5 py-2.5 text-[11px]">
+                  Book Consultation
+                </Link>
+                <Link href="/tools/recommendation" className="pvg-knowledge-btn-outline px-5 py-2.5 text-[11px]">
+                  Get Recommendation
+                </Link>
+              </div>
             </div>
           </ScrollReveal>
         </div>

@@ -40,3 +40,9 @@ export function rudrakshaMukhiImage(slug: string): string | null {
 export function rudrakshaMukhiImageByNumber(mukhi: number): string | null {
   return rudrakshaMukhiImage(`${mukhi}-mukhi`);
 }
+
+export function resolveRudrakshaNavImage(slug: string, image?: string | null): string | null {
+  if (image) return image;
+  if (/^\d+-mukhi$/.test(slug)) return rudrakshaMukhiImage(slug);
+  return null;
+}

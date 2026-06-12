@@ -11,9 +11,19 @@
 .pvg-react-home-root .cfg-lin-btn,
 .pvg-react-home-root a.reco-form-cta,
 .pvg-react-home-root .reco-form-cta,
+.pvg-react-home-root button.reco-form-cta,
 .pvg-react-home-root a.svc-click-btn,
 .pvg-react-home-root .svc-click-btn {
   color: #ffffff !important;
+}
+
+.pvg-react-home-root button.reco-form-cta {
+  background: var(--maroon) !important;
+}
+
+.pvg-react-home-root button.reco-form-cta:hover {
+  background: var(--gold-light) !important;
+  color: var(--maroon-deep) !important;
 }
 
 .pvg-react-home-root .about-exp-badge {
@@ -37,6 +47,17 @@
   height: 100% !important;
   object-fit: contain !important;
   filter: drop-shadow(0 14px 26px rgba(122, 21, 21, 0.28));
+}
+
+.pvg-react-home-root .who-section .about-stack-card:nth-child(5) {
+  background: linear-gradient(145deg, #120208, #2A0810);
+}
+
+.pvg-react-home-root .who-section .about-stack-card[data-pos="4"] {
+  z-index: 0 !important;
+  opacity: 0.38 !important;
+  filter: saturate(0.8) brightness(0.88) !important;
+  transform: rotate(-10deg) translate(-24px, 20px) scale(0.91) !important;
 }
 
 .pvg-react-home-root .cert-section .cert-stack-card,

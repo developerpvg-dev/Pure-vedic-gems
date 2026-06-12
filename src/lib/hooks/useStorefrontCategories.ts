@@ -7,7 +7,7 @@ import {
   type StorefrontCategoryGroup,
 } from '@/lib/categories/storefront';
 
-const CACHE_KEY = 'pvg_storefront_categories_v1';
+const CACHE_KEY = 'pvg_storefront_categories_v2';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function readCachedGroups(): StorefrontCategoryGroup[] | null {

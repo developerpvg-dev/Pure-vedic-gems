@@ -4056,15 +4056,15 @@
     .reco-form-input[type="time"]::-webkit-calendar-picker-indicator {
       opacity: 0.4; cursor: pointer;
     }
-    .reco-form-cta {
+    .pvg-react-home-root button.reco-form-cta {
       width: 100%; padding: 13px; border-radius: 3px; border: none; cursor: pointer;
       background: var(--maroon); color: var(--white);
       font-family: var(--font-ui); font-size: 13px; font-weight: 700;
       letter-spacing: 0.03em; text-transform: none;
-      transition: background 0.2s, transform 0.15s;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
     }
-    .reco-form-cta:hover { background: var(--gold-light); color: var(--maroon-deep); transform: translateY(-1px); }
-    .reco-form-cta:disabled { cursor: wait; opacity: 0.72; transform: none; }
+    .pvg-react-home-root button.reco-form-cta:hover { background: var(--gold-light); color: var(--maroon-deep); transform: translateY(-1px); }
+    .pvg-react-home-root button.reco-form-cta:disabled { cursor: wait; opacity: 0.72; transform: none; }
     .reco-form-status {
       margin-top: 10px;
       font-family: var(--font-ui);

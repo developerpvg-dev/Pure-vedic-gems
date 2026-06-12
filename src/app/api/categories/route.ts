@@ -8,6 +8,7 @@ import {
   type StorefrontCategoryGroupSlug,
   type StorefrontSubCategory,
 } from '@/lib/categories/storefront';
+import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
 
 type GemCategoryRow = {
   id: string;
@@ -62,14 +63,26 @@ function gemLabel(category: GemCategoryRow) {
 
 function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
   const parentSlug = category.type === 'upratna' ? 'upratna' : category.type === 'rudraksha' ? 'rudraksha' : 'navaratna';
+  const image =
+    category.type === 'rudraksha'
+      ? resolveRudrakshaNavImage(category.slug, category.image_url)
+      : category.image_url;
   return {
     slug: category.slug,
     label: gemLabel(category),
     href: storefrontSubcategoryHref(parentSlug, category.slug),
     swatch: category.color,
-    image: category.image_url,
+    image,
     meta: category.type === 'navaratna' ? category.planet ?? null : null,
   };
+}
+
+function isRudrakshaMukhiSlug(slug: string) {
+  return /^\d+-mukhi$/.test(slug);
+}
+
+function rudrakshaMukhiSortOrder(slug: string) {
+  return Number.parseInt(slug, 10) || 0;
 }
 
 function catalogToSubcategory(category: CatalogCategoryRow): StorefrontSubCategory {
@@ -96,7 +109,14 @@ function isCatalogSubcategory(row: CatalogCategoryRow) {
 function buildStorefrontGroups(gemRows: GemCategoryRow[], catalogRows: CatalogCategoryRow[]): StorefrontCategoryGroup[] {
   return STOREFRONT_GROUP_CONFIG.map((group) => {
     const subcategories = group.gemType
-      ? gemRows.filter((row) => row.type === group.gemType).map(gemToSubcategory)
+      ? gemRows
+          .filter((row) => row.type === group.gemType)
+          .filter((row) => group.gemType !== 'rudraksha' || isRudrakshaMukhiSlug(row.slug))
+          .sort((a, b) => {
+            if (group.gemType !== 'rudraksha') return a.sort_order - b.sort_order;
+            return rudrakshaMukhiSortOrder(a.slug) - rudrakshaMukhiSortOrder(b.slug);
+          })
+          .map(gemToSubcategory)
       : catalogRows
           .filter((row) => group.catalogFamilies?.includes(row.family) && isCatalogSubcategory(row))
           .map(catalogToSubcategory);

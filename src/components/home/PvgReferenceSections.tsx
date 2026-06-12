@@ -9,7 +9,7 @@ import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
 
-const WHO_WE_ARE_IMG_VERSION = '20260609';
+const WHO_WE_ARE_IMG_VERSION = '20260611';
 const CONFIGURATOR_STEPS_IMG_VERSION = '20260611b';
 const CERT_STACK_IMG_VERSION = '20260611';
 
@@ -299,6 +299,10 @@ export function PvgReferenceSections({
         <div className="about-img-wrap">
           <div className="about-img-stack" id="aboutStack" aria-label="Heritage photographs">
 
+            <div className="about-stack-card" data-pos="4">
+              <img className="about-stack-img" src={`/home/whoweare/vedic-talismans.png?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Powerful Vedic talismans — sacred geometry jewellery designs" loading="lazy" />
+            </div>
+
             <div className="about-stack-card" data-pos="3">
               <img className="about-stack-img" src={`/home/whoweare/1Heritage.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" />
             </div>
@@ -352,7 +356,7 @@ export function PvgReferenceSections({
               <div className="about-stat-label">Countries</div>
             </div>
             <div className="about-stat">
-              <div className="about-stat-num">1L+</div>
+              <div className="about-stat-num">1.5 L</div>
               <div className="about-stat-label">Lives Changed</div>
             </div>
             <div className="about-stat">
