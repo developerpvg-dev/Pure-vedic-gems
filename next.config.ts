@@ -186,6 +186,7 @@ const nextConfig: NextConfig = {
         ['/red-coral-qualities', '/knowledge/gem-qualities/red-coral'],
         ['/buy-online-catseye-gemstone', '/knowledge/gem-qualities/catseye'],
         ['/hessonite-qualites', '/knowledge/gem-qualities/hessonite'],
+        ['/opal-qualities', '/knowledge/gem-qualities/opal'],
       ].flatMap(([source, destination]) => [
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },

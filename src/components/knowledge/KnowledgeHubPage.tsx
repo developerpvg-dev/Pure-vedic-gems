@@ -17,6 +17,12 @@ const LIBRARIES = [
   },
   {
     group: 'Gemstones',
+    title: 'Opal Qualities',
+    copy: 'Australian opal quality tiers, play-of-colour grading, and Venus (Shukra) wearing guidance.',
+    href: '/knowledge/gem-qualities/opal',
+  },
+  {
+    group: 'Gemstones',
     title: 'Treatments & Enhancements',
     copy: 'Heating, oiling, dyeing, diffusion, filling, and other disclosures explained.',
     href: '/knowledge/treatments',

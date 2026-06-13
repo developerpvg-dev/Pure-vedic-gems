@@ -216,10 +216,18 @@
   color: #2c0404 !important;
 }
 
-.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-copy,
-.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-copy p {
-  color: rgba(255, 255, 255, 0.9) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+@media (min-width: 768px) {
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-copy,
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-copy p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+  }
+
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-copy,
+  .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-copy p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
+  }
 }
 
 .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-navaratna .pvg-rcta-v2-btn-chat {
@@ -242,12 +250,6 @@
 /* Rudraksha (rudraksha knowledge pages) */
 .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-heading {
   color: #2d160b !important;
-}
-
-.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-copy,
-.pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-copy p {
-  color: rgba(255, 255, 255, 0.9) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
 }
 
 .pvg-knowledge-page .pvg-react-home-root .pvg-rcta-v2-rudraksha .pvg-rcta-v2-btn-chat {

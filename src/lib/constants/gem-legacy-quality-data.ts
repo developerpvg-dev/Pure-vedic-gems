@@ -2,7 +2,7 @@
 
 import type { GemLegacyGuide } from './gem-legacy-quality-types';
 
-export const LEGACY_GEM_QUALITY_SLUGS = ["blue-sapphire","yellow-sapphire","ruby","emerald","red-coral","catseye","hessonite"] as const;
+export const LEGACY_GEM_QUALITY_SLUGS = ["blue-sapphire","yellow-sapphire","ruby","emerald","red-coral","catseye","hessonite","opal"] as const;
 
 export type LegacyGemQualitySlug = (typeof LEGACY_GEM_QUALITY_SLUGS)[number];
 
@@ -1740,6 +1740,306 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
           {
             "src": "/gems-knowledge/hessonite/image-12-1.jpg",
             "alt": "Very High / Rare Quality Hessonite (Gomed) Gemstone — image-12-1.jpg"
+          }
+        ]
+      }
+    ]
+  },
+  "opal": {
+    "slug": "opal",
+    "shopHref": "/shop/opal",
+    "faqs": [
+      {
+        "question": "What is opal gemstone ?",
+        "answer": "Opal is a precious gemstone known for its natural beauty and play of colour. These are made up of hydrated silica. These are not only used as jewellery but also as an astrological remedy."
+      },
+      {
+        "question": "What is an astrological opal gemstone ?",
+        "answer": "According to Vedic astrology, opal gemstones connect to the planet Venus (Shukra). Astrological opal gemstones are natural, untreated, purified by Vedic rituals under the guidance of a learned priest (Pandit). Australian opal gemstones are considered the best quality healing gemstones in Vedic astrology."
+      },
+      {
+        "question": "What are the lowest quality opal gemstones?",
+        "answer": "The lowest quality opal gemstones have a good fire and shine, if they are treated. However, these gemstones look dull without treatment. As a result, these are not astrologically effective. These are the origin of Australia and Ethiopia. The prices of the lowest quality opal range from 50 to 200 Rs per carat approximately. We do not keep these opal gemstones."
+      },
+      {
+        "question": "What are the medium quality opal gemstones ?",
+        "answer": "These opal gemstones have a very less to medium firing effect and have greyish or off-white colour. Australia is the origin of these opal gemstones. The prices of these opal gemstones range from 200 to 800 Rs per carat approximately. Astrologically, these are effective for healing. Recommended! Explore our economy, premium, and super premium ranges for this category of opal gemstones."
+      },
+      {
+        "question": "What are the high quality opal gemstones?",
+        "answer": "These opal gemstones have very good firing and multicoloured brilliance. The colour of these opal gemstones ranges from off-white to pure white. These are absolutely natural opal gemstones (no treatment) and are of Australian origin. The prices of these opal gemstones range from 800 to 2000 Rs per carat approximately. As per Vedic astrology, these are very effective for healing. Highly recommended! For this category of opal gemstones, explore our luxury and super luxury ranges."
+      },
+      {
+        "question": "What are the rare quality (very high quality) opal gemstones?",
+        "answer": "These opal gemstones have a very strong firing effect with multicoloured brilliance. Australia is the origin place of these opal gemstones. The prices of these gemstones range from 2000 to 10000 Rs per carat approximately. These are the most effective opal gemstones as per Vedic astrology because of their rare quality (very high quality). Highly recommended! Check out the exclusive range for this category of opal gemstones."
+      },
+      {
+        "question": "Which planet is associated with opal gemstones?",
+        "answer": "Opal gemstones connect to the planet Venus, as per Vedic astrology. Individuals with a positive placement of Venus in their birth chart can wear opal gemstones. It is responsible for physical well being, status in society, and so on."
+      },
+      {
+        "question": "Which is the best quality opal gemstone ?",
+        "answer": "The best quality opal gemstones have a good play of colour, clarity, carat weight, origin, and so on. In order to buy these types of opal gemstones, visit our website, www.purevedicgems.in."
+      },
+      {
+        "question": "What is white opal price per carat ?",
+        "answer": "Opal gemstone price in India ranges from 50 to 2000 Rs per carat approximately. However, the prices of opal gemstones depend on their colour, clarity, fire effect, origin, carat weight, and so on. It is always recommended to choose one of the oldest opal gemstone sellers to ensure the best quality."
+      },
+      {
+        "question": "Which country produces the best-quality opal gemstones?",
+        "answer": "Australia is a leading producer of the best quality of opal gemstones in the world. Other than this, Ethiopia, Mexico, United States, Brazil, and Mexico also produce opal gemstones, however, their quality is not up to the mark of astrological standards."
+      },
+      {
+        "question": "Who can wear opal gemstones?",
+        "answer": "Individuals who have a positive placement of planet Venus in their birth chart (kundali) can wear an opal gemstone. However, before wearing an opal gemstone, you should consult with a knowledgeable astrologer as well as a certified astro gemologist for the optimum astrological result from this remedy."
+      },
+      {
+        "question": "What are opal gemstone benefits?",
+        "answer": "Opal gemstones connect to the planet Venus, which enhances creativity, improves relationships with your partner, improves communication skills, beneficial for eye health, immune system, and so on. In order to magnify the potency of opal gemstones, perform Vedic rituals under the guidance of an experienced Vedic priest (pandit). For more information, you can explore our website or YouTube channel."
+      },
+      {
+        "question": "How do I wear astrological opal gemstones?",
+        "answer": "In order to wear an astrological opal gemstone, you should always consult a knowledgeable astrologer who can analyse your birth chart correctly. You should also consult a certified astro gemologist to choose a Vedic quality opal gemstone. Thus, you can get optimum astrological benefits from this Vedic remedy."
+      },
+      {
+        "question": "Should I wear an opal in a ring or a pendant ?",
+        "answer": "Wearing an opal in a ring is better than wearing a pendant for healing purposes. An opal gemstone in a ring touches our bodies directly, which is more effective than a pendant. However, before wearing an opal gemstone, analyse your birth chart with an experienced astrologer. You can also contact our knowledgeable Vedic astrologers for personalised guidance."
+      },
+      {
+        "question": "How do I buy an opal gemstone online ?",
+        "answer": "If you are buying an opal gemstone online, you should check the quality of images, online reputation of opal gemstone seller, return and refund policies, previous customer reviews, payment options, shipping security, and so on. We at Pure Vedic Gems always ensure the ultimate buying experience of gemstones. Watch our YouTube channel for more knowledge, or you can visit our offline store in Delhi, India."
+      },
+      {
+        "question": "Where do I buy an opal gemstone?",
+        "answer": "Pure Vedic Gems is one of the leading astrological quality gemstone sellers in Delhi, India. We always ensure untreated, high quality, effective opal gemstones. For any information with respect to gemstones and other related services, you can contact us."
+      }
+    ],
+    "legacyH1": "Oldest & Most Trusted Jyotish Quality OPAL Gemstone Seller in India!",
+    "certificationQuote": "Kindly compare and buy only Govt. Certified (IGI-GTL) or world repute labs (Like GIA, IGI, GRS, AGS, GII, Etc.) certified Opal Gemstones only. Because only these labs (Not the private or affiliated labs opened nowadays) have the latest and the most advanced equipment to test these gemstones for the various treatments that are being done on them to enhance its color and clarity to dupe and cheat people.",
+    "sectionIntro": "Opal Qualities available in the market",
+    "shopLabel": "Click here to View Our Products",
+    "introBullets": [
+      "Natural, Non-Treated, Astrologically Approved, Certified Opals for potentiating the positive energies of planet Venus (Shukra) in one's life.",
+      "Opal is one of the best alternative or substitute for diamond (after white sapphire).",
+      "Opal is also known as Upala in Sanskrit, it is used to enhance the powers of the planet Venus (Shukra).",
+      "This gemstone helps to strengthen the cosmic rays of the planet Venus.",
+      "Wearing the Opal helps to improve relationships, increases love and affection, increase curative and artistic abilities, also helps to cure diseases."
+    ],
+    "trustPoints": [
+      {
+        "bold": "Pure Vedic Gems",
+        "text": " is the oldest & most trusted name associated with all kinds of vedic planetary gemstones."
+      },
+      {
+        "bold": "Genuine Gemstones",
+        "text": " with certification from international standard govt. labs only."
+      },
+      {
+        "bold": "Astrologically approved",
+        "text": " (Jyotish standard) energized & purified gems with vedic mantras & rituals for best results."
+      }
+    ],
+    "aboutTitle": "Purified & Energized Vedic Opals",
+    "aboutParagraphs": [
+      "We deal in authentic, potent, jyotish standard (as mentioned in vedic classic texts) & Natural gemstones only for best results."
+    ],
+    "instructionColumns": [
+      [
+        "Accurate Gemstone consultation from genuine Vedic Astrologer.",
+        "Most reasonable prices(direct sourcing from the mines, gems cutters-polishers).",
+        "We provide most reasonable & genuine prices of astro-jyotish quality gems across the globe."
+      ],
+      [
+        "We have specialized & experienced artisans (karigars) for setting these gemstones according to vedic wearing instructions.",
+        "We provide certification from labs having complete world standard equipments to test all the treatments and enhancements coming in gems nowadays.",
+        "We have huge collection of certified, authentic & genuine jyotish gemstones."
+      ],
+      [
+        "We also provide special facility of energizing (Abhimantrit) the gemstone according to personalized Gotra & Rashi through vedic mantras.",
+        "We provide complete genuine vedic instructions for wearing gemstone.",
+        "Opal Gemstones represents the planet Venus & people with positive Venus position in weak houses should wear Opal Gems for enhancing planet Shukra benefic blessings."
+      ]
+    ],
+    "generalCharacteristics": [
+      "This gemstone works on \"Sahasrara Chakra\" or \"Crown Chakra\".",
+      "The genuine Jyotish Opal gems are known to give good health, wealth, luck and protection.",
+      "Opal is a precious gemstone and is often regarded as the symbol of happiness, hope, and genuineness.",
+      "It cures sexual disorders, infertility, barrenness, sperm problems, sexual desire problems, bowel diseases, eyes infections, constipation and gastric problems etc",
+      "It brings victory and superior strength to the wearer, its wearer experience spiritual ecstasy at times.",
+      "Opals generally follow the phenomenon known as the \"play-of-color\" is the brilliant range of the full spectrum of colors caused by the diffraction of white light by the internal structure of orderly arrayed spheres of silica.",
+      "The auspicious day to commence its use is Friday morning.",
+      "Opal Gems should be set in silver or white gold made rings/pendants to enhance the positive energies of planet Venus in one's life.",
+      "Ring can be worn on the middle finger or the ring finger of the right hand.",
+      "One should also pray to Lord Venus chant it's Mantra before wearing the Opal for the first time.",
+      "\"Om Shun Shukraye Namah\" 108 times to attain best results."
+    ],
+    "jewelleryCta": {
+      "title": "Click here to View our Astrological-Approved Jewellery Designs (Rings, Pendants, Customized Talismans)",
+      "href": "/shop/jewelry",
+      "label": "Order Now"
+    },
+    "energizingVideoLabel": "Click here to View our \"Purifying and Energizing of Opal by Vedic Rituals at Pure Vedic Gems\"",
+    "energizingVideoHref": "https://www.youtube.com/watch?v=O07rLvm6ncY",
+    "phone": "+91 9871582404",
+    "faqTitle": "Opal Gemstone-Frequently Asked Questions",
+    "tiers": [
+      {
+        "title": "Lowest Quality Opal Gemstone",
+        "note": "We don't keep this standard/quality of Emerald gemstone because they are totally ineffective for astrological healing purposes",
+        "rows": [
+          {
+            "label": "Origin",
+            "value": "Australian/ Ethiopian"
+          },
+          {
+            "label": "Treatments",
+            "value": "Glued or Sticker Applied to Create Artificial Fire /Non-Treated"
+          },
+          {
+            "label": "Astrologically",
+            "value": "Not Effective / Not Recommended"
+          },
+          {
+            "label": "Price Range (Per Carat) Approx",
+            "value": "Rs 50 Per Carat up to -Rs 200 Per carat"
+          },
+          {
+            "label": "Colortone & Appearance",
+            "value": "Good Fire & Shine If Artificial Treated But Absolutely Without Any Fire or Brilliance / Dull If Untreated"
+          }
+        ],
+        "images": [
+          {
+            "src": "/gems-knowledge/opal/low-Quality-1.jpg",
+            "alt": "Lowest Quality Opal Gemstone — low-Quality-1.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Low-Quality-2.jpg",
+            "alt": "Lowest Quality Opal Gemstone — Low-Quality-2.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Low-Quality-3.jpg",
+            "alt": "Lowest Quality Opal Gemstone — Low-Quality-3.jpg"
+          }
+        ]
+      },
+      {
+        "title": "Medium Quality Opal Gemstone",
+        "note": "For This Category Fiery Opal See the Economy, Premium and Super Premium Range",
+        "rows": [
+          {
+            "label": "Origin",
+            "value": "Australian"
+          },
+          {
+            "label": "Treatments",
+            "value": "Not Treated"
+          },
+          {
+            "label": "Astrologically",
+            "value": "Effective / Recommended"
+          },
+          {
+            "label": "Price Range (Per Carat) Approx",
+            "value": "Rs 200 Per Carat up to -Rs 800 Per carat"
+          },
+          {
+            "label": "Colortone & Appearance",
+            "value": "Very Less to Medium Firing Effect In Partial Or Few Portions Of The Stone & Grayish or Off White Color-tone"
+          }
+        ],
+        "images": [
+          {
+            "src": "/gems-knowledge/opal/Opal-Medium-Quality-1.jpg",
+            "alt": "Medium Quality Opal Gemstone — Opal-Medium-Quality-1.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Opal-Medium-Quality-2.jpg",
+            "alt": "Medium Quality Opal Gemstone — Opal-Medium-Quality-2.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Opal-Medium-Quality-3.jpg",
+            "alt": "Medium Quality Opal Gemstone — Opal-Medium-Quality-3.jpg"
+          }
+        ]
+      },
+      {
+        "title": "High Quality Opal Gemstone",
+        "note": "For This Category Fiery Opal See the Luxury and Super Luxury Range",
+        "rows": [
+          {
+            "label": "Origin",
+            "value": "Australian"
+          },
+          {
+            "label": "Treatments",
+            "value": "No Treatments"
+          },
+          {
+            "label": "Astrologically",
+            "value": "Very Effective / Recommended"
+          },
+          {
+            "label": "Price Range (Per Carat) Approx",
+            "value": "Rs 800– Rs 2000 per carat"
+          },
+          {
+            "label": "Colortone & Appearance",
+            "value": "Very Good Firing & Multicolored Brilliance Effect From 70% to 100% of The Stone Area, Off White to Pure white Color-Tone ."
+          }
+        ],
+        "images": [
+          {
+            "src": "/gems-knowledge/opal/Opal-High-Quality-1.jpg",
+            "alt": "High Quality Opal Gemstone — Opal-High-Quality-1.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Opal-High-Quality-2.jpg",
+            "alt": "High Quality Opal Gemstone — Opal-High-Quality-2.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Opal-High-Quality-3.jpg",
+            "alt": "High Quality Opal Gemstone — Opal-High-Quality-3.jpg"
+          }
+        ]
+      },
+      {
+        "title": "Very High / Rare Quality Opal Gemstone",
+        "note": "For This Category Fiery Opal See the Exclusive Range",
+        "rows": [
+          {
+            "label": "Origin",
+            "value": "Australian"
+          },
+          {
+            "label": "Treatments",
+            "value": "No Treatments"
+          },
+          {
+            "label": "Astrologically",
+            "value": "Most Effective /Highly Recommended"
+          },
+          {
+            "label": "Price Range (Per Carat) Approx",
+            "value": "Rs 2000 Per Carat up to -Rs 10000 Per carat"
+          },
+          {
+            "label": "Colortone & Appearance",
+            "value": "Very Strong (Almost 100% Of The Stone Area ) Firing Effect with Multi-Colored Brilliance.(In these qualities of Opals you will find all the colors of firing effects like blue, green, yellow, orange, red etc)."
+          }
+        ],
+        "images": [
+          {
+            "src": "/gems-knowledge/opal/Opal-Very-High-Quality-1.jpg",
+            "alt": "Very High / Rare Quality Opal Gemstone — Opal-Very-High-Quality-1.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Opal-Very-High-Quality-2.jpg",
+            "alt": "Very High / Rare Quality Opal Gemstone — Opal-Very-High-Quality-2.jpg"
+          },
+          {
+            "src": "/gems-knowledge/opal/Opal-Very-High-Quality-3.jpg",
+            "alt": "Very High / Rare Quality Opal Gemstone — Opal-Very-High-Quality-3.jpg"
           }
         ]
       }

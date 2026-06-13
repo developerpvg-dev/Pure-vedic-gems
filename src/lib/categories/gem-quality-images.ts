@@ -25,11 +25,18 @@ const NAVARATNA_STONE_FALLBACK: Record<string, string> = {
   'white-sapphire': '/home/navratnaimg/stone6.webp',
 };
 
+const OPAL_CARD_FALLBACK = '/gems-knowledge/opal/Opal-High-Quality-1.jpg';
+
 export function gemQualityCardImage(
   gemSlug: string,
   navaratnaCategories: HomeManagedCategory[],
   heroFallback: string,
+  upratnaCategories?: HomeManagedCategory[],
 ): string {
+  if (gemSlug === 'opal') {
+    const opal = upratnaCategories?.find((item) => item.slug === 'opal');
+    return opal?.image_url ?? OPAL_CARD_FALLBACK;
+  }
   const navSlug = GEM_QUALITY_TO_NAVARATNA_SLUG[gemSlug];
   if (!navSlug) return heroFallback;
   const category = navaratnaCategories.find((item) => item.slug === navSlug);

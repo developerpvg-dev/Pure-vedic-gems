@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Gem Qualities Library | PureVedicGems',
     description:
-      'Identify natural Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite, Cat’s Eye, White Sapphire and Pearl — Vedic authenticity guide.',
+      'Identify natural Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite, Cat’s Eye, White Sapphire, Pearl and Opal — Vedic authenticity guide.',
     type: 'website',
     url: absoluteUrl('/knowledge/gem-qualities'),
     images: [
@@ -34,12 +34,13 @@ export const metadata: Metadata = {
 
 export default async function GemQualitiesIndexPage() {
   const managedCategories = await getHomeManagedCategories();
-  const gems = GEM_QUALITIES.filter((gem) => gem.slug !== 'opal').map((gem) => ({
+  const gems = GEM_QUALITIES.map((gem) => ({
     ...gem,
     cardImage: gemQualityCardImage(
       gem.slug,
       managedCategories.navaratna,
       gem.heroImage,
+      managedCategories.upratna,
     ),
   }));
 

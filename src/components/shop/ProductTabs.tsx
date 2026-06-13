@@ -101,7 +101,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
           <button
             key={tab.key}
             onClick={() => setActive(tab.key)}
-            className="product-tabs-trigger flex shrink-0 items-center gap-1 px-2.5 py-2 text-[10px] font-medium transition-all sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-[12px] md:px-5 md:py-3"
+            className="product-tabs-trigger flex shrink-0 items-center gap-1 px-2.5 py-2 text-[10px] font-medium transition-all lg:gap-1.5 lg:px-4 lg:py-2.5 lg:text-[12px] xl:px-5 xl:py-3"
             style={{
               color: active === tab.key ? 'var(--pvg-primary)' : 'var(--pvg-muted)',
               borderBottom:
@@ -110,15 +110,15 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
                   : '1px solid transparent',
             }}
           >
-            <span className="[&_svg]:h-3 [&_svg]:w-3 sm:[&_svg]:h-3.5 sm:[&_svg]:w-3.5">{tab.icon}</span>
-            <span className="hidden sm:inline">{tab.label}</span>
-            <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+            <span className="[&_svg]:h-3 [&_svg]:w-3 lg:[&_svg]:h-3.5 lg:[&_svg]:w-3.5">{tab.icon}</span>
+            <span className="hidden lg:inline">{tab.label}</span>
+            <span className="lg:hidden">{tab.label.split(' ')[0]}</span>
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
-      <div className="py-4 sm:py-6">
+      <div className="py-4 lg:py-6">
         {/* Description */}
         {active === 'description' && (
           <div className="space-y-4">

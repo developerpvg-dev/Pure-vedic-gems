@@ -320,7 +320,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                     <div className="h-6 w-48 animate-pulse rounded bg-brand-border" />
                     <div className="mt-2 h-4 w-80 animate-pulse rounded bg-brand-border" />
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 lg:gap-3">
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {Array.from({ length: 9 }).map((_, i) => (
                       <div key={i} className="overflow-hidden rounded-xl border border-brand-border">
                         <div className="relative animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />

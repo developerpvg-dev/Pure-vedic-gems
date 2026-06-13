@@ -719,6 +719,18 @@ function setupTabs(tabSelector: string, panelSelector: string, panelPrefix: stri
   });
 }
 
+function getSliderScrollAmount(scrollTarget: HTMLElement) {
+  const card = scrollTarget.querySelector<HTMLElement>(
+    '.director-pick-card, .pvg-category-card, .home-videos-track > a, .semi-circ-card',
+  );
+  if (card) {
+    const gap = Number.parseFloat(getComputedStyle(scrollTarget).columnGap || getComputedStyle(scrollTarget).gap || '12') || 12;
+    return Math.round(card.getBoundingClientRect().width + gap);
+  }
+
+  return Math.max(240, Math.round(scrollTarget.clientWidth * 0.82));
+}
+
 function setupSliderButtons() {
   const sliderButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.pvg-slider-btn'));
 
@@ -729,7 +741,7 @@ function setupSliderButtons() {
       const scrollTarget = targetId ? document.getElementById(targetId) : null;
       if (!scrollTarget) return;
 
-      const amount = Math.max(240, Math.round(scrollTarget.clientWidth * 0.82));
+      const amount = getSliderScrollAmount(scrollTarget);
       scrollTarget.scrollBy({ left: amount * direction, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     };
 

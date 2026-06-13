@@ -60,6 +60,93 @@
   transform: rotate(-10deg) translate(-24px, 20px) scale(0.91) !important;
 }
 
+/* Tablet: Who We Are — wider image; quote/stats below body copy on the right */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pvg-react-home-root .about-grid {
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr) !important;
+    gap: clamp(18px, 2.8vw, 28px) !important;
+    align-items: start !important;
+  }
+
+  .pvg-react-home-root .about-img-wrap {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding-bottom: 8px !important;
+  }
+
+  .pvg-react-home-root .about-img-stack {
+    min-height: clamp(360px, 46vw, 440px) !important;
+  }
+
+  .pvg-react-home-root .about-stack-img {
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+
+  .pvg-react-home-root .about-copy-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    gap: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .pvg-react-home-root .about-copy-intro {
+    min-width: 0 !important;
+  }
+
+  .pvg-react-home-root .about-copy-intro .s-eyebrow {
+    display: none !important;
+  }
+
+  .pvg-react-home-root .about-copy-intro .s-heading {
+    font-size: clamp(22px, 2.6vw, 30px) !important;
+    margin-bottom: 12px !important;
+  }
+
+  .pvg-react-home-root .about-copy-intro .s-rule {
+    margin-bottom: 12px !important;
+  }
+
+  .pvg-react-home-root .about-copy-intro .who-body {
+    font-size: 14.5px !important;
+    line-height: 1.65 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .pvg-react-home-root .about-copy-extra {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pvg-react-home-root .about-copy-extra .who-quote {
+    margin: 14px 0 !important;
+    padding: 10px 14px !important;
+    font-size: 14.5px !important;
+    line-height: 1.55 !important;
+  }
+
+  .pvg-react-home-root .about-copy-extra .about-stats {
+    margin-bottom: 14px !important;
+  }
+
+  .pvg-react-home-root .about-copy-extra .about-stat-num {
+    font-size: 18px !important;
+  }
+
+  .pvg-react-home-root .about-copy-extra .about-stat-label {
+    font-size: 9px !important;
+  }
+
+  .pvg-react-home-root .about-copy-extra .about-cta-row {
+    margin-top: 0 !important;
+  }
+}
+
 .pvg-react-home-root .cert-section .cert-stack-card,
 .pvg-react-home-root .cert-section .cert-stack-card:nth-child(1),
 .pvg-react-home-root .cert-section .cert-stack-card:nth-child(2),
@@ -299,43 +386,54 @@
   }
 }
 
-/* ── Homepage CTA arcs: lower the circle so title/copy never collide ── */
+/* ── Homepage CTA: maroon arc + heading spacing on desktop ── */
 @media (min-width: 768px) {
   .pvg-react-home-root .pvg-rcta-v2 {
-    --pvg-rcta-bottom-height: calc(var(--pvg-rcta-height, 360px) * 0.44) !important;
-    padding-bottom: 10px !important;
+    --pvg-rcta-height: 380px;
+    --pvg-rcta-bottom-height: calc(var(--pvg-rcta-height) * 0.52) !important;
+    padding-top: 20px !important;
+    padding-bottom: 0 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-layout,
+  .pvg-react-home-root .pvg-rcta-v2-person-col,
+  .pvg-react-home-root .pvg-rcta-v2-card {
+    min-height: var(--pvg-rcta-height) !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-circle {
-    bottom: -22px !important;
+    bottom: 0 !important;
     height: var(--pvg-rcta-bottom-height) !important;
-    transform: translateY(14px) !important;
+    transform: none !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-card {
-    grid-template-rows: minmax(0, 0.48fr) minmax(0, 0.52fr) !important;
+    grid-template-rows: minmax(0, 0.46fr) minmax(0, 0.54fr) !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-top {
     align-items: flex-end !important;
-    padding: 22px 0 10px !important;
+    padding: 8px 0 18px !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-bottom {
     justify-content: flex-end !important;
-    padding: 16px 0 34px !important;
+    padding: 16px 0 26px !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-copy {
-    margin-bottom: 18px !important;
+    margin-bottom: 20px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
   }
 }
 
 /* Tablet: all homepage CTA sections (Navaratna, Upratna, Rudraksha) */
 @media (min-width: 768px) and (max-width: 1100px) {
   .pvg-react-home-root .pvg-rcta-v2 {
-    --pvg-rcta-height: 318px !important;
-    --pvg-rcta-bottom-height: 168px !important;
+    --pvg-rcta-height: 338px !important;
+    --pvg-rcta-bottom-height: calc(var(--pvg-rcta-height) * 0.62) !important;
+    padding-top: 12px !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-layout {
@@ -347,6 +445,7 @@
 
   .pvg-react-home-root .pvg-rcta-v2-card {
     min-height: var(--pvg-rcta-height) !important;
+    grid-template-rows: minmax(0, 0.38fr) minmax(0, 0.62fr) !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-person-col {
@@ -354,8 +453,9 @@
   }
 
   .pvg-react-home-root .pvg-rcta-v2-circle {
-    bottom: -18px !important;
-    transform: translateY(18px) !important;
+    bottom: 0 !important;
+    height: var(--pvg-rcta-bottom-height) !important;
+    transform: none !important;
     border-radius: 118px 0 0 0 !important;
   }
 
@@ -369,11 +469,23 @@
     max-width: 100% !important;
   }
 
+  .pvg-react-home-root .pvg-rcta-v2-top {
+    align-items: flex-end !important;
+    padding: 4px 0 10px !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-bottom {
+    justify-content: flex-end !important;
+    padding: 10px 0 20px !important;
+  }
+
   .pvg-react-home-root .pvg-rcta-v2-copy {
     font-size: 14px !important;
     line-height: 1.58 !important;
     max-width: 100% !important;
     margin-bottom: 14px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14) !important;
   }
 
   .pvg-react-home-root .pvg-rcta-v2-btns {
@@ -404,73 +516,153 @@
   }
 }
 
-/* Tablet: Director's Pick */
-@media (min-width: 768px) and (max-width: 1100px) {
-  .pvg-react-home-root .director-layout {
-    display: grid !important;
-    grid-template-columns: minmax(150px, 0.32fr) minmax(0, 1fr) !important;
-    grid-template-rows: auto auto !important;
-    gap: 14px 18px !important;
-    padding-top: 10px !important;
-    align-items: start !important;
-  }
-
-  .pvg-react-home-root .director-profile {
-    display: flex !important;
-    grid-column: 1 !important;
-    grid-row: 1 / 3 !important;
-    width: 100% !important;
-    max-width: 210px !important;
-    height: 360px !important;
-    margin-top: -28px !important;
+/* Tablet: Director's Pick — exact desktop layout, scrollable product row only */
+@media (min-width: 768px) and (max-width: 1180px) {
+  .pvg-react-home-root .directors-section.director-section {
     overflow: visible !important;
+    padding-top: 0 !important;
+    padding-bottom: 44px !important;
+    background: linear-gradient(180deg, #fbf6eb 0%, #f3e4c7 54%, #f8f0de 100%) !important;
   }
 
-  .pvg-react-home-root .director-portrait img {
-    width: 118% !important;
-    max-width: none !important;
-    object-position: bottom center !important;
-    transform: none !important;
+  .pvg-react-home-root .director-layout {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(220px, 0.44fr) minmax(0, 1.56fr) !important;
+    grid-template-rows: 96px auto !important;
+    gap: 0 clamp(16px, 2vw, 28px) !important;
+    align-items: end !important;
+    padding-top: 18px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .pvg-react-home-root .director-content {
     display: contents !important;
   }
 
-  .pvg-react-home-root .director-strip {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
+  .pvg-react-home-root .director-profile {
+    display: block !important;
+    grid-column: 1 !important;
+    grid-row: 1 / 3 !important;
+    justify-self: center !important;
+    align-self: end !important;
+    position: relative !important;
+    z-index: 3 !important;
+    width: min(28vw, 335px) !important;
+    height: 480px !important;
+    min-height: 0 !important;
+    margin-top: -175px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+  }
+
+  .pvg-react-home-root .director-portrait {
+    position: absolute !important;
+    inset: 0 !important;
     display: flex !important;
-    min-height: auto !important;
-    margin: 0 !important;
-    padding: 16px 18px !important;
-    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    pointer-events: none !important;
+  }
+
+  .pvg-react-home-root .director-portrait img {
+    width: min(122%, 380px) !important;
+    max-width: none !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: bottom center !important;
+    transform: none !important;
+    filter: drop-shadow(0 16px 28px rgba(26, 2, 2, 0.28)) !important;
+  }
+
+  .pvg-react-home-root .director-profile-note {
+    display: none !important;
+  }
+
+  .pvg-react-home-root .director-strip {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    align-self: start !important;
+    position: relative !important;
+    z-index: 1 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 12px !important;
-    border-radius: 14px !important;
+    gap: clamp(10px, 1.2vw, 18px) !important;
+    min-height: 88px !important;
+    margin: 0 !important;
+    padding: 11px clamp(16px, 2vw, 28px) 11px min(24vw, 318px) !important;
+    border: 1px solid rgba(122, 21, 21, 0.14) !important;
+    border-radius: 14px 56px 14px 56px !important;
     background: linear-gradient(135deg, #f5e8c8 0%, #e8d09a 55%, #dcc084 100%) !important;
     box-shadow: 0 2px 18px rgba(122, 21, 21, 0.07) !important;
+    overflow: visible !important;
   }
 
   .pvg-react-home-root .director-strip-copy {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
     align-items: flex-start !important;
     text-align: left !important;
   }
 
   .pvg-react-home-root .director-strip .section-title {
-    white-space: normal !important;
-    font-size: clamp(22px, 2.8vw, 28px) !important;
+    margin: 0 0 3px !important;
+    color: var(--maroon-deep) !important;
+    font-family: var(--font-display) !important;
+    font-size: clamp(20px, 1.9vw, 28px) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em !important;
+    line-height: 1.1 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
   }
 
   .pvg-react-home-root .director-strip .section-sub {
-    max-width: 36ch !important;
+    margin: 0 !important;
+    color: var(--muted) !important;
+    font-family: var(--font-body) !important;
     font-size: 12px !important;
+    font-style: italic !important;
+    line-height: 1.45 !important;
+    max-width: min(36vw, 300px) !important;
   }
 
   .pvg-react-home-root .director-all-link {
     display: inline-flex !important;
+    visibility: visible !important;
+    flex: 0 0 auto !important;
     flex-shrink: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 18px !important;
+    border: 1px solid var(--maroon-deep) !important;
+    border-radius: 999px !important;
+    color: var(--maroon-deep) !important;
+    background: rgba(255, 255, 255, 0.34) !important;
+    font-family: var(--font-ui) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+    z-index: 4 !important;
   }
 
   .pvg-react-home-root .director-mobile-cta,
@@ -480,33 +672,146 @@
     display: none !important;
   }
 
-  .pvg-react-home-root .director-picks {
+  .pvg-react-home-root .pvg-director-slider-shell {
     grid-column: 2 !important;
     grid-row: 2 !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-self: end !important;
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 10px !important;
+    padding-left: clamp(44px, 4.5vw, 56px) !important;
+    padding-right: clamp(44px, 4.5vw, 56px) !important;
+    --director-scroll-card: max(168px, calc((100% - 48px) / 5));
+  }
+
+  /* Same card width as desktop 5-column grid; row scrolls horizontally */
+  .pvg-react-home-root .director-picks {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    align-self: start !important;
     gap: 12px !important;
+    width: 100% !important;
     margin-top: 0 !important;
+    padding: 0 0 4px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(122, 21, 21, 0.2) transparent !important;
+    touch-action: pan-x !important;
+    grid-column: unset !important;
+    grid-row: unset !important;
+    grid-template-columns: none !important;
   }
 
   .pvg-react-home-root .director-pick-card {
     display: flex !important;
+    flex: 0 0 var(--director-scroll-card) !important;
+    min-width: var(--director-scroll-card) !important;
+    max-width: none !important;
+    min-height: 100% !important;
     flex-direction: column !important;
-    min-height: 0 !important;
+    scroll-snap-align: start !important;
+    grid-template-columns: none !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .pvg-react-home-root .director-pick-card:nth-child(n+5) {
+    display: flex !important;
+  }
+
+  .pvg-react-home-root .director-pick-body {
+    display: flex !important;
   }
 
   .pvg-react-home-root .director-pick-media {
-    min-height: 108px !important;
-    aspect-ratio: 1.15 / 1 !important;
+    aspect-ratio: 4 / 3 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: linear-gradient(145deg, #fbf5e9, #efe0c4) !important;
+  }
+
+  .pvg-react-home-root .director-pick-media::before {
+    display: none !important;
+  }
+
+  .pvg-react-home-root .director-pick-media img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .pvg-react-home-root .director-pick-body {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 13px 13px 12px !important;
+  }
+
+  .pvg-react-home-root .director-pick-info {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    text-align: left !important;
   }
 
   .pvg-react-home-root .director-pick-info h4 {
-    font-size: 13px !important;
-    min-height: auto !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    text-align: left !important;
   }
 
   .pvg-react-home-root .director-pick-info .pick-meta {
     font-size: 10px !important;
+    white-space: normal !important;
+  }
+
+  .pvg-react-home-root .director-pick-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .pvg-react-home-root .director-pick-btn {
+    min-height: 34px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+  }
+
+  .pvg-react-home-root .pvg-director-slider-shell .pvg-slider-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    width: 42px !important;
+    height: 42px !important;
+    z-index: 6 !important;
+  }
+
+  .pvg-react-home-root .pvg-director-slider-shell .pvg-slider-btn-prev {
+    left: clamp(4px, 0.8vw, 10px) !important;
+  }
+
+  .pvg-react-home-root .pvg-director-slider-shell .pvg-slider-btn-next {
+    right: clamp(4px, 0.8vw, 10px) !important;
   }
 }
 
@@ -535,5 +840,165 @@
 @media (max-width: 380px) {
   .pvg-react-home-root .director-portrait img {
     transform: translateX(-10%) !important;
+  }
+}
+
+/* Phone: ~50% of image above colored arch, ~50% on bg */
+@media (max-width: 767px) {
+  .pvg-react-home-root .pvg-rcta-v2 {
+    --pvg-rcta-mobile-img-h: clamp(268px, 70vw, 320px);
+    --pvg-rcta-mobile-btn-zone: 152px;
+    overflow: visible !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-card {
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-bottom {
+    padding: 10px 0 6px !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-copy {
+    position: relative !important;
+    z-index: 2 !important;
+    color: var(--pvg-rcta-mobile-copy) !important;
+    text-shadow: none !important;
+    margin-bottom: 0 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-circle {
+    height: calc(var(--pvg-rcta-mobile-btn-zone) + var(--pvg-rcta-mobile-img-h) * 0.5) !important;
+    max-height: min(300px, 82vw) !important;
+    transform: none !important;
+    z-index: 1 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-person-col {
+    position: relative !important;
+    margin-top: 8px !important;
+    margin-bottom: calc(var(--pvg-rcta-mobile-img-h) * -0.5 + 16px) !important;
+    overflow: visible !important;
+    z-index: 3 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-person-wrap {
+    position: relative !important;
+    height: var(--pvg-rcta-mobile-img-h) !important;
+    width: min(100%, 392px) !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
+    z-index: 3 !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-person-img {
+    object-fit: contain !important;
+    object-position: center bottom !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-navaratna.pvg-rcta-v2-reverse .pvg-rcta-v2-person-wrap {
+    width: min(100%, 392px) !important;
+    height: var(--pvg-rcta-mobile-img-h) !important;
+  }
+
+  .pvg-react-home-root .pvg-rcta-v2-mobile-actions {
+    position: relative !important;
+    z-index: 2 !important;
+    margin-top: calc(var(--pvg-rcta-mobile-img-h) * 0.5 + 8px) !important;
+  }
+}
+
+/* Tablet: Explore by Category — horizontal scroll + prev/next buttons */
+@media (min-width: 768px) and (max-width: 1180px) {
+  .pvg-react-home-root .explore-section .pvg-explore-slider-shell {
+    position: relative !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
+    padding-left: clamp(52px, 6vw, 72px) !important;
+    padding-right: clamp(52px, 6vw, 72px) !important;
+    --explore-tablet-card: clamp(200px, 28vw, 240px);
+  }
+
+  .pvg-react-home-root .explore-section .pvg-category-card-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    grid-template-columns: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 14px !important;
+    padding: 2px 4px 12px !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important;
+  }
+
+  .pvg-react-home-root .explore-section .pvg-category-card-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .pvg-react-home-root .explore-section .pvg-category-card {
+    flex: 0 0 var(--explore-tablet-card) !important;
+    max-width: var(--explore-tablet-card) !important;
+    min-width: var(--explore-tablet-card) !important;
+    scroll-snap-align: start !important;
+  }
+
+  .pvg-react-home-root .explore-section .pvg-explore-slider-shell .pvg-slider-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    top: calc(4px + (var(--explore-tablet-card) * 1.15) / 2) !important;
+    transform: translateY(-50%) !important;
+    width: 42px !important;
+    height: 42px !important;
+    z-index: 6 !important;
+  }
+
+  .pvg-react-home-root .explore-section .pvg-explore-slider-shell .pvg-slider-btn-prev {
+    left: clamp(10px, 1.4vw, 16px) !important;
+  }
+
+  .pvg-react-home-root .explore-section .pvg-explore-slider-shell .pvg-slider-btn-next {
+    right: clamp(10px, 1.4vw, 16px) !important;
+  }
+}
+
+@media (min-width: 1181px) {
+  .pvg-react-home-root .pvg-director-slider-shell {
+    display: contents !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .pvg-react-home-root .pvg-director-slider-shell .director-picks {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    margin-top: 10px !important;
+  }
+
+  .pvg-react-home-root .pvg-director-slider-shell .pvg-slider-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .pvg-react-home-root .pvg-director-slider-shell {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .pvg-react-home-root .pvg-director-slider-shell .pvg-slider-btn {
+    display: none !important;
+  }
+
+  .pvg-react-home-root .director-picks {
+    grid-column: unset !important;
+    grid-row: unset !important;
   }
 }

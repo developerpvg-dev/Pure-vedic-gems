@@ -327,46 +327,50 @@ export function PvgReferenceSections({
 
         
         <div className="about-copy-wrap">
-          <div className="s-eyebrow">
-            <div className="s-eyebrow-line"></div>
+          <div className="about-copy-intro">
+            <div className="s-eyebrow">
+              <div className="s-eyebrow-line"></div>
+            </div>
+
+            <h2 className="s-heading" id="who-heading">
+              Four Generations<br />
+              <em>One Sacred Mission</em>
+            </h2>
+
+            <div className="s-rule"></div>
+
+            <p className="who-body">
+              Since 1937, Pure Vedic Gems has been the custodian of India's most authentic Vedic gemstone tradition — where ancient Jyotish science meets world-class modern gemology. Founded by the Mehra family and carried forward across four generations, our purpose has never wavered: to deliver genuine cosmic healing through the precise science of planetary gems.
+            </p>
           </div>
 
-          <h2 className="s-heading" id="who-heading">
-            Four Generations<br />
-            <em>One Sacred Mission</em>
-          </h2>
+          <div className="about-copy-extra">
+            <blockquote className="who-quote">
+              "We do not merely sell gemstones. We deliver precise cosmic remedies — authenticated by science, consecrated by Vedic tradition, and aligned to the cosmic forces of the universe."
+            </blockquote>
 
-          <div className="s-rule"></div>
-
-          <p className="who-body">
-            Since 1937, Pure Vedic Gems has been the custodian of India's most authentic Vedic gemstone tradition — where ancient Jyotish science meets world-class modern gemology. Founded by the Mehra family and carried forward across four generations, our purpose has never wavered: to deliver genuine cosmic healing through the precise science of planetary gems.
-          </p>
-
-          <blockquote className="who-quote">
-            "We do not merely sell gemstones. We deliver precise cosmic remedies — authenticated by science, consecrated by Vedic tradition, and aligned to the cosmic forces of the universe."
-          </blockquote>
-
-          <div className="about-stats" aria-label="Key achievements">
-            <div className="about-stat">
-              <div className="about-stat-num">87+</div>
-              <div className="about-stat-label">Yrs Legacy</div>
+            <div className="about-stats" aria-label="Key achievements">
+              <div className="about-stat">
+                <div className="about-stat-num">87+</div>
+                <div className="about-stat-label">Yrs Legacy</div>
+              </div>
+              <div className="about-stat">
+                <div className="about-stat-num">40+</div>
+                <div className="about-stat-label">Countries</div>
+              </div>
+              <div className="about-stat">
+                <div className="about-stat-num">1.5 L</div>
+                <div className="about-stat-label">Lives Changed</div>
+              </div>
+              <div className="about-stat">
+                <div className="about-stat-num">6</div>
+                <div className="about-stat-label">Cert. Bodies</div>
+              </div>
             </div>
-            <div className="about-stat">
-              <div className="about-stat-num">40+</div>
-              <div className="about-stat-label">Countries</div>
-            </div>
-            <div className="about-stat">
-              <div className="about-stat-num">1.5 L</div>
-              <div className="about-stat-label">Lives Changed</div>
-            </div>
-            <div className="about-stat">
-              <div className="about-stat-num">6</div>
-              <div className="about-stat-label">Cert. Bodies</div>
-            </div>
-          </div>
 
-          <div className="about-cta-row">
-            <a href="#" className="btn-maroon">Our Full Story</a>
+            <div className="about-cta-row">
+              <a href="#" className="btn-maroon">Our Full Story</a>
+            </div>
           </div>
         </div>
 

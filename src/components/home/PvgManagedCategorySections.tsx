@@ -881,8 +881,12 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
               <svg viewBox="0 0 24 24" focusable="false"><path d="M6 9l6 6 6-6" /></svg>
             </div>
 
-            <div className="director-picks">
-              {products.slice(0, 5).map((product) => <DirectorPickCard key={product.id} product={product} />)}
+            <div className="pvg-slider-shell pvg-director-slider-shell">
+              <SliderButton target="directorPicksScroll" direction="prev" label="Previous director picks" />
+              <div className="director-picks" id="directorPicksScroll">
+                {products.slice(0, 5).map((product) => <DirectorPickCard key={product.id} product={product} />)}
+              </div>
+              <SliderButton target="directorPicksScroll" direction="next" label="Next director picks" />
             </div>
 
             <Link href="/shop/directors-pick" className="director-mobile-cta">

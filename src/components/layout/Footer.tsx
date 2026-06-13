@@ -73,7 +73,7 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
       { label: 'Red Coral (Moonga)', href: '/knowledge/gem-qualities/red-coral' },
       { label: 'Hessonite (Gomed)', href: '/knowledge/gem-qualities/hessonite' },
       { label: 'Cat’s Eye (Lehsuniya)', href: '/knowledge/gem-qualities/catseye' },
-      { label: 'Opal', href: '/knowledge/gem-qualities/opal' },
+      { label: 'Opal Qualities', href: '/knowledge/gem-qualities/opal' },
       { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
     ],
   },

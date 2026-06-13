@@ -195,7 +195,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
                 alt={`${productName} — image ${activeIdx + 1}`}
                 fill
                 className="object-cover lg:object-contain"
-                sizes="(min-width: 1024px) 50vw, 100vw"
+                  sizes="(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw"
                 priority={activeIdx === 0}
                 loading="eager"
                 fetchPriority="high"
@@ -257,7 +257,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
             <button
               key={i}
               onClick={() => setActiveIdx(i)}
-              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border transition-all duration-200 hover:opacity-100 sm:h-14 sm:w-14 lg:h-22 lg:w-22 lg:rounded-lg lg:border-2"
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border transition-all duration-200 hover:opacity-100 lg:h-22 lg:w-22 lg:rounded-lg lg:border-2"
               style={{
                 borderColor: i === activeIdx ? 'var(--pvg-accent)' : 'var(--pvg-border)',
                 opacity: i === activeIdx ? 1 : 0.6,
@@ -276,7 +276,7 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
           {videoUrl && (
             <button
               onClick={() => setActiveIdx(videoIdx)}
-              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border transition-all duration-200 hover:opacity-100 sm:h-14 sm:w-14 lg:h-22 lg:w-22 lg:rounded-lg lg:border-2"
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border transition-all duration-200 hover:opacity-100 lg:h-22 lg:w-22 lg:rounded-lg lg:border-2"
               style={{
                 borderColor: isVideoActive ? 'var(--pvg-accent)' : 'var(--pvg-border)',
                 opacity: isVideoActive ? 1 : 0.6,

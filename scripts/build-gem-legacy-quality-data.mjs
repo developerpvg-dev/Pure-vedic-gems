@@ -14,6 +14,7 @@ const KEY_TO_SLUG = {
   'red-coral-qualities': 'red-coral',
   'buy-online-catseye-gemstone': 'catseye',
   'hessonite-qualites': 'hessonite',
+  'opal-qualities': 'opal',
 };
 
 const SHOP = {
@@ -24,6 +25,7 @@ const SHOP = {
   'red-coral': '/shop/red-coral',
   catseye: '/shop/cats-eye',
   hessonite: '/shop/hessonite',
+  opal: '/shop/opal',
 };
 
 function img(slug, file) {
@@ -416,6 +418,97 @@ const GUIDES = {
         { label: 'Astrologically', value: '100 % Effective/Highly Recommended' },
         { label: 'Price Range (Per Carat) Approx', value: 'Rs 2000 - Rs 6000 per Carat' },
         { label: 'Colortone & Appearance', value: 'Absolutely Transparent / Very Bright Orangish /Brownish color Brilliance' },
+      ]),
+    ],
+  },
+  opal: {
+    legacyH1: legacyJson['opal-qualities'].h1,
+    certificationQuote: legacyJson['opal-qualities'].certification_quote,
+    sectionIntro: 'Opal Qualities available in the market',
+    shopLabel: 'Click here to View Our Products',
+    introBullets: [
+      'Natural, Non-Treated, Astrologically Approved, Certified Opals for potentiating the positive energies of planet Venus (Shukra) in one\'s life.',
+      'Opal is one of the best alternative or substitute for diamond (after white sapphire).',
+      'Opal is also known as Upala in Sanskrit, it is used to enhance the powers of the planet Venus (Shukra).',
+      'This gemstone helps to strengthen the cosmic rays of the planet Venus.',
+      'Wearing the Opal helps to improve relationships, increases love and affection, increase curative and artistic abilities, also helps to cure diseases.',
+    ],
+    trustPoints: [
+      { bold: 'Pure Vedic Gems', text: ' is the oldest & most trusted name associated with all kinds of vedic planetary gemstones.' },
+      { bold: 'Genuine Gemstones', text: ' with certification from international standard govt. labs only.' },
+      { bold: 'Astrologically approved', text: ' (Jyotish standard) energized & purified gems with vedic mantras & rituals for best results.' },
+    ],
+    aboutTitle: 'Purified & Energized Vedic Opals',
+    aboutParagraphs: [
+      'We deal in authentic, potent, jyotish standard (as mentioned in vedic classic texts) & Natural gemstones only for best results.',
+    ],
+    instructionColumns: [
+      [
+        'Accurate Gemstone consultation from genuine Vedic Astrologer.',
+        'Most reasonable prices(direct sourcing from the mines, gems cutters-polishers).',
+        'We provide most reasonable & genuine prices of astro-jyotish quality gems across the globe.',
+      ],
+      [
+        'We have specialized & experienced artisans (karigars) for setting these gemstones according to vedic wearing instructions.',
+        'We provide certification from labs having complete world standard equipments to test all the treatments and enhancements coming in gems nowadays.',
+        'We have huge collection of certified, authentic & genuine jyotish gemstones.',
+      ],
+      [
+        'We also provide special facility of energizing (Abhimantrit) the gemstone according to personalized Gotra & Rashi through vedic mantras.',
+        'We provide complete genuine vedic instructions for wearing gemstone.',
+        'Opal Gemstones represents the planet Venus & people with positive Venus position in weak houses should wear Opal Gems for enhancing planet Shukra benefic blessings.',
+      ],
+    ],
+    generalCharacteristics: [
+      'This gemstone works on "Sahasrara Chakra" or "Crown Chakra".',
+      'The genuine Jyotish Opal gems are known to give good health, wealth, luck and protection.',
+      'Opal is a precious gemstone and is often regarded as the symbol of happiness, hope, and genuineness.',
+      'It cures sexual disorders, infertility, barrenness, sperm problems, sexual desire problems, bowel diseases, eyes infections, constipation and gastric problems etc',
+      'It brings victory and superior strength to the wearer, its wearer experience spiritual ecstasy at times.',
+      'Opals generally follow the phenomenon known as the "play-of-color" is the brilliant range of the full spectrum of colors caused by the diffraction of white light by the internal structure of orderly arrayed spheres of silica.',
+      'The auspicious day to commence its use is Friday morning.',
+      'Opal Gems should be set in silver or white gold made rings/pendants to enhance the positive energies of planet Venus in one\'s life.',
+      'Ring can be worn on the middle finger or the ring finger of the right hand.',
+      'One should also pray to Lord Venus chant it\'s Mantra before wearing the Opal for the first time.',
+      '"Om Shun Shukraye Namah" 108 times to attain best results.',
+    ],
+    jewelleryCta: {
+      title: 'Click here to View our Astrological-Approved Jewellery Designs (Rings, Pendants, Customized Talismans)',
+      href: '/shop/jewelry',
+      label: 'Order Now',
+    },
+    energizingVideoLabel: 'Click here to View our "Purifying and Energizing of Opal by Vedic Rituals at Pure Vedic Gems"',
+    energizingVideoHref: 'https://www.youtube.com/watch?v=O07rLvm6ncY',
+    phone: '+91 9871582404',
+    faqTitle: 'Opal Gemstone-Frequently Asked Questions',
+    tiers: [
+      tierFromJson('opal', 'opal-qualities', 'Lowest Quality Opal Gemstone', "We don't keep this standard/quality of Emerald gemstone because they are totally ineffective for astrological healing purposes", [
+        { label: 'Origin', value: 'Australian/ Ethiopian' },
+        { label: 'Treatments', value: 'Glued or Sticker Applied to Create Artificial Fire /Non-Treated' },
+        { label: 'Astrologically', value: 'Not Effective / Not Recommended' },
+        { label: 'Price Range (Per Carat) Approx', value: 'Rs 50 Per Carat up to -Rs 200 Per carat' },
+        { label: 'Colortone & Appearance', value: 'Good Fire & Shine If Artificial Treated But Absolutely Without Any Fire or Brilliance / Dull If Untreated' },
+      ]),
+      tierFromJson('opal', 'opal-qualities', 'Medium Quality Opal Gemstone', 'For This Category Fiery Opal See the Economy, Premium and Super Premium Range', [
+        { label: 'Origin', value: 'Australian' },
+        { label: 'Treatments', value: 'Not Treated' },
+        { label: 'Astrologically', value: 'Effective / Recommended' },
+        { label: 'Price Range (Per Carat) Approx', value: 'Rs 200 Per Carat up to -Rs 800 Per carat' },
+        { label: 'Colortone & Appearance', value: 'Very Less to Medium Firing Effect In Partial Or Few Portions Of The Stone & Grayish or Off White Color-tone' },
+      ]),
+      tierFromJson('opal', 'opal-qualities', 'High Quality Opal Gemstone', 'For This Category Fiery Opal See the Luxury and Super Luxury Range', [
+        { label: 'Origin', value: 'Australian' },
+        { label: 'Treatments', value: 'No Treatments' },
+        { label: 'Astrologically', value: 'Very Effective / Recommended' },
+        { label: 'Price Range (Per Carat) Approx', value: 'Rs 800– Rs 2000 per carat' },
+        { label: 'Colortone & Appearance', value: 'Very Good Firing & Multicolored Brilliance Effect From 70% to 100% of The Stone Area, Off White to Pure white Color-Tone .' },
+      ]),
+      tierFromJson('opal', 'opal-qualities', 'Very High / Rare Quality Opal Gemstone', 'For This Category Fiery Opal See the Exclusive Range', [
+        { label: 'Origin', value: 'Australian' },
+        { label: 'Treatments', value: 'No Treatments' },
+        { label: 'Astrologically', value: 'Most Effective /Highly Recommended' },
+        { label: 'Price Range (Per Carat) Approx', value: 'Rs 2000 Per Carat up to -Rs 10000 Per carat' },
+        { label: 'Colortone & Appearance', value: 'Very Strong (Almost 100% Of The Stone Area ) Firing Effect with Multi-Colored Brilliance.(In these qualities of Opals you will find all the colors of firing effects like blue, green, yellow, orange, red etc).' },
       ]),
     ],
   },

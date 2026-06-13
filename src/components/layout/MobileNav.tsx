@@ -24,6 +24,7 @@ const KNOWLEDGE_LINKS = [
   { label: 'Rudraksha Library', href: '/knowledge/rudraksha' },
   { label: 'Rudraksha Qualities', href: '/knowledge/rudraksha-qualities' },
   { label: 'Gems Qualities', href: '/knowledge/gem-qualities' },
+  { label: 'Opal Qualities', href: '/knowledge/gem-qualities/opal' },
   { label: 'Vedic Astrology', href: '/knowledge/astrology' },
 ] as const;
 

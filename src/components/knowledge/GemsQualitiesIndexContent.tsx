@@ -67,7 +67,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
             <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-[#3B2F26] md:text-lg">
               The authoritative Vedic reference on identifying natural, untreated Jyotish
               gemstones — Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite,
-              Cat&apos;s Eye, White Sapphire and Pearl. Trusted since 1937.
+              Cat&apos;s Eye, White Sapphire, Pearl and Opal. Trusted since 1937.
             </p>
 
             <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -109,7 +109,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
       <section className="mx-auto mt-20 max-w-7xl px-4 md:px-8">
         <div className="text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#B8861E]">
-            Nine Planets · Nine Gems
+            Planetary Gems · Quality Guides
           </p>
           <h2
             className="mt-2 text-[#4D0A0A]"

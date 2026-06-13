@@ -63,6 +63,14 @@
     display: contents;
   }
 
+  .about-copy-intro {
+    display: contents;
+  }
+
+  .about-copy-extra {
+    display: contents;
+  }
+
   .about-copy-wrap .s-eyebrow {
     display: none;
   }
@@ -96,7 +104,7 @@
     order: 6;
   }
 
-  .about-copy-wrap .about-cta {
+  .about-copy-wrap .about-cta-row {
     order: 7;
   }
 }
@@ -5066,11 +5074,6 @@
 
     @media (max-width: 980px) {
       .pvg-welcome-copy { max-width: 100%; }
-      .director-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding-top: 0; }
-      .director-profile { grid-column: 1; grid-row: 1; width: min(78vw, 300px); height: 300px; margin: 0 auto -20px; }
-      .director-strip { grid-column: 1; grid-row: 2; min-height: auto; padding: 28px; border-radius: 14px 40px 14px 40px; }
-      .director-strip .section-title { white-space: normal; }
-      .director-picks { grid-column: 1; grid-row: 3; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 22px; }
       .remedy-shell { grid-template-columns: 1fr; min-height: auto; }
       .remedy-showcase { min-height: 380px; }
       .remedy-timeline::before { left: 52px; }
@@ -5654,6 +5657,8 @@
 @media (max-width: 768px) {
   .about-grid { display: flex; flex-direction: column; gap: 22px; }
   .about-copy-wrap { display: contents; }
+  .about-copy-intro { display: contents; }
+  .about-copy-extra { display: contents; }
   .about-copy-wrap .s-eyebrow { display: none; }
   .about-copy-wrap .s-heading { order: 1; margin: 0 auto; text-align: center; }
   .about-img-wrap { order: 2 !important; width: min(100%, 380px); margin: 0 auto; }
@@ -5661,7 +5666,7 @@
   .about-copy-wrap .who-body { order: 4; }
   .about-copy-wrap .who-quote { order: 5; }
   .about-copy-wrap .about-stats { order: 6; }
-  .about-copy-wrap .about-cta { order: 7; }
+  .about-copy-wrap .about-cta-row { order: 7; }
 }
 
 .rudra-left-carousel,
@@ -5790,17 +5795,6 @@
   .director-layout { grid-template-columns: 240px minmax(0, 1fr); grid-template-rows: 170px auto; gap: 0 22px; padding-top: 16px; }
   .director-profile { width: 240px; height: 428px; margin-top: -16px; }
   .director-strip { min-height: 170px; padding: 22px 28px 22px 272px; }
-}
-
-@media (max-width: 980px) {
-  .director-layout { grid-template-columns: 168px minmax(0, 1fr); grid-template-rows: 132px auto; gap: 0 14px; padding-top: 10px; }
-  .director-profile { width: 168px; height: 332px; margin-top: -10px; }
-  .director-strip { min-height: auto; padding: 14px 18px 14px 186px; border-radius: 14px 42px 14px 42px; }
-  .director-strip .section-title { font-size: 29px; line-height: 1.1; white-space: nowrap; }
-  .director-strip .section-sub { max-width: 300px; font-size: 14px; }
-  .director-all-link { min-height: 42px; padding: 0 14px; font-size: 11px; }
-  .director-picks { grid-template-columns: 1fr; margin-top: 18px; gap: 12px; }
-  .director-pick-media { min-height: 128px; }
 }
 
 @media (max-width: 640px) {
@@ -8146,12 +8140,20 @@ a.pvg-footer-link:hover {
   background: linear-gradient(180deg, #fbf6eb 0%, #f3e4c7 54%, #f8f0de 100%) !important;
 }
 
-.pvg-react-home-root .director-picks {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  align-items: stretch !important;
-  gap: 12px !important;
-  overflow: visible !important;
+@media (min-width: 1181px) {
+  .pvg-react-home-root .director-picks {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .pvg-react-home-root .director-picks {
+    gap: 12px !important;
+  }
 }
 
 .pvg-react-home-root .director-pick-card {
@@ -8368,13 +8370,9 @@ a.pvg-footer-link:hover {
   .pvg-react-home-root .pvg-category-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
-  .pvg-react-home-root .director-picks {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 
-@media (min-width: 768px) and (max-width: 1024px) {
+@media (max-width: 767px) {
   .pvg-react-home-root .director-layout {
     grid-template-columns: 1fr !important;
     grid-template-rows: auto !important;
@@ -8398,6 +8396,10 @@ a.pvg-footer-link:hover {
 
   .pvg-react-home-root .director-pick-info h4 {
     font-size: 14px !important;
+  }
+
+  .pvg-react-home-root .director-picks {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -8800,63 +8802,6 @@ a.pvg-footer-link:hover {
 
 .pvg-react-home-root .testi-quote-v2 {
   color: #4f3f35 !important;
-}
-
-@media (min-width: 768px) and (max-width: 1024px) {
-  .pvg-react-home-root .director-layout {
-    display: grid !important;
-    grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) !important;
-    grid-template-rows: auto auto !important;
-    gap: 0 22px !important;
-    padding-top: 10px !important;
-    align-items: stretch !important;
-  }
-
-  .pvg-react-home-root .director-profile {
-    grid-column: 1 !important;
-    grid-row: 1 / 3 !important;
-    display: flex !important;
-    width: 100% !important;
-    height: 396px !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .pvg-react-home-root .director-content {
-    grid-column: 2 !important;
-    display: block !important;
-    min-width: 0 !important;
-  }
-
-  .pvg-react-home-root .director-strip {
-    display: flex !important;
-    min-height: 132px !important;
-    padding: 22px 24px !important;
-    border-radius: 14px 42px 14px 42px !important;
-  }
-
-  .pvg-react-home-root .director-picks {
-    display: flex !important;
-    grid-template-columns: none !important;
-    gap: 14px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    overscroll-behavior-inline: contain !important;
-    padding: 4px 2px 16px !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: thin !important;
-    scrollbar-color: rgba(122, 21, 21, 0.24) transparent !important;
-  }
-
-  .pvg-react-home-root .director-pick-card {
-    flex: 0 0 min(42vw, 278px) !important;
-    scroll-snap-align: start !important;
-  }
-
-  .pvg-react-home-root .director-pick-info h4 {
-    font-size: 13px !important;
-  }
 }
 
 @media (max-width: 767px) {
