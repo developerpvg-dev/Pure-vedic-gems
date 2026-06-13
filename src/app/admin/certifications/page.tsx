@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Award, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Award, X, BarChart3, Clock, IndianRupee } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, fmtInr } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 interface Certification {
   id: string;
@@ -35,6 +38,12 @@ export default function CertificationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { totalLabs: number; activeLabs: number; defaultLabs: number; avgExtraCharge: number; avgTurnaroundDays: number };
+    chargeBreakdown: Array<{ label: string; value: number; meta: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    turnaroundBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/certifications/analytics');
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -129,22 +138,34 @@ export default function CertificationsPage() {
   const activeCount = items.filter(i => i.is_active).length;
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Certification Labs</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage certification labs available in the configurator. {activeCount} active.
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Certification
-        </button>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Certification Labs"
+        description={`Manage certification labs available in the configurator. ${activeCount} active.`}
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700">
+            <Plus className="h-4 w-4" /> Add Certification
+          </button>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total labs" value={(analytics?.summary.totalLabs ?? items.length).toLocaleString('en-IN')} icon={Award} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="Active labs" value={(analytics?.summary.activeLabs ?? activeCount).toLocaleString('en-IN')} icon={BarChart3} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.defaultLabs ?? 0} default`} />
+        <AdminStatCard label="Avg extra charge" value={fmtInr(analytics?.summary.avgExtraCharge ?? 0)} icon={IndianRupee} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Avg turnaround" value={analytics?.summary.avgTurnaroundDays ? `${analytics.summary.avgTurnaroundDays} days` : '—'} icon={Clock} tone="text-blue-600" bg="bg-blue-50" />
       </div>
+
+      <AdminAnalyticsPanel title="Certification analytics" subtitle="Pricing & turnaround overview" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Extra charge by lab" icon={IndianRupee} items={analytics?.chargeBreakdown ?? []} />
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Turnaround distribution" icon={Clock} items={analytics?.turnaroundBreakdown ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
 
       {error && !showModal && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>

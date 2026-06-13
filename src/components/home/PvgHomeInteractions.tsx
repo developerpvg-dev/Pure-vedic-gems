@@ -104,6 +104,17 @@ function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+function preloadStackImages(cards: HTMLElement[]) {
+  cards.forEach((card) => {
+    card.querySelectorAll('img').forEach((node) => {
+      if (!(node instanceof HTMLImageElement) || !node.src || node.complete) return;
+      const loader = new Image();
+      loader.decoding = 'async';
+      loader.src = node.src;
+    });
+  });
+}
+
 function setupRotatingStack(
   selector: string,
   intervalMs: number,
@@ -112,6 +123,8 @@ function setupRotatingStack(
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selector));
   if (cards.length <= 1) return undefined;
 
+  preloadStackImages(cards);
+
   const container = cards[0].closest('section') ?? cards[0].parentElement;
   let activeIndex = cards.findIndex((card) => card.dataset.pos === '0');
   if (activeIndex < 0) activeIndex = cards.length - 1;
@@ -119,12 +132,12 @@ function setupRotatingStack(
   let timer: number | null = null;
   let isVisible = true;
   const pauseOnReducedMotion = options?.pauseOnReducedMotion ?? true;
+  const transitionMs = 600;
 
   const render = () => {
     cards.forEach((card, index) => {
       const position = (activeIndex - index + cards.length) % cards.length;
       card.dataset.pos = String(position);
-      card.classList.toggle('is-top', position === 0);
     });
   };
 
@@ -140,7 +153,7 @@ function setupRotatingStack(
       activeIndex = (activeIndex + 1) % cards.length;
       render();
       schedule();
-    }, intervalMs);
+    }, Math.max(intervalMs, transitionMs + 400));
   };
 
   const observer = new IntersectionObserver(

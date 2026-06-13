@@ -343,6 +343,186 @@ const nextConfig: NextConfig = {
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
+
+      // Legacy core nav / footer pages from the old WordPress site -> new routes.
+      ...[
+        ['/about-us', '/about'],
+        ['/about-vedic-astrology', '/knowledge/astrology'],
+        ['/contact-us', '/contact'],
+        ['/energized-gems', '/knowledge/energized-gems'],
+        ['/gems-care', '/knowledge/gems-care'],
+        ['/know-your-vedic-gems', '/knowledge/gemstones'],
+        ['/nine-vedic-gems', '/knowledge/gemstones'],
+        ['/how-to-measure-your-finger-for-ring', '/tools/ring-size-guide'],
+        ['/treatments-and-enhancements-gemstones', '/knowledge/treatments'],
+        ['/rudraksha-qualities', '/knowledge/rudraksha-qualities'],
+        ['/buy-online-rudraksha', '/knowledge/rudraksha-qualities'],
+        ['/gemstone-recommendation-by-date-of-birth', '/tools/recommendation'],
+        ['/rings-design', '/shop/jewelry'],
+        ['/video', '/videos'],
+        ['/videos-testimonials', '/videos'],
+        ['/blogs', '/blog'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
+      // Additional legacy gem "qualities" slugs -> canonical quality guides.
+      ...[
+        ['/hessonite-qualities', 'hessonite'],
+        ['/ruby-qualities', 'ruby'],
+        ['/white-sapphire-gemstone-qualities', 'white-sapphire'],
+      ].flatMap(([source, gem]) => [
+        { source, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
+        { source: `${source}/`, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
+      ]),
+
+      // Legacy bare gem category / listing pages -> storefront listings.
+      ...[
+        ['/blue-sapphire', '/shop/blue-sapphire'],
+        ['/yellow-sapphire', '/shop/yellow-sapphire'],
+        ['/catseye-gemstone', '/shop/cats-eye'],
+        ['/emerald-gemstone', '/shop/emerald'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
+      // Legacy WP blog taxonomy + individual testimonial pages.
+      { source: '/category/:slug', destination: '/blog', statusCode: 301 },
+      { source: '/category/:slug/', destination: '/blog', statusCode: 301 },
+      { source: '/testimonial/:slug', destination: '/testimonials', statusCode: 301 },
+      { source: '/testimonial/:slug/', destination: '/testimonials', statusCode: 301 },
+
+      // Legacy blog articles that are gem-specific -> canonical gem quality guides.
+      // (These old slugs do not collide with any current Sanity blog post.)
+      ...[
+        ['/blog/planets-and-their-gems-blue-sapphire', 'blue-sapphire'],
+        ['/blog/planets-and-their-gems-catseye', 'catseye'],
+        ['/blog/planets-and-their-gems-emerald', 'emerald'],
+        ['/blog/planets-and-their-gems-hessonite', 'hessonite'],
+        ['/blog/planets-and-their-gems-ruby', 'ruby'],
+        ['/blog/planets-gems-red-coral', 'red-coral'],
+        ['/blog/planets-gems-white-sapphire', 'white-sapphire'],
+        ['/blog/benefits-of-pure-and-natural-opal-gemstone', 'opal'],
+        ['/blog/jyotish-pearl-for-the-moon', 'pearl'],
+        ['/blog/ruby-motivation-action', 'ruby'],
+        ['/blog/astrologically-effective-red-coral', 'red-coral'],
+      ].flatMap(([source, gem]) => [
+        { source, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
+        { source: `${source}/`, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
+      ]),
+
+      // Legacy blog articles about Rudraksha -> Rudraksha knowledge guide.
+      ...[
+        '/blog/rudrakshas-and-its-uses',
+        '/blog/astrologically-effective-rosaries',
+      ].flatMap((source) => [
+        { source, destination: '/knowledge/rudraksha-qualities', statusCode: 301 },
+        { source: `${source}/`, destination: '/knowledge/rudraksha-qualities', statusCode: 301 },
+      ]),
+
+      // Legacy blog articles about gems in general / healing -> gemstones knowledge hub.
+      ...[
+        '/blog/astrological-benefits-of-gemestones',
+        '/blog/gems-in-clinical-healing',
+        '/blog/gemstones-for-health-wealth-and-prosperity',
+        '/blog/healing-stones',
+        '/blog/healing-vibrational-energy-gems',
+        '/blog/jyotish-gemstones',
+        '/blog/planetary-gemology',
+        '/blog/quality-and-size-of-gems',
+        '/blog/ring-of-planetary-gems',
+        '/blog/usage-gems-cure-diseases',
+        '/blog/where-gemstones-are-found',
+      ].flatMap((source) => [
+        { source, destination: '/knowledge/gemstones', statusCode: 301 },
+        { source: `${source}/`, destination: '/knowledge/gemstones', statusCode: 301 },
+      ]),
+
+      // Legacy blog article about pujas/yagyas -> yagya service hub.
+      ...[
+        '/blog/yagna-and-pooja',
+        '/blog/steps-involved-in-conducting-vedic-pujasprayers',
+      ].flatMap((source) => [
+        { source, destination: '/vedic-yagyas-service', statusCode: 301 },
+        { source: `${source}/`, destination: '/vedic-yagyas-service', statusCode: 301 },
+      ]),
+
+      // Remaining legacy blog articles (mantras, stotras, planetary houses,
+      // chakras, meditation, healing theory) -> the astrology knowledge hub.
+      // 301s here preserve crawl + link equity instead of returning 404s.
+      ...[
+        '/blog/benefits-jupiter-10th-house-horoscope',
+        '/blog/benefits-jupiter-11th-house-horoscope',
+        '/blog/benefits-jupiter-12th-house-horoscope',
+        '/blog/benefits-jupiter-2nd-house-horoscope-2',
+        '/blog/benefits-jupiter-3rd-house-horoscope',
+        '/blog/benefits-jupiter-4th-house-horoscope-2',
+        '/blog/benefits-jupiter-5th-house-horoscope',
+        '/blog/benefits-jupiter-6th-house-horoscope',
+        '/blog/benefits-jupiter-7th-house-horoscope',
+        '/blog/benefits-jupiter-8th-house-horoscope',
+        '/blog/benefits-jupiter-9th-house-horoscope',
+        '/blog/benefits-of-jupiter-in-1st-house-of-horoscope',
+        '/blog/mercury-in-the-10th-house-horoscope-benefits-of-mercury-in-the-10th-house-of-horoscope',
+        '/blog/mercury-in-the-11th-house-horoscope-benefits-of-mercury-in-the-11th-house-of-horoscope',
+        '/blog/mercury-in-the-12th-house-horoscope-benefits-of-mercury-in-the-12th-house-of-horoscope',
+        '/blog/mercury-in-the-2nd-house-horoscope-benefits-of-mercury-in-the-2nd-house-of-horoscope',
+        '/blog/mercury-in-the-3rd-house-horoscope-benefits-of-mercury-in-the-3rd-house-of-horoscope',
+        '/blog/mercury-in-the-4th-house-horoscope-benefits-of-mercury-in-the-4th-house-of-horoscope',
+        '/blog/mercury-in-the-6th-house-horoscope-benefits-of-mercury-in-the-6th-house-of-horoscope',
+        '/blog/mercury-in-the-7th-house-horoscope-benefits-of-mercury-in-the-7th-house-of-horoscope',
+        '/blog/mercury-in-the-8th-house-horoscope-benefits-of-mercury-in-the-8th-house-of-horoscope',
+        '/blog/mercury-in-the-9th-house-horoscope-benefits-of-mercury-in-the-9th-house-of-horoscope',
+        '/blog/mantras-for-jupiter',
+        '/blog/mantras-for-mars',
+        '/blog/mantras-for-mercury-budha-mantras-for-mercury-budha',
+        '/blog/mantras-for-moon-chandra',
+        '/blog/mantras-for-saturn',
+        '/blog/mantras-for-self-empowerment',
+        '/blog/mantras-for-sun',
+        '/blog/mantras-for-venus',
+        '/blog/mantras-north-node',
+        '/blog/mantras-south-node-ketu',
+        '/blog/mantras-specific-inner-conditions',
+        '/blog/mantra-reducing-fear-anger-spiritual-liberation',
+        '/blog/short-planetary-mantras',
+        '/blog/the-navgraha-mantra',
+        '/blog/the-principal-seed-mantras',
+        '/blog/zodiac-mantras-success-part-1',
+        '/blog/zodiac-mantras-success-part-2',
+        '/blog/fundamental-truths-to-remember-about-mantras',
+        '/blog/stotras-and-sahasarnam-for-the-navgrah',
+        '/blog/stotras-and-sahasarnam-the-jupiter',
+        '/blog/stotras-and-sahasarnam-the-mars',
+        '/blog/stotras-and-sahasarnam-the-mercury',
+        '/blog/stotras-and-sahasarnam-the-sun',
+        '/blog/stotras-and-sahasarnam-the-venus',
+        '/blog/stotras-sahasarnam-moon',
+        '/blog/stotras-sahasarnam-north-node-chandra',
+        '/blog/stotras-sahasarnam-south-node-chandra',
+        '/blog/stotras-sahasarnam-the-saturn',
+        '/blog/rahu-looks-nature-and-remedies',
+        '/blog/the-planets-and-our-bodies',
+        '/blog/the-power-of-the-astrological-sign',
+        '/blog/how-the-astrological-remedies-work',
+        '/blog/fasts-vratas-as-a-remedy',
+        '/blog/good-behaviour-peace-happiness',
+        '/blog/the-chakras',
+        '/blog/nine-cosmic-rays-healing',
+        '/blog/light-the-radiant-energy',
+        '/blog/therapy-through-colors',
+        '/blog/meditation-with-the-senses',
+        '/blog/six-breathing-techniques',
+        '/blog/herbs-and-the-six-tastes',
+        '/blog/notable-herbs-human-welfare',
+        '/blog/tips-related-to-the-physical-world',
+        '/blog/tips-related-to-the-spiritual-world',
+      ].flatMap((source) => [
+        { source, destination: '/knowledge/astrology', statusCode: 301 },
+        { source: `${source}/`, destination: '/knowledge/astrology', statusCode: 301 },
+      ]),
     ];
   },
 

@@ -15,6 +15,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid cart event' }, { status: 400 });
   }
 
+  // This is an untrusted, public analytics endpoint. It records the event for
+  // funnel analytics but must never raise admin/sales notifications or
+  // high-value alerts — those are driven only by server-verified cart
+  // mutations where the value is computed from the database.
   await logCartEvent({
     guestSessionId: parsed.data.guest_session_id,
     eventType: parsed.data.event_type,
@@ -22,6 +26,7 @@ export async function POST(request: NextRequest) {
     quantity: parsed.data.quantity,
     value: parsed.data.value,
     metadata: parsed.data.metadata,
+    allowNotifications: false,
   });
 
   return NextResponse.json({ success: true });

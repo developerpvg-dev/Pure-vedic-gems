@@ -10,7 +10,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminAccess();
+  const auth = await requireAdminAccess('orders.write');
   if ('error' in auth) return auth.error;
 
   const { id } = await params;

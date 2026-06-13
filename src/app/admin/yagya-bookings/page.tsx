@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Flame, Loader2, Search, X } from 'lucide-react';
+import { BarChart3, CreditCard, Flame, IndianRupee, Loader2, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
 
 interface YagyaBooking {
   id: string;
@@ -79,14 +81,24 @@ export default function AdminYagyaBookingsPage() {
   const [bookings, setBookings] = useState<YagyaBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [active, setActive] = useState<YagyaBooking | null>(null);
+  const [analytics, setAnalytics] = useState<{
+    summary: { totalBookings: number; capturedPayments: number; pendingPayments: number; capturedRevenue: number; avgBookingValue: number; completedServices: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    paymentBreakdown: Array<{ label: string; value: number; meta: number }>;
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const qs = new URLSearchParams();
       if (statusFilter !== 'all') qs.set('status', statusFilter);
+      if (paymentFilter !== 'all') qs.set('payment_status', paymentFilter);
       if (search.trim()) qs.set('q', search.trim());
       const res = await fetch(`/api/admin/yagya-bookings?${qs.toString()}`);
       if (!res.ok) throw new Error('Failed');
@@ -97,24 +109,57 @@ export default function AdminYagyaBookingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, search]);
+  }, [statusFilter, paymentFilter, search]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    setAnalyticsLoading(true);
+    fetch('/api/admin/yagya-bookings/analytics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .catch(() => undefined)
+      .finally(() => setAnalyticsLoading(false));
+  }, []);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <Flame className="h-6 w-6 text-amber-600" /> Yagya Bookings
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">Manage paid yagya bookings, sankalp details, payments, and service status.</p>
-        </div>
+      <AdminPageHeader
+        title="Yagya Bookings"
+        description="Manage paid yagya bookings, sankalp details, payments, and service status."
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total bookings" value={(analytics?.summary.totalBookings ?? bookings.length).toLocaleString('en-IN')} icon={Flame} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Captured revenue" value={fmtInr(analytics?.summary.capturedRevenue ?? 0)} icon={IndianRupee} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.capturedPayments ?? 0} payments`} />
+        <AdminStatCard label="Pending payment" value={(analytics?.summary.pendingPayments ?? bookings.filter((b) => b.payment_status === 'pending').length).toLocaleString('en-IN')} icon={CreditCard} tone="text-yellow-600" bg="bg-yellow-50" />
+        <AdminStatCard label="Completed services" value={(analytics?.summary.completedServices ?? 0).toLocaleString('en-IN')} icon={BarChart3} tone="text-teal-600" bg="bg-teal-50" subtext={analytics?.summary.avgBookingValue ? `Avg ${fmtInr(analytics.summary.avgBookingValue)}` : undefined} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <AdminAnalyticsPanel
+        title="Booking analytics"
+        subtitle="Last 30 days · revenue & pipeline"
+        loading={analyticsLoading}
+        open={analyticsOpen}
+        onToggle={() => setAnalyticsOpen((v) => !v)}
+      >
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Booking trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Payment status" icon={CreditCard} items={analytics?.paymentBreakdown.slice(0, 6) ?? []} />
+          </div>
+        </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <MetricBars embedded title="Service status" icon={Flame} items={analytics?.statusBreakdown.slice(0, 8) ?? []} />
+        </div>
+      </AdminAnalyticsPanel>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -132,6 +177,16 @@ export default function AdminYagyaBookingsPage() {
         >
           <option value="all">All statuses</option>
           {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+          ))}
+        </select>
+        <select
+          value={paymentFilter}
+          onChange={(e) => setPaymentFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400"
+        >
+          <option value="all">All payments</option>
+          {Object.keys(PAYMENT_STYLE).map((s) => (
             <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
           ))}
         </select>

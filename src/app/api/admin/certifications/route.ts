@@ -1,29 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-
-  const adminDb = createAdminClient();
-  const { data: member } = await adminDb
-    .from('team_members')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .single();
-
-  const m = member as { role: string; is_active: boolean } | null;
-  if (!m?.is_active) {
-    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-  }
-  return { user, role: m.role };
-}
+import { requireAdminAccess } from '@/lib/admin/api';
 
 export async function GET() {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const auth = await requireAdminAccess('products.read');
+  if ('error' in auth) return auth.error;
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -39,8 +20,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const auth = await requireAdminAccess('products.write');
+  if ('error' in auth) return auth.error;
 
   let body: Record<string, unknown>;
   try {

@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Loader2, Star, X } from 'lucide-react';
+import { BarChart3, Check, Loader2, MessageSquare, Search, Star, X } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart } from '@/components/admin/AdminCharts';
 
 interface FeedbackItem {
   id: string;
@@ -21,18 +23,35 @@ interface FeedbackItem {
 export default function AdminFeedbackPage() {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [status, setStatus] = useState('pending');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<{
+    summary: { totalFeedback: number; pending: number; approved: number; rejected: number; displayAllowed: number; featured: number; avgRating: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    ratingBreakdown: Array<{ label: string; value: number; meta: number }>;
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    const response = await fetch(`/api/admin/feedback?status=${status}`, { cache: 'no-store' });
+    const params = new URLSearchParams({ status });
+    if (search.trim()) params.set('q', search.trim());
+    const response = await fetch(`/api/admin/feedback?${params.toString()}`, { cache: 'no-store' });
     const data = await response.json().catch(() => null) as { feedback?: FeedbackItem[] } | null;
     setItems(data?.feedback ?? []);
     setLoading(false);
-  }, [status]);
+  }, [status, search]);
 
   useEffect(() => { void fetchItems(); }, [fetchItems]);
+
+  useEffect(() => {
+    fetch('/api/admin/feedback/analytics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .catch(() => undefined);
+  }, []);
 
   async function updateFeedback(id: string, update: Record<string, unknown>) {
     setSavingId(id);
@@ -45,12 +64,46 @@ export default function AdminFeedbackPage() {
     void fetchItems();
   }
 
+  const filteredItems = search.trim()
+    ? items.filter((item) => {
+        const q = search.toLowerCase();
+        return item.name.toLowerCase().includes(q)
+          || (item.email?.toLowerCase().includes(q) ?? false)
+          || (item.subject?.toLowerCase().includes(q) ?? false)
+          || item.message.toLowerCase().includes(q);
+      })
+    : items;
+
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Feedback Moderation</h1>
-          <p className="mt-1 text-sm text-gray-500">Approve, reject, publish, and feature public feedback submissions.</p>
+    <div className="space-y-6">
+      <AdminPageHeader title="Feedback Moderation" description="Approve, reject, publish, and feature public feedback submissions." />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total feedback" value={(analytics?.summary.totalFeedback ?? items.length).toLocaleString('en-IN')} icon={MessageSquare} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="Pending review" value={(analytics?.summary.pending ?? 0).toLocaleString('en-IN')} icon={Loader2} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Approved" value={(analytics?.summary.approved ?? 0).toLocaleString('en-IN')} icon={Check} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.featured ?? 0} featured`} />
+        <AdminStatCard label="Avg rating" value={analytics?.summary.avgRating ? `${analytics.summary.avgRating} / 5` : '—'} icon={Star} tone="text-yellow-600" bg="bg-yellow-50" />
+      </div>
+
+      <AdminAnalyticsPanel title="Feedback analytics" subtitle="Submissions & ratings · last 30 days" open={analyticsOpen} onToggle={() => setAnalyticsOpen((v) => !v)}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Submission trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Rating distribution" icon={Star} items={analytics?.ratingBreakdown ?? []} />
+          </div>
+        </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <MetricBars embedded title="Status breakdown" icon={BarChart3} items={analytics?.statusBreakdown ?? []} />
+        </div>
+      </AdminAnalyticsPanel>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search feedback..." className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm" />
         </div>
         <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
           <option value="pending">Pending</option>
@@ -62,11 +115,11 @@ export default function AdminFeedbackPage() {
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-amber-600" /></div>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-500">No feedback found.</div>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <article key={item.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0 flex-1">

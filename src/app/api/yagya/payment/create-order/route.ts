@@ -5,6 +5,7 @@ import { getRazorpayClient } from '@/lib/razorpay/client';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { yagyaBookingCreateOrderSchema } from '@/lib/validators/yagya';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { setBookingTokenCookie } from '@/lib/security/booking-token';
 
 interface RazorpayOrderResult {
   id: string;
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
       : []),
   ]);
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     booking_id: booking.id,
     razorpay_order_id: razorpayOrder.id,
     amount: amountInPaise,
@@ -191,4 +192,10 @@ export async function POST(request: NextRequest) {
       contact: parsed.data.phone,
     },
   });
+
+  // Bind this booking to the current browser so a guest can later prove
+  // ownership when finalizing payment (no schema change required).
+  setBookingTokenCookie(response, 'yagya', booking.id);
+
+  return response;
 }

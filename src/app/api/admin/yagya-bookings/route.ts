@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { sanitizeSearchTerm } from '@/lib/utils/search';
 import type { YagyaBooking } from '@/lib/types/database';
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminAccess();
+  const auth = await requireAdminAccess('orders.read');
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
   const paymentStatus = searchParams.get('payment_status');
-  const search = searchParams.get('q')?.trim();
+  const rawSearch = searchParams.get('q')?.trim();
+  const search = rawSearch ? sanitizeSearchTerm(rawSearch) : undefined;
 
   const admin = createAdminClient();
   let query = admin

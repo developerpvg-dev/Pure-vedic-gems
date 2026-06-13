@@ -6,6 +6,7 @@ import { verifyPaymentSignature } from '@/lib/razorpay/verify';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { yagyaPaymentVerifySchema } from '@/lib/validators/yagya';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { hasValidBookingToken } from '@/lib/security/booking-token';
 import type { YagyaBooking, Json } from '@/lib/types/database';
 
 export async function POST(request: NextRequest) {
@@ -47,7 +48,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Yagya booking not found' }, { status: 404 });
   }
 
-  if (booking.customer_id && booking.customer_id !== user?.id) {
+  if (booking.customer_id) {
+    // Account-owned bookings can only be finalized by their owner.
+    if (booking.customer_id !== user?.id) {
+      return NextResponse.json({ error: 'Yagya booking not found' }, { status: 404 });
+    }
+  } else if (!hasValidBookingToken(request, 'yagya', booking.id)) {
+    // Guest bookings require the signed cookie issued at create-order time.
     return NextResponse.json({ error: 'Yagya booking not found' }, { status: 404 });
   }
 

@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Flame, Loader2, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import { BarChart3, Flame, IndianRupee, Loader2, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 interface Yagya {
   id: string;
@@ -87,6 +90,12 @@ export default function AdminYagyasPage() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { totalYagyas: number; activeYagyas: number; inactiveYagyas: number; avgPrice: number; catalogValue: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    planetBreakdown: Array<{ label: string; value: number; meta: number }>;
+    priceBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/yagyas/analytics');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -190,22 +199,38 @@ export default function AdminYagyasPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <Flame className="h-6 w-6 text-amber-600" /> Vedic Yagyas
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">Manage Yagya pricing, descriptions, images and visibility.</p>
-        </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
-        >
-          <Plus className="h-4 w-4" /> New Yagya
-        </button>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Vedic Yagyas"
+        description="Manage Yagya pricing, descriptions, images and visibility."
+        actions={
+          <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
+            <Plus className="h-4 w-4" /> New Yagya
+          </button>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total yagyas" value={(analytics?.summary.totalYagyas ?? yagyas.length).toLocaleString('en-IN')} icon={Flame} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Active" value={(analytics?.summary.activeYagyas ?? yagyas.filter((y) => y.is_active).length).toLocaleString('en-IN')} icon={BarChart3} tone="text-green-600" bg="bg-green-50" />
+        <AdminStatCard label="Catalog value" value={fmtInr(analytics?.summary.catalogValue ?? 0)} icon={IndianRupee} tone="text-emerald-600" bg="bg-emerald-50" />
+        <AdminStatCard label="Avg price" value={fmtInr(analytics?.summary.avgPrice ?? 0)} icon={Flame} tone="text-orange-600" bg="bg-orange-50" />
       </div>
+
+      <AdminAnalyticsPanel title="Yagya catalog analytics" subtitle="Pricing & planet mix · last 30 days" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Catalog growth</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="By planet/deity" icon={Flame} items={analytics?.planetBreakdown.slice(0, 8) ?? []} />
+          </div>
+        </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <MetricBars embedded title="Price by yagya" icon={IndianRupee} items={analytics?.priceBreakdown.slice(0, 10) ?? []} />
+        </div>
+      </AdminAnalyticsPanel>
 
       {loading ? (
         <div className="flex items-center gap-2 text-gray-500"><Loader2 className="h-5 w-5 animate-spin" /> Loading…</div>

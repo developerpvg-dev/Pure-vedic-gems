@@ -1,26 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-
-  // Use admin client to bypass RLS on team_members
-  const adminDb = createAdminClient();
-  const { data: member } = await adminDb
-    .from('team_members')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .single();
-
-  const m = member as { role: string; is_active: boolean } | null;
-  if (!m?.is_active) {
-    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-  }
-  return { user, role: m.role };
-}
+import { requireAdminAccess } from '@/lib/admin/api';
 
 /**
  * PUT /api/admin/metals/[id]
@@ -30,8 +10,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const auth = await requireAdminAccess('products.write');
+  if ('error' in auth) return auth.error;
 
   const { id } = await params;
 
@@ -92,8 +72,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const auth = await requireAdminAccess('products.write');
+  if ('error' in auth) return auth.error;
 
   const { id } = await params;
 

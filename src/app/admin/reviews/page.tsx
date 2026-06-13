@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, Loader2, Star, X } from 'lucide-react';
+import { BarChart3, Check, Loader2, ShieldCheck, Star, X } from 'lucide-react';
 import { productHref } from '@/lib/categories/storefront';
 import { AdminPagination } from '@/components/admin/AdminPagination';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart } from '@/components/admin/AdminCharts';
 
 interface AdminReview {
   id: string;
@@ -30,6 +32,13 @@ export default function AdminReviewsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<{
+    summary: { totalReviews: number; pending: number; approved: number; featured: number; verified: number; avgRating: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    ratingBreakdown: Array<{ label: string; value: number; meta: number }>;
+    moderationBreakdown: Array<{ label: string; value: number; meta: number }>;
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -47,6 +56,13 @@ export default function AdminReviewsPage() {
     return () => window.clearTimeout(timer);
   }, [fetchReviews]);
 
+  useEffect(() => {
+    fetch('/api/admin/reviews/analytics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .catch(() => undefined);
+  }, []);
+
   async function moderate(id: string, action: 'approve' | 'reject' | 'feature' | 'unfeature') {
     setSavingId(id);
     await fetch(`/api/admin/reviews/${id}`, {
@@ -59,12 +75,32 @@ export default function AdminReviewsPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review Moderation</h1>
-          <p className="mt-1 text-sm text-gray-500">Approve verified reviews before ratings appear publicly.</p>
+    <div className="space-y-6">
+      <AdminPageHeader title="Review Moderation" description="Approve verified reviews before ratings appear publicly." />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total reviews" value={(analytics?.summary.totalReviews ?? total).toLocaleString('en-IN')} icon={Star} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Pending" value={(analytics?.summary.pending ?? 0).toLocaleString('en-IN')} icon={Loader2} tone="text-yellow-600" bg="bg-yellow-50" />
+        <AdminStatCard label="Approved" value={(analytics?.summary.approved ?? 0).toLocaleString('en-IN')} icon={Check} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.featured ?? 0} featured`} />
+        <AdminStatCard label="Avg rating" value={analytics?.summary.avgRating ? `${analytics.summary.avgRating} / 5` : '—'} icon={ShieldCheck} tone="text-blue-600" bg="bg-blue-50" subtext={`${analytics?.summary.verified ?? 0} verified`} />
+      </div>
+
+      <AdminAnalyticsPanel title="Review analytics" subtitle="Moderation pipeline & ratings · last 30 days" open={analyticsOpen} onToggle={() => setAnalyticsOpen((v) => !v)}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Review trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Rating distribution" icon={Star} items={analytics?.ratingBreakdown ?? []} />
+          </div>
         </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <MetricBars embedded title="Moderation status" icon={BarChart3} items={analytics?.moderationBreakdown ?? []} />
+        </div>
+      </AdminAnalyticsPanel>
+
+      <div className="flex justify-end rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>

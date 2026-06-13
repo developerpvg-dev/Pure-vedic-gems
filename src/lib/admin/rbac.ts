@@ -81,6 +81,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'finance.read',
     'compliance.manage',
     'settings.commerce',
+    'settings.team',
   ],
   sales: ['dashboard.read', 'products.read', 'orders.read', 'orders.write', 'leads.read', 'leads.write'],
   content: ['dashboard.read', 'products.read', 'products.write', 'imports.write', 'content.manage'],
@@ -140,6 +141,14 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/leads')) return 'leads.read';
   if (pathname.startsWith('/admin/reviews')) return 'content.manage';
   if (pathname.startsWith('/admin/testimonials')) return 'content.manage';
+  if (pathname.startsWith('/admin/feedback')) return 'content.manage';
+  if (pathname.startsWith('/admin/category-reviews')) return 'content.manage';
+  if (pathname.startsWith('/admin/events')) return 'content.manage';
+  if (pathname.startsWith('/admin/videos')) return 'content.manage';
+  if (pathname.startsWith('/admin/lab-certificates')) return 'content.manage';
+  if (pathname.startsWith('/admin/configurations')) return 'products.read';
+  if (pathname.startsWith('/admin/yagyas')) return 'products.read';
+  if (pathname.startsWith('/admin/yagya-bookings')) return 'orders.read';
   if (pathname.startsWith('/admin/notifications')) return 'leads.read';
   if (
     pathname.startsWith('/admin/categories') ||

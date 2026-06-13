@@ -300,23 +300,23 @@ export function PvgReferenceSections({
           <div className="about-img-stack" id="aboutStack" aria-label="Heritage photographs">
 
             <div className="about-stack-card" data-pos="4">
-              <img className="about-stack-img" src={`/home/whoweare/vedic-talismans.png?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Powerful Vedic talismans — sacred geometry jewellery designs" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/vedic-talismans.png?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Powerful Vedic talismans — sacred geometry jewellery designs" loading="eager" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="3">
-              <img className="about-stack-img" src={`/home/whoweare/1Heritage.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Four generations of Pure Vedic Gems family heritage" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/1Heritage.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Four generations of Pure Vedic Gems family heritage" loading="eager" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="2">
-              <img className="about-stack-img" src={`/home/whoweare/2Sourcing.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/2Sourcing.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="eager" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="1">
-              <img className="about-stack-img" src={`/home/whoweare/3Certification.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Pure Vedic Gems certification bodies" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/3Certification.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Pure Vedic Gems certification bodies" loading="eager" decoding="async" />
             </div>
 
             <div className="about-stack-card" data-pos="0">
-              <img className="about-stack-img" src={`/home/whoweare/4Energization.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Authentic Vedic gemstone energization ritual" loading="lazy" />
+              <img className="about-stack-img" src={`/home/whoweare/4Energization.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Authentic Vedic gemstone energization ritual" loading="eager" decoding="async" fetchPriority="high" />
             </div>
 
           </div>
@@ -417,25 +417,25 @@ export function PvgReferenceSections({
 
             <div className="cert-stack-card" data-pos="3">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`} alt="GIA gemstone certificate sample" loading="lazy" />
+                <img className="cert-stack-img" src={`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`} alt="GIA gemstone certificate sample" loading="eager" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`} alt="IGI gemstone certificate sample" loading="lazy" />
+                <img className="cert-stack-img" src={`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`} alt="IGI gemstone certificate sample" loading="eager" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`} alt="GII gemstone certificate sample" loading="lazy" />
+                <img className="cert-stack-img" src={`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`} alt="GII gemstone certificate sample" loading="eager" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="0">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi4.png?v=${CERT_STACK_IMG_VERSION}`} alt="Multiple gemstone certification reports from global labs" loading="lazy" />
+                <img className="cert-stack-img" src={`/home/certificates/certi4.png?v=${CERT_STACK_IMG_VERSION}`} alt="Multiple gemstone certification reports from global labs" loading="eager" decoding="async" fetchPriority="high" />
               </div>
             </div>
 

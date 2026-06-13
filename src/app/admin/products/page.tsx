@@ -3,8 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Search, Archive, RotateCcw, Lock, Unlock, Star, Upload, Download, PackageCheck } from 'lucide-react';
+import { Plus, Archive, RotateCcw, Lock, Unlock, Star, Upload, Download, PackageCheck, Package, AlertTriangle, BarChart3 } from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
+import { AdminAnalyticsPanel, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
+import {
+  AdminProductFilters,
+  EMPTY_ADMIN_PRODUCT_FILTERS,
+  adminProductFiltersToParams,
+  type AdminProductFilterState,
+} from '@/components/admin/AdminProductFilters';
 
 interface AdminProduct {
   id: string;
@@ -32,8 +40,38 @@ interface AdminProduct {
   created_at: string;
 }
 
-const AVAILABILITY_OPTIONS = ['in_stock', 'reserved', 'sold', 'on_demand', 'out_of_stock', 'archived'];
 const PRODUCTS_PER_PAGE = 20;
+
+function readInitialFilters(): AdminProductFilterState {
+  if (typeof window === 'undefined') return { ...EMPTY_ADMIN_PRODUCT_FILTERS };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    ...EMPTY_ADMIN_PRODUCT_FILTERS,
+    search: params.get('search') ?? '',
+    category: params.get('category') ?? '',
+    sub_category: params.get('sub_category') ?? '',
+    product_type: params.get('product_type') ?? '',
+    status: params.get('status') ?? '',
+    availability: params.get('availability_status') ?? '',
+    stock: params.get('stock') ?? '',
+    origin: params.get('origin') ?? '',
+    planet: params.get('planet') ?? '',
+    shape: params.get('shape') ?? '',
+    quality_label: params.get('quality_label') ?? '',
+    certificate_lab: params.get('certificate_lab') ?? '',
+    treatment: params.get('treatment') ?? '',
+    price_mode: params.get('price_mode') ?? '',
+    min_price: params.get('min_price') ?? '',
+    max_price: params.get('max_price') ?? '',
+    min_carat: params.get('min_carat') ?? '',
+    max_carat: params.get('max_carat') ?? '',
+    featured: params.get('featured') ?? '',
+    directors_pick: params.get('directors_pick') ?? '',
+    configurator_enabled: params.get('configurator_enabled') ?? '',
+    sort_by: params.get('sort_by') ?? 'newest',
+    sort_order: params.get('sort_order') ?? 'desc',
+  };
+}
 
 function label(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
@@ -44,25 +82,43 @@ export default function AdminProductsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('');
-  const [availability, setAvailability] = useState('');
-  const [stock, setStock] = useState(() => {
-    if (typeof window === 'undefined') return '';
-    return new URLSearchParams(window.location.search).get('stock') ?? '';
-  });
+  const [filters, setFilters] = useState<AdminProductFilterState>({ ...EMPTY_ADMIN_PRODUCT_FILTERS });
+  const [filtersReady, setFiltersReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyProduct, setBusyProduct] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<{
+    summary: { totalProducts: number; activeProducts: number; lowStockCount: number; outOfStockCount: number; catalogValue: number; avgPrice: number };
+    categoryBreakdown: Array<{ label: string; value: number; meta: number }>;
+    availabilityBreakdown: Array<{ label: string; value: number; meta: number }>;
+    creationTrend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
+
+  const syncUrl = useCallback((nextFilters: AdminProductFilterState, nextPage: number) => {
+    const params = adminProductFiltersToParams(nextFilters, nextPage, PRODUCTS_PER_PAGE);
+    params.delete('page');
+    params.delete('per_page');
+    const query = params.toString();
+    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+    window.history.replaceState(null, '', nextUrl);
+  }, []);
+
+  useEffect(() => {
+    setFilters(readInitialFilters());
+    const params = new URLSearchParams(window.location.search);
+    const initialPage = Math.max(1, Number(params.get('page') ?? '1'));
+    setPage(initialPage);
+    setFiltersReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersReady) return;
+    syncUrl(filters, page);
+  }, [filters, page, filtersReady, syncUrl]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), per_page: String(PRODUCTS_PER_PAGE) });
-    if (search) params.set('search', search);
-    if (category) params.set('category', category);
-    if (status) params.set('status', status);
-    if (availability) params.set('availability_status', availability);
-    if (stock) params.set('stock', stock);
+    const params = adminProductFiltersToParams(filters, page, PRODUCTS_PER_PAGE);
     const res = await fetch(`/api/admin/products?${params}`);
     if (res.ok) {
       const data = await res.json();
@@ -71,17 +127,34 @@ export default function AdminProductsPage() {
       setTotalPages(data.total_pages);
     }
     setLoading(false);
-  }, [page, search, category, status, availability, stock]);
+  }, [filters, page]);
+
+  const updateFilters = useCallback((updates: Partial<AdminProductFilterState>) => {
+    setFilters((current) => ({ ...current, ...updates }));
+    setPage(1);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters({ ...EMPTY_ADMIN_PRODUCT_FILTERS });
+    setPage(1);
+  }, []);
 
   useEffect(() => {
+    if (!filtersReady) return;
     void Promise.resolve().then(fetchProducts);
-  }, [fetchProducts]);
+  }, [filtersReady, fetchProducts]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchProducts();
-  };
+  useEffect(() => {
+    const params = adminProductFiltersToParams(filters, 1, PRODUCTS_PER_PAGE);
+    params.delete('page');
+    params.delete('per_page');
+    params.delete('sort_by');
+    params.delete('sort_order');
+    fetch(`/api/admin/products/analytics?${params}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .catch(() => undefined);
+  }, [filters]);
 
   const runOperation = async (id: string, body: Record<string, unknown>, failureMessage = 'Product update failed') => {
     setBusyProduct(id);
@@ -148,42 +221,30 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="mt-6 grid gap-2 lg:grid-cols-[1fr_150px_145px_180px_150px_auto]">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search SKU, tag, legacy ID, name, slug, category..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-          />
+      <AdminProductFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
+
+      <AdminAnalyticsPanel
+        title="Catalog analytics"
+        subtitle={`${analytics?.summary.totalProducts ?? total} products in current filter scope`}
+        open={analyticsOpen}
+        onToggle={() => setAnalyticsOpen((v) => !v)}
+      >
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard label="Active products" value={(analytics?.summary.activeProducts ?? 0).toLocaleString('en-IN')} icon={Package} tone="text-blue-600" bg="bg-blue-50" />
+          <AdminStatCard label="Catalog value" value={fmtInr(analytics?.summary.catalogValue ?? 0)} icon={Star} tone="text-green-600" bg="bg-green-50" subtext={`Avg ${fmtInr(analytics?.summary.avgPrice ?? 0)}`} />
+          <AdminStatCard label="Low stock" value={(analytics?.summary.lowStockCount ?? 0).toLocaleString('en-IN')} icon={AlertTriangle} tone="text-amber-600" bg="bg-amber-50" />
+          <AdminStatCard label="Out of stock" value={(analytics?.summary.outOfStockCount ?? 0).toLocaleString('en-IN')} icon={PackageCheck} tone="text-red-600" bg="bg-red-50" />
         </div>
-        <input
-          value={category}
-          onChange={(e) => { setCategory(e.target.value); setPage(1); }}
-          placeholder="Category"
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500"
-        />
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
-          <option value="">All status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <select value={availability} onChange={(e) => { setAvailability(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
-          <option value="">All availability</option>
-          {AVAILABILITY_OPTIONS.map((option) => <option key={option} value={option}>{label(option)}</option>)}
-        </select>
-        <select value={stock} onChange={(e) => { setStock(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500">
-          <option value="">All stock</option>
-          <option value="low">Low stock (&lt; 5)</option>
-          <option value="out">Out of stock</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
-          Search
-        </button>
-      </form>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">New products (30 days)</h3>
+            {analytics ? <RevenueTrendChart data={analytics.creationTrend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="By category" icon={BarChart3} items={analytics?.categoryBreakdown.slice(0, 7) ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
 
       {/* Table */}
       <div className="mt-6 overflow-x-auto rounded-xl border border-gray-200 bg-white">

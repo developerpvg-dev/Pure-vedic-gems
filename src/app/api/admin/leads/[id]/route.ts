@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireAdminAccess } from '@/lib/admin/api';
 import { enquiryUpdateSchema } from '@/lib/validators/enquiry';
 import { consultationUpdateSchema, type ConsultationUpdateInput } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
@@ -22,32 +22,13 @@ function hasScheduleChange(update: ConsultationUpdateInput, current: Consultatio
   );
 }
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-
-  const adminDb = createAdminClient();
-  const { data: member } = await adminDb
-    .from('team_members')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .single();
-
-  const m = member as { role: string; is_active: boolean } | null;
-  if (!m?.is_active) {
-    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-  }
-  return { user, role: m.role };
-}
-
 // PUT: update an enquiry or consultation
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin();
-  if ('error' in auth && auth.error) return auth.error;
+  const auth = await requireAdminAccess('leads.write');
+  if ('error' in auth) return auth.error;
 
   const { id } = await params;
 

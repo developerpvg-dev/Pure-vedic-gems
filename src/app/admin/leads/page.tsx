@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Search, Phone, Mail, MessageSquare, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, Phone, Mail, MessageSquare, User, ChevronDown, ChevronUp, BarChart3, Users, IndianRupee } from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
+import { AdminAnalyticsPanel, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
 
 interface Enquiry {
   id: string;
@@ -107,6 +109,22 @@ export default function LeadsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState({
+    total: 0,
+    totalEnquiries: 0,
+    totalConsultations: 0,
+    newEnquiries: 0,
+    pendingConsultations: 0,
+    completedConsultations: 0,
+  });
+  const [analytics, setAnalytics] = useState<{
+    trend: Array<{ date: string; label: string; orders: number; revenue: number; capturedRevenue?: number }>;
+    enquiryStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    consultationStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    summary: { consultationRevenue: number };
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -118,10 +136,16 @@ export default function LeadsPage() {
     try {
       const res = await fetch(`/api/admin/leads?${params}`);
       if (!res.ok) throw new Error();
-      const data = await res.json() as { leads?: Lead[]; total?: number; total_pages?: number };
+      const data = await res.json() as {
+        leads?: Lead[];
+        total?: number;
+        total_pages?: number;
+        summary?: typeof summary;
+      };
       setLeads(data.leads ?? []);
       setTotal(data.total ?? 0);
       setTotalPages(data.total_pages ?? 1);
+      if (data.summary) setSummary(data.summary);
     } catch {
       setLeads([]);
       setTotal(0);
@@ -131,6 +155,14 @@ export default function LeadsPage() {
   }, [filter, page, search, statusFilter]);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
+
+  useEffect(() => {
+    setAnalyticsLoading(true);
+    fetch('/api/admin/leads/analytics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .finally(() => setAnalyticsLoading(false));
+  }, []);
 
   async function updateLead(id: string, type: string, updates: Record<string, unknown>) {
     setSaving(id);
@@ -152,44 +184,58 @@ export default function LeadsPage() {
     setSaving(null);
   }
 
-  const stats = {
-    total,
-    newCount: leads.filter((l) => l.status === 'new' || l.status === 'pending').length,
-    enquiries: leads.filter((l) => l._type === 'enquiry').length,
-    consultations: leads.filter((l) => l._type === 'consultation').length,
-  };
-
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Leads & Enquiries</h1>
-        <p className="mt-1 text-sm text-gray-500">Manage customer enquiries and consultation bookings</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Leads & Enquiries</h1>
+        <p className="mt-0.5 text-sm text-gray-500">Manage customer enquiries and consultation bookings</p>
       </div>
 
       {error && (
-        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {error}
         </div>
       )}
 
-      {/* Stats */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'Total Leads', value: stats.total, color: 'text-gray-900' },
-          { label: 'New / Pending', value: stats.newCount, color: 'text-blue-600' },
-          { label: 'Enquiries', value: stats.enquiries, color: 'text-amber-600' },
-          { label: 'Consultations', value: stats.consultations, color: 'text-purple-600' },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs font-medium text-gray-500">{s.label}</p>
-            <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total leads" value={summary.total.toLocaleString('en-IN')} icon={Users} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="New enquiries" value={summary.newEnquiries.toLocaleString('en-IN')} icon={MessageSquare} tone="text-blue-600" bg="bg-blue-50" />
+        <AdminStatCard label="Pending consultations" value={summary.pendingConsultations.toLocaleString('en-IN')} icon={User} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Consultation revenue" value={fmtInr(analytics?.summary.consultationRevenue ?? 0)} icon={IndianRupee} tone="text-green-600" bg="bg-green-50" subtext={`${summary.completedConsultations} completed`} />
       </div>
 
-      {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
+      <AdminAnalyticsPanel
+        title="Lead analytics"
+        subtitle="Last 30 days · enquiries & consultations"
+        loading={analyticsLoading}
+        open={analyticsOpen}
+        onToggle={() => setAnalyticsOpen((v) => !v)}
+      >
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Activity trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Enquiry status" icon={BarChart3} items={analytics?.enquiryStatusBreakdown.slice(0, 6) ?? []} />
+          </div>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Consultation status" icon={User} items={analytics?.consultationStatusBreakdown.slice(0, 6) ?? []} />
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Enquiries vs consultations" icon={MessageSquare} items={[
+              { label: 'Enquiries', value: summary.totalEnquiries, meta: 0 },
+              { label: 'Consultations', value: summary.totalConsultations, meta: analytics?.summary.consultationRevenue ?? 0 },
+            ]} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
           {(['all', 'enquiry', 'consultation'] as const).map((t) => (
             <button key={t} onClick={() => { setFilter(t); setPage(1); }}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -210,6 +256,7 @@ export default function LeadsPage() {
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search name, email, phone..."
             className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm sm:w-64" />
+        </div>
         </div>
       </div>
 

@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Megaphone, RefreshCw, Send } from 'lucide-react';
+import { BarChart3, Loader2, Megaphone, RefreshCw, Send, CheckCircle, AlertTriangle, Radio } from 'lucide-react';
 import type { NOTIFICATION_TEMPLATE_LIBRARY } from '@/lib/constants/notification-templates';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart } from '@/components/admin/AdminCharts';
 
 interface NotificationLogRow {
   id: string;
@@ -50,6 +52,13 @@ export default function AdminNotificationsPage() {
     expiresAt: '',
   });
   const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [analytics, setAnalytics] = useState<{
+    summary: { totalLogs: number; sentCount: number; failedCount: number; successRate: number; activeBroadcasts: number; totalBroadcasts: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    typeBreakdown: Array<{ label: string; value: number; meta: number }>;
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -76,6 +85,13 @@ export default function AdminNotificationsPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [fetchLogs, fetchBroadcasts]);
+
+  useEffect(() => {
+    fetch('/api/admin/notifications/analytics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .catch(() => undefined);
+  }, []);
 
   async function sendBroadcast(event: React.FormEvent) {
     event.preventDefault();
@@ -124,12 +140,32 @@ export default function AdminNotificationsPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications & Automation</h1>
-          <p className="mt-1 text-sm text-gray-500">Template inventory, delivery logs, failures, and retry queue.</p>
+    <div className="space-y-6">
+      <AdminPageHeader title="Notifications & Automation" description="Template inventory, delivery logs, failures, and retry queue." />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total deliveries" value={(analytics?.summary.totalLogs ?? logs.length).toLocaleString('en-IN')} icon={Megaphone} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="Success rate" value={`${analytics?.summary.successRate ?? 0}%`} icon={CheckCircle} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.sentCount ?? 0} sent`} />
+        <AdminStatCard label="Failed" value={(analytics?.summary.failedCount ?? 0).toLocaleString('en-IN')} icon={AlertTriangle} tone="text-red-600" bg="bg-red-50" />
+        <AdminStatCard label="Active broadcasts" value={(analytics?.summary.activeBroadcasts ?? 0).toLocaleString('en-IN')} icon={Radio} tone="text-amber-600" bg="bg-amber-50" subtext={`${analytics?.summary.totalBroadcasts ?? 0} total`} />
+      </div>
+
+      <AdminAnalyticsPanel title="Delivery analytics" subtitle="Notification volume & status · last 30 days" open={analyticsOpen} onToggle={() => setAnalyticsOpen((v) => !v)}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Delivery trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="By status" icon={BarChart3} items={analytics?.statusBreakdown.slice(0, 6) ?? []} />
+          </div>
         </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <MetricBars embedded title="By channel type" icon={Megaphone} items={analytics?.typeBreakdown.slice(0, 8) ?? []} />
+        </div>
+      </AdminAnalyticsPanel>
+
+      <div className="flex justify-end rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
           <option value="">All Status</option>
           <option value="queued">Queued</option>

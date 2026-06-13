@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
   const orderItems = parseOrderItems(order.items);
   const productIds = [...new Set(orderItems.map((item) => item.product_id).filter((id): id is string => Boolean(id)))];
   const { data: products } = productIds.length > 0
-    ? await supabase.from('products').select('*').in('id', productIds).eq('is_active', true)
+    ? await supabase
+        .from('products')
+        .select('id, sku, tag_number, name, category, thumbnail_url, price, carat_weight, origin, in_stock, availability_status')
+        .in('id', productIds)
+        .eq('is_active', true)
     : { data: [] };
   const productMap = new Map((products as Product[] | null ?? []).map((product) => [product.id, product]));
 

@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Sparkles, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sparkles, X, BarChart3, IndianRupee, Video } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, fmtInr } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 interface Energization {
   id: string;
@@ -33,6 +36,12 @@ export default function EnergizationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { totalOptions: number; activeOptions: number; withVideo: number; avgPrice: number; maxPrice: number };
+    priceBreakdown: Array<{ label: string; value: number; meta: number }>;
+    videoBreakdown: Array<{ label: string; value: number; meta: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/energizations/analytics');
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -132,22 +141,34 @@ export default function EnergizationsPage() {
   const activeCount = items.filter(i => i.is_active).length;
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Energization / Pooja Options</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage pooja and energization options. {activeCount} active. Prices add to the final configuration price.
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Energization
-        </button>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Energization / Pooja Options"
+        description={`Manage pooja and energization options. ${activeCount} active. Prices add to the final configuration price.`}
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700">
+            <Plus className="h-4 w-4" /> Add Energization
+          </button>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total options" value={(analytics?.summary.totalOptions ?? items.length).toLocaleString('en-IN')} icon={Sparkles} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="Active" value={(analytics?.summary.activeOptions ?? activeCount).toLocaleString('en-IN')} icon={BarChart3} tone="text-green-600" bg="bg-green-50" />
+        <AdminStatCard label="With video" value={(analytics?.summary.withVideo ?? 0).toLocaleString('en-IN')} icon={Video} tone="text-purple-600" bg="bg-purple-50" />
+        <AdminStatCard label="Avg price" value={fmtInr(analytics?.summary.avgPrice ?? 0)} icon={IndianRupee} tone="text-amber-600" bg="bg-amber-50" subtext={analytics?.summary.maxPrice ? `Up to ${fmtInr(analytics.summary.maxPrice)}` : undefined} />
       </div>
+
+      <AdminAnalyticsPanel title="Energization analytics" subtitle="Pricing tiers & video options" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Price by option" icon={IndianRupee} items={analytics?.priceBreakdown ?? []} />
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Video inclusion" icon={Video} items={analytics?.videoBreakdown ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
 
       {error && !showModal && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>

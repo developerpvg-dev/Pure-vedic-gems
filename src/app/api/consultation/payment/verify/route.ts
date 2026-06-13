@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/utils/rate-limit';
 import { sendConsultationBookingEmails } from '@/lib/resend/send-consultation-booking';
 import { consultationPaymentVerifySchema } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { hasValidBookingToken } from '@/lib/security/booking-token';
 import type { Consultation, Json } from '@/lib/types/database';
 
 export async function POST(request: NextRequest) {
@@ -48,7 +49,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
   }
 
-  if (consultation.customer_id && consultation.customer_id !== user?.id) {
+  if (consultation.customer_id) {
+    // Account-owned bookings can only be finalized by their owner.
+    if (consultation.customer_id !== user?.id) {
+      return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
+    }
+  } else if (!hasValidBookingToken(request, 'consultation', consultation.id)) {
+    // Guest bookings require the signed cookie issued at create-order time.
     return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
   }
 

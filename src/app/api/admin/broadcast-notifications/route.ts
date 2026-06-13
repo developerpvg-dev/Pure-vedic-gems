@@ -34,7 +34,7 @@ async function fetchBroadcastRows(limit: number) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminAccess('content.manage');
+  const auth = await requireAdminAccess('leads.read');
   if ('error' in auth) return auth.error;
 
   const limit = Math.min(100, Math.max(1, Number(request.nextUrl.searchParams.get('limit') ?? 50)));
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminAccess('content.manage');
+  const auth = await requireAdminAccess('leads.write');
   if ('error' in auth) return auth.error;
 
   const body = await request.json().catch(() => ({}));
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const auth = await requireAdminAccess('content.manage');
+  const auth = await requireAdminAccess('leads.write');
   if ('error' in auth) return auth.error;
 
   const body = await request.json().catch(() => ({}));

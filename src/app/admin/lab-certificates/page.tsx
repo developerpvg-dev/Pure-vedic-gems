@@ -36,6 +36,7 @@ export default function AdminLabCertificatesPage() {
   const [error, setError] = useState('');
 
   const fetchItems = useCallback(async () => {
+    setLoading(true);
     const response = await fetch('/api/admin/lab-certificates', { cache: 'no-store' });
     const data = await response.json().catch(() => null) as { certificates?: LabCertificate[] } | null;
     setItems(data?.certificates ?? []);

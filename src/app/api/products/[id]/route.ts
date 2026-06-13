@@ -5,6 +5,31 @@ import type { Product, ProductDetailResponse } from '@/lib/types/product';
 // UUID v4 regex for differentiating slug vs UUID lookups
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Internal/operational columns that must never be exposed on the public PDP.
+const INTERNAL_PRODUCT_FIELDS = [
+  'reserved_by_customer_id',
+  'reserved_by_admin_id',
+  'reservation_note',
+  'reserved_until',
+  'reserved_quantity',
+  'manual_reserve_enabled',
+  'making_charge',
+  'import_batch_id',
+  'last_import_batch_id',
+  'import_warnings',
+  'legacy_data',
+  'legacy_seo',
+  'high_value_review_required',
+] as const;
+
+function redactInternalProductFields<T extends Record<string, unknown>>(product: T): T {
+  const clone = { ...product };
+  for (const field of INTERNAL_PRODUCT_FIELDS) {
+    delete clone[field];
+  }
+  return clone;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -73,7 +98,7 @@ export async function GET(
         : 0;
 
     const response: ProductDetailResponse = {
-      product,
+      product: redactInternalProductFields(product as unknown as Record<string, unknown>) as unknown as Product,
       related_products: relatedProducts ?? [],
       expert,
       review_summary: {

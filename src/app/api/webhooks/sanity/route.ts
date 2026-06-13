@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
 
+/** Constant-time string comparison that never throws on length mismatch. */
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 /**
  * POST /api/webhooks/sanity
  *
@@ -25,14 +33,15 @@ export async function POST(request: NextRequest) {
       .update(body)
       .digest('hex');
 
-    if (signature !== expectedSig) {
+    if (!timingSafeEqualStr(signature, expectedSig)) {
       console.warn('[sanity-webhook] Invalid signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
   } else {
-    // Fallback: check secret as query param (Sanity GROQ-powered webhooks)
-    const urlSecret = request.nextUrl.searchParams.get('secret');
-    if (urlSecret !== secret) {
+    // Fallback: check secret as query param (Sanity GROQ-powered webhooks).
+    // Constant-time compared to avoid leaking timing information.
+    const urlSecret = request.nextUrl.searchParams.get('secret') ?? '';
+    if (!timingSafeEqualStr(urlSecret, secret)) {
       return NextResponse.json({ error: 'Invalid secret' }, { status: 401 });
     }
   }

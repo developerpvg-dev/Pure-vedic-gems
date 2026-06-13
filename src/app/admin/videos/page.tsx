@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FolderPlus, Loader2, Pencil, Plus, Trash2, Video } from 'lucide-react';
+import { BarChart3, FolderPlus, Loader2, Pencil, Plus, Star, Trash2, Video } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 interface VideoCategory {
   id: string;
@@ -56,6 +59,12 @@ export default function AdminVideosPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { totalCategories: number; activeCategories: number; totalVideos: number; activeVideos: number; featuredVideos: number; uncategorizedVideos: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    categoryBreakdown: Array<{ label: string; value: number; meta: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/videos/analytics');
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -157,12 +166,29 @@ export default function AdminVideosPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Video Library</h1>
-        <p className="mt-1 text-sm text-gray-500">Create video categories and add YouTube educational videos shown on the public <span className="font-medium">/videos</span> page.</p>
+    <div className="space-y-6">
+      <AdminPageHeader title="Video Library" description="Create video categories and add YouTube educational videos shown on the public /videos page." />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Categories" value={(analytics?.summary.totalCategories ?? categories.length).toLocaleString('en-IN')} icon={FolderPlus} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="Total videos" value={(analytics?.summary.totalVideos ?? videos.length).toLocaleString('en-IN')} icon={Video} tone="text-blue-600" bg="bg-blue-50" />
+        <AdminStatCard label="Featured" value={(analytics?.summary.featuredVideos ?? 0).toLocaleString('en-IN')} icon={Star} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Uncategorized" value={(analytics?.summary.uncategorizedVideos ?? 0).toLocaleString('en-IN')} icon={BarChart3} tone="text-red-600" bg="bg-red-50" />
       </div>
-      {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      <AdminAnalyticsPanel title="Video library analytics" subtitle="Category mix · last 30 days" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Publish trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Videos per category" icon={FolderPlus} items={analytics?.categoryBreakdown.slice(0, 8) ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
+
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">

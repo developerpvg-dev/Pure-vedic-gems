@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Search, UserRound } from 'lucide-react';
+import { Loader2, Search, UserRound, Users, Repeat, TrendingUp, IndianRupee } from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
 
 interface CustomerRow {
   id: string;
@@ -36,6 +38,11 @@ export default function AdminCustomersPage() {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<{
+    summary: { totalCustomers: number; newCustomers30d: number; repeatCustomers: number; customersWithOrders: number; totalCustomerRevenue: number };
+    signupTrend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+  } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(true);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -52,6 +59,13 @@ export default function AdminCustomersPage() {
   }, [page, search]);
 
   useEffect(() => {
+    fetch('/api/admin/customers/analytics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setAnalytics(data); })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => { void fetchCustomers(); }, 0);
     return () => window.clearTimeout(timer);
   }, [fetchCustomers]);
@@ -65,12 +79,21 @@ export default function AdminCustomersPage() {
   }, [selectedId]);
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Customer CRM</h1>
-        <p className="mt-1 text-sm text-gray-500">Timeline of orders, consultations, reviews, saved gems, and notification activity.</p>
+    <div className="space-y-6">
+      <AdminPageHeader title="Customer CRM" description="Timeline of orders, consultations, reviews, and customer activity." />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total customers" value={(analytics?.summary.totalCustomers ?? total).toLocaleString('en-IN')} icon={Users} tone="text-blue-600" bg="bg-blue-50" />
+        <AdminStatCard label="New (30 days)" value={(analytics?.summary.newCustomers30d ?? 0).toLocaleString('en-IN')} icon={TrendingUp} tone="text-green-600" bg="bg-green-50" />
+        <AdminStatCard label="Repeat buyers" value={(analytics?.summary.repeatCustomers ?? 0).toLocaleString('en-IN')} icon={Repeat} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Customer revenue" value={fmtInr(analytics?.summary.totalCustomerRevenue ?? 0)} icon={IndianRupee} tone="text-emerald-600" bg="bg-emerald-50" />
       </div>
-      <div className="mb-4 flex gap-2">
+
+      <AdminAnalyticsPanel title="Signup trend" subtitle="New customer registrations · last 30 days" open={analyticsOpen} onToggle={() => setAnalyticsOpen((v) => !v)}>
+        {analytics ? <RevenueTrendChart data={analytics.signupTrend} /> : <p className="text-sm text-gray-400">Loading analytics…</p>}
+      </AdminAnalyticsPanel>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search customers..." className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm" />

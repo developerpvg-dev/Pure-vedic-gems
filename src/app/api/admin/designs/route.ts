@@ -1,25 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireAdminAccess } from '@/lib/admin/api';
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-
-  const admin = createAdminClient();
-  const { data: member } = await admin
-    .from('team_members')
-    .select('role, is_active')
-    .eq('id', user.id)
-    .single();
-
-  const m = member as { role: string; is_active: boolean } | null;
-  if (!m?.is_active) {
-    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
-  }
-  return { user, role: m.role };
-}
+const DESIGN_UPDATE_FIELDS = [
+  'name',
+  'setting_type',
+  'image_url',
+  'description',
+  'making_charges',
+  'estimated_metal_weight',
+  'sort_order',
+  'is_active',
+] as const;
 
 /**
  * GET /api/admin/designs
@@ -27,7 +19,7 @@ async function requireAdmin() {
  * Supports ?setting_type=ring|pendant|bracelet filter.
  */
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdminAccess('products.read');
   if ('error' in auth) return auth.error;
 
   const { searchParams } = request.nextUrl;
@@ -60,7 +52,7 @@ export async function GET(request: NextRequest) {
  * Create a new jewelry design.
  */
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdminAccess('products.write');
   if ('error' in auth) return auth.error;
 
   try {
@@ -105,22 +97,32 @@ export async function POST(request: NextRequest) {
  * Update an existing jewelry design.
  */
 export async function PATCH(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdminAccess('products.write');
   if ('error' in auth) return auth.error;
 
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id } = body as { id?: unknown };
 
-    if (!id) {
+    if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Design ID is required' }, { status: 400 });
+    }
+
+    const updates: Record<string, unknown> = {};
+    for (const field of DESIGN_UPDATE_FIELDS) {
+      if (field in body) updates[field] = (body as Record<string, unknown>)[field];
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
       .from('jewelry_designs')
-      .update(updates)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(updates as any)
       .eq('id', id)
       .select()
       .single();
@@ -141,7 +143,7 @@ export async function PATCH(request: NextRequest) {
  * Soft-delete a design (set is_active=false).
  */
 export async function DELETE(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdminAccess('products.write');
   if ('error' in auth) return auth.error;
 
   const { searchParams } = request.nextUrl;

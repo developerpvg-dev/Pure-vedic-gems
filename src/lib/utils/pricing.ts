@@ -225,9 +225,13 @@ export async function recalculateOrderTotal(
   let certificationCharges = 0;
   let energizationCharges = 0;
 
-  const configIds = items
-    .filter((i) => i.configuration_id)
-    .map((i) => i.configuration_id!);
+  const configIds = Array.from(
+    new Set(
+      items
+        .filter((i) => i.configuration_id)
+        .map((i) => i.configuration_id!)
+    )
+  );
 
   if (configIds.length > 0) {
     const configItemMap = new Map(
@@ -235,23 +239,27 @@ export async function recalculateOrderTotal(
         .filter((item) => item.configuration_id)
         .map((item) => [item.configuration_id!, item])
     );
-    const { data: configs } = await supabase
+    const { data: configs, error: configError } = await supabase
       .from('product_configurations')
       .select('id, product_id, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee')
       .in('id', configIds);
 
-    if (configs) {
-      for (const cfg of configs) {
-        const sourceItem = configItemMap.get(cfg.id);
-        if (!sourceItem || sourceItem.product_id !== cfg.product_id) {
-          throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
-        }
-        const quantity = sourceItem.quantity;
-        jewelryCharges += ((cfg.making_charge ?? 0) + (cfg.custom_design_fee ?? 0)) * quantity;
-        metalCharges += (cfg.metal_price ?? 0) * quantity;
-        certificationCharges += (cfg.certification_fee ?? 0) * quantity;
-        energizationCharges += (cfg.energization_fee ?? 0) * quantity;
+    // Fail closed: every requested configuration must resolve to an active row.
+    // A missing/invalid configuration_id must never silently skip its charges.
+    if (configError || !configs || configs.length !== configIds.length) {
+      throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
+    }
+
+    for (const cfg of configs) {
+      const sourceItem = configItemMap.get(cfg.id);
+      if (!sourceItem || sourceItem.product_id !== cfg.product_id) {
+        throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
       }
+      const quantity = sourceItem.quantity;
+      jewelryCharges += ((cfg.making_charge ?? 0) + (cfg.custom_design_fee ?? 0)) * quantity;
+      metalCharges += (cfg.metal_price ?? 0) * quantity;
+      certificationCharges += (cfg.certification_fee ?? 0) * quantity;
+      energizationCharges += (cfg.energization_fee ?? 0) * quantity;
     }
   }
 
@@ -300,6 +308,36 @@ export async function recalculateOrderTotal(
     if (!isDateValid) throw new Error('Coupon code is not valid for today.');
     if (!isUsageValid) throw new Error('Coupon usage limit has been reached.');
     if (!meetsMinimum) throw new Error(`Coupon requires a minimum order of Rs. ${coupon.min_order_amount}.`);
+
+    // ── Per-customer + first-time coupon enforcement ──────────────────────
+    // These coupon types are tied to a customer identity, so a guest checkout
+    // cannot satisfy them. Require sign-in rather than silently allowing reuse.
+    const customerId = rewardOptions?.customerId ?? null;
+    if ((coupon.usage_limit_per_customer || coupon.first_time_customers_only) && !customerId) {
+      throw new Error('Please sign in to use this coupon.');
+    }
+
+    if (customerId && coupon.usage_limit_per_customer) {
+      const { count } = await supabase
+        .from('coupon_redemptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('coupon_id', coupon.id)
+        .eq('customer_id', customerId);
+      if ((count ?? 0) >= coupon.usage_limit_per_customer) {
+        throw new Error('You have already used this coupon the maximum number of times.');
+      }
+    }
+
+    if (customerId && coupon.first_time_customers_only) {
+      const { count } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('customer_id', customerId)
+        .eq('payment_status', 'captured');
+      if ((count ?? 0) > 0) {
+        throw new Error('This coupon is only valid for first-time customers.');
+      }
+    }
 
     const includeProducts = values(coupon.applies_to_product_ids);
     const includeCategories = values(coupon.applies_to_category_slugs);

@@ -5,6 +5,7 @@ import type { ProductCreateInput } from '@/lib/validators/product';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { LOW_STOCK_THRESHOLD, notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
+import { PRICE_MODES, PRODUCT_TYPES } from '@/lib/constants/product-taxonomy';
 
 type RelatedProductPayload = Pick<
   ProductCreateInput,
@@ -25,6 +26,21 @@ type UntypedTable = {
 
 type UntypedDb = { from: (table: string) => UntypedTable };
 const AVAILABILITY_FILTERS = ['in_stock', 'out_of_stock', 'sold', 'reserved', 'on_demand', 'archived'] as const;
+const ADMIN_SORT_COLUMNS = ['newest', 'price', 'carat', 'name', 'stock'] as const;
+
+function parseOptionalNumber(value: string | null) {
+  if (!value?.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function parseOptionalBoolean(value: string | null) {
+  if (!value?.trim()) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['true', '1', 'yes'].includes(normalized)) return true;
+  if (['false', '0', 'no'].includes(normalized)) return false;
+  return undefined;
+}
 
 function splitProductPayload(payload: ProductCreateInput) {
   const { category_assignments, currency_prices, option_rules, ...productPayload } = payload;
@@ -111,15 +127,36 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
   const perPage = Math.min(50, Math.max(1, parseInt(searchParams.get('per_page') ?? '20')));
   const search = searchParams.get('search')?.trim();
-  const category = searchParams.get('category');
+  const category = searchParams.get('category')?.trim();
+  const subCategory = searchParams.get('sub_category')?.trim();
+  const productType = searchParams.get('product_type')?.trim();
   const status = searchParams.get('status');
   const availability = searchParams.get('availability_status');
   const stock = searchParams.get('stock');
+  const origin = searchParams.get('origin')?.trim();
+  const planet = searchParams.get('planet')?.trim();
+  const shape = searchParams.get('shape')?.trim();
+  const qualityLabel = searchParams.get('quality_label')?.trim();
+  const certificateLab = searchParams.get('certificate_lab')?.trim();
+  const treatment = searchParams.get('treatment')?.trim();
+  const priceMode = searchParams.get('price_mode')?.trim();
+  const minPrice = parseOptionalNumber(searchParams.get('min_price'));
+  const maxPrice = parseOptionalNumber(searchParams.get('max_price'));
+  const minCarat = parseOptionalNumber(searchParams.get('min_carat'));
+  const maxCarat = parseOptionalNumber(searchParams.get('max_carat'));
+  const featured = parseOptionalBoolean(searchParams.get('featured'));
+  const directorsPick = parseOptionalBoolean(searchParams.get('directors_pick'));
+  const configuratorEnabled = parseOptionalBoolean(searchParams.get('configurator_enabled'));
+  const sortByParam = searchParams.get('sort_by') ?? 'newest';
+  const sortBy = (ADMIN_SORT_COLUMNS as readonly string[]).includes(sortByParam)
+    ? (sortByParam as (typeof ADMIN_SORT_COLUMNS)[number])
+    : 'newest';
+  const sortOrder = searchParams.get('sort_order') === 'asc' ? 'asc' : 'desc';
 
   const admin = createAdminClient();
   let query = admin
     .from('products')
-    .select('id, sku, tag_number, legacy_woo_id, name, slug, category, sub_category, price, carat_weight, origin, in_stock, stock_quantity, stock_status, availability_status, reserved_until, reservation_note, is_active, featured, is_directors_pick, display_order, images, created_at', { count: 'exact' });
+    .select('id, sku, tag_number, legacy_woo_id, name, slug, category, sub_category, product_type, price, carat_weight, origin, planet, shape, quality_label, certificate_lab, treatment, price_mode, in_stock, stock_quantity, stock_status, availability_status, reserved_until, reservation_note, is_active, featured, is_directors_pick, display_order, configurator_enabled, images, created_at', { count: 'exact' });
 
   if (search) {
     const searchClauses = [
@@ -133,8 +170,10 @@ export async function GET(request: NextRequest) {
     if (Number.isInteger(legacyId) && legacyId > 0) searchClauses.push(`legacy_woo_id.eq.${legacyId}`);
     query = query.or(searchClauses.join(','));
   }
-  if (category) {
-    query = query.eq('category', category);
+  if (category) query = query.eq('category', category);
+  if (subCategory) query = query.eq('sub_category', subCategory);
+  if (productType && (PRODUCT_TYPES as readonly string[]).includes(productType)) {
+    query = query.eq('product_type', productType as (typeof PRODUCT_TYPES)[number]);
   }
   if (status === 'active') query = query.eq('is_active', true);
   if (status === 'inactive') query = query.eq('is_active', false);
@@ -147,8 +186,29 @@ export async function GET(request: NextRequest) {
   if (stock === 'out') {
     query = query.eq('stock_quantity', 0);
   }
+  if (origin) query = query.eq('origin', origin);
+  if (planet) query = query.eq('planet', planet);
+  if (shape) query = query.eq('shape', shape);
+  if (qualityLabel) query = query.eq('quality_label', qualityLabel);
+  if (certificateLab) query = query.eq('certificate_lab', certificateLab);
+  if (treatment) query = query.eq('treatment', treatment);
+  if (priceMode && (PRICE_MODES as readonly string[]).includes(priceMode)) {
+    query = query.eq('price_mode', priceMode as (typeof PRICE_MODES)[number]);
+  }
+  if (minPrice !== undefined) query = query.gte('price', minPrice);
+  if (maxPrice !== undefined) query = query.lte('price', maxPrice);
+  if (minCarat !== undefined) query = query.gte('carat_weight', minCarat);
+  if (maxCarat !== undefined) query = query.lte('carat_weight', maxCarat);
+  if (featured !== undefined) query = query.eq('featured', featured);
+  if (directorsPick !== undefined) query = query.eq('is_directors_pick', directorsPick);
+  if (configuratorEnabled !== undefined) query = query.eq('configurator_enabled', configuratorEnabled);
 
-  query = query.order('created_at', { ascending: false });
+  const ascending = sortOrder === 'asc';
+  if (sortBy === 'price') query = query.order('price', { ascending });
+  else if (sortBy === 'carat') query = query.order('carat_weight', { ascending, nullsFirst: false });
+  else if (sortBy === 'name') query = query.order('name', { ascending });
+  else if (sortBy === 'stock') query = query.order('stock_quantity', { ascending });
+  else query = query.order('created_at', { ascending: sortOrder === 'asc' ? true : false });
 
   const from = (page - 1) * perPage;
   query = query.range(from, from + perPage - 1);

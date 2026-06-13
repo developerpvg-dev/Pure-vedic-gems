@@ -485,6 +485,7 @@ export async function logCartEvent({
   quantity,
   value,
   metadata = {},
+  allowNotifications = true,
 }: {
   customerId?: string | null;
   guestSessionId?: string | null;
@@ -495,6 +496,10 @@ export async function logCartEvent({
   quantity?: number | null;
   value?: number | null;
   metadata?: Record<string, unknown>;
+  // Internal callers (server-verified cart mutations) may raise admin/sales
+  // alerts. Untrusted public callers must pass false so they cannot spoof
+  // notifications or high-value alerts with a client-controlled value.
+  allowNotifications?: boolean;
 }) {
   if (!customerId && !guestSessionId) return;
   const supabase = createAdminClient();
@@ -512,6 +517,8 @@ export async function logCartEvent({
       metadata: metadata as Json,
     })
     .then(null, () => undefined);
+
+  if (!allowNotifications) return;
 
   if ((value ?? 0) >= HIGH_VALUE_CART_THRESHOLD) {
     await supabase

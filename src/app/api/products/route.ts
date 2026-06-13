@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
+import { buildIlikePattern } from '@/lib/utils/search';
 import type { ProductListResponse } from '@/lib/types/product';
 
 // Card-level columns to select (avoid fetching full descriptions for listing)
@@ -10,10 +11,6 @@ const CARD_SELECT = `
   in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled,
   product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number
 `;
-
-function buildSearchTerm(query: string) {
-  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,10 +74,12 @@ export async function GET(request: NextRequest) {
       query = query.eq('treatment', filters.treatment);
     }
     if (filters.q) {
-      const searchTerm = buildSearchTerm(filters.q);
-      query = query.or(
-        `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
-      );
+      const searchTerm = buildIlikePattern(filters.q);
+      if (searchTerm) {
+        query = query.or(
+          `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
+        );
+      }
     }
     if (filters.featured !== undefined) {
       query = query.eq('featured', filters.featured);

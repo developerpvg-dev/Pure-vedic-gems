@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Package, Plus, ShoppingCart, DollarSign, TrendingUp,
   AlertCircle, Clock, Loader2, ArrowRight, Eye, MessageSquare,
-  BarChart3, CreditCard, PieChart, Users,
+  BarChart3, CreditCard, PieChart, Users, ShieldCheck, Video,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -374,6 +374,50 @@ export default function AdminDashboard() {
           </p>
         </div>
       </div>
+
+      {/* Analytics quick links */}
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-gray-900">Analytics Hub</h2>
+            <p className="text-xs text-gray-500">Jump to advanced filters, charts, and data analysis</p>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+          {[
+            { href: '/admin/orders', label: 'Orders', desc: 'Trends & pipeline', icon: ShoppingCart },
+            { href: '/admin/finance', label: 'Finance', desc: 'Revenue breakdown', icon: DollarSign },
+            { href: '/admin/products?stock=low', label: 'Products', desc: 'Catalog & inventory', icon: Package },
+            { href: '/admin/leads', label: 'Leads', desc: 'Enquiries & consults', icon: MessageSquare },
+            { href: '/admin/customers', label: 'Customers', desc: 'CRM & signup trend', icon: Users },
+            { href: '/admin/yagya-bookings', label: 'Yagya Bookings', desc: 'Payments & services', icon: TrendingUp },
+            { href: '/admin/reviews', label: 'Reviews', desc: 'Moderation analytics', icon: Eye },
+            { href: '/admin/feedback', label: 'Feedback', desc: 'Ratings & status', icon: BarChart3 },
+            { href: '/admin/notifications', label: 'Notifications', desc: 'Delivery metrics', icon: CreditCard },
+            { href: '/admin/compliance', label: 'Compliance', desc: 'Privacy & tax desk', icon: ShieldCheck },
+            { href: '/admin/configurations', label: 'Configurations', desc: 'Configurator funnel', icon: Package },
+            { href: '/admin/metals', label: 'Metals', desc: 'Pricing catalog', icon: DollarSign },
+            { href: '/admin/testimonials', label: 'Testimonials', desc: 'Homepage reviews', icon: MessageSquare },
+            { href: '/admin/events', label: 'Events', desc: 'Seminar videos', icon: Video },
+            { href: '/admin/videos', label: 'Video library', desc: 'Educational content', icon: Eye },
+            { href: '/admin/yagyas', label: 'Yagya catalog', desc: 'Service pricing', icon: TrendingUp },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group flex items-start gap-3 rounded-lg border border-gray-100 p-3 transition hover:border-amber-200 hover:bg-amber-50/50"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-600 transition group-hover:bg-amber-100 group-hover:text-amber-700">
+                <item.icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">{item.label}</p>
+                <p className="text-xs text-gray-500">{item.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <RoleChartGrid data={data} />
 

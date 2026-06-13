@@ -53,11 +53,30 @@
   background: linear-gradient(145deg, #120208, #2A0810);
 }
 
-.pvg-react-home-root .who-section .about-stack-card[data-pos="4"] {
-  z-index: 0 !important;
-  opacity: 0.38 !important;
-  filter: saturate(0.8) brightness(0.88) !important;
-  transform: rotate(-10deg) translate(-24px, 20px) scale(0.91) !important;
+/* Who We Are & Cert stacks — keep fanned deck UI; smooth one-by-one rotation */
+.pvg-react-home-root .who-section .about-stack-card {
+  overflow: hidden !important;
+}
+
+.pvg-react-home-root .who-section .about-stack-img,
+.pvg-react-home-root .cert-section .cert-stack-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  display: block !important;
+}
+
+/* Smoother stack rotation — no keyframe/transition fight */
+.pvg-react-home-root .about-stack-card,
+.pvg-react-home-root .cert-stack-card {
+  transition: transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 500ms ease, filter 500ms ease !important;
+  will-change: auto !important;
+}
+
+.pvg-react-home-root .about-stack-card.is-top,
+.pvg-react-home-root .cert-stack-card.is-top {
+  animation: none !important;
 }
 
 /* Tablet: Who We Are — wider image; quote/stats below body copy on the right */
@@ -79,11 +98,6 @@
 
   .pvg-react-home-root .about-img-stack {
     min-height: clamp(360px, 46vw, 440px) !important;
-  }
-
-  .pvg-react-home-root .about-stack-img {
-    object-fit: cover !important;
-    object-position: center center !important;
   }
 
   .pvg-react-home-root .about-copy-wrap {
@@ -145,6 +159,24 @@
   .pvg-react-home-root .about-copy-extra .about-cta-row {
     margin-top: 0 !important;
   }
+
+  .pvg-react-home-root .cert-grid {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr) !important;
+    gap: clamp(18px, 2.8vw, 28px) !important;
+    align-items: start !important;
+  }
+
+  .pvg-react-home-root .cert-section .about-img-wrap {
+    width: 100% !important;
+    max-width: none !important;
+    justify-self: stretch !important;
+  }
+
+  .pvg-react-home-root .cert-section .about-img-stack {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: clamp(360px, 46vw, 440px) !important;
+  }
 }
 
 .pvg-react-home-root .cert-section .cert-stack-card,
@@ -164,17 +196,18 @@
   justify-content: center !important;
   width: 100% !important;
   height: 100% !important;
+  min-height: 0 !important;
   padding: 18px !important;
+  overflow: hidden !important;
   background: #ffffff !important;
 }
 
 .pvg-react-home-root .cert-section .cert-stack-img {
-  width: auto !important;
-  height: auto !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
   object-fit: contain !important;
   object-position: center center !important;
+  display: block !important;
   background: #ffffff !important;
 }
 

@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Eye, Loader2, Pencil, Plus, Star, Trash2, Upload } from 'lucide-react';
+import { BarChart3, CheckCircle2, Eye, Home, Loader2, Pencil, Plus, Star, Trash2, Upload } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 interface TestimonialItem {
   id: string;
@@ -46,8 +49,16 @@ export default function AdminTestimonialsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { totalTestimonials: number; approved: number; draft: number; hidden: number; onHomepage: number; withProof: number; avgRating: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    ratingBreakdown: Array<{ label: string; value: number; meta: number }>;
+    placementBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/testimonials/analytics');
 
   const fetchItems = useCallback(async () => {
+    setLoading(true);
     const response = await fetch(`/api/admin/testimonials?status=${status}`, { cache: 'no-store' });
     const data = await response.json().catch(() => null) as { testimonials?: TestimonialItem[] } | null;
     setItems(data?.testimonials ?? []);
@@ -129,6 +140,45 @@ export default function AdminTestimonialsPage() {
   }
 
   return (
+    <div className="space-y-6">
+      <AdminPageHeader title="Testimonials" description="Manage customer reviews, proof archives, and homepage placement." />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total" value={(analytics?.summary.totalTestimonials ?? items.length).toLocaleString('en-IN')} icon={Star} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Approved" value={(analytics?.summary.approved ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.draft ?? 0} draft`} />
+        <AdminStatCard label="On homepage" value={(analytics?.summary.onHomepage ?? 0).toLocaleString('en-IN')} icon={Home} tone="text-purple-600" bg="bg-purple-50" subtext={`${analytics?.summary.withProof ?? 0} with proof`} />
+        <AdminStatCard label="Avg rating" value={analytics?.summary.avgRating ? `${analytics.summary.avgRating} / 5` : '—'} icon={Star} tone="text-yellow-600" bg="bg-yellow-50" />
+      </div>
+
+      <AdminAnalyticsPanel title="Testimonial analytics" subtitle="Status & ratings · last 30 days" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Publish trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Rating distribution" icon={Star} items={analytics?.ratingBreakdown ?? []} />
+          </div>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Status" icon={BarChart3} items={analytics?.statusBreakdown ?? []} />
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Placement" icon={Home} items={analytics?.placementBreakdown ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
+
+      <div className="flex justify-end rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <select value={status} onChange={(event) => { setLoading(true); setStatus(event.target.value); }} className="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+          <option value="all">All</option>
+          <option value="draft">Draft</option>
+          <option value="approved">Approved</option>
+          <option value="hidden">Hidden</option>
+        </select>
+      </div>
+
     <div className="grid gap-6 xl:grid-cols-[0.95fr_1.4fr]">
       <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h1 className="text-2xl font-bold text-gray-900">{editingId ? 'Edit Testimonial' : 'Add Testimonial'}</h1>
@@ -179,17 +229,9 @@ export default function AdminTestimonialsPage() {
       </section>
 
       <section>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Testimonials</h2>
-            <p className="mt-1 text-sm text-gray-500">{items.length} testimonial records.</p>
-          </div>
-          <select value={status} onChange={(event) => { setLoading(true); setStatus(event.target.value); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-            <option value="all">All</option>
-            <option value="draft">Draft</option>
-            <option value="approved">Approved</option>
-            <option value="hidden">Hidden</option>
-          </select>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-gray-900">All testimonials</h2>
+          <p className="text-sm text-gray-500">{items.length} records · filter above</p>
         </div>
 
         {loading ? (
@@ -228,6 +270,7 @@ export default function AdminTestimonialsPage() {
           </div>
         )}
       </section>
+    </div>
     </div>
   );
 }

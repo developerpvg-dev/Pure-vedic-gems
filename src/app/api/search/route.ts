@@ -5,13 +5,14 @@ import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowl
 import { productHref } from '@/lib/categories/storefront';
 import { getAllBlogPosts, getAllKnowledgeArticles } from '@/lib/sanity/queries';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { sanitizeSearchTerm } from '@/lib/utils/search';
 import { searchQuerySchema } from '@/lib/validators/product';
 import type { SearchResponse, SearchResult, SearchResultGroup } from '@/lib/types/product';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import type { SanityKnowledgeArticle } from '@/lib/types/content';
 
 function buildSearchTerm(query: string) {
-  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
+  return `%${sanitizeSearchTerm(query)}%`;
 }
 
 function matchesQuery(values: Array<string | null | undefined>, query: string) {

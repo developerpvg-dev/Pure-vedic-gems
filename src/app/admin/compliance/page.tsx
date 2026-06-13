@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, FileText, Loader2, ReceiptText, RefreshCw, RotateCcw, Scale, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, BarChart3, FileText, IndianRupee, Loader2, ReceiptText, RefreshCw, RotateCcw, Scale, ShieldCheck } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 type ComplianceTab = 'privacy' | 'returns' | 'invoices' | 'tax' | 'policies';
 type Row = Record<string, unknown> & { id: string; status?: string; created_at?: string; updated_at?: string };
@@ -58,22 +61,19 @@ function statusClass(status?: string) {
   return 'bg-gray-100 text-gray-700';
 }
 
-function StatCard({ label, value, tone = 'neutral' }: { label: string; value: number; tone?: 'neutral' | 'warning' | 'success' }) {
-  const color = tone === 'warning' ? 'text-amber-700' : tone === 'success' ? 'text-green-700' : 'text-gray-950';
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${color}`}>{value}</p>
-    </div>
-  );
-}
-
 export default function CompliancePage() {
   const [tab, setTab] = useState<ComplianceTab>('privacy');
   const [data, setData] = useState<ComplianceData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
   const [message, setMessage] = useState('');
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { openPrivacyRequests: number; openReturnRequests: number; totalInvoices: number; pendingInvoices: number; invoiceValue: number; totalRefunds: number; refundValue: number; activeTaxRules: number; activePolicies: number };
+    trend: Array<{ date: string; label: string; orders: number; revenue: number }>;
+    privacyStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    returnStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
+    invoiceStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/compliance/analytics');
 
   async function loadCompliance() {
     setLoading(true);
@@ -125,24 +125,44 @@ export default function CompliancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-950">Compliance Desk</h1>
-          <p className="mt-1 text-sm text-gray-500">Week 12 controls for tax, invoices, returns, privacy, consent, and policy evidence.</p>
-        </div>
-        <button onClick={() => loadCompliance()} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Compliance Desk"
+        description="Tax, invoices, returns, privacy, consent, and policy evidence."
+        actions={
+          <button onClick={() => loadCompliance()} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </button>
+        }
+      />
 
       {message && <p className={`rounded-lg px-3 py-2 text-sm ${message.includes('failed') || message.includes('Unable') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>{message}</p>}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Open privacy" value={stats.openPrivacy} tone={stats.openPrivacy ? 'warning' : 'success'} />
-        <StatCard label="Open returns" value={stats.openReturns} tone={stats.openReturns ? 'warning' : 'success'} />
-        <StatCard label="Pending invoices" value={stats.pendingInvoices} tone={stats.pendingInvoices ? 'warning' : 'success'} />
-        <StatCard label="Tax rules to verify" value={stats.verificationNeeded} tone="warning" />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Open privacy" value={(analytics?.summary.openPrivacyRequests ?? stats.openPrivacy).toLocaleString('en-IN')} icon={ShieldCheck} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Open returns" value={(analytics?.summary.openReturnRequests ?? stats.openReturns).toLocaleString('en-IN')} icon={RotateCcw} tone="text-orange-600" bg="bg-orange-50" />
+        <AdminStatCard label="Invoice value" value={fmtInr(analytics?.summary.invoiceValue ?? 0)} icon={IndianRupee} tone="text-green-600" bg="bg-green-50" subtext={`${analytics?.summary.pendingInvoices ?? stats.pendingInvoices} pending`} />
+        <AdminStatCard label="Refunds" value={fmtInr(analytics?.summary.refundValue ?? 0)} icon={ReceiptText} tone="text-red-600" bg="bg-red-50" subtext={`${analytics?.summary.totalRefunds ?? 0} records`} />
       </div>
+
+      <AdminAnalyticsPanel title="Compliance analytics" subtitle="Cross-desk activity · last 30 days" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 xl:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Activity trend</h3>
+            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
+            <MetricBars embedded title="Privacy status" icon={ShieldCheck} items={analytics?.privacyStatusBreakdown.slice(0, 6) ?? []} />
+          </div>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Return / RMA status" icon={RotateCcw} items={analytics?.returnStatusBreakdown.slice(0, 6) ?? []} />
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Invoice status" icon={ReceiptText} items={analytics?.invoiceStatusBreakdown.slice(0, 6) ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
 
       <div className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-white p-2">
         {TABS.map((item) => {

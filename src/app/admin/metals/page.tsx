@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, X, Check, IndianRupee } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, IndianRupee, BarChart3, Layers, TrendingUp } from 'lucide-react';
+import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import { MetricBars, fmtInr } from '@/components/admin/AdminCharts';
+import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 
 interface MetalRow {
   id: string;
@@ -36,6 +39,12 @@ export default function AdminMetalsPage() {
   // Quick-edit price inline
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState('');
+  const { analytics, loading: analyticsLoading, open: analyticsOpen, toggle } = useAdminAnalytics<{
+    summary: { totalMetals: number; activeMetals: number; inactiveMetals: number; avgPricePerGram: number; highestPrice: number; lowestPrice: number };
+    priceBreakdown: Array<{ label: string; value: number; meta: number }>;
+    purityBreakdown: Array<{ label: string; value: number; meta: number }>;
+    statusBreakdown: Array<{ label: string; value: number; meta: number }>;
+  }>('/api/admin/metals/analytics');
 
   const fetchMetals = useCallback(async () => {
     setLoading(true);
@@ -133,25 +142,41 @@ export default function AdminMetalsPage() {
   };
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Metals & Pricing</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Manage metals and their current prices. These prices are used in the gem configurator.
-          </p>
-        </div>
-        <button
-          onClick={() => { setShowForm(true); setEditing(null); setForm(EMPTY_FORM); setError(''); }}
-          className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Metal
-        </button>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Metals & Pricing"
+        description="Manage metals and their current prices. These prices are used in the gem configurator."
+        actions={
+          <button
+            onClick={() => { setShowForm(true); setEditing(null); setForm(EMPTY_FORM); setError(''); }}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Metal
+          </button>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Total metals" value={(analytics?.summary.totalMetals ?? metals.length).toLocaleString('en-IN')} icon={Layers} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="Active" value={(analytics?.summary.activeMetals ?? metals.filter((m) => m.is_active).length).toLocaleString('en-IN')} icon={TrendingUp} tone="text-green-600" bg="bg-green-50" />
+        <AdminStatCard label="Avg price/gram" value={fmtInr(analytics?.summary.avgPricePerGram ?? 0)} icon={IndianRupee} tone="text-amber-600" bg="bg-amber-50" />
+        <AdminStatCard label="Price range" value={analytics?.summary.highestPrice ? `${fmtInr(analytics.summary.lowestPrice)} – ${fmtInr(analytics.summary.highestPrice)}` : '—'} icon={BarChart3} tone="text-blue-600" bg="bg-blue-50" />
       </div>
 
+      <AdminAnalyticsPanel title="Metal pricing analytics" subtitle="Catalog overview & purity mix" loading={analyticsLoading} open={analyticsOpen} onToggle={toggle}>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Price per gram" icon={IndianRupee} items={analytics?.priceBreakdown ?? []} />
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+            <MetricBars embedded title="Purity breakdown" icon={Layers} items={analytics?.purityBreakdown ?? []} />
+          </div>
+        </div>
+      </AdminAnalyticsPanel>
+
       {/* Quick Stats */}
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {metals.filter(m => m.is_active).map((m) => (
           <div key={m.id} className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs font-medium text-gray-500">{m.name}</p>
