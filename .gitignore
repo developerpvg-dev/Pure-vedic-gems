@@ -12,6 +12,15 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+
+# local scratch artifacts (screenshots, build logs, one-off scripts)
+/*.png
+/build-output.txt
+/take-screenshots.mjs
+/fix_*.mjs
+/fix_*.js
 
 # next.js
 /.next/
