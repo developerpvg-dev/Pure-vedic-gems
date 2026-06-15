@@ -391,8 +391,9 @@ const nextConfig: NextConfig = {
       // Legacy WP blog taxonomy + individual testimonial pages.
       { source: '/category/:slug', destination: '/blog', statusCode: 301 },
       { source: '/category/:slug/', destination: '/blog', statusCode: 301 },
-      { source: '/testimonial/:slug', destination: '/testimonials', statusCode: 301 },
-      { source: '/testimonial/:slug/', destination: '/testimonials', statusCode: 301 },
+      // Slugs only — do not redirect static assets like /testimonial/cardbg.png
+      { source: '/testimonial/:slug([^/.]+)', destination: '/testimonials', statusCode: 301 },
+      { source: '/testimonial/:slug([^/.]+)/', destination: '/testimonials', statusCode: 301 },
 
       // Legacy blog articles that are gem-specific -> canonical gem quality guides.
       // (These old slugs do not collide with any current Sanity blog post.)

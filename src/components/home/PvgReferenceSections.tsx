@@ -9,7 +9,36 @@ import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
 
-const WHO_WE_ARE_IMG_VERSION = '20260611';
+const WHO_WE_ARE_IMG_VERSION = '20260614';
+
+const WHO_WE_ARE_STACK_IMAGES = [
+  {
+    src: '/home/whoweare/1Heritage.webp',
+    alt: 'Four generations of Pure Vedic Gems family heritage since 1937',
+    pos: '4',
+  },
+  {
+    src: '/home/whoweare/puja-energization.jpeg',
+    alt: '100% natural purified and energized Astro-Rashi gemstones with Vedic puja',
+    pos: '3',
+  },
+  {
+    src: '/home/whoweare/genuine-rudraksha-xray-certified.jpeg',
+    alt: 'Genuine X-ray certified, purified and energized Rudrakshas with Rudra mantras',
+    pos: '2',
+  },
+  {
+    src: '/home/whoweare/most-reasonable-genuine-prices.jpeg',
+    alt: 'Most reasonable and genuine prices through direct mine and farm sourcing',
+    pos: '1',
+  },
+  {
+    src: '/home/whoweare/powerful-vedic-talisman.jpeg',
+    alt: 'Powerful Vedic talismans according to ancient sacred texts',
+    pos: '0',
+    fetchPriority: 'high' as const,
+  },
+] as const;
 const CONFIGURATOR_STEPS_IMG_VERSION = '20260611b';
 const CERT_STACK_IMG_VERSION = '20260611';
 
@@ -298,30 +327,21 @@ export function PvgReferenceSections({
         
         <div className="about-img-wrap">
           <div className="about-img-stack" id="aboutStack" aria-label="Heritage photographs">
-
-            <div className="about-stack-card" data-pos="4">
-              <img className="about-stack-img" src={`/home/whoweare/vedic-talismans.png?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Powerful Vedic talismans — sacred geometry jewellery designs" loading="eager" decoding="async" />
-            </div>
-
-            <div className="about-stack-card" data-pos="3">
-              <img className="about-stack-img" src={`/home/whoweare/1Heritage.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Four generations of Pure Vedic Gems family heritage" loading="eager" decoding="async" />
-            </div>
-
-            <div className="about-stack-card" data-pos="2">
-              <img className="about-stack-img" src={`/home/whoweare/2Sourcing.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Direct gemstone sourcing from Sri Lanka, Burma and Zambia" loading="eager" decoding="async" />
-            </div>
-
-            <div className="about-stack-card" data-pos="1">
-              <img className="about-stack-img" src={`/home/whoweare/3Certification.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Pure Vedic Gems certification bodies" loading="eager" decoding="async" />
-            </div>
-
-            <div className="about-stack-card" data-pos="0">
-              <img className="about-stack-img" src={`/home/whoweare/4Energization.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="Authentic Vedic gemstone energization ritual" loading="eager" decoding="async" fetchPriority="high" />
-            </div>
-
+            {WHO_WE_ARE_STACK_IMAGES.map((item) => (
+              <div key={item.src} className="about-stack-card" data-pos={item.pos}>
+                <img
+                  className="about-stack-img"
+                  src={`${item.src}?v=${WHO_WE_ARE_IMG_VERSION}`}
+                  alt={item.alt}
+                  loading={item.pos === '0' ? 'eager' : 'lazy'}
+                  decoding="async"
+                  {...('fetchPriority' in item ? { fetchPriority: item.fetchPriority } : {})}
+                />
+              </div>
+            ))}
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src={`/home/whoweare/87yeara.png?v=${WHO_WE_ARE_IMG_VERSION}`} alt="" loading="lazy" />
+            <img className="about-exp-img" src={`/home/whoweare/87yeara.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="" loading="lazy" />
           </div>
         </div>
 
@@ -417,19 +437,19 @@ export function PvgReferenceSections({
 
             <div className="cert-stack-card" data-pos="3">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`} alt="GIA gemstone certificate sample" loading="eager" decoding="async" />
+                <img className="cert-stack-img" src={`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`} alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`} alt="IGI gemstone certificate sample" loading="eager" decoding="async" />
+                <img className="cert-stack-img" src={`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`} alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`} alt="GII gemstone certificate sample" loading="eager" decoding="async" />
+                <img className="cert-stack-img" src={`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`} alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
@@ -1079,9 +1099,10 @@ export function PvgReferenceSections({
         <div className="remedy-showcase" aria-live="polite">
           {[
             { src: '/home/whoweare/1Heritage.webp', alt: 'Pure Vedic Gems heritage milestone' },
-            { src: '/home/whoweare/2Sourcing.webp', alt: 'Gemstone sourcing milestone' },
-            { src: '/home/whoweare/3Certification.webp', alt: 'Certification milestone' },
-            { src: '/home/whoweare/4Energization.webp', alt: 'Energization milestone' },
+            { src: '/home/whoweare/puja-energization.jpeg', alt: 'Vedic puja energization milestone' },
+            { src: '/home/whoweare/genuine-rudraksha-xray-certified.jpeg', alt: 'X-ray certified Rudraksha milestone' },
+            { src: '/home/whoweare/most-reasonable-genuine-prices.jpeg', alt: 'Direct sourcing and fair pricing milestone' },
+            { src: '/home/whoweare/powerful-vedic-talisman.jpeg', alt: 'Vedic talisman milestone' },
             { src: '/stones_img/stone1.webp', alt: 'Global clientele milestone' },
             { src: '/home/hero/pvgherobg3.webp', alt: 'Next generation platform milestone' },
           ].map((item, index) => (

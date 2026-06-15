@@ -118,7 +118,7 @@ function preloadStackImages(cards: HTMLElement[]) {
 function setupRotatingStack(
   selector: string,
   intervalMs: number,
-  options?: { pauseOnReducedMotion?: boolean }
+  options?: { pauseOnReducedMotion?: boolean; mobileIntervalMs?: number }
 ) {
   const cards = Array.from(document.querySelectorAll<HTMLElement>(selector));
   if (cards.length <= 1) return undefined;
@@ -132,12 +132,17 @@ function setupRotatingStack(
   let timer: number | null = null;
   let isVisible = true;
   const pauseOnReducedMotion = options?.pauseOnReducedMotion ?? true;
-  const transitionMs = 600;
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  const effectiveInterval =
+    isMobile && options?.mobileIntervalMs ? options.mobileIntervalMs : intervalMs;
+  const transitionMs = isMobile ? 550 : 600;
 
   const render = () => {
-    cards.forEach((card, index) => {
-      const position = (activeIndex - index + cards.length) % cards.length;
-      card.dataset.pos = String(position);
+    window.requestAnimationFrame(() => {
+      cards.forEach((card, index) => {
+        const position = (activeIndex - index + cards.length) % cards.length;
+        card.dataset.pos = String(position);
+      });
     });
   };
 
@@ -153,7 +158,7 @@ function setupRotatingStack(
       activeIndex = (activeIndex + 1) % cards.length;
       render();
       schedule();
-    }, Math.max(intervalMs, transitionMs + 400));
+    }, Math.max(effectiveInterval, transitionMs + 400));
   };
 
   const observer = new IntersectionObserver(
@@ -878,8 +883,18 @@ export function PvgHomeInteractions() {
   useEffect(() => {
     const cleanups: Array<(() => void) | undefined> = [];
 
-    cleanups.push(setupRotatingStack('#aboutStack .about-stack-card', 2800, { pauseOnReducedMotion: false }));
-    cleanups.push(setupRotatingStack('#certStack .cert-stack-card', 2800, { pauseOnReducedMotion: false }));
+    cleanups.push(
+      setupRotatingStack('#aboutStack .about-stack-card', 2800, {
+        pauseOnReducedMotion: false,
+        mobileIntervalMs: 4500,
+      })
+    );
+    cleanups.push(
+      setupRotatingStack('#certStack .cert-stack-card', 2800, {
+        pauseOnReducedMotion: false,
+        mobileIntervalMs: 4500,
+      })
+    );
     cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200, { pauseOnReducedMotion: false }));
     cleanups.push(setupTrustRotation());
     cleanups.push(...setupTabs('.explore-tab', '.explore-panel', 'panel-', 'tab'));

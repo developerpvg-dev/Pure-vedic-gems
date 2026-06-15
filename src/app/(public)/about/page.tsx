@@ -79,7 +79,7 @@ const LOCATIONS = [
   {
     title: 'Vedic Sciences Research Centre',
     city: 'Sector 49, Noida',
-    image: '/home/whoweare/4Energization.webp',
+    image: '/home/whoweare/puja-energization.jpeg',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20Sector%2049%20Noida',
     embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida&z=15&output=embed',
     copy: 'Gems, Rudraksha, yagya, healing therapy, Vedic astrology, research, and energizing centre for deeper remedy work and consultation.',

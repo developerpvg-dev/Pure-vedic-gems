@@ -5662,6 +5662,7 @@
   .about-copy-wrap .s-eyebrow { display: none; }
   .about-copy-wrap .s-heading { order: 1; margin: 0 auto; text-align: center; }
   .about-img-wrap { order: 2 !important; width: min(100%, 380px); margin: 0 auto; }
+  .who-section .about-img-wrap { width: 100% !important; max-width: none !important; margin: 0 auto !important; }
   .about-copy-wrap .s-rule { order: 3; margin: 4px auto 0; }
   .about-copy-wrap .who-body { order: 4; }
   .about-copy-wrap .who-quote { order: 5; }
@@ -7862,6 +7863,10 @@ a.pvg-footer-link:hover {
     min-height: 218px !important;
   }
 
+  .pvg-react-home-root .who-section .about-img-stack {
+    min-height: 0 !important;
+  }
+
   .pvg-react-home-root .about-copy-wrap .s-heading,
   .pvg-react-home-root .s-heading {
     margin-bottom: 6px !important;
@@ -8775,7 +8780,7 @@ a.pvg-footer-link:hover {
   isolation: isolate;
   background:
     linear-gradient(90deg, rgba(17, 8, 5, 0.94) 0%, rgba(31, 13, 8, 0.82) 34%, rgba(58, 18, 12, 0.72) 100%),
-    url('/testimonial/testimonial.png') center / cover no-repeat !important;
+    url('/home/testimonial/cardbg.webp') center / cover no-repeat !important;
   color: #ffffff;
 }
 
@@ -9307,7 +9312,7 @@ a.pvg-footer-link:hover {
 }
 
 .pvg-react-home-root .testimonials-section {
-  background: url('/testimonial/testimonial.png') center / cover no-repeat !important;
+  background: url('/home/testimonial/cardbg.webp') center / cover no-repeat !important;
   color: #2c0404 !important;
 }
 

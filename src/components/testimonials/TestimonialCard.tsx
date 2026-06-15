@@ -52,7 +52,7 @@ export function TestimonialCard({ testimonial, indexString }: TestimonialCardPro
       {/* Background Image */}
       <div className="absolute inset-0 z-0 drop-shadow-md">
         <Image 
-            src="/testimonial/cardbg.png" 
+            src="/home/testimonial/cardbg.webp"
             alt="Testimonial background" 
             fill 
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

@@ -58,8 +58,15 @@
   overflow: hidden !important;
 }
 
-.pvg-react-home-root .who-section .about-stack-img,
 .pvg-react-home-root .cert-section .cert-stack-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  display: block !important;
+}
+
+.pvg-react-home-root .who-section .about-stack-img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
@@ -160,6 +167,71 @@
     margin-top: 0 !important;
   }
 
+  /* Who We Are stack — portrait infographics + fanned deck like desktop */
+  .pvg-react-home-root .who-section .about-img-wrap {
+    padding-top: 10px !important;
+    padding-left: 18px !important;
+    padding-bottom: 20px !important;
+    padding-right: 12px !important;
+    overflow: visible !important;
+  }
+
+  .pvg-react-home-root .who-section .about-img-stack {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: 1989 / 2163 !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 12px 26px rgba(44, 4, 4, 0.14)) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-img {
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card {
+    border-width: 3px !important;
+    background: #0d0d0d !important;
+    transform-origin: 50% 70% !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    will-change: auto !important;
+    filter: none !important;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="4"] {
+    z-index: 0 !important;
+    opacity: 0.38 !important;
+    transform: rotate(-10deg) translate(-24px, 20px) scale(0.91) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="3"] {
+    z-index: 1 !important;
+    opacity: 0.52 !important;
+    transform: rotate(-7deg) translate(-18px, 16px) scale(0.94) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="2"] {
+    z-index: 2 !important;
+    opacity: 0.72 !important;
+    transform: rotate(-3.5deg) translate(-9px, 9px) scale(0.97) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="1"] {
+    z-index: 3 !important;
+    opacity: 0.9 !important;
+    transform: rotate(3deg) translate(9px, 6px) scale(0.985) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="0"] {
+    z-index: 4 !important;
+    opacity: 1 !important;
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16) !important;
+  }
+
   .pvg-react-home-root .cert-grid {
     grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr) !important;
     gap: clamp(18px, 2.8vw, 28px) !important;
@@ -170,12 +242,59 @@
     width: 100% !important;
     max-width: none !important;
     justify-self: stretch !important;
+    padding-top: 10px !important;
+    padding-left: 18px !important;
+    padding-bottom: 20px !important;
+    padding-right: 12px !important;
+    overflow: visible !important;
   }
 
   .pvg-react-home-root .cert-section .about-img-stack {
     width: 100% !important;
     max-width: none !important;
-    min-height: clamp(360px, 46vw, 440px) !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: 1170 / 990 !important;
+    margin-inline: 0 !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 12px 26px rgba(44, 4, 4, 0.12)) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-frame {
+    padding: 10px !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card {
+    transform-origin: 50% 70% !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    will-change: auto !important;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="3"] {
+    z-index: 1 !important;
+    opacity: 0.65 !important;
+    transform: rotate(-7deg) translate(-18px, 16px) scale(0.94) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="2"] {
+    z-index: 2 !important;
+    opacity: 0.8 !important;
+    transform: rotate(-3.5deg) translate(-9px, 9px) scale(0.97) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="1"] {
+    z-index: 3 !important;
+    opacity: 0.9 !important;
+    transform: rotate(3deg) translate(9px, 6px) scale(0.985) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="0"] {
+    z-index: 4 !important;
+    opacity: 1 !important;
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14) !important;
   }
 }
 
@@ -328,10 +447,166 @@
 }
 
 @media (max-width: 767px) {
-  .pvg-react-home-root .about-exp-badge {
-    right: -18px !important;
-    bottom: -18px !important;
-    width: clamp(88px, 25vw, 116px) !important;
+  .pvg-react-home-root .who-section .about-img-wrap {
+    width: min(94vw, 340px) !important;
+    max-width: min(94vw, 340px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: 8px !important;
+    padding-top: 10px !important;
+    padding-left: 16px !important;
+    padding-bottom: 16px !important;
+    padding-right: 12px !important;
+    overflow: visible !important;
+  }
+
+  .pvg-react-home-root .who-section .about-img-stack {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: 1989 / 2163 !important;
+    border-radius: 6px !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 10px 22px rgba(44, 4, 4, 0.14)) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-img {
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card {
+    border-width: 2px !important;
+    border-color: #ffffff !important;
+    border-radius: 6px !important;
+    background: #0d0d0d !important;
+    box-shadow: none !important;
+    transform-origin: 50% 70% !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    will-change: auto !important;
+    filter: none !important;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="4"] {
+    z-index: 0 !important;
+    opacity: 0.38 !important;
+    transform: rotate(-10deg) translate(-16px, 14px) scale(0.91) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="3"] {
+    z-index: 1 !important;
+    opacity: 0.52 !important;
+    transform: rotate(-7deg) translate(-13px, 12px) scale(0.94) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="2"] {
+    z-index: 2 !important;
+    opacity: 0.72 !important;
+    transform: rotate(-3.5deg) translate(-7px, 7px) scale(0.97) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="1"] {
+    z-index: 3 !important;
+    opacity: 0.9 !important;
+    transform: rotate(3deg) translate(7px, 5px) scale(0.985) !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="0"] {
+    z-index: 4 !important;
+    opacity: 1 !important;
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important;
+  }
+
+  .pvg-react-home-root .cert-section .about-img-wrap .about-exp-badge {
+    right: -20px !important;
+    bottom: -16px !important;
+    width: clamp(100px, 28vw, 124px) !important;
+  }
+
+  .pvg-react-home-root .cert-section .about-img-wrap {
+    width: min(96vw, 420px) !important;
+    max-width: min(96vw, 420px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 4px !important;
+    padding-top: 10px !important;
+    padding-left: 16px !important;
+    padding-bottom: 16px !important;
+    padding-right: 12px !important;
+    overflow: visible !important;
+  }
+
+  .pvg-react-home-root .cert-section .about-img-stack {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: 1170 / 990 !important;
+    margin-inline: 0 !important;
+    overflow: visible !important;
+    filter: drop-shadow(0 10px 22px rgba(44, 4, 4, 0.12)) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-frame {
+    padding: 8px !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card {
+    transform-origin: 50% 70% !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    will-change: auto !important;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="3"] {
+    z-index: 1 !important;
+    opacity: 0.65 !important;
+    transform: rotate(-7deg) translate(-13px, 12px) scale(0.94) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="2"] {
+    z-index: 2 !important;
+    opacity: 0.8 !important;
+    transform: rotate(-3.5deg) translate(-7px, 7px) scale(0.97) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="1"] {
+    z-index: 3 !important;
+    opacity: 0.9 !important;
+    transform: rotate(3deg) translate(7px, 5px) scale(0.985) !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="0"] {
+    z-index: 4 !important;
+    opacity: 1 !important;
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14) !important;
+  }
+
+  /* 87year badge — proportional corner overlap like desktop/tablet */
+  .pvg-react-home-root .who-section .about-img-wrap .about-exp-badge {
+    right: -20px !important;
+    bottom: -16px !important;
+    width: clamp(100px, 28vw, 124px) !important;
+    height: auto !important;
+    aspect-ratio: 3 / 2 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    z-index: 6 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-img-wrap .about-exp-img {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 3 / 2 !important;
+    object-fit: contain !important;
+    filter: none !important;
   }
 
   .pvg-react-home-root .pvg-slider-shell {
@@ -1033,5 +1308,119 @@
   .pvg-react-home-root .director-picks {
     grid-column: unset !important;
     grid-row: unset !important;
+  }
+}
+
+/* Phone: Who We Are stack — fanned deck (same as desktop), wins over home.css scale-only rules */
+@media (max-width: 767px) {
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="4"] {
+    transform: rotate(-10deg) translate(-16px, 14px) scale(0.91) !important;
+    opacity: 0.38 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="3"] {
+    transform: rotate(-7deg) translate(-13px, 12px) scale(0.94) !important;
+    opacity: 0.52 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="2"] {
+    transform: rotate(-3.5deg) translate(-7px, 7px) scale(0.97) !important;
+    opacity: 0.72 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="1"] {
+    transform: rotate(3deg) translate(7px, 5px) scale(0.985) !important;
+    opacity: 0.9 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="0"] {
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* Tablet: Who We Are stack — fanned deck matches desktop */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="4"] {
+    transform: rotate(-10deg) translate(-24px, 20px) scale(0.91) !important;
+    opacity: 0.38 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="3"] {
+    transform: rotate(-7deg) translate(-18px, 16px) scale(0.94) !important;
+    opacity: 0.52 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="2"] {
+    transform: rotate(-3.5deg) translate(-9px, 9px) scale(0.97) !important;
+    opacity: 0.72 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="1"] {
+    transform: rotate(3deg) translate(9px, 6px) scale(0.985) !important;
+    opacity: 0.9 !important;
+  }
+
+  .pvg-react-home-root .who-section .about-stack-card[data-pos="0"] {
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+}
+
+/* Phone: Cert stack — fanned deck + correct aspect, beats home.css min-height rules */
+@media (max-width: 767px) {
+  .pvg-react-home-root .cert-section .about-img-stack {
+    min-height: 0 !important;
+    aspect-ratio: 1170 / 990 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="3"] {
+    transform: rotate(-7deg) translate(-13px, 12px) scale(0.94) !important;
+    opacity: 0.65 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="2"] {
+    transform: rotate(-3.5deg) translate(-7px, 7px) scale(0.97) !important;
+    opacity: 0.8 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="1"] {
+    transform: rotate(3deg) translate(7px, 5px) scale(0.985) !important;
+    opacity: 0.9 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="0"] {
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Tablet: Cert stack — fanned deck matches desktop */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pvg-react-home-root .cert-section .about-img-stack {
+    min-height: 0 !important;
+    aspect-ratio: 1170 / 990 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="3"] {
+    transform: rotate(-7deg) translate(-18px, 16px) scale(0.94) !important;
+    opacity: 0.65 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="2"] {
+    transform: rotate(-3.5deg) translate(-9px, 9px) scale(0.97) !important;
+    opacity: 0.8 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="1"] {
+    transform: rotate(3deg) translate(9px, 6px) scale(0.985) !important;
+    opacity: 0.9 !important;
+  }
+
+  .pvg-react-home-root .cert-section .cert-stack-card[data-pos="0"] {
+    transform: rotate(0deg) translate(0, 0) scale(1) !important;
+    opacity: 1 !important;
   }
 }

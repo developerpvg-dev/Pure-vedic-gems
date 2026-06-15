@@ -276,7 +276,7 @@ export function FeedbackThread({ items }: { items: PublicFeedbackItem[] }) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/testimonial/cardbg.png"
+                  src="/home/testimonial/cardbg.webp"
                   alt=""
                   aria-hidden="true"
                   className="w-full h-auto pointer-events-none select-none block"
@@ -389,7 +389,7 @@ export function FeedbackThread({ items }: { items: PublicFeedbackItem[] }) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/testimonial/cardbg.png"
+              src="/home/testimonial/cardbg.webp"
               alt=""
               aria-hidden="true"
               className="w-full h-auto pointer-events-none select-none block"
