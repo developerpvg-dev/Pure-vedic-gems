@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, ChevronLeft, ShoppingBag } from 'lucide-react';
+import { Heart, ShoppingBag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { productHref } from '@/lib/categories/storefront';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import { SavedGemRemoveButton } from '@/components/account/SavedGemRemoveButton';
 
 export const dynamic = 'force-dynamic';
@@ -57,47 +57,15 @@ export default async function SavedPage() {
     (savedItems as Array<{ id: string; created_at: string; products: SavedProduct | null }>) ?? [];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link
-          href="/account"
-          className="mb-4 inline-flex items-center gap-1 text-sm hover:underline"
-          style={{ color: 'var(--pvg-muted)' }}
-        >
-          <ChevronLeft className="h-4 w-4" /> Back to Account
-        </Link>
-        <h1
-          className="font-heading text-3xl md:text-4xl"
-          style={{ color: 'var(--pvg-primary)' }}
-        >
-          Saved Gems
-        </h1>
-        <OrnamentalDivider className="mt-4 max-w-50" />
-      </div>
+    <div className="pvg-account-stack">
+      <AccountPageHeader title="Saved Gems" subtitle="Your wishlist of gemstones saved for later." />
 
       {items.length === 0 ? (
-        <div
-          className="rounded-2xl border py-20 text-center"
-          style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}
-        >
-          <Heart
-            className="mx-auto mb-4 h-14 w-14"
-            style={{ color: 'var(--pvg-muted)', opacity: 0.35 }}
-          />
-          <h2
-            className="font-heading text-xl"
-            style={{ color: 'var(--pvg-primary)' }}
-          >
-            No saved gems yet
-          </h2>
-          <p className="mt-2 text-sm" style={{ color: 'var(--pvg-muted)' }}>
-            Tap the heart icon on any gemstone to save it here.
-          </p>
-          <Link
-            href="/shop"
-            className="mt-6 inline-block rounded-lg px-7 py-3 text-sm font-bold uppercase tracking-widest transition-all hover:-translate-y-0.5"
-            style={{ background: 'var(--pvg-primary)', color: 'var(--pvg-bg)' }}
-          >
+        <div className="pvg-account-card pvg-account-empty">
+          <Heart className="pvg-account-empty-icon h-14 w-14" aria-hidden="true" />
+          <h2 className="pvg-account-empty-title">No saved gems yet</h2>
+          <p className="pvg-account-empty-copy">Tap the heart icon on any gemstone to save it here.</p>
+          <Link href="/shop" className="pvg-account-btn mt-5">
             Browse Gemstones
           </Link>
         </div>
@@ -123,11 +91,7 @@ export default async function SavedPage() {
             return (
               <div
                 key={item.id}
-                className="group relative overflow-hidden rounded-xl border transition-all hover:-translate-y-1 hover:shadow-lg"
-                style={{
-                  borderColor: 'var(--pvg-border)',
-                  background: 'var(--pvg-surface)',
-                }}
+                className="pvg-account-card group relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
               >
                 <SavedGemRemoveButton
                   productId={product.id}

@@ -350,9 +350,15 @@ function canonicalCategory(legacySlug: string, legacyName: string) {
     'ready-rudraksha-jewelry-stock': 'Ready Rudraksha Jewelry',
     'rudraksha-pendents': 'Rudraksha Pendants',
   };
-  const family = slug.includes('jewelry') || slug.includes('pendent') ? 'jewelry' : 'rudraksha';
-  const sortOrder = slug === 'rudraksha' ? 30 : slug.includes('exclusive') ? 90 : 100;
+  const family = resolveFamily(slug);
+  const sortOrder = slug === 'rudraksha' ? 30 : slug.includes('exclusive') ? 90 : family === 'jewelry' ? 400 : family === 'mala' ? 450 : 100;
   return { slug, name: names[slug] ?? legacyName, family, sortOrder };
+}
+
+function resolveFamily(slug: string): 'rudraksha' | 'jewelry' | 'mala' {
+  if (slug.includes('mala') || slug === 'indrakshi-mala') return 'mala';
+  if (slug.includes('jewelry') || slug.includes('pendent')) return 'jewelry';
+  return 'rudraksha';
 }
 
 function choosePrimaryCategory(terms: LegacyTermRef[], categoryByLegacySlug: Map<string, CategoryStage>): CategoryStage | null {

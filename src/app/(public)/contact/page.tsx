@@ -2,10 +2,28 @@
 
 import Image from 'next/image';
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Mail, MapPin, Phone, Send } from 'lucide-react';
+import { ArrowRight, Clock, Diamond, Globe, Headphones, Mail, Phone, Send, Shield } from 'lucide-react';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
+import './contact-page.css';
 
 type SubmitStatus = 'idle' | 'sending' | 'sent' | 'error';
+
+type AddressBlock = {
+  label: string;
+  lines: readonly string[];
+};
+
+type OfficeLocation = {
+  id: string;
+  title: string;
+  region: string;
+  flag: string;
+  photo: string;
+  mapUrl: string;
+  addresses: readonly AddressBlock[];
+  landmark?: string;
+  hours: string;
+};
 
 const COUNTRY_CODES = [
   { id: 'IN', dial: '+91', flag: '🇮🇳', name: 'India' },
@@ -74,89 +92,115 @@ const initialForm = {
   message: '',
 };
 
-const PRIMARY_ADDRESSES = [
-  {
-    flag: '/flags/india.svg',
-    title: 'Pure Vedic Gems - Delhi',
-    lines: [
-      'FF-32, MGF Metropolitan Mall',
-      'District Centre Saket, New Delhi 110017',
-      'Ph: +91 98715 82404',
-      'E: info@purevedicgems.in',
-    ],
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi',
-  },
-  {
-    flag: '/flags/india.svg',
-    title: 'Research Centre - Noida',
-    lines: [
-      '6th Floor, East Avenue Grand Building',
-      'Sector 49, Noida, U.P. 201301',
-      'Ph: +91 77039 34332',
-      'E: info@purevedicgems.com',
-    ],
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida',
-  },
+const DELHI_MAP_URL =
+  'https://www.google.com/maps/search/?api=1&query=FF-32%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi%20110017';
+const UK_RETAIL_MAP_URL =
+  'https://www.google.com/maps/search/?api=1&query=Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK';
+const SULTANPUR_MAP_URL =
+  'https://www.google.com/maps/search/?api=1&query=Balaji%20Building%20CRC%20Design%20Centre%20Road%20Sultanpur%20Delhi%20110030';
+
+const INDIA_PHONES = [
+  '+91 9871582404',
+  '+91 9310172512',
+  '+91 9891344074',
+  '+91 7703934332',
+  '+91 9810980550',
+  '+91 7827095342',
 ] as const;
 
-const LOCATION_COLUMNS = [
-  {
-    flag: '/flags/india.svg',
-    title: 'Delhi, India',
-    lines: ['MGF Metropolitan Mall, Saket', 'New Delhi 110017', 'Ph: +91 98715 82404'],
-    mapUrl: PRIMARY_ADDRESSES[0].mapUrl,
-  },
-  {
-    flag: '/flags/india.svg',
-    title: 'Noida, India',
-    lines: ['East Avenue Grand Building', 'Sector 49, Noida 201301', 'Ph: +91 77039 34332'],
-    mapUrl: PRIMARY_ADDRESSES[1].mapUrl,
-  },
-  {
-    flag: '/flags/uk.svg',
-    title: 'Hounslow, U.K.',
-    lines: ['95 Juniper Court', 'Hanworth Road, Hounslow TW3 3TL', 'Appointment support'],
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=95%20Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK',
-  },
-  {
-    flag: '/flags/uk.svg',
-    title: 'Milton Keynes, U.K.',
-    lines: ['3 Winstanley Ln', 'Shenley Lodge, MK5 7BT', 'Registered address'],
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=3%20Winstanley%20Ln%20Shenley%20Lodge%20Milton%20Keynes%20MK5%207BT%20UK',
-  },
-] as const;
+const UK_PHONE = '+44 7831 491778';
 
-const CONTACT_DETAILS = {
-  phones: ['+44-7831491778', '+91-9871582404', '+91-7703934332', '+91-9810980550'],
-  emails: ['info@purevedicgems.in', 'info@purevedicgems.com', 'purevedicgems@gmail.com'],
-} as const;
+const CONTACT_EMAILS = [
+  'info@purevedicgems.in',
+  'info@purevedicgems.com',
+  'purevedicgems@gmail.com',
+] as const;
 
 const WORKING_TIMINGS = [
-  ['Monday', '11:00 am - 7:00 pm'],
-  ['Tuesday', '11:00 am - 7:00 pm'],
+  ['Monday', '11:00 am – 8:00 pm'],
+  ['Tuesday', '11:00 am – 8:00 pm'],
   ['Wednesday', 'Closed'],
-  ['Thursday', '11:00 am - 7:00 pm'],
-  ['Friday', '11:00 am - 7:00 pm'],
-  ['Saturday', '11:00 am - 7:00 pm'],
-  ['Sunday', '11:00 am - 7:00 pm'],
+  ['Thursday', '11:00 am – 8:00 pm'],
+  ['Friday', '11:00 am – 8:00 pm'],
+  ['Saturday', '11:00 am – 8:00 pm'],
+  ['Sunday', '11:00 am – 8:00 pm'],
 ] as const;
 
-const LOCATION_MAPS = [
+const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
   {
-    title: 'Delhi Store',
-    routeImage: '/legacy/contact/delhi-location-map.jpg',
-    routeAlt: 'Route map to Pure Vedic Gems Delhi outlet in MGF Metropolitan Mall',
-    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi&z=15&output=embed',
-    mapUrl: PRIMARY_ADDRESSES[0].mapUrl,
+    id: 'delhi',
+    title: 'Delhi',
+    region: 'India',
+    flag: '/flags/india.svg',
+    photo: '/home/hero/pvgheropc2.webp',
+    mapUrl: DELHI_MAP_URL,
+    addresses: [
+      {
+        label: 'Registered Address',
+        lines: ['E-1566, JJ Tigri', 'New Delhi-110062, India'],
+      },
+      {
+        label: 'Retail Outlet',
+        lines: [
+          'FF-32, MGF Metropolitan Mall',
+          'Opposite Saket (Lawyers) Court',
+          'Distt. Centre Saket, New Delhi-110017, India',
+        ],
+      },
+    ],
+    landmark: 'Nearest Metro: Malviya Nagar (Yellow Line)',
+    hours: '11:00 am – 8:00 pm · Weekly off: Wednesday',
   },
   {
-    title: 'Noida Research Centre',
-    routeImage: '/legacy/contact/noida-location-map.jpg',
-    routeAlt: 'Route map to Pure Vedic Science and Research Centre Noida',
-    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida&z=15&output=embed',
-    mapUrl: PRIMARY_ADDRESSES[1].mapUrl,
+    id: 'uk',
+    title: 'United Kingdom',
+    region: 'Pure Vedic Gems Pvt. Ltd.',
+    flag: '/flags/uk.svg',
+    photo: '/home/hero/pvgheropc1.webp',
+    mapUrl: UK_RETAIL_MAP_URL,
+    addresses: [
+      {
+        label: 'Retail Outlet',
+        lines: ['Juniper Court, Hanworth Road', 'Hounslow, TW3 3TL, United Kingdom'],
+      },
+      {
+        label: 'Registered Address',
+        lines: ['Winstanley Ln, Shenley Lodge', 'Milton Keynes, MK5 7BT, UK'],
+      },
+    ],
+    hours: 'By appointment only',
+  },
+  {
+    id: 'sultanpur',
+    title: 'Sultanpur',
+    region: 'Delhi, India',
+    flag: '/flags/india.svg',
+    photo: '/home/ourservicesimg/retail-store.webp',
+    mapUrl: SULTANPUR_MAP_URL,
+    addresses: [
+      {
+        label: 'Retail Outlet',
+        lines: [
+          'Khasra No. 382, Balaji Building',
+          'CRC Design Centre Road, Shiv Shakti Temple',
+          'Sultanpur, Delhi, Bharat — 110030',
+        ],
+      },
+    ],
+    landmark: 'Nearby Sultanpur Metro Station',
+    hours: '11:00 am – 8:00 pm · Weekly off: Wednesday',
   },
 ] as const;
+
+const TRUST_BADGES = [
+  { icon: Shield, title: 'Certified Natural Gems', copy: '100% authentic & lab certified' },
+  { icon: Diamond, title: 'Trusted Since 1937', copy: 'Four generations of expertise' },
+  { icon: Headphones, title: 'Expert Guidance', copy: 'Personalized gem consultation' },
+  { icon: Globe, title: 'Global Presence', copy: 'Serving clients worldwide' },
+] as const;
+
+const DELHI_MAP_EMBED =
+  'https://maps.google.com/maps?hl=en&q=FF-32%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi%20110017&z=15&output=embed';
 
 function cleanPhone(value: string) {
   return value.replace(/[^+\d]/g, '');
@@ -194,211 +238,287 @@ export default function ContactPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#faf8f4] font-body text-[#15110d]">
+    <main className="pvg-contact-page min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
 
-      {/* ── Header Section ──────────────────────────────────── */}
-      <section className="px-4 pb-4 pt-10 sm:px-6 lg:pt-14" style={{ paddingTop: '7rem' }}>
+      <section className="px-4 pb-6 pt-10 sm:px-6 lg:pt-14" aria-labelledby="contact-hero-heading">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="flex flex-col items-center justify-center mb-0">
-            <h1 className="section-title">How can we help?</h1>
-            <p className="navratna-subtitle text-[#5a5043]!" style={{ margin: 0 }}>
-              Reach out to us — our team will respond within 24 hours.
+          <div className="mb-0 flex flex-col items-center justify-center">
+            <h1 className="section-title" id="contact-hero-heading">
+              Contact Us
+            </h1>
+            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
+              Reach out to our team — we respond within 24 hours on business days.
             </p>
+            <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
           </div>
         </div>
       </section>
 
-      {/* ── Contact Form + Addresses ─────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-4 sm:px-8 mb-14">
-        <div className="grid gap-16 lg:grid-cols-[0.55fr_0.45fr] lg:items-start">
-
-          {/* Form */}
-          <div className="border border-[#e0d6c8] px-6 py-8 sm:px-8" style={{ backgroundColor: '#ffffff' }}>
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-[#2c0a04] tracking-tight">Send Us a Message</h2>
-            </div>
-            <form onSubmit={handleSubmit} className="grid gap-3">
-              <input
-                required
-                maxLength={200}
-                placeholder="Name *"
-                value={formState.name}
-                onChange={(event) => setFormState({ ...formState, name: event.target.value })}
-                className="h-11 w-full border border-[#d9d4cb] px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
-                style={{ backgroundColor: '#ffffff' }}
-              />
-              <input
-                required
-                type="email"
-                maxLength={255}
-                placeholder="Email *"
-                value={formState.email}
-                onChange={(event) => setFormState({ ...formState, email: event.target.value })}
-                className="h-11 w-full border border-[#d9d4cb] px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
-                style={{ backgroundColor: '#ffffff' }}
-              />
-              <div className="grid grid-cols-[140px_1fr] gap-2">
-                <div className="relative">
-                  <select
-                    value={formState.countryCode}
-                    onChange={(event) => setFormState({ ...formState, countryCode: event.target.value })}
-                    className="h-11 w-full appearance-none border border-[#d9d4cb] pl-3 pr-8 text-sm text-[#15110d] outline-none focus:border-[#b86654]"
-                    style={{ backgroundColor: '#ffffff' }}
-                  >
-                    {COUNTRY_CODES.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.flag} {c.dial} {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9e9892]">▾</span>
+      <section className="pvg-contact-main" aria-label="Contact form and reach us">
+        <div className="pvg-contact-grid">
+          <ScrollReveal>
+            <article className="pvg-contact-card pvg-contact-form-card">
+              <div className="pvg-contact-form-head">
+                <div className="pvg-contact-form-icon" aria-hidden="true">
+                  <Mail className="h-5 w-5" />
                 </div>
-                <input
-                  maxLength={20}
-                  placeholder="Phone number"
-                  value={formState.phone}
-                  onChange={(event) => setFormState({ ...formState, phone: event.target.value })}
-                  className="h-11 w-full border border-[#d9d4cb] px-4 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
-                  style={{ backgroundColor: '#ffffff' }}
-                />
+                <div>
+                  <h2>Send Us a Message</h2>
+                  <p>Share your query and we&apos;ll get back to you shortly.</p>
+                </div>
               </div>
-              <textarea
-                required
-                rows={6}
-                maxLength={5000}
-                placeholder="Comments *"
-                value={formState.message}
-                onChange={(event) => setFormState({ ...formState, message: event.target.value })}
-                className="w-full resize-y border border-[#d9d4cb] px-4 py-3 text-sm outline-none transition placeholder:text-[#9e9892] focus:border-[#b86654]"
-                style={{ backgroundColor: '#ffffff' }}
-              />
-              <button
-                type="submit"
-                disabled={status === 'sending'}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#7a5230] text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-[#5f3d24] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {status === 'sending' ? 'Sending...' : 'Submit'} <Send className="h-4 w-4" />
-              </button>
-              {status === 'sent' && <p className="text-center text-sm font-bold text-[#4f7f54]">Message sent. We will get back to you shortly.</p>}
-              {status === 'error' && <p className="text-center text-sm font-bold text-[#b53a2f]">Could not send right now. Please call or email us directly.</p>}
-            </form>
-          </div>
-
-          {/* Addresses */}
-          <div className="space-y-10 pt-2">
-            {PRIMARY_ADDRESSES.map((address) => (
-              <div key={address.title}>
-                <span className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#f4eadb]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={address.flag} alt="" width={22} height={15} aria-hidden="true" style={{ borderRadius: '2px', objectFit: 'cover' }} />
-                </span>
-                <h2 className="mt-3 text-lg font-black uppercase tracking-[0.05em]">{address.title}</h2>
-                <div className="mt-2 space-y-0.5 text-[15px] leading-7 text-[#15110d]">
-                  {address.lines.map((line) => <p key={line}>{line}</p>)}
+              <form onSubmit={handleSubmit} className="pvg-contact-form">
+                <input
+                  required
+                  maxLength={200}
+                  placeholder="Name *"
+                  value={formState.name}
+                  onChange={(event) => setFormState({ ...formState, name: event.target.value })}
+                  className="pvg-contact-field"
+                />
+                <input
+                  required
+                  type="email"
+                  maxLength={255}
+                  placeholder="Email *"
+                  value={formState.email}
+                  onChange={(event) => setFormState({ ...formState, email: event.target.value })}
+                  className="pvg-contact-field"
+                />
+                <div className="pvg-contact-phone-row">
+                  <div className="pvg-contact-select-wrap">
+                    <select
+                      value={formState.countryCode}
+                      onChange={(event) => setFormState({ ...formState, countryCode: event.target.value })}
+                      className="pvg-contact-select"
+                      aria-label="Country code"
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.flag} {c.dial} {c.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="pvg-contact-select-caret" aria-hidden="true">▾</span>
+                  </div>
+                  <input
+                    maxLength={20}
+                    placeholder="Phone number"
+                    value={formState.phone}
+                    onChange={(event) => setFormState({ ...formState, phone: event.target.value })}
+                    className="pvg-contact-field"
+                  />
                 </div>
-                <a href={address.mapUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[15px] font-medium text-[#b86654] hover:underline">
-                  Get Directions <ArrowRight className="h-4 w-4" />
+                <textarea
+                  required
+                  rows={6}
+                  maxLength={5000}
+                  placeholder="Your message *"
+                  value={formState.message}
+                  onChange={(event) => setFormState({ ...formState, message: event.target.value })}
+                  className="pvg-contact-textarea"
+                />
+                <button type="submit" disabled={status === 'sending'} className="pvg-contact-submit">
+                  {status === 'sending' ? 'Sending...' : 'Send Message'}
+                  <Send className="h-4 w-4" />
+                </button>
+                {status === 'sent' ? (
+                  <p className="pvg-contact-status pvg-contact-status--ok">Message sent. We will get back to you shortly.</p>
+                ) : null}
+                {status === 'error' ? (
+                  <p className="pvg-contact-status pvg-contact-status--err">Could not send right now. Please call or email us directly.</p>
+                ) : null}
+              </form>
+            </article>
+          </ScrollReveal>
+
+          <ScrollReveal delay={80}>
+            <aside className="pvg-contact-card pvg-contact-reach-card" aria-label="Phone, email and hours">
+              <h2 className="pvg-contact-reach-title">Reach Us Directly</h2>
+
+              <div className="pvg-contact-reach-block">
+                <p className="pvg-contact-reach-label">
+                  <Phone className="h-4 w-4" aria-hidden="true" />
+                  India
+                </p>
+                <div className="pvg-contact-phone-grid">
+                  {INDIA_PHONES.map((phone) => (
+                    <a key={phone} href={`tel:${cleanPhone(phone)}`}>
+                      {phone}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pvg-contact-reach-block">
+                <p className="pvg-contact-reach-label">
+                  <Phone className="h-4 w-4" aria-hidden="true" />
+                  United Kingdom
+                </p>
+                <a href={`tel:${cleanPhone(UK_PHONE)}`} className="pvg-contact-reach-single">
+                  {UK_PHONE}
                 </a>
               </div>
-            ))}
-          </div>
 
+              <div className="pvg-contact-reach-block">
+                <p className="pvg-contact-reach-label">
+                  <Mail className="h-4 w-4" aria-hidden="true" />
+                  Email
+                </p>
+                <div className="pvg-contact-reach-list">
+                  {CONTACT_EMAILS.map((email) => (
+                    <a key={email} href={`mailto:${email}`}>
+                      {email}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pvg-contact-reach-block">
+                <p className="pvg-contact-reach-label">
+                  <Clock className="h-4 w-4" aria-hidden="true" />
+                  Working Hours
+                </p>
+                <div className="pvg-contact-hours-box">
+                  {WORKING_TIMINGS.map(([day, time]) => (
+                    <div key={day} className="pvg-contact-hours-row">
+                      <span>{day}</span>
+                      <span>{time}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="pvg-contact-reach-note">UK office visits are by appointment only.</p>
+              </div>
+            </aside>
+          </ScrollReveal>
         </div>
       </section>
 
-      <section className="border-y border-[#ece5db] bg-white px-4 py-10 sm:px-6 lg:py-12">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-y-10 divide-[#ece5db] sm:grid-cols-2 sm:divide-x lg:grid-cols-4">
-            {LOCATION_COLUMNS.map((location) => (
-              <ScrollReveal key={location.title}>
-                <div className="px-5 text-center">
-                  <span className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#f4eadb]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={location.flag} alt="" width={22} height={15} aria-hidden="true" style={{ borderRadius: '2px', objectFit: 'cover' }} />
-                  </span>
-                  <h2 className="mt-4 text-lg font-black uppercase tracking-[0.05em]">{location.title}</h2>
-                  <div className="mt-2 space-y-1 text-[15px] leading-7 text-[#15110d]">
-                    {location.lines.map((line) => <p key={line}>{line}</p>)}
+      <section className="pvg-contact-locations" aria-labelledby="contact-locations-heading">
+        <div className="pvg-contact-locations-inner">
+          <div className="section-head">
+            <h2 className="section-title" id="contact-locations-heading">
+              Our Locations
+            </h2>
+            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
+              Three offices across India and the United Kingdom
+            </p>
+            <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+          </div>
+
+          <div className="pvg-contact-location-grid">
+            {OFFICE_LOCATIONS.map((location, index) => (
+              <ScrollReveal key={location.id} delay={index * 60}>
+                <article className="pvg-contact-card pvg-contact-location-card">
+                  <div className="pvg-contact-location-photo-wrap">
+                    <Image
+                      src={location.photo}
+                      alt=""
+                      fill
+                      className="pvg-contact-location-photo"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                    <span className="pvg-contact-location-flag" aria-hidden="true">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={location.flag} alt="" width={22} height={15} style={{ objectFit: 'cover', borderRadius: '2px' }} />
+                    </span>
                   </div>
-                  <a href={location.mapUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-base font-medium text-[#f36b5b] hover:underline">
-                    Get Directions <ArrowRight className="h-4 w-4" />
-                  </a>
-                </div>
+
+                  <div className="pvg-contact-location-body">
+                    <header className="pvg-contact-location-head">
+                      <h3>{location.title}</h3>
+                      <p>{location.region}</p>
+                    </header>
+
+                    {location.addresses.map((block) => (
+                      <div key={block.label} className="pvg-contact-addr-block">
+                        <p className="pvg-contact-addr-label">{block.label}</p>
+                        <address>
+                          {block.lines.map((line) => (
+                            <span key={line}>
+                              {line}
+                              <br />
+                            </span>
+                          ))}
+                        </address>
+                      </div>
+                    ))}
+
+                    {location.landmark ? (
+                      <p className="pvg-contact-location-landmark">{location.landmark}</p>
+                    ) : null}
+
+                    <p className="pvg-contact-location-hours">
+                      <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                      {location.hours}
+                    </p>
+
+                    <a href={location.mapUrl} target="_blank" rel="noreferrer" className="pvg-contact-link">
+                      Get Directions <ArrowRight className="h-4 w-4" />
+                    </a>
+                  </div>
+                </article>
               </ScrollReveal>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-10 sm:px-6 lg:py-14">
-        <div className="mx-auto max-w-7xl space-y-10">
-          <ScrollReveal>
-            <div className="border border-[#d8bd75] bg-[#fdf3e7] p-6 sm:p-8 lg:p-10">
-              <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-3">
-                  <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[#8a6400]"><Phone className="h-4 w-4" /> Phone</p>
-                  <div className="space-y-2">
-                    {CONTACT_DETAILS.phones.map((phone) => (
-                      <a key={phone} href={`tel:${cleanPhone(phone)}`} className="flex items-center gap-2 text-[15px] text-[#261a10] transition hover:text-[#b86654]">
-                        <Phone className="h-3.5 w-3.5 shrink-0 text-[#c9a84c]" />{phone}
-                      </a>
-                    ))}
+      <section className="pvg-contact-trust" aria-label="Why customers trust Pure Vedic Gems">
+        <div className="pvg-contact-trust-grid">
+          {TRUST_BADGES.map((badge, index) => {
+            const Icon = badge.icon;
+            return (
+              <ScrollReveal key={badge.title} delay={index * 50}>
+                <div className="pvg-contact-trust-item">
+                  <div className="pvg-contact-trust-icon" aria-hidden="true">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <strong>{badge.title}</strong>
+                    <span>{badge.copy}</span>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[#8a6400]"><Mail className="h-4 w-4" /> Email</p>
-                  <div className="space-y-2">
-                    {CONTACT_DETAILS.emails.map((email) => (
-                      <a key={email} href={`mailto:${email}`} className="flex items-center gap-2 text-[15px] text-[#261a10] transition hover:text-[#b86654]">
-                        <Mail className="h-3.5 w-3.5 shrink-0 text-[#c9a84c]" />{email}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3 sm:col-span-2 lg:col-span-1">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8a6400]">Working Timing</p>
-                  <div className="space-y-2 border border-[#e6d3a6] bg-white/40 p-4">
-                    {WORKING_TIMINGS.map(([day, time]) => (
-                      <div key={day} className="grid grid-cols-[92px_1fr] gap-3 text-[15px] leading-6 text-[#261a10] sm:grid-cols-[110px_1fr]">
-                        <span className="font-semibold">{day}</span>
-                        <span>{time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+      </section>
 
-          {LOCATION_MAPS.map((location) => (
-            <ScrollReveal key={location.title}>
-              <article>
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="flex items-center gap-2 text-2xl font-black"><MapPin className="h-5 w-5 text-[#b86654]" /> {location.title}</h2>
-                  <a href={location.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-black uppercase tracking-[0.08em] text-[#f36b5b] hover:underline">
-                    Open in Maps <ArrowRight className="h-4 w-4" />
-                  </a>
-                </div>
-                <div className="grid gap-5 lg:grid-cols-[0.38fr_0.62fr]">
-                  <Image
-                    src={location.routeImage}
-                    alt={location.routeAlt}
-                    width={900}
-                    height={620}
-                    className="w-full border border-[#ece5db] bg-white object-contain"
-                  />
-                  <iframe
-                    title={location.title}
-                    src={location.embedUrl}
-                    className="h-96 w-full border border-[#ece5db]"
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                </div>
-              </article>
-            </ScrollReveal>
-          ))}
+      <section className="pvg-contact-maps" aria-labelledby="contact-map-heading">
+        <div className="pvg-contact-maps-inner">
+          <ScrollReveal>
+            <article className="pvg-contact-map-block">
+              <div className="section-head !mb-6">
+                <h2 className="section-title" id="contact-map-heading">
+                  Saket Showroom — Directions
+                </h2>
+                <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+              </div>
+              <div className="pvg-contact-map-actions">
+                <a href={DELHI_MAP_URL} target="_blank" rel="noreferrer" className="pvg-contact-link">
+                  Open in Maps <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+              <div className="pvg-contact-map-grid">
+                <Image
+                  src="/legacy/contact/delhi-location-map.jpg"
+                  alt="Route map to the Saket retail outlet at MGF Metropolitan Mall"
+                  width={900}
+                  height={620}
+                  className="pvg-contact-map-route"
+                />
+                <iframe
+                  title="Saket showroom map"
+                  src={DELHI_MAP_EMBED}
+                  className="pvg-contact-map-embed"
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </article>
+          </ScrollReveal>
         </div>
       </section>
     </main>

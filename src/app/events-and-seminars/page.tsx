@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import type { EventVideo, EventVideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import { VideoRow } from '@/components/events/VideoRow';
+import './events-page.css';
 
 export const metadata: Metadata = {
   title: 'Events and Seminars | Pure Vedic Gems Videos',
@@ -17,6 +17,61 @@ export const revalidate = 300;
 const CATEGORIES_PER_PAGE = 5;
 
 type CategoryWithVideos = EventVideoCategory & { videos: EventVideo[] };
+
+function Pagination({ currentPage, totalPages }: { currentPage: number; totalPages: number }) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="mt-16 flex items-center justify-center gap-2">
+      {currentPage > 1 ? (
+        <Link
+          href={`?page=${currentPage - 1}`}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8bd75] text-[#6b3b23] transition-colors hover:bg-[#b86654] hover:text-white"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
+      ) : null}
+      {Array.from({ length: totalPages }, (_, index) => {
+        const pageNumber = index + 1;
+        if (totalPages > 7) {
+          if (pageNumber !== 1 && pageNumber !== totalPages && Math.abs(pageNumber - currentPage) > 2) {
+            if (pageNumber === 2 || pageNumber === totalPages - 1) {
+              return (
+                <span key={pageNumber} className="px-1 text-[#6b3b23]">
+                  ...
+                </span>
+              );
+            }
+            return null;
+          }
+        }
+        return (
+          <Link
+            key={pageNumber}
+            href={`?page=${pageNumber}`}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+              pageNumber === currentPage
+                ? 'bg-[#a37c44] text-white'
+                : 'border border-[#e0d6c8] text-[#a37c44] hover:bg-[#f0eadd]'
+            }`}
+          >
+            {pageNumber}
+          </Link>
+        );
+      })}
+      {currentPage < totalPages ? (
+        <Link
+          href={`?page=${currentPage + 1}`}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8bd75] text-[#6b3b23] transition-colors hover:bg-[#b86654] hover:text-white"
+          aria-label="Next page"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
 
 export default async function EventsAndSeminarsPage({
   searchParams,
@@ -48,81 +103,43 @@ export default async function EventsAndSeminarsPage({
   );
 
   return (
-    <>
-      {/* Hero */}
-      <section className="bg-secondary/30 pt-14 pb-4 md:pt-18 md:pb-6">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <ScrollReveal>
-            <span className="font-body text-xs font-semibold uppercase tracking-[5px] text-accent">
-              Sacred Ceremonies
-            </span>
-            <h1 className="mt-10 font-heading text-3xl font-bold text-primary md:text-4xl lg:text-5xl">
+    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
+      <section className="px-4 pb-8 pt-10 sm:px-6 lg:pt-14" aria-labelledby="events-page-heading">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-0 flex flex-col items-center justify-center">
+            <h1 className="section-title" id="events-page-heading">
               Events &amp; Seminars
             </h1>
-            <OrnamentalDivider className="mx-auto mt-3 max-w-sm" />
-          </ScrollReveal>
+            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
+              Watch ceremonies, seminars, yagyas, and spiritual gatherings from Pure Vedic Gems.
+            </p>
+            <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+          </div>
         </div>
       </section>
 
-      {/* Videos */}
-      <section className="bg-background pt-8 pb-16 md:pt-10 md:pb-20">
-        <div className="mx-auto max-w-7xl px-6">
-          {allCategories.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">No event videos are published yet.</p>
-          ) : (
-            <>
-              <div className="space-y-12">
-                {categories.map((category: CategoryWithVideos) => (
-                  <ScrollReveal key={category.id}>
-                    <section className="rounded-sm border border-border bg-card p-4 shadow-sm md:p-6">
-                      <div className="mb-5 border-b border-border pb-5">
-                        <h2 className="font-heading text-xl font-semibold text-primary md:text-2xl">{category.title}</h2>
-                      </div>
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8" aria-label="Event video categories">
+        {allCategories.length === 0 ? (
+          <p className="pvg-events-empty">No event videos are published yet.</p>
+        ) : (
+          <>
+            <div className="space-y-10">
+              {categories.map((category: CategoryWithVideos) => (
+                <ScrollReveal key={category.id}>
+                  <section className="pvg-events-category-card p-4 md:p-6">
+                    <div className="pvg-events-category-head">
+                      <h2 className="pvg-events-category-title">{category.title}</h2>
+                    </div>
+                    <VideoRow videos={category.videos} />
+                  </section>
+                </ScrollReveal>
+              ))}
+            </div>
 
-                      <VideoRow videos={category.videos} />
-                    </section>
-                  </ScrollReveal>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-12 flex items-center justify-center gap-2">
-                  {safePage > 1 && (
-                    <Link
-                      href={`?page=${safePage - 1}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-border text-primary hover:bg-accent/10"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Link>
-                  )}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <Link
-                      key={p}
-                      href={`?page=${p}`}
-                      className={`inline-flex h-9 w-9 items-center justify-center rounded-sm border text-sm font-medium transition-colors ${
-                        p === safePage
-                          ? 'border-accent bg-accent text-accent-foreground'
-                          : 'border-border text-primary hover:bg-accent/10'
-                      }`}
-                    >
-                      {p}
-                    </Link>
-                  ))}
-                  {safePage < totalPages && (
-                    <Link
-                      href={`?page=${safePage + 1}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-border text-primary hover:bg-accent/10"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            <Pagination currentPage={safePage} totalPages={totalPages} />
+          </>
+        )}
       </section>
-    </>
+    </main>
   );
 }

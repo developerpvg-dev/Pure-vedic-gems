@@ -1,0 +1,31 @@
+/* Events & seminars — matches testimonials / contact typography */
+
+.pvg-events-category-card {
+  border: 1px solid #ede6d5;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(44, 4, 4, 0.06);
+}
+
+.pvg-events-category-head {
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #ede6d5;
+  padding-bottom: 1rem;
+}
+
+.pvg-events-category-title {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: #2c0404;
+}
+
+.pvg-events-empty {
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #6b5b4e;
+}

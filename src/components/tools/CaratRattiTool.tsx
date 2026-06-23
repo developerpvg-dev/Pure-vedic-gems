@@ -28,39 +28,39 @@ export function CaratRattiTool() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_0.85fr]">
-      <section className="border border-brand-border bg-brand-surface p-5 md:p-7">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gold-light text-brand-primary">
-            <Scale className="h-5 w-5" />
+    <div className="pvg-tool-layout grid gap-6 lg:grid-cols-[1fr_0.85fr]">
+      <section className="pvg-tool-card p-5 md:p-7">
+        <div className="mb-5 flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#fdf3e7] text-[#7a1515]">
+            <Scale className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="font-heading text-2xl text-brand-primary">Carat to Ratti Converter</h2>
-            <p className="text-sm text-brand-muted">Using 1 carat = 1.1 ratti.</p>
+            <h2 className="pvg-tool-card-title">Carat to Ratti Converter</h2>
+            <p className="pvg-tool-card-sub">Using 1 carat = 1.1 ratti.</p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-end">
           <label className="block">
-            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Carat</span>
+            <span className="pvg-tool-label">Carat</span>
             <input
               value={carat}
               onChange={(event) => updateCarat(event.target.value)}
               inputMode="decimal"
-              className="h-14 w-full border border-brand-border bg-brand-bg px-4 text-lg font-semibold text-brand-primary outline-none focus:border-brand-accent"
+              className="pvg-tool-input text-lg font-semibold"
               placeholder="1.00"
             />
           </label>
-          <div className="hidden pb-4 text-brand-muted md:block">
+          <div className="hidden justify-center pb-3 text-[#6b5b4e] md:flex" aria-hidden="true">
             <ArrowRightLeft className="h-5 w-5" />
           </div>
           <label className="block">
-            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Ratti</span>
+            <span className="pvg-tool-label">Ratti</span>
             <input
               value={ratti}
               onChange={(event) => updateRatti(event.target.value)}
               inputMode="decimal"
-              className="h-14 w-full border border-brand-border bg-brand-bg px-4 text-lg font-semibold text-brand-primary outline-none focus:border-brand-accent"
+              className="pvg-tool-input text-lg font-semibold"
               placeholder="1.10"
             />
           </label>
@@ -68,22 +68,17 @@ export function CaratRattiTool() {
 
         <div className="mt-5 flex flex-wrap gap-2">
           {quickValues.map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => updateCarat(String(value))}
-              className="border border-brand-border px-3 py-2 text-xs font-bold text-brand-primary transition hover:border-brand-accent hover:text-brand-accent"
-            >
+            <button key={value} type="button" onClick={() => updateCarat(String(value))} className="pvg-tool-chip">
               {value} ct
             </button>
           ))}
         </div>
       </section>
 
-      <aside className="border border-brand-border bg-brand-bg-alt p-5 md:p-7">
-        <p className="text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Buying Note</p>
-        <h3 className="mt-3 font-heading text-xl text-brand-primary">Use weight with context</h3>
-        <p className="mt-3 text-sm leading-7 text-brand-muted">
+      <aside className="pvg-tool-card-alt p-5 md:p-7">
+        <p className="pvg-tool-label">Buying Note</p>
+        <h3 className="pvg-tool-card-title" style={{ marginTop: '0.5rem' }}>Use weight with context</h3>
+        <p className="mt-3 text-sm leading-7 text-[#5a5043]">
           Ratti is used in many Indian gemstone conversations, while certificates usually mention carat. Always compare stone quality, treatment, origin, and setting cost along with weight.
         </p>
       </aside>

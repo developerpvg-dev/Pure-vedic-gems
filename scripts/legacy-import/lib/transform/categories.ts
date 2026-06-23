@@ -79,6 +79,7 @@ const TITLE_FALLBACK_PATTERNS: Array<[RegExp, NavratnaSubcategory, string, strin
   [/\byellow\s*sapphire\b|\bpukhraj\b/i, 'yellow-sapphire', 'Yellow Sapphire (Pukhraj)', 'Jupiter'],
   [/\bblue\s*sapphire\b|\bneelam\b/i, 'blue-sapphire', 'Blue Sapphire (Neelam)', 'Saturn'],
   [/\bwhite\s*sapphire\b|\bshvet\s*pukhraj\b|\bsafed\s*pukhraj\b/i, 'white-sapphire', 'White Sapphire (Shvet Pukhraj)', 'Venus'],
+  [/\bpink\s*sapphire\b/i, 'white-sapphire', 'Pink Sapphire', 'Venus'],
   [/\bred\s*coral\b|\bmoonga\b|\bmunga\b/i, 'red-coral', 'Red Coral (Moonga)', 'Mars'],
   [/\bcat'?s?\s*eye\b|\blehsunia\b|\blasunia\b/i, 'cats-eye', "Cat's Eye (Lehsunia)", 'Ketu'],
   [/\bemerald\b|\bpanna\b/i, 'emerald', 'Emerald (Panna)', 'Mercury'],

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { Flame, ChevronRight, CreditCard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import type { YagyaBooking } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -63,25 +64,16 @@ export default async function AccountYagyasPage() {
   const bookings = (data ?? []) as YagyaBooking[];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[3px]" style={{ color: 'var(--pvg-accent)' }}>
-            Account Dashboard
-          </p>
-          <h1 className="font-heading text-3xl md:text-4xl" style={{ color: 'var(--pvg-primary)' }}>My Yagyas</h1>
-          <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--pvg-muted)' }}>
-            Track your yagya bookings, Razorpay payment reference, muhurat, and service status.
-          </p>
-        </div>
-        <Link
-          href="/vedic-yagyas"
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition hover:-translate-y-0.5"
-          style={{ background: 'var(--pvg-primary)', color: 'var(--pvg-bg)' }}
-        >
-          <Flame className="h-4 w-4" /> Book a Yagya
-        </Link>
-      </div>
+    <div className="pvg-account-stack">
+      <AccountPageHeader
+        title="My Yagyas"
+        subtitle="Track your yagya bookings, Razorpay payment reference, muhurat, and service status."
+        action={(
+          <Link href="/vedic-yagyas" className="pvg-account-btn">
+            <Flame className="h-4 w-4" aria-hidden="true" /> Book a Yagya
+          </Link>
+        )}
+      />
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -90,24 +82,24 @@ export default async function AccountYagyasPage() {
       )}
 
       {bookings.length === 0 ? (
-        <div className="rounded-2xl border px-6 py-16 text-center" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}>
-          <Flame className="mx-auto h-12 w-12 opacity-40" style={{ color: 'var(--pvg-muted)' }} />
-          <p className="mt-4 font-semibold" style={{ color: 'var(--pvg-primary)' }}>No yagya bookings yet</p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--pvg-muted)' }}>Choose a yagya and complete payment to see it here.</p>
-          <Link href="/vedic-yagyas" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--pvg-accent)' }}>
-            Browse yagyas <ChevronRight className="h-4 w-4" />
+        <div className="pvg-account-card pvg-account-empty">
+          <Flame className="pvg-account-empty-icon h-12 w-12" aria-hidden="true" />
+          <p className="pvg-account-empty-title">No yagya bookings yet</p>
+          <p className="pvg-account-empty-copy">Choose a yagya and complete payment to see it here.</p>
+          <Link href="/vedic-yagyas" className="pvg-account-card-link mt-5 inline-flex">
+            Browse yagyas <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       ) : (
         <div className="space-y-4">
           {bookings.map((booking) => (
-            <article key={booking.id} className="rounded-2xl border p-5 md:p-6" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}>
+            <article key={booking.id} className="pvg-account-card pvg-account-card-pad">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="font-heading text-xl" style={{ color: 'var(--pvg-primary)' }}>
+                  <h2 className="pvg-account-card-title text-lg">
                     {booking.yagya_title_snapshot || 'Vedic Yagya'}
                   </h2>
-                  <p className="mt-1 text-xs" style={{ color: 'var(--pvg-muted)' }}>
+                  <p className="pvg-account-row-meta">
                     {booking.booking_number} · Booked on {formatDate(booking.created_at)}
                   </p>
                 </div>
@@ -125,8 +117,8 @@ export default async function AccountYagyasPage() {
               </div>
 
               {(booking.scheduled_date || booking.muhurat_note || booking.recording_link) && (
-                <div className="mt-5 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-bg)' }}>
-                  <p className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Yagya Schedule</p>
+                <div className="pvg-account-info-box mt-5 text-sm">
+                  <p className="pvg-account-row-title">Yagya Schedule</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <Info label="Muhurat Date" value={formatDate(booking.scheduled_date)} />
                     <Info label="Muhurat Note" value={booking.muhurat_note || '-'} />
@@ -135,14 +127,14 @@ export default async function AccountYagyasPage() {
                 </div>
               )}
 
-              <div className="mt-5 grid gap-3 rounded-xl border px-4 py-3 text-xs sm:grid-cols-2" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-bg)' }}>
+              <div className="pvg-account-info-box mt-5 grid gap-3 text-xs sm:grid-cols-2">
                 <div>
-                  <span className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Razorpay Order:</span>{' '}
-                  <span style={{ color: 'var(--pvg-muted)' }}>{booking.razorpay_order_id || '-'}</span>
+                  <span className="font-semibold text-[#2c0404]">Razorpay Order:</span>{' '}
+                  <span className="text-[#6b5b4e]">{booking.razorpay_order_id || '-'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Razorpay Payment:</span>{' '}
-                  <span style={{ color: 'var(--pvg-muted)' }}>{booking.razorpay_payment_id || '-'}</span>
+                  <span className="font-semibold text-[#2c0404]">Razorpay Payment:</span>{' '}
+                  <span className="text-[#6b5b4e]">{booking.razorpay_payment_id || '-'}</span>
                 </div>
               </div>
             </article>
@@ -156,10 +148,8 @@ export default async function AccountYagyasPage() {
 function Info({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
   return (
     <div>
-      <p className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--pvg-muted)' }}>
-        {icon}{label}
-      </p>
-      <p className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>{value}</p>
+      <p className="pvg-account-info-label">{icon}{label}</p>
+      <p className="pvg-account-info-value">{value}</p>
     </div>
   );
 }

@@ -102,87 +102,87 @@ export function GemRecommendationTool() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <form onSubmit={submit} className="border border-brand-border bg-brand-surface p-5 md:p-7">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gold-light text-brand-primary">
-            <Sparkles className="h-5 w-5" />
+    <div className="pvg-tool-layout grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      <form onSubmit={submit} className="pvg-tool-card p-5 md:p-7">
+        <div className="mb-5 flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#fdf3e7] text-[#7a1515]">
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="font-heading text-2xl text-brand-primary">Gem Recommendation</h2>
-            <p className="text-sm text-brand-muted">A preliminary shortlist before expert review.</p>
+            <h2 className="pvg-tool-card-title">Gem Recommendation</h2>
+            <p className="pvg-tool-card-sub">A preliminary shortlist before expert review.</p>
           </div>
         </div>
 
         <div className="grid gap-4">
           <label>
-            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Date of Birth</span>
-            <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="h-12 w-full border border-brand-border bg-brand-bg px-3 text-sm outline-none focus:border-brand-accent" />
+            <span className="pvg-tool-label">Date of Birth</span>
+            <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="pvg-tool-input" />
           </label>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label>
-              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Birth Time</span>
-              <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} className="h-12 w-full border border-brand-border bg-brand-bg px-3 text-sm outline-none focus:border-brand-accent" />
+              <span className="pvg-tool-label">Birth Time</span>
+              <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} className="pvg-tool-input" />
             </label>
             <label>
-              <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Budget Ceiling</span>
-              <input value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} inputMode="numeric" placeholder="INR" className="h-12 w-full border border-brand-border bg-brand-bg px-3 text-sm outline-none focus:border-brand-accent" />
+              <span className="pvg-tool-label">Budget Ceiling</span>
+              <input value={budgetMax} onChange={(event) => setBudgetMax(event.target.value)} inputMode="numeric" placeholder="INR" className="pvg-tool-input" />
             </label>
           </div>
           <label>
-            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Birth Place</span>
-            <input value={birthPlace} onChange={(event) => setBirthPlace(event.target.value)} placeholder="City, country" className="h-12 w-full border border-brand-border bg-brand-bg px-3 text-sm outline-none focus:border-brand-accent" />
+            <span className="pvg-tool-label">Birth Place</span>
+            <input value={birthPlace} onChange={(event) => setBirthPlace(event.target.value)} placeholder="City, country" className="pvg-tool-input" />
           </label>
           <label>
-            <span className="mb-2 block text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Primary Purpose</span>
-            <select value={purpose} onChange={(event) => setPurpose(event.target.value)} className="h-12 w-full border border-brand-border bg-brand-bg px-3 text-sm outline-none focus:border-brand-accent">
+            <span className="pvg-tool-label">Primary Purpose</span>
+            <select value={purpose} onChange={(event) => setPurpose(event.target.value)} className="pvg-tool-input">
               {purposes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </label>
         </div>
 
-        <button type="submit" disabled={isLoading} className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 bg-brand-primary px-5 text-xs font-bold uppercase tracking-[1.5px] text-brand-bg transition hover:bg-brand-accent hover:text-brand-primary disabled:opacity-60">
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        <button type="submit" disabled={isLoading} className="pvg-tool-btn mt-5 w-full">
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
           Generate Shortlist
         </button>
-        {error ? <p className="mt-3 text-sm font-semibold text-red-700" role="status">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm font-semibold text-[#b53a2f]" role="alert">{error}</p> : null}
       </form>
 
-      <section className="border border-brand-border bg-brand-bg-alt p-5 md:p-7">
+      <section className="pvg-tool-card-alt p-5 md:p-7">
         {result ? (
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Preliminary Result</p>
-            <h3 className="mt-3 font-heading text-3xl text-brand-primary">
+            <p className="pvg-tool-label">Preliminary Result</p>
+            <h3 className="pvg-tool-card-title" style={{ marginTop: '0.5rem' }}>
               {result.rashi ? `${result.rashi} shortlist` : 'Purpose-led shortlist'}
             </h3>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[1.5px] text-brand-muted">Primary gems</p>
-                <ul className="mt-2 space-y-2 text-sm font-semibold text-brand-primary">
+                <p className="pvg-tool-label">Primary gems</p>
+                <ul className="mt-2 space-y-2 text-sm font-semibold text-[#2c0404]">
                   {result.primaryGemNames.map((gem) => <li key={gem}>{gem}</li>)}
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[1.5px] text-brand-muted">Alternatives</p>
-                <ul className="mt-2 space-y-2 text-sm text-brand-muted">
+                <p className="pvg-tool-label">Alternatives</p>
+                <ul className="mt-2 space-y-2 text-sm text-[#5a5043]">
                   {result.supportingGemNames.map((gem) => <li key={gem}>{gem}</li>)}
                 </ul>
               </div>
             </div>
-            <div className="mt-5 space-y-3 text-sm leading-7 text-brand-muted">
+            <div className="mt-5 space-y-3 text-sm leading-7 text-[#6b5b4e]">
               {result.notes.map((note) => <p key={note}>{note}</p>)}
             </div>
-            <p className="mt-5 border-l-2 border-brand-accent pl-4 text-sm leading-7 text-brand-primary">{result.advisory}</p>
+            <p className="mt-5 border-l-2 border-[#b8861e] pl-4 text-sm leading-7 text-[#2c0404]">{result.advisory}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href={result.landingHref} className="bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-[1.5px] text-brand-bg">View Shortlist</Link>
-              <Link href="/consultation" className="border border-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-[1.5px] text-brand-primary">Book Consultation</Link>
+              <Link href={result.landingHref} className="pvg-tool-btn">View Shortlist</Link>
+              <Link href="/consultation" className="pvg-tool-btn-outline">Book Consultation</Link>
             </div>
           </div>
         ) : (
-          <div className="flex h-full min-h-80 flex-col justify-center">
-            <p className="text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">How it works</p>
-            <h3 className="mt-3 font-heading text-3xl text-brand-primary">Purpose first, chart-aware next</h3>
-            <p className="mt-4 text-sm leading-7 text-brand-muted">
+          <div className="flex min-h-64 flex-col justify-center sm:min-h-80">
+            <p className="pvg-tool-label">How it works</p>
+            <h3 className="pvg-tool-card-title" style={{ marginTop: '0.5rem' }}>Purpose first, chart-aware next</h3>
+            <p className="mt-4 text-sm leading-7 text-[#5a5043]">
               The tool combines your purpose with a lightweight date-based rashi signal. It does not replace a full Vedic chart reading, but it gives a structured place to begin.
             </p>
           </div>

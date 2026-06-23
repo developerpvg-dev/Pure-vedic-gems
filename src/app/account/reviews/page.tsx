@@ -1,12 +1,9 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { ReviewSubmissionPanel, type ReviewEligibleItem } from '@/components/account/ReviewSubmissionPanel';
+import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import { parseOrderItems, isReviewEligibleStatus } from '@/lib/customer/orders';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { Order, Review } from '@/lib/types/database';
-
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
@@ -48,15 +45,11 @@ export default async function AccountReviewsPage() {
     .filter((item): item is ReviewEligibleItem => item !== null);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link href="/account" className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--pvg-muted)] hover:underline">
-          <ChevronLeft className="h-4 w-4" /> Back to Account
-        </Link>
-        <h1 className="font-heading text-3xl text-[var(--pvg-primary)] md:text-4xl">My Reviews</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--pvg-muted)]">Submit verified purchase reviews after delivery. Public ratings are shown only after moderation.</p>
-        <OrnamentalDivider className="mt-4 max-w-[200px]" />
-      </div>
+    <div className="pvg-account-stack">
+      <AccountPageHeader
+        title="My Reviews"
+        subtitle="Submit verified purchase reviews after delivery. Public ratings are shown only after moderation."
+      />
       <ReviewSubmissionPanel items={eligibleItems} />
     </div>
   );

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
+import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
@@ -57,11 +58,7 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
     if (filters.featured) query = query.eq('featured', true);
     if (filters.directors_pick) query = query.eq('is_directors_pick', true);
     if (filters.product_type) query = query.eq('product_type', filters.product_type);
-    if (filters.availability_status) {
-      query = query.eq('availability_status', filters.availability_status);
-    } else {
-      query = query.eq('in_stock', true);
-    }
+    query = applyShopAvailabilityFilter(query, filters);
     if (filters.sub_category) query = query.eq('sub_category', filters.sub_category);
     if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);
     if (filters.max_price !== undefined) query = query.lte('price', filters.max_price);
@@ -83,15 +80,7 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
       );
     }
 
-    if (filters.directors_pick && filters.sort_by === 'newest') {
-      query = query.order('display_order', { ascending: true }).order('created_at', { ascending: false });
-    } else {
-      const sortColumn =
-        filters.sort_by === 'price' ? 'price' :
-        filters.sort_by === 'carat' ? 'carat_weight' : 'created_at';
-      const ascending = filters.sort_order === 'asc';
-      query = query.order(sortColumn, { ascending });
-    }
+    query = applyShopListingSort(query, filters);
 
     const from = (page - 1) * perPage;
     const to = from + perPage - 1;

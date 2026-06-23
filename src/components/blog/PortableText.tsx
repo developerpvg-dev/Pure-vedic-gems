@@ -47,23 +47,18 @@ function renderMarks(span: Span, markDefs: MarkDef[] = []) {
           href={def.href}
           target={def.href.startsWith('http') ? '_blank' : undefined}
           rel={def.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-          className="text-amber-700 underline underline-offset-2 hover:text-amber-900"
         >
           {node}
         </a>
       );
     } else if (mark === 'strong') {
-      node = <strong className="font-semibold">{node}</strong>;
+      node = <strong>{node}</strong>;
     } else if (mark === 'em') {
       node = <em>{node}</em>;
     } else if (mark === 'underline') {
       node = <u>{node}</u>;
     } else if (mark === 'code') {
-      node = (
-        <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm text-amber-800">
-          {node}
-        </code>
-      );
+      node = <code>{node}</code>;
     }
   }
   return node;
@@ -92,21 +87,17 @@ function renderBlock(block: Block) {
   const headingId = slugifyHeading(getPlainText(block.children));
   switch (block.style) {
     case 'h1':
-      return <h1 id={headingId} className="mb-4 mt-8 scroll-mt-28 text-3xl font-bold text-gray-900">{children}</h1>;
+      return <h1 id={headingId}>{children}</h1>;
     case 'h2':
-      return <h2 id={headingId} className="mb-3 mt-7 scroll-mt-28 text-2xl font-bold text-gray-900">{children}</h2>;
+      return <h2 id={headingId}>{children}</h2>;
     case 'h3':
-      return <h3 id={headingId} className="mb-2 mt-6 scroll-mt-28 text-xl font-semibold text-gray-900">{children}</h3>;
+      return <h3 id={headingId}>{children}</h3>;
     case 'h4':
-      return <h4 id={headingId} className="mb-2 mt-5 scroll-mt-28 text-lg font-semibold text-gray-800">{children}</h4>;
+      return <h4 id={headingId}>{children}</h4>;
     case 'blockquote':
-      return (
-        <blockquote className="my-5 border-l-4 border-amber-400 bg-amber-50/50 py-3 pl-4 pr-3 text-gray-700 italic">
-          {children}
-        </blockquote>
-      );
+      return <blockquote>{children}</blockquote>;
     default:
-      return <p className="mb-4 leading-relaxed text-gray-700">{children}</p>;
+      return <p>{children}</p>;
   }
 }
 
@@ -141,10 +132,7 @@ export function PortableText({ value }: { value: unknown[] | undefined | null })
       {grouped.map((item, i) => {
         if ('items' in item && item._type === 'list') {
           const Tag = item.listItem === 'number' ? 'ol' : 'ul';
-          const listClass =
-            item.listItem === 'number'
-              ? 'mb-4 list-decimal space-y-1 pl-6 text-gray-700'
-              : 'mb-4 list-disc space-y-1 pl-6 text-gray-700';
+          const listClass = item.listItem === 'number' ? 'list-decimal' : 'list-disc';
           return (
             <Tag key={i} className={listClass}>
               {item.items.map((li, j) => (
@@ -164,19 +152,14 @@ export function PortableText({ value }: { value: unknown[] | undefined | null })
             .auto('format')
             .url();
           return (
-            <figure key={block._key ?? i} className="my-6">
+            <figure key={block._key ?? i}>
               <Image
                 src={src}
                 alt={block.alt || ''}
                 width={800}
                 height={450}
-                className="rounded-lg"
               />
-              {block.caption && (
-                <figcaption className="mt-2 text-center text-sm text-gray-500">
-                  {block.caption}
-                </figcaption>
-              )}
+              {block.caption && <figcaption>{block.caption}</figcaption>}
             </figure>
           );
         }

@@ -1,0 +1,88 @@
+/* Lab certificate — matches testimonials / contact typography */
+
+.pvg-lab-trust-box {
+  display: flex;
+  max-width: 42rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 1.5rem auto 0;
+  border: 1px solid #e6d3a6;
+  border-radius: 10px;
+  background: #fdf3e7;
+  padding: 1rem 1.15rem;
+  text-align: left;
+}
+
+.pvg-lab-trust-box svg {
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+  color: #b8861e;
+}
+
+.pvg-lab-trust-box p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5a5043;
+}
+
+.pvg-lab-cert-card {
+  overflow: hidden;
+  border: 1px solid #ede6d5;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(44, 4, 4, 0.06);
+  transition: box-shadow 0.25s ease;
+}
+
+.pvg-lab-cert-card:hover {
+  box-shadow: 0 14px 40px rgba(44, 4, 4, 0.1);
+}
+
+.pvg-lab-cert-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-lab-cert-title {
+  margin: 0.5rem 0 0;
+  min-height: 3.25rem;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(18px, 1.8vw, 22px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #2c0404;
+}
+
+.pvg-lab-cert-desc {
+  margin: 0.75rem 0 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #6b5b4e;
+}
+
+.pvg-lab-cert-link {
+  margin-top: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid #7a1515;
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a1515;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pvg-lab-cert-link:hover {
+  background: #7a1515;
+  color: #fff;
+}

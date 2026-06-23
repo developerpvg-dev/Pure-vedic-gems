@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Package, ChevronLeft } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import { ReorderButton } from '@/components/account/ReorderButton';
 import type { Order } from '@/lib/types/database';
 
@@ -50,54 +50,23 @@ export default async function OrdersPage() {
   const orders = (rawOrders ?? []) as Order[];
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <Link
-          href="/account"
-          className="mb-4 inline-flex items-center gap-1 text-sm hover:underline"
-          style={{ color: 'var(--pvg-muted)' }}
-        >
-          <ChevronLeft className="h-4 w-4" /> Back to Account
-        </Link>
-        <h1
-          className="font-heading text-3xl md:text-4xl"
-          style={{ color: 'var(--pvg-primary)' }}
-        >
-          My Orders
-        </h1>
-        <OrnamentalDivider className="mt-4 max-w-50" />
-      </div>
+    <div className="pvg-account-stack">
+      <AccountPageHeader
+        title="My Orders"
+        subtitle="Track and view your complete order history."
+      />
 
-      {/* Order list */}
       {!orders || orders.length === 0 ? (
-        <div
-          className="rounded-2xl border py-20 text-center"
-          style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}
-        >
-          <Package
-            className="mx-auto mb-4 h-14 w-14"
-            style={{ color: 'var(--pvg-muted)', opacity: 0.35 }}
-          />
-          <h2
-            className="font-heading text-xl"
-            style={{ color: 'var(--pvg-primary)' }}
-          >
-            No orders yet
-          </h2>
-          <p className="mt-2 text-sm" style={{ color: 'var(--pvg-muted)' }}>
-            Your order history will appear here once you make a purchase.
-          </p>
-          <Link
-            href="/shop"
-            className="mt-6 inline-block rounded-lg px-7 py-3 text-sm font-bold uppercase tracking-widest transition-all hover:-translate-y-0.5"
-            style={{ background: 'var(--pvg-primary)', color: 'var(--pvg-bg)' }}
-          >
+        <div className="pvg-account-card pvg-account-empty">
+          <Package className="pvg-account-empty-icon h-14 w-14" aria-hidden="true" />
+          <h2 className="pvg-account-empty-title">No orders yet</h2>
+          <p className="pvg-account-empty-copy">Your order history will appear here once you make a purchase.</p>
+          <Link href="/shop" className="pvg-account-btn mt-6">
             Explore Gemstones
           </Link>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {orders.map((order) => {
             const items = Array.isArray(order.items) ? order.items : [];
             const statusInfo =
@@ -106,27 +75,11 @@ export default async function OrdersPage() {
             const stepIdx = getStatusStep(order.status);
 
             return (
-              <div
-                key={order.id}
-                className="overflow-hidden rounded-2xl border"
-                style={{
-                  borderColor: 'var(--pvg-border)',
-                  background: 'var(--pvg-surface)',
-                }}
-              >
-                {/* Order card header */}
-                <div
-                  className="flex flex-wrap items-center justify-between gap-3 px-6 py-4"
-                  style={{ background: 'var(--pvg-bg-alt)' }}
-                >
+              <div key={order.id} className="pvg-account-card overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ede6d5] bg-[#faf8f4] px-5 py-4 md:px-6">
                   <div>
-                    <p
-                      className="font-heading text-lg"
-                      style={{ color: 'var(--pvg-primary)' }}
-                    >
-                      {order.order_number}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--pvg-muted)' }}>
+                    <p className="pvg-account-card-title text-lg">{order.order_number}</p>
+                    <p className="pvg-account-row-meta">
                       Placed on{' '}
                       {new Date(order.created_at).toLocaleDateString('en-IN', {
                         day: 'numeric',

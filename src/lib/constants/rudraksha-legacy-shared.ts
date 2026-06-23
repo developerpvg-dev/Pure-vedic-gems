@@ -32,4 +32,5 @@ export const RUDRAKSHA_COLLECTION_LINKS: { label: string; href: string }[] = [
   { label: 'Ganesh Rudraksha', href: '/shop/rudraksha/ganesh-rudraksha' },
   { label: 'Nir Mukhi Rudraksha', href: '/shop/rudraksha/nir-mukhi' },
   { label: 'Garbh Gauri', href: '/shop/rudraksha/garbh-gauri' },
+  { label: 'Sawar Rudraksha', href: '/shop/rudraksha/sawar-rudraksha' },
 ];

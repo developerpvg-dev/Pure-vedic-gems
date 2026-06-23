@@ -5,6 +5,7 @@ import { knownSubcategoryHref, resolveShopCategoryPath, staticShopCategoryParams
 import { productHref } from '@/lib/categories/storefront';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
+import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
@@ -15,12 +16,14 @@ import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbJsonLd, buildMetadata, collectionPageJsonLd, faqJsonLd, itemListJsonLd } from '@/lib/utils/seo';
 import type { SeoLandingPage } from '@/lib/constants/seo-landing-pages';
 import type { ProductCard } from '@/lib/types/product';
+import { RudrakshaCategoryGrid } from '@/components/shop/RudrakshaCategoryGrid';
 
 export const revalidate = 60;
 
 interface ResolvedCategory {
   category?: string;
   sub_category?: string;
+  catalogSubcategories?: string[];
   directorsPick?: boolean;
   label: string;
   desc: string;
@@ -87,19 +90,18 @@ async function CategoryProducts({
       .select(CARD_SELECT, { count: 'exact' })
       .eq('is_active', true);
 
-    if (meta?.category) query = query.eq('category', meta.category);
+    if (meta?.category && !meta?.catalogSubcategories?.length) query = query.eq('category', meta.category);
     if (meta?.sub_category) query = query.eq('sub_category', meta.sub_category);
+    if (meta?.catalogSubcategories?.length) {
+      query = query.in('sub_category', meta.catalogSubcategories);
+    }
     if (!meta?.category && filters.category) query = query.eq('category', filters.category);
     if (!meta?.sub_category && filters.sub_category) query = query.eq('sub_category', filters.sub_category);
     if (meta?.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
     if (meta?.seoLanding?.primaryGemSlugs.length) query = query.in('sub_category', meta.seoLanding.primaryGemSlugs);
     if (filters.featured) query = query.eq('featured', true);
     if (filters.product_type) query = query.eq('product_type', filters.product_type);
-    if (filters.availability_status) {
-      query = query.eq('availability_status', filters.availability_status);
-    } else {
-      query = query.eq('in_stock', true);
-    }
+    query = applyShopAvailabilityFilter(query, filters);
 
     // Additional user-applied filters
     if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);
@@ -122,14 +124,7 @@ async function CategoryProducts({
       );
     }
 
-    if ((meta?.directorsPick || filters.directors_pick) && filters.sort_by === 'newest') {
-      query = query.order('display_order', { ascending: true }).order('created_at', { ascending: false });
-    } else {
-      const sortColumn =
-        filters.sort_by === 'price' ? 'price' :
-        filters.sort_by === 'carat' ? 'carat_weight' : 'created_at';
-      query = query.order(sortColumn, { ascending: filters.sort_order === 'asc' });
-    }
+    query = applyShopListingSort(query, filters, { directorsPick: meta?.directorsPick });
 
     const perPage = filters.per_page;
     const page = filters.page;
@@ -141,8 +136,9 @@ async function CategoryProducts({
   }
 
   const facets = await getShopFilterOptions({
-    category: meta?.category,
-    subCategory: meta?.sub_category,
+    category: meta?.catalogSubcategories?.length ? undefined : meta?.category,
+    subCategory: meta?.catalogSubcategories?.length ? undefined : meta?.sub_category,
+    subCategories: meta?.catalogSubcategories,
     directorsPick: meta?.directorsPick,
     primaryGemSlugs: meta?.seoLanding?.primaryGemSlugs,
   }, filters);
@@ -152,6 +148,9 @@ async function CategoryProducts({
   return (
     <>
       {meta?.seoLanding ? <SeoLandingHeader landing={meta.seoLanding} total={total} /> : <CategoryHeader label={label} desc={desc} />}
+      {meta?.category === 'rudraksha' && !meta?.sub_category && !meta?.catalogSubcategories?.length ? (
+        <RudrakshaCategoryGrid />
+      ) : null}
       <FilterBar
         total={total}
         facets={facets}

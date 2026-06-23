@@ -1,4 +1,10 @@
-import { RUDRAKSHA_MUKHI_IMAGE_BY_SLUG } from '@/lib/constants/rudraksha-category-images';
+import { RUDRAKSHA_MUKHI_IMAGE_BY_SLUG, rudrakshaMukhiImage } from '@/lib/constants/rudraksha-category-images';
+import {
+  RUDRAKSHA_STOREFRONT_SLUGS,
+  rudrakshaSubcategoryLabel,
+} from '@/lib/constants/rudraksha-subcategories';
+import { NAVARATNA_NAV_IMAGE_BY_SLUG } from '@/lib/constants/navaratna-category-images';
+import { UPRATNA_NAV_IMAGE_BY_SLUG } from '@/lib/constants/upratna-category-images';
 
 export type StorefrontCategoryGroupSlug = 'navaratna' | 'upratna' | 'rudraksha' | 'idols' | 'jewelry' | 'malas';
 
@@ -105,15 +111,15 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     label: 'Navaratna Gems',
     href: '/shop/navaratna',
     subcategories: [
-      { slug: 'ruby', label: 'Ruby (Manik)', href: '/shop/ruby', swatch: '#c9142f', image: '/home/navratnaimg/stone1.webp', meta: 'Sun' },
-      { slug: 'pearl', label: 'Pearl (Moti)', href: '/shop/pearl', swatch: '#f5f5f4', image: '/home/navratnaimg/stone2.webp', meta: 'Moon' },
-      { slug: 'red-coral', label: 'Red Coral (Moonga)', href: '/shop/red-coral', swatch: '#e15b3c', image: '/home/navratnaimg/stone7.webp', meta: 'Mars' },
-      { slug: 'emerald', label: 'Emerald (Panna)', href: '/shop/emerald', swatch: '#2e8b57', image: '/home/navratnaimg/stone4.webp', meta: 'Mercury' },
-      { slug: 'yellow-sapphire', label: 'Yellow Sapphire (Pukhraj)', href: '/shop/yellow-sapphire', swatch: '#d4a017', image: '/home/navratnaimg/stone5.webp', meta: 'Jupiter' },
-      { slug: 'diamond', label: 'Diamond (Heera)', href: '/shop/diamond', swatch: '#d8d8d8', image: '/home/navratnaimg/stone6.webp', meta: 'Venus' },
-      { slug: 'blue-sapphire', label: 'Blue Sapphire (Neelam)', href: '/shop/blue-sapphire', swatch: '#1e4f9d', image: '/home/navratnaimg/stone3.webp', meta: 'Saturn' },
-      { slug: 'hessonite', label: 'Hessonite (Gomed)', href: '/shop/hessonite', swatch: '#b7682c', image: '/home/navratnaimg/stone8.webp', meta: 'Rahu' },
-      { slug: 'cats-eye', label: "Cat's Eye (Lehsunia)", href: '/shop/cats-eye', swatch: '#9c8b68', image: '/home/navratnaimg/stone9.webp', meta: 'Ketu' },
+      { slug: 'ruby', label: 'Ruby (Manik)', href: '/shop/ruby', swatch: '#c9142f', image: NAVARATNA_NAV_IMAGE_BY_SLUG.ruby, meta: 'Sun' },
+      { slug: 'pearl', label: 'Pearl (Moti)', href: '/shop/pearl', swatch: '#f5f5f4', image: NAVARATNA_NAV_IMAGE_BY_SLUG.pearl, meta: 'Moon' },
+      { slug: 'red-coral', label: 'Red Coral (Moonga)', href: '/shop/red-coral', swatch: '#e15b3c', image: NAVARATNA_NAV_IMAGE_BY_SLUG['red-coral'], meta: 'Mars' },
+      { slug: 'emerald', label: 'Emerald (Panna)', href: '/shop/emerald', swatch: '#2e8b57', image: NAVARATNA_NAV_IMAGE_BY_SLUG.emerald, meta: 'Mercury' },
+      { slug: 'yellow-sapphire', label: 'Yellow Sapphire (Pukhraj)', href: '/shop/yellow-sapphire', swatch: '#d4a017', image: NAVARATNA_NAV_IMAGE_BY_SLUG['yellow-sapphire'], meta: 'Jupiter' },
+      { slug: 'diamond', label: 'Diamond (Heera)', href: '/shop/diamond', swatch: '#d8d8d8', image: NAVARATNA_NAV_IMAGE_BY_SLUG.diamond, meta: 'Venus' },
+      { slug: 'blue-sapphire', label: 'Blue Sapphire (Neelam)', href: '/shop/blue-sapphire', swatch: '#1e4f9d', image: NAVARATNA_NAV_IMAGE_BY_SLUG['blue-sapphire'], meta: 'Saturn' },
+      { slug: 'hessonite', label: 'Hessonite (Gomed)', href: '/shop/hessonite', swatch: '#b7682c', image: NAVARATNA_NAV_IMAGE_BY_SLUG.hessonite, meta: 'Rahu' },
+      { slug: 'cats-eye', label: "Cat's Eye (Lehsunia)", href: '/shop/cats-eye', swatch: '#9c8b68', image: NAVARATNA_NAV_IMAGE_BY_SLUG['cats-eye'], meta: 'Ketu' },
     ],
   },
   {
@@ -121,32 +127,29 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     label: 'Upratna Gems',
     href: '/shop/upratna',
     subcategories: [
-      { slug: 'opal', label: 'Opal', href: '/shop/opal', swatch: '#FBBFB4' },
-      { slug: 'pitambari', label: 'Pitambari', href: '/shop/pitambari', swatch: '#E0B84C' },
-      { slug: 'turquoise', label: 'Turquoise (Firoza)', href: '/shop/turquoise', swatch: '#3CB2B2' },
-      { slug: 'amethyst', label: 'Amethyst', href: '/shop/amethyst', swatch: '#9B59B6' },
-      { slug: 'moonstone', label: 'Moonstone', href: '/shop/moonstone', swatch: '#C8D8E8' },
-      { slug: 'garnet', label: 'Garnet', href: '/shop/garnet', swatch: '#C0392B' },
-      { slug: 'peridot', label: 'Peridot', href: '/shop/peridot', swatch: '#7EC850' },
-      { slug: 'tanzanite', label: 'Tanzanite', href: '/shop/tanzanite', swatch: '#3B5998' },
-      { slug: 'lapis-lazuli', label: 'Lapis Lazuli', href: '/shop/lapis-lazuli', swatch: '#1F3A8C' },
-      { slug: 'citrine', label: 'Citrine', href: '/shop/citrine', swatch: '#F39C12' },
-      { slug: 'aquamarine', label: 'Aquamarine', href: '/shop/aquamarine', swatch: '#5DADE2' },
+      { slug: 'opal', label: 'Opal', href: '/shop/opal', swatch: '#FBBFB4', image: UPRATNA_NAV_IMAGE_BY_SLUG.opal },
+      { slug: 'pitambari', label: 'Pitambari', href: '/shop/pitambari', swatch: '#E0B84C', image: UPRATNA_NAV_IMAGE_BY_SLUG.pitambari },
+      { slug: 'turquoise', label: 'Turquoise (Firoza)', href: '/shop/turquoise', swatch: '#3CB2B2', image: UPRATNA_NAV_IMAGE_BY_SLUG.turquoise },
+      { slug: 'amethyst', label: 'Amethyst', href: '/shop/amethyst', swatch: '#9B59B6', image: UPRATNA_NAV_IMAGE_BY_SLUG.amethyst },
+      { slug: 'moonstone', label: 'Moonstone', href: '/shop/moonstone', swatch: '#C8D8E8', image: UPRATNA_NAV_IMAGE_BY_SLUG.moonstone },
+      { slug: 'garnet', label: 'Garnet', href: '/shop/garnet', swatch: '#C0392B', image: UPRATNA_NAV_IMAGE_BY_SLUG.garnet },
+      { slug: 'peridot', label: 'Peridot', href: '/shop/peridot', swatch: '#7EC850', image: UPRATNA_NAV_IMAGE_BY_SLUG.peridot },
+      { slug: 'tanzanite', label: 'Tanzanite', href: '/shop/tanzanite', swatch: '#3B5998', image: UPRATNA_NAV_IMAGE_BY_SLUG.tanzanite },
+      { slug: 'lapis-lazuli', label: 'Lapis Lazuli', href: '/shop/lapis-lazuli', swatch: '#1F3A8C', image: UPRATNA_NAV_IMAGE_BY_SLUG['lapis-lazuli'] },
+      { slug: 'citrine', label: 'Citrine', href: '/shop/citrine', swatch: '#F39C12', image: UPRATNA_NAV_IMAGE_BY_SLUG.citrine },
+      { slug: 'aquamarine', label: 'Aquamarine', href: '/shop/aquamarine', swatch: '#5DADE2', image: UPRATNA_NAV_IMAGE_BY_SLUG.aquamarine },
     ],
   },
   {
     slug: 'rudraksha',
     label: 'Rudraksha',
     href: '/shop/rudraksha',
-    subcategories: Object.entries(RUDRAKSHA_MUKHI_IMAGE_BY_SLUG).map(([slug, image]) => {
-      const n = slug.replace('-mukhi', '');
-      return {
-        slug,
-        label: `${n} Mukhi`,
-        href: `/shop/${slug}`,
-        image,
-      };
-    }),
+    subcategories: RUDRAKSHA_STOREFRONT_SLUGS.map((slug) => ({
+      slug,
+      label: rudrakshaSubcategoryLabel(slug),
+      href: `/shop/rudraksha/${slug}`,
+      image: rudrakshaMukhiImage(slug) ?? undefined,
+    })),
   },
   {
     slug: 'idols',
@@ -168,12 +171,12 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     label: 'Vedic Jewellery',
     href: '/shop/jewelry',
     subcategories: [
-      { slug: 'ring', label: 'Rings', href: '/shop/ring' },
-      { slug: 'pendant', label: 'Pendants', href: '/shop/pendant' },
       { slug: 'bracelets', label: 'Bracelets', href: '/shop/bracelets' },
-      { slug: 'diamond-jewellery', label: 'Diamond Jewellery', href: '/shop/diamond-jewellery' },
-      { slug: 'rudraksha-jewelry', label: 'Rudraksha Jewelry', href: '/shop/rudraksha-jewelry' },
-      { slug: 'astro-gems-stock', label: 'Astro-Gems Stock', href: '/shop/astro-gems-stock' },
+      { slug: 'exclusive-rudraksha-malas', label: 'Exclusive Rudraksha Malas', href: '/shop/exclusive-rudraksha-malas' },
+      { slug: 'ready-rudraksha-jewelry-stock', label: 'Ready (Rudraksha Jewelry) Stock', href: '/shop/ready-rudraksha-jewelry-stock' },
+      { slug: 'diamond-jewellery', label: 'Diamond-Jewellery', href: '/shop/diamond-jewellery' },
+      { slug: 'malas', label: 'Malas', href: '/shop/malas' },
+      { slug: 'astro-gems-stock', label: 'Ready (Astro-Gems) Stock', href: '/shop/astro-gems-stock' },
     ],
   },
   {

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient } from '@/lib/supabase/public';
 import {
+  isRudrakshaStorefrontSlug,
+  rudrakshaStorefrontSortOrder,
+} from '@/lib/constants/rudraksha-subcategories';
+import {
   catalogFamilyToStorefrontGroupSlug,
   STORE_CATEGORY_GROUPS_FALLBACK,
   storefrontSubcategoryHref,
@@ -8,7 +12,7 @@ import {
   type StorefrontCategoryGroupSlug,
   type StorefrontSubCategory,
 } from '@/lib/categories/storefront';
-import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
+import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 
 type GemCategoryRow = {
   id: string;
@@ -63,10 +67,7 @@ function gemLabel(category: GemCategoryRow) {
 
 function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
   const parentSlug = category.type === 'upratna' ? 'upratna' : category.type === 'rudraksha' ? 'rudraksha' : 'navaratna';
-  const image =
-    category.type === 'rudraksha'
-      ? resolveRudrakshaNavImage(category.slug, category.image_url)
-      : category.image_url;
+  const image = resolveCategoryNavImage(category.slug, category.image_url);
   return {
     slug: category.slug,
     label: gemLabel(category),
@@ -75,14 +76,6 @@ function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
     image,
     meta: category.type === 'navaratna' ? category.planet ?? null : null,
   };
-}
-
-function isRudrakshaMukhiSlug(slug: string) {
-  return /^\d+-mukhi$/.test(slug);
-}
-
-function rudrakshaMukhiSortOrder(slug: string) {
-  return Number.parseInt(slug, 10) || 0;
 }
 
 function catalogToSubcategory(category: CatalogCategoryRow): StorefrontSubCategory {
@@ -111,10 +104,10 @@ function buildStorefrontGroups(gemRows: GemCategoryRow[], catalogRows: CatalogCa
     const subcategories = group.gemType
       ? gemRows
           .filter((row) => row.type === group.gemType)
-          .filter((row) => group.gemType !== 'rudraksha' || isRudrakshaMukhiSlug(row.slug))
+          .filter((row) => group.gemType !== 'rudraksha' || isRudrakshaStorefrontSlug(row.slug))
           .sort((a, b) => {
             if (group.gemType !== 'rudraksha') return a.sort_order - b.sort_order;
-            return rudrakshaMukhiSortOrder(a.slug) - rudrakshaMukhiSortOrder(b.slug);
+            return rudrakshaStorefrontSortOrder(a.slug) - rudrakshaStorefrontSortOrder(b.slug);
           })
           .map(gemToSubcategory)
       : catalogRows

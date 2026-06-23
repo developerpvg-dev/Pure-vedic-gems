@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Loader2, PackageSearch, ShieldCheck } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { ExternalLink, Loader2, PackageSearch, ShieldCheck } from 'lucide-react';
+import { ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/constants/order-status';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface TrackingEvent {
   status: string;
@@ -25,7 +29,28 @@ interface TrackingResult {
   events: TrackingEvent[];
 }
 
+function formatStatus(status: string) {
+  return ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replace(/_/g, ' ');
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export function OrderTrackingLookup() {
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const autoSubmitted = useRef(false);
+
   const [orderNumber, setOrderNumber] = useState('');
   const [contact, setContact] = useState('');
   const [token, setToken] = useState('');
@@ -33,90 +58,236 @@ export function OrderTrackingLookup() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  const lookupOrder = useCallback(async (payload: { order_number: string; contact?: string; token?: string }) => {
+    const trimmedOrder = payload.order_number.trim();
+    if (!trimmedOrder) {
+      setError('Please enter your order number.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setResult(null);
 
-    const response = await fetch('/api/orders/tracking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_number: orderNumber, contact, token: token || undefined }),
-    }).catch(() => null);
-    setIsLoading(false);
+    try {
+      const response = await fetch('/api/orders/tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_number: trimmedOrder,
+          contact: payload.contact?.trim() || undefined,
+          token: payload.token?.trim() || undefined,
+        }),
+      });
 
-    const data = await response?.json().catch(() => null) as TrackingResult & { error?: string } | null;
-    if (!response?.ok || !data || data.error) {
-      setError(data?.error ?? 'Tracking access could not be verified');
-      return;
+      const data = (await response.json().catch(() => null)) as (TrackingResult & { error?: string }) | null;
+
+      if (!response.ok || !data || data.error) {
+        setError(data?.error ?? 'Tracking access could not be verified. Check your order number and contact details.');
+        return;
+      }
+
+      setResult(data);
+    } catch {
+      setError('Unable to reach the tracking service. Please try again in a moment.');
+    } finally {
+      setIsLoading(false);
     }
-    setResult(data);
+  }, []);
+
+  useEffect(() => {
+    const orderFromUrl =
+      searchParams.get('order') ??
+      searchParams.get('order_number') ??
+      searchParams.get('orderNumber') ??
+      '';
+    const contactFromUrl =
+      searchParams.get('contact') ??
+      searchParams.get('email') ??
+      searchParams.get('phone') ??
+      '';
+    const tokenFromUrl = searchParams.get('token') ?? '';
+
+    if (!orderFromUrl) return;
+
+    setOrderNumber(orderFromUrl);
+    if (contactFromUrl) setContact(contactFromUrl);
+    if (tokenFromUrl) setToken(tokenFromUrl);
+
+    if (autoSubmitted.current) return;
+    autoSubmitted.current = true;
+
+    void lookupOrder({
+      order_number: orderFromUrl,
+      contact: contactFromUrl,
+      token: tokenFromUrl,
+    });
+  }, [lookupOrder, searchParams]);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    await lookupOrder({ order_number: orderNumber, contact, token });
   }
 
+  const timelineEvents = result
+    ? [...result.events].sort(
+        (a, b) => new Date(a.event_time).getTime() - new Date(b.event_time).getTime(),
+      )
+    : [];
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-5 shadow-sm">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+      <form
+        onSubmit={handleSubmit}
+        className="pvg-track-form-card rounded-xl border border-[#ede6d5] bg-white p-5 shadow-[0_10px_32px_rgba(44,4,4,0.06)]"
+      >
         <div className="mb-5 flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-gold-light text-[var(--pvg-accent)]">
-            <PackageSearch className="h-5 w-5" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#fdf3e7] text-[#7a1515]">
+            <PackageSearch className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="font-heading text-xl text-[var(--pvg-primary)]">Track Order</h2>
-            <p className="mt-1 text-sm text-[var(--pvg-muted)]">Use order number plus email or phone for safe guest access.</p>
+            <h2 className="pvg-track-form-title">Lookup Order</h2>
+            <p className="pvg-track-form-sub">
+              Enter your order number and the email or phone used at checkout.
+            </p>
           </div>
         </div>
+
+        {!authLoading && isAuthenticated ? (
+          <p className="pvg-track-signed-in">
+            You&apos;re signed in — if this order is on your account, you can track with the order number alone.
+          </p>
+        ) : null}
+
         <div className="space-y-4">
           <label className="block">
-            <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--pvg-muted)]">Order number</span>
-            <input value={orderNumber} onChange={(event) => setOrderNumber(event.target.value)} required className="w-full rounded-lg border border-[var(--pvg-border)] bg-brand-bg px-3 py-2.5 text-sm outline-none focus:border-[var(--pvg-accent)]" />
+            <span className="pvg-track-field-label">Order number</span>
+            <input
+              value={orderNumber}
+              onChange={(event) => setOrderNumber(event.target.value)}
+              required
+              autoComplete="off"
+              placeholder="e.g. PVG-2024-00123"
+              className="pvg-track-field"
+            />
           </label>
+
           <label className="block">
-            <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--pvg-muted)]">Email or phone</span>
-            <input value={contact} onChange={(event) => setContact(event.target.value)} required className="w-full rounded-lg border border-[var(--pvg-border)] bg-brand-bg px-3 py-2.5 text-sm outline-none focus:border-[var(--pvg-accent)]" />
+            <span className="pvg-track-field-label">Email or phone</span>
+            <input
+              value={contact}
+              onChange={(event) => setContact(event.target.value)}
+              autoComplete="email tel"
+              placeholder="Used when placing the order"
+              className="pvg-track-field"
+            />
+            <p className="pvg-track-field-hint">
+              Required for guest orders. Optional if you are signed in to the account that placed the order.
+            </p>
           </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--pvg-muted)]">Secure token</span>
-            <input value={token} onChange={(event) => setToken(event.target.value)} placeholder="Optional guest link token" className="w-full rounded-lg border border-[var(--pvg-border)] bg-brand-bg px-3 py-2.5 text-sm outline-none focus:border-[var(--pvg-accent)]" />
-          </label>
+
+          <details className="pvg-track-token-details">
+            <summary>Have a secure tracking link?</summary>
+            <label className="mt-3 block">
+              <span className="pvg-track-field-label">Secure token</span>
+              <input
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                autoComplete="off"
+                placeholder="Paste token from your confirmation link"
+                className="pvg-track-field"
+              />
+            </label>
+          </details>
         </div>
-        {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        <button type="submit" disabled={isLoading} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-[var(--pvg-bg)] transition hover:bg-brand-accent disabled:cursor-wait disabled:opacity-70">
-          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          Track securely
+
+        {error ? <p className="pvg-track-error" role="alert">{error}</p> : null}
+
+        <button type="submit" disabled={isLoading} className="pvg-track-submit">
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+          {isLoading ? 'Looking up…' : 'Track securely'}
         </button>
       </form>
 
-      <div className="rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-5 md:p-6">
+      <div className="pvg-track-result-panel rounded-xl border border-[#ede6d5] bg-white p-5 shadow-[0_10px_32px_rgba(44,4,4,0.06)] md:p-6">
         {result ? (
           <div>
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--pvg-border)] pb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#ede6d5] pb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--pvg-accent)]">{result.order.order_number}</p>
-                <h2 className="mt-1 font-heading text-2xl text-[var(--pvg-primary)]">{result.order.status.replace(/_/g, ' ')}</h2>
+                <p className="pvg-track-order-num">{result.order.order_number}</p>
+                <h2 className="pvg-track-status">{formatStatus(result.order.status)}</h2>
               </div>
               {result.order.tracking_url ? (
-                <a href={result.order.tracking_url} target="_blank" rel="noreferrer" className="rounded-lg border border-[var(--pvg-border)] px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--pvg-primary)] hover:border-[var(--pvg-accent)]">Carrier tracking</a>
+                <a
+                  href={result.order.tracking_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pvg-track-carrier-link"
+                >
+                  Carrier tracking
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                </a>
               ) : null}
             </div>
-            <div className="mt-5 space-y-4">
-              {result.events.length > 0 ? result.events.map((event) => (
-                <div key={`${event.status}-${event.event_time}`} className="rounded-xl border border-[var(--pvg-border)] bg-brand-bg-alt p-4">
-                  <p className="font-semibold capitalize text-[var(--pvg-primary)]">{event.status.replace(/_/g, ' ')}</p>
-                  <p className="mt-1 text-xs text-[var(--pvg-muted)]">{new Date(event.event_time).toLocaleString('en-IN')}{event.location ? ` · ${event.location}` : ''}</p>
-                  {event.note && <p className="mt-2 text-sm text-[var(--pvg-text)]">{event.note}</p>}
+
+            <div className="pvg-track-meta-grid">
+              <div className="pvg-track-meta-item">
+                <span>Order placed</span>
+                <strong>{formatDate(result.order.created_at)}</strong>
+              </div>
+              {result.order.estimated_delivery ? (
+                <div className="pvg-track-meta-item">
+                  <span>Estimated delivery</span>
+                  <strong>{formatDate(result.order.estimated_delivery)}</strong>
                 </div>
-              )) : (
-                <div className="rounded-xl border border-[var(--pvg-border)] bg-brand-bg-alt p-5 text-sm text-[var(--pvg-muted)]">Tracking events will appear after fulfillment updates the shipment.</div>
+              ) : null}
+              {result.order.tracking_number ? (
+                <div className="pvg-track-meta-item">
+                  <span>Tracking number</span>
+                  <strong>{result.order.tracking_number}</strong>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="pvg-track-timeline">
+              {timelineEvents.length > 0 ? (
+                timelineEvents.map((event) => (
+                  <article key={`${event.status}-${event.event_time}-${event.note ?? ''}`} className="pvg-track-event">
+                    <h3 className="pvg-track-event-title">{formatStatus(event.status)}</h3>
+                    <p className="pvg-track-event-time">
+                      {formatDate(event.event_time)}
+                      {event.location ? ` · ${event.location}` : ''}
+                      {event.carrier ? ` · ${event.carrier}` : ''}
+                    </p>
+                    {event.note ? <p className="pvg-track-event-note">{event.note}</p> : null}
+                    {event.tracking_url ? (
+                      <a href={event.tracking_url} target="_blank" rel="noreferrer" className="pvg-track-account-link">
+                        View carrier update
+                      </a>
+                    ) : null}
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-xl border border-[#ede6d5] bg-[#faf8f4] p-5 text-sm leading-relaxed text-[#6b5b4e]">
+                  Your order is confirmed. Shipment tracking events will appear here once fulfillment updates the package.
+                </div>
               )}
             </div>
+
+            {isAuthenticated ? (
+              <Link href="/account/orders" className="pvg-track-account-link">
+                View all orders in your account →
+              </Link>
+            ) : null}
           </div>
         ) : (
-          <div className="flex min-h-[320px] items-center justify-center text-center">
+          <div className="pvg-track-empty">
             <div>
-              <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-[var(--pvg-accent)]" />
-              <p className="font-heading text-xl text-[var(--pvg-primary)]">Private tracking</p>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[var(--pvg-muted)]">Order details are shown only after matching the order number with account access, secure token, email, or phone.</p>
+              <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-[#b8861e]" aria-hidden="true" />
+              <h2>Private tracking</h2>
+              <p>
+                Order details are shown only after matching the order number with your account, email, phone, or secure token.
+              </p>
             </div>
           </div>
         )}

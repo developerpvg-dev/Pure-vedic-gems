@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import Image from 'next/image';
 import { Star, X } from 'lucide-react';
 import { TestimonialProofButton } from './TestimonialProofButton';
+
+const TESTIMONIAL_CARD_BG_WEBP = '/home/testimonial/cardbg.webp';
+const TESTIMONIAL_CARD_BG_PNG = '/home/testimonial/cardbg.png';
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -48,17 +50,27 @@ export function TestimonialCard({ testimonial, indexString }: TestimonialCardPro
       : testimonial.message;
 
   const CardContent = ({ isExpanded = false }: { isExpanded?: boolean }) => (
-    <div className={`relative aspect-[1.5] max-w-[800px] mx-auto flex items-center justify-center ${isExpanded ? "w-full" : "w-[110%] ml-[-5%] sm:w-full sm:ml-0 scale-[1.05] sm:scale-100 origin-center"}`}>
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0 drop-shadow-md">
-        <Image 
-            src="/home/testimonial/cardbg.webp"
-            alt="Testimonial background" 
-            fill 
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-contain"
-            priority={!isExpanded}
-            unoptimized={true}
+    <div
+      className={`pvg-testimonial-card-frame relative mx-auto flex w-full max-w-[800px] items-center justify-center ${
+        isExpanded ? 'aspect-[3/2] min-h-[240px]' : 'aspect-[3/2] min-h-[210px] sm:min-h-[240px]'
+      }`}
+    >
+      {/* Background Image — native img for reliable mobile/tablet rendering */}
+      <div className="pointer-events-none absolute inset-0 z-0 drop-shadow-md">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={TESTIMONIAL_CARD_BG_WEBP}
+          alt=""
+          aria-hidden="true"
+          className="block h-full w-full object-contain object-center"
+          loading={isExpanded ? 'eager' : 'lazy'}
+          decoding="async"
+          onError={(event) => {
+            const image = event.currentTarget;
+            if (!image.src.includes('cardbg.png')) {
+              image.src = TESTIMONIAL_CARD_BG_PNG;
+            }
+          }}
         />
       </div>
 

@@ -74,11 +74,11 @@ const TERM_MAP: Record<number, TargetSpec> = {
   276: { category: 'idol', subCategory: 'durga-devi', productType: 'idol', energization: false, group: 'idols', leafCategorySlug: 'durga-devi', parentCategorySlug: 'idol', label: 'Durga Devi', priority: 10 },
   277: { category: 'idol', subCategory: 'shiv-ji', productType: 'idol', energization: false, group: 'idols', leafCategorySlug: 'shiv-ji', parentCategorySlug: 'idol', label: 'Shiv Ji', priority: 10 },
   286: { category: 'jewelry', subCategory: 'bracelets', productType: 'jewelry', energization: false, group: 'jewelry', leafCategorySlug: 'bracelets', parentCategorySlug: 'jewelry', label: 'Bracelets', priority: 10 },
-  185: { category: 'jewelry', subCategory: 'diamond-jewellery', productType: 'jewelry', energization: false, group: 'jewelry', leafCategorySlug: 'diamond-jewellery', parentCategorySlug: 'jewelry', label: 'Diamond Jewellery', priority: 10 },
-  183: { category: 'jewelry', subCategory: 'astro-gems-stock', productType: 'jewelry', energization: false, group: 'jewelry', leafCategorySlug: 'astro-gems-stock', parentCategorySlug: 'jewelry', label: 'Ready Astro-Gems Stock', priority: 10 },
-  184: { category: 'mala', subCategory: 'malas', productType: 'mala', energization: true, group: 'malas', leafCategorySlug: 'mala', parentCategorySlug: null, label: 'Rudraksha Malas', priority: 5 },
-  278: { category: 'rudraksha', subCategory: 'exclusive-rudraksha-malas', productType: 'mala', energization: true, group: 'rudraksha', leafCategorySlug: 'exclusive-rudraksha-malas', parentCategorySlug: 'rudraksha', label: 'Exclusive Rudraksha Malas', priority: 20 },
-  279: { category: 'rudraksha', subCategory: 'ready-rudraksha-jewelry-stock', productType: 'jewelry', energization: true, group: 'rudraksha', leafCategorySlug: 'ready-rudraksha-jewelry-stock', parentCategorySlug: 'rudraksha', label: 'Ready Rudraksha Jewelry Stock', priority: 20 },
+  185: { category: 'jewelry', subCategory: 'diamond-jewellery', productType: 'jewelry', energization: false, group: 'jewelry', leafCategorySlug: 'diamond-jewellery', parentCategorySlug: 'jewelry', label: 'Diamond-Jewellery', priority: 10 },
+  183: { category: 'jewelry', subCategory: 'astro-gems-stock', productType: 'jewelry', energization: false, group: 'jewelry', leafCategorySlug: 'astro-gems-stock', parentCategorySlug: 'jewelry', label: 'Ready (Astro-Gems) Stock', priority: 10 },
+  184: { category: 'jewelry', subCategory: 'malas', productType: 'mala', energization: true, group: 'jewelry', leafCategorySlug: 'malas', parentCategorySlug: 'jewelry', label: 'Malas', priority: 5 },
+  278: { category: 'jewelry', subCategory: 'exclusive-rudraksha-malas', productType: 'mala', energization: true, group: 'jewelry', leafCategorySlug: 'exclusive-rudraksha-malas', parentCategorySlug: 'jewelry', label: 'Exclusive Rudraksha Malas', priority: 20 },
+  279: { category: 'jewelry', subCategory: 'ready-rudraksha-jewelry-stock', productType: 'jewelry', energization: true, group: 'jewelry', leafCategorySlug: 'ready-rudraksha-jewelry-stock', parentCategorySlug: 'jewelry', label: 'Ready (Rudraksha Jewelry) Stock', priority: 20 },
 };
 
 function groupCanonicalBase(group: Group): string {

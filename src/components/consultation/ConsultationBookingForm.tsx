@@ -28,6 +28,7 @@ import {
 import { useAuth } from '@/lib/hooks/useAuth';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import type { ConsultationPlan } from '@/lib/types/database';
+import '@/app/consultation/consultation-page.css';
 
 interface RazorpayResponse {
   razorpay_order_id: string;
@@ -346,23 +347,23 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
 
   if (success) {
     return (
-      <div className="bg-[#fbf7ef] px-4 pb-16 pt-30">
-        <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center rounded-lg border border-brand-border bg-white px-6 py-14 text-center shadow-[0_18px_54px_rgba(68,35,12,0.08)]">
+      <div className="pvg-consultation-page px-4 sm:px-6">
+        <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center rounded-xl border border-[#ede6d5] bg-white px-5 py-12 text-center shadow-[0_10px_32px_rgba(44,4,4,0.06)] sm:px-8 sm:py-14">
           <div className="mb-5 grid h-16 w-16 place-items-center rounded-full bg-green-50 text-green-700 ring-1 ring-green-100">
             <CheckCircle className="h-9 w-9" />
           </div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[3px] text-brand-accent">Payment Verified</p>
-          <h1 className="text-3xl font-bold text-brand-primary sm:text-4xl">Consultation Booked</h1>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-brand-muted">
+          <h1 className="section-title">Consultation Booked</h1>
+          <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.75rem auto 0', maxWidth: '32rem' }}>
             Your booking and payment details are saved. A confirmation email has been sent with the consultation service and payment reference.
           </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
+          <div className="section-rule-center" style={{ margin: '15px auto' }} aria-hidden="true" />
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
             {isAuthenticated && (
-              <Link href="/account/consultations" className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-bg transition hover:bg-brand-accent hover:text-brand-primary">
+              <Link href="/account/consultations" className="inline-flex items-center gap-2 rounded-lg bg-[#7a1515] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#4d0a0a]">
                 <FileText className="h-4 w-4" /> View Booking
               </Link>
             )}
-            <Link href="/" className="rounded-lg border border-brand-border px-5 py-3 text-sm font-semibold text-brand-primary transition hover:bg-brand-surface">
+            <Link href="/" className="rounded-lg border border-[#ede6d5] px-5 py-3 text-sm font-semibold text-[#2c0404] transition hover:bg-[#faf8f4]">
               Back to Home
             </Link>
           </div>
@@ -372,21 +373,26 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   }
 
   return (
-    <div className="bg-[#fbf7ef]">
-      <div className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 lg:px-10 lg:pt-14">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold leading-snug text-slate-800 sm:text-3xl">Book a Vedic Consultation</h1>
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">Choose the exact consultation service, add your birth and contact details, then confirm the booking with secure Razorpay payment.</p>
-        </div>
+    <div className="pvg-consultation-page px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <section className="mx-auto max-w-4xl pb-8 pt-10 text-center sm:pt-12 lg:pt-14" aria-labelledby="consultation-heading">
+          <h1 className="section-title" id="consultation-heading">
+            Book a Vedic Consultation
+          </h1>
+          <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
+            Choose your consultation service, add birth and contact details, then confirm with secure Razorpay payment.
+          </p>
+          <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+        </section>
 
         {plans.length === 0 ? (
-          <div className="mx-auto mt-10 max-w-2xl rounded-lg border border-brand-border bg-white px-6 py-12 text-center shadow-[0_18px_54px_rgba(68,35,12,0.06)]">
-            <p className="font-semibold text-brand-primary">Consultation plans are currently unavailable.</p>
-            <p className="mt-2 text-sm text-brand-muted">Please check back shortly or contact the PureVedicGems team.</p>
+          <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-[#ede6d5] bg-white px-5 py-12 text-center shadow-[0_10px_32px_rgba(44,4,4,0.06)] sm:px-6">
+            <p className="font-semibold text-[#2c0404]">Consultation plans are currently unavailable.</p>
+            <p className="mt-2 text-sm text-[#5a5043]">Please check back shortly or contact the PureVedicGems team.</p>
           </div>
         ) : (
           <>
-            <section className="mt-7 grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" aria-label="Consultation plans">
+            <section className="pvg-consultation-plans mt-2" aria-label="Consultation plans">
               {plans.map((plan, index) => {
                 const metadata = readMetadata(plan);
                 const { theme } = getPlanTheme(plan, index);
@@ -448,14 +454,14 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
               })}
             </section>
 
-            <section id="consultation-booking" className="mt-6 grid gap-4 scroll-mt-24 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-amber-700 ring-1 ring-amber-100">
-                      <FileText className="h-3 w-3" /> Booking Details
+            <section id="consultation-booking" className="pvg-consultation-booking mt-6 scroll-mt-28">
+              <div className="pvg-consultation-booking-card p-4 sm:p-5">
+                <div className="pvg-consultation-booking-head">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <span className="pvg-consultation-booking-badge">
+                      <FileText className="h-3 w-3" aria-hidden="true" /> Booking Details
                     </span>
-                    <h2 className="text-sm font-semibold text-slate-700">Complete Your Consultation Request</h2>
+                    <h2 className="pvg-consultation-booking-title">Complete Your Consultation Request</h2>
                   </div>
                   {errors.plan && <span className="text-xs font-medium text-red-500">{errors.plan}</span>}
                 </div>
@@ -484,7 +490,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                 </div>
               </div>
 
-              <aside className="h-fit rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-28">
+              <aside className="pvg-consultation-sidebar h-fit p-4 sm:p-5">
                 {/* Selected plan pill */}
                 <div className="mb-1 flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-brand-primary">

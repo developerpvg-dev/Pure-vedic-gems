@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { buildIlikePattern } from '@/lib/utils/search';
+import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
 import type { ProductListResponse } from '@/lib/types/product';
 
 // Card-level columns to select (avoid fetching full descriptions for listing)
@@ -33,8 +34,13 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('products')
       .select(CARD_SELECT, { count: 'exact' })
-      .eq('is_active', true)
-      .eq('in_stock', true);
+      .eq('is_active', true);
+
+    const configuratorEnabled = searchParams.get('configurator_enabled') === 'true';
+    query = applyShopAvailabilityFilter(query, {
+      ...filters,
+      configurator_enabled: configuratorEnabled || filters.configurator_enabled,
+    });
 
     // Apply filters
     if (filters.category) {
@@ -42,9 +48,6 @@ export async function GET(request: NextRequest) {
     }
     if (filters.product_type) {
       query = query.eq('product_type', filters.product_type);
-    }
-    if (filters.availability_status) {
-      query = query.eq('availability_status', filters.availability_status);
     }
     if (filters.sub_category) {
       query = query.eq('sub_category', filters.sub_category);
@@ -88,25 +91,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('is_directors_pick', filters.directors_pick);
     }
 
-    // Configurator-enabled filter
-    const configuratorEnabled = searchParams.get('configurator_enabled');
-    if (configuratorEnabled === 'true') {
+    if (configuratorEnabled) {
       query = query.eq('configurator_enabled', true);
     }
 
-    // Sorting
-    if (filters.directors_pick && filters.sort_by === 'newest') {
-      query = query.order('display_order', { ascending: true }).order('created_at', { ascending: false });
-    } else {
-      const sortColumn =
-        filters.sort_by === 'price'
-          ? 'price'
-          : filters.sort_by === 'carat'
-            ? 'carat_weight'
-            : 'created_at';
-      const ascending = filters.sort_order === 'asc';
-      query = query.order(sortColumn, { ascending });
-    }
+    query = applyShopListingSort(query, filters);
 
     // Pagination
     const page = filters.page;

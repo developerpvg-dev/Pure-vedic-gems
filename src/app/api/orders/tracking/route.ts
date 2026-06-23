@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   const accountMatches = userId && order.customer_id === userId;
 
   if (!emailMatches && !phoneMatches && !tokenMatches && !accountMatches) {
-    return NextResponse.json({ error: 'Tracking access could not be verified' }, { status: 403 });
+    return NextResponse.json({ error: 'Tracking access could not be verified. Check your order number and the email or phone used at checkout.' }, { status: 403 });
   }
 
   const { data: events } = await db

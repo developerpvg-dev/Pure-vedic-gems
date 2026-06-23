@@ -3,10 +3,9 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import type { LibraryVideo, VideoCategory } from '@/lib/types/database';
-import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { canonicalUrl } from '@/lib/utils/seo';
+import './videos-page.css';
 
 export const metadata: Metadata = {
   title: 'Vedic Gemstone & Astrology Video Library | Pure Vedic Gems',
@@ -20,6 +19,61 @@ export const revalidate = 300;
 const CATEGORIES_PER_PAGE = 4;
 
 type CategoryWithVideos = VideoCategory & { videos: LibraryVideo[] };
+
+function Pagination({ currentPage, totalPages }: { currentPage: number; totalPages: number }) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="mt-16 flex items-center justify-center gap-2">
+      {currentPage > 1 ? (
+        <Link
+          href={`?page=${currentPage - 1}`}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8bd75] text-[#6b3b23] transition-colors hover:bg-[#b86654] hover:text-white"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Link>
+      ) : null}
+      {Array.from({ length: totalPages }, (_, index) => {
+        const pageNumber = index + 1;
+        if (totalPages > 7) {
+          if (pageNumber !== 1 && pageNumber !== totalPages && Math.abs(pageNumber - currentPage) > 2) {
+            if (pageNumber === 2 || pageNumber === totalPages - 1) {
+              return (
+                <span key={pageNumber} className="px-1 text-[#6b3b23]">
+                  ...
+                </span>
+              );
+            }
+            return null;
+          }
+        }
+        return (
+          <Link
+            key={pageNumber}
+            href={`?page=${pageNumber}`}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+              pageNumber === currentPage
+                ? 'bg-[#a37c44] text-white'
+                : 'border border-[#e0d6c8] text-[#a37c44] hover:bg-[#f0eadd]'
+            }`}
+          >
+            {pageNumber}
+          </Link>
+        );
+      })}
+      {currentPage < totalPages ? (
+        <Link
+          href={`?page=${currentPage + 1}`}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8bd75] text-[#6b3b23] transition-colors hover:bg-[#b86654] hover:text-white"
+          aria-label="Next page"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
 
 export default async function VideoLibraryPage({
   searchParams,
@@ -69,90 +123,50 @@ export default async function VideoLibraryPage({
   };
 
   return (
-    <>
+    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* Hero */}
-      <section className="bg-secondary/30 pt-14 pb-4 md:pt-18 md:pb-6">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <ScrollReveal>
-            <span className="font-body text-xs font-semibold uppercase tracking-[5px] text-accent">
-              Knowledge Hub
-            </span>
-            <h1 className="mt-10 font-heading text-3xl font-bold text-primary md:text-4xl lg:text-5xl">
+      <section className="px-4 pb-8 pt-10 sm:px-6 lg:pt-14" aria-labelledby="videos-page-heading">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-0 flex flex-col items-center justify-center">
+            <h1 className="section-title" id="videos-page-heading">
               Video Library
             </h1>
-            <OrnamentalDivider className="mx-auto mt-3 max-w-sm" />
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
+            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
               Free educational videos on Vedic jyotish remedies, gemstones, rudraksha, karmic remedies and sacred energization rituals.
             </p>
-          </ScrollReveal>
+            <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+          </div>
         </div>
       </section>
 
-      {/* Videos */}
-      <section className="bg-background pt-8 pb-16 md:pt-10 md:pb-20">
-        <div className="mx-auto max-w-7xl px-6">
-          {allCategories.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">No videos are published yet.</p>
-          ) : (
-            <>
-              <div className="space-y-12">
-                {categories.map((category: CategoryWithVideos) => (
-                  <section key={category.id}>
-                    <div className="mb-5 border-b border-border pb-4">
-                      <h2 className="font-heading text-xl font-semibold text-primary md:text-2xl">{category.title}</h2>
-                      {category.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {category.videos.map((video) => (
-                        <VideoCard key={video.id} video={video} />
-                      ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8" aria-label="Video categories">
+        {allCategories.length === 0 ? (
+          <p className="pvg-videos-empty">No videos are published yet.</p>
+        ) : (
+          <>
+            <div className="space-y-12">
+              {categories.map((category: CategoryWithVideos) => (
+                <section key={category.id}>
+                  <div className="pvg-videos-category-head">
+                    <h2 className="pvg-videos-category-title">{category.title}</h2>
+                    {category.description ? (
+                      <p className="pvg-videos-category-desc">{category.description}</p>
+                    ) : null}
+                  </div>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {category.videos.map((video) => (
+                      <VideoCard key={video.id} video={video} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-12 flex items-center justify-center gap-2">
-                  {safePage > 1 && (
-                    <Link
-                      href={`?page=${safePage - 1}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-border text-primary hover:bg-accent/10"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Link>
-                  )}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <Link
-                      key={p}
-                      href={`?page=${p}`}
-                      className={`inline-flex h-9 w-9 items-center justify-center rounded-sm border text-sm font-medium transition-colors ${
-                        p === safePage
-                          ? 'border-accent bg-accent text-accent-foreground'
-                          : 'border-border text-primary hover:bg-accent/10'
-                      }`}
-                    >
-                      {p}
-                    </Link>
-                  ))}
-                  {safePage < totalPages && (
-                    <Link
-                      href={`?page=${safePage + 1}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-border text-primary hover:bg-accent/10"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            <Pagination currentPage={safePage} totalPages={totalPages} />
+          </>
+        )}
       </section>
-    </>
+    </main>
   );
 }

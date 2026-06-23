@@ -9,7 +9,7 @@ import {
   BLOG_CATEGORY_LINKS,
 } from '@/lib/constants/nav-items';
 import { findStorefrontGroup, type StorefrontCategoryGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
-import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
+import { resolveCategoryNavImage, collectGemstoneNavImageUrls } from '@/lib/constants/category-nav-images';
 import { useCart } from '@/lib/hooks/useCart';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { UserAuthButton } from '@/components/auth/UserAuthButton';
@@ -90,7 +90,7 @@ function CalendarSvg() {
 
 
 function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
-  const thumbImage = resolveRudrakshaNavImage(link.slug, link.image);
+  const thumbImage = resolveCategoryNavImage(link.slug, link.image);
   const shellStyle: React.CSSProperties = {
     width: '48px',
     height: '48px',
@@ -333,6 +333,14 @@ export function SiteHeader() {
   const { cart } = useCart();
   const cartCount = mounted ? cart.item_count : 0;
   const categoryGroups = useStorefrontCategories();
+
+  useEffect(() => {
+    for (const src of collectGemstoneNavImageUrls(categoryGroups)) {
+      const img = new window.Image();
+      img.decoding = 'async';
+      img.src = src;
+    }
+  }, [categoryGroups]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);

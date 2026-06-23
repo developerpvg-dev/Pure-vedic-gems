@@ -27,6 +27,14 @@ export const RUDRAKSHA_MUKHI_IMAGE_BY_SLUG: Record<string, string> = {
   '21-mukhi': card('21-mukhi'),
 };
 
+export const RUDRAKSHA_SPECIAL_IMAGE_BY_SLUG: Record<string, string> = {
+  'gauri-shankar': card('gauri-shankar'),
+  'ganesh-rudraksha': card('ganesh-rudraksha'),
+  'nir-mukhi': card('nir-mukhi'),
+  'garbh-gauri': card('garbh-gauri'),
+  'sawar-rudraksha': card('sawar-rudraksha'),
+};
+
 export const RUDRAKSHA_FEATURE_IMAGES = {
   collection: `${RUDRAKSHA_CARDS_BASE}/finest-quality-collection.png`,
   malas: `${RUDRAKSHA_CARDS_BASE}/exclusive-malas.png`,
@@ -34,7 +42,7 @@ export const RUDRAKSHA_FEATURE_IMAGES = {
 } as const;
 
 export function rudrakshaMukhiImage(slug: string): string | null {
-  return RUDRAKSHA_MUKHI_IMAGE_BY_SLUG[slug] ?? null;
+  return RUDRAKSHA_MUKHI_IMAGE_BY_SLUG[slug] ?? RUDRAKSHA_SPECIAL_IMAGE_BY_SLUG[slug] ?? null;
 }
 
 export function rudrakshaMukhiImageByNumber(mukhi: number): string | null {
@@ -43,6 +51,7 @@ export function rudrakshaMukhiImageByNumber(mukhi: number): string | null {
 
 export function resolveRudrakshaNavImage(slug: string, image?: string | null): string | null {
   if (image) return image;
-  if (/^\d+-mukhi$/.test(slug)) return rudrakshaMukhiImage(slug);
-  return null;
+  return rudrakshaMukhiImage(slug);
 }
+
+export { resolveCategoryNavImage, collectGemstoneNavImageUrls } from '@/lib/constants/category-nav-images';

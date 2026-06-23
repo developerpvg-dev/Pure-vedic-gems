@@ -34,6 +34,7 @@ export type ShopFilterOptions = {
 export type ShopFilterScope = {
   category?: string;
   subCategory?: string;
+  subCategories?: string[];
   directorsPick?: boolean;
   primaryGemSlugs?: string[];
 };
@@ -155,8 +156,9 @@ export async function getShopFilterOptions(
     .eq('is_active', true)
     .limit(2000);
 
-  if (scope.category) query = query.eq('category', scope.category);
+  if (scope.category && !scope.subCategories?.length) query = query.eq('category', scope.category);
   if (scope.subCategory) query = query.eq('sub_category', scope.subCategory);
+  if (scope.subCategories?.length) query = query.in('sub_category', scope.subCategories);
   if (scope.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
   if (scope.primaryGemSlugs?.length) query = query.in('sub_category', scope.primaryGemSlugs);
   if (filters.q) {

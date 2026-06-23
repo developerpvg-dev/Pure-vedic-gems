@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { catalogFamilyToStorefrontGroupSlug, storefrontSubcategoryHref } from '@/lib/categories/storefront';
+import { isRudrakshaHomeGridSlug, RUDRAKSHA_HOME_GRID_LIMIT } from '@/lib/constants/rudraksha-subcategories';
 import {
   Check,
   Eye,
@@ -47,7 +48,7 @@ const SECTION_CONFIGS = [
     parentSlug: undefined,
     homepageSlot: undefined,
     accent: 'rose',
-    fieldHint: 'Name, rare flag, badge/meta label, main image, hover image.',
+    fieldHint: 'Row 1: 1–6 Mukhi. Row 2: 10–15 Mukhi. Max 12 cards on homepage. Toggle homepage visibility per category.',
   },
   {
     id: 'upratna',
@@ -505,6 +506,17 @@ export default function AdminCategoriesPage() {
     });
   }, [activeSectionId, allCategories, query]);
 
+  const rudrakshaHomepageCount = useMemo(() => {
+    if (activeSectionId !== 'rudraksha-grid') return null;
+    return allCategories.filter(
+      (category) =>
+        category.sectionId === 'rudraksha-grid'
+        && isRudrakshaHomeGridSlug(category.slug)
+        && category.is_active
+        && (category.featured_on_homepage ?? true),
+    ).length;
+  }, [activeSectionId, allCategories]);
+
   function openCreate(section = activeSection) {
     setForm(createEmptyForm(section));
     setEditing(false);
@@ -563,6 +575,20 @@ export default function AdminCategoriesPage() {
     const payload = {
       ...formFromCategory(category),
       is_active: !category.is_active,
+    };
+    const response = await fetch('/api/admin/homepage-categories', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (response.ok) await fetchCategories();
+  }
+
+  async function toggleFeaturedOnHomepage(category: ManagedCategory) {
+    if (category.source !== 'gem') return;
+    const payload = {
+      ...formFromCategory(category),
+      featured_on_homepage: !(category.featured_on_homepage ?? true),
     };
     const response = await fetch('/api/admin/homepage-categories', {
       method: 'PUT',
@@ -655,6 +681,11 @@ export default function AdminCategoriesPage() {
                 </div>
                 <h2 className="mt-2 text-xl font-bold text-gray-950">{activeSection.title}</h2>
                 <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{activeSection.fieldHint}</p>
+                {rudrakshaHomepageCount !== null ? (
+                  <p className="mt-2 text-xs font-semibold text-rose-700">
+                    {rudrakshaHomepageCount}/{RUDRAKSHA_HOME_GRID_LIMIT} homepage grid slots active (1–6 Mukhi, 10–15 Mukhi)
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -742,6 +773,14 @@ export default function AdminCategoriesPage() {
                           {category.display_locations ? <div>Label: <span className="font-medium text-gray-900">{category.display_locations}</span></div> : null}
                           {category.planet ? <div>Planet: <span className="font-medium text-gray-900">{category.planet}</span></div> : null}
                           {category.is_rare ? <span className="inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">Rare</span> : null}
+                          {category.sectionId === 'rudraksha-grid' && isRudrakshaHomeGridSlug(category.slug) ? (
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${category.featured_on_homepage ?? true ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                              {category.featured_on_homepage ?? true ? 'Homepage grid' : 'Hidden from homepage'}
+                            </span>
+                          ) : null}
+                          {category.sectionId === 'rudraksha-grid' && !isRudrakshaHomeGridSlug(category.slug) ? (
+                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">Shop only (not in 12-card grid)</span>
+                          ) : null}
                         </div>
                       ) : (
                         <div className="space-y-1.5">
@@ -758,16 +797,32 @@ export default function AdminCategoriesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        onClick={() => void toggleActive(category)}
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition ${
-                          category.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'
-                        }`}
-                      >
-                        {category.is_active ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                        {category.is_active ? 'Active' : 'Inactive'}
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void toggleActive(category)}
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition ${
+                            category.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          {category.is_active ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                          {category.is_active ? 'Active' : 'Inactive'}
+                        </button>
+                        {category.source === 'gem' && category.sectionId === 'rudraksha-grid' && isRudrakshaHomeGridSlug(category.slug) ? (
+                          <button
+                            type="button"
+                            onClick={() => void toggleFeaturedOnHomepage(category)}
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition ${
+                              category.featured_on_homepage ?? true
+                                ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {category.featured_on_homepage ?? true ? 'On homepage' : 'Off homepage'}
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
@@ -910,6 +965,27 @@ export default function AdminCategoriesPage() {
                           className="h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500"
                         />
                         Mark this Rudraksha category as rare
+                      </label>
+                    ) : null}
+
+                    {form.source === 'gem' ? (
+                      <label className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium ${
+                        form.sectionId === 'rudraksha-grid' && !isRudrakshaHomeGridSlug(form.slug)
+                          ? 'border-gray-200 bg-gray-50 text-gray-500'
+                          : 'border-amber-100 bg-amber-50 text-amber-900'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={form.featured_on_homepage}
+                          disabled={form.sectionId === 'rudraksha-grid' && Boolean(form.slug) && !isRudrakshaHomeGridSlug(form.slug)}
+                          onChange={(event) => updateForm('featured_on_homepage', event.target.checked)}
+                          className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50"
+                        />
+                        {form.sectionId === 'rudraksha-grid'
+                          ? isRudrakshaHomeGridSlug(form.slug || '')
+                            ? 'Show on homepage Rudraksha grid (max 12: 1–6 Mukhi, 10–15 Mukhi)'
+                            : 'Only 1–6 and 10–15 Mukhi appear in the homepage grid'
+                          : 'Show this gemstone category on the homepage'}
                       </label>
                     ) : null}
                   </>

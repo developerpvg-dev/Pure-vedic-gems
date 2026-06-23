@@ -1,0 +1,167 @@
+/* Stores page — matches testimonials / contact typography */
+
+.pvg-stores-breadcrumb a {
+  transition: color 0.2s;
+}
+
+.pvg-stores-card-eyebrow {
+  margin-bottom: 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-stores-card-title {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(18px, 1.8vw, 22px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #2c0404;
+}
+
+.pvg-stores-card-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.45;
+  color: #5a5043;
+}
+
+.pvg-stores-addr-block + .pvg-stores-addr-block {
+  margin-top: 0.75rem;
+}
+
+.pvg-stores-addr-label {
+  margin: 0 0 0.2rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-stores-addr-lines {
+  margin: 0;
+  font-size: 15px;
+  font-style: normal;
+  line-height: 1.6;
+  color: #6b5b4e;
+}
+
+.pvg-stores-landmark {
+  margin: 0.75rem 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #8a6400;
+}
+
+.pvg-stores-contact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #5a5043;
+}
+
+.pvg-stores-contact-row svg {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  color: #b8861e;
+}
+
+.pvg-stores-contact-row a {
+  color: #2c0404;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pvg-stores-contact-row a:hover {
+  color: #7a1515;
+}
+
+.pvg-stores-hours {
+  margin-top: 1rem;
+  border: 1px solid #ede6d5;
+  border-radius: 8px;
+  background: #faf8f4;
+  padding: 0.75rem 0.85rem;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6b5b4e;
+}
+
+.pvg-stores-hours strong {
+  color: #2c0404;
+}
+
+.pvg-stores-directions {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 8px;
+  background: #7a1515;
+  padding: 0.6rem 1rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.pvg-stores-directions:hover {
+  background: #4d0a0a;
+}
+
+.pvg-stores-cta-title {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: #2c0404;
+}
+
+.pvg-stores-cta-copy {
+  margin: 0.5rem 0 0;
+  max-width: 36rem;
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1.55;
+  color: #5a5043;
+}
+
+.pvg-stores-cta-link {
+  margin-top: 1.25rem;
+  display: inline-flex;
+  border-radius: 8px;
+  border: 1px solid #7a1515;
+  padding: 0.75rem 1.25rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a1515;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pvg-stores-cta-link:hover {
+  background: #7a1515;
+  color: #fff;
+}
+
+@media (min-width: 768px) {
+  .pvg-stores-cta-link {
+    margin-top: 0;
+  }
+}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
 import {
   User,
   Phone,
@@ -9,12 +8,11 @@ import {
   Clock,
   MapPin,
   Loader2,
-  ChevronLeft,
   CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { createClient } from '@/lib/supabase/client';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import type { Database } from '@/lib/types/database';
 
 type ProfileUpdate = Database['public']['Tables']['customer_profiles']['Update'];
@@ -61,40 +59,25 @@ function Field({
   options,
   helpText,
 }: FieldProps) {
-  const baseInputClass =
-    'w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm outline-none transition-all';
-  const baseStyle = {
-    borderColor: 'var(--pvg-border)',
-    background: 'var(--pvg-surface)',
-    color: 'var(--pvg-text)',
-  };
+  const baseInputClass = 'pvg-account-field pl-10';
 
   return (
     <div className="space-y-1">
-      <label
-        htmlFor={id}
-        className="block text-[13px] font-semibold uppercase tracking-wider"
-        style={{ color: 'var(--pvg-primary)' }}
-      >
+      <label htmlFor={id} className="pvg-account-label">
         {label}
-        {required && (
-          <span className="ml-1" style={{ color: 'var(--pvg-accent)' }}>
-            *
-          </span>
-        )}
+        {required ? <span className="ml-1 text-[#b8861e]">*</span> : null}
       </label>
       <div className="relative">
         <Icon
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
-          style={{ color: 'var(--pvg-muted)' }}
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6b5b4e]"
+          aria-hidden="true"
         />
         {isSelect ? (
           <select
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className={baseInputClass + ' cursor-pointer appearance-none'}
-            style={baseStyle}
+            className={`${baseInputClass} cursor-pointer appearance-none`}
           >
             <option value="">— Select —</option>
             {options?.map((opt) => (
@@ -112,21 +95,10 @@ function Field({
             placeholder={placeholder}
             required={required}
             className={baseInputClass}
-            style={baseStyle}
-            onFocus={(e) =>
-              (e.currentTarget.style.borderColor = 'var(--pvg-accent)')
-            }
-            onBlur={(e) =>
-              (e.currentTarget.style.borderColor = 'var(--pvg-border)')
-            }
           />
         )}
       </div>
-      {helpText && (
-        <p className="text-xs" style={{ color: 'var(--pvg-muted)' }}>
-          {helpText}
-        </p>
-      )}
+      {helpText ? <p className="text-xs text-[#6b5b4e]">{helpText}</p> : null}
     </div>
   );
 }
@@ -193,37 +165,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link
-          href="/account"
-          className="mb-4 inline-flex items-center gap-1 text-sm hover:underline"
-          style={{ color: 'var(--pvg-muted)' }}
-        >
-          <ChevronLeft className="h-4 w-4" /> Back to Account
-        </Link>
-        <h1
-          className="font-heading text-3xl md:text-4xl"
-          style={{ color: 'var(--pvg-primary)' }}
-        >
-          My Profile
-        </h1>
-        <OrnamentalDivider className="mt-4 max-w-50" />
-      </div>
+    <div className="pvg-account-stack">
+      <AccountPageHeader
+        title="Profile & DOB"
+        subtitle="Edit your contact details and birth information for consultations and recommendations."
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* ── Personal Info ─────────────────────────────────────────────── */}
-          <div
-            className="lg:col-span-2 rounded-2xl border p-6 md:p-8 space-y-6"
-            style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}
-          >
-            <h2
-              className="font-heading text-xl"
-              style={{ color: 'var(--pvg-primary)' }}
-            >
-              Personal Information
-            </h2>
+          <div className="pvg-account-card pvg-account-card-pad space-y-6 lg:col-span-2">
+            <h2 className="pvg-account-card-title">Personal Information</h2>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <Field
@@ -280,19 +231,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ── Vedic Birth Details ────────────────────────────────────────── */}
-          <div
-            className="rounded-2xl border p-6 md:p-8 space-y-5"
-            style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}
-          >
+          <div className="pvg-account-card pvg-account-card-pad space-y-5">
             <div>
-              <h2
-                className="font-heading text-xl"
-                style={{ color: 'var(--pvg-primary)' }}
-              >
-                Vedic Birth Details
-              </h2>
-              <p className="mt-1 text-xs" style={{ color: 'var(--pvg-muted)' }}>
+              <h2 className="pvg-account-card-title">Vedic Birth Details</h2>
+              <p className="mt-1 text-xs text-[#6b5b4e]">
                 Used for gemstone recommendations & energization ceremonies
               </p>
             </div>
@@ -358,10 +300,9 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-lg px-8 py-3 text-sm font-bold uppercase tracking-widest transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: 'var(--pvg-primary)', color: 'var(--pvg-bg)' }}
+              className="pvg-account-btn disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
               Save Changes
             </button>
           </div>

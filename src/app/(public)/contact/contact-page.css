@@ -1,0 +1,628 @@
+/* ── Contact page — PVG brand polish ───────────────────────────── */
+
+.pvg-contact-page {
+  --c-maroon: #7a1515;
+  --c-maroon-deep: #2c0404;
+  --c-gold: #b8861e;
+  --c-gold-light: #d4a843;
+  --c-cream: #faf8f4;
+  --c-surface: #ffffff;
+  --c-muted: #6b5b4e;
+  --c-line: #ede6d5;
+  --c-line-dark: #ddd0b4;
+}
+
+/* Main grid */
+.pvg-contact-main {
+  position: relative;
+  z-index: 2;
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+@media (min-width: 640px) {
+  .pvg-contact-main {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.pvg-contact-grid {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .pvg-contact-grid {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: 1.75rem;
+  }
+}
+
+/* Cards */
+.pvg-contact-card {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-line) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 48px rgba(44, 4, 4, 0.07) !important;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.pvg-contact-card:hover {
+  box-shadow: 0 22px 56px rgba(44, 4, 4, 0.1) !important;
+}
+
+/* Form */
+.pvg-contact-form-card {
+  padding: 1.75rem 1.5rem 1.5rem;
+  border-top: 3px solid var(--c-maroon) !important;
+}
+
+@media (min-width: 640px) {
+  .pvg-contact-form-card {
+    padding: 2rem 2rem 1.75rem;
+  }
+}
+
+.pvg-contact-form-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pvg-contact-form-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(212, 168, 67, 0.16);
+  color: var(--c-maroon);
+  flex-shrink: 0;
+}
+
+.pvg-contact-form-head h2 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(22px, 2.2vw, 28px) !important;
+  font-weight: 700 !important;
+  color: #2c0404 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.015em !important;
+}
+
+.pvg-contact-form-head p {
+  margin: 0.35rem 0 0;
+  font-size: 19px !important;
+  font-style: italic !important;
+  color: #5a5043 !important;
+  line-height: 1.5 !important;
+}
+
+.pvg-contact-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.pvg-contact-field,
+.pvg-contact-select,
+.pvg-contact-textarea {
+  width: 100%;
+  border: 1px solid var(--c-line-dark);
+  border-radius: 8px;
+  background: #fff !important;
+  color: var(--c-maroon-deep) !important;
+  font-size: 0.94rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pvg-contact-field,
+.pvg-contact-select {
+  height: 2.85rem;
+  padding: 0 1rem;
+}
+
+.pvg-contact-textarea {
+  min-height: 9rem;
+  padding: 0.8rem 1rem;
+  resize: vertical;
+}
+
+.pvg-contact-field:focus,
+.pvg-contact-select:focus,
+.pvg-contact-textarea:focus {
+  border-color: var(--c-maroon) !important;
+  box-shadow: 0 0 0 3px rgba(122, 21, 21, 0.1);
+}
+
+.pvg-contact-phone-row {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 9.5rem) minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+@media (max-width: 399px) {
+  .pvg-contact-phone-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pvg-contact-select-wrap {
+  position: relative;
+}
+
+.pvg-contact-select {
+  appearance: none;
+  padding-right: 2rem;
+}
+
+.pvg-contact-select-caret {
+  pointer-events: none;
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9a9186;
+  font-size: 0.7rem;
+}
+
+.pvg-contact-submit {
+  margin-top: 0.25rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--c-maroon) !important;
+  color: #fff !important;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(122, 21, 21, 0.25);
+}
+
+.pvg-contact-submit:hover:not(:disabled) {
+  background: #4d0a0a !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(122, 21, 21, 0.32);
+}
+
+.pvg-contact-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.pvg-contact-status {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pvg-contact-status--ok { color: #3f7d4a !important; }
+.pvg-contact-status--err { color: #b53a2f !important; }
+
+/* Reach-us sidebar */
+.pvg-contact-reach-card {
+  padding: 1.5rem 1.35rem;
+  border-top: 3px solid var(--c-gold) !important;
+  height: 100%;
+}
+
+@media (min-width: 640px) {
+  .pvg-contact-reach-card {
+    padding: 1.75rem 1.5rem;
+  }
+}
+
+.pvg-contact-reach-title {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(22px, 2.2vw, 28px) !important;
+  font-weight: 700 !important;
+  color: #2c0404 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.015em !important;
+}
+
+.pvg-contact-reach-block + .pvg-contact-reach-block {
+  margin-top: 1.15rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--c-line);
+}
+
+.pvg-contact-reach-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-maroon) !important;
+}
+
+.pvg-contact-reach-label svg {
+  color: var(--c-gold);
+}
+
+.pvg-contact-phone-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem 0.75rem;
+}
+
+@media (min-width: 400px) {
+  .pvg-contact-phone-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pvg-contact-phone-grid a,
+.pvg-contact-reach-list a,
+.pvg-contact-reach-single {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #261a10 !important;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pvg-contact-phone-grid a:hover,
+.pvg-contact-reach-list a:hover,
+.pvg-contact-reach-single:hover {
+  color: var(--c-maroon) !important;
+}
+
+.pvg-contact-reach-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.pvg-contact-reach-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--c-muted) !important;
+}
+
+.pvg-contact-hours-box {
+  border: 1px solid var(--c-line-dark);
+  border-radius: 8px;
+  background: #faf8f4;
+  padding: 0.75rem 0.85rem;
+}
+
+.pvg-contact-hours-row {
+  display: grid;
+  grid-template-columns: 5.75rem 1fr;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--c-muted) !important;
+}
+
+.pvg-contact-hours-row + .pvg-contact-hours-row {
+  margin-top: 0.3rem;
+}
+
+.pvg-contact-hours-row span:first-child {
+  font-weight: 600;
+  color: #261a10 !important;
+}
+
+.pvg-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--c-maroon) !important;
+  text-decoration: none;
+  transition: color 0.2s, gap 0.2s;
+}
+
+.pvg-contact-link:hover {
+  color: var(--c-gold) !important;
+  gap: 0.5rem;
+}
+
+/* Locations */
+.pvg-contact-locations {
+  padding: 1rem 1rem 2.5rem;
+  background: linear-gradient(180deg, #fff 0%, var(--c-cream) 100%) !important;
+  border-top: 1px solid var(--c-line);
+}
+
+.pvg-contact-locations-inner {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+}
+
+.pvg-contact-location-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .pvg-contact-location-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pvg-contact-location-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pvg-contact-location-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.pvg-contact-location-photo-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #ece5db;
+}
+
+.pvg-contact-location-photo {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.pvg-contact-location-card:hover .pvg-contact-location-photo {
+  transform: scale(1.05);
+}
+
+.pvg-contact-location-flag {
+  position: absolute;
+  left: 50%;
+  bottom: -1rem;
+  transform: translateX(-50%);
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.pvg-contact-location-body {
+  padding: 1.65rem 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+}
+
+.pvg-contact-location-head {
+  margin-bottom: 0.85rem;
+}
+
+.pvg-contact-location-head h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(18px, 1.8vw, 22px) !important;
+  font-weight: 700 !important;
+  color: #2c0404 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.pvg-contact-location-head p {
+  margin: 0.25rem 0 0;
+  font-size: 15px !important;
+  font-style: italic !important;
+  color: #5a5043 !important;
+}
+
+.pvg-contact-addr-block + .pvg-contact-addr-block {
+  margin-top: 0.75rem;
+}
+
+.pvg-contact-addr-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-maroon) !important;
+}
+
+.pvg-contact-location-body address {
+  margin: 0;
+  font-style: normal;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--c-muted) !important;
+}
+
+.pvg-contact-location-landmark {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #8a6400 !important;
+}
+
+.pvg-contact-location-hours {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--c-maroon-deep) !important;
+}
+
+.pvg-contact-location-hours svg {
+  color: var(--c-gold);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.pvg-contact-location-body .pvg-contact-link {
+  margin-top: auto;
+  padding-top: 0.85rem;
+}
+
+/* Maps — single featured showroom */
+.pvg-contact-maps {
+  padding: 0 1rem 3.5rem;
+}
+.pvg-contact-trust {
+  padding: 2rem 1rem;
+  background: #fff !important;
+  border-top: 1px solid var(--c-line);
+}
+
+.pvg-contact-trust-grid {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .pvg-contact-trust-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pvg-contact-trust-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pvg-contact-trust-item {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.pvg-contact-trust-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: rgba(212, 168, 67, 0.14);
+  color: var(--c-maroon);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.pvg-contact-trust-item strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--c-maroon-deep) !important;
+  margin-bottom: 0.15rem;
+}
+
+.pvg-contact-trust-item span {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--c-muted) !important;
+}
+
+/* Maps */
+.pvg-contact-maps {
+  padding: 1rem 1rem 3.5rem;
+}
+
+.pvg-contact-maps-inner {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 2.5rem;
+}
+
+.pvg-contact-map-block {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-line) !important;
+  border-radius: 14px !important;
+  padding: 1.25rem 1.25rem 1rem;
+  box-shadow: 0 10px 32px rgba(44, 4, 4, 0.06) !important;
+}
+
+.pvg-contact-map-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.pvg-contact-map-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pvg-contact-map-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  color: var(--c-maroon-deep) !important;
+}
+
+.pvg-contact-map-head h2 svg {
+  color: var(--c-maroon);
+}
+
+.pvg-contact-map-grid {
+  display: grid;
+  gap: 1rem;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+@media (min-width: 1024px) {
+  .pvg-contact-map-grid {
+    grid-template-columns: 0.36fr 0.64fr;
+  }
+}
+
+.pvg-contact-map-route {
+  width: 100%;
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.pvg-contact-map-embed {
+  width: 100%;
+  height: 22rem;
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvg-contact-location-card:hover .pvg-contact-location-photo {
+    transform: none;
+  }
+}

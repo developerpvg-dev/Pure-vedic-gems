@@ -7,6 +7,12 @@ import {
   RUDRAKSHA_FEATURE_IMAGES,
   rudrakshaMukhiImage,
 } from '@/lib/constants/rudraksha-category-images';
+import {
+  RUDRAKSHA_HOME_GRID_SLUGS,
+  isRudrakshaStorefrontSlug,
+  pickRudrakshaHomeGridCategories,
+  rudrakshaSubcategoryLabel,
+} from '@/lib/constants/rudraksha-subcategories';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 
 export type HomeManagedCategory = {
@@ -22,6 +28,8 @@ export type HomeManagedCategory = {
   display_locations: string | null;
   color: string | null;
   sort_order: number;
+  featured_on_homepage?: boolean;
+  is_rare?: boolean;
 };
 
 type CategoryBucket = {
@@ -74,7 +82,7 @@ export type HomeSectionCatalog = {
 
 type UntypedDb = { from: (table: string) => any };
 
-const CATEGORY_COLUMNS_WITH_LOCATIONS = 'id, name, slug, type, sanskrit_name, planet, image_url, hover_image_url, description, display_locations, color, sort_order';
+const CATEGORY_COLUMNS_WITH_LOCATIONS = 'id, name, slug, type, sanskrit_name, planet, image_url, hover_image_url, description, display_locations, color, sort_order, featured_on_homepage, is_rare';
 const CATEGORY_COLUMNS_BASE = 'id, name, slug, type, sanskrit_name, planet, image_url, hover_image_url, description, color, sort_order';
 const UPRATNA_DEFAULT_LOCATIONS = 'Burma / Mozambique / Africa';
 
@@ -111,20 +119,22 @@ const UPRATNA_FALLBACK: HomeManagedCategory[] = [
   { id: 'malachite', name: 'Malachite', slug: 'malachite', type: 'upratna', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#48C07A', sort_order: 10 },
 ];
 
-const RUDRAKSHA_FALLBACK: HomeManagedCategory[] = [
-  { id: '15-mukhi', name: '15 Mukhi', slug: '15-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Rare', color: null, sort_order: 1 },
-  { id: '16-mukhi', name: '16 Mukhi', slug: '16-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Rare', color: null, sort_order: 2 },
-  { id: '17-mukhi', name: '17 Mukhi', slug: '17-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Rare', color: null, sort_order: 3 },
-  { id: '18-mukhi', name: '18 Mukhi', slug: '18-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Rare', color: null, sort_order: 4 },
-  { id: '19-mukhi', name: '19 Mukhi', slug: '19-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Rare', color: null, sort_order: 5 },
-  { id: '21-mukhi', name: '21 Mukhi', slug: '21-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Rare', color: null, sort_order: 6 },
-  { id: '1-mukhi', name: '1 Mukhi', slug: '1-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Classic', color: null, sort_order: 7 },
-  { id: '2-mukhi', name: '2 Mukhi', slug: '2-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Classic', color: null, sort_order: 8 },
-  { id: '3-mukhi', name: '3 Mukhi', slug: '3-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Classic', color: null, sort_order: 9 },
-  { id: '4-mukhi', name: '4 Mukhi', slug: '4-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Classic', color: null, sort_order: 10 },
-  { id: '5-mukhi', name: '5 Mukhi', slug: '5-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Classic', color: null, sort_order: 11 },
-  { id: '6-mukhi', name: '6 Mukhi', slug: '6-mukhi', type: 'rudraksha', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: 'Classic', color: null, sort_order: 12 },
-];
+const RUDRAKSHA_FALLBACK: HomeManagedCategory[] = RUDRAKSHA_HOME_GRID_SLUGS.map((slug, index) => ({
+  id: slug,
+  name: rudrakshaSubcategoryLabel(slug),
+  slug,
+  type: 'rudraksha',
+  sanskrit_name: null,
+  planet: null,
+  image_url: null,
+  hover_image_url: null,
+  description: null,
+  display_locations: Number.parseInt(slug, 10) >= 10 ? 'Rare' : 'Classic',
+  color: null,
+  sort_order: index + 1,
+  featured_on_homepage: true,
+  is_rare: Number.parseInt(slug, 10) >= 10,
+}));
 
 const RUDRAKSHA_FEATURE_FALLBACK: HomeCatalogCategory[] = [
   { id: 'rudraksha-mukhi-collection', name: '1-15 Finest Quality Rudrakshas', slug: 'rudraksha-mukhi-collection', family: 'rudraksha', image_url: null, hover_image_url: null, homepage_subtitle: 'Complete Mukhi range', homepage_badge: 'Featured', cta_label: 'Shop All', canonical_path: '/shop/rudraksha', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 1 },
@@ -177,6 +187,10 @@ function normalizeCategory(row: Record<string, unknown>): HomeManagedCategory | 
     display_locations: row.display_locations ? String(row.display_locations) : null,
     color: row.color ? String(row.color) : null,
     sort_order: Number(row.sort_order ?? 0),
+    featured_on_homepage: row.featured_on_homepage === undefined || row.featured_on_homepage === null
+      ? true
+      : row.featured_on_homepage !== false && row.featured_on_homepage !== 'false',
+    is_rare: row.is_rare === true || row.is_rare === 'true',
   };
 }
 
@@ -208,12 +222,27 @@ function mergeWithFallback(items: HomeManagedCategory[], fallback: HomeManagedCa
     const fallbackItem = fallbackBySlug.get(item.slug);
     return {
       ...item,
+      name: item.name || fallbackItem?.name || item.slug,
       sanskrit_name: item.sanskrit_name ?? fallbackItem?.sanskrit_name ?? null,
       image_url: item.image_url ?? null,
       display_locations: item.display_locations ?? fallbackItem?.display_locations ?? (item.type === 'upratna' ? UPRATNA_DEFAULT_LOCATIONS : item.description ?? null),
       color: item.color ?? fallbackItem?.color ?? null,
+      featured_on_homepage: item.featured_on_homepage ?? fallbackItem?.featured_on_homepage ?? true,
+      is_rare: item.is_rare ?? fallbackItem?.is_rare ?? false,
     };
   });
+}
+
+function buildRudrakshaHomeCategories(items: HomeManagedCategory[]) {
+  const merged = mergeWithFallback(
+    items.filter((category) => isRudrakshaStorefrontSlug(category.slug)),
+    RUDRAKSHA_FALLBACK,
+  );
+  const fallbackBySlug = new Map(RUDRAKSHA_FALLBACK.map((item) => [item.slug, item]));
+  return pickRudrakshaHomeGridCategories(merged, fallbackBySlug).map((item) => ({
+    ...item,
+    name: item.name || rudrakshaSubcategoryLabel(item.slug),
+  }));
 }
 
 export async function getHomeManagedCategories(): Promise<CategoryBucket> {
@@ -249,7 +278,7 @@ export async function getHomeManagedCategories(): Promise<CategoryBucket> {
   return {
     navaratna: mergeWithFallback(grouped.navaratna, NAVARATNA_FALLBACK),
     upratna: mergeWithFallback(grouped.upratna, UPRATNA_FALLBACK),
-    rudraksha: mergeWithFallback(grouped.rudraksha, RUDRAKSHA_FALLBACK),
+    rudraksha: buildRudrakshaHomeCategories(grouped.rudraksha),
   };
 }
 
@@ -402,8 +431,8 @@ function catalogCategoryHref(category: HomeCatalogCategory) {
   return storefrontSubcategoryHref(parentSlug, category.slug);
 }
 
-function rudrakshaImageForSlug(slug: string) {
-  return rudrakshaMukhiImage(slug);
+function rudrakshaImageForSlug(slug: string, imageUrl?: string | null) {
+  return imageUrl ?? rudrakshaMukhiImage(slug);
 }
 
 function rudrakshaFeatureImage(card: HomeCatalogCategory) {
@@ -667,8 +696,8 @@ export function RudrakshaHomeSection({
               <div className="rudra-grid-right">
                 {visibleCategories.map((category) => {
                   const meta = locationLabel(category) || '';
-                  const isRare = meta.toLowerCase().includes('rare');
-                  const imageUrl = category.image_url ?? rudrakshaImageForSlug(category.slug);
+                  const isRare = category.is_rare || meta.toLowerCase().includes('rare');
+                  const imageUrl = rudrakshaImageForSlug(category.slug, category.image_url);
                   return (
                     <Link key={category.slug} href={managedCategoryHref(category)} className="rudra-item-card">
                       <div className="rudra-circ-wrap">

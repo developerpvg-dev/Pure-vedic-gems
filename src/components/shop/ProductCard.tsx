@@ -22,20 +22,8 @@ function getImageSrc(product: ProductCardType): string {
       return (first as { url: string }).url;
     }
   }
-  // Fallback per category
-  const fallbacks: Record<string, string> = {
-    gemstone:
-      'https://images.unsplash.com/photo-1551122089-4e3e72477432?w=600&h=900&fit=crop&q=80',
-    rudraksha:
-      'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=600&h=900&fit=crop&q=80',
-    jewelry:
-      'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=900&fit=crop&q=80',
-    mala:
-      'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=600&h=900&fit=crop&q=80',
-    idol:
-      'https://images.unsplash.com/photo-1624927637280-f033784c1279?w=600&h=900&fit=crop&q=80',
-  };
-  return fallbacks[product.category] ?? fallbacks.gemstone;
+  // Branded placeholder — avoid unrelated stock photos when legacy image is missing
+  return '/placeholder-gem.png';
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -63,7 +51,7 @@ export function ProductCard({ product }: ProductCardProps) {
     ? 'Reserved'
     : product.availability_status === 'sold'
     ? 'Sold'
-    : 'Out of stock';
+    : 'Out of Stock';
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -127,17 +115,20 @@ export function ProductCard({ product }: ProductCardProps) {
             src={imageSrc}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            className={`object-cover transition-transform duration-500 group-hover:scale-[1.04]${isUnavailable ? ' opacity-60' : ''}`}
             sizes="(min-width: 1536px) 20vw, (min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 46vw"
           />
         </Link>
 
-        {/* Status badges — prominent top-left overlay */}
         {isUnavailable && (
-          <div className="absolute left-1.5 top-1.5 z-10 rounded bg-red-600/95 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-md sm:left-2 sm:top-2 sm:rounded-md sm:px-2.5 sm:py-1 sm:text-[10px]">
-            {unavailableLabel}
+          <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center bg-black/20">
+            <span className="rounded-md bg-red-600/95 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-lg sm:text-xs">
+              {unavailableLabel}
+            </span>
           </div>
         )}
+
+        {/* Status badges — prominent top-left overlay */}
         {!isUnavailable && isOnRequest && (
           <div className="absolute left-1.5 top-1.5 z-10 rounded bg-[#7A1515]/95 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-md sm:left-2 sm:top-2 sm:rounded-md sm:px-2.5 sm:py-1 sm:text-[10px]">
             On Request

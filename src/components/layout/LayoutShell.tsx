@@ -18,9 +18,15 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     '/tools',
     '/blog',
     '/about',
-    '/contact',
     '/track-order',
-  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
+  ].some((route) => pathname === route || pathname.startsWith(`${route}/`))
+    && !pathname.startsWith('/about/experts')
+    && !pathname.startsWith('/about/stores')
+    && pathname !== '/track-order'
+    && pathname !== '/consultation'
+    && !pathname.startsWith('/tools/')
+    && !pathname.startsWith('/account')
+    && !pathname.startsWith('/blog');
   const shellClassName = [
     'flex-1',
     usesReferenceTheme ? 'pvg-reference-theme' : null,

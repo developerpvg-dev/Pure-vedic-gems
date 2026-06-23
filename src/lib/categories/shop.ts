@@ -11,6 +11,8 @@ import {
 
 export type BaseShopCategory = {
   category?: string;
+  sub_category?: string;
+  catalogSubcategories?: string[];
   label: string;
   desc: string;
   canonicalPath: string;
@@ -65,12 +67,14 @@ export const BASE_CATEGORY_MAP: Record<string, BaseShopCategory> = {
     label: 'Malas',
     desc: 'Sacred malas of Rudraksha, crystals and gemstones for japa meditation and spiritual practice.',
     canonicalPath: '/shop/malas',
+    catalogSubcategories: ['malas', 'exclusive-rudraksha-malas'],
   },
   mala: {
     category: 'mala',
     label: 'Malas',
     desc: 'Sacred malas of Rudraksha, crystals and gemstones for japa meditation and spiritual practice.',
     canonicalPath: '/shop/malas',
+    catalogSubcategories: ['malas', 'exclusive-rudraksha-malas'],
   },
   idols: {
     category: 'idol',
@@ -143,6 +147,9 @@ export const KNOWN_CATALOG_SUBCATEGORIES: Record<string, { category: 'rudraksha'
   '21-mukhi': { category: 'rudraksha', label: '21 Mukhi Rudraksha' },
   'gauri-shankar': { category: 'rudraksha', label: 'Gauri Shankar Rudraksha' },
   'ganesh-rudraksha': { category: 'rudraksha', label: 'Ganesh Rudraksha' },
+  'nir-mukhi': { category: 'rudraksha', label: 'Nir Mukhi Rudraksha' },
+  'garbh-gauri': { category: 'rudraksha', label: 'Garbh Gauri' },
+  'sawar-rudraksha': { category: 'rudraksha', label: 'Sawar Rudraksha' },
   'shree-yantra': { category: 'idol', label: 'Shree Yantra' },
   'durga-devi': { category: 'idol', label: 'Durga Devi' },
   hanuman: { category: 'idol', label: 'Hanuman' },
@@ -154,20 +161,23 @@ export const KNOWN_CATALOG_SUBCATEGORIES: Record<string, { category: 'rudraksha'
   saraswati: { category: 'idol', label: 'Saraswati' },
   vishnu: { category: 'idol', label: 'Vishnu' },
   bracelets: { category: 'jewelry', label: 'Bracelets' },
-  'rudraksha-jewelry': { category: 'jewelry', label: 'Ready Rudraksha Jewelry' },
-  'diamond-jewellery': { category: 'jewelry', label: 'Diamond Jewellery' },
-  'astro-gems-stock': { category: 'jewelry', label: 'Ready Astro-Gems Stock' },
+  'rudraksha-jewelry': { category: 'jewelry', label: 'Customised Rudraksha Jewelleries' },
+  'ready-rudraksha-jewelry-stock': { category: 'jewelry', label: 'Ready (Rudraksha Jewelry) Stock' },
+  'rudraksha-pendents': { category: 'jewelry', label: 'Rudraksha Pendants' },
+  'diamond-jewellery': { category: 'jewelry', label: 'Diamond-Jewellery' },
+  'astro-gems-stock': { category: 'jewelry', label: 'Ready (Astro-Gems) Stock' },
   ring: { category: 'jewelry', label: 'Rings' },
   pendant: { category: 'jewelry', label: 'Pendants' },
   necklace: { category: 'jewelry', label: 'Necklaces' },
   earring: { category: 'jewelry', label: 'Earrings' },
   malas: { category: 'mala', label: 'Rudraksha Malas' },
-  'exclusive-rudraksha-malas': { category: 'mala', label: 'Exclusive Rudraksha Malas' },
+  'exclusive-rudraksha-malas': { category: 'jewelry', label: 'Exclusive Rudraksha Malas' },
 };
 
 export type ResolvedShopCategory = {
   category?: string;
   sub_category?: string;
+  catalogSubcategories?: string[];
   parentSlug?: StorefrontCategoryGroupSlug | 'gemstones';
   label: string;
   desc: string;
@@ -342,7 +352,18 @@ export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: 
   }
 
   const base = BASE_CATEGORY_MAP[parentOrSlug];
-  if (base) return base;
+  if (base) {
+    return {
+      category: base.category,
+      sub_category: base.sub_category,
+      catalogSubcategories: base.catalogSubcategories,
+      parentSlug: normalizeStorefrontGroupSlug(parentOrSlug) ?? undefined,
+      label: base.label,
+      desc: base.desc,
+      canonicalPath: base.canonicalPath,
+      directorsPick: base.directorsPick,
+    };
+  }
 
   return (
     await findGemCategory(parentOrSlug)

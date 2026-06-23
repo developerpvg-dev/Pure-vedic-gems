@@ -1,0 +1,416 @@
+/* Account area — matches contact / consultation typography */
+
+.pvg-account-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #faf8f4;
+  padding-bottom: 5rem;
+  padding-top: 7rem;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  color: #15110d;
+}
+
+@media (min-width: 1024px) {
+  .pvg-account-page {
+    padding-top: 7.5rem;
+  }
+}
+
+.pvg-account-inner {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 2.5rem 1rem 0;
+}
+
+@media (min-width: 640px) {
+  .pvg-account-inner {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pvg-account-inner {
+    padding-top: 3.5rem;
+  }
+}
+
+.pvg-account-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pvg-account-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a5043;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pvg-account-back:hover {
+  color: #7a1515;
+}
+
+.pvg-account-hero {
+  text-align: center;
+}
+
+.pvg-account-hero-eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-account-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pvg-account-quick-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .pvg-account-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pvg-account-quick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .pvg-account-quick-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pvg-account-quick-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid #ede6d5;
+  border-radius: 14px;
+  background: #fff;
+  padding: 1.15rem 1.2rem;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(44, 4, 4, 0.05);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.pvg-account-quick-link:hover {
+  border-color: #ddd0b4;
+  box-shadow: 0 12px 32px rgba(44, 4, 4, 0.08);
+  transform: translateY(-2px);
+}
+
+.pvg-account-quick-icon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #fdf3e7;
+  color: #7a1515;
+}
+
+.pvg-account-quick-label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #2c0404;
+}
+
+.pvg-account-quick-desc {
+  margin: 0.2rem 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5a5043;
+}
+
+.pvg-account-quick-chevron {
+  margin-top: auto;
+  color: #b8861e;
+  transition: transform 0.2s;
+}
+
+.pvg-account-quick-link:hover .pvg-account-quick-chevron {
+  transform: translateX(3px);
+}
+
+.pvg-account-card {
+  border: 1px solid #ede6d5;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(44, 4, 4, 0.06);
+}
+
+.pvg-account-card-pad {
+  padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .pvg-account-card-pad {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+.pvg-account-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.pvg-account-card-title {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(20px, 2vw, 24px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: #2c0404;
+}
+
+.pvg-account-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a1515;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pvg-account-card-link:hover {
+  color: #b8861e;
+}
+
+.pvg-account-divider {
+  border-top: 1px solid #ede6d5;
+}
+
+.pvg-account-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.pvg-account-row-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2c0404;
+}
+
+.pvg-account-row-meta {
+  margin: 0.2rem 0 0;
+  font-size: 12px;
+  color: #6b5b4e;
+}
+
+.pvg-account-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.pvg-account-empty-icon {
+  margin: 0 auto 1rem;
+  color: #6b5b4e;
+  opacity: 0.35;
+}
+
+.pvg-account-empty-title {
+  margin: 0;
+  font-size: clamp(18px, 1.8vw, 22px);
+  font-weight: 700;
+  color: #2c0404;
+}
+
+.pvg-account-empty-copy {
+  margin: 0.5rem 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5a5043;
+}
+
+.pvg-account-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 0;
+  border-radius: 8px;
+  background: #7a1515;
+  padding: 0.7rem 1.15rem;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pvg-account-btn:hover {
+  background: #4d0a0a;
+}
+
+.pvg-account-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid #7a1515;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0.65rem 1rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a1515;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pvg-account-btn-outline:hover {
+  background: #7a1515;
+  color: #fff;
+}
+
+.pvg-account-stat-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .pvg-account-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pvg-account-stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pvg-account-stat {
+  border: 1px solid #ede6d5;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1.1rem 1.15rem;
+}
+
+.pvg-account-stat-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-account-stat-value {
+  margin: 0.45rem 0 0;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 700;
+  line-height: 1.1;
+  color: #2c0404;
+}
+
+.pvg-account-stat-detail {
+  margin: 0.25rem 0 0;
+  font-size: 12px;
+  color: #6b5b4e;
+}
+
+.pvg-account-badge {
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pvg-account-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-account-field {
+  width: 100%;
+  border: 1px solid #ddd0b4;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.94rem;
+  color: #2c0404;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pvg-account-field:focus {
+  border-color: #7a1515;
+  box-shadow: 0 0 0 3px rgba(122, 21, 21, 0.1);
+}
+
+.pvg-account-info-box {
+  border: 1px solid #ede6d5;
+  border-radius: 10px;
+  background: #faf8f4;
+  padding: 0.85rem 1rem;
+}
+
+.pvg-account-info-label {
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b5b4e;
+}
+
+.pvg-account-info-value {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c0404;
+}

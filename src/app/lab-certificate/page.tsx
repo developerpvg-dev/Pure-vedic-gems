@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ExternalLink, FileBadge2, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import type { LabCertificate } from '@/lib/types/database';
+import './lab-certificate-page.css';
 
 export const metadata: Metadata = {
   title: 'Lab Certificate Samples | Pure Vedic Gems',
@@ -38,46 +39,61 @@ export default async function LabCertificatePage() {
   const certificates = (data ?? []) as LabCertificate[];
 
   return (
-    <main className="pvg-simple-page pvg-info-page min-h-screen bg-[#fbfaf7] pt-28 font-body text-[#15110d]">
-      <section className="px-4 pb-10 pt-10 sm:px-6 lg:pt-14">
+    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
+      <section className="px-4 pb-10 pt-10 sm:px-6 lg:pt-14" aria-labelledby="lab-cert-heading">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b86654]">Trust documents</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Lab certificate samples</h1>
-          <p className="mx-auto mt-4 max-w-3xl text-[15px] leading-7 text-[#5e4a38]">
-              Certificate examples from government-recognised Indian labs and international gemological institutes. Admins can add new certificate names and upload sample certificate files from the control room.
-          </p>
-          <div className="mx-auto mt-7 flex max-w-2xl items-start gap-3 border border-[#d8bd75] bg-[#fdf3e7] px-5 py-4 text-left">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#8a6400]" />
-            <p className="text-sm leading-6 text-[#5e4a38]">Every sample is displayed as a public reference so customers understand the lab documentation available with eligible gemstones and Rudrakshas.</p>
+          <div className="mb-0 flex flex-col items-center justify-center">
+            <h1 className="section-title" id="lab-cert-heading">
+              Lab Certificate Samples
+            </h1>
+            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
+              Certificate examples from government-recognised Indian labs and international gemological institutes used with eligible gemstones and Rudrakshas.
+            </p>
+            <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+          </div>
+
+          <div className="pvg-lab-trust-box">
+            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+            <p>
+              Every sample is displayed as a public reference so customers understand the lab documentation available with eligible gemstones and Rudrakshas.
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8" aria-label="Certificate samples">
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {certificates.map((certificate) => {
             const assetUrl = certificateAsset(certificate);
             return (
-            <article key={certificate.id} className="group overflow-hidden border border-[#e5d7c8] bg-white shadow-[0_14px_40px_rgba(46,30,16,0.06)]">
-              <Link href={assetUrl} target="_blank" rel="noreferrer" className="relative block aspect-[4/3] bg-[#f7efe5]">
-                {assetUrl ? (
-                  <Image src={assetUrl} alt={certificate.name} fill sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw" className="object-contain p-3 transition duration-500 group-hover:scale-[1.03]" />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <FileBadge2 className="h-16 w-16 text-[#8a6400]" />
-                  </div>
-                )}
-              </Link>
-              <div className="p-5">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#b86654]">{certificate.lab_name || 'Certificate'}</p>
-                <h2 className="mt-2 min-h-14 text-xl font-black leading-tight text-[#15110d]">{certificate.name}</h2>
-                {certificate.description && <p className="mt-3 text-sm leading-7 text-[#5e4a38]">{certificate.description}</p>}
-                <Link href={assetUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 border border-[#d9c3aa] px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#6b3b23] transition hover:border-[#b86654] hover:text-[#b86654]">
-                  View certificate
-                  <ExternalLink className="h-3.5 w-3.5" />
+              <article key={certificate.id} className="pvg-lab-cert-card group">
+                <Link href={assetUrl} target="_blank" rel="noreferrer" className="relative block aspect-[4/3] bg-[#faf8f4]">
+                  {assetUrl ? (
+                    <Image
+                      src={assetUrl}
+                      alt={certificate.name}
+                      fill
+                      sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="object-contain p-3 transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <FileBadge2 className="h-16 w-16 text-[#b8861e]" aria-hidden="true" />
+                    </div>
+                  )}
                 </Link>
-              </div>
-            </article>
+                <div className="p-5">
+                  <p className="pvg-lab-cert-eyebrow">{certificate.lab_name || 'Certificate'}</p>
+                  <h2 className="pvg-lab-cert-title">{certificate.name}</h2>
+                  {certificate.description ? (
+                    <p className="pvg-lab-cert-desc">{certificate.description}</p>
+                  ) : null}
+                  <Link href={assetUrl} target="_blank" rel="noreferrer" className="pvg-lab-cert-link">
+                    View certificate
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                </div>
+              </article>
             );
           })}
         </div>

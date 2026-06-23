@@ -7,6 +7,7 @@ import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
 import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySections';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
+import { TrustCardsSection } from '@/components/home/TrustCardsSection';
 import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
 
 const WHO_WE_ARE_IMG_VERSION = '20260614';
@@ -176,136 +177,7 @@ export function PvgReferenceSections({
 
 
   
-  <section className="trust-section" aria-label="Trust credentials">
-    <div className="trust-inner">
-      <div className="trust-cards">
-
-        
-        <div className="trust-card">
-          
-          <svg className="chakra-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="36" cy="36" r="34" stroke="#D4A843" strokeWidth="1"/>
-            <circle cx="36" cy="36" r="26" stroke="#D4A843" strokeWidth="0.7"/>
-            <circle cx="36" cy="36" r="10" stroke="#D4A843" strokeWidth="0.7"/>
-            <circle cx="36" cy="36" r="5" fill="#D4A843" opacity="0.3"/>
-            <line x1="36" y1="2" x2="36" y2="70" stroke="#D4A843" strokeWidth="0.8"/>
-            <line x1="2" y1="36" x2="70" y2="36" stroke="#D4A843" strokeWidth="0.8"/>
-            <line x1="11.5" y1="11.5" x2="60.5" y2="60.5" stroke="#D4A843" strokeWidth="0.8"/>
-            <line x1="60.5" y1="11.5" x2="11.5" y2="60.5" stroke="#D4A843" strokeWidth="0.8"/>
-            
-            <polygon points="36,8 39,28 36,32 33,28" fill="#B8861E" opacity="0.5"/>
-            <polygon points="64,36 44,39 40,36 44,33" fill="#B8861E" opacity="0.5"/>
-            <polygon points="36,64 33,44 36,40 39,44" fill="#B8861E" opacity="0.5"/>
-            <polygon points="8,36 28,33 32,36 28,39" fill="#B8861E" opacity="0.5"/>
-            <polygon points="55.5,16.5 41,32 37,30 43,20" fill="#B8861E" opacity="0.35"/>
-            <polygon points="55.5,55.5 40,41 42,37 52,43" fill="#B8861E" opacity="0.35"/>
-            <polygon points="16.5,55.5 31,40 35,42 29,52" fill="#B8861E" opacity="0.35"/>
-            <polygon points="16.5,16.5 31,32 29,36 19,30" fill="#B8861E" opacity="0.35"/>
-          </svg>
-          <div className="trust-card-value">1937</div>
-          <div className="trust-card-label">Established Since</div>
-          <div className="trust-card-sub">4th Generation Family</div>
-        </div>
-
-        
-        <div className="trust-card">
-          
-          <svg className="chakra-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="36" cy="36" r="34" stroke="#D4A843" strokeWidth="1"/>
-            <circle cx="36" cy="36" r="7" fill="#D4A843" opacity="0.25"/>
-            <circle cx="36" cy="36" r="3" fill="#D4A843" opacity="0.5"/>
-            
-            <ellipse cx="36" cy="14" rx="5" ry="11" fill="#D4A843" opacity="0.22"/>
-            <ellipse cx="36" cy="58" rx="5" ry="11" fill="#D4A843" opacity="0.22"/>
-            <ellipse cx="14" cy="36" rx="11" ry="5" fill="#D4A843" opacity="0.22"/>
-            <ellipse cx="58" cy="36" rx="11" ry="5" fill="#D4A843" opacity="0.22"/>
-            <ellipse cx="16.5" cy="16.5" rx="8" ry="5" transform="rotate(-45 16.5 16.5)" fill="#D4A843" opacity="0.18"/>
-            <ellipse cx="55.5" cy="55.5" rx="8" ry="5" transform="rotate(-45 55.5 55.5)" fill="#D4A843" opacity="0.18"/>
-            <ellipse cx="55.5" cy="16.5" rx="8" ry="5" transform="rotate(45 55.5 16.5)" fill="#D4A843" opacity="0.18"/>
-            <ellipse cx="16.5" cy="55.5" rx="8" ry="5" transform="rotate(45 16.5 55.5)" fill="#D4A843" opacity="0.18"/>
-            <circle cx="36" cy="36" r="20" stroke="#B8861E" strokeWidth="0.5" strokeDasharray="3 3"/>
-          </svg>
-          <div className="trust-card-value">87+</div>
-          <div className="trust-card-label">Years of Legacy</div>
-          <div className="trust-card-sub">Unbroken Heritage</div>
-        </div>
-
-        
-        <div className="trust-card">
-          
-          <svg className="chakra-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="36" cy="36" r="34" stroke="#D4A843" strokeWidth="1"/>
-            <ellipse cx="36" cy="36" rx="22" ry="34" stroke="#D4A843" strokeWidth="0.7"/>
-            <ellipse cx="36" cy="36" rx="10" ry="34" stroke="#D4A843" strokeWidth="0.5"/>
-            <line x1="2" y1="36" x2="70" y2="36" stroke="#D4A843" strokeWidth="0.6"/>
-            <ellipse cx="36" cy="36" rx="34" ry="12" stroke="#D4A843" strokeWidth="0.5"/>
-            <ellipse cx="36" cy="36" rx="34" ry="22" stroke="#D4A843" strokeWidth="0.4"/>
-            <circle cx="36" cy="36" r="4" fill="#B8861E" opacity="0.5"/>
-          </svg>
-          <div className="trust-card-value">40+</div>
-          <div className="trust-card-label">Countries Served</div>
-          <div className="trust-card-sub">Global Clientele</div>
-        </div>
-
-        
-        <div className="trust-card">
-          
-          <svg className="chakra-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="36" cy="36" r="34" stroke="#D4A843" strokeWidth="1"/>
-            <path d="M36 10 L52 18 L52 36 C52 48 36 60 36 60 C36 60 20 48 20 36 L20 18 Z" stroke="#D4A843" strokeWidth="1.2" fill="#D4A843" fillOpacity="0.08"/>
-            <path d="M36 20 L44 24 L44 36 C44 43 36 50 36 50 C36 50 28 43 28 36 L28 24 Z" fill="#D4A843" fillOpacity="0.12"/>
-            <path d="M29 35 L34 40 L43 28" stroke="#B8861E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <div className="trust-card-value">6</div>
-          <div className="trust-card-label">Lab Certifications</div>
-          <div className="trust-card-sub">GIA · IGI · GRS · IIGJ</div>
-        </div>
-
-        
-        <div className="trust-card">
-          
-          <svg className="chakra-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="36" cy="36" r="34" stroke="#D4A843" strokeWidth="1"/>
-            
-            <polygon points="36,14 56,52 16,52" stroke="#D4A843" strokeWidth="1" fill="#D4A843" fillOpacity="0.07"/>
-            
-            <polygon points="36,58 56,20 16,20" stroke="#D4A843" strokeWidth="1" fill="#D4A843" fillOpacity="0.07"/>
-            <circle cx="36" cy="36" r="6" fill="#D4A843" opacity="0.3"/>
-            <circle cx="36" cy="36" r="2.5" fill="#B8861E" opacity="0.7"/>
-            
-            <circle cx="36" cy="8" r="1.8" fill="#D4A843" opacity="0.5"/>
-            <circle cx="64" cy="36" r="1.8" fill="#D4A843" opacity="0.5"/>
-            <circle cx="36" cy="64" r="1.8" fill="#D4A843" opacity="0.5"/>
-            <circle cx="8" cy="36" r="1.8" fill="#D4A843" opacity="0.5"/>
-          </svg>
-          <div className="trust-card-value">Vedic</div>
-          <div className="trust-card-label">Energized</div>
-          <div className="trust-card-sub">Authentic Puja · Video Proof</div>
-        </div>
-
-        
-        <div className="trust-card">
-          
-          <svg className="chakra-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="36" cy="36" r="34" stroke="#D4A843" strokeWidth="1"/>
-            {/* Group of people icon */}
-            <circle cx="24" cy="26" r="7" stroke="#D4A843" strokeWidth="1.2" fill="#D4A843" fillOpacity="0.12"/>
-            <circle cx="48" cy="26" r="7" stroke="#D4A843" strokeWidth="1.2" fill="#D4A843" fillOpacity="0.12"/>
-            <circle cx="36" cy="22" r="8" stroke="#B8861E" strokeWidth="1.5" fill="#D4A843" fillOpacity="0.18"/>
-            <path d="M12 52 C12 42 20 36 28 36 L44 36 C52 36 60 42 60 52" stroke="#D4A843" strokeWidth="1.2" fill="#D4A843" fillOpacity="0.1"/>
-            <path d="M20 52 C20 45 26 40 32 40 L40 40 C46 40 52 45 52 52" stroke="#B8861E" strokeWidth="1.5" fill="#D4A843" fillOpacity="0.15"/>
-            {/* Checkmark badge */}
-            <circle cx="54" cy="20" r="8" fill="#138808" fillOpacity="0.85"/>
-            <path d="M50 20 L53 23 L58 17" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          </svg>
-          <div className="trust-card-value">1.5 L+</div>
-          <div className="trust-card-label">Certified Customers</div>
-          <div className="trust-card-sub">Trusted · Verified · Happy</div>
-        </div>
-
-      </div>
-    </div>
-  </section>
+  <TrustCardsSection />
 
   <section className="pvg-welcome-section" aria-label="Welcome to Pure Vedic Science and Research Centre">
     <div className="container">

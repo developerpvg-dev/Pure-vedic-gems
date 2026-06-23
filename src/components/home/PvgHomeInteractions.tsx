@@ -651,70 +651,6 @@ function setupLockedScrollSteppers(sequences: ScrollSequence[]) {
   };
 }
 
-function setupTrustRotation() {
-  const trustCards = Array.from(document.querySelectorAll<HTMLElement>('.trust-card'));
-  if (!trustCards.length) return undefined;
-
-  let startIndex = 0;
-  let visibleCount = 0;
-  let timer: number | null = null;
-  let resizeFrame = 0;
-
-  const getVisibleCount = () => {
-    const width = window.innerWidth;
-    if (width <= 767) return 2;
-    if (width <= 1024) return 3;
-    return 0;
-  };
-
-  const clearTrustGroups = () => trustCards.forEach((card) => card.classList.remove('trust-hidden'));
-
-  const showWindow = () => {
-    if (!visibleCount || trustCards.length <= visibleCount) {
-      clearTrustGroups();
-      return;
-    }
-
-    trustCards.forEach((card, index) => {
-      const inWindow = index >= startIndex && index < startIndex + visibleCount;
-      card.classList.toggle('trust-hidden', !inWindow);
-    });
-  };
-
-  const restart = () => {
-    if (timer) window.clearInterval(timer);
-    timer = null;
-    visibleCount = getVisibleCount();
-    startIndex = 0;
-    showWindow();
-    if (!prefersReducedMotion() && visibleCount && trustCards.length > visibleCount) {
-      timer = window.setInterval(() => {
-        const maxStart = trustCards.length - visibleCount;
-        startIndex = startIndex >= maxStart ? 0 : startIndex + 1;
-        showWindow();
-      }, 3500);
-    }
-  };
-
-  const onResize = () => {
-    if (resizeFrame) return;
-    resizeFrame = window.requestAnimationFrame(() => {
-      resizeFrame = 0;
-      restart();
-    });
-  };
-
-  restart();
-  window.addEventListener('resize', onResize, { passive: true });
-
-  return () => {
-    if (timer) window.clearInterval(timer);
-    if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
-    window.removeEventListener('resize', onResize);
-    clearTrustGroups();
-  };
-}
-
 function setupTabs(tabSelector: string, panelSelector: string, panelPrefix: string, dataAttr: string) {
   const tabs = Array.from(document.querySelectorAll<HTMLElement>(tabSelector));
   const panels = Array.from(document.querySelectorAll<HTMLElement>(panelSelector));
@@ -896,7 +832,6 @@ export function PvgHomeInteractions() {
       })
     );
     cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200, { pauseOnReducedMotion: false }));
-    cleanups.push(setupTrustRotation());
     cleanups.push(...setupTabs('.explore-tab', '.explore-panel', 'panel-', 'tab'));
     cleanups.push(...setupTabs('.khub-tab', '.khub-panel', 'khub-panel-', 'khub'));
     cleanups.push(...setupSliderButtons());

@@ -1,0 +1,63 @@
+/* Experts page — matches testimonials / contact typography */
+
+.pvg-experts-card-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a1515;
+}
+
+.pvg-experts-card-name {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(18px, 1.8vw, 22px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #2c0404;
+}
+
+.pvg-experts-card-role {
+  margin: 0.25rem 0 0;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.45;
+  color: #5a5043;
+}
+
+.pvg-experts-card-bio {
+  margin: 1rem 0 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #6b5b4e;
+}
+
+.pvg-experts-card-quote {
+  margin: 1.25rem 0 0;
+  border-left: 2px solid #b8861e;
+  padding-left: 1rem;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.65;
+  color: #5a5043;
+}
+
+.pvg-experts-cta-title {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: #2c0404;
+}
+
+.pvg-experts-cta-copy {
+  margin: 0.5rem 0 0;
+  max-width: 36rem;
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1.55;
+  color: #5a5043;
+}

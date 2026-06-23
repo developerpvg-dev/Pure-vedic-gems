@@ -10,8 +10,10 @@ import {
 } from '@/lib/sanity/queries';
 import { PortableText } from '@/components/blog/PortableText';
 import { ShareButtons } from '@/components/blog/ShareButtons';
+import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import type { Metadata } from 'next';
+import '../blog-page.css';
 
 export const revalidate = 3600;
 
@@ -76,7 +78,6 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 
-  // Article JSON-LD
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -99,174 +100,123 @@ export default async function BlogPostPage({ params }: PageProps) {
   };
 
   return (
-    <article className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 text-sm" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-1.5 text-gray-500">
-          <li>
-            <Link href="/" className="transition hover:text-amber-700">Home</Link>
-          </li>
-          <li>/</li>
-          <li>
-            <Link href="/blog" className="transition hover:text-amber-700">Blog</Link>
-          </li>
+    <main className="pvg-blog-page font-body text-[#15110d]">
+      <article className="pvg-blog-article-inner">
+        <nav className="pvg-blog-breadcrumb" aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          <span aria-hidden="true">/</span>
+          <Link href="/blog">Blog</Link>
           {post.category && (
             <>
-              <li>/</li>
-              <li>
-                <Link
-                  href={`/blog/category/${post.category.slug?.current ?? post.category.slug}`}
-                  className="transition hover:text-amber-700"
-                >
-                  {post.category.title}
-                </Link>
-              </li>
+              <span aria-hidden="true">/</span>
+              <Link href={`/blog/category/${post.category.slug?.current ?? post.category.slug}`}>
+                {post.category.title}
+              </Link>
             </>
           )}
-          <li>/</li>
-          <li className="truncate font-medium text-gray-900">{post.title}</li>
-        </ol>
-      </nav>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="line-clamp-1">{post.title}</span>
+        </nav>
 
-      {/* Hero Image */}
-      {heroImage && (
-        <div className="relative mb-8 aspect-[2/1] overflow-hidden rounded-2xl bg-gray-100">
-          <Image
-            src={heroImage}
-            alt={post.title}
-            fill
-            className="object-cover"
-            priority
-            sizes="(max-width: 768px) 100vw, 800px"
-          />
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="mb-8">
-        {post.category && (
-          <Link
-            href={`/blog/category/${post.category.slug?.current ?? post.category.slug}`}
-            className="mb-3 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-700 transition hover:bg-amber-100"
-          >
-            {post.category.title}
-          </Link>
-        )}
-        <h1 className="font-heading text-3xl font-bold text-gray-900 sm:text-4xl lg:text-5xl">
-          {post.title}
-        </h1>
-        {post.excerpt && (
-          <p className="mt-4 text-lg text-gray-600">{post.excerpt}</p>
-        )}
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-5">
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            {post.author?.name && (
-              <div className="flex items-center gap-2">
-                {post.author.image && (
-                  <Image
-                    src={urlFor(post.author.image).width(40).height(40).url()}
-                    alt={post.author.name}
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                  />
-                )}
-                <span className="font-medium text-gray-700">{post.author.name}</span>
-              </div>
-            )}
-            {post.publishedAt && (
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
-                <time dateTime={post.publishedAt}>
-                  {new Date(post.publishedAt).toLocaleDateString('en-IN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </time>
-              </span>
-            )}
-            {post.estimatedReadingTime && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {post.estimatedReadingTime} min read
-              </span>
-            )}
+        {heroImage && (
+          <div className="pvg-blog-post-hero">
+            <Image
+              src={heroImage}
+              alt={post.title}
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, 800px"
+            />
           </div>
+        )}
+
+        <header className="pvg-blog-post-header">
+          {post.category && (
+            <Link
+              href={`/blog/category/${post.category.slug?.current ?? post.category.slug}`}
+              className="pvg-blog-post-category"
+            >
+              {post.category.title}
+            </Link>
+          )}
+          <h1 className="section-title" style={{ textAlign: 'left' }}>{post.title}</h1>
+          {post.excerpt && (
+            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.75rem 0 0', textAlign: 'left' }}>
+              {post.excerpt}
+            </p>
+          )}
+          <div className="section-rule-center" style={{ margin: '15px 0 0', marginLeft: 0 }} aria-hidden="true" />
+          <div className="pvg-blog-post-meta">
+            <div className="flex flex-wrap items-center gap-4">
+              {post.author?.name && (
+                <div className="pvg-blog-post-author">
+                  {post.author.image && (
+                    <Image
+                      src={urlFor(post.author.image).width(40).height(40).url()}
+                      alt={post.author.name}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  )}
+                  <span>{post.author.name}</span>
+                </div>
+              )}
+              {post.publishedAt && (
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                  <time dateTime={post.publishedAt}>
+                    {new Date(post.publishedAt).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </time>
+                </span>
+              )}
+              {post.estimatedReadingTime && (
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                  {post.estimatedReadingTime} min read
+                </span>
+              )}
+            </div>
+            <ShareButtons title={post.title} slug={slug} />
+          </div>
+        </header>
+
+        <div className="mb-8">
+          <PortableText value={post.body as unknown[]} />
+        </div>
+
+        <div className="pvg-blog-post-footer">
+          <Link href="/blog" className="pvg-blog-back">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to Blog
+          </Link>
           <ShareButtons title={post.title} slug={slug} />
         </div>
-      </header>
 
-      {/* Body */}
-      <div className="mb-12">
-        <PortableText value={post.body as unknown[]} />
-      </div>
+        {relatedPosts.length > 0 && (
+          <section className="pvg-blog-related" aria-labelledby="related-articles-heading">
+            <h2 className="pvg-blog-related-title" id="related-articles-heading">
+              Related Articles
+            </h2>
+            <div className="pvg-blog-grid">
+              {relatedPosts.map((rp) => (
+                <BlogPostCard key={rp._id} post={rp} />
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* Bottom Share + Back */}
-      <div className="flex items-center justify-between border-t border-gray-200 pt-6">
-        <Link
-          href="/blog"
-          className="flex items-center gap-2 text-sm font-medium text-amber-700 transition hover:text-amber-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Blog
-        </Link>
-        <ShareButtons title={post.title} slug={slug} />
-      </div>
-
-      {/* Related Posts */}
-      {relatedPosts.length > 0 && (
-        <section className="mt-16">
-          <h2 className="mb-6 text-2xl font-bold text-gray-900">Related Articles</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {relatedPosts.map((rp) => {
-              const img = rp.mainImage
-                ? urlFor(rp.mainImage).width(400).height(260).quality(75).auto('format').url()
-                : null;
-              return (
-                <Link
-                  key={rp._id}
-                  href={`/blog/${rp.slug?.current}`}
-                  className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-lg"
-                >
-                  {img && (
-                    <div className="relative aspect-[3/2] overflow-hidden bg-gray-100">
-                      <Image
-                        src={img}
-                        alt={rp.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-amber-700 line-clamp-2">
-                      {rp.title}
-                    </h3>
-                    {rp.publishedAt && (
-                      <p className="mt-2 text-xs text-gray-500">
-                        {new Date(rp.publishedAt).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
-    </article>
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        />
+      </article>
+    </main>
   );
 }

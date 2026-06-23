@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { findStorefrontGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
-import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
+import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { BLOG_CATEGORY_LINKS } from '@/lib/constants/nav-items';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -34,7 +34,7 @@ const DIRECT_LINKS = [
 ] as const;
 
 function MobileCategoryThumb({ link }: { link: StorefrontSubCategory }) {
-  const thumbImage = resolveRudrakshaNavImage(link.slug, link.image);
+  const thumbImage = resolveCategoryNavImage(link.slug, link.image);
   if (thumbImage) {
     return (
       <span

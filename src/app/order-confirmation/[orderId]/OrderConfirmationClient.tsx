@@ -286,7 +286,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
         {/* CTA Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           <Link
-            href="/account/orders"
+            href={`/track-order?order=${encodeURIComponent(order.order_number)}${order.guest_email ? `&email=${encodeURIComponent(order.guest_email)}` : ''}`}
             className="flex items-center justify-center gap-2 bg-brand-primary text-white py-3.5 px-6 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
           >
             <Package className="h-4 w-4" />

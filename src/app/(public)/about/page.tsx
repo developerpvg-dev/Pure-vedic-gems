@@ -354,7 +354,7 @@ export default function AboutPage() {
       <section className="bg-white px-4 py-8 sm:px-6 lg:py-12">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-5 lg:items-stretch">
-            <ScrollReveal className="lg:col-span-2 lg:h-full">
+            <ScrollReveal className="lg:col-span-2">
               <div className="flex h-full flex-col justify-center">
                 <h2 className="text-3xl font-black leading-tight tracking-tight text-[#261a10] sm:text-4xl lg:text-[2.45rem]">
                   Our Specialization: <span className="text-[#8a6400]">India&apos;s Oldest Gemstone &amp; Rudraksha Sellers</span>
@@ -371,7 +371,7 @@ export default function AboutPage() {
               </div>
             </ScrollReveal>
 
-            <ScrollReveal direction="right" className="lg:col-span-3 lg:h-full">
+            <ScrollReveal direction="right" className="flex h-full w-full lg:col-span-3">
               <GemstoneWorldMap />
             </ScrollReveal>
           </div>
@@ -410,17 +410,15 @@ export default function AboutPage() {
             </ScrollReveal>
 
             <ScrollReveal direction="right">
-              <div className="overflow-hidden rounded-3xl border-2 border-[#e8d5a3] bg-white p-4 shadow-[0_14px_42px_rgba(61,43,31,0.10)] sm:p-5">
-                <Image
-                  src="/aboutus/process.png"
-                  alt="Our direct sourcing supply chain — mines to customer with no middlemen"
-                  width={1200}
-                  height={600}
-                  unoptimized
-                  className="mx-auto w-full rounded-2xl"
-                  style={{ objectFit: 'contain' }}
-                />
-              </div>
+              <Image
+                src="/aboutus/sourcing-advantage.png"
+                alt="Direct sourcing flowchart — mines and farms to Pure Vedic Gems and customers, bypassing middlemen"
+                width={1024}
+                height={621}
+                unoptimized
+                className="mx-auto w-full"
+                style={{ objectFit: 'contain' }}
+              />
             </ScrollReveal>
           </div>
         </div>

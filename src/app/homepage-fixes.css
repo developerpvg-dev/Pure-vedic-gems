@@ -26,6 +26,61 @@
   color: var(--maroon-deep) !important;
 }
 
+/* Trust cards — phone/tablet rotate pages (swap cards in grid) */
+@keyframes pvgTrustCardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .pvg-react-home-root .trust-cards.trust-cards--rotating {
+    display: grid !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .pvg-react-home-root .trust-cards.trust-cards--rotating[data-columns='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .pvg-react-home-root .trust-cards.trust-cards--rotating[data-columns='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .pvg-react-home-root .trust-cards--rotating .trust-card-reveal {
+    animation: pvgTrustCardReveal 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvg-react-home-root .trust-cards--rotating .trust-card-reveal {
+    animation: none !important;
+  }
+}
+
+/* Testimonial torn-paper bg — ensure image renders on phone/tablet */
+@media (max-width: 1024px) {
+  #testimonials .pvg-testimonial-card-frame > .absolute.inset-0 img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvg-react-home-root .trust-cards--rotating .trust-card-reveal {
+    animation: none !important;
+  }
+}
+
 .pvg-react-home-root .about-exp-badge {
   position: absolute !important;
   right: -32px !important;

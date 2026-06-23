@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { CalendarClock, ChevronRight, CreditCard, FileText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import type { Consultation } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -61,25 +62,16 @@ export default async function AccountConsultationsPage() {
   const consultations = (data ?? []) as Consultation[];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[3px]" style={{ color: 'var(--pvg-accent)' }}>
-            Account Dashboard
-          </p>
-          <h1 className="font-heading text-3xl md:text-4xl" style={{ color: 'var(--pvg-primary)' }}>My Consultations</h1>
-          <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--pvg-muted)' }}>
-            Track your paid consultation bookings, Razorpay payment reference, and service status.
-          </p>
-        </div>
-        <Link
-          href="/consultation"
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition hover:-translate-y-0.5"
-          style={{ background: 'var(--pvg-primary)', color: 'var(--pvg-bg)' }}
-        >
-          <CalendarClock className="h-4 w-4" /> Book Consultation
-        </Link>
-      </div>
+    <div className="pvg-account-stack">
+      <AccountPageHeader
+        title="My Consultations"
+        subtitle="Track your paid consultation bookings, Razorpay payment reference, and service status."
+        action={(
+          <Link href="/consultation" className="pvg-account-btn">
+            <CalendarClock className="h-4 w-4" aria-hidden="true" /> Book Consultation
+          </Link>
+        )}
+      />
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -88,24 +80,24 @@ export default async function AccountConsultationsPage() {
       )}
 
       {consultations.length === 0 ? (
-        <div className="rounded-2xl border px-6 py-16 text-center" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}>
-          <FileText className="mx-auto h-12 w-12 opacity-40" style={{ color: 'var(--pvg-muted)' }} />
-          <p className="mt-4 font-semibold" style={{ color: 'var(--pvg-primary)' }}>No consultation bookings yet</p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--pvg-muted)' }}>Choose a consultation plan and complete payment to see it here.</p>
-          <Link href="/consultation" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--pvg-accent)' }}>
-            View plans <ChevronRight className="h-4 w-4" />
+        <div className="pvg-account-card pvg-account-empty">
+          <FileText className="pvg-account-empty-icon h-12 w-12" aria-hidden="true" />
+          <p className="pvg-account-empty-title">No consultation bookings yet</p>
+          <p className="pvg-account-empty-copy">Choose a consultation plan and complete payment to see it here.</p>
+          <Link href="/consultation" className="pvg-account-card-link mt-5 inline-flex">
+            View plans <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       ) : (
         <div className="space-y-4">
           {consultations.map((consultation) => (
-            <article key={consultation.id} className="rounded-2xl border p-5 md:p-6" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-surface)' }}>
+            <article key={consultation.id} className="pvg-account-card pvg-account-card-pad">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="font-heading text-xl" style={{ color: 'var(--pvg-primary)' }}>
+                  <h2 className="pvg-account-card-title text-lg">
                     {consultation.plan_title_snapshot || 'Vedic Consultation'}
                   </h2>
-                  <p className="mt-1 text-xs" style={{ color: 'var(--pvg-muted)' }}>
+                  <p className="pvg-account-row-meta">
                     Booked on {formatDate(consultation.created_at)}
                   </p>
                 </div>
@@ -123,8 +115,8 @@ export default async function AccountConsultationsPage() {
               </div>
 
               {(consultation.scheduled_date || consultation.scheduled_time || consultation.meeting_link || consultation.admin_schedule_notes) && (
-                <div className="mt-5 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-bg)' }}>
-                  <p className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Scheduled Consultation</p>
+                <div className="pvg-account-info-box mt-5 text-sm">
+                  <p className="pvg-account-row-title">Scheduled Consultation</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Info label="Date" value={consultation.scheduled_date || '-'} />
                     <Info label="Time" value={consultation.scheduled_time?.slice(0, 5) || '-'} />
@@ -137,14 +129,14 @@ export default async function AccountConsultationsPage() {
                 </div>
               )}
 
-              <div className="mt-5 grid gap-3 rounded-xl border px-4 py-3 text-xs sm:grid-cols-2" style={{ borderColor: 'var(--pvg-border)', background: 'var(--pvg-bg)' }}>
+              <div className="pvg-account-info-box mt-5 grid gap-3 text-xs sm:grid-cols-2">
                 <div>
-                  <span className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Razorpay Order:</span>{' '}
-                  <span style={{ color: 'var(--pvg-muted)' }}>{consultation.razorpay_order_id || '-'}</span>
+                  <span className="font-semibold text-[#2c0404]">Razorpay Order:</span>{' '}
+                  <span className="text-[#6b5b4e]">{consultation.razorpay_order_id || '-'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>Razorpay Payment:</span>{' '}
-                  <span style={{ color: 'var(--pvg-muted)' }}>{consultation.razorpay_payment_id || '-'}</span>
+                  <span className="font-semibold text-[#2c0404]">Razorpay Payment:</span>{' '}
+                  <span className="text-[#6b5b4e]">{consultation.razorpay_payment_id || '-'}</span>
                 </div>
               </div>
             </article>
@@ -158,10 +150,8 @@ export default async function AccountConsultationsPage() {
 function Info({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
   return (
     <div>
-      <p className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--pvg-muted)' }}>
-        {icon}{label}
-      </p>
-      <p className="font-semibold" style={{ color: 'var(--pvg-primary)' }}>{value}</p>
+      <p className="pvg-account-info-label">{icon}{label}</p>
+      <p className="pvg-account-info-value">{value}</p>
     </div>
   );
 }
