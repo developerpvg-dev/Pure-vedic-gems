@@ -883,7 +883,7 @@
 }
 
 .remedy-image img {
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -4649,7 +4649,7 @@
     .remedy-image img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
       filter: brightness(0.72) saturate(1.08) contrast(1.04);
     }
@@ -5814,7 +5814,7 @@
 .remedy-showcase { min-height: 420px; }
 .remedy-image { visibility: hidden; }
 .remedy-image.is-active { visibility: visible; }
-.remedy-image img { object-fit: cover; object-position: center; }
+.remedy-image img { object-fit: contain; object-position: center; }
 
 @media (max-width: 900px) {
   .remedy-showcase { min-height: 320px; }

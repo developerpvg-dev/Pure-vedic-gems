@@ -964,7 +964,6 @@ export function PvgReferenceSections({
     imageSide="left"
   />
 
-  
   <section className="remedy-section" id="our-legacy" aria-labelledby="remedy-heading">
     <div className="container">
       <div className="remedy-shell">
@@ -979,7 +978,7 @@ export function PvgReferenceSections({
             { src: '/home/hero/pvgherobg3.webp', alt: 'Next generation platform milestone' },
           ].map((item, index) => (
             <div key={item.src} className={`remedy-image${index === 0 ? ' is-active' : ''}`} data-legacy-image={index}>
-              <img src={item.src} alt={item.alt} loading="lazy" />
+              <img src={item.src} alt={item.alt} loading={index === 0 ? 'eager' : 'lazy'} />
             </div>
           ))}
           <div className="remedy-showcase-copy">
@@ -1014,8 +1013,6 @@ export function PvgReferenceSections({
       </div>
     </div>
   </section>
-
-
 
 
 
