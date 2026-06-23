@@ -7,8 +7,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
 loadEnv({ path: resolve(repoRoot, '.env.local') });
 
-const dbUrl = process.env.DATABASE_URL ?? process.env.LEGACY_IMPORT_DATABASE_URL_PRODUCTION;
-if (!dbUrl) throw new Error('Missing DATABASE_URL');
+const dbUrl = (() => {
+  const url = process.env.DATABASE_URL ?? process.env.LEGACY_IMPORT_DATABASE_URL_PRODUCTION;
+  if (!url) throw new Error('Missing DATABASE_URL');
+  return url;
+})();
 
 const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
 
