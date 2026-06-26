@@ -1,0 +1,646 @@
+{
+  "designs": [
+    {
+      "name": "Rudraksha - One Mukhi",
+      "slug": "rudraksha-design-1",
+      "sortOrder": 1,
+      "makingCharges": {
+        "silver_925": 3500
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 4.5,
+        "gold_18k": 4.5,
+        "gold_22k": 5
+      },
+      "diamondCharges": {},
+      "notes": [
+        "One Mukhi Rudraksha mounting"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 3500
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 4.5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 4.5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 5
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "one_mukhi"
+    },
+    {
+      "name": "Rudraksha - 2 to 17 Mukhi, Ganesh & Gauri Shankar",
+      "slug": "rudraksha-design-2",
+      "sortOrder": 2,
+      "makingCharges": {
+        "silver_925": 2000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 1.5,
+        "gold_18k": 1.5,
+        "gold_22k": 2
+      },
+      "diamondCharges": {},
+      "notes": [
+        "2 to 17 Mukhi, Ganesh & Gauri Shankar (round & oval shapes)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 2000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 1.5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 1.5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 2
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "standard_mukhi"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+)",
+      "slug": "rudraksha-design-3",
+      "sortOrder": 3,
+      "makingCharges": {
+        "silver_925": 4000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 4.5,
+        "gold_18k": 4.5,
+        "gold_22k": 5
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 4000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 4.5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 4.5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 5
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 2",
+      "slug": "rudraksha-design-4",
+      "sortOrder": 4,
+      "makingCharges": {
+        "silver_925": 4000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 5,
+        "gold_18k": 5,
+        "gold_22k": 5.5
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 4000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 5.5
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 3",
+      "slug": "rudraksha-design-5",
+      "sortOrder": 5,
+      "makingCharges": {
+        "silver_925": 5000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 5,
+        "gold_18k": 5,
+        "gold_22k": 5.5
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 5000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 5.5
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 4",
+      "slug": "rudraksha-design-6",
+      "sortOrder": 6,
+      "makingCharges": {
+        "silver_925": 3500
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 3,
+        "gold_18k": 3,
+        "gold_22k": 3.5
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 3500
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 3
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 3
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 3.5
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 5",
+      "slug": "rudraksha-design-7",
+      "sortOrder": 7,
+      "makingCharges": {
+        "silver_925": 5500
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 4,
+        "gold_18k": 4,
+        "gold_22k": 4.5
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 5500
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 4
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 4
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 4.5
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 6",
+      "slug": "rudraksha-design-8",
+      "sortOrder": 8,
+      "makingCharges": {
+        "silver_925": 4000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 3.5,
+        "gold_18k": 3.5,
+        "gold_22k": 4
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 4000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 3.5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 3.5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 4
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 7",
+      "slug": "rudraksha-design-9",
+      "sortOrder": 9,
+      "makingCharges": {
+        "silver_925": 4000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 3.5,
+        "gold_18k": 3.5,
+        "gold_22k": 4
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 4000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 3.5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 3.5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 4
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 8",
+      "slug": "rudraksha-design-10",
+      "sortOrder": 10,
+      "makingCharges": {
+        "silver_925": 6000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 5.5,
+        "gold_18k": 5.5,
+        "gold_22k": 6
+      },
+      "diamondCharges": {},
+      "notes": [
+        "Multiple Rudraksha combinations (3 or more beads)"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 6000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 5.5
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 5.5
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 6
+        }
+      ],
+      "productScope": "rudraksha",
+      "rudrakshaCategory": "multiple_beads"
+    }
+  ],
+  "records": [
+    {
+      "name": "Rudraksha - One Mukhi",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-1.jpeg",
+      "description": "One Mukhi Rudraksha mounting",
+      "making_charges": {
+        "silver_925": 3500
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 4.5,
+        "gold_18k": 4.5,
+        "gold_22k": 5
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "one_mukhi",
+      "sort_order": 1,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - 2 to 17 Mukhi, Ganesh & Gauri Shankar",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-2.jpeg",
+      "description": "2 to 17 Mukhi, Ganesh & Gauri Shankar (round & oval shapes)",
+      "making_charges": {
+        "silver_925": 2000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 1.5,
+        "gold_18k": 1.5,
+        "gold_22k": 2
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "standard_mukhi",
+      "sort_order": 2,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+)",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-3.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 4000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 4.5,
+        "gold_18k": 4.5,
+        "gold_22k": 5
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 3,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 2",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-4.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 4000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 5,
+        "gold_18k": 5,
+        "gold_22k": 5.5
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 4,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 3",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-5.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 5000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 5,
+        "gold_18k": 5,
+        "gold_22k": 5.5
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 5,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 4",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-6.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 3500
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 3,
+        "gold_18k": 3,
+        "gold_22k": 3.5
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 6,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 5",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-7.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 5500
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 4,
+        "gold_18k": 4,
+        "gold_22k": 4.5
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 7,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 6",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-8.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 4000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 3.5,
+        "gold_18k": 3.5,
+        "gold_22k": 4
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 8,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 7",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-9.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 4000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 3.5,
+        "gold_18k": 3.5,
+        "gold_22k": 4
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 9,
+      "is_active": true
+    },
+    {
+      "name": "Rudraksha - Multiple Beads (3+) - Style 8",
+      "setting_type": "pendant",
+      "image_url": "/rudraksha-designs/design-10.jpeg",
+      "description": "Multiple Rudraksha combinations (3 or more beads)",
+      "making_charges": {
+        "silver_925": 6000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 5.5,
+        "gold_18k": 5.5,
+        "gold_22k": 6
+      },
+      "diamond_charges": {},
+      "product_scope": "rudraksha",
+      "rudraksha_category": "multiple_beads",
+      "sort_order": 10,
+      "is_active": true
+    }
+  ]
+}

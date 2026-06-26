@@ -6,12 +6,14 @@
  * Mobile/tablet prioritizes a phone-friendly stacked flow with sticky actions.
  */
 
-import { startTransition, useCallback, useEffect, useRef, useState, type Dispatch } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
+import { buildConfiguratorPriceTotals } from '@/lib/utils/configurator-pricing-display';
+import { JEWELRY_GST_RATE_PERCENT } from '@/lib/constants/jewelry-design-metals';
 import type {
   ConfiguratorAction,
   ConfiguratorState,
@@ -23,6 +25,12 @@ import {
   normalizeConfiguratorRules,
   type ConfiguratorOptionRules,
 } from '@/lib/utils/configurator-rules';
+import { isConfiguratorStepSkipped } from '@/lib/utils/configurator-steps';
+import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
+import {
+  resolveLaborRatesForJewelry,
+  type JewelrySettingMetalProfiles,
+} from '@/lib/utils/jewelry-setting-metal-profiles';
 
 import PriceSummary from './PriceSummary';
 import StepSidebar from './StepSidebar';
@@ -38,15 +46,15 @@ const STEP_DESCRIPTIONS: Record<number, string> = {};
 
 void STEP_DESCRIPTIONS;
 
-function isStepSkipped(step: number, settingType: string | null): boolean {
-  return (step === 4 || step === 5) && settingType === 'loose';
+function isStepSkipped(step: number, state: ConfiguratorState): boolean {
+  return isConfiguratorStepSkipped(step, state);
 }
 
-function getTotalVisibleSteps(startStep: number, settingType: string | null): number {
+function getTotalVisibleSteps(startStep: number, state: ConfiguratorState): number {
   let count = 0;
 
   for (let step = startStep; step <= 7; step += 1) {
-    if (!isStepSkipped(step, settingType)) {
+    if (!isStepSkipped(step, state)) {
       count += 1;
     }
   }
@@ -57,12 +65,12 @@ function getTotalVisibleSteps(startStep: number, settingType: string | null): nu
 function getDisplayStepForState(
   stepId: number,
   startStep: number,
-  settingType: string | null
+  state: ConfiguratorState
 ): number {
   let count = 0;
 
   for (let step = startStep; step <= stepId; step += 1) {
-    if (!isStepSkipped(step, settingType)) {
+    if (!isStepSkipped(step, state)) {
       count += 1;
     }
   }
@@ -93,6 +101,10 @@ interface ConfiguratorWrapperProps {
   isComplete: () => boolean;
   reset: () => void;
   goldRate: GoldRateData | null;
+  laborRates?: Record<string, number> | null;
+  pricingModes?: Record<string, 'weight' | 'fixed_sheet'> | null;
+  ratesBySlug?: Record<string, number> | null;
+  settingProfiles?: JewelrySettingMetalProfiles | null;
   startStep?: number;
 }
 
@@ -104,11 +116,35 @@ export default function ConfiguratorWrapper({
   isComplete,
   reset,
   goldRate,
+  laborRates = null,
+  pricingModes = null,
+  ratesBySlug = null,
+  settingProfiles = null,
   startStep = 1,
 }: ConfiguratorWrapperProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [priceMobileOpen, setPriceMobileOpen] = useState(false);
   const [optionRules, setOptionRules] = useState<ConfiguratorOptionRules | null>(null);
+  const effectiveLaborRates = useMemo(() => {
+    const scopeFallback =
+      state.selected_product &&
+      isRudrakshaConfiguratorContext(state.selected_product.category, {
+        category: state.selected_product.category,
+        sub_category: state.selected_product.sub_category,
+      })
+        ? 'rudraksha'
+        : 'gemstone';
+
+    if (state.selected_design || state.setting_type) {
+      return resolveLaborRatesForJewelry(
+        state.setting_type,
+        state.selected_design,
+        settingProfiles,
+        scopeFallback
+      );
+    }
+    return laborRates;
+  }, [state.selected_design, state.selected_product, state.setting_type, settingProfiles, laborRates]);
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
 
@@ -118,12 +154,12 @@ export default function ConfiguratorWrapper({
         return;
       }
 
-      if (canGoToStep(step) && !isStepSkipped(step, state.setting_type)) {
+      if (canGoToStep(step) && !isStepSkipped(step, state)) {
         setPriceMobileOpen(false);
         dispatch({ type: 'GO_TO_STEP', payload: step });
       }
     },
-    [canGoToStep, dispatch, startStep, state.setting_type]
+    [canGoToStep, dispatch, startStep, state]
   );
 
   const handleNext = useCallback(() => {
@@ -248,6 +284,8 @@ export default function ConfiguratorWrapper({
         return (
           <DesignSelector
             settingType={state.setting_type!}
+            gemCategory={state.gem_category}
+            selectedProduct={state.selected_product}
             optionRules={optionRules}
             selected={state.selected_design}
             customDesignUrl={state.custom_design_url}
@@ -269,6 +307,9 @@ export default function ConfiguratorWrapper({
             ringSize={state.ring_size}
             chainLength={state.chain_length}
             goldRate={goldRate}
+            laborRates={effectiveLaborRates}
+            pricingModes={pricingModes}
+            ratesBySlug={ratesBySlug}
             selectedDesign={state.selected_design}
             optionRules={optionRules}
             onMetalChange={(metal) => dispatch({ type: 'SET_METAL', payload: metal })}
@@ -313,11 +354,20 @@ export default function ConfiguratorWrapper({
 
   const complete = isComplete();
   const pricing = state.pricing;
-  const totalSteps = getTotalVisibleSteps(startStep, state.setting_type);
+  const displayTotal = useMemo(
+    () =>
+      buildConfiguratorPriceTotals(pricing, {
+        settingType: state.setting_type,
+        productCategory: state.selected_product?.category ?? null,
+        jewelryGstPercent: JEWELRY_GST_RATE_PERCENT,
+      }).grand_total,
+    [pricing, state.setting_type, state.selected_product?.category]
+  );
+  const totalSteps = getTotalVisibleSteps(startStep, state);
   const currentDisplayNum = getDisplayStepForState(
     state.current_step,
     startStep,
-    state.setting_type
+    state
   );
   const currentStepMeta = CONFIGURATOR_STEPS.find(
     (step) => step.id === state.current_step
@@ -325,11 +375,16 @@ export default function ConfiguratorWrapper({
   const selectedProductImage = getSelectedProductImage(state);
   const progressPct = Math.round((currentDisplayNum / totalSteps) * 100);
   const visibleSteps = CONFIGURATOR_STEPS.filter(
-    (step) => step.id >= startStep && !isStepSkipped(step.id, state.setting_type)
+    (step) => step.id >= startStep && !isStepSkipped(step.id, state)
   );
   const canGoBack = state.current_step > startStep;
+  const rudrakshaFlow = isRudrakshaConfiguratorContext(
+    state.gem_category,
+    state.selected_product
+  );
   const canBuyLoose =
     !!state.selected_product &&
+    !rudrakshaFlow &&
     state.current_step >= 3 &&
     state.setting_type !== 'loose' &&
     isSettingTypeAllowed(optionRules, 'loose');
@@ -532,7 +587,7 @@ export default function ConfiguratorWrapper({
             </header>
 
             {/* ── Desktop 3-column body: step sidebar | content | price ── */}
-            <div className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[180px_minmax(0,1fr)_240px]">
+            <div className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[180px_minmax(0,1fr)_300px]">
 
               {/* Left: vertical step sidebar — desktop only */}
               <aside
@@ -561,14 +616,8 @@ export default function ConfiguratorWrapper({
               </section>
 
               {/* Right: price summary — desktop only */}
-              <aside
-                className="hidden min-h-0 flex-col lg:flex"
-                style={{
-                  background:
-                    'linear-gradient(180deg, rgba(255,254,250,0.92) 0%, rgba(248,239,226,0.9) 100%)',
-                }}
-              >
-                <div className="min-h-0 flex-1 p-4">
+              <aside className="hidden min-h-0 overflow-hidden lg:flex lg:flex-col">
+                <div className="flex min-h-0 flex-1 flex-col p-4">
                   <PriceSummary
                     state={state}
                     isComplete={complete}
@@ -635,7 +684,7 @@ export default function ConfiguratorWrapper({
                         Estimated Total
                       </p>
                       <p className="mt-1 truncate text-sm font-bold text-accent">
-                        {pricing.total > 0 ? formatPrice(pricing.total) : 'Build your quote'}
+                        {displayTotal > 0 ? formatPrice(displayTotal) : 'Build your quote'}
                       </p>
                     </div>
 
@@ -664,20 +713,25 @@ export default function ConfiguratorWrapper({
                   </div>
                 </div>
 
-                {state.current_step < 7 ? (
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canProceed()}
-                    className="h-11 shrink-0 rounded-2xl bg-accent px-5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
-                  >
-                    Continue
-                    <ArrowRight className="ml-1.5 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <>
-                    <div className="hidden rounded-2xl border border-border/70 bg-white/75 px-3 py-2 text-xs text-muted-foreground lg:block">
-                      Add to cart from the summary panel.
-                    </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden lg:block">
+                    <PriceSummary
+                      state={state}
+                      isComplete={complete}
+                      goldRate={goldRate}
+                      variant="button-only"
+                    />
+                  </div>
+                  {state.current_step < 7 ? (
+                    <Button
+                      onClick={handleNext}
+                      disabled={!canProceed()}
+                      className="h-11 shrink-0 rounded-2xl bg-accent px-5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
+                    >
+                      Continue
+                      <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </Button>
+                  ) : (
                     <div className="lg:hidden">
                       <PriceSummary
                         state={state}
@@ -686,8 +740,8 @@ export default function ConfiguratorWrapper({
                         variant="button-only"
                       />
                     </div>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             </footer>
           </div>

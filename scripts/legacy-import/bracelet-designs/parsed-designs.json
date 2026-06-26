@@ -1,0 +1,898 @@
+{
+  "designs": [
+    {
+      "name": "Design-1",
+      "slug": "design-1",
+      "sortOrder": 1,
+      "makingCharges": {
+        "silver_925": 10000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 10000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-2",
+      "slug": "design-2",
+      "sortOrder": 2,
+      "makingCharges": {
+        "silver_925": 10000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 10000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-3",
+      "slug": "design-3",
+      "sortOrder": 3,
+      "makingCharges": {
+        "silver_925": 10000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 10000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-4",
+      "slug": "design-4",
+      "sortOrder": 4,
+      "makingCharges": {
+        "silver_925": 10000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 10000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-5",
+      "slug": "design-5",
+      "sortOrder": 5,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 25
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-6",
+      "slug": "design-6",
+      "sortOrder": 6,
+      "makingCharges": {
+        "silver_925": 7000
+      },
+      "estimatedMetalWeight": {
+        "gold_14k": 15,
+        "gold_18k": 15,
+        "gold_22k": 15,
+        "platinum": 12
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "fixed",
+          "fixedPrice": 7000
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 12
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-7",
+      "slug": "design-7",
+      "sortOrder": 7,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "platinum": 15
+      },
+      "diamondCharges": {
+        "gold_18k": 50000
+      },
+      "notes": [
+        "18K Gold: +50000 Diamonds Cost"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 20,
+          "note": "+50000 Diamonds Cost",
+          "diamondCharge": 50000
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-8",
+      "slug": "design-8",
+      "sortOrder": 8,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 35,
+        "gold_18k": 35,
+        "platinum": 30
+      },
+      "diamondCharges": {
+        "gold_18k": 50000
+      },
+      "notes": [
+        "18K Gold: +50000 Diamonds Cost"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 35
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 35,
+          "note": "+50000 Diamonds Cost",
+          "diamondCharge": 50000
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 30
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-9",
+      "slug": "design-9",
+      "sortOrder": 9,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "gold_22k": 22,
+        "platinum": 18
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 22
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 18
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-10",
+      "slug": "design-10",
+      "sortOrder": 10,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "gold_22k": 20,
+        "platinum": 18
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 18
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-11",
+      "slug": "design-11",
+      "sortOrder": 11,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "gold_22k": 20,
+        "platinum": 15
+      },
+      "diamondCharges": {},
+      "notes": [],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "weight",
+          "weightGrams": 20
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    },
+    {
+      "name": "Design-12",
+      "slug": "design-12",
+      "sortOrder": 12,
+      "makingCharges": {},
+      "estimatedMetalWeight": {
+        "gold_14k": 15,
+        "gold_18k": 15,
+        "platinum": 15
+      },
+      "diamondCharges": {
+        "platinum": 25000
+      },
+      "notes": [
+        "Platinum: +25000 Diamonds Cost"
+      ],
+      "metals": [
+        {
+          "slug": "silver_925",
+          "label": "Silver",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "gold_14k",
+          "label": "14K Gold",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "gold_18k",
+          "label": "18K Gold",
+          "kind": "weight",
+          "weightGrams": 15
+        },
+        {
+          "slug": "gold_22k",
+          "label": "22K Gold",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "platinum",
+          "label": "Platinum",
+          "kind": "weight",
+          "weightGrams": 15,
+          "note": "+25000 Diamonds Cost",
+          "diamondCharge": 25000
+        },
+        {
+          "slug": "panchdhatu",
+          "label": "Panchdhatu (Without Gold)",
+          "kind": "unavailable"
+        },
+        {
+          "slug": "panchdhatu_with_gold",
+          "label": "Panchdhatu (With Gold)",
+          "kind": "unavailable"
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "name": "Design-1",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-1.jpeg",
+      "description": null,
+      "making_charges": {
+        "silver_925": 10000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamond_charges": {},
+      "sort_order": 1,
+      "is_active": true
+    },
+    {
+      "name": "Design-2",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-2.jpeg",
+      "description": null,
+      "making_charges": {
+        "silver_925": 10000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamond_charges": {},
+      "sort_order": 2,
+      "is_active": true
+    },
+    {
+      "name": "Design-3",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-3.jpeg",
+      "description": null,
+      "making_charges": {
+        "silver_925": 10000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamond_charges": {},
+      "sort_order": 3,
+      "is_active": true
+    },
+    {
+      "name": "Design-4",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-4.jpeg",
+      "description": null,
+      "making_charges": {
+        "silver_925": 10000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamond_charges": {},
+      "sort_order": 4,
+      "is_active": true
+    },
+    {
+      "name": "Design-5",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-5.jpeg",
+      "description": null,
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 25,
+        "gold_18k": 25,
+        "gold_22k": 25,
+        "platinum": 20
+      },
+      "diamond_charges": {},
+      "sort_order": 5,
+      "is_active": true
+    },
+    {
+      "name": "Design-6",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-6.jpeg",
+      "description": null,
+      "making_charges": {
+        "silver_925": 7000
+      },
+      "estimated_metal_weight": {
+        "gold_14k": 15,
+        "gold_18k": 15,
+        "gold_22k": 15,
+        "platinum": 12
+      },
+      "diamond_charges": {},
+      "sort_order": 6,
+      "is_active": true
+    },
+    {
+      "name": "Design-7",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-7.jpeg",
+      "description": "18K Gold: +50000 Diamonds Cost",
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "platinum": 15
+      },
+      "diamond_charges": {
+        "gold_18k": 50000
+      },
+      "sort_order": 7,
+      "is_active": true
+    },
+    {
+      "name": "Design-8",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-8.jpeg",
+      "description": "18K Gold: +50000 Diamonds Cost",
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 35,
+        "gold_18k": 35,
+        "platinum": 30
+      },
+      "diamond_charges": {
+        "gold_18k": 50000
+      },
+      "sort_order": 8,
+      "is_active": true
+    },
+    {
+      "name": "Design-9",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-9.jpeg",
+      "description": null,
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "gold_22k": 22,
+        "platinum": 18
+      },
+      "diamond_charges": {},
+      "sort_order": 9,
+      "is_active": true
+    },
+    {
+      "name": "Design-10",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-10.jpeg",
+      "description": null,
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "gold_22k": 20,
+        "platinum": 18
+      },
+      "diamond_charges": {},
+      "sort_order": 10,
+      "is_active": true
+    },
+    {
+      "name": "Design-11",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-11.jpeg",
+      "description": null,
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 20,
+        "gold_18k": 20,
+        "gold_22k": 20,
+        "platinum": 15
+      },
+      "diamond_charges": {},
+      "sort_order": 11,
+      "is_active": true
+    },
+    {
+      "name": "Design-12",
+      "setting_type": "bracelet",
+      "image_url": "/bracelet-designs/design-12.jpeg",
+      "description": "Platinum: +25000 Diamonds Cost",
+      "making_charges": {},
+      "estimated_metal_weight": {
+        "gold_14k": 15,
+        "gold_18k": 15,
+        "platinum": 15
+      },
+      "diamond_charges": {
+        "platinum": 25000
+      },
+      "sort_order": 12,
+      "is_active": true
+    }
+  ]
+}

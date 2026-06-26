@@ -145,7 +145,7 @@ export default function AdminMetalsPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Metals & Pricing"
-        description="Manage metals and their current prices. These prices are used in the gem configurator."
+        description="Manage the metal catalog and live ₹/g rates. Labor % and fixed making charges are set per category and design in Jewelry Designs."
         actions={
           <button
             onClick={() => { setShowForm(true); setEditing(null); setForm(EMPTY_FORM); setError(''); }}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, MessageCircle, Share2, Gem, Phone } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
@@ -24,10 +24,10 @@ function getImageSrc(product: Product): string {
 }
 
 export function AddToCartBar({ product }: AddToCartBarProps) {
-  const { addItem, isInCart, getItemQty, updateQty } = useCart();
-  const [localQty, setLocalQty] = useState(1);
+  const { addItem, isInCart, getItemQty, updateQty, getItemKey } = useCart();
   const inCart = isInCart(product.id);
   const cartQty = getItemQty(product.id);
+  const cartItemKey = getItemKey(product.id);
   const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
   const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
   const isOnRequest =
@@ -38,30 +38,23 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const isUnavailable =
     !isOnRequest &&
     (!product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
+  const canAdjustQuantity = maxQuantity > 1 && !product.sold_individually;
+  const showQuantityStepper = !isUnavailable && inCart && canAdjustQuantity;
 
-  // When item is in cart, the counter mirrors the cart quantity directly.
-  // When not yet in cart, the counter is a local "how many to add" state.
-  const displayQty = inCart ? cartQty : localQty;
+  const displayQty = cartQty;
 
   const handleDecrease = () => {
-    if (inCart) {
-      // Enforce min 1 in cart via the quantity selector (user must remove from cart page to delete)
-      if (cartQty > 1) updateQty(product.id, cartQty - 1);
-    } else {
-      setLocalQty((q) => Math.max(1, q - 1));
-    }
+    if (!inCart || !cartItemKey) return;
+    if (cartQty > 1) updateQty(cartItemKey, cartQty - 1);
   };
 
   const handleIncrease = () => {
-    if (isUnavailable || displayQty >= maxQuantity) {
-      toast.info(maxQuantity > 0 ? `Only ${maxQuantity} unit${maxQuantity > 1 ? 's' : ''} available` : 'This product is out of stock');
+    if (!inCart || !cartItemKey) return;
+    if (displayQty >= maxQuantity) {
+      toast.info(`Only ${maxQuantity} unit${maxQuantity > 1 ? 's' : ''} available`);
       return;
     }
-    if (inCart) {
-      updateQty(product.id, cartQty + 1);
-    } else {
-      setLocalQty((q) => Math.min(maxQuantity, q + 1));
-    }
+    updateQty(cartItemKey, cartQty + 1);
   };
 
   const handleAdd = useCallback(() => {
@@ -71,12 +64,8 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       });
       return;
     }
-    if (localQty > maxQuantity) {
-      toast.error(`Only ${maxQuantity} unit${maxQuantity > 1 ? 's' : ''} available`);
-      setLocalQty(Math.max(1, maxQuantity));
-      return;
-    }
 
+    const quantityToAdd = 1;
     addItem({
       product_id: product.id,
       slug: product.slug,
@@ -86,7 +75,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       category: product.category,
       image_url: getImageSrc(product),
       price: product.price,
-      quantity: localQty,
+      quantity: quantityToAdd,
       stock_quantity: product.stock_quantity,
       stock_status: product.stock_status,
       availability_status: product.availability_status,
@@ -101,12 +90,11 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       category: product.category,
       source: 'product_detail',
     });
-    setLocalQty(1); // reset local counter after adding
     toast.success(`${product.name} added to cart`, {
-      description: `${localQty} item${localQty > 1 ? 's' : ''} added.`,
+      description: 'View your cart to proceed to checkout.',
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
-  }, [addItem, product, localQty, isUnavailable, maxQuantity]);
+  }, [addItem, product, isUnavailable]);
 
   const waLink = `https://wa.me/919871582404?text=${encodeURIComponent(
     `Hi, I'm interested in: ${product.name} (SKU: ${product.sku}). Please share more details.`
@@ -174,26 +162,28 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       <>
       {/* Primary action row — compact single line on mobile */}
       <div className="flex items-stretch gap-1.5 lg:gap-2">
-        <div className="flex shrink-0 items-center rounded-md border border-[var(--pvg-border)] bg-brand-surface lg:rounded-lg">
-          <button
-            onClick={handleDecrease}
-            className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] lg:h-10 lg:w-9"
-            aria-label="Decrease quantity"
-          >
-            −
-          </button>
-          <span className="w-6 text-center text-[13px] font-semibold text-[var(--pvg-primary)] lg:w-7 lg:text-[14px]">
-            {displayQty}
-          </span>
-          <button
-            onClick={handleIncrease}
-            disabled={isUnavailable || displayQty >= maxQuantity}
-            className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] lg:h-10 lg:w-9"
-            aria-label="Increase quantity"
-          >
-            +
-          </button>
-        </div>
+        {showQuantityStepper ? (
+          <div className="flex shrink-0 items-center rounded-md border border-[var(--pvg-border)] bg-brand-surface lg:rounded-lg">
+            <button
+              onClick={handleDecrease}
+              className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] lg:h-10 lg:w-9"
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className="w-6 text-center text-[13px] font-semibold text-[var(--pvg-primary)] lg:w-7 lg:text-[14px]">
+              {displayQty}
+            </span>
+            <button
+              onClick={handleIncrease}
+              disabled={displayQty >= maxQuantity}
+              className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] disabled:cursor-not-allowed disabled:opacity-40 lg:h-10 lg:w-9"
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        ) : null}
 
         <button
           onClick={inCart ? undefined : handleAdd}

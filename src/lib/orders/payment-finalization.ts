@@ -394,26 +394,57 @@ export async function finalizeCapturedPayment({
 }) {
   const supabase = createAdminClient();
 
-  if (order.payment_status !== 'captured') {
-    await supabase
-      .from('orders')
-      .update({
-        razorpay_payment_id: razorpayPaymentId,
-        razorpay_signature: razorpaySignature ?? order.razorpay_signature,
-        payment_status: 'captured',
-        payment_method: method ?? 'razorpay',
-        status: 'confirmed',
-        amount_verified_at: new Date().toISOString(),
-        payment_failure_reason: null,
-        payment_review_reason: null,
-        last_payment_event_id: eventId ?? order.last_payment_event_id,
-      })
-      .eq('id', order.id);
+  // ── Atomic claim — only ONE finalizer transitions the order to "captured".
+  //
+  // The client-verify path and the webhook path use DIFFERENT payment-event
+  // idempotency keys (`client:<paymentId>` vs `webhook:...`), so the
+  // upsertPaymentEvent dedupe does not prevent both from finalizing the same
+  // payment. The previous guard (`order.payment_status !== 'captured'`) read
+  // a stale snapshot fetched before any write, so two concurrent finalizers
+  // would both pass it and run the one-time side effects twice:
+  //   • double inventory decrement (lost update → phantom stock),
+  //   • double coupon redemption + used_count bump,
+  //   • double reward-points award.
+  //
+  // The conditional UPDATE below is the single source of truth: the row is
+  // flipped to "captured" only if it is not already captured, and Postgres
+  // row-level locking serializes concurrent claims. The caller that affects
+  // the row is the "winner" and owns the one-time side effects.
+  const { data: claimed, error: claimError } = await supabase
+    .from('orders')
+    .update({
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_signature: razorpaySignature ?? order.razorpay_signature,
+      payment_status: 'captured',
+      payment_method: method ?? 'razorpay',
+      status: 'confirmed',
+      amount_verified_at: new Date().toISOString(),
+      payment_failure_reason: null,
+      payment_review_reason: null,
+      last_payment_event_id: eventId ?? order.last_payment_event_id,
+    })
+    .eq('id', order.id)
+    .neq('payment_status', 'captured')
+    .select('id')
+    .maybeSingle();
 
+  if (claimError) {
+    console.error('[Payment] Failed to claim order for finalization:', claimError);
+    // Cannot prove we own the transition — do not run side effects.
+    if (eventId) await markPaymentEventProcessed(eventId);
+    return;
+  }
+
+  if (claimed) {
+    // One-time side effects — only the winning finalizer runs these.
     await updateInventoryForCapturedOrder(order);
     await markCouponRedeemed(order);
   }
 
+  // Idempotent side effects — safe to run on every finalization attempt,
+  // including replays where another path already claimed the capture.
+  // (confirmRewardRedemption is gated on status='pending'; awardOrderRewardPoints
+  // is internally idempotent; notifications guard on their own *_sent_at flags.)
   await confirmRewardRedemption(order.id);
   await awardOrderRewardPoints(order);
 

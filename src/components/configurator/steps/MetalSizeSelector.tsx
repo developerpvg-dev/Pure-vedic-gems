@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
 import {
@@ -22,6 +23,13 @@ import {
   type ConfiguratorOptionRules,
   type RingSizeSystemId,
 } from '@/lib/utils/configurator-rules';
+import {
+  calculateJewelryDesignPricing,
+  isMetalAvailableForDesign,
+} from '@/lib/utils/jewelry-pricing';
+import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
+import { resolveMetalRatePerGram } from '@/lib/hooks/useManualMetalPrices';
+import type { MetalPricingMode } from '@/lib/utils/metal-pricing-config';
 
 interface MetalSizeSelectorProps {
   settingType: SettingType;
@@ -29,6 +37,9 @@ interface MetalSizeSelectorProps {
   ringSize: string | null;
   chainLength: string | null;
   goldRate: GoldRateData | null;
+  laborRates?: Record<string, number> | null;
+  pricingModes?: Record<string, MetalPricingMode> | null;
+  ratesBySlug?: Record<string, number> | null;
   selectedDesign: JewelryDesign | null;
   optionRules: ConfiguratorOptionRules | null;
   onMetalChange: (metal: MetalId) => void;
@@ -39,6 +50,7 @@ interface MetalSizeSelectorProps {
 const SLUG_TO_RATE_KEY: Record<string, keyof GoldRateData> = {
   gold_22k: 'gold_22k_per_gram',
   gold_18k: 'gold_18k_per_gram',
+  gold_14k: 'gold_14k_per_gram',
   silver_925: 'silver_per_gram',
   panchdhatu: 'panchdhatu_per_gram',
   platinum: 'platinum_per_gram',
@@ -53,13 +65,83 @@ function getRateForMetal(metalSlug: string, goldRate: GoldRateData): number {
 function getEstimatedMetalPrice(
   metalSlug: string,
   design: JewelryDesign | null,
-  goldRate: GoldRateData | null
-): { weight: number; rate: number; total: number } {
-  if (!design || !goldRate) return { weight: 0, rate: 0, total: 0 };
-  const weights = design.estimated_metal_weight as Record<string, number> | null;
-  const weight = weights?.[metalSlug] ?? weights?.['default'] ?? 0;
-  const rate = getRateForMetal(metalSlug, goldRate);
-  return { weight, rate, total: Math.round(weight * rate) };
+  goldRate: GoldRateData | null,
+  laborRates?: Record<string, number> | null,
+  pricingModes?: Record<string, MetalPricingMode> | null,
+  ratesBySlug?: Record<string, number> | null
+): {
+  weight: number;
+  rate: number;
+  total: number;
+  pricingKind: 'weight' | 'fixed';
+  laborRatePercent: number;
+  makingCharge: number;
+  metalPrice: number;
+  diamondCharge: number;
+} {
+  if (!design || !goldRate) {
+    return {
+      weight: 0,
+      rate: 0,
+      total: 0,
+      pricingKind: 'fixed',
+      laborRatePercent: 0,
+      makingCharge: 0,
+      metalPrice: 0,
+      diamondCharge: 0,
+    };
+  }
+  const rate = resolveMetalRatePerGram(metalSlug, goldRate, ratesBySlug);
+  const pricing = calculateJewelryDesignPricing({
+    metal: metalSlug,
+    makingCharges: design.making_charges,
+    estimatedMetalWeight: design.estimated_metal_weight,
+    diamondCharges: design.diamond_charges,
+    metalRatePerGram: rate,
+    laborRates,
+    pricingModes,
+  });
+  return {
+    weight: pricing.metalWeightGrams,
+    rate,
+    total: pricing.metalPrice + pricing.makingCharge + pricing.diamondCharge,
+    pricingKind: pricing.pricingKind,
+    laborRatePercent: pricing.laborRatePercent,
+    makingCharge: pricing.makingCharge,
+    metalPrice: pricing.metalPrice,
+    diamondCharge: pricing.diamondCharge,
+  };
+}
+
+function formatMountingSubtitle(
+  estimate: ReturnType<typeof getEstimatedMetalPrice>,
+  stoneLabel?: string | null
+): { primary: string; secondary?: string } {
+  if (estimate.total <= 0) return { primary: '' };
+  const stoneName = stoneLabel?.trim();
+
+  if (estimate.pricingKind === 'fixed') {
+    const parts: string[] = [`Making ${formatPrice(estimate.makingCharge)}`];
+    if (estimate.diamondCharge > 0) {
+      parts.push(`${stoneName || 'Stone'} ${formatPrice(estimate.diamondCharge)}`);
+    }
+    return {
+      primary: parts.join(' + '),
+      secondary: 'Fixed sheet price',
+    };
+  }
+
+  if (estimate.weight > 0 && estimate.rate > 0) {
+    return {
+      primary: `${estimate.weight}g × ${formatPrice(estimate.rate)}/g`,
+      secondary:
+        estimate.laborRatePercent > 0
+          ? `+ ${estimate.laborRatePercent}% labor ≈ ${formatPrice(estimate.total)}`
+          : `≈ ${formatPrice(estimate.total)}`,
+    };
+  }
+
+  return { primary: `≈ ${formatPrice(estimate.total)}` };
 }
 
 function apiToMetalOption(item: Record<string, unknown>): MetalOption {
@@ -82,6 +164,9 @@ export default function MetalSizeSelector({
   ringSize,
   chainLength,
   goldRate,
+  laborRates = null,
+  pricingModes = null,
+  ratesBySlug = null,
   selectedDesign,
   optionRules,
   onMetalChange,
@@ -98,8 +183,18 @@ export default function MetalSizeSelector({
   const parsedRingSize = useMemo(() => parseRingSizeValue(ringSize), [ringSize]);
   const allowedRingSizeSystems = useMemo(() => getAllowedRingSizeSystems(optionRules), [optionRules]);
   const visibleMetals = useMemo(
-    () => metals.filter((option) => isMetalAllowed(optionRules, option.id)),
-    [metals, optionRules]
+    () =>
+      metals.filter((option) => {
+        if (!isMetalAllowed(optionRules, option.id)) return false;
+        if (!selectedDesign) return true;
+        return isMetalAvailableForDesign(
+          option.id,
+          selectedDesign.making_charges,
+          selectedDesign.estimated_metal_weight,
+          selectedDesign.metal_flags
+        );
+      }),
+    [metals, optionRules, selectedDesign]
   );
   const activeRingSizeSystem = useMemo(
     () => RING_SIZE_SYSTEMS.find((item) => item.id === ringSizeSystem) ?? RING_SIZE_SYSTEMS[0],
@@ -127,13 +222,30 @@ export default function MetalSizeSelector({
 
   return (
     <div>
-      {/* Metal selection — horizontal pills */}
-      <fieldset className="mt-3">
-        <legend className="text-xs font-medium text-primary mb-1.5">Select Metal</legend>
-        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Metal type">
+      {/* Metal selection */}
+      <fieldset className="mt-1">
+        <legend className="mb-4 text-base font-semibold text-primary sm:text-lg">
+          Select Metal
+        </legend>
+        <div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+          role="radiogroup"
+          aria-label="Metal type"
+        >
           {visibleMetals.map((opt) => {
             const isSelected = metal === opt.id;
-            const estimate = getEstimatedMetalPrice(opt.id, selectedDesign, goldRate);
+            const estimate = getEstimatedMetalPrice(
+              opt.id,
+              selectedDesign,
+              goldRate,
+              laborRates,
+              pricingModes,
+              ratesBySlug
+            );
+            const stoneLabel = selectedDesign
+              ? getStoneAddonLabelFromDesign(selectedDesign)
+              : null;
+            const subtitle = goldRate ? formatMountingSubtitle(estimate, stoneLabel) : null;
 
             return (
               <button
@@ -142,28 +254,52 @@ export default function MetalSizeSelector({
                 role="radio"
                 aria-checked={isSelected}
                 className={cn(
-                  'flex flex-col items-start rounded-lg border px-3 py-2 text-left transition-all duration-150',
-                  'hover:border-accent',
+                  'relative flex w-full flex-col items-start rounded-2xl border-2 px-4 py-4 text-left transition-all duration-150',
+                  'hover:border-accent/70 hover:shadow-sm',
                   isSelected
-                    ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
-                    : 'border-border bg-card'
+                    ? 'border-accent bg-accent/8 shadow-[0_8px_24px_rgba(201,168,76,0.15)]'
+                    : 'border-border/80 bg-card'
                 )}
               >
-                <span className={cn('text-xs font-semibold', isSelected ? 'text-accent' : 'text-primary')}>
+                {isSelected && (
+                  <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  </span>
+                )}
+
+                <span
+                  className={cn(
+                    'pr-8 text-base font-bold leading-tight sm:text-lg',
+                    isSelected ? 'text-accent' : 'text-primary'
+                  )}
+                >
                   {opt.label}
                 </span>
-                {goldRate && (
-                  <span className="text-[9px] text-muted-foreground">
-                    {formatPrice(getRateForMetal(opt.id, goldRate))}/g
-                    {estimate.total > 0 && ` · ≈${formatPrice(estimate.total)}`}
+
+                {opt.purity && (
+                  <span className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {opt.purity}
                   </span>
+                )}
+
+                {subtitle?.primary && (
+                  <div className="mt-3 w-full space-y-1 border-t border-border/50 pt-3">
+                    <p className="text-sm font-semibold leading-snug text-foreground">
+                      {subtitle.primary}
+                    </p>
+                    {subtitle.secondary && (
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {subtitle.secondary}
+                      </p>
+                    )}
+                  </div>
                 )}
               </button>
             );
           })}
         </div>
         {visibleMetals.length === 0 && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             No metals are enabled for this product. Choose the loose stone option or contact us for a custom quote.
           </p>
         )}

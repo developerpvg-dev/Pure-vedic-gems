@@ -24,6 +24,17 @@ function hashGuestToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+function safeEqualHex(a: string, b: string): boolean {
+  // Constant-time comparison of two hex digests. Falls back to false when the
+  // lengths differ (timingSafeEqual would throw).
+  if (a.length !== b.length || a.length === 0) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
 export default async function OrderConfirmationPage({ params }: Props) {
   const { orderId } = await params;
 
@@ -66,7 +77,8 @@ export default async function OrderConfirmationPage({ params }: Props) {
     if (
       !order.guest_access_token ||
       cookieOrderId !== order.id ||
-      expectedHash !== order.guest_access_token
+      !expectedHash ||
+      !safeEqualHex(expectedHash, order.guest_access_token)
     ) {
       notFound();
     }

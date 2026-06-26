@@ -3,12 +3,32 @@ import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+// Generic, identical response for "not found" and "access denied" so that an
+// attacker cannot enumerate valid order numbers (a distinct 404 vs 403 would
+// reveal whether an order number exists).
+const TRACKING_DENIED = {
+  error: 'Tracking access could not be verified. Check your order number and the email or phone used at checkout.',
+};
+
 export async function POST(request: NextRequest) {
+  // ── Rate limiting: 10 tracking lookups per minute per IP ──────────────
+  // Prevents brute-forcing the email/phone verification field against a known
+  // order number.
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!rateLimit(`track:${ip}`, 10, 60 * 1000)) {
+    return NextResponse.json(
+      { error: 'Too many tracking requests. Please wait a moment.' },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null) as { order_number?: string; email?: string; phone?: string; contact?: string; token?: string } | null;
   const orderNumber = body?.order_number?.trim();
   if (!orderNumber) return NextResponse.json({ error: 'order_number is required' }, { status: 400 });
@@ -31,7 +51,8 @@ export async function POST(request: NextRequest) {
     .eq('order_number', orderNumber)
     .single();
 
-  if (error || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  // Return the same payload + status for "not found" as for "access denied".
+  if (error || !order) return NextResponse.json(TRACKING_DENIED, { status: 403 });
 
   const normalizedContact = contact?.toLowerCase();
   const normalizedPhoneContact = contact?.replace(/\D/g, '');
@@ -46,7 +67,7 @@ export async function POST(request: NextRequest) {
   const accountMatches = userId && order.customer_id === userId;
 
   if (!emailMatches && !phoneMatches && !tokenMatches && !accountMatches) {
-    return NextResponse.json({ error: 'Tracking access could not be verified. Check your order number and the email or phone used at checkout.' }, { status: 403 });
+    return NextResponse.json(TRACKING_DENIED, { status: 403 });
   }
 
   const { data: events } = await db

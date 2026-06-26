@@ -23,7 +23,7 @@ export async function PUT(
   }
 
   const update: Record<string, unknown> = {};
-  const allowedFields = ['name', 'slug', 'purity', 'price_per_gram', 'description', 'sort_order', 'is_active'];
+  const allowedFields = ['name', 'slug', 'purity', 'price_per_gram', 'description', 'sort_order', 'is_active', 'labor_rate_percent', 'pricing_mode', 'gst_rate_percent'];
 
   for (const field of allowedFields) {
     if (field in body) {
@@ -35,6 +35,32 @@ export async function PUT(
           return NextResponse.json({ error: 'price_per_gram must be a non-negative number' }, { status: 400 });
         }
         update[field] = price;
+      } else if (field === 'labor_rate_percent') {
+        if (body[field] === null) {
+          update[field] = null;
+        } else {
+          const labor = Number(body[field]);
+          if (isNaN(labor) || labor < 0 || labor > 100) {
+            return NextResponse.json({ error: 'labor_rate_percent must be between 0 and 100' }, { status: 400 });
+          }
+          update[field] = labor;
+        }
+      } else if (field === 'gst_rate_percent') {
+        if (body[field] === null) {
+          update[field] = null;
+        } else {
+          const gst = Number(body[field]);
+          if (isNaN(gst) || gst < 0 || gst > 100) {
+            return NextResponse.json({ error: 'gst_rate_percent must be between 0 and 100' }, { status: 400 });
+          }
+          update[field] = gst;
+        }
+      } else if (field === 'pricing_mode') {
+        const mode = String(body[field]);
+        if (mode !== 'weight' && mode !== 'fixed_sheet') {
+          return NextResponse.json({ error: 'pricing_mode must be weight or fixed_sheet' }, { status: 400 });
+        }
+        update[field] = mode;
       } else {
         update[field] = body[field];
       }

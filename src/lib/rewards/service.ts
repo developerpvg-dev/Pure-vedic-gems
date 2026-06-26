@@ -263,6 +263,25 @@ export async function awardOrderRewardPoints(order: Order) {
   if (points <= 0) return 0;
 
   const supabase = createAdminClient();
+
+  // ── Idempotent guard: claim the award atomically.
+  // reward_points_earned is initialised to 0 when the order is created, so
+  // only the first caller that flips it to `points` proceeds to insert the
+  // transaction. This prevents double-award when both the client-verify and
+  // webhook paths finalize the same payment, or when a webhook is replayed.
+  const { data: claimed, error: claimError } = await supabase
+    .from('orders')
+    .update({ reward_points_earned: points })
+    .eq('id', order.id)
+    .eq('reward_points_earned', 0)
+    .select('id')
+    .maybeSingle();
+
+  if (claimError || !claimed) {
+    // Already awarded by another path, or the claim failed — do not insert.
+    return 0;
+  }
+
   const expiresAt = settings.expiry_days
     ? new Date(Date.now() + settings.expiry_days * 24 * 60 * 60 * 1000).toISOString()
     : null;
@@ -279,14 +298,16 @@ export async function awardOrderRewardPoints(order: Order) {
     metadata: { order_number: order.order_number } as Json,
   });
 
-  if (!error) {
+  if (error) {
+    // Roll back the claim so a later retry can re-attempt the award.
     await supabase
       .from('orders')
-      .update({ reward_points_earned: points })
+      .update({ reward_points_earned: 0 })
       .eq('id', order.id)
+      .eq('reward_points_earned', points)
       .then(null, () => undefined);
-    return points;
+    return 0;
   }
 
-  return 0;
+  return points;
 }

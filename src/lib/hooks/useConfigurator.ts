@@ -12,15 +12,29 @@ import type {
   ConfigPricingBreakdown,
   GoldRateData,
 } from '@/lib/types/configurator';
+import { calculateJewelryDesignPricing } from '@/lib/utils/jewelry-pricing';
+import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
+import {
+  resolveLaborRatesForJewelry,
+  type JewelrySettingMetalProfiles,
+} from '@/lib/utils/jewelry-setting-metal-profiles';
+import { resolveMetalRatePerGram } from '@/lib/hooks/useManualMetalPrices';
+import {
+  isRudrakshaConfiguratorContext,
+} from '@/lib/utils/rudraksha-design-rules';
 
 const DEFAULT_STORAGE_KEY = 'pvg_configurator:full';
 
 const EMPTY_PRICING: ConfigPricingBreakdown = {
   gem_price: 0,
   making_charge: 0,
+  diamond_charge: 0,
+  stone_addon_label: null,
   metal_price: 0,
   metal_weight_grams: 0,
   gold_rate_per_gram: 0,
+  labor_rate_percent: 0,
+  jewelry_pricing_mode: null,
   certification_fee: 0,
   energization_fee: 0,
   custom_design_fee: 0,
@@ -84,73 +98,107 @@ function mergeHydratedState(
 interface UseConfiguratorOptions {
   initialState?: ConfiguratorState;
   storageKey?: string;
+  laborRates?: Record<string, number> | null;
+  pricingModes?: Record<string, 'weight' | 'fixed_sheet'> | null;
+  ratesBySlug?: Record<string, number> | null;
+  settingProfiles?: JewelrySettingMetalProfiles | null;
 }
 
 /**
  * If setting is 'loose', skip design + metal steps (4 & 5).
- * Return the effective next step for a given current position.
+ * Rudraksha flow skips setting-type step (3) — mountings are always pendant.
  */
-function getNextStep(step: number, settingType: string | null): number {
-  if (step === 3 && settingType === 'loose') return 6;
+function getNextStep(step: number, state: ConfiguratorState): number {
+  const rudraksha = isRudrakshaConfiguratorContext(
+    state.gem_category,
+    state.selected_product
+  );
+  if (step === 3 && state.setting_type === 'loose') return 6;
+  if (step === 2 && rudraksha) return 4;
   return Math.min(step + 1, 7);
 }
 
-function getPrevStep(step: number, settingType: string | null): number {
-  if (step === 6 && settingType === 'loose') return 3;
+function getPrevStep(step: number, state: ConfiguratorState): number {
+  const rudraksha = isRudrakshaConfiguratorContext(
+    state.gem_category,
+    state.selected_product
+  );
+  if (step === 6 && state.setting_type === 'loose') return 3;
+  if (step === 4 && rudraksha) return 2;
   return Math.max(step - 1, 1);
 }
 
 /** Recalculate pricing from current state selections */
 function recalcPricing(
   state: ConfiguratorState,
-  goldRate?: GoldRateData | null
+  goldRate?: GoldRateData | null,
+  laborRates?: Record<string, number> | null,
+  pricingModes?: Record<string, 'weight' | 'fixed_sheet'> | null,
+  ratesBySlug?: Record<string, number> | null,
+  settingProfiles?: JewelrySettingMetalProfiles | null
 ): ConfigPricingBreakdown {
   const gemPrice = state.selected_product?.price ?? 0;
 
-  // Making charge from the selected design (stored as JSON per metal type)
   let makingCharge = 0;
-  if (state.selected_design && state.metal) {
-    const charges = state.selected_design.making_charges as Record<string, number> | null;
-    if (charges) {
-      makingCharge = charges[state.metal] ?? charges['default'] ?? 0;
-    }
-  }
-
-  // Metal price = metal weight × rate per gram
+  let diamondCharge = 0;
   let metalPrice = 0;
   let metalWeightGrams = 0;
   let goldRatePerGram = 0;
-  if (state.selected_design && state.metal && goldRate) {
-    const weights = state.selected_design.estimated_metal_weight as Record<string, number> | null;
-    metalWeightGrams = weights?.[state.metal] ?? weights?.['default'] ?? 0;
+  let laborRatePercent = 0;
+  let jewelryPricingMode: 'weight' | 'fixed' | null = null;
+  let stoneAddonLabel: string | null = null;
 
-    // Dynamic lookup: map metal slug to GoldRateData field
-    const SLUG_TO_RATE_KEY: Record<string, keyof typeof goldRate> = {
-      gold_22k: 'gold_22k_per_gram',
-      gold_18k: 'gold_18k_per_gram',
-      silver_925: 'silver_per_gram',
-      panchdhatu: 'panchdhatu_per_gram',
-      platinum: 'platinum_per_gram',
-    };
-    const rateKey = SLUG_TO_RATE_KEY[state.metal];
-    if (rateKey) {
-      goldRatePerGram = (goldRate[rateKey] as number) ?? 0;
-    }
-    metalPrice = Math.round(metalWeightGrams * goldRatePerGram);
+  if (state.selected_design && state.metal && goldRate) {
+    goldRatePerGram = resolveMetalRatePerGram(state.metal, goldRate, ratesBySlug);
+
+    const effectiveLaborRates = resolveLaborRatesForJewelry(
+      state.setting_type,
+      state.selected_design,
+      settingProfiles,
+      state.selected_product?.category === 'rudraksha' ? 'rudraksha' : 'gemstone'
+    );
+
+    const breakdown = calculateJewelryDesignPricing({
+      metal: state.metal,
+      makingCharges: state.selected_design.making_charges,
+      estimatedMetalWeight: state.selected_design.estimated_metal_weight,
+      diamondCharges: state.selected_design.diamond_charges,
+      metalRatePerGram: goldRatePerGram,
+      laborRates: effectiveLaborRates,
+      pricingModes,
+    });
+    makingCharge = breakdown.makingCharge;
+    diamondCharge = breakdown.diamondCharge;
+    metalPrice = breakdown.metalPrice;
+    metalWeightGrams = breakdown.metalWeightGrams;
+    laborRatePercent = breakdown.laborRatePercent;
+    jewelryPricingMode = breakdown.pricingKind;
+    stoneAddonLabel = getStoneAddonLabelFromDesign(state.selected_design);
   }
 
   const certificationFee = state.selected_lab?.extra_charge ?? 0;
   const energizationFee = state.selected_energization?.price ?? 0;
   const customDesignFee = 0;
 
-  const total = gemPrice + makingCharge + metalPrice + certificationFee + energizationFee + customDesignFee;
+  const total =
+    gemPrice +
+    makingCharge +
+    diamondCharge +
+    metalPrice +
+    certificationFee +
+    energizationFee +
+    customDesignFee;
 
   return {
     gem_price: gemPrice,
     making_charge: makingCharge,
+    diamond_charge: diamondCharge,
+    stone_addon_label: stoneAddonLabel,
     metal_price: metalPrice,
     metal_weight_grams: metalWeightGrams,
     gold_rate_per_gram: goldRatePerGram,
+    labor_rate_percent: laborRatePercent,
+    jewelry_pricing_mode: jewelryPricingMode,
     certification_fee: certificationFee,
     energization_fee: energizationFee,
     custom_design_fee: customDesignFee,
@@ -183,11 +231,25 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
           pricing: { ...EMPTY_PRICING },
         };
 
-      case 'SET_PRODUCT':
+      case 'SET_PRODUCT': {
+        const rudraksha = isRudrakshaConfiguratorContext(
+          state.gem_category,
+          action.payload
+        );
         return {
           ...state,
           selected_product: action.payload,
+          ...(rudraksha
+            ? {
+                setting_type: 'pendant' as const,
+                selected_design: null,
+                custom_design_url: null,
+                metal: null,
+                chain_length: null,
+              }
+            : {}),
         };
+      }
 
       case 'SET_SETTING_TYPE':
         return {
@@ -246,13 +308,13 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
       case 'NEXT_STEP':
         return {
           ...state,
-          current_step: getNextStep(state.current_step, state.setting_type),
+          current_step: getNextStep(state.current_step, state),
         };
 
       case 'PREV_STEP':
         return {
           ...state,
-          current_step: getPrevStep(state.current_step, state.setting_type),
+          current_step: getPrevStep(state.current_step, state),
         };
 
       case 'RESET':
@@ -336,19 +398,45 @@ export function useConfigurator(
     }
   }, [state, storageKey]);
 
-  // Recalculate pricing whenever selections or gold rate change
+  const laborRatesRef = useRef(options.laborRates ?? null);
+  const pricingModesRef = useRef(options.pricingModes ?? null);
+  const ratesBySlugRef = useRef(options.ratesBySlug ?? null);
+  const settingProfilesRef = useRef(options.settingProfiles ?? null);
+  laborRatesRef.current = options.laborRates ?? null;
+  pricingModesRef.current = options.pricingModes ?? null;
+  ratesBySlugRef.current = options.ratesBySlug ?? null;
+  settingProfilesRef.current = options.settingProfiles ?? null;
+
   const pricing = useMemo(
-    () => recalcPricing(state, goldRate),
+    () =>
+      recalcPricing(
+        state,
+        goldRate,
+        laborRatesRef.current,
+        pricingModesRef.current,
+        ratesBySlugRef.current,
+        settingProfilesRef.current
+      ),
     // Only recalc when the specific fields that affect pricing change
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       state.selected_product?.price,
       state.selected_design?.id,
+      state.selected_design?.labor_rates,
       state.metal,
       state.selected_lab?.extra_charge,
       state.selected_energization?.price,
       state.setting_type,
+      options.settingProfiles,
       goldRate?.gold_22k_per_gram,
+      goldRate?.gold_18k_per_gram,
+      goldRate?.gold_14k_per_gram,
+      goldRate?.platinum_per_gram,
+      goldRate?.silver_per_gram,
+      goldRate?.panchdhatu_per_gram,
+      options.laborRates,
+      options.pricingModes,
+      options.ratesBySlug,
     ]
   );
 

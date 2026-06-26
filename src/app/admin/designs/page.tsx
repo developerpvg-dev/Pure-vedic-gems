@@ -1,481 +1,521 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Plus, Pencil, Trash2, Upload, Loader2, X } from 'lucide-react';
+import Link from 'next/link';
+import {
+  Gem,
+  Layers,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase/client';
+import { AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
+import DesignForm, { type AdminJewelryDesign } from '@/components/admin/jewelry-designs/DesignForm';
+import JewelryMetalCatalogPanel from '@/components/admin/jewelry-designs/JewelryMetalCatalogPanel';
+import {
+  JEWELRY_DESIGN_SETTING_TYPES,
+  RUDRAKSHA_MOUNTING_CATEGORIES,
+} from '@/lib/constants/jewelry-design-metals';
+import { getAvailableMetalsForDesign } from '@/lib/utils/jewelry-pricing';
+import {
+  decodeMetalRowsFromDesign,
+  getDesignDiamondChargeFromDesign,
+  getStoneAddonLabelFromDesign,
+} from '@/lib/utils/jewelry-design-fields';
+import { formatPrice } from '@/lib/utils/format';
 
-interface JewelryDesign {
-  id: string;
-  name: string;
-  setting_type: string;
-  image_url: string | null;
-  description: string | null;
-  making_charges: Record<string, number>;
-  estimated_metal_weight: Record<string, number> | null;
-  sort_order: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-const SETTING_TYPES = ['ring', 'pendant', 'bracelet'] as const;
+const SCOPE_FILTERS = [
+  { id: 'all', label: 'All scopes' },
+  { id: 'gemstone', label: 'Gemstone' },
+  { id: 'rudraksha', label: 'Rudraksha' },
+] as const;
 
 export default function AdminDesignsPage() {
-  const [designs, setDesigns] = useState<JewelryDesign[]>([]);
+  const [designs, setDesigns] = useState<AdminJewelryDesign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
+  const [settingFilter, setSettingFilter] = useState<string>('all');
+  const [scopeFilter, setScopeFilter] = useState<string>('all');
+  const [includeInactive, setIncludeInactive] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<JewelryDesign | null>(null);
+  const [editing, setEditing] = useState<AdminJewelryDesign | null>(null);
+  const [catalogVersion, setCatalogVersion] = useState(0);
 
   const fetchDesigns = useCallback(async () => {
     setLoading(true);
     try {
-      const params = filter !== 'all' ? `?setting_type=${filter}` : '';
-      const res = await fetch(`/api/admin/designs${params}`);
+      const params = new URLSearchParams();
+      if (settingFilter !== 'all') params.set('setting_type', settingFilter);
+      if (scopeFilter !== 'all') params.set('product_scope', scopeFilter);
+      if (includeInactive) params.set('include_inactive', 'true');
+
+      const res = await fetch(`/api/admin/designs?${params.toString()}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load');
       setDesigns(data.designs ?? []);
-    } catch {
-      toast.error('Failed to load designs');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load designs');
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [includeInactive, scopeFilter, settingFilter]);
 
-  useEffect(() => { fetchDesigns(); }, [fetchDesigns]);
+  useEffect(() => {
+    void fetchDesigns();
+  }, [fetchDesigns]);
+
+  const stats = useMemo(() => {
+    const active = designs.filter((d) => d.is_active).length;
+    const gemstone = designs.filter((d) => d.product_scope !== 'rudraksha').length;
+    const rudraksha = designs.filter((d) => d.product_scope === 'rudraksha').length;
+    return { total: designs.length, active, gemstone, rudraksha };
+  }, [designs]);
+
+  const grouped = useMemo(() => {
+    const groups: Array<{ key: string; title: string; items: AdminJewelryDesign[] }> = [];
+
+    if (scopeFilter === 'all' || scopeFilter === 'gemstone') {
+      for (const type of JEWELRY_DESIGN_SETTING_TYPES) {
+        const items = designs.filter(
+          (d) => d.product_scope !== 'rudraksha' && d.setting_type === type
+        );
+        if (items.length > 0) {
+          groups.push({
+            key: `gem-${type}`,
+            title: `${type.charAt(0).toUpperCase() + type.slice(1)} designs`,
+            items,
+          });
+        }
+      }
+    }
+
+    if (scopeFilter === 'all' || scopeFilter === 'rudraksha') {
+      for (const cat of RUDRAKSHA_MOUNTING_CATEGORIES) {
+        const items = designs.filter(
+          (d) => d.product_scope === 'rudraksha' && d.rudraksha_category === cat.value
+        );
+        if (items.length > 0) {
+          groups.push({ key: `rud-${cat.value}`, title: `Rudraksha — ${cat.label}`, items });
+        }
+      }
+    }
+
+    return groups;
+  }, [designs, scopeFilter]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this design?')) return;
+    if (!confirm('Deactivate this design? Existing orders keep their reference.')) return;
     try {
       const res = await fetch(`/api/admin/designs?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
-      toast.success('Design removed');
-      fetchDesigns();
+      toast.success('Design deactivated');
+      void fetchDesigns();
     } catch {
-      toast.error('Failed to remove design');
+      toast.error('Failed to deactivate design');
     }
   };
 
-  const handleEdit = (design: JewelryDesign) => {
+  const handleReactivate = async (design: AdminJewelryDesign) => {
+    try {
+      const res = await fetch('/api/admin/designs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: design.id,
+          name: design.name,
+          setting_type: design.setting_type,
+          product_scope: design.product_scope,
+          rudraksha_category: design.rudraksha_category,
+          description: design.description,
+          image_url: design.image_url,
+          sort_order: design.sort_order,
+          is_active: true,
+          design_diamond_charge: getDesignDiamondChargeFromDesign(design.diamond_charges),
+          stone_addon_label: getStoneAddonLabelFromDesign(design),
+          metal_rows: decodeMetalRowsForPatch(design),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success('Design reactivated');
+      void fetchDesigns();
+    } catch {
+      toast.error('Failed to reactivate');
+    }
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (design: AdminJewelryDesign) => {
     setEditing(design);
     setShowForm(true);
   };
 
-  const handleFormClose = () => {
-    setShowForm(false);
-    setEditing(null);
-  };
-
-  const handleFormSuccess = () => {
-    handleFormClose();
-    fetchDesigns();
-  };
-
-  const filtered = designs.filter(d => d.is_active);
-
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Setting Types & Designs</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage jewelry designs for each setting type (Ring, Pendant, Bracelet).
-          </p>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Jewelry Designs"
+        description="Manage ring, pendant, bracelet, and Rudraksha mounting designs. Per-design metal pricing uses metals from Metals & Pricing."
+        actions={
+          <>
+            <Link
+              href="/admin/metals"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              <Layers className="h-4 w-4" />
+              Metals catalog
+            </Link>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700"
+            >
+              <Plus className="h-4 w-4" />
+              Add design
+            </button>
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <AdminStatCard
+          label="Total designs"
+          value={stats.total}
+          icon={Gem}
+          tone="text-amber-700"
+          bg="bg-amber-50"
+        />
+        <AdminStatCard
+          label="Active"
+          value={stats.active}
+          icon={Sparkles}
+          tone="text-emerald-600"
+          bg="bg-emerald-50"
+        />
+        <AdminStatCard
+          label="Gemstone"
+          value={stats.gemstone}
+          icon={Gem}
+          tone="text-violet-600"
+          bg="bg-violet-50"
+        />
+        <AdminStatCard
+          label="Rudraksha"
+          value={stats.rudraksha}
+          icon={Layers}
+          tone="text-sky-600"
+          bg="bg-sky-50"
+        />
+      </div>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">Filters</h2>
+            <p className="mt-0.5 text-xs text-gray-500">Narrow designs by product scope and setting type.</p>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+              className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+            />
+            Show inactive designs
+          </label>
         </div>
-        <button
-          onClick={() => { setEditing(null); setShowForm(true); }}
-          className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Design
-        </button>
-      </div>
 
-      {/* Filter tabs */}
-      <div className="mt-6 flex gap-2">
-        {['all', ...SETTING_TYPES].map((t) => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize transition ${
-              filter === t ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {t === 'all' ? 'All Types' : t}
-          </button>
-        ))}
-      </div>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex flex-wrap gap-2">
+            <span className="mr-1 self-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              Scope
+            </span>
+            {SCOPE_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setScopeFilter(f.id)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                  scopeFilter === f.id
+                    ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-      {/* Design Form Modal */}
-      {showForm && (
-        <DesignForm
-          design={editing}
-          onClose={handleFormClose}
-          onSuccess={handleFormSuccess}
+          <div className="hidden h-6 w-px bg-gray-200 sm:block" />
+
+          <div className="flex flex-wrap gap-2">
+            <span className="mr-1 self-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              Setting
+            </span>
+            {['all', ...JEWELRY_DESIGN_SETTING_TYPES].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setSettingFilter(t)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium capitalize transition ${
+                  settingFilter === t
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {t === 'all' ? 'All' : t}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {scopeFilter !== 'all' && settingFilter !== 'all' && (
+        <JewelryMetalCatalogPanel
+          key={`${scopeFilter}-${settingFilter}-${catalogVersion}`}
+          productScope={scopeFilter}
+          settingType={settingFilter}
+          defaultOpen
+          onCatalogChange={() => setCatalogVersion((v) => v + 1)}
         />
       )}
 
-      {/* Designs Grid */}
-      {loading ? (
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-64 animate-pulse rounded-xl bg-gray-100" />
-          ))}
+      <section>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Design library</h2>
+            <p className="text-sm text-gray-500">
+              {loading
+                ? 'Loading designs…'
+                : grouped.length === 0
+                  ? 'No designs match the current filters.'
+                  : `${stats.total} design${stats.total === 1 ? '' : 's'} shown`}
+            </p>
+          </div>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="mt-12 text-center text-gray-500">
-          <p className="text-lg font-medium">No designs yet</p>
-          <p className="mt-1 text-sm">Add your first jewelry design to get started.</p>
-        </div>
-      ) : (
-        <>
-          {SETTING_TYPES.map((type) => {
-            const typeDesigns = filtered.filter((d) => d.setting_type === type);
-            if (typeDesigns.length === 0 && filter !== 'all' && filter !== type) return null;
-            if (typeDesigns.length === 0) return null;
 
-            return (
-              <div key={type} className="mt-8">
-                <h2 className="mb-4 text-lg font-semibold capitalize text-gray-900">
-                  {type} Designs
-                  <span className="ml-2 text-sm font-normal text-gray-400">({typeDesigns.length})</span>
-                </h2>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {typeDesigns.map((design) => (
-                    <div
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-72 animate-pulse rounded-xl bg-gray-100" />
+            ))}
+          </div>
+        ) : grouped.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
+            <Gem className="mx-auto h-10 w-10 text-gray-300" />
+            <p className="mt-4 text-base font-semibold text-gray-900">No designs found</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Adjust filters or create your first jewelry design.
+            </p>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+            >
+              <Plus className="h-4 w-4" />
+              Add design
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {grouped.map((group) => (
+              <div key={group.key}>
+                <div className="mb-4 flex items-center gap-2">
+                  <h3 className="text-base font-semibold text-gray-900">{group.title}</h3>
+                  <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                    {group.items.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {group.items.map((design) => (
+                    <DesignCard
                       key={design.id}
-                      className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-md"
-                    >
-                      {/* Image */}
-                      <div className="relative aspect-[4/3] bg-gray-50">
-                        {design.image_url ? (
-                          <Image
-                            src={design.image_url}
-                            alt={design.name}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-gray-300">
-                            <span className="text-4xl">
-                              {type === 'ring' ? '💍' : type === 'pendant' ? '📿' : '⌚'}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Actions overlay */}
-                        <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            onClick={() => handleEdit(design)}
-                            className="rounded-lg bg-white p-1.5 shadow-md transition hover:bg-gray-50"
-                            title="Edit"
-                          >
-                            <Pencil className="h-4 w-4 text-gray-600" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(design.id)}
-                            className="rounded-lg bg-white p-1.5 shadow-md transition hover:bg-red-50"
-                            title="Remove"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Info */}
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900">{design.name}</h3>
-                        {design.description && (
-                          <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">{design.description}</p>
-                        )}
-                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
-                          <span className="rounded bg-gray-100 px-2 py-0.5 capitalize">{design.setting_type}</span>
-                          <span>Order: {design.sort_order}</span>
-                        </div>
-                        {design.making_charges && Object.keys(design.making_charges).length > 0 && (
-                          <div className="mt-2 text-xs text-gray-500">
-                            Making charges:{' '}
-                            {Object.entries(design.making_charges).map(([metal, charge]) => (
-                              <span key={metal} className="mr-2">
-                                {metal.replace(/_/g, ' ')}: ₹{Number(charge).toLocaleString('en-IN')}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      design={design}
+                      onEdit={() => openEdit(design)}
+                      onDelete={() => void handleDelete(design.id)}
+                      onReactivate={() => void handleReactivate(design)}
+                    />
                   ))}
                 </div>
               </div>
-            );
-          })}
-        </>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {showForm && (
+        <DesignForm
+          key={`${editing?.id ?? 'new'}-${catalogVersion}`}
+          design={editing}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
+          onSuccess={() => {
+            setShowForm(false);
+            setEditing(null);
+            void fetchDesigns();
+            setCatalogVersion((v) => v + 1);
+          }}
+          onCatalogChange={() => setCatalogVersion((v) => v + 1)}
+        />
       )}
     </div>
   );
 }
 
-// ─── Design Form Component ──────────────────────────────────────────────────
-
-function DesignForm({
+function DesignCard({
   design,
-  onClose,
-  onSuccess,
+  onEdit,
+  onDelete,
+  onReactivate,
 }: {
-  design: JewelryDesign | null;
-  onClose: () => void;
-  onSuccess: () => void;
+  design: AdminJewelryDesign;
+  onEdit: () => void;
+  onDelete: () => void;
+  onReactivate: () => void;
 }) {
-  const [name, setName] = useState(design?.name ?? '');
-  const [settingType, setSettingType] = useState(design?.setting_type ?? 'ring');
-  const [description, setDescription] = useState(design?.description ?? '');
-  const [imageUrl, setImageUrl] = useState(design?.image_url ?? '');
-  const [sortOrder, setSortOrder] = useState(design?.sort_order ?? 0);
-  const [makingCharges, setMakingCharges] = useState<Record<string, string>>(
-    design?.making_charges
-      ? Object.fromEntries(Object.entries(design.making_charges).map(([k, v]) => [k, String(v)]))
-      : { gold_22k: '', gold_18k: '', silver_925: '', panchdhatu: '' }
+  const availableMetals = getAvailableMetalsForDesign(
+    design.making_charges,
+    design.estimated_metal_weight,
+    design.metal_flags
   );
-  const [metalWeights, setMetalWeights] = useState<Record<string, string>>(
-    design?.estimated_metal_weight
-      ? Object.fromEntries(Object.entries(design.estimated_metal_weight).map(([k, v]) => [k, String(v)]))
-      : { default: '' }
-  );
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const silverCharge = design.making_charges?.silver_925;
+  const minCharge = Object.values(design.making_charges ?? {}).filter((v) => v > 0);
+  const chargeLabel =
+    silverCharge != null
+      ? `Silver ${formatPrice(silverCharge)}`
+      : minCharge.length > 0
+        ? `From ${formatPrice(Math.min(...minCharge))}`
+        : 'Weight-based pricing';
 
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const supabase = createClient();
-      const ext = file.name.split('.').pop() ?? 'jpg';
-      const safeName = `design_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('jewelry-designs')
-        .upload(safeName, file, { cacheControl: '3600', upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('jewelry-designs')
-        .getPublicUrl(safeName);
-
-      setImageUrl(publicUrl);
-      toast.success('Image uploaded');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error('Design name is required');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const charges: Record<string, number> = {};
-      for (const [k, v] of Object.entries(makingCharges)) {
-        const num = parseFloat(v);
-        if (!isNaN(num) && num > 0) charges[k] = num;
-      }
-
-      const weights: Record<string, number> = {};
-      for (const [k, v] of Object.entries(metalWeights)) {
-        const num = parseFloat(v);
-        if (!isNaN(num) && num > 0) weights[k] = num;
-      }
-
-      const body = {
-        ...(design ? { id: design.id } : {}),
-        name: name.trim(),
-        setting_type: settingType,
-        description: description.trim() || null,
-        image_url: imageUrl || null,
-        making_charges: charges,
-        estimated_metal_weight: Object.keys(weights).length > 0 ? weights : null,
-        sort_order: sortOrder,
-      };
-
-      const res = await fetch('/api/admin/designs', {
-        method: design ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Failed to save');
-      }
-
-      toast.success(design ? 'Design updated' : 'Design created');
-      onSuccess();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save design');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const stoneLabel = getStoneAddonLabelFromDesign(design);
+  const stoneCharge = getDesignDiamondChargeFromDesign(design.diamond_charges);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
-          <X className="h-5 w-5" />
-        </button>
-
-        <h2 className="text-xl font-bold text-gray-900">
-          {design ? 'Edit Design' : 'Add New Design'}
-        </h2>
-
-        <div className="mt-6 space-y-4">
-          {/* Setting Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Setting Type</label>
-            <select
-              value={settingType}
-              onChange={(e) => setSettingType(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            >
-              {SETTING_TYPES.map((t) => (
-                <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-              ))}
-            </select>
+    <article
+      className={`group flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md ${
+        design.is_active ? 'border-gray-200' : 'border-red-200/80'
+      }`}
+    >
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100">
+        {design.image_url ? (
+          <Image
+            src={design.image_url}
+            alt={design.name}
+            fill
+            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+            sizes="(max-width: 640px) 100vw, 33vw"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-300">
+            <Gem className="h-10 w-10" />
+            <span className="text-xs">No image</span>
           </div>
-
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Design Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              placeholder="e.g. Classic Solitaire Ring"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Brief description of this design..."
-            />
-          </div>
-
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Design Image</label>
-            <div className="mt-1 flex items-center gap-3">
-              {imageUrl ? (
-                <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200">
-                  <Image src={imageUrl} alt="Preview" fill className="object-cover" />
-                  <button
-                    onClick={() => setImageUrl('')}
-                    className="absolute right-0.5 top-0.5 rounded-full bg-white p-0.5 shadow"
-                  >
-                    <X className="h-3 w-3 text-gray-500" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 transition hover:border-amber-400"
-                >
-                  {uploading ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                  ) : (
-                    <Upload className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
-                }}
-              />
-              <p className="text-xs text-gray-400">JPG, PNG, WebP. Max 10MB.</p>
-            </div>
-          </div>
-
-          {/* Sort Order */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Sort Order</label>
-            <input
-              type="number"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
-              className="mt-1 w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-
-          {/* Making Charges */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Making Charges (₹)</label>
-            <p className="text-xs text-gray-400 mb-2">Set charges per metal type</p>
-            <div className="grid grid-cols-2 gap-2">
-              {['gold_22k', 'gold_18k', 'silver_925', 'panchdhatu', 'platinum'].map((metal) => (
-                <div key={metal} className="flex items-center gap-2">
-                  <span className="w-20 text-xs text-gray-500 capitalize">{metal.replace(/_/g, ' ')}</span>
-                  <input
-                    type="number"
-                    value={makingCharges[metal] ?? ''}
-                    onChange={(e) => setMakingCharges((prev) => ({ ...prev, [metal]: e.target.value }))}
-                    className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
-                    placeholder="0"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Estimated Metal Weight */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Estimated Metal Weight (grams)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={metalWeights['default'] ?? ''}
-              onChange={(e) => setMetalWeights({ default: e.target.value })}
-              className="mt-1 w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              placeholder="e.g. 4.5"
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {design ? 'Update Design' : 'Create Design'}
-          </button>
+        )}
+        <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
+          {!design.is_active && (
+            <span className="rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              Inactive
+            </span>
+          )}
+          <span className="rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-semibold capitalize text-gray-700 shadow-sm backdrop-blur">
+            {design.setting_type}
+          </span>
         </div>
       </div>
-    </div>
+
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="line-clamp-2 font-semibold text-gray-900">{design.name}</h3>
+
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <Badge tone={design.product_scope === 'rudraksha' ? 'sky' : 'violet'}>
+            {design.product_scope === 'rudraksha' ? 'Rudraksha' : 'Gemstone'}
+          </Badge>
+          {design.rudraksha_category && (
+            <Badge>{design.rudraksha_category.replace(/_/g, ' ')}</Badge>
+          )}
+        </div>
+
+        <div className="mt-3 space-y-1 text-xs text-gray-500">
+          <p>
+            <span className="font-medium text-gray-700">Pricing:</span> {chargeLabel}
+          </p>
+          <p>
+            <span className="font-medium text-gray-700">Metals:</span>{' '}
+            {availableMetals.length} available
+          </p>
+          {stoneCharge && stoneCharge > 0 ? (
+            <p>
+              <span className="font-medium text-gray-700">{stoneLabel ?? 'Stone'}:</span>{' '}
+              {formatPrice(stoneCharge)}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-auto flex gap-2 pt-4">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-200 py-2.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit design
+          </button>
+          {design.is_active ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-lg border border-red-200 px-3 py-2.5 text-red-600 transition hover:bg-red-50"
+              title="Deactivate"
+              aria-label="Deactivate design"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onReactivate}
+              className="rounded-lg border border-emerald-200 px-3 py-2.5 text-emerald-700 transition hover:bg-emerald-50"
+              title="Reactivate"
+              aria-label="Reactivate design"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
   );
+}
+
+function Badge({
+  children,
+  tone = 'gray',
+}: {
+  children: React.ReactNode;
+  tone?: 'gray' | 'violet' | 'sky';
+}) {
+  const tones = {
+    gray: 'bg-gray-100 text-gray-600',
+    violet: 'bg-violet-50 text-violet-700',
+    sky: 'bg-sky-50 text-sky-700',
+  };
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${tones[tone]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function decodeMetalRowsForPatch(design: AdminJewelryDesign) {
+  return decodeMetalRowsFromDesign(design);
 }

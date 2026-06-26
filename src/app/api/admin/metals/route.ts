@@ -38,9 +38,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, slug, purity, price_per_gram, description, sort_order } = body as {
+  const { name, slug, purity, price_per_gram, description, sort_order, labor_rate_percent, pricing_mode, gst_rate_percent } = body as {
     name?: string; slug?: string; purity?: string; price_per_gram?: number;
     description?: string; sort_order?: number;
+    labor_rate_percent?: number | null;
+    pricing_mode?: string;
+    gst_rate_percent?: number | null;
   };
 
   if (!name || !slug || typeof price_per_gram !== 'number') {
@@ -63,6 +66,19 @@ export async function POST(request: NextRequest) {
       price_per_gram,
       description: description ? String(description).trim() : null,
       sort_order: typeof sort_order === 'number' ? sort_order : 0,
+      pricing_mode: pricing_mode === 'fixed_sheet' ? 'fixed_sheet' : 'weight',
+      labor_rate_percent:
+        labor_rate_percent == null
+          ? null
+          : typeof labor_rate_percent === 'number'
+            ? labor_rate_percent
+            : null,
+      gst_rate_percent:
+        gst_rate_percent == null
+          ? null
+          : typeof gst_rate_percent === 'number'
+            ? gst_rate_percent
+            : null,
     })
     .select()
     .single();

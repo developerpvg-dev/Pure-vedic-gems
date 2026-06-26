@@ -1,22 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
-
-const DESIGN_UPDATE_FIELDS = [
-  'name',
-  'setting_type',
-  'image_url',
-  'description',
-  'making_charges',
-  'estimated_metal_weight',
-  'sort_order',
-  'is_active',
-] as const;
+import {
+  jewelryDesignCreateSchema,
+  jewelryDesignUpdateSchema,
+  normalizeDesignPayload,
+} from '@/lib/validators/jewelry-design';
+import {
+  insertJewelryDesign,
+  migrationHintForStrippedColumns,
+  updateJewelryDesign,
+} from '@/lib/admin/jewelry-design-persist';
 
 /**
  * GET /api/admin/designs
- * Returns all jewelry designs (admin view, includes inactive).
- * Supports ?setting_type=ring|pendant|bracelet filter.
+ * Admin list with optional filters.
  */
 export async function GET(request: NextRequest) {
   const auth = await requireAdminAccess('products.read');
@@ -24,17 +22,33 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const settingType = searchParams.get('setting_type');
+  const productScope = searchParams.get('product_scope');
+  const rudrakshaCategory = searchParams.get('rudraksha_category');
+  const includeInactive = searchParams.get('include_inactive') === 'true';
 
   const supabase = createAdminClient();
 
   let query = supabase
     .from('jewelry_designs')
     .select('*')
+    .order('product_scope')
     .order('setting_type')
     .order('sort_order', { ascending: true });
 
+  if (!includeInactive) {
+    query = query.eq('is_active', true);
+  }
+
   if (settingType) {
     query = query.eq('setting_type', settingType);
+  }
+
+  if (productScope) {
+    query = query.eq('product_scope', productScope);
+  }
+
+  if (rudrakshaCategory) {
+    query = query.eq('rudraksha_category', rudrakshaCategory);
   }
 
   const { data, error } = await query;
@@ -49,7 +63,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/designs
- * Create a new jewelry design.
+ * Create a jewelry design with full metal pricing matrix.
  */
 export async function POST(request: NextRequest) {
   const auth = await requireAdminAccess('products.write');
@@ -57,36 +71,31 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const parsed = jewelryDesignCreateSchema.safeParse(body);
 
-    const { name, setting_type, image_url, description, making_charges, estimated_metal_weight, sort_order } = body;
-
-    if (!name || !setting_type) {
-      return NextResponse.json({ error: 'Name and setting type are required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
+    const payload = normalizeDesignPayload(parsed.data);
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase
-      .from('jewelry_designs')
-      .insert({
-        name,
-        setting_type,
-        image_url: image_url || null,
-        description: description || null,
-        making_charges: making_charges || {},
-        estimated_metal_weight: estimated_metal_weight || null,
-        sort_order: sort_order ?? 0,
-        is_active: true,
-      })
-      .select()
-      .single();
+    const { data, error, strippedColumns } = await insertJewelryDesign(supabase, payload);
 
     if (error) {
       console.error('[admin/designs] Insert error:', error);
-      return NextResponse.json({ error: 'Failed to create design' }, { status: 500 });
+      const hint = migrationHintForStrippedColumns(strippedColumns);
+      return NextResponse.json(
+        { error: hint ?? 'Failed to create design' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ design: data }, { status: 201 });
+    const warning = migrationHintForStrippedColumns(strippedColumns);
+    return NextResponse.json({ design: data, warning }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
@@ -102,37 +111,32 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id } = body as { id?: unknown };
+    const parsed = jewelryDesignUpdateSchema.safeParse(body);
 
-    if (!id || typeof id !== 'string') {
-      return NextResponse.json({ error: 'Design ID is required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
-    const updates: Record<string, unknown> = {};
-    for (const field of DESIGN_UPDATE_FIELDS) {
-      if (field in body) updates[field] = (body as Record<string, unknown>)[field];
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
-    }
-
+    const { id } = parsed.data;
+    const payload = normalizeDesignPayload(parsed.data);
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase
-      .from('jewelry_designs')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(updates as any)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error, strippedColumns } = await updateJewelryDesign(supabase, id, payload);
 
     if (error) {
       console.error('[admin/designs] Update error:', error);
-      return NextResponse.json({ error: 'Failed to update design' }, { status: 500 });
+      const hint = migrationHintForStrippedColumns(strippedColumns);
+      return NextResponse.json(
+        { error: hint ?? 'Failed to update design' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ design: data });
+    const warning = migrationHintForStrippedColumns(strippedColumns);
+    return NextResponse.json({ design: data, warning });
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }

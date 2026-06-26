@@ -29,7 +29,7 @@ const NAV_GROUPS = [
       { href: '/admin/categories', label: 'Section Categories', icon: Gem },
       { href: '/admin/configurations', label: 'Configurations', icon: SlidersHorizontal },
       { href: '/admin/metals', label: 'Metals & Pricing', icon: CircleDollarSign },
-      { href: '/admin/designs', label: 'Setting Types & Designs', icon: Palette },
+      { href: '/admin/designs', label: 'Jewelry Designs', icon: Palette },
       { href: '/admin/certifications', label: 'Certifications', icon: Award },
       { href: '/admin/energizations', label: 'Energization / Pooja', icon: Sparkles },
     ],

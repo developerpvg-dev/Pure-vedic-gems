@@ -19,6 +19,10 @@
     "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
     "test:perf": "playwright test tests/e2e/performance-budget.spec.ts",
     "legacy:rewards": "tsx scripts/legacy-import/rewards/migrate-rewards.ts",
+    "legacy:ring-designs": "tsx scripts/legacy-import/ring-designs/migrate-ring-designs.ts",
+    "legacy:pendant-designs": "tsx scripts/legacy-import/pendant-designs/migrate-pendant-designs.ts",
+    "legacy:bracelet-designs": "tsx scripts/legacy-import/bracelet-designs/migrate-bracelet-designs.ts",
+    "legacy:rudraksha-designs": "tsx scripts/legacy-import/rudraksha-designs/migrate-rudraksha-designs.ts",
     "seed:navratna-reviews": "tsx scripts/seed/generate-navratna-category-reviews.ts",
     "seed:rudraksha-reviews": "tsx scripts/seed/generate-rudraksha-category-reviews.ts",
     "seed:upratna-reviews": "tsx scripts/seed/generate-upratna-category-reviews.ts",
@@ -87,6 +91,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.6",
+    "xlsx": "^0.18.5"
   }
 }

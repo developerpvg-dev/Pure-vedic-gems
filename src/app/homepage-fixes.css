@@ -1554,6 +1554,47 @@
   }
 }
 
+/* Rudraksha feature carousel — one card visible at a time on every device */
+.pvg-react-home-root .rudra-left-carousel {
+  position: relative !important;
+  overflow: hidden !important;
+  width: 100%;
+}
+
+.pvg-react-home-root .rudra-left-card {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+  transform: translateY(18px) scale(0.97);
+  transition: opacity 0.65s ease, transform 0.65s ease, visibility 0.65s ease;
+}
+
+.pvg-react-home-root .rudra-left-card.is-active {
+  opacity: 1 !important;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pvg-react-home-root .rudra-left-img {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.pvg-react-home-root .rudra-carousel-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
 /* Tablet: Cert stack — fanned deck matches desktop */
 @media (min-width: 768px) and (max-width: 1023px) {
   .pvg-react-home-root .cert-section .about-img-stack {

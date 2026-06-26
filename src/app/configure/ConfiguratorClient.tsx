@@ -6,6 +6,7 @@
  */
 
 import { useMemo } from 'react';
+import useSWR from 'swr';
 import { useManualMetalPrices } from '@/lib/hooks/useManualMetalPrices';
 import {
   createConfiguratorState,
@@ -14,6 +15,8 @@ import {
 import ConfiguratorWrapper from '@/components/configurator/ConfiguratorWrapper';
 import type { ProductCard } from '@/lib/types/product';
 import type { ConfiguratorState, GemCategory } from '@/lib/types/configurator';
+import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
+import type { JewelrySettingMetalProfiles } from '@/lib/utils/jewelry-setting-metal-profiles';
 
 interface ConfiguratorClientProps {
   /** Pre-selected product (routed from PDP "Configure" button) */
@@ -31,9 +34,21 @@ function ConfiguratorSession({
   startStep,
   storageKey,
 }: ConfiguratorSessionProps) {
-  const { metalPrices } = useManualMetalPrices();
+  const { metalPrices, laborRates, pricingModes, ratesBySlug } = useManualMetalPrices();
+  const { data: profileData } = useSWR<{ profiles: JewelrySettingMetalProfiles }>(
+    '/api/jewelry/setting-profiles',
+    (url) => fetch(url).then((r) => r.json()),
+    { revalidateOnFocus: false }
+  );
   const { state, dispatch, canGoToStep, canProceed, isComplete, reset } =
-    useConfigurator(metalPrices, { initialState, storageKey });
+    useConfigurator(metalPrices, {
+      initialState,
+      storageKey,
+      laborRates,
+      pricingModes,
+      ratesBySlug,
+      settingProfiles: profileData?.profiles ?? null,
+    });
 
   return (
     <ConfiguratorWrapper
@@ -44,6 +59,10 @@ function ConfiguratorSession({
       isComplete={isComplete}
       reset={reset}
       goldRate={metalPrices}
+      laborRates={laborRates}
+      pricingModes={pricingModes}
+      ratesBySlug={ratesBySlug}
+      settingProfiles={profileData?.profiles ?? null}
       startStep={startStep}
     />
   );
@@ -62,15 +81,18 @@ export default function ConfiguratorClient({
       };
     }
 
-    const category: GemCategory =
-      preselectedProduct.sub_category || preselectedProduct.category || 'other';
+    const rudraksha = isRudrakshaConfiguratorContext(null, preselectedProduct);
+    const category: GemCategory = rudraksha
+      ? 'rudraksha'
+      : preselectedProduct.sub_category || preselectedProduct.category || 'other';
 
     return {
       key: `product:${preselectedProduct.id}`,
       initialState: createConfiguratorState({
-        current_step: 3,
+        current_step: rudraksha ? 4 : 3,
         gem_category: category,
         selected_product: preselectedProduct,
+        ...(rudraksha ? { setting_type: 'pendant' as const } : {}),
       }),
       startStep: 3,
       storageKey: `pvg_configurator:product:${preselectedProduct.id}`,

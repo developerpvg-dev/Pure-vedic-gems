@@ -10,9 +10,19 @@ import {
   normalizeConfiguratorRules,
   validateRingSizeValue,
 } from '@/lib/utils/configurator-rules';
-import type { ConfigurationDeliveryEta, SettingType } from '@/lib/types/configurator';
+import type { ConfigurationDeliveryEta, SettingType, ConfigPricingBreakdown } from '@/lib/types/configurator';
 import type { Json } from '@/lib/types/database';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
+import { calculateJewelryDesignPricing } from '@/lib/utils/jewelry-pricing';
+import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
+import {
+  parseJewelrySettingProfilesFromCommerce,
+  resolveLaborRatesForJewelry,
+} from '@/lib/utils/jewelry-setting-metal-profiles';
+import {
+  designMatchesRudrakshaProduct,
+  isRudrakshaConfiguratorContext,
+} from '@/lib/utils/rudraksha-design-rules';
 
 const ConfigurationSchema = z.object({
   product_id: z.string().uuid(),
@@ -69,6 +79,11 @@ type JewelryDesignForPricing = {
   setting_type: string;
   making_charges: unknown;
   estimated_metal_weight: unknown;
+  diamond_charges: unknown;
+  labor_rates?: unknown;
+  stone_addon_label?: string | null;
+  product_scope: string;
+  rudraksha_category: string | null;
   is_active: boolean;
 };
 
@@ -114,20 +129,27 @@ function getProductImage(product: ProductForConfiguration) {
 
 async function getCurrentMetalRates(admin: ReturnType<typeof createAdminClient>) {
   const rates: Record<string, number> = {};
+  const pricingModes: Record<string, 'weight' | 'fixed_sheet'> = {};
   const { data: metals, error } = await admin
     .from('metals')
-    .select('slug, price_per_gram')
+    .select('slug, price_per_gram, pricing_mode')
     .eq('is_active', true);
 
   if (error) {
     throw new Error('Unable to load admin metal prices');
   }
 
-  for (const metal of metals as Array<{ slug: string; price_per_gram: number }>) {
+  for (const metal of metals as Array<{
+    slug: string;
+    price_per_gram: number;
+    pricing_mode: string;
+  }>) {
     rates[metal.slug] = Number(metal.price_per_gram);
+    pricingModes[metal.slug] =
+      metal.pricing_mode === 'fixed_sheet' ? 'fixed_sheet' : 'weight';
   }
 
-  return rates;
+  return { rates, pricingModes };
 }
 
 function calculateDeliveryEta(args: {
@@ -200,7 +222,7 @@ function buildSnapshot(args: {
   design: JewelryDesignForPricing | null;
   certification: CertificationForPricing | null;
   energization: EnergizationForPricing | null;
-  breakdown: Record<string, number>;
+  breakdown: ConfigPricingBreakdown;
   deliveryEta: ConfigurationDeliveryEta;
   summary: string;
 }) {
@@ -339,11 +361,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Date of birth is required for energization.' }, { status: 400 });
   }
 
-  const [designResult, certificationResult, energizationResult, metalRates] = await Promise.all([
+  const [designResult, certificationResult, energizationResult, metalPricing, commerceResult] =
+    await Promise.all([
     input.design_id && settingType !== 'loose'
       ? admin
           .from('jewelry_designs')
-          .select('id, name, setting_type, making_charges, estimated_metal_weight, is_active')
+          .select('id, name, setting_type, making_charges, estimated_metal_weight, diamond_charges, labor_rates, stone_addon_label, product_scope, rudraksha_category, is_active')
           .eq('id', input.design_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -362,11 +385,45 @@ export async function POST(request: NextRequest) {
           .maybeSingle()
       : Promise.resolve({ data: null }),
     getCurrentMetalRates(admin),
+    admin.from('commerce_settings').select('values').limit(1).maybeSingle(),
   ]);
+
+  const settingProfiles = parseJewelrySettingProfilesFromCommerce(
+    ((commerceResult.data as { values?: unknown } | null)?.values ?? {}) as Record<
+      string,
+      unknown
+    >
+  );
 
   const design = designResult.data as JewelryDesignForPricing | null;
   if (input.design_id && (!design || !design.is_active || design.setting_type !== settingType)) {
     return NextResponse.json({ error: 'Selected design is not available for this setting.' }, { status: 400 });
+  }
+
+  const rudrakshaProduct = isRudrakshaConfiguratorContext(product.category, {
+    category: product.category,
+    sub_category: product.sub_category,
+  });
+
+  if (design && rudrakshaProduct) {
+    if (design.product_scope !== 'rudraksha') {
+      return NextResponse.json({ error: 'Selected design is not a Rudraksha mounting.' }, { status: 400 });
+    }
+    if (!designMatchesRudrakshaProduct(design.rudraksha_category, {
+      category: product.category,
+      sub_category: product.sub_category,
+      name: product.name,
+      slug: product.slug,
+    })) {
+      return NextResponse.json(
+        { error: 'Selected mounting does not apply to this Rudraksha type.' },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (design && !rudrakshaProduct && design.product_scope === 'rudraksha') {
+    return NextResponse.json({ error: 'Rudraksha mountings are only for Rudraksha products.' }, { status: 400 });
   }
 
   const certification = certificationResult.data as CertificationForPricing | null;
@@ -380,31 +437,56 @@ export async function POST(request: NextRequest) {
   }
 
   let makingCharge = 0;
+  let diamondCharge = 0;
   let metalPrice = 0;
   let metalWeightGrams = 0;
   let goldRatePerGram = 0;
+  let laborRatePercent = 0;
+  let jewelryPricingMode: 'weight' | 'fixed' | null = null;
+
+  let stoneAddonLabel: string | null = null;
 
   if (settingType !== 'loose' && design && input.metal) {
-    const charges = asNumberRecord(design.making_charges);
-    makingCharge = charges?.[input.metal] ?? charges?.default ?? 0;
-
     const weights = asNumberRecord(design.estimated_metal_weight);
     metalWeightGrams = weights?.[input.metal] ?? weights?.default ?? 0;
-    goldRatePerGram = metalRates[input.metal] ?? 0;
+    goldRatePerGram = metalPricing.rates[input.metal] ?? 0;
     if (metalWeightGrams > 0 && goldRatePerGram <= 0) {
       return NextResponse.json(
         { error: 'Manual price for the selected metal is not configured in admin.' },
         { status: 400 }
       );
     }
-    metalPrice = Math.round(metalWeightGrams * goldRatePerGram);
+
+    const pricing = calculateJewelryDesignPricing({
+      metal: input.metal,
+      makingCharges: design.making_charges,
+      estimatedMetalWeight: design.estimated_metal_weight,
+      diamondCharges: design.diamond_charges,
+      metalRatePerGram: goldRatePerGram,
+      laborRates: resolveLaborRatesForJewelry(settingType, design, settingProfiles),
+      pricingModes: metalPricing.pricingModes,
+    });
+    makingCharge = pricing.makingCharge;
+    diamondCharge = pricing.diamondCharge;
+    metalPrice = pricing.metalPrice;
+    metalWeightGrams = pricing.metalWeightGrams;
+    laborRatePercent = pricing.laborRatePercent;
+    jewelryPricingMode = pricing.pricingKind;
+    stoneAddonLabel = getStoneAddonLabelFromDesign(design);
   }
 
   const gemPrice = Number(product.price);
   const certificationFee = certification?.extra_charge ?? 0;
   const energizationFee = energization?.price ?? 0;
   const customDesignFee = hasCustomDesign ? CUSTOM_DESIGN_REVIEW_FEE : 0;
-  const total = gemPrice + makingCharge + metalPrice + certificationFee + energizationFee + customDesignFee;
+  const total =
+    gemPrice +
+    makingCharge +
+    diamondCharge +
+    metalPrice +
+    certificationFee +
+    energizationFee +
+    customDesignFee;
   const deliveryEta = calculateDeliveryEta({ settingType, certification, energization, hasCustomDesign });
   const summary = buildSummary({
     product,
@@ -417,9 +499,13 @@ export async function POST(request: NextRequest) {
   const breakdown = {
     gem_price: gemPrice,
     making_charge: makingCharge,
+    diamond_charge: diamondCharge,
+    stone_addon_label: stoneAddonLabel,
     metal_price: metalPrice,
     metal_weight_grams: metalWeightGrams,
     gold_rate_per_gram: goldRatePerGram,
+    labor_rate_percent: laborRatePercent,
+    jewelry_pricing_mode: jewelryPricingMode,
     certification_fee: certificationFee,
     energization_fee: energizationFee,
     custom_design_fee: customDesignFee,
@@ -467,7 +553,7 @@ export async function POST(request: NextRequest) {
       certification_id: certification?.id ?? null,
       energization_id: energization?.id ?? null,
       gem_price: gemPrice,
-      making_charge: makingCharge,
+      making_charge: makingCharge + diamondCharge,
       metal_price: metalPrice,
       metal_weight_grams: metalWeightGrams,
       gold_rate_per_gram: goldRatePerGram,

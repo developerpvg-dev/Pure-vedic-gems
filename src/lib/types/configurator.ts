@@ -43,7 +43,9 @@ export const SETTING_TYPE_META: Record<
 /** Fallback metal options — used when admin metals API is unavailable */
 export const METAL_OPTIONS = [
   { id: 'silver_925', label: 'Silver 925', priceKey: 'silver' as const },
-  { id: 'panchdhatu', label: 'Panchdhatu', priceKey: 'panchdhatu' as const },
+  { id: 'panchdhatu', label: 'Panchdhatu (Without Gold)', priceKey: 'panchdhatu' as const },
+  { id: 'panchdhatu_with_gold', label: 'Panchdhatu (With Gold)', priceKey: 'panchdhatu' as const },
+  { id: 'gold_14k', label: 'Gold 14K', priceKey: 'gold_14k' as const },
   { id: 'gold_18k', label: 'Gold 18K', priceKey: 'gold_18k' as const },
   { id: 'gold_22k', label: 'Gold 22K', priceKey: 'gold_22k' as const },
   { id: 'platinum', label: 'Platinum', priceKey: 'platinum' as const },
@@ -109,9 +111,13 @@ export interface GemCategoryOption {
 export interface ConfigPricingBreakdown {
   gem_price: number;
   making_charge: number;
+  diamond_charge: number;
+  stone_addon_label: string | null;
   metal_price: number;
   metal_weight_grams: number;
   gold_rate_per_gram: number;
+  labor_rate_percent: number;
+  jewelry_pricing_mode: 'weight' | 'fixed' | null;
   certification_fee: number;
   energization_fee: number;
   custom_design_fee: number;
@@ -130,6 +136,7 @@ export interface ConfigurationDeliveryEta {
 export interface GoldRateData {
   gold_22k_per_gram: number;
   gold_18k_per_gram: number;
+  gold_14k_per_gram: number;
   silver_per_gram: number;
   panchdhatu_per_gram: number;
   platinum_per_gram: number;

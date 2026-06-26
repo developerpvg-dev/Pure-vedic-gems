@@ -182,96 +182,6 @@ function setupRotatingStack(
   };
 }
 
-function setupAutoCarousel(
-  cardSelector: string,
-  dotSelector: string,
-  intervalMs: number,
-  options?: { pauseOnReducedMotion?: boolean }
-) {
-  const cards = Array.from(document.querySelectorAll<HTMLElement>(cardSelector));
-  const dots = Array.from(document.querySelectorAll<HTMLElement>(dotSelector));
-  if (!cards.length) return undefined;
-
-  const carouselRoot = cards[0].parentElement;
-
-  let currentIndex = Math.max(0, cards.findIndex((card) => card.classList.contains('is-active')));
-  let timer: number | null = null;
-  let isVisible = false;
-  const pauseOnReducedMotion = options?.pauseOnReducedMotion ?? true;
-
-  const updateVisibility = () => {
-    if (!carouselRoot) {
-      isVisible = true;
-      schedule();
-      return;
-    }
-
-    const rect = carouselRoot.getBoundingClientRect();
-    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-
-    isVisible = rect.bottom > 0 && rect.right > 0 && rect.top < viewportHeight && rect.left < viewportWidth;
-    schedule();
-  };
-
-  const goTo = (nextIndex: number) => {
-    cards[currentIndex]?.classList.remove('is-active');
-    dots[currentIndex]?.classList.remove('is-active');
-    currentIndex = (nextIndex + cards.length) % cards.length;
-    cards[currentIndex]?.classList.add('is-active');
-    dots[currentIndex]?.classList.add('is-active');
-  };
-
-  const stop = () => {
-    if (timer) window.clearTimeout(timer);
-    timer = null;
-  };
-
-  const schedule = () => {
-    stop();
-    if (!isVisible || document.hidden || (pauseOnReducedMotion && prefersReducedMotion())) return;
-    timer = window.setTimeout(() => {
-      goTo(currentIndex + 1);
-      schedule();
-    }, intervalMs);
-  };
-
-  const dotCleanups = dots.map((dot, index) => {
-    const handler = () => {
-      goTo(index);
-      schedule();
-    };
-    dot.addEventListener('click', handler);
-    return () => dot.removeEventListener('click', handler);
-  });
-
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      isVisible = Boolean(entry?.isIntersecting);
-      schedule();
-    },
-    { rootMargin: '180px 0px' }
-  );
-
-  const onVisibilityChange = () => schedule();
-
-  goTo(currentIndex);
-  if (carouselRoot) observer.observe(carouselRoot);
-  document.addEventListener('visibilitychange', onVisibilityChange);
-  window.addEventListener('scroll', updateVisibility, { passive: true });
-  window.addEventListener('resize', updateVisibility);
-  updateVisibility();
-
-  return () => {
-    stop();
-    observer.disconnect();
-    document.removeEventListener('visibilitychange', onVisibilityChange);
-    window.removeEventListener('scroll', updateVisibility);
-    window.removeEventListener('resize', updateVisibility);
-    dotCleanups.forEach((cleanup) => cleanup());
-  };
-}
-
 function syncStepWindow(steps: HTMLElement[], index: number) {
   const stepWindow = steps[0]?.parentElement as HTMLElement | null;
   if (!stepWindow || steps.length <= 4) return;
@@ -831,7 +741,6 @@ export function PvgHomeInteractions() {
         mobileIntervalMs: 4500,
       })
     );
-    cleanups.push(setupAutoCarousel('#rudraCarousel .rudra-left-card', '#rudraCarouselDots .rudra-c-dot', 4200, { pauseOnReducedMotion: false }));
     cleanups.push(...setupTabs('.explore-tab', '.explore-panel', 'panel-', 'tab'));
     cleanups.push(...setupTabs('.khub-tab', '.khub-panel', 'khub-panel-', 'khub'));
     cleanups.push(...setupSliderButtons());

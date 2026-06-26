@@ -1,9 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
+import { cookies } from 'next/headers';
 import { PaymentCreateOrderSchema } from '@/lib/validators/order';
 import { getRazorpayClient } from '@/lib/razorpay/client';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { isPaidPaymentStatus } from '@/lib/constants/order-status';
+
+type OrderForOwnership = {
+  id: string;
+  customer_id: string | null;
+  guest_access_token?: string | null;
+};
+
+/**
+ * Verify the caller is allowed to pay for this order.
+ * - Authenticated orders: the signed-in user must be the order's customer.
+ * - Guest orders: the pvg_guest_order_token cookie must match the stored hash.
+ * Returns false for any mismatch so the caller can respond with a generic 404
+ * (avoiding order-id enumeration).
+ */
+async function canPayOrder(order: OrderForOwnership): Promise<boolean> {
+  if (order.customer_id) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return !!user && user.id === order.customer_id;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get('pvg_guest_order_token')?.value ?? '';
+    const [cookieOrderId, guestToken] = cookieValue.split('.');
+    if (!guestToken || cookieOrderId !== order.id || !order.guest_access_token) {
+      return false;
+    }
+    const expectedHash = crypto.createHash('sha256').update(guestToken).digest('hex');
+    return expectedHash === order.guest_access_token;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * POST /api/payment/create-order
@@ -54,11 +97,23 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const { data: order, error: fetchError } = await supabase
     .from('orders')
-    .select('id, order_number, total, payment_status, status, razorpay_order_id, payment_attempts')
+    .select('id, order_number, total, payment_status, status, razorpay_order_id, payment_attempts, customer_id, guest_access_token')
     .eq('id', order_id)
     .single();
 
   if (fetchError || !order) {
+    return NextResponse.json(
+      { error: 'Order not found' },
+      { status: 404 }
+    );
+  }
+
+  // ── Ownership check: only the order's owner may initiate payment ──────
+  // Prevents IDOR — without this, any caller with an order_id could create a
+  // Razorpay order against someone else's pending order. Generic 404 avoids
+  // confirming the order exists to a non-owner.
+  const isAuthorized = await canPayOrder(order);
+  if (!isAuthorized) {
     return NextResponse.json(
       { error: 'Order not found' },
       { status: 404 }

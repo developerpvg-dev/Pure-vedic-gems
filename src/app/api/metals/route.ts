@@ -10,7 +10,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('metals')
-      .select('id, name, slug, purity, price_per_gram, sort_order, updated_at')
+      .select('id, name, slug, purity, price_per_gram, labor_rate_percent, gst_rate_percent, pricing_mode, sort_order, updated_at')
       .eq('is_active', true)
       .order('sort_order');
 

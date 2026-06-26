@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
+import { canIncreaseQuantity, getMaxAvailableQuantity } from '@/lib/cart/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { productHref } from '@/lib/categories/storefront';
@@ -23,6 +24,8 @@ function CartItemRow({
   onUpdate: (key: string, qty: number) => void;
 }) {
   const itemHref = productHref({ category: item.category, slug: item.slug ?? item.product_id });
+  const maxQuantity = getMaxAvailableQuantity(item);
+  const canIncrease = canIncreaseQuantity(item);
 
   return (
     <div className="flex items-start gap-4 border-b border-[var(--pvg-border)] py-6 last:border-0">
@@ -83,25 +86,32 @@ function CartItemRow({
 
         {/* Qty + price row */}
         <div className="mt-2 flex items-center justify-between">
-          {/* Quantity control */}
-          <div className="flex items-center rounded-lg border border-[var(--pvg-border)]">
-            <button
-              onClick={() => onUpdate(item.key, item.quantity - 1)}
-              className="flex h-8 w-8 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
-              aria-label="Decrease"
-            >
-              <Minus className="h-3 w-3" />
-            </button>
-            <span className="w-8 text-center text-[13px] font-semibold text-[var(--pvg-primary)]">
-              {item.quantity}
-            </span>
-            <button
-              onClick={() => onUpdate(item.key, item.quantity + 1)}
-              className="flex h-8 w-8 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
-              aria-label="Increase"
-            >
-              <Plus className="h-3 w-3" />
-            </button>
+          <div>
+            <div className="flex items-center rounded-lg border border-[var(--pvg-border)]">
+              <button
+                onClick={() => onUpdate(item.key, item.quantity - 1)}
+                className="flex h-8 w-8 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
+                aria-label="Decrease"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="w-8 text-center text-[13px] font-semibold text-[var(--pvg-primary)]">
+                {item.quantity}
+              </span>
+              <button
+                onClick={() => onUpdate(item.key, item.quantity + 1)}
+                disabled={!canIncrease}
+                className="flex h-8 w-8 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Increase"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
+            {maxQuantity > 0 && item.quantity >= maxQuantity && (
+              <p className="mt-1 text-[11px] font-medium text-amber-700">
+                {item.sold_individually ? 'Limited to 1 per order' : `Maximum available: ${maxQuantity}`}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-4">

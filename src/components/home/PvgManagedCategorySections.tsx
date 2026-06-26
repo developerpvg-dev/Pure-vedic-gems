@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { RudrakshaFeatureCarousel } from '@/components/home/RudrakshaFeatureCarousel';
 import { catalogFamilyToStorefrontGroupSlug, productHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
 import {
   RUDRAKSHA_FEATURE_IMAGES,
@@ -435,17 +436,6 @@ function rudrakshaImageForSlug(slug: string, imageUrl?: string | null) {
   return imageUrl ?? rudrakshaMukhiImage(slug);
 }
 
-function rudrakshaFeatureImage(card: HomeCatalogCategory) {
-  if (card.slug.includes('mukhi') || card.slug.includes('collection')) {
-    return RUDRAKSHA_FEATURE_IMAGES.collection;
-  }
-  if (card.slug.includes('mala')) return RUDRAKSHA_FEATURE_IMAGES.malas;
-  if (card.slug.includes('jewelry') || card.slug.includes('jeweller')) {
-    return RUDRAKSHA_FEATURE_IMAGES.jewellery;
-  }
-  return RUDRAKSHA_FEATURE_IMAGES.jewellery;
-}
-
 export function SliderButton({ target, direction, label }: { target: string; direction: 'prev' | 'next'; label: string }) {
   return (
     <button type="button" className={`pvg-slider-btn pvg-slider-btn-${direction}`} data-slider-target={target} data-slider-direction={direction} aria-label={label}>
@@ -654,7 +644,7 @@ export function RudrakshaHomeSection({
   featureCards?: HomeCatalogCategory[];
 }) {
   const visibleCategories = categories.slice(0, 12);
-  const visibleFeatureCards = featureCards.slice(0, 3);
+  const visibleFeatureCards = featureCards;
 
   return (
     <>
@@ -669,27 +659,7 @@ export function RudrakshaHomeSection({
 
           <div className="rudra-layout">
             <div>
-              <div className="rudra-left-carousel" id="rudraCarousel">
-                {visibleFeatureCards.map((card, index) => {
-                  const featureImage = card.image_url ?? rudrakshaFeatureImage(card);
-                  return (
-                    <Link key={card.slug} href={catalogCategoryHref(card)} className={`rudra-left-card${index === 0 ? ' is-active' : ''}`} data-rudra-card={index}>
-                      <div className="rudra-left-img">
-                        <Image fill src={featureImage} alt={card.name} loading="lazy" sizes="(max-width: 768px) 100vw, 500px" style={{ objectFit: 'cover', objectPosition: 'center' }} />
-                      </div>
-                      <div className="rudra-left-footer">
-                        <div className="rudra-left-title">{card.name}</div>
-                        <span className="rudra-left-show">{card.cta_label ?? 'Shop Now'}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-              <div className="rudra-carousel-dots" id="rudraCarouselDots">
-                {visibleFeatureCards.map((card, index) => (
-                  <button key={card.slug} className={`rudra-c-dot${index === 0 ? ' is-active' : ''}`} data-dot={index} aria-label={`Show ${card.name}`} />
-                ))}
-              </div>
+              <RudrakshaFeatureCarousel cards={visibleFeatureCards} />
             </div>
 
             <div>

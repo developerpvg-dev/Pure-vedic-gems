@@ -1138,6 +1138,12 @@ export interface Database {
           description: string | null;
           making_charges: Json;
           estimated_metal_weight: Json | null;
+          diamond_charges: Json;
+          stone_addon_label: string | null;
+          product_scope: string;
+          rudraksha_category: string | null;
+          metal_flags: Json;
+          labor_rates: Json;
           is_custom: boolean;
           sort_order: number;
           is_active: boolean;
@@ -2699,6 +2705,9 @@ export interface Database {
           slug: string;
           purity: string | null;
           price_per_gram: number;
+          labor_rate_percent: number | null;
+          gst_rate_percent: number | null;
+          pricing_mode: string;
           description: string | null;
           is_active: boolean;
           sort_order: number;
@@ -2711,6 +2720,9 @@ export interface Database {
           slug: string;
           purity?: string | null;
           price_per_gram: number;
+          labor_rate_percent?: number | null;
+          gst_rate_percent?: number | null;
+          pricing_mode?: string;
           description?: string | null;
           is_active?: boolean;
           sort_order?: number;
@@ -2723,6 +2735,9 @@ export interface Database {
           slug?: string;
           purity?: string | null;
           price_per_gram?: number;
+          labor_rate_percent?: number | null;
+          gst_rate_percent?: number | null;
+          pricing_mode?: string;
           description?: string | null;
           is_active?: boolean;
           sort_order?: number;

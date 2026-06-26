@@ -25,8 +25,10 @@ function cap(s: string | null | undefined) {
 const METAL_LABELS: Record<string, string> = {
   gold_22k:   '22K Gold',
   gold_18k:   '18K Gold',
+  gold_14k:   '14K Gold',
   silver_925: '925 Sterling Silver',
-  panchdhatu: 'Panchdhatu',
+  panchdhatu: 'Panchdhatu (Without Gold)',
+  panchdhatu_with_gold: 'Panchdhatu (With Gold)',
   platinum:   'Platinum',
 };
 
