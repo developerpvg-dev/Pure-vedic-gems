@@ -6,6 +6,7 @@ import {
   enableMetalOnDesign,
   catalogMetalsAddableToDesign,
   getStoneAddonLabelFromDesign,
+  getDesignConfiguratorNote,
   resolveStoneAddonLabelForSave,
 } from '@/lib/utils/jewelry-design-fields';
 
@@ -52,6 +53,18 @@ describe('jewelry-design-fields', () => {
     expect(resolveStoneAddonLabelForSave(null, 5000)).toBe('Diamond');
     expect(resolveStoneAddonLabelForSave('Emerald', 8000)).toBe('Emerald');
     expect(resolveStoneAddonLabelForSave('Ruby', null)).toBeNull();
+  });
+
+  it('extracts configurator note from remark descriptions', () => {
+    expect(
+      getDesignConfiguratorNote({
+        description:
+          'Silver: Remark the price of the small stones to be used around the centre big depends on quality.',
+      })
+    ).toBe(
+      'The price of the small stones to be used around the centre big depends on quality.'
+    );
+    expect(getDesignConfiguratorNote({ description: '18K Gold: +17500 diamonds cost' })).toBeNull();
   });
 
   it('encodes and decodes per-design labor rates', () => {

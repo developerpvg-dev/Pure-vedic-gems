@@ -96,7 +96,15 @@ export const BASE_CATEGORY_MAP: Record<string, BaseShopCategory> = {
   },
 };
 
-export const KNOWN_GEM_SUBCATEGORIES: Record<string, { category: 'navaratna' | 'upratna'; label: string; desc: string }> = {
+export type KnownGemSubcategoryMeta = {
+  category: 'navaratna' | 'upratna';
+  label: string;
+  desc: string;
+  /** Legacy Yoast / category page title when it differs from the default template. */
+  seoTitle?: string;
+};
+
+export const KNOWN_GEM_SUBCATEGORIES: Record<string, KnownGemSubcategoryMeta> = {
   ruby: { category: 'navaratna', label: 'Ruby (Manik)', desc: 'Natural Ruby gemstones for Surya, with certified options and expert Jyotish guidance.' },
   pearl: { category: 'navaratna', label: 'Pearl (Moti)', desc: 'Natural Pearl gemstones for Chandra, including traditional Vedic wearing support.' },
   'red-coral': { category: 'navaratna', label: 'Red Coral (Moonga)', desc: 'Natural Red Coral gemstones for Mangal, sourced and disclosed with care.' },
@@ -107,6 +115,17 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, { category: 'navaratna' | '
   hessonite: { category: 'navaratna', label: 'Hessonite (Gomed)', desc: 'Natural Hessonite gemstones for Rahu, with lab and origin disclosure where available.' },
   'cats-eye': { category: 'navaratna', label: "Cat's Eye (Lehsunia)", desc: 'Natural Cat Eye gemstones for Ketu, selected with careful Jyotish guidance.' },
   'white-sapphire': { category: 'navaratna', label: 'White Sapphire (Shvet Pukhraj)', desc: 'Certified White Sapphire gemstones, the traditional Vedic substitute for Diamond aligned with Shukra (Venus).' },
+  'exclusive-gems': {
+    category: 'navaratna',
+    label: 'Exclusive Gems',
+    desc: 'Rare on-request Navaratna gemstones sourced on demand. Enquire for availability and pricing.',
+  },
+  pitambari: {
+    category: 'navaratna',
+    label: 'Pitambari',
+    seoTitle: 'Buy 100% Natural Pitambari Online – Natural Sri-lankan Pitambari Sapphire | PureVedicGems',
+    desc: 'Buy 100% natural Pitambari sapphire online — Sri-Lankan Pitambari Neelam for Jupiter (Guru) and Saturn (Shani). Certified astrological gemstones with expert Jyotish guidance.',
+  },
   amethyst: { category: 'upratna', label: 'Amethyst', desc: 'Semi-precious Amethyst gemstones and Vedic alternatives.' },
   'lapis-lazuli': { category: 'upratna', label: 'Lapis Lazuli', desc: 'Semi-precious Lapis Lazuli gemstones and spiritual jewellery options.' },
   moonstone: { category: 'upratna', label: 'Moonstone', desc: 'Moonstone gemstones and Chandra-aligned semi-precious alternatives.' },
@@ -119,7 +138,6 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, { category: 'navaratna' | '
   'tiger-eye': { category: 'upratna', label: 'Tiger Eye', desc: 'Tiger Eye semi-precious gemstones and bracelets.' },
   malachite: { category: 'upratna', label: 'Malachite', desc: 'Malachite semi-precious gemstones and spiritual accessories.' },
   opal: { category: 'upratna', label: 'Opal', desc: 'Opal semi-precious gemstones and Venus-aligned alternatives.' },
-  pitambari: { category: 'upratna', label: 'Pitambari', desc: 'Pitambari (Pitambari Neelam) semi-precious gemstones and Vedic alternatives.' },
   tanzanite: { category: 'upratna', label: 'Tanzanite', desc: 'Tanzanite semi-precious gemstones and Vedic alternatives.' },
 };
 
@@ -183,6 +201,7 @@ export type ResolvedShopCategory = {
   desc: string;
   canonicalPath: string;
   directorsPick?: boolean;
+  seoTitle?: string;
   seoLanding?: SeoLandingPage;
 };
 
@@ -266,6 +285,7 @@ function knownGemCategory(slug: string, expectedType?: GemCategoryRow['type']): 
     parentSlug,
     label: known.label,
     desc: known.desc,
+    seoTitle: known.seoTitle,
     canonicalPath: storefrontSubcategoryHref(parentSlug, slug),
   };
 }
@@ -366,10 +386,12 @@ export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: 
   }
 
   return (
+    knownGemCategory(parentOrSlug)
+  ) ?? (
     await findGemCategory(parentOrSlug)
   ) ?? (
     await findProductCategory(parentOrSlug)
-  ) ?? knownGemCategory(parentOrSlug) ?? knownCatalogCategory(parentOrSlug) ?? null;
+  ) ?? knownCatalogCategory(parentOrSlug) ?? null;
 }
 
 export function staticShopCategoryParams() {

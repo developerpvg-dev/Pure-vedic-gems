@@ -123,6 +123,47 @@
   --sidebar-accent-foreground: #3D2B1F;
   --sidebar-border: rgba(61, 43, 31, 0.12);
   --sidebar-ring: #C9A84C;
+
+  /* Fixed SiteHeader clearance — keep in sync with .pvg-header-spacer */
+  --pvg-site-header-offset: calc(104px + env(safe-area-inset-top, 0px));
+  --pvg-site-header-sticky-top: calc(96px + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 768px) {
+  :root,
+  [data-palette='1'] {
+    --pvg-site-header-offset: calc(118px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: calc(108px + env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (min-width: 1024px) {
+  :root,
+  [data-palette='1'] {
+    --pvg-site-header-offset: calc(130px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: calc(118px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Reserves space for the fixed SiteHeader (topbar + navbar + border) */
+.pvg-header-spacer {
+  display: block;
+  width: 100%;
+  flex-shrink: 0;
+  height: var(--pvg-site-header-offset);
+  pointer-events: none;
+}
+
+.pvg-page-below-header {
+  padding-top: var(--pvg-site-header-offset);
+}
+
+.pvg-sticky-below-header {
+  top: var(--pvg-site-header-sticky-top);
+}
+
+html {
+  scroll-padding-top: var(--pvg-site-header-offset);
 }
 
 /* --- Palette 2: Warm Burgundy --- */

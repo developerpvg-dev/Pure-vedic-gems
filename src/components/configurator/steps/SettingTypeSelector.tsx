@@ -75,7 +75,7 @@ export default function SettingTypeSelector({
                 isSelected ? 'bg-accent/5' : ''
               )}>
                 <span className={cn(
-                  'block text-sm font-semibold font-heading',
+                  'block text-sm font-semibold',
                   isSelected ? 'text-accent' : 'text-primary'
                 )}>
                   {meta.label}

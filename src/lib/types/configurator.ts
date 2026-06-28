@@ -113,6 +113,7 @@ export interface ConfigPricingBreakdown {
   making_charge: number;
   diamond_charge: number;
   stone_addon_label: string | null;
+  design_note: string | null;
   metal_price: number;
   metal_weight_grams: number;
   gold_rate_per_gram: number;

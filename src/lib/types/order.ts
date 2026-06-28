@@ -96,4 +96,6 @@ export interface OrderItemRecord {
   category?: string;
   configuration_id?: string;
   configuration_summary?: string;
+  configuration_snapshot?: unknown;
+  delivery_eta_label?: string | null;
 }

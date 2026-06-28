@@ -6497,16 +6497,6 @@
   border: 0;
 }
 
-.pvg-header-spacer {
-  height: 98px;
-}
-
-@media (min-width: 768px) {
-  .pvg-header-spacer {
-    height: 110px;
-  }
-}
-
 .pvg-hero-clean {
   height: clamp(300px, 41vw, 620px) !important;
   min-height: 220px !important;

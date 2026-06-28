@@ -120,6 +120,8 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
       { slug: 'blue-sapphire', label: 'Blue Sapphire (Neelam)', href: '/shop/blue-sapphire', swatch: '#1e4f9d', image: NAVARATNA_NAV_IMAGE_BY_SLUG['blue-sapphire'], meta: 'Saturn' },
       { slug: 'hessonite', label: 'Hessonite (Gomed)', href: '/shop/hessonite', swatch: '#b7682c', image: NAVARATNA_NAV_IMAGE_BY_SLUG.hessonite, meta: 'Rahu' },
       { slug: 'cats-eye', label: "Cat's Eye (Lehsunia)", href: '/shop/cats-eye', swatch: '#9c8b68', image: NAVARATNA_NAV_IMAGE_BY_SLUG['cats-eye'], meta: 'Ketu' },
+      { slug: 'pitambari', label: 'Pitambari', href: '/shop/pitambari', swatch: '#E0B84C', image: UPRATNA_NAV_IMAGE_BY_SLUG.pitambari, meta: 'Jupiter & Saturn' },
+      { slug: 'exclusive-gems', label: 'Exclusive Gems', href: '/shop/exclusive-gems', swatch: '#7A1515', meta: 'On Request' },
     ],
   },
   {
@@ -128,7 +130,6 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     href: '/shop/upratna',
     subcategories: [
       { slug: 'opal', label: 'Opal', href: '/shop/opal', swatch: '#FBBFB4', image: UPRATNA_NAV_IMAGE_BY_SLUG.opal },
-      { slug: 'pitambari', label: 'Pitambari', href: '/shop/pitambari', swatch: '#E0B84C', image: UPRATNA_NAV_IMAGE_BY_SLUG.pitambari },
       { slug: 'turquoise', label: 'Turquoise (Firoza)', href: '/shop/turquoise', swatch: '#3CB2B2', image: UPRATNA_NAV_IMAGE_BY_SLUG.turquoise },
       { slug: 'amethyst', label: 'Amethyst', href: '/shop/amethyst', swatch: '#9B59B6', image: UPRATNA_NAV_IMAGE_BY_SLUG.amethyst },
       { slug: 'moonstone', label: 'Moonstone', href: '/shop/moonstone', swatch: '#C8D8E8', image: UPRATNA_NAV_IMAGE_BY_SLUG.moonstone },

@@ -73,25 +73,18 @@ export function ContactSection({
   // ── Collapsed view when complete ──────────────────────────────────────
   if (!isActive && isComplete && savedData) {
     return (
-      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">
-              ✓
-            </span>
-            <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
-              Contact Information
-            </h2>
+      <div className="pvg-checkout-step pvg-checkout-step--complete">
+        <div className="pvg-checkout-step-head pvg-checkout-step-head--tight">
+          <div className="pvg-checkout-step-title-row">
+            <span className="pvg-checkout-step-badge">✓</span>
+            <h2 className="pvg-checkout-step-title">Contact information</h2>
           </div>
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1 text-sm text-[var(--pvg-accent)] hover:underline"
-          >
+          <button type="button" onClick={onEdit} className="pvg-checkout-step-edit">
             <Pencil className="h-3.5 w-3.5" />
             Edit
           </button>
         </div>
-        <div className="text-sm text-[var(--pvg-muted)] space-y-1 ml-8">
+        <div className="pvg-checkout-step-summary">
           <p>{savedData.full_name}</p>
           <p>{savedData.email} · {savedData.phone}</p>
           {savedData.billing_gstin && <p>GST invoice: {savedData.business_name || 'Business'} · {savedData.billing_gstin}</p>}
@@ -103,14 +96,10 @@ export function ContactSection({
   // ── Disabled view ────────────────────────────────────────────────────
   if (!isActive) {
     return (
-      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6 opacity-50">
-        <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-bg-alt text-[var(--pvg-muted)] text-xs font-bold">
-            1
-          </span>
-          <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
-            Contact Information
-          </h2>
+      <div className="pvg-checkout-step pvg-checkout-step--disabled">
+        <div className="pvg-checkout-step-title-row">
+          <span className="pvg-checkout-step-badge">1</span>
+          <h2 className="pvg-checkout-step-title">Contact information</h2>
         </div>
       </div>
     );
@@ -118,14 +107,12 @@ export function ContactSection({
 
   // ── Active form ──────────────────────────────────────────────────────
   return (
-    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-accent text-white text-xs font-bold">
-          1
-        </span>
-        <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
-          Contact Information
-        </h2>
+    <div className="pvg-checkout-step pvg-checkout-step--active">
+      <div className="pvg-checkout-step-head">
+        <div className="pvg-checkout-step-title-row">
+          <span className="pvg-checkout-step-badge">1</span>
+          <h2 className="pvg-checkout-step-title">Contact information</h2>
+        </div>
       </div>
 
       {!isLoggedIn && (
@@ -208,7 +195,7 @@ export function ContactSection({
           </p>
         </div>
 
-        <div className="rounded-lg border border-[var(--pvg-border)] bg-brand-bg p-4">
+        <div className="pvg-checkout-panel">
           <label className="flex items-start gap-3 text-sm text-[var(--pvg-text)]">
             <input
               type="checkbox"
@@ -260,10 +247,7 @@ export function ContactSection({
           )}
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-brand-primary text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-        >
+        <button type="submit" className="pvg-checkout-btn pvg-checkout-btn--primary">
           Continue to Shipping
           <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
         </button>

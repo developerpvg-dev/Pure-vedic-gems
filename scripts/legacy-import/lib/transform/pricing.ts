@@ -51,11 +51,28 @@ export function normalisePricing(meta: Record<string, string | null | undefined>
     price = explicit;
   }
 
-  if (price === null) warnings.push('no usable price (regular/sale/_price all empty)');
-
   const pricePerCarat = perCarat !== null && perCarat > 0 ? perCarat : null;
+
+  // Derive total from per-carat × weight when Woo _price is empty (common for gems).
+  if (
+    (price === null || price <= 0) &&
+    pricePerCarat !== null &&
+    caratWeight !== null &&
+    caratWeight > 0
+  ) {
+    price = Math.round(pricePerCarat * caratWeight);
+  }
+
+  if (price === null || price <= 0) {
+    warnings.push('no usable price (regular/sale/_price and per-carat derivation all empty)');
+  }
+
   const priceMode: 'fixed' | 'per_carat' | 'on_demand' =
-    price === null ? 'on_demand' : pricePerCarat !== null ? 'per_carat' : 'fixed';
+    pricePerCarat !== null && caratWeight !== null && caratWeight > 0
+      ? 'per_carat'
+      : price !== null && price > 0
+        ? 'fixed'
+        : 'on_demand';
 
   // Sanity check: per-carat * weight should be within 5% of price.
   if (pricePerCarat !== null && caratWeight !== null && price !== null && price > 0) {
@@ -69,6 +86,21 @@ export function normalisePricing(meta: Record<string, string | null | undefined>
   }
 
   return { price, comparePrice, pricePerCarat, priceMode, warnings };
+}
+
+export function isQuoteOnlyPriceMode(priceMode: string | null | undefined): boolean {
+  return priceMode === 'on_demand' || priceMode === 'quote_required';
+}
+
+/** Map legacy Woo stock + price mode to storefront availability_status. */
+export function resolveLegacyAvailabilityStatus(args: {
+  priceMode: string;
+  inStock: boolean;
+  stockStatus: string;
+}): 'on_demand' | 'in_stock' | 'out_of_stock' {
+  if (isQuoteOnlyPriceMode(args.priceMode)) return 'on_demand';
+  if (args.inStock || args.stockStatus === 'in_stock') return 'in_stock';
+  return 'out_of_stock';
 }
 
 function toNumber(v: string | null | undefined): number | null {

@@ -136,6 +136,12 @@ const nextConfig: NextConfig = {
       { source: '/disclaimer', destination: '/policies/legal-notice', statusCode: 301 },
       { source: '/disclaimer/', destination: '/policies/legal-notice', statusCode: 301 },
 
+      // Pitambari moved from Upratna to Navaratna (legacy /product-category/navratan/pitambari/)
+      ...['/shop/upratna/pitambari'].flatMap((source) => [
+        { source, destination: '/shop/navaratna/pitambari', statusCode: 301 },
+        { source: `${source}/`, destination: '/shop/navaratna/pitambari', statusCode: 301 },
+      ]),
+
       // Legacy yagya / pooja payment & landing pages -> migrated yagya pages.
       // Each source has a trailing-slash variant because old WP URLs ended with "/".
       ...[

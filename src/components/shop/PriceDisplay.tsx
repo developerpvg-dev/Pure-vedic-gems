@@ -1,4 +1,9 @@
-import { formatPrice, formatEMI } from '@/lib/utils/format';
+import {
+  formatProductListPrice,
+  isProductPriceOnRequest,
+  resolveProductDisplayPrice,
+} from '@/lib/shop/product-pricing';
+import { formatEMI, formatPrice } from '@/lib/utils/format';
 
 interface PriceDisplayProps {
   price: number;
@@ -17,7 +22,16 @@ export function PriceDisplay({
   showEMI = true,
   priceMode,
 }: PriceDisplayProps) {
-  const isOnRequest = priceMode === 'on_demand' || priceMode === 'quote_required' || !price || price <= 0;
+  const product = {
+    price,
+    compare_price: comparePrice,
+    price_per_carat: pricePerCarat,
+    carat_weight: caratWeight,
+    price_mode: priceMode,
+  };
+  const isOnRequest = isProductPriceOnRequest(product);
+  const resolvedPrice = resolveProductDisplayPrice(product) ?? 0;
+  const priceDisplay = formatProductListPrice(product);
 
   if (isOnRequest) {
     return (
@@ -35,19 +49,18 @@ export function PriceDisplay({
   }
 
   const discount =
-    comparePrice && comparePrice > price
-      ? Math.round(((comparePrice - price) / comparePrice) * 100)
+    comparePrice && comparePrice > resolvedPrice
+      ? Math.round(((comparePrice - resolvedPrice) / comparePrice) * 100)
       : null;
 
   return (
     <div className="product-price-display space-y-1 md:space-y-1 lg:space-y-1.5">
-      {/* Main price row */}
       <div className="flex flex-wrap items-end gap-2 md:gap-2 lg:gap-3">
         <span className="product-price-main text-[clamp(24px,7vw,36px)] font-medium leading-none tracking-tight text-[#111111] lg:text-4xl">
-          {formatPrice(price)}
+          {priceDisplay.label}
         </span>
 
-        {comparePrice && comparePrice > price && (
+        {comparePrice && comparePrice > resolvedPrice && (
           <span className="product-price-compare text-lg text-brand-muted line-through lg:text-lg">
             {formatPrice(comparePrice)}
           </span>
@@ -60,19 +73,18 @@ export function PriceDisplay({
         )}
       </div>
 
-      {/* Per carat price */}
-      {pricePerCarat && caratWeight && (
+      {priceDisplay.detail && (
         <p className="product-price-meta text-[12px] text-brand-muted lg:text-[13px]">
-          {formatPrice(pricePerCarat)}/ct &nbsp;·&nbsp; {caratWeight.toFixed(2)} ct
+          {priceDisplay.detail}
+          {caratWeight ? ` · ${caratWeight.toFixed(2)} ct` : ''}
         </p>
       )}
 
-      {/* EMI */}
-      {showEMI && price >= 10000 && (
+      {showEMI && resolvedPrice >= 10000 && (
         <p className="product-price-emi text-[11px] text-brand-muted lg:text-[12px]">
           EMI from{' '}
           <span className="font-semibold text-brand-primary">
-            {formatEMI(price, 12)}/mo
+            {formatEMI(resolvedPrice, 12)}/mo
           </span>{' '}
           (12 months)
         </p>

@@ -33,6 +33,7 @@ export const NAVARATNA_SUBCATEGORIES = [
   { slug: 'blue-sapphire', label: 'Blue Sapphire (Neelam)' },
   { slug: 'hessonite', label: 'Hessonite (Gomed)' },
   { slug: 'cats-eye', label: "Cat's Eye (Lehsunia)" },
+  { slug: 'pitambari', label: 'Pitambari' },
 ] as const;
 
 export const RUDRAKSHA_SUBCATEGORIES = [
@@ -82,7 +83,6 @@ export const UPRATNA_SUBCATEGORIES = [
   { slug: 'sunstone', label: 'Sunstone' },
   { slug: 'rose-quartz', label: 'Rose Quartz' },
   { slug: 'tanzanite', label: 'Tanzanite' },
-  { slug: 'pitambari', label: 'Pitambari' },
 ] as const;
 
 export const IDOL_SUBCATEGORIES = [

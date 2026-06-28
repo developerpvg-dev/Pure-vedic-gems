@@ -123,7 +123,7 @@ export default function UploadDesign({ onUploadComplete, onCancel }: UploadDesig
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-primary font-heading">
+        <h3 className="text-sm font-semibold text-primary">
           Upload Custom Design
         </h3>
         <Button variant="ghost" size="sm" onClick={onCancel} className="h-7 text-xs">

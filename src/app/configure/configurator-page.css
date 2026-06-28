@@ -1,0 +1,441 @@
+/* Configurator — match storefront Roboto typography (contact, shop, etc.) */
+
+.pvg-configurator,
+.pvg-configurator * {
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+}
+
+.pvg-configurator button,
+.pvg-configurator input,
+.pvg-configurator select,
+.pvg-configurator textarea {
+  font-family: inherit;
+}
+
+.pvg-configurator :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pvg-configurator legend {
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-weight: 600;
+}
+
+/* Price sidebar — compact Roboto receipt typography */
+.pvg-price-summary,
+.pvg-price-summary * {
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif !important;
+  letter-spacing: normal;
+}
+
+.pvg-price-summary {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Metal & size step — balanced typography */
+.pvg-metal-step {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pvg-metal-step-label {
+  margin-bottom: 0;
+}
+
+.pvg-metal-card {
+  min-height: 0;
+}
+
+.pvg-metal-step .pvg-range {
+  height: 6px;
+}
+
+.pvg-cert-step {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pvg-cert-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: color-mix(in srgb, var(--accent) 5%, white);
+  color: var(--muted-foreground);
+}
+
+.pvg-cert-note p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pvg-cert-note strong {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.pvg-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pvg-cert-option--span {
+  grid-column: 1 / -1;
+}
+
+.pvg-cert-option {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 4.25rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  border-radius: 0.625rem;
+  background: white;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.pvg-cert-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.pvg-cert-option--active {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, white);
+}
+
+.pvg-cert-option-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pvg-cert-option-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pvg-cert-option-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--primary);
+}
+
+.pvg-cert-option-title--active {
+  color: var(--accent);
+}
+
+.pvg-cert-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.pvg-cert-option-detail {
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.pvg-cert-option-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  margin-top: 0.1rem;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+}
+
+.pvg-cert-foot-item::before {
+  content: '·';
+  margin-right: 0.55rem;
+  color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.pvg-cert-foot-item:first-child::before {
+  content: none;
+  margin: 0;
+}
+
+.pvg-cert-foot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.pvg-cert-foot-link:hover {
+  text-decoration: underline;
+}
+
+.pvg-cert-option-price {
+  flex-shrink: 0;
+  padding-top: 0.05rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.pvg-cert-option-price--active {
+  color: var(--accent);
+}
+
+.pvg-cert-muted,
+.pvg-cert-empty {
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--muted) 28%, white);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.pvg-cert-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 0.75rem;
+  text-align: center;
+}
+
+.pvg-cert-error p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+@media (max-width: 640px) {
+  .pvg-cert-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Energization step — matches certification layout */
+.pvg-energ-step {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pvg-energ-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pvg-energ-option--span {
+  grid-column: 1 / -1;
+}
+
+.pvg-energ-option {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 4.25rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  border-radius: 0.625rem;
+  background: white;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.pvg-energ-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.pvg-energ-option--active {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, white);
+}
+
+.pvg-energ-option-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pvg-energ-option-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--primary);
+}
+
+.pvg-energ-option-title--active {
+  color: var(--accent);
+}
+
+.pvg-energ-option-detail {
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.pvg-energ-option-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.1rem;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+}
+
+.pvg-energ-foot-video {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--accent);
+}
+
+.pvg-energ-option-price {
+  flex-shrink: 0;
+  padding-top: 0.05rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.pvg-energ-option-price--active {
+  color: var(--accent);
+}
+
+.pvg-energ-muted {
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--muted) 28%, white);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.pvg-energ-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 0.75rem;
+  text-align: center;
+}
+
+.pvg-energ-error p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.pvg-energ-form {
+  margin-top: 0.875rem;
+  padding: 0.875rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--muted) 18%, white);
+}
+
+.pvg-energ-form-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.pvg-energ-form-hint {
+  margin: 0.2rem 0 0.75rem;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.pvg-energ-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.pvg-energ-field label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.pvg-energ-input,
+.pvg-energ-select {
+  height: 2rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: white;
+  padding: 0 0.55rem;
+  font-size: 12px;
+  color: var(--foreground);
+}
+
+.pvg-energ-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  font-size: 11px;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.pvg-energ-checkbox input {
+  height: 0.9rem;
+  width: 0.9rem;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .pvg-energ-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pvg-energ-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

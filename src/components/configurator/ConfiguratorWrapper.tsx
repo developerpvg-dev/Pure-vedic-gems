@@ -21,11 +21,17 @@ import type {
 } from '@/lib/types/configurator';
 import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
 import {
+  getConfiguratorNextStep,
+  getConfiguratorPrevStep,
+  isConfiguratorStepSkipped,
+} from '@/lib/utils/configurator-steps';
+import {
+  isCertificationStepAvailable,
+  isEnergizationStepAvailable,
   isSettingTypeAllowed,
   normalizeConfiguratorRules,
   type ConfiguratorOptionRules,
 } from '@/lib/utils/configurator-rules';
-import { isConfiguratorStepSkipped } from '@/lib/utils/configurator-steps';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
 import {
   resolveLaborRatesForJewelry,
@@ -46,15 +52,23 @@ const STEP_DESCRIPTIONS: Record<number, string> = {};
 
 void STEP_DESCRIPTIONS;
 
-function isStepSkipped(step: number, state: ConfiguratorState): boolean {
-  return isConfiguratorStepSkipped(step, state);
+function isStepSkipped(
+  step: number,
+  state: ConfiguratorState,
+  optionRules: ConfiguratorOptionRules | null
+): boolean {
+  return isConfiguratorStepSkipped(step, state, optionRules);
 }
 
-function getTotalVisibleSteps(startStep: number, state: ConfiguratorState): number {
+function getTotalVisibleSteps(
+  startStep: number,
+  state: ConfiguratorState,
+  optionRules: ConfiguratorOptionRules | null
+): number {
   let count = 0;
 
   for (let step = startStep; step <= 7; step += 1) {
-    if (!isStepSkipped(step, state)) {
+    if (!isStepSkipped(step, state, optionRules)) {
       count += 1;
     }
   }
@@ -65,12 +79,13 @@ function getTotalVisibleSteps(startStep: number, state: ConfiguratorState): numb
 function getDisplayStepForState(
   stepId: number,
   startStep: number,
-  state: ConfiguratorState
+  state: ConfiguratorState,
+  optionRules: ConfiguratorOptionRules | null
 ): number {
   let count = 0;
 
   for (let step = startStep; step <= stepId; step += 1) {
-    if (!isStepSkipped(step, state)) {
+    if (!isStepSkipped(step, state, optionRules)) {
       count += 1;
     }
   }
@@ -154,18 +169,21 @@ export default function ConfiguratorWrapper({
         return;
       }
 
-      if (canGoToStep(step) && !isStepSkipped(step, state)) {
+      if (canGoToStep(step) && !isStepSkipped(step, state, optionRules)) {
         setPriceMobileOpen(false);
         dispatch({ type: 'GO_TO_STEP', payload: step });
       }
     },
-    [canGoToStep, dispatch, startStep, state]
+    [canGoToStep, dispatch, optionRules, startStep, state]
   );
 
   const handleNext = useCallback(() => {
     setPriceMobileOpen(false);
-    dispatch({ type: 'NEXT_STEP' });
-  }, [dispatch]);
+    dispatch({
+      type: 'GO_TO_STEP',
+      payload: getConfiguratorNextStep(state.current_step, state, optionRules),
+    });
+  }, [dispatch, optionRules, state]);
 
   const handlePrev = useCallback(() => {
     if (state.current_step <= startStep) {
@@ -173,8 +191,18 @@ export default function ConfiguratorWrapper({
     }
 
     setPriceMobileOpen(false);
-    dispatch({ type: 'PREV_STEP' });
-  }, [dispatch, startStep, state.current_step]);
+    dispatch({
+      type: 'GO_TO_STEP',
+      payload: getConfiguratorPrevStep(state.current_step, state, optionRules),
+    });
+  }, [dispatch, optionRules, startStep, state]);
+
+  const handleDesignMismatch = useCallback(() => {
+    if (state.setting_type) {
+      dispatch({ type: 'SET_SETTING_TYPE', payload: state.setting_type });
+    }
+    dispatch({ type: 'GO_TO_STEP', payload: 4 });
+  }, [dispatch, state.setting_type]);
 
   const handleBuyLoose = useCallback(() => {
     setPriceMobileOpen(false);
@@ -231,6 +259,33 @@ export default function ConfiguratorWrapper({
 
     return () => controller.abort();
   }, [state.selected_product?.id]);
+
+  useEffect(() => {
+    if (!optionRules) return;
+    if (!isCertificationStepAvailable(optionRules)) {
+      dispatch({ type: 'SKIP_CERTIFICATION' });
+      if (state.current_step === 6) {
+        dispatch({ type: 'GO_TO_STEP', payload: 7 });
+      }
+    }
+  }, [dispatch, optionRules, state.current_step]);
+
+  useEffect(() => {
+    if (!optionRules) return;
+    if (!isEnergizationStepAvailable(optionRules)) {
+      dispatch({ type: 'SET_ENERGIZATION', payload: null });
+    }
+  }, [dispatch, optionRules]);
+
+  useEffect(() => {
+    if (
+      state.selected_design &&
+      state.setting_type &&
+      state.selected_design.setting_type !== state.setting_type
+    ) {
+      handleDesignMismatch();
+    }
+  }, [handleDesignMismatch, state.selected_design, state.setting_type]);
 
   useEffect(() => {
     if (state.setting_type && !isSettingTypeAllowed(optionRules, state.setting_type)) {
@@ -325,6 +380,7 @@ export default function ConfiguratorWrapper({
             selected={state.selected_lab}
             certificationSkipped={state.certification_skipped}
             optionRules={optionRules}
+            product={state.selected_product}
             onSelect={(lab) => {
               dispatch({ type: 'SET_LAB', payload: lab });
               dispatch({ type: 'NEXT_STEP' });
@@ -363,11 +419,12 @@ export default function ConfiguratorWrapper({
       }).grand_total,
     [pricing, state.setting_type, state.selected_product?.category]
   );
-  const totalSteps = getTotalVisibleSteps(startStep, state);
+  const totalSteps = getTotalVisibleSteps(startStep, state, optionRules);
   const currentDisplayNum = getDisplayStepForState(
     state.current_step,
     startStep,
-    state
+    state,
+    optionRules
   );
   const currentStepMeta = CONFIGURATOR_STEPS.find(
     (step) => step.id === state.current_step
@@ -375,7 +432,7 @@ export default function ConfiguratorWrapper({
   const selectedProductImage = getSelectedProductImage(state);
   const progressPct = Math.round((currentDisplayNum / totalSteps) * 100);
   const visibleSteps = CONFIGURATOR_STEPS.filter(
-    (step) => step.id >= startStep && !isStepSkipped(step.id, state)
+    (step) => step.id >= startStep && !isStepSkipped(step.id, state, optionRules)
   );
   const canGoBack = state.current_step > startStep;
   const rudrakshaFlow = isRudrakshaConfiguratorContext(
@@ -390,7 +447,7 @@ export default function ConfiguratorWrapper({
     isSettingTypeAllowed(optionRules, 'loose');
 
   return (
-    <>
+    <div className="pvg-configurator font-sans">
       <div
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[3px]"
         onClick={() => window.history.back()}
@@ -438,7 +495,7 @@ export default function ConfiguratorWrapper({
                   <p className="text-[11px] font-semibold uppercase leading-none tracking-[0.18em] text-accent">
                     Step {currentDisplayNum} of {totalSteps}
                   </p>
-                  <p className="mt-0.5 truncate font-heading text-sm font-semibold leading-tight text-primary">
+                  <p className="mt-0.5 truncate text-sm font-semibold leading-tight text-primary">
                     {currentStepMeta?.title ?? 'Configure'}
                   </p>
                 </div>
@@ -549,7 +606,7 @@ export default function ConfiguratorWrapper({
                 <span className="hidden shrink-0 rounded-full border border-border/60 bg-white/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground xl:inline">
                   Configurator
                 </span>
-                <h2 className="truncate font-heading text-base font-semibold text-primary">
+                <h2 className="truncate text-base font-semibold text-primary">
                   {startStep >= 3 && state.selected_product
                     ? `Configure ${state.selected_product.name}`
                     : 'Design Your Jewelry'}
@@ -599,6 +656,7 @@ export default function ConfiguratorWrapper({
                   canGoToStep={canGoToStep}
                   onStepClick={handleStepClick}
                   startStep={startStep}
+                  optionRules={optionRules}
                   vertical
                 />
               </aside>
@@ -623,6 +681,7 @@ export default function ConfiguratorWrapper({
                     isComplete={complete}
                     goldRate={goldRate}
                     variant="desktop"
+                    onDesignMismatch={handleDesignMismatch}
                   />
                 </div>
               </aside>
@@ -714,14 +773,6 @@ export default function ConfiguratorWrapper({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                  <div className="hidden lg:block">
-                    <PriceSummary
-                      state={state}
-                      isComplete={complete}
-                      goldRate={goldRate}
-                      variant="button-only"
-                    />
-                  </div>
                   {state.current_step < 7 ? (
                     <Button
                       onClick={handleNext}
@@ -738,6 +789,7 @@ export default function ConfiguratorWrapper({
                         isComplete={complete}
                         goldRate={goldRate}
                         variant="button-only"
+                        onDesignMismatch={handleDesignMismatch}
                       />
                     </div>
                   )}
@@ -747,6 +799,6 @@ export default function ConfiguratorWrapper({
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

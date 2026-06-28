@@ -14,7 +14,7 @@ import type { ConfigurationDeliveryEta, SettingType, ConfigPricingBreakdown } fr
 import type { Json } from '@/lib/types/database';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { calculateJewelryDesignPricing } from '@/lib/utils/jewelry-pricing';
-import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
+import { getDesignConfiguratorNote, getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
 import {
   parseJewelrySettingProfilesFromCommerce,
   resolveLaborRatesForJewelry,
@@ -28,7 +28,11 @@ const ConfigurationSchema = z.object({
   product_id: z.string().uuid(),
   setting_type: z.enum(['ring', 'pendant', 'bracelet', 'loose']).nullable(),
   design_id: z.string().uuid().nullable(),
-  custom_design_url: z.string().url().nullable().optional(),
+  custom_design_url: z
+    .union([z.string().url(), z.literal('')])
+    .nullable()
+    .optional()
+    .transform((value) => (value ? value : null)),
   metal: z.string().nullable(),
   ring_size: z.string().nullable().optional(),
   chain_length: z.string().nullable().optional(),
@@ -40,7 +44,7 @@ const ConfigurationSchema = z.object({
       dob: z.string(),
       gotra: z.string(),
       rashi: z.string(),
-      record_ceremony: z.boolean(),
+      record_ceremony: z.boolean().optional().default(false),
     })
     .nullable()
     .optional(),
@@ -396,8 +400,27 @@ export async function POST(request: NextRequest) {
   );
 
   const design = designResult.data as JewelryDesignForPricing | null;
+  if (designResult.error) {
+    console.error('jewelry_designs lookup failed:', designResult.error.message);
+    return NextResponse.json(
+      { error: 'Unable to load the selected design. Please try again.' },
+      { status: 500 }
+    );
+  }
   if (input.design_id && (!design || !design.is_active || design.setting_type !== settingType)) {
-    return NextResponse.json({ error: 'Selected design is not available for this setting.' }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: 'Selected design is not available for this setting.',
+        details: {
+          design_id: input.design_id,
+          setting_type: settingType,
+          found: !!design,
+          design_setting_type: design?.setting_type ?? null,
+          is_active: design?.is_active ?? null,
+        },
+      },
+      { status: 400 }
+    );
   }
 
   const rudrakshaProduct = isRudrakshaConfiguratorContext(product.category, {
@@ -501,6 +524,7 @@ export async function POST(request: NextRequest) {
     making_charge: makingCharge,
     diamond_charge: diamondCharge,
     stone_addon_label: stoneAddonLabel,
+    design_note: design ? getDesignConfiguratorNote(design) : null,
     metal_price: metalPrice,
     metal_weight_grams: metalWeightGrams,
     gold_rate_per_gram: goldRatePerGram,

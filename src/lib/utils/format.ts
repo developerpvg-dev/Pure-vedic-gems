@@ -13,6 +13,21 @@ export function formatPrice(amount: number, currency = 'INR'): string {
   }).format(amount);
 }
 
+export type {
+  ProductPricingInput as ProductPriceFields,
+} from '@/lib/shop/product-pricing';
+
+export {
+  formatProductListPrice,
+  isProductPriceOnRequest,
+  isProductPurchasable,
+  isProductStockUnavailable,
+  productOfferAvailability,
+  productStructuredOfferPrice,
+  resolveProductCartPrice,
+  resolveProductDisplayPrice,
+} from '@/lib/shop/product-pricing';
+
 /**
  * Format EMI — calculates monthly instalment across given months.
  * Default: 12 months.

@@ -6,7 +6,14 @@ import { ShoppingBag, Eye, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
-import { formatPrice, formatCarats } from '@/lib/utils/format';
+import {
+  formatProductListPrice,
+  getProductUnavailableLabel,
+  isProductPriceOnRequest,
+  isProductStockUnavailable,
+  resolveProductCartPrice,
+} from '@/lib/shop/product-pricing';
+import { formatCarats, formatPrice } from '@/lib/utils/format';
 import { productHref } from '@/lib/categories/storefront';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
@@ -37,21 +44,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const inCart = isInCart(product.id);
   const href = productHref(product);
   const imageSrc = getImageSrc(product);
-  const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
-  const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
-  const isOnRequest =
-    product.price_mode === 'on_demand' ||
-    product.price_mode === 'quote_required' ||
-    !product.price ||
-    product.price <= 0;
-  const isUnavailable =
-    !isOnRequest &&
-    (!product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
-  const unavailableLabel = product.availability_status === 'reserved'
-    ? 'Reserved'
-    : product.availability_status === 'sold'
-    ? 'Sold'
-    : 'Out of Stock';
+  const isOnRequest = isProductPriceOnRequest(product);
+  const isUnavailable = isProductStockUnavailable(product);
+  const unavailableLabel = getProductUnavailableLabel(product.availability_status);
+  const priceDisplay = formatProductListPrice(product);
+  const resolvedPrice = resolveProductCartPrice(product);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
       name: product.name,
       category: product.category,
       image_url: imageSrc,
-      price: product.price,
+      price: resolvedPrice,
       quantity: 1,
       stock_quantity: product.stock_quantity,
       stock_status: product.stock_status,
@@ -219,24 +216,22 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Price row */}
         <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-          {isOnRequest ? (
-            <span className="text-[11px] font-semibold text-[#7A1515] sm:text-[14px]">Price on Request</span>
-          ) : (
-            <>
-              <span className="text-[12px] font-semibold text-gray-900 sm:text-[14px]">
-                {formatPrice(product.price)}
-              </span>
-              {product.compare_price && product.compare_price > product.price && (
-                <span className="text-[10px] text-gray-400 line-through sm:text-[11px]">
-                  {formatPrice(product.compare_price)}
-                </span>
-              )}
-              {product.price_per_carat && (
-                <span className="w-full text-[9px] text-brand-muted sm:ml-auto sm:w-auto sm:text-[10px]">
-                  {formatPrice(product.price_per_carat)}/ct
-                </span>
-              )}
-            </>
+          <span
+            className={`text-[12px] font-semibold sm:text-[14px] ${
+              isOnRequest ? 'text-[#7A1515]' : 'text-gray-900'
+            }`}
+          >
+            {priceDisplay.label}
+          </span>
+          {!isOnRequest && product.compare_price && product.compare_price > resolvedPrice && (
+            <span className="text-[10px] text-gray-400 line-through sm:text-[11px]">
+              {formatPrice(product.compare_price)}
+            </span>
+          )}
+          {!isOnRequest && priceDisplay.detail && (
+            <span className="w-full text-[9px] text-brand-muted sm:ml-auto sm:w-auto sm:text-[10px]">
+              {priceDisplay.detail}
+            </span>
           )}
         </div>
 

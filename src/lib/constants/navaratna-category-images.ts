@@ -10,6 +10,7 @@ export const NAVARATNA_NAV_IMAGE_BY_SLUG: Record<string, string> = {
   'red-coral': '/home/navratnaimg/stone7.webp',
   hessonite: '/home/navratnaimg/stone8.webp',
   'cats-eye': '/home/navratnaimg/stone9.webp',
+  pitambari: '/home/upratna-cards/pitambari.webp',
 };
 
 export function navaratnaNavImage(slug: string): string | null {

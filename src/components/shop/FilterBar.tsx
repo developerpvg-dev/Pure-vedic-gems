@@ -23,6 +23,7 @@ import { useGemCategories } from '@/components/shop/ShopSidebar';
 import type { ShopFilterOption, ShopFilterOptions } from '@/lib/shop/filters';
 
 const SORT_OPTIONS = [
+  { label: 'Default order', value: 'catalog-asc' },
   { label: 'Newest first', value: 'newest-desc' },
   { label: 'Price: low to high', value: 'price-asc' },
   { label: 'Price: high to low', value: 'price-desc' },
@@ -356,7 +357,7 @@ export function FilterBar({
     updateParam({ q: searchText.trim() });
   }
 
-  const sortValue = get('sort') || `${get('sort_by') || 'newest'}-${get('sort_order') || 'desc'}`;
+  const sortValue = get('sort') || `${get('sort_by') || 'catalog'}-${get('sort_order') || 'asc'}`;
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -392,9 +393,9 @@ export function FilterBar({
           <Select
             value={sortValue}
             onValueChange={(nextValue) => {
-              const selectedSort = nextValue ?? 'newest-desc';
+              const selectedSort = nextValue ?? 'catalog-asc';
               const [sortBy, sortOrder] = selectedSort.split('-');
-              updateParam({ sort: selectedSort, sort_by: sortBy ?? 'newest', sort_order: sortOrder ?? 'desc' });
+              updateParam({ sort: selectedSort, sort_by: sortBy ?? 'catalog', sort_order: sortOrder ?? 'asc' });
             }}
           >
             <SelectTrigger className="h-10 w-full rounded-md border-brand-border bg-white text-[12px] font-medium text-brand-text shadow-none">
@@ -553,9 +554,9 @@ export function FilterBar({
           <Select
             value={sortValue}
             onValueChange={(nextValue) => {
-              const selectedSort = nextValue ?? 'newest-desc';
+              const selectedSort = nextValue ?? 'catalog-asc';
               const [sortBy, sortOrder] = selectedSort.split('-');
-              updateParam({ sort: selectedSort, sort_by: sortBy ?? 'newest', sort_order: sortOrder ?? 'desc' });
+              updateParam({ sort: selectedSort, sort_by: sortBy ?? 'catalog', sort_order: sortOrder ?? 'asc' });
             }}
           >
             <SelectTrigger className="h-10 min-w-42 shrink-0 rounded-md border-brand-border bg-white text-[12px] font-medium text-brand-text shadow-none">

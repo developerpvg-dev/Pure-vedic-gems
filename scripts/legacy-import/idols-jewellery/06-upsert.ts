@@ -21,6 +21,7 @@ import { config as loadEnv } from 'dotenv';
 import { Client } from 'pg';
 import pgTypes from 'pg';
 import { parseRunMode } from '../lib/supabase.js';
+import { isQuoteOnlyPriceMode, resolveLegacyAvailabilityStatus } from '../lib/transform/pricing.js';
 
 pgTypes.types.setTypeParser(20, (val: string) => parseInt(val, 10));
 
@@ -149,8 +150,11 @@ function stockStatus(value: string | null | undefined): 'in_stock' | 'out_of_sto
 }
 
 function availability(row: StagedProduct, normalisedStock: string) {
-  if (row.price_mode === 'on_demand' || row.price_mode === 'quote_required' || !row.price || row.price <= 0) return 'on_demand';
-  return normalisedStock === 'in_stock' ? 'in_stock' : 'out_of_stock';
+  return resolveLegacyAvailabilityStatus({
+    priceMode: row.price_mode ?? 'fixed',
+    inStock: normalisedStock === 'in_stock',
+    stockStatus: normalisedStock,
+  });
 }
 
 const DEDICATED_VIDEO_CTE = /* sql */ `
@@ -186,7 +190,7 @@ async function upsertProduct(client: Client, row: StagedProduct, media: MediaMap
   const warnings = Array.isArray(row.warnings) ? [...row.warnings] : [];
   if (images.length === 0) warnings.push('media: no uploaded images resolved');
   const normalisedStock = stockStatus(row.stock_status);
-  const isOnDemand = row.price_mode === 'on_demand' || row.price_mode === 'quote_required' || !row.price || row.price <= 0;
+  const isOnDemand = isQuoteOnlyPriceMode(row.price_mode);
   const productType = row.product_type ?? 'idol';
 
   const upsert = await client.query(

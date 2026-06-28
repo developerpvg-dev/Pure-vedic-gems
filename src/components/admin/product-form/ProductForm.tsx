@@ -6,6 +6,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
 
+import { createClient } from '@/lib/supabase/client';
 import { MediaUploader } from '@/components/admin/MediaUploader';
 import { productCategoryToStorefrontGroupSlug } from '@/lib/categories/storefront';
 import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
@@ -53,6 +54,25 @@ interface MediaFile {
   type: 'image' | 'video';
   preview?: string;
 }
+
+type ProductOptionRulesState = {
+  certificate_enabled?: boolean;
+  allowed_certification_lab_ids?: string[];
+  energization_enabled?: boolean;
+  allowed_energization_option_ids?: string[];
+};
+
+type CertificationLabOption = {
+  id: string;
+  name: string;
+  extra_charge: number;
+};
+
+type EnergizationOptionRow = {
+  id: string;
+  name: string;
+  price: number;
+};
 
 type ManagedCategoryApiRow = {
   name: string;
@@ -245,6 +265,22 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [isActive, setIsActive] = useState(get<boolean>(initialProduct, 'is_active') ?? true);
   const configuratorPreset = directorsPickPreset || config.kind === 'navratna';
   const [configuratorEnabled, setConfiguratorEnabled] = useState(Boolean(get(initialProduct, 'configurator_enabled') ?? configuratorPreset));
+  const initialOptionRules = get<ProductOptionRulesState>(initialProduct, 'option_rules');
+  const supportsCertAddons = config.kind === 'navratna' || config.kind === 'upratna' || config.kind === 'rudraksha';
+  const [certificationAddonEnabled, setCertificationAddonEnabled] = useState(
+    Boolean(initialOptionRules?.certificate_enabled ?? supportsCertAddons)
+  );
+  const [allowedCertificationLabIds, setAllowedCertificationLabIds] = useState<string[]>(
+    initialOptionRules?.allowed_certification_lab_ids ?? []
+  );
+  const [certificationLabs, setCertificationLabs] = useState<CertificationLabOption[]>([]);
+  const [energizationAddonEnabled, setEnergizationAddonEnabled] = useState(
+    Boolean(initialOptionRules?.energization_enabled ?? supportsCertAddons)
+  );
+  const [allowedEnergizationOptionIds, setAllowedEnergizationOptionIds] = useState<string[]>(
+    initialOptionRules?.allowed_energization_option_ids ?? []
+  );
+  const [energizationOptions, setEnergizationOptions] = useState<EnergizationOptionRow[]>([]);
 
   // ── SEO / AEO / GEO ───────────────────────────────────
   const initialSeoData = (get<Record<string, unknown>>(initialProduct, 'seo_data')) ?? {};
@@ -301,6 +337,76 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       cancelled = true;
     };
   }, [config.kind]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCertificationLabs() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('certification_labs')
+          .select('id, name, extra_charge')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+        if (error || !data || cancelled) return;
+        setCertificationLabs(data as CertificationLabOption[]);
+      } catch {
+        // ignore — admin can still save without lab list
+      }
+    }
+    void fetchCertificationLabs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchEnergizationOptions() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('energization_options')
+          .select('id, name, price')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+        if (error || !data || cancelled) return;
+        setEnergizationOptions(data as EnergizationOptionRow[]);
+      } catch {
+        // ignore
+      }
+    }
+    void fetchEnergizationOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mode !== 'create' || allowedCertificationLabIds.length > 0 || certificationLabs.length === 0) {
+      return;
+    }
+    setAllowedCertificationLabIds(certificationLabs.map((lab) => lab.id));
+  }, [allowedCertificationLabIds.length, certificationLabs, mode]);
+
+  useEffect(() => {
+    if (mode !== 'create' || allowedEnergizationOptionIds.length > 0 || energizationOptions.length === 0) {
+      return;
+    }
+    setAllowedEnergizationOptionIds(energizationOptions.map((option) => option.id));
+  }, [allowedEnergizationOptionIds.length, energizationOptions, mode]);
+
+  function toggleEnergizationOption(optionId: string) {
+    setAllowedEnergizationOptionIds((current) =>
+      current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId]
+    );
+  }
+
+  function toggleCertificationLab(labId: string) {
+    setAllowedCertificationLabIds((current) =>
+      current.includes(labId) ? current.filter((id) => id !== labId) : [...current, labId]
+    );
+  }
 
   const subCategoryOptions = useMemo(() => {
     const merged = [...config.subCategories];
@@ -513,10 +619,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         : undefined,
     };
 
-    if (mode === 'create') {
+    if (supportsCertAddons) {
       body.option_rules = {
-        certificate_enabled: certificateDisplayEnabled,
-        energization_enabled: effectiveConfiguratorEnabled,
+        certificate_enabled: certificationAddonEnabled && allowedCertificationLabIds.length > 0,
+        energization_enabled: energizationAddonEnabled && allowedEnergizationOptionIds.length > 0,
         jewelry_design_enabled: effectiveConfiguratorEnabled,
         metal_enabled: effectiveConfiguratorEnabled,
         ring_size_enabled: effectiveConfiguratorEnabled,
@@ -524,6 +630,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         allowed_metals: [],
         allowed_ring_size_systems:
           effectiveConfiguratorEnabled || ringSizeSystem ? ['india', 'us', 'uk_au', 'eu'] : [],
+        allowed_certification_lab_ids: certificationAddonEnabled ? allowedCertificationLabIds : [],
+        allowed_energization_option_ids: energizationAddonEnabled ? allowedEnergizationOptionIds : [],
       };
     }
 
@@ -1073,6 +1181,66 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
               </div>
             )}
             <FormCheckbox checked={configuratorEnabled} onChange={setConfiguratorEnabled} label="Enable customization configurator" />
+            {supportsCertAddons && configuratorEnabled && (
+              <div className="ml-7 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <FormCheckbox
+                  checked={certificationAddonEnabled}
+                  onChange={setCertificationAddonEnabled}
+                  label="Allow additional lab certificates in configurator"
+                />
+                {certificationAddonEnabled && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">
+                      Choose which certification labs customers can add for this product.
+                    </p>
+                    {certificationLabs.length === 0 ? (
+                      <p className="text-xs text-amber-700">No certification labs found. Seed labs first.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {certificationLabs.map((lab) => (
+                          <FormCheckbox
+                            key={lab.id}
+                            checked={allowedCertificationLabIds.includes(lab.id)}
+                            onChange={() => toggleCertificationLab(lab.id)}
+                            label={`${lab.name}${lab.extra_charge > 0 ? ` (+₹${lab.extra_charge.toLocaleString('en-IN')})` : ' (Free)'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {supportsCertAddons && configuratorEnabled && (
+              <div className="ml-7 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <FormCheckbox
+                  checked={energizationAddonEnabled}
+                  onChange={setEnergizationAddonEnabled}
+                  label="Allow Vedic energization / pooja options in configurator"
+                />
+                {energizationAddonEnabled && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">
+                      Choose which pooja / energization tiers customers can select for this product.
+                    </p>
+                    {energizationOptions.length === 0 ? (
+                      <p className="text-xs text-amber-700">No energization options found. Seed options first.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2">
+                        {energizationOptions.map((option) => (
+                          <FormCheckbox
+                            key={option.id}
+                            checked={allowedEnergizationOptionIds.includes(option.id)}
+                            onChange={() => toggleEnergizationOption(option.id)}
+                            label={`${option.name}${option.price > 0 ? ` (+₹${option.price.toLocaleString('en-IN')})` : ' (Free)'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

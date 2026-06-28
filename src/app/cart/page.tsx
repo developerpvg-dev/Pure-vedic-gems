@@ -143,7 +143,7 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
   const total = subtotal + shipping;
 
   return (
-    <div className="sticky top-[100px] rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-6">
+    <div className="sticky pvg-sticky-below-header rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-6">
       <h2 className="font-heading mb-6 text-lg font-semibold text-[var(--pvg-primary)]">
         Order Summary
       </h2>
@@ -278,7 +278,7 @@ export default function CartPage() {
   const { items, subtotal, item_count } = cart;
 
   return (
-    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-[130px] md:px-6 lg:px-10">
+    <main className="min-h-screen bg-brand-bg px-4 pb-24 md:px-6 lg:px-10">
       <div className="mx-auto max-w-[1400px]">
         {/* Header */}
         <div className="mb-8 flex items-baseline justify-between">

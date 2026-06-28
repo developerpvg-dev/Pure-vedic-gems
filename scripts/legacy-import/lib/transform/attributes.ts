@@ -14,6 +14,9 @@
  * be written against it.
  */
 
+import { parseAttributeValues as parseCertificateAttributeValues } from './certificate-options';
+import { parseAttributeValues as parseEnergizationAttributeValues } from './energization-options';
+
 export type OptionKind = 'certificate' | 'energization' | 'metal' | 'mount' | 'size' | 'size_system';
 
 export interface ParsedOption {
@@ -26,6 +29,12 @@ export interface ParsedOption {
   raw: string;
 }
 
-export function parseAttributeValues(_kind: OptionKind, _rawValue: string): ParsedOption[] {
-  throw new Error('parseAttributeValues: not yet implemented (PR-3).');
+export function parseAttributeValues(kind: OptionKind, rawValue: string): ParsedOption[] {
+  if (kind === 'certificate') {
+    return parseCertificateAttributeValues('certificate', rawValue);
+  }
+  if (kind === 'energization') {
+    return parseEnergizationAttributeValues('energization', rawValue);
+  }
+  throw new Error(`parseAttributeValues: ${kind} is not implemented yet.`);
 }

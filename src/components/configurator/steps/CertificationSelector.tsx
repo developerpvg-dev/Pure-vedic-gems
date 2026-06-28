@@ -1,12 +1,11 @@
 'use client';
 
 /**
- * Step 6 — Certification Lab Selection (Compact)
- * Smaller cards, tighter spacing.
+ * Step 6 — Certification Lab Selection
  */
 
 import { useEffect, useState } from 'react';
-import { Shield, Clock, ExternalLink, AlertCircle } from 'lucide-react';
+import { ExternalLink, AlertCircle, BadgeCheck } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,29 +16,110 @@ import {
   isCertificationAllowed,
   type ConfiguratorOptionRules,
 } from '@/lib/utils/configurator-rules';
+import { productLooksPrecertified } from '@/lib/utils/legacy-certificate-options';
+
+interface CertificationProductContext {
+  certificate_number?: string | null;
+  certificate_lab?: string | null;
+  certification?: string | null;
+}
 
 interface CertificationSelectorProps {
   selected: CertificationLab | null;
   certificationSkipped: boolean;
   optionRules: ConfiguratorOptionRules | null;
+  product?: CertificationProductContext | null;
   onSelect: (lab: CertificationLab) => void;
   onSkip: () => void;
+}
+
+interface CertOptionProps {
+  active: boolean;
+  title: string;
+  detail?: string | null;
+  priceLabel: string;
+  recommended?: boolean;
+  meta?: string[];
+  sampleUrl?: string | null;
+  onClick: () => void;
+  className?: string;
+}
+
+function CertOption({
+  active,
+  title,
+  detail,
+  priceLabel,
+  recommended = false,
+  meta = [],
+  sampleUrl,
+  onClick,
+  className,
+}: CertOptionProps) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={cn('pvg-cert-option', active && 'pvg-cert-option--active', className)}
+    >
+      <span className="pvg-cert-option-main">
+        <span className="pvg-cert-option-top">
+          <span className={cn('pvg-cert-option-title', active && 'pvg-cert-option-title--active')}>
+            {title}
+          </span>
+          {recommended ? <span className="pvg-cert-tag">Recommended</span> : null}
+        </span>
+
+        {detail ? <span className="pvg-cert-option-detail">{detail}</span> : null}
+
+        {(meta.length > 0 || sampleUrl) && (
+          <span className="pvg-cert-option-foot">
+            {meta.map((item) => (
+              <span key={item} className="pvg-cert-foot-item">
+                {item}
+              </span>
+            ))}
+            {sampleUrl ? (
+              <a
+                href={sampleUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pvg-cert-foot-link"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <ExternalLink className="h-3 w-3" aria-hidden />
+                Sample
+              </a>
+            ) : null}
+          </span>
+        )}
+      </span>
+
+      <span className={cn('pvg-cert-option-price', active && 'pvg-cert-option-price--active')}>
+        {priceLabel}
+      </span>
+    </button>
+  );
 }
 
 export default function CertificationSelector({
   selected,
   certificationSkipped,
   optionRules,
+  product,
   onSelect,
   onSkip,
 }: CertificationSelectorProps) {
   const [labs, setLabs] = useState<CertificationLab[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const certificateEnabled = optionRules?.certificate_enabled ?? true;
+  const certificateEnabled = optionRules?.certificate_enabled ?? false;
   const visibleLabs = certificateEnabled
     ? labs.filter((lab) => isCertificationAllowed(optionRules, lab.id))
     : [];
+  const alreadyCertified = productLooksPrecertified(product ?? {});
 
   useEffect(() => {
     async function fetchLabs() {
@@ -65,114 +145,76 @@ export default function CertificationSelector({
   }, []);
 
   return (
-    <div>
+    <div className="pvg-cert-step">
+      {alreadyCertified && (
+        <div className="pvg-cert-note" role="status">
+          <BadgeCheck className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+          <p>
+            <strong>Already certified</strong>
+            {' — '}
+            {product?.certificate_lab || product?.certification || 'Certificate included'}
+            {product?.certificate_number ? ` (${product.certificate_number})` : ''}.
+            {visibleLabs.length > 0
+              ? ' Add another lab below if needed.'
+              : ' No extra certificates for this item.'}
+          </p>
+        </div>
+      )}
+
       {loading ? (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+        <div className="pvg-cert-grid">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-[4.25rem] w-full rounded-lg" />
           ))}
         </div>
       ) : error ? (
-        <div className="mt-3 flex flex-col items-center gap-2 py-6 text-center">
+        <div className="pvg-cert-error">
           <AlertCircle className="h-5 w-5 text-destructive" />
-          <p className="text-xs font-medium text-primary">{error}</p>
-          <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.reload()}>Retry</Button>
+          <p>{error}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Certification lab">
-          {/* Skip option */}
-          <button
+        <div className="pvg-cert-grid" role="radiogroup" aria-label="Certification lab">
+          <CertOption
+            active={certificationSkipped}
+            title="Without certificate"
+            detail="No additional lab report"
+            priceLabel="No charge"
             onClick={onSkip}
-            role="radio"
-            aria-checked={certificationSkipped}
-            className={cn(
-              'flex flex-col rounded-lg border p-2.5 text-left transition-all duration-150',
-              'hover:border-accent',
-              certificationSkipped
-                ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
-                : 'border-border bg-card'
-            )}
-          >
-            <div className="flex items-center gap-1.5">
-              <Shield className={cn('h-3.5 w-3.5', certificationSkipped ? 'text-accent' : 'text-muted-foreground')} />
-              <span className={cn('text-xs font-semibold', certificationSkipped ? 'text-accent' : 'text-primary')}>
-                No Certification
-              </span>
-            </div>
-            <span className="mt-1 text-[9px] text-muted-foreground">Skip · No cost</span>
-          </button>
+            className="pvg-cert-option--span"
+          />
 
           {!certificateEnabled && (
-            <div className="col-span-2 rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
-              Additional certificates are not enabled for this product. You can continue without adding a lab certificate.
-            </div>
+            <p className="pvg-cert-muted pvg-cert-option--span">
+              Additional certificates are not available for this product.
+            </p>
           )}
 
           {visibleLabs.map((lab) => {
             const isChosen = selected?.id === lab.id;
             const isFree = lab.extra_charge === 0;
+            const detail = lab.description || lab.full_name || null;
 
             return (
-              <button
+              <CertOption
                 key={lab.id}
+                active={isChosen}
+                title={lab.name}
+                detail={detail}
+                priceLabel={isFree ? 'Free' : `+${formatPrice(lab.extra_charge)}`}
+                recommended={lab.is_default}
+                meta={[`${lab.turnaround_days} day${lab.turnaround_days === 1 ? '' : 's'}`]}
+                sampleUrl={lab.sample_cert_url}
                 onClick={() => onSelect(lab)}
-                role="radio"
-                aria-checked={isChosen}
-                className={cn(
-                  'flex flex-col rounded-lg border p-2.5 text-left transition-all duration-150',
-                  'hover:border-accent',
-                  isChosen
-                    ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
-                    : 'border-border bg-card'
-                )}
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Shield className={cn('h-3.5 w-3.5 shrink-0', isChosen ? 'text-accent' : 'text-muted-foreground')} />
-                    <span className={cn('text-xs font-semibold truncate', isChosen ? 'text-accent' : 'text-primary')}>
-                      {lab.name}
-                    </span>
-                  </div>
-                  <span className={cn(
-                    'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium',
-                    isFree ? 'bg-green-50 text-green-700' : 'bg-muted text-foreground'
-                  )}>
-                    {isFree ? 'Free' : `+${formatPrice(lab.extra_charge)}`}
-                  </span>
-                </div>
-
-                {lab.full_name && (
-                  <p className="mt-0.5 text-[9px] text-muted-foreground truncate">{lab.full_name}</p>
-                )}
-
-                <div className="mt-1 flex items-center gap-2 text-[9px] text-muted-foreground">
-                  <span className="flex items-center gap-0.5">
-                    <Clock className="h-2.5 w-2.5" /> {lab.turnaround_days}d
-                  </span>
-                  {lab.sample_cert_url && (
-                    <a
-                      href={lab.sample_cert_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-0.5 text-accent hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="h-2.5 w-2.5" /> Sample
-                    </a>
-                  )}
-                  {lab.is_default && (
-                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[8px] font-medium text-accent">
-                      Recommended
-                    </span>
-                  )}
-                </div>
-              </button>
+              />
             );
           })}
 
           {certificateEnabled && visibleLabs.length === 0 && (
-            <p className="col-span-2 text-center text-xs text-muted-foreground">
-              No additional lab options are enabled for this product.
+            <p className="pvg-cert-muted pvg-cert-option--span">
+              No lab options are enabled for this product.
             </p>
           )}
         </div>

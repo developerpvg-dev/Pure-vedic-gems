@@ -29,9 +29,15 @@ export function buildConfiguratorPriceTotals(
     settingType: string | null;
     productCategory?: string | null;
     jewelryGstPercent?: number;
+    designNote?: string | null;
   }
 ): ConfiguratorPriceTotals {
-  const { settingType, productCategory, jewelryGstPercent = JEWELRY_GST_RATE_PERCENT } = options;
+  const {
+    settingType,
+    productCategory,
+    jewelryGstPercent = JEWELRY_GST_RATE_PERCENT,
+    designNote = pricing.design_note,
+  } = options;
   const showJewelry = Boolean(settingType && settingType !== 'loose');
   const lines: ConfiguratorPriceLine[] = [];
 
@@ -39,54 +45,76 @@ export function buildConfiguratorPriceTotals(
     key: 'gem',
     label: 'Gemstone',
     amount: pricing.gem_price,
+    display: pricing.gem_price > 0 ? undefined : '—',
   });
 
   if (showJewelry) {
-    if (pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0) {
-      lines.push({
-        key: 'metal-weight',
-        label: 'Metal weight',
-        display: `${pricing.metal_weight_grams} g`,
-        amount: null,
-      });
-      if (pricing.gold_rate_per_gram > 0) {
+    const hasJewelryDetail =
+      pricing.metal_price > 0 ||
+      pricing.making_charge > 0 ||
+      pricing.diamond_charge > 0 ||
+      pricing.metal_weight_grams > 0;
+
+    if (hasJewelryDetail) {
+      if (pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0) {
         lines.push({
-          key: 'metal-rate',
-          label: 'Live metal rate',
-          display: `${formatPrice(pricing.gold_rate_per_gram)}/g`,
+          key: 'metal-weight',
+          label: 'Metal weight',
+          display: `${pricing.metal_weight_grams} g`,
           amount: null,
         });
-      }
-      if (pricing.metal_price > 0) {
-        lines.push({
-          key: 'metal-value',
-          label: 'Metal value',
-          detail:
-            pricing.gold_rate_per_gram > 0
-              ? `${pricing.metal_weight_grams} g × ${formatPrice(pricing.gold_rate_per_gram)}/g`
-              : undefined,
-          amount: pricing.metal_price,
-        });
-      }
-      if (pricing.labor_rate_percent > 0 && pricing.making_charge > 0) {
-        lines.push({
-          key: 'labor',
-          label: `Labor charge (${pricing.labor_rate_percent}%)`,
-          detail: `${pricing.labor_rate_percent}% of ${formatPrice(pricing.metal_price)} metal value`,
-          amount: pricing.making_charge,
-        });
+        if (pricing.gold_rate_per_gram > 0) {
+          lines.push({
+            key: 'metal-rate',
+            label: 'Live metal rate',
+            display: `${formatPrice(pricing.gold_rate_per_gram)}/g`,
+            amount: null,
+          });
+        }
+        if (pricing.metal_price > 0) {
+          lines.push({
+            key: 'metal-value',
+            label: 'Metal value',
+            detail:
+              pricing.gold_rate_per_gram > 0
+                ? `${pricing.metal_weight_grams} g × ${formatPrice(pricing.gold_rate_per_gram)}/g`
+                : undefined,
+            amount: pricing.metal_price,
+          });
+        }
+        if (pricing.labor_rate_percent > 0 && pricing.making_charge > 0) {
+          lines.push({
+            key: 'labor',
+            label: `Labor charge (${pricing.labor_rate_percent}%)`,
+            detail: `${pricing.labor_rate_percent}% of ${formatPrice(pricing.metal_price)} metal value`,
+            amount: pricing.making_charge,
+          });
+        } else if (pricing.making_charge > 0) {
+          lines.push({
+            key: 'making',
+            label: 'Making charge',
+            amount: pricing.making_charge,
+          });
+        }
       } else if (pricing.making_charge > 0) {
         lines.push({
-          key: 'making',
-          label: 'Making charge',
+          key: 'making-fixed',
+          label: 'Making charge (fixed)',
           amount: pricing.making_charge,
         });
       }
-    } else if (pricing.making_charge > 0) {
+    } else {
       lines.push({
-        key: 'making-fixed',
-        label: 'Making charge (fixed)',
-        amount: pricing.making_charge,
+        key: 'metal-value-pending',
+        label: 'Metal value',
+        amount: null,
+        display: '—',
+      });
+      lines.push({
+        key: 'making-pending',
+        label: 'Making charge',
+        amount: null,
+        display: '—',
       });
     }
 
@@ -97,6 +125,15 @@ export function buildConfiguratorPriceTotals(
           ? `${pricing.stone_addon_label} add-on`
           : 'Stone / diamond add-on',
         amount: pricing.diamond_charge,
+      });
+    }
+
+    if (designNote) {
+      lines.push({
+        key: 'design-note',
+        label: 'Design note',
+        display: designNote,
+        amount: null,
       });
     }
   }

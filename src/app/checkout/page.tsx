@@ -2,7 +2,17 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Truck } from 'lucide-react';
+import {
+  ShieldCheck,
+  Truck,
+  ArrowLeft,
+  Lock,
+  Landmark,
+  Award,
+  MessageCircle,
+  ShoppingBag,
+  Loader2,
+} from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { ContactInfo, ShippingAddress, EnergizationFields } from '@/lib/validators/order';
@@ -12,17 +22,21 @@ import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
 import { RewardPointsRedemption, type CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
 import { EnergizationFieldsForm } from '@/components/checkout/EnergizationFields';
-import { EmiCalculator } from '@/components/shop/EmiCalculator';
 import Link from 'next/link';
 
 type CheckoutStep = 'contact' | 'shipping' | 'payment';
+
+const STEPS: { id: CheckoutStep; step: number; label: string }[] = [
+  { id: 'contact', step: 1, label: 'Contact' },
+  { id: 'shipping', step: 2, label: 'Shipping' },
+  { id: 'payment', step: 3, label: 'Payment' },
+];
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, clearCart } = useCart();
   const { user, profile, isLoading } = useAuth();
 
-  // ── Step state ───────────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('contact');
   const [contactData, setContactData] = useState<ContactInfo | null>(null);
   const [shippingData, setShippingData] = useState<ShippingAddress | null>(null);
@@ -38,7 +52,6 @@ export default function CheckoutPage() {
   const [rewardLoading, setRewardLoading] = useState(false);
   const [rewardPointsToRedeem, setRewardPointsToRedeem] = useState(0);
 
-  // ── Check if any cart item needs energization ────────────────────────
   const hasEnergizationItem = useMemo(() => {
     return cart.items.some(
       (item) =>
@@ -47,7 +60,6 @@ export default function CheckoutPage() {
     );
   }, [cart.items]);
 
-  // ── Step completion checks ───────────────────────────────────────────
   const isContactComplete = contactData !== null;
   const isShippingComplete = shippingData !== null;
   const cartSubtotal = useMemo(() => cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart.items]);
@@ -82,7 +94,6 @@ export default function CheckoutPage() {
     return () => { active = false; };
   }, [user]);
 
-  // ── Pre-fill from profile if logged in ───────────────────────────────
   const defaultContact: Partial<ContactInfo> = useMemo(() => {
     if (profile) {
       return {
@@ -94,7 +105,6 @@ export default function CheckoutPage() {
     return {};
   }, [profile, user]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────
   const handleContactComplete = (data: ContactInfo) => {
     setContactData(data);
     setCurrentStep('shipping');
@@ -111,90 +121,100 @@ export default function CheckoutPage() {
     router.push(`/order-confirmation/${resultOrderId}`);
   };
 
-  // ── Empty cart guard ─────────────────────────────────────────────────
+  const stepComplete = (id: CheckoutStep) => {
+    if (id === 'contact') return isContactComplete;
+    if (id === 'shipping') return isShippingComplete;
+    return false;
+  };
+
+  const stepDisabled = (id: CheckoutStep) => {
+    if (id === 'contact') return false;
+    if (id === 'shipping') return !isContactComplete;
+    return !isShippingComplete;
+  };
+
   if (cart.items.length === 0 && !orderId) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-20">
-        <Truck className="h-16 w-16 text-[var(--pvg-muted)] mb-6" strokeWidth={1} />
-        <h1 className="font-heading text-2xl font-semibold text-[var(--pvg-primary)] mb-3">
-          Your cart is empty
-        </h1>
-        <p className="text-[var(--pvg-muted)] mb-8 text-center max-w-md">
-          Add some gemstones to your cart before proceeding to checkout.
-        </p>
-        <Link
-          href="/shop"
-          className="inline-flex items-center gap-2 bg-brand-accent text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
-        >
-          Browse Gemstones
-        </Link>
+      <div className="pvg-checkout-page">
+        <div className="pvg-checkout-empty">
+          <div className="pvg-checkout-empty-icon">
+            <ShoppingBag className="h-8 w-8" strokeWidth={1.5} />
+          </div>
+          <h1 className="pvg-checkout-title">Your cart is empty</h1>
+          <p className="pvg-checkout-subtitle mt-2">
+            Add certified gemstones or jewellery to your cart before completing checkout.
+          </p>
+          <Link href="/shop" className="pvg-checkout-btn pvg-checkout-btn--accent mt-6 w-auto px-8">
+            Browse Gemstones
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4 py-20 text-center">
-        <div>
-          <p className="font-heading text-2xl text-[var(--pvg-primary)]">Preparing secure checkout</p>
-          <p className="mt-2 text-sm text-[var(--pvg-muted)]">Checking your account status...</p>
+      <div className="pvg-checkout-page">
+        <div className="pvg-checkout-empty">
+          <Loader2 className="h-10 w-10 animate-spin text-[#8a6400] mb-4" />
+          <p className="pvg-checkout-title text-xl">Preparing secure checkout</p>
+          <p className="pvg-checkout-subtitle mt-2">Checking your account status…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-brand-bg">
-      {/* Checkout Header */}
-      <div className="bg-brand-surface border-b border-[var(--pvg-border)]">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="font-heading text-xl text-[var(--pvg-primary)] font-bold">
-            PureVedicGems
-          </Link>
-          <div className="flex items-center gap-2 text-sm text-[var(--pvg-muted)]">
-            <Lock className="h-4 w-4" />
-            <span>Secure Checkout</span>
+    <div className="pvg-checkout-page">
+      <div className="pvg-checkout-shell">
+        <header className="pvg-checkout-hero">
+          <div className="pvg-checkout-hero-top">
+            <div>
+              <Link href="/cart" className="pvg-checkout-back">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to cart
+              </Link>
+              <p className="pvg-checkout-eyebrow mt-3">Secure checkout</p>
+              <h1 className="pvg-checkout-title">Complete your order</h1>
+              <p className="pvg-checkout-subtitle">
+                A few quick steps — we&apos;ll confirm pricing and taxes before payment opens.
+              </p>
+            </div>
+            <span className="pvg-checkout-secure-pill">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#8a6400]" />
+              SSL encrypted
+            </span>
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Step Indicator */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-center gap-2 md:gap-4 text-sm text-[var(--pvg-muted)]">
-          <StepBadge
-            step={1}
-            label="Contact"
-            isActive={currentStep === 'contact'}
-            isComplete={isContactComplete}
-            onClick={() => setCurrentStep('contact')}
-          />
-          <div className="h-px w-8 bg-brand-border" />
-          <StepBadge
-            step={2}
-            label="Shipping"
-            isActive={currentStep === 'shipping'}
-            isComplete={isShippingComplete}
-            onClick={() => isContactComplete && setCurrentStep('shipping')}
-            disabled={!isContactComplete}
-          />
-          <div className="h-px w-8 bg-brand-border" />
-          <StepBadge
-            step={3}
-            label="Payment"
-            isActive={currentStep === 'payment'}
-            isComplete={false}
-            onClick={() => isShippingComplete && setCurrentStep('payment')}
-            disabled={!isShippingComplete}
-          />
-        </div>
-      </div>
+        <nav className="pvg-checkout-progress" aria-label="Checkout progress">
+          {STEPS.map(({ id, step, label }) => {
+            const active = currentStep === id;
+            const complete = stepComplete(id);
+            const disabled = stepDisabled(id);
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`pvg-checkout-progress-item${active ? ' pvg-checkout-progress-item--active' : ''}${complete ? ' pvg-checkout-progress-item--complete' : ''}`}
+                onClick={() => !disabled && setCurrentStep(id)}
+                disabled={disabled}
+                aria-current={active ? 'step' : undefined}
+              >
+                <div className="pvg-checkout-progress-track" aria-hidden>
+                  <div className="pvg-checkout-progress-fill" />
+                </div>
+                <div className="pvg-checkout-progress-label">
+                  <span className="pvg-checkout-progress-num">{complete && !active ? '✓' : step}</span>
+                  <span className="pvg-checkout-progress-text">{label}</span>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column — Forms */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Step 1: Contact */}
+        <div className="pvg-checkout-grid">
+          <div className="pvg-checkout-main">
             <ContactSection
               isActive={currentStep === 'contact'}
               isComplete={isContactComplete}
@@ -205,7 +225,6 @@ export default function CheckoutPage() {
               isLoggedIn={!!user}
             />
 
-            {/* Step 2: Shipping */}
             <ShippingSection
               isActive={currentStep === 'shipping'}
               isComplete={isShippingComplete}
@@ -216,7 +235,6 @@ export default function CheckoutPage() {
               disabled={!isContactComplete}
             />
 
-            {/* Energization Fields (shown if applicable) */}
             {hasEnergizationItem && currentStep === 'payment' && (
               <EnergizationFieldsForm
                 value={energizationData}
@@ -224,24 +242,21 @@ export default function CheckoutPage() {
               />
             )}
 
-            {/* Special Instructions */}
             {currentStep === 'payment' && (
-              <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
-                <h3 className="font-heading text-base font-semibold text-[var(--pvg-primary)] mb-3">
-                  Special Instructions (Optional)
-                </h3>
+              <div className="pvg-checkout-step pvg-checkout-step--active">
+                <h3 className="pvg-checkout-step-title mb-3">Special instructions</h3>
+                <p className="pvg-checkout-hint mb-3">Optional — sizing notes, gifting, or delivery preferences.</p>
                 <textarea
                   value={specialInstructions}
                   onChange={(e) => setSpecialInstructions(e.target.value)}
-                  placeholder="Any special requests for your order..."
+                  placeholder="Any special requests for your order…"
                   maxLength={1000}
                   rows={3}
-                  className="w-full rounded-lg border border-[var(--pvg-border)] bg-brand-bg px-4 py-3 text-sm text-[var(--pvg-text)] placeholder:text-[var(--pvg-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--pvg-accent)] resize-none"
+                  className="pvg-checkout-input resize-none"
                 />
               </div>
             )}
 
-            {/* Step 3: Payment */}
             {currentStep === 'payment' && contactData && shippingData && (
               <>
                 <RewardPointsRedemption
@@ -269,82 +284,47 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Right Column — Order Summary */}
-          <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-24">
+          <aside>
+            <div className="lg:sticky pvg-sticky-below-header">
               <CheckoutOrderSummary
                 items={cart.items}
                 shippingMethod={shippingMethod}
                 rewardPointsToRedeem={rewardPointsToRedeem}
                 rewards={rewardInfo}
               />
-              <div className="mt-6">
-                <EmiCalculator amount={cart.subtotal} />
-              </div>
-              {/* Trust badges */}
-              <div className="mt-6 bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <ShieldCheck className="h-5 w-5 text-[var(--pvg-accent)]" />
-                  <span className="text-sm font-medium text-[var(--pvg-primary)]">
-                    Secure Payment Guaranteed
-                  </span>
+
+              <div className="pvg-checkout-trust">
+                <div className="pvg-checkout-trust-title">
+                  <ShieldCheck className="h-4 w-4 text-[#8a6400]" />
+                  Why shop with confidence
                 </div>
-                <div className="space-y-2.5 text-xs text-[var(--pvg-muted)]">
-                  <p>🔒 256-bit SSL encryption</p>
-                  <p>🏦 RBI authorized payment gateway</p>
-                  <p>📜 100% authentic certified gemstones</p>
-                  <p>🚚 Free insured shipping across India</p>
-                  <p>📞 24/7 WhatsApp support</p>
-                </div>
+                <ul className="pvg-checkout-trust-list">
+                  <li className="pvg-checkout-trust-item">
+                    <Lock />
+                    256-bit SSL encryption on every transaction
+                  </li>
+                  <li className="pvg-checkout-trust-item">
+                    <Landmark />
+                    RBI-authorised Razorpay payment gateway
+                  </li>
+                  <li className="pvg-checkout-trust-item">
+                    <Award />
+                    100% authentic, lab-certified gemstones
+                  </li>
+                  <li className="pvg-checkout-trust-item">
+                    <Truck />
+                    Insured shipping across India
+                  </li>
+                  <li className="pvg-checkout-trust-item">
+                    <MessageCircle />
+                    WhatsApp support for order updates
+                  </li>
+                </ul>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
-  );
-}
-
-// ─── Step Badge Component ───────────────────────────────────────────────────
-
-function StepBadge({
-  step,
-  label,
-  isActive,
-  isComplete,
-  onClick,
-  disabled,
-}: {
-  step: number;
-  label: string;
-  isActive: boolean;
-  isComplete: boolean;
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all
-        ${
-          isActive
-            ? 'bg-brand-accent text-white'
-            : isComplete
-              ? 'bg-brand-gold-light text-[var(--pvg-primary)] cursor-pointer hover:bg-brand-accent/20'
-              : 'bg-brand-bg-alt text-[var(--pvg-muted)]'
-        }
-        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-      `}
-    >
-      <span
-        className={`flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold
-          ${isActive ? 'bg-white/20' : isComplete ? 'bg-green-100 text-green-700' : 'bg-brand-border'}
-        `}
-      >
-        {isComplete ? '✓' : step}
-      </span>
-      <span className="hidden sm:inline">{label}</span>
-    </button>
   );
 }

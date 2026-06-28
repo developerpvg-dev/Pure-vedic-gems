@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import { Client } from 'pg';
 import pgTypes from 'pg';
+import { isQuoteOnlyPriceMode, resolveLegacyAvailabilityStatus } from '../lib/transform/pricing.js';
 import { parseRunMode } from '../lib/supabase.js';
 import { RUDRAKSHA_RICH_GUIDES } from '../../../src/lib/constants/rudraksha-rich-content.js';
 
@@ -172,8 +173,11 @@ function stockStatus(value: string | null | undefined): 'in_stock' | 'out_of_sto
 }
 
 function availability(row: StagedProduct, normalisedStock: string) {
-  if (row.price_mode === 'on_demand' || row.price_mode === 'quote_required' || !row.price || row.price <= 0) return 'on_demand';
-  return normalisedStock === 'in_stock' ? 'in_stock' : 'out_of_stock';
+  return resolveLegacyAvailabilityStatus({
+    priceMode: row.price_mode ?? 'fixed',
+    inStock: normalisedStock === 'in_stock',
+    stockStatus: normalisedStock,
+  });
 }
 
 function certificateEnabled(row: StagedProduct) {
@@ -218,7 +222,7 @@ async function upsertGemstone(client: Client, row: StagedProduct, subCategoryId:
   const warnings = Array.isArray(row.warnings) ? [...row.warnings] : [];
   if (images.length === 0) warnings.push('media: no uploaded images resolved');
   const normalisedStock = stockStatus(row.stock_status);
-  const isOnRequest = row.price_mode === 'on_demand' || row.price_mode === 'quote_required' || !row.price || row.price <= 0;
+  const isOnRequest = isQuoteOnlyPriceMode(row.price_mode);
 
   const upsert = await client.query(
     `INSERT INTO public.products (
@@ -353,7 +357,7 @@ async function upsertRudraksha(client: Client, row: StagedProduct, subCategoryId
   if (images.length === 0) warnings.push('media: no uploaded images resolved');
   const guide = rudrakshaGuide(row.mukhi_count);
   const normalisedStock = stockStatus(row.stock_status);
-  const isOnDemand = row.price_mode === 'on_demand' || row.price_mode === 'quote_required';
+  const isOnDemand = isQuoteOnlyPriceMode(row.price_mode);
   const productType = row.product_type ?? 'rudraksha';
 
   const upsert = await client.query(

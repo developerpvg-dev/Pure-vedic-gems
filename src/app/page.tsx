@@ -42,7 +42,6 @@ export default async function HomePage() {
 
   return (
     <div className="pvg-react-home-root">
-      <div className="pvg-header-spacer" aria-hidden="true" />
       <PvgHeroSection />
       <PvgReferenceSections
         navaratnaSection={<NavaratnaHomeSection categories={categories.navaratna} />}

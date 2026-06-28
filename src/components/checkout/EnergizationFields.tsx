@@ -28,11 +28,9 @@ export function EnergizationFieldsForm({ value, onChange }: EnergizationFieldsFo
   };
 
   return (
-    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-accent)]/30 p-6">
-      <h3 className="font-heading text-base font-semibold text-[var(--pvg-primary)] mb-1">
-        🔱 Energization & Puja
-      </h3>
-      <p className="text-xs text-[var(--pvg-muted)] mb-4">
+    <div className="pvg-checkout-step pvg-checkout-step--active border-[rgba(138,100,0,0.22)]">
+      <h3 className="pvg-checkout-step-title mb-1">Energization &amp; puja</h3>
+      <p className="pvg-checkout-hint mb-4">
         Your cart contains items that can be energized with Vedic ceremonies. Fill in these
         details so our priests can perform the puja in your name.
       </p>

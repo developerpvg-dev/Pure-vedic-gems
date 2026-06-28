@@ -11,6 +11,7 @@ import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
 import type { ConfiguratorState } from '@/lib/types/configurator';
+import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
 import { isConfiguratorStepSkipped } from '@/lib/utils/configurator-steps';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
 
@@ -19,6 +20,7 @@ interface StepSidebarProps {
   canGoToStep: (step: number) => boolean;
   onStepClick: (step: number) => void;
   startStep?: number;
+  optionRules?: ConfiguratorOptionRules | null;
   /** When true renders a vertical sidebar list (desktop left column) */
   vertical?: boolean;
 }
@@ -53,25 +55,34 @@ function getStepValue(step: number, state: ConfiguratorState): string | null {
   }
 }
 
-function isStepSkipped(step: number, state: ConfiguratorState): boolean {
-  return isConfiguratorStepSkipped(step, state);
+function isStepSkipped(
+  step: number,
+  state: ConfiguratorState,
+  optionRules?: ConfiguratorOptionRules | null
+): boolean {
+  return isConfiguratorStepSkipped(step, state, optionRules);
 }
 
-function getVisibleSteps(startStep: number, state: ConfiguratorState) {
+function getVisibleSteps(
+  startStep: number,
+  state: ConfiguratorState,
+  optionRules?: ConfiguratorOptionRules | null
+) {
   return CONFIGURATOR_STEPS.filter(
-    (step) => step.id >= startStep && !isStepSkipped(step.id, state)
+    (step) => step.id >= startStep && !isStepSkipped(step.id, state, optionRules)
   );
 }
 
 function getDisplayStepNum(
   stepId: number,
   startStep: number,
-  state: ConfiguratorState
+  state: ConfiguratorState,
+  optionRules?: ConfiguratorOptionRules | null
 ) {
   let count = 0;
 
   for (let step = startStep; step <= stepId; step += 1) {
-    if (!isStepSkipped(step, state)) {
+    if (!isStepSkipped(step, state, optionRules)) {
       count += 1;
     }
   }
@@ -84,9 +95,10 @@ export default function StepSidebar({
   canGoToStep,
   onStepClick,
   startStep = 1,
+  optionRules = null,
   vertical = false,
 }: StepSidebarProps) {
-  const visibleSteps = getVisibleSteps(startStep, state);
+  const visibleSteps = getVisibleSteps(startStep, state, optionRules);
 
   // ── Vertical sidebar (desktop left panel) ────────────────────────────────
   if (vertical) {
@@ -98,7 +110,7 @@ export default function StepSidebar({
           const isCompleted = step.id < state.current_step;
           const value = getStepValue(step.id, state);
           const canClick = canGoToStep(step.id) && !isCurrent;
-          const displayStepNum = getDisplayStepNum(step.id, startStep, state);
+          const displayStepNum = getDisplayStepNum(step.id, startStep, state, optionRules);
 
           return (
             <div key={step.id} className="flex gap-3">
@@ -158,7 +170,7 @@ export default function StepSidebar({
       <nav className="hidden lg:flex items-center flex-wrap gap-0.5" aria-label="Configurator steps">
         {visibleSteps.map((step, idx) => {
           const isLast = idx === visibleSteps.length - 1;
-          const displayStepNum = getDisplayStepNum(step.id, startStep, state);
+          const displayStepNum = getDisplayStepNum(step.id, startStep, state, optionRules);
           const isCurrent = state.current_step === step.id;
           const isCompleted = step.id < state.current_step;
           const value = getStepValue(step.id, state);
@@ -194,7 +206,7 @@ export default function StepSidebar({
                 <div className="min-w-0">
                   <p
                     className={cn(
-                      'text-[11px] font-semibold leading-tight font-heading truncate max-w-19',
+                      'text-[11px] font-semibold leading-tight truncate max-w-19',
                       isCurrent ? 'text-primary' : 'text-muted-foreground'
                     )}
                   >

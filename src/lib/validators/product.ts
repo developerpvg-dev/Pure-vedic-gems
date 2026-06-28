@@ -157,8 +157,8 @@ export const productFiltersSchema = z
     q: optionalString(200),
     featured: optionalFilterBoolean,
     directors_pick: optionalFilterBoolean,
-    sort_by: z.enum(SORT_BY).optional().default('newest'),
-    sort_order: z.enum(SORT_ORDER).optional().default('desc'),
+    sort_by: z.enum(SORT_BY).optional().default('catalog'),
+    sort_order: z.enum(SORT_ORDER).optional().default('asc'),
     page: z.coerce.number().int().min(1).optional().default(1),
     per_page: z.coerce.number().int().min(1).max(50).optional().default(20),
   })

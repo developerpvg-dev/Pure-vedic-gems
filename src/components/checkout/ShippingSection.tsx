@@ -131,25 +131,18 @@ export function ShippingSection({
   // ── Collapsed/complete view ──────────────────────────────────────────
   if (!isActive && isComplete && savedData) {
     return (
-      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">
-              ✓
-            </span>
-            <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
-              Shipping Address
-            </h2>
+      <div className="pvg-checkout-step pvg-checkout-step--complete">
+        <div className="pvg-checkout-step-head pvg-checkout-step-head--tight">
+          <div className="pvg-checkout-step-title-row">
+            <span className="pvg-checkout-step-badge">✓</span>
+            <h2 className="pvg-checkout-step-title">Shipping address</h2>
           </div>
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1 text-sm text-[var(--pvg-accent)] hover:underline"
-          >
+          <button type="button" onClick={onEdit} className="pvg-checkout-step-edit">
             <Pencil className="h-3.5 w-3.5" />
             Edit
           </button>
         </div>
-        <div className="text-sm text-[var(--pvg-muted)] space-y-1 ml-8">
+        <div className="pvg-checkout-step-summary">
           <p>{savedData.line1}{savedData.line2 ? `, ${savedData.line2}` : ''}</p>
           <p>{savedData.city}, {savedData.state} - {savedData.pincode}</p>
           <p className="text-xs">
@@ -163,14 +156,10 @@ export function ShippingSection({
   // ── Disabled view ────────────────────────────────────────────────────
   if (!isActive || disabled) {
     return (
-      <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6 opacity-50">
-        <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-bg-alt text-[var(--pvg-muted)] text-xs font-bold">
-            2
-          </span>
-          <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
-            Shipping Address
-          </h2>
+      <div className="pvg-checkout-step pvg-checkout-step--disabled">
+        <div className="pvg-checkout-step-title-row">
+          <span className="pvg-checkout-step-badge">2</span>
+          <h2 className="pvg-checkout-step-title">Shipping address</h2>
         </div>
       </div>
     );
@@ -178,14 +167,12 @@ export function ShippingSection({
 
   // ── Active form ──────────────────────────────────────────────────────
   return (
-    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-accent text-white text-xs font-bold">
-          2
-        </span>
-        <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)]">
-          Shipping Address
-        </h2>
+    <div className="pvg-checkout-step pvg-checkout-step--active">
+      <div className="pvg-checkout-step-head">
+        <div className="pvg-checkout-step-title-row">
+          <span className="pvg-checkout-step-badge">2</span>
+          <h2 className="pvg-checkout-step-title">Shipping address</h2>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -335,10 +322,7 @@ export function ShippingSection({
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-brand-primary text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-        >
+        <button type="submit" className="pvg-checkout-btn pvg-checkout-btn--primary">
           Continue to Payment
           <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
         </button>

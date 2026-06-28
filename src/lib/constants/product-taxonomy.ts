@@ -35,7 +35,7 @@ export const CATALOG_FAMILIES = [
   'uncategorized',
 ] as const;
 
-export const SORT_BY = ['price', 'carat', 'newest'] as const;
+export const SORT_BY = ['catalog', 'price', 'carat', 'newest'] as const;
 export const SORT_ORDER = ['asc', 'desc'] as const;
 
 export const PLANETS = [

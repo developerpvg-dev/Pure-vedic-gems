@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 import type { Product, ProductCard } from '@/lib/types/product';
+import {
+  productOfferAvailability,
+  productStructuredOfferPrice,
+} from '@/lib/shop/product-pricing';
 
 export type JsonLd = Record<string, unknown>;
 
@@ -148,17 +152,18 @@ export function faqJsonLd(faqs: Array<{ question: string; answer: string }>): Js
 }
 
 export function productJsonLd(product: Product | ProductCard, path: string): JsonLd {
-  const isOnRequest =
-    product.price_mode === 'on_demand' ||
-    product.price_mode === 'quote_required' ||
-    !product.price ||
-    product.price <= 0;
-  const availability = isOnRequest
-    ? 'https://schema.org/LimitedAvailability'
-    : product.in_stock === false || product.availability_status === 'out_of_stock'
-      ? 'https://schema.org/OutOfStock'
-      : 'https://schema.org/InStock';
-  const hasStructuredPrice = typeof product.price === 'number' && (product.price > 0 || product.price_mode === 'free');
+  const pricing = {
+    price: product.price,
+    price_per_carat: product.price_per_carat,
+    carat_weight: product.carat_weight,
+    price_mode: product.price_mode,
+    in_stock: product.in_stock,
+    stock_quantity: product.stock_quantity,
+    availability_status: product.availability_status,
+    sold_individually: product.sold_individually,
+  };
+  const availability = productOfferAvailability(pricing);
+  const structuredPrice = productStructuredOfferPrice(pricing);
 
   return {
     '@context': 'https://schema.org',
@@ -170,16 +175,14 @@ export function productJsonLd(product: Product | ProductCard, path: string): Jso
     category: product.category,
     description: productDescription(product),
     url: absoluteUrl(path),
-    offers: typeof product.price === 'number'
-      ? {
-          '@type': 'Offer',
-          url: absoluteUrl(path),
-          priceCurrency: (product as Product).currency || 'INR',
-          price: hasStructuredPrice ? product.price : undefined,
-          availability,
-          itemCondition: 'https://schema.org/NewCondition',
-        }
-      : undefined,
+    offers: {
+      '@type': 'Offer',
+      url: absoluteUrl(path),
+      priceCurrency: (product as Product).currency || 'INR',
+      price: structuredPrice,
+      availability,
+      itemCondition: 'https://schema.org/NewCondition',
+    },
   };
 }
 

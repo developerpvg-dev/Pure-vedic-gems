@@ -118,6 +118,19 @@ export function getStoneAddonFromDesign(design: {
   return { label, amount };
 }
 
+/** Customer-facing note when a design has a qualitative pricing remark (e.g. Design-34). */
+export function getDesignConfiguratorNote(design: {
+  description?: string | null;
+}): string | null {
+  const text = design.description?.trim();
+  if (!text || !/remark/i.test(text)) return null;
+
+  const afterRemark = text.split(/remark[:\s]*/i)[1]?.trim();
+  if (afterRemark) return afterRemark.charAt(0).toUpperCase() + afterRemark.slice(1);
+
+  return text.replace(/^[^:]+:\s*/i, '').trim() || text;
+}
+
 export function resolveStoneAddonLabelForSave(
   label: string | null | undefined,
   amount: number | null | undefined

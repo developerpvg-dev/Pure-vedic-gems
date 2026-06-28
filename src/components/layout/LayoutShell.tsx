@@ -6,15 +6,44 @@ import { SiteHeader } from './SiteHeader';
 import { Footer } from './Footer';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 
+/** Routes that already reserve space below the fixed header in their own layout */
+function pageHasBuiltInHeaderOffset(pathname: string): boolean {
+  const exact = new Set([
+    '/track-order',
+    '/contact',
+    '/feedback',
+    '/testimonials',
+    '/videos',
+    '/events-and-seminars',
+    '/lab-certificate',
+    '/consultation',
+  ]);
+
+  if (exact.has(pathname)) return true;
+
+  const prefixes = [
+    '/shop',
+    '/tools/',
+    '/about/experts',
+    '/about/stores',
+    '/knowledge',
+    '/blog',
+    '/account',
+    '/policies',
+  ];
+
+  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
   const isHome = pathname === '/';
+  const showHeaderSpacer = !isAdmin && !pageHasBuiltInHeaderOffset(pathname);
   const usesReferenceTheme = [
     '/policies',
     '/account',
     '/consultation',
-    '/configure',
     '/tools',
     '/blog',
     '/about',
@@ -42,6 +71,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SiteHeader />
+      {showHeaderSpacer ? <div className="pvg-header-spacer" aria-hidden="true" /> : null}
       <main className={shellClassName}>{children}</main>
       <StickyContactRail />
       <Footer />

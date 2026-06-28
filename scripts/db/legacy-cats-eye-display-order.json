@@ -1,0 +1,327 @@
+[
+  {
+    "legacy_woo_id": 4357,
+    "display_order": 0,
+    "title": "Catseye 9.57ct.@12600 per. ct. (Luxury)"
+  },
+  {
+    "legacy_woo_id": 10731,
+    "display_order": 1,
+    "title": "Catseye 7.60 ct.@150 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 10735,
+    "display_order": 2,
+    "title": "Catseye 7.81ct.@150 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 10741,
+    "display_order": 3,
+    "title": "Catseye 6.65ct.@150 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 10747,
+    "display_order": 4,
+    "title": "Catseye 7.45ct.@200 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 10769,
+    "display_order": 5,
+    "title": "Catseye 5.85 ct.@200 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 10810,
+    "display_order": 6,
+    "title": "Catseye 7.19 ct. @150 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 18531,
+    "display_order": 7,
+    "title": "Catseye 3.07ct.@1550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18533,
+    "display_order": 8,
+    "title": "Catseye 4.11ct.@1150 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18535,
+    "display_order": 9,
+    "title": "Catseye 4.66ct.@1150 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18537,
+    "display_order": 10,
+    "title": "Catseye 4.87ct.@1550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18543,
+    "display_order": 11,
+    "title": "Catseye 5.97ct.@200 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 18551,
+    "display_order": 12,
+    "title": "Catseye 9.60ct.@1550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18553,
+    "display_order": 13,
+    "title": "Catseye 10.55ct.@1550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18555,
+    "display_order": 14,
+    "title": "Catseye 2.85ct.@300 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 18562,
+    "display_order": 15,
+    "title": "Catseye 3.60ct.@1150 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 18564,
+    "display_order": 16,
+    "title": "Catseye 3.67ct.@1550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 20676,
+    "display_order": 17,
+    "title": "Catseye 3.57ct.@550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 20678,
+    "display_order": 18,
+    "title": "Catseye 4.00ct.@550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 20682,
+    "display_order": 19,
+    "title": "Catseye 5.75ct.@550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 20693,
+    "display_order": 20,
+    "title": "Catseye 4.19ct.@550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 20695,
+    "display_order": 21,
+    "title": "Catseye 5.41ct.@550 per. ct. (Premium)"
+  },
+  {
+    "legacy_woo_id": 20699,
+    "display_order": 22,
+    "title": "Catseye 3.41ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20704,
+    "display_order": 23,
+    "title": "Catseye 10.89ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20709,
+    "display_order": 24,
+    "title": "Catseye 7.27ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20711,
+    "display_order": 25,
+    "title": "Catseye 3.45ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20713,
+    "display_order": 26,
+    "title": "Catseye 17.08ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20715,
+    "display_order": 27,
+    "title": "Catseye 14.54ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20717,
+    "display_order": 28,
+    "title": "Catseye 6.92ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20721,
+    "display_order": 29,
+    "title": "Catseye 7.31ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20723,
+    "display_order": 30,
+    "title": "Catseye 4.45ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20725,
+    "display_order": 31,
+    "title": "Catseye 12.80ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20727,
+    "display_order": 32,
+    "title": "Catseye 4.70ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20729,
+    "display_order": 33,
+    "title": "Catseye 3.24ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20733,
+    "display_order": 34,
+    "title": "Catseye 5.89ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20735,
+    "display_order": 35,
+    "title": "Catseye 4.52ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20737,
+    "display_order": 36,
+    "title": "Catseye 11.54ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20740,
+    "display_order": 37,
+    "title": "Catseye 20.00ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20742,
+    "display_order": 38,
+    "title": "Catseye 4.60ct.@400 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20745,
+    "display_order": 39,
+    "title": "Catseye 5.22ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20747,
+    "display_order": 40,
+    "title": "Catseye 9.21ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20749,
+    "display_order": 41,
+    "title": "Catseye 10.79ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 20751,
+    "display_order": 42,
+    "title": "Catseye 6.07ct.@500 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21614,
+    "display_order": 43,
+    "title": "Catseye 1.28ct.@2100 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21618,
+    "display_order": 44,
+    "title": "Catseye 2.40ct.@2600 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21620,
+    "display_order": 45,
+    "title": "Catseye 6.57ct.@2300 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21622,
+    "display_order": 46,
+    "title": "Catseye 2.06ct.@2100 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21627,
+    "display_order": 47,
+    "title": "Catseye 1.33ct.@2100 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21629,
+    "display_order": 48,
+    "title": "Catseye 3.09ct.@2600 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 21631,
+    "display_order": 49,
+    "title": "Catseye 7.65ct.@2300 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 23159,
+    "display_order": 50,
+    "title": "Catseye 4.02ct.@14450 per. ct. (Luxury)"
+  },
+  {
+    "legacy_woo_id": 25269,
+    "display_order": 51,
+    "title": "Catseye 7.69ct.@450 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 25270,
+    "display_order": 52,
+    "title": "Catseye 7.12ct.@450 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 30323,
+    "display_order": 53,
+    "title": "Catseye 2.64ct.@20510 per. ct. (Super Luxury)"
+  },
+  {
+    "legacy_woo_id": 31411,
+    "display_order": 54,
+    "title": "Catseye 7.16ct.@300 per. ct. (Economy)"
+  },
+  {
+    "legacy_woo_id": 33508,
+    "display_order": 55,
+    "title": "Catseye 4.00ct.@20602 per. ct. (Super Luxury)"
+  },
+  {
+    "legacy_woo_id": 35601,
+    "display_order": 56,
+    "title": "Catseye 5.20ct.@19565 per. ct. (Super Luxury)"
+  },
+  {
+    "legacy_woo_id": 37851,
+    "display_order": 57,
+    "title": "Catseye 2.93ct.@7555 per. ct. (Luxury)"
+  },
+  {
+    "legacy_woo_id": 37854,
+    "display_order": 58,
+    "title": "Catseye 2.69ct.@5667 per. ct. (Luxury)"
+  },
+  {
+    "legacy_woo_id": 37857,
+    "display_order": 59,
+    "title": "Catseye 3.35ct.@6716 per. ct.(Luxury)"
+  },
+  {
+    "legacy_woo_id": 37860,
+    "display_order": 60,
+    "title": "Catseye 4.07ct.@5617 per. ct. (Super Premium)"
+  },
+  {
+    "legacy_woo_id": 37863,
+    "display_order": 61,
+    "title": "Catseye 5.59ct.@5676 per. ct. (Super Premium)"
+  },
+  {
+    "legacy_woo_id": 37866,
+    "display_order": 62,
+    "title": "Catseye 4.20ct.@5667 per. ct. (Super Premium)"
+  },
+  {
+    "legacy_woo_id": 37869,
+    "display_order": 63,
+    "title": "Catseye 4.27ct.@14944 per. ct. (Luxury)"
+  },
+  {
+    "legacy_woo_id": 37874,
+    "display_order": 64,
+    "title": "Catseye 6.83ct.@16996 per. ct. (Super Luxury)"
+  }
+]

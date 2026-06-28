@@ -27,7 +27,9 @@ export type NavratnaSubcategory =
   | 'hessonite'
   | 'cats-eye'
   | 'white-sapphire'
-  | 'diamond';
+  | 'diamond'
+  | 'pitambari'
+  | 'exclusive-gems';
 
 export interface NavratnaCategoryMap {
   /** Canonical sub-category slug to write into `products.sub_category`. */
@@ -69,6 +71,8 @@ const LEGACY_NAVRATNA_TERM_MAP: Record<string, NavratnaCategoryMap> = {
   'cat-eye': { subCategory: 'cats-eye', label: "Cat's Eye (Lehsunia)", planet: 'Ketu' },
 
   'white-sapphire': { subCategory: 'white-sapphire', label: 'White Sapphire (Shvet Pukhraj)', planet: 'Venus' },
+
+  pitambari: { subCategory: 'pitambari', label: 'Pitambari', planet: 'Jupiter & Saturn' },
 };
 
 /**
@@ -157,20 +161,12 @@ export function classifyNavratna(args: {
 
   if (hasExclusive) {
     const fallback = TITLE_FALLBACK_PATTERNS.find(([re]) => re.test(args.productTitle));
-    if (fallback) {
-      const [, subCategory, label, planet] = fallback;
-      return {
-        include: true,
-        subCategory,
-        label,
-        planet,
-        qualityLabel: 'Exclusive',
-        legacyPath,
-      };
-    }
     return {
-      include: false,
-      reason: 'exclusive-gems-only-and-title-unresolved',
+      include: true,
+      subCategory: 'exclusive-gems',
+      label: 'Exclusive Gems',
+      planet: fallback?.[3],
+      qualityLabel: 'Exclusive',
       legacyPath,
     };
   }

@@ -304,34 +304,27 @@ export function PaymentSection({
   };
 
   return (
-    <div className="bg-brand-surface rounded-xl border border-brand-border p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-brand-accent text-white text-xs font-bold">
-          3
-        </span>
-        <h2 className="font-heading text-lg font-semibold text-brand-primary">
-          Payment
-        </h2>
+    <div className="pvg-checkout-step pvg-checkout-step--active">
+      <div className="pvg-checkout-step-head">
+        <div className="pvg-checkout-step-title-row">
+          <span className="pvg-checkout-step-badge">3</span>
+          <h2 className="pvg-checkout-step-title">Payment</h2>
+        </div>
       </div>
 
-      {/* Payment info */}
-      <div className="mb-6 p-4 rounded-lg bg-brand-bg border border-brand-border">
+      <div className="pvg-checkout-panel mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <CreditCard className="h-4 w-4 text-brand-accent" />
-          <span className="text-sm font-medium text-brand-primary">
-            Razorpay Secure Payment
-          </span>
+          <CreditCard className="h-4 w-4 text-[#8a6400]" />
+          <span className="text-sm font-semibold text-[#3d2b1f]">Razorpay secure payment</span>
         </div>
-        <p className="text-xs text-brand-muted mb-3">
-          You&apos;ll be redirected to Razorpay&apos;s secure checkout to complete your payment.
-          Your card details never touch our servers.
+        <p className="pvg-checkout-hint mb-3">
+          Complete payment in Razorpay&apos;s window — card and UPI details never touch our servers.
         </p>
-        <div className="flex flex-wrap gap-2 text-xs text-brand-muted">
-          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">UPI</span>
-          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">Credit Card</span>
-          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">Debit Card</span>
-          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">Net Banking</span>
-          <span className="px-2 py-1 bg-brand-surface rounded border border-brand-border">EMI</span>
+        <div className="pvg-checkout-pay-methods">
+          <span className="pvg-checkout-pay-tag">UPI</span>
+          <span className="pvg-checkout-pay-tag">Credit card</span>
+          <span className="pvg-checkout-pay-tag">Debit card</span>
+          <span className="pvg-checkout-pay-tag">Net banking</span>
         </div>
       </div>
 
@@ -342,7 +335,7 @@ export function PaymentSection({
         </div>
       )}
 
-      <div className="mb-4 space-y-3 rounded-lg border border-brand-border bg-brand-bg p-4 text-xs text-brand-muted">
+      <div className="pvg-checkout-panel mb-4 space-y-3 text-xs text-[#7a6250]">
         <label className="flex gap-3">
           <input
             type="checkbox"
@@ -390,13 +383,10 @@ export function PaymentSection({
 
       {/* Pay button */}
       <button
+        type="button"
         onClick={handlePayNow}
         disabled={isProcessing || !termsAccepted || !returnsAccepted}
-        className={`w-full py-4 rounded-lg font-semibold text-base flex items-center justify-center gap-2 transition-all ${
-          isProcessing || !termsAccepted || !returnsAccepted
-            ? 'bg-brand-muted text-white cursor-wait'
-            : 'bg-brand-accent text-white hover:brightness-105 hover:shadow-lg'
-        }`}
+        className="pvg-checkout-btn pvg-checkout-btn--accent py-4 text-base"
       >
         {isProcessing ? (
           <>
@@ -411,7 +401,7 @@ export function PaymentSection({
         )}
       </button>
 
-      <p className="text-center text-xs text-brand-muted mt-3">
+      <p className="pvg-checkout-footnote mt-3">
         Payment and tax totals are verified on our server before Razorpay opens.
       </p>
     </div>

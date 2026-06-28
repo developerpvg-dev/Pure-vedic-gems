@@ -191,13 +191,29 @@ export function isMetalAllowed(rules: ConfiguratorOptionRules | null, metal: str
 export function isCertificationAllowed(rules: ConfiguratorOptionRules | null, certificationId: string | null | undefined) {
   const resolvedRules = rules ?? DEFAULT_CONFIGURATOR_RULES;
   if (!resolvedRules.certificate_enabled) return false;
-  return isAllowedByList(certificationId, resolvedRules.allowed_certification_lab_ids);
+  if (!certificationId) return false;
+  const allowed = resolvedRules.allowed_certification_lab_ids;
+  if (allowed.length === 0) return false;
+  return allowed.includes(certificationId);
+}
+
+export function isCertificationStepAvailable(rules: ConfiguratorOptionRules | null) {
+  const resolvedRules = rules ?? DEFAULT_CONFIGURATOR_RULES;
+  return resolvedRules.certificate_enabled && resolvedRules.allowed_certification_lab_ids.length > 0;
 }
 
 export function isEnergizationAllowed(rules: ConfiguratorOptionRules | null, energizationId: string | null | undefined) {
   const resolvedRules = rules ?? DEFAULT_CONFIGURATOR_RULES;
   if (!resolvedRules.energization_enabled) return false;
-  return isAllowedByList(energizationId, resolvedRules.allowed_energization_option_ids);
+  if (!energizationId) return false;
+  const allowed = resolvedRules.allowed_energization_option_ids;
+  if (allowed.length === 0) return false;
+  return allowed.includes(energizationId);
+}
+
+export function isEnergizationStepAvailable(rules: ConfiguratorOptionRules | null) {
+  const resolvedRules = rules ?? DEFAULT_CONFIGURATOR_RULES;
+  return resolvedRules.energization_enabled && resolvedRules.allowed_energization_option_ids.length > 0;
 }
 
 export function getAllowedRingSizeSystems(rules: ConfiguratorOptionRules | null) {

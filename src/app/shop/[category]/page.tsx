@@ -6,6 +6,7 @@ import { productHref } from '@/lib/categories/storefront';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
+import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
@@ -48,7 +49,7 @@ export async function generateMetadata({
   const meta = await resolveCategory(category);
   if (!meta) return {};
   return buildMetadata({
-    title: meta.seoLanding?.seoTitle ?? `${meta.label} | PureVedicGems`,
+    title: meta.seoLanding?.seoTitle ?? meta.seoTitle ?? `${meta.label} | PureVedicGems`,
     description: meta.desc,
     path: meta.canonicalPath ?? `/shop/${category}`,
   });
@@ -102,6 +103,11 @@ async function CategoryProducts({
     if (filters.featured) query = query.eq('featured', true);
     if (filters.product_type) query = query.eq('product_type', filters.product_type);
     query = applyShopAvailabilityFilter(query, filters);
+    query = applyQuoteOnlyListingFilter(
+      query,
+      meta?.category ?? filters.category,
+      meta?.sub_category ?? filters.sub_category,
+    );
 
     // Additional user-applied filters
     if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);

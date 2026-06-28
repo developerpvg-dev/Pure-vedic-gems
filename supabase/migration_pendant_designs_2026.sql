@@ -245,16 +245,16 @@ WHERE NOT EXISTS (SELECT 1 FROM jewelry_designs WHERE name = 'Design-17' AND set
 
 UPDATE jewelry_designs SET
   image_url = '/pendant-designs/design-18.jpeg',
-  description = '18K Gold: +8000 Diamods Cost',
+  description = '18K Gold: +8000 Diamonds Cost',
   making_charges = '{}'::jsonb,
   estimated_metal_weight = '{"gold_14k":8,"gold_18k":8,"platinum":7.5}'::jsonb,
-  diamond_charges = '{}'::jsonb,
+  diamond_charges = '{"gold_18k":8000}'::jsonb,
   sort_order = 18,
   is_active = true
 WHERE name = 'Design-18' AND setting_type = 'pendant';
 
 INSERT INTO jewelry_designs (name, setting_type, image_url, description, making_charges, estimated_metal_weight, diamond_charges, sort_order, is_active)
-SELECT 'Design-18', 'pendant', '/pendant-designs/design-18.jpeg', '18K Gold: +8000 Diamods Cost', '{}'::jsonb, '{"gold_14k":8,"gold_18k":8,"platinum":7.5}'::jsonb, '{}'::jsonb, 18, true
+SELECT 'Design-18', 'pendant', '/pendant-designs/design-18.jpeg', '18K Gold: +8000 Diamonds Cost', '{}'::jsonb, '{"gold_14k":8,"gold_18k":8,"platinum":7.5}'::jsonb, '{"gold_18k":8000}'::jsonb, 18, true
 WHERE NOT EXISTS (SELECT 1 FROM jewelry_designs WHERE name = 'Design-18' AND setting_type = 'pendant');
 
 UPDATE jewelry_designs SET

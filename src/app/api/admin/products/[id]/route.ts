@@ -121,7 +121,18 @@ export async function GET(
     return NextResponse.json({ error: 'Product not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ product });
+  const { data: optionRules } = await admin
+    .from('product_option_rules')
+    .select('*')
+    .eq('product_id', id)
+    .maybeSingle();
+
+  return NextResponse.json({
+    product: {
+      ...product,
+      option_rules: optionRules ?? null,
+    },
+  });
 }
 
 // ── PUT: update product ─────────────────────────────────────────────

@@ -12,8 +12,9 @@ import type {
   ConfigPricingBreakdown,
   GoldRateData,
 } from '@/lib/types/configurator';
-import { calculateJewelryDesignPricing } from '@/lib/utils/jewelry-pricing';
-import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
+import { resolveProductDisplayPrice } from '@/lib/shop/product-pricing';
+import { getDesignConfiguratorNote, getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
+import { calculateJewelryDesignPricing, getDesignWideDiamondCharge } from '@/lib/utils/jewelry-pricing';
 import {
   resolveLaborRatesForJewelry,
   type JewelrySettingMetalProfiles,
@@ -30,6 +31,7 @@ const EMPTY_PRICING: ConfigPricingBreakdown = {
   making_charge: 0,
   diamond_charge: 0,
   stone_addon_label: null,
+  design_note: null,
   metal_price: 0,
   metal_weight_grams: 0,
   gold_rate_per_gram: 0,
@@ -72,6 +74,41 @@ function cloneConfiguratorState(state: ConfiguratorState): ConfiguratorState {
   });
 }
 
+/** Drop selections that no longer match the current setting (e.g. pendant design + ring setting). */
+export function sanitizeConfiguratorSelections(
+  state: ConfiguratorState
+): ConfiguratorState {
+  const next = cloneConfiguratorState(state);
+
+  if (
+    next.selected_design &&
+    next.setting_type &&
+    next.selected_design.setting_type !== next.setting_type
+  ) {
+    next.selected_design = null;
+  }
+
+  if (next.setting_type === 'loose') {
+    next.selected_design = null;
+    next.custom_design_url = null;
+    next.metal = null;
+    next.ring_size = null;
+    next.chain_length = null;
+  } else {
+    if (next.setting_type !== 'ring') next.ring_size = null;
+    if (next.setting_type !== 'pendant') next.chain_length = null;
+  }
+
+  return next;
+}
+
+export function isDesignCompatibleWithSetting(
+  state: ConfiguratorState
+): boolean {
+  if (!state.selected_design || !state.setting_type) return true;
+  return state.selected_design.setting_type === state.setting_type;
+}
+
 function mergeHydratedState(
   saved: ConfiguratorState,
   initialState: ConfiguratorState
@@ -79,20 +116,22 @@ function mergeHydratedState(
   const selectedProductId = initialState.selected_product?.id;
 
   if (!selectedProductId) {
-    return cloneConfiguratorState(saved);
+    return sanitizeConfiguratorSelections(cloneConfiguratorState(saved));
   }
 
   if (saved.selected_product?.id && saved.selected_product.id !== selectedProductId) {
     return cloneConfiguratorState(initialState);
   }
 
-  return createConfiguratorState({
-    ...saved,
-    current_step: Math.max(initialState.current_step, saved.current_step),
-    gem_category: initialState.gem_category,
-    selected_product: initialState.selected_product,
-    pricing: { ...saved.pricing },
-  });
+  return sanitizeConfiguratorSelections(
+    createConfiguratorState({
+      ...saved,
+      current_step: Math.max(initialState.current_step, saved.current_step),
+      gem_category: initialState.gem_category,
+      selected_product: initialState.selected_product,
+      pricing: { ...saved.pricing },
+    })
+  );
 }
 
 interface UseConfiguratorOptions {
@@ -137,7 +176,9 @@ function recalcPricing(
   ratesBySlug?: Record<string, number> | null,
   settingProfiles?: JewelrySettingMetalProfiles | null
 ): ConfigPricingBreakdown {
-  const gemPrice = state.selected_product?.price ?? 0;
+  const gemPrice = state.selected_product
+    ? resolveProductDisplayPrice(state.selected_product) ?? 0
+    : 0;
 
   let makingCharge = 0;
   let diamondCharge = 0;
@@ -147,6 +188,13 @@ function recalcPricing(
   let laborRatePercent = 0;
   let jewelryPricingMode: 'weight' | 'fixed' | null = null;
   let stoneAddonLabel: string | null = null;
+  let designNote: string | null = null;
+
+  if (state.selected_design) {
+    diamondCharge = getDesignWideDiamondCharge(state.selected_design.diamond_charges);
+    stoneAddonLabel = getStoneAddonLabelFromDesign(state.selected_design);
+    designNote = getDesignConfiguratorNote(state.selected_design);
+  }
 
   if (state.selected_design && state.metal && goldRate) {
     goldRatePerGram = resolveMetalRatePerGram(state.metal, goldRate, ratesBySlug);
@@ -194,6 +242,7 @@ function recalcPricing(
     making_charge: makingCharge,
     diamond_charge: diamondCharge,
     stone_addon_label: stoneAddonLabel,
+    design_note: designNote,
     metal_price: metalPrice,
     metal_weight_grams: metalWeightGrams,
     gold_rate_per_gram: goldRatePerGram,
@@ -321,7 +370,7 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
         return cloneConfiguratorState(initialState);
 
       case 'HYDRATE':
-        return cloneConfiguratorState(action.payload);
+        return sanitizeConfiguratorSelections(cloneConfiguratorState(action.payload));
 
       default:
         return state;
@@ -482,7 +531,10 @@ export function useConfigurator(
       case 3:
         return !!state.setting_type;
       case 4:
-        return !!state.selected_design || !!state.custom_design_url;
+        return (
+          (!!state.selected_design && isDesignCompatibleWithSetting(state)) ||
+          !!state.custom_design_url
+        );
       case 5:
         return !!state.metal && (
           state.setting_type === 'pendant'
@@ -520,12 +572,21 @@ export function useConfigurator(
       return hasGem && hasLab;
     }
 
+    const hasValidDesign =
+      !!state.custom_design_url ||
+      (!!state.selected_design && isDesignCompatibleWithSetting(state));
+
     return (
       hasGem &&
       !!state.setting_type &&
-      (!!state.selected_design || !!state.custom_design_url) &&
+      hasValidDesign &&
       !!state.metal &&
-      hasLab
+      hasLab &&
+      (state.setting_type === 'ring'
+        ? !!state.ring_size
+        : state.setting_type === 'pendant'
+          ? !!state.chain_length
+          : true)
     );
   }, [
     state.selected_product,
@@ -535,6 +596,8 @@ export function useConfigurator(
     state.selected_design,
     state.custom_design_url,
     state.metal,
+    state.ring_size,
+    state.chain_length,
   ]);
 
   const reset = useCallback(() => {

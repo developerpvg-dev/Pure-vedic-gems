@@ -15,109 +15,102 @@ interface CheckoutOrderSummaryProps {
   rewards?: CheckoutRewardState | null;
 }
 
-export function CheckoutOrderSummary({ items, shippingMethod, rewardPointsToRedeem = 0, rewards = null }: CheckoutOrderSummaryProps) {
+export function CheckoutOrderSummary({
+  items,
+  shippingMethod,
+  rewardPointsToRedeem = 0,
+  rewards = null,
+}: CheckoutOrderSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.cost ?? 0;
   const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
   const gst = estimateClientTax(items, shipping);
   const total = Math.max(0, subtotal - rewardDiscount + shipping + gst);
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="bg-brand-surface rounded-xl border border-[var(--pvg-border)] p-6">
-      <h2 className="font-heading text-lg font-semibold text-[var(--pvg-primary)] mb-4">
-        Order Summary
-      </h2>
-
-      {/* Items */}
-      <div className="space-y-3 mb-4">
-        {items.map((item) => (
-          <div key={item.key} className="flex items-start gap-3">
-            <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-[var(--pvg-border)] bg-brand-bg-alt">
-              <Image
-                src={item.image_url || '/placeholder-gem.png'}
-                alt={item.name}
-                fill
-                sizes="44px"
-                className="object-cover"
-              />
-              {item.quantity > 1 && (
-                <span className="absolute -top-1 -right-1 bg-brand-accent text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                  {item.quantity}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--pvg-text)] truncate">
-                {item.name}
-              </p>
-              {item.carat_weight && (
-                <p className="text-xs text-[var(--pvg-muted)]">
-                  {item.carat_weight} ct
-                  {item.origin ? ` · ${item.origin}` : ''}
-                </p>
-              )}
-            </div>
-            <p className="text-sm font-semibold text-[var(--pvg-primary)] whitespace-nowrap">
-              {formatPrice(item.price * item.quantity)}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-[var(--pvg-border)] my-4" />
-
-      {/* Breakdown */}
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-[var(--pvg-muted)]">
-            Subtotal ({items.length} item{items.length > 1 ? 's' : ''})
-          </span>
-          <span className="text-[var(--pvg-text)]">{formatPrice(subtotal)}</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-[var(--pvg-muted)]">Shipping</span>
-          <span className={shipping === 0 ? 'text-green-600 font-medium' : 'text-[var(--pvg-text)]'}>
-            {shipping === 0 ? 'FREE' : formatPrice(shipping)}
-          </span>
-        </div>
-
-        {rewardDiscount > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="text-[var(--pvg-muted)]">Reward points</span>
-            <span className="font-medium text-green-700">-{formatPrice(rewardDiscount)}</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <span className="text-[var(--pvg-muted)]">Estimated GST/IGST</span>
-          <span className="text-[var(--pvg-text)]">{formatPrice(gst)}</span>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-[var(--pvg-border)] my-4" />
-
-      {/* Total */}
-      <div className="flex items-center justify-between">
-        <span className="font-heading text-base font-bold text-[var(--pvg-primary)]">
-          Total
-        </span>
-        <span className="font-heading text-xl font-bold text-[var(--pvg-accent)]">
-          {formatPrice(total)}
-        </span>
-      </div>
-
-      {/* EMI teaser */}
-      {total >= 5000 && (
-        <p className="text-xs text-[var(--pvg-muted)] mt-3 text-center">
-          Or from {formatPrice(Math.ceil(total / 12))}/month × 12 with EMI
+    <div className="pvg-checkout-summary">
+      <div className="pvg-checkout-summary-head">
+        <h2 className="pvg-checkout-summary-title">Order summary</h2>
+        <p className="pvg-checkout-summary-count">
+          {itemCount} item{itemCount !== 1 ? 's' : ''} · taxes estimated below
         </p>
-      )}
-      <p className="mt-3 text-center text-[11px] leading-relaxed text-[var(--pvg-muted)]">
-        Final HSN, GST split, and invoice eligibility are recalculated securely before payment.
-      </p>
+      </div>
+
+      <div className="pvg-checkout-summary-body">
+        <div>
+          {items.map((item) => (
+            <div key={item.key} className="pvg-checkout-item">
+              <div className="pvg-checkout-item-thumb">
+                <Image
+                  src={item.image_url || '/placeholder-gem.png'}
+                  alt={item.name}
+                  fill
+                  sizes="52px"
+                  className="object-cover"
+                />
+                {item.quantity > 1 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#8a6400] text-[10px] font-bold text-white">
+                    {item.quantity}
+                  </span>
+                )}
+              </div>
+              <div className="pvg-checkout-item-info">
+                <p className="pvg-checkout-item-name">{item.name}</p>
+                {(item.carat_weight || item.origin) && (
+                  <p className="pvg-checkout-item-meta">
+                    {item.carat_weight ? `${item.carat_weight} ct` : ''}
+                    {item.carat_weight && item.origin ? ' · ' : ''}
+                    {item.origin ?? ''}
+                  </p>
+                )}
+                {item.configuration_summary && (
+                  <div className="pvg-checkout-item-chips">
+                    {item.configuration_summary.split(' · ').map((part, i) => (
+                      <span key={i} className="pvg-checkout-chip">
+                        {part}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="pvg-checkout-item-price">{formatPrice(item.price * item.quantity)}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="pvg-checkout-lines">
+          <div className="pvg-checkout-line">
+            <span>Subtotal</span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+          <div className="pvg-checkout-line">
+            <span>Shipping</span>
+            <span className={shipping === 0 ? 'text-green-700 font-semibold' : ''}>
+              {shipping === 0 ? 'FREE' : formatPrice(shipping)}
+            </span>
+          </div>
+          {rewardDiscount > 0 && (
+            <div className="pvg-checkout-line pvg-checkout-line--discount">
+              <span>Reward points</span>
+              <span>-{formatPrice(rewardDiscount)}</span>
+            </div>
+          )}
+          <div className="pvg-checkout-line">
+            <span>Estimated GST/IGST</span>
+            <span>{formatPrice(gst)}</span>
+          </div>
+        </div>
+
+        <div className="pvg-checkout-total">
+          <span className="pvg-checkout-total-label">Total</span>
+          <span className="pvg-checkout-total-value">{formatPrice(total)}</span>
+        </div>
+
+        <p className="pvg-checkout-footnote">
+          Final HSN, GST split, and invoice eligibility are recalculated securely before payment.
+        </p>
+      </div>
     </div>
   );
 }

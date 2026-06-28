@@ -50,7 +50,7 @@ export function RewardPointsRedemption({
 
   if (!userSignedIn) {
     return (
-      <div className="rounded-xl border border-brand-border bg-brand-surface p-5">
+      <div className="pvg-checkout-step">
         <div className="flex gap-3">
           <Gift className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" />
           <div>
@@ -64,7 +64,7 @@ export function RewardPointsRedemption({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-brand-border bg-brand-surface p-5 text-sm text-brand-muted">
+      <div className="pvg-checkout-step flex items-center gap-3 text-sm text-[#7a6250]">
         <Loader2 className="h-4 w-4 animate-spin text-brand-accent" />
         Loading reward points...
       </div>
@@ -74,7 +74,7 @@ export function RewardPointsRedemption({
   if (!rewards?.is_active) return null;
 
   return (
-    <div className="rounded-xl border border-brand-border bg-brand-surface p-5">
+    <div className="pvg-checkout-step">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex gap-3">
           <Gift className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" />
@@ -104,7 +104,7 @@ export function RewardPointsRedemption({
               onChange(value === 0 ? 0 : Math.min(maxRedeem, Math.max(rewards.min_redeem_points, value)));
             }}
             placeholder={`Redeem up to ${maxRedeem}`}
-            className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-sm text-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            className="pvg-checkout-input"
           />
           <button
             type="button"

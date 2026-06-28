@@ -21,6 +21,10 @@ import type { Json } from '@/lib/types/database';
 import { buildMetadata } from '@/lib/utils/seo';
 import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
+import {
+  productOfferAvailability,
+  productStructuredOfferPrice,
+} from '@/lib/shop/product-pricing';
 
 export const revalidate = 300;
 
@@ -90,15 +94,18 @@ function ProductJsonLd({
 }) {
   const images = extractImages(product.images);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com';
-  const isOnRequest =
-    product.price_mode === 'on_demand' ||
-    product.price_mode === 'quote_required' ||
-    !product.price ||
-    product.price <= 0;
-  const unavailable =
-    !isOnRequest &&
-    (!product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
-  const hasStructuredPrice = typeof product.price === 'number' && (product.price > 0 || product.price_mode === 'free');
+  const pricing = {
+    price: product.price,
+    price_per_carat: product.price_per_carat,
+    carat_weight: product.carat_weight,
+    price_mode: product.price_mode,
+    in_stock: product.in_stock,
+    stock_quantity: product.stock_quantity,
+    availability_status: product.availability_status,
+    sold_individually: product.sold_individually,
+  };
+  const structuredPrice = productStructuredOfferPrice(pricing);
+  const offerAvailability = productOfferAvailability(pricing);
   const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
   const averageRating = ratedReviews.length > 0
     ? ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
@@ -116,12 +123,8 @@ function ProductJsonLd({
       '@type': 'Offer',
       url: `${siteUrl}${href}`,
       priceCurrency: 'INR',
-      price: hasStructuredPrice ? product.price : undefined,
-      availability: isOnRequest
-        ? 'https://schema.org/LimitedAvailability'
-        : unavailable
-        ? 'https://schema.org/OutOfStock'
-        : 'https://schema.org/InStock',
+      price: structuredPrice,
+      availability: offerAvailability,
       seller: { '@type': 'Organization', name: 'PureVedicGems' },
     },
     ...(averageRating != null

@@ -41,6 +41,7 @@ const PARTIAL_HREFS: Array<[RegExp, string]> = [
   [/blue sapphire|neelam/i, '/shop/navaratna/blue-sapphire'],
   [/hessonite|gomed/i, '/shop/navaratna/hessonite'],
   [/cat'?s eye|lehsun/i, '/shop/navaratna/cats-eye'],
+  [/pitambari/i, '/shop/navaratna/pitambari'],
   [/diamond|heera/i, '/shop/navaratna/diamond'],
   [/ganesh/i, '/shop/idols/ganesha'],
   [/shiva linga|shivling/i, '/shop/idols/shivling'],

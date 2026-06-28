@@ -9,6 +9,11 @@ import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { toast } from 'sonner';
 import type { Product } from '@/lib/types/product';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
+import {
+  isProductPriceOnRequest,
+  isProductStockUnavailable,
+  resolveProductCartPrice,
+} from '@/lib/shop/product-pricing';
 
 interface AddToCartBarProps {
   product: Product;
@@ -30,14 +35,9 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
   const cartItemKey = getItemKey(product.id);
   const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
   const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
-  const isOnRequest =
-    product.price_mode === 'on_demand' ||
-    product.price_mode === 'quote_required' ||
-    !product.price ||
-    product.price <= 0;
-  const isUnavailable =
-    !isOnRequest &&
-    (!product.in_stock || maxQuantity <= 0 || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? ''));
+  const isOnRequest = isProductPriceOnRequest(product);
+  const isUnavailable = isProductStockUnavailable(product);
+  const cartPrice = resolveProductCartPrice(product);
   const canAdjustQuantity = maxQuantity > 1 && !product.sold_individually;
   const showQuantityStepper = !isUnavailable && inCart && canAdjustQuantity;
 
@@ -74,7 +74,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       name: product.name,
       category: product.category,
       image_url: getImageSrc(product),
-      price: product.price,
+      price: cartPrice,
       quantity: quantityToAdd,
       stock_quantity: product.stock_quantity,
       stock_status: product.stock_status,

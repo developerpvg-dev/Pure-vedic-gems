@@ -3,7 +3,9 @@ import { createPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { buildIlikePattern } from '@/lib/utils/search';
 import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
+import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
 import type { ProductListResponse } from '@/lib/types/product';
+import { isConfiguratorGemCatalogScope } from '@/lib/shop/configurator';
 
 // Card-level columns to select (avoid fetching full descriptions for listing)
 const CARD_SELECT = `
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
     if (filters.sub_category) {
       query = query.eq('sub_category', filters.sub_category);
     }
+    query = applyQuoteOnlyListingFilter(query, filters.category, filters.sub_category);
     if (filters.min_price !== undefined) {
       query = query.gte('price', filters.min_price);
     }
@@ -91,7 +94,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('is_directors_pick', filters.directors_pick);
     }
 
-    if (configuratorEnabled) {
+    if (configuratorEnabled && !isConfiguratorGemCatalogScope(filters.category, filters.sub_category)) {
       query = query.eq('configurator_enabled', true);
     }
 

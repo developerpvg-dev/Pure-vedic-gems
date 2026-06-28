@@ -2,6 +2,7 @@ import type { ProductFilters } from '@/lib/types/product';
 
 type SortableQuery = {
   eq(column: string, value: unknown): SortableQuery;
+  not(column: string, operator: string, value: string): SortableQuery;
   order(column: string, options: { ascending: boolean }): SortableQuery;
 };
 
@@ -15,12 +16,17 @@ export function applyShopAvailabilityFilter<T extends SortableQuery>(
     return query.eq('availability_status', filters.availability_status) as T;
   }
   if (options?.inStockOnly || filters.configurator_enabled) {
-    return query.eq('in_stock', true) as T;
+    return query
+      .eq('in_stock', true)
+      .not('price_mode', 'in', '(on_demand,quote_required)') as T;
   }
   return query;
 }
 
-/** In-stock products first; out-of-stock products always appear last within the page. */
+/**
+ * Legacy WooCommerce catalog order (menu_order / scraped category sequence).
+ * In-stock items appear first; within each stock group, display_order is preserved.
+ */
 export function applyShopListingSort<T extends SortableQuery>(
   query: T,
   filters: Pick<ProductFilters, 'sort_by' | 'sort_order' | 'directors_pick'>,
@@ -28,11 +34,18 @@ export function applyShopListingSort<T extends SortableQuery>(
 ): T {
   const directorsPick = options?.directorsPick || filters.directors_pick;
 
-  if (directorsPick && filters.sort_by === 'newest') {
+  if (directorsPick && (filters.sort_by === 'catalog' || filters.sort_by === 'newest')) {
     return query
       .order('in_stock', { ascending: false })
       .order('display_order', { ascending: true })
-      .order('created_at', { ascending: false }) as T;
+      .order('legacy_woo_id', { ascending: true }) as T;
+  }
+
+  if (filters.sort_by === 'catalog') {
+    return query
+      .order('in_stock', { ascending: false })
+      .order('display_order', { ascending: true })
+      .order('legacy_woo_id', { ascending: true }) as T;
   }
 
   const sortColumn =

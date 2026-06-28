@@ -1,12 +1,11 @@
 'use client';
 
 /**
- * Step 7 — Energization & Puja (Compact)
- * Options from the energization_options table. Compact cards.
+ * Step 7 — Energization & Puja
  */
 
 import { useEffect, useState } from 'react';
-import { Flame, Video, Calendar, User, Star, Sparkles, AlertCircle } from 'lucide-react';
+import { AlertCircle, Video } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,18 +21,18 @@ import {
 } from '@/lib/utils/configurator-rules';
 
 const RASHI_OPTIONS = [
-  { value: 'mesh', label: 'Mesh (Aries)', hindi: 'मेष' },
-  { value: 'vrishabh', label: 'Vrishabh (Taurus)', hindi: 'वृषभ' },
-  { value: 'mithun', label: 'Mithun (Gemini)', hindi: 'मिथुन' },
-  { value: 'kark', label: 'Kark (Cancer)', hindi: 'कर्क' },
-  { value: 'simha', label: 'Simha (Leo)', hindi: 'सिंह' },
-  { value: 'kanya', label: 'Kanya (Virgo)', hindi: 'कन्या' },
-  { value: 'tula', label: 'Tula (Libra)', hindi: 'तुला' },
-  { value: 'vrishchik', label: 'Vrishchik (Scorpio)', hindi: 'वृश्चिक' },
-  { value: 'dhanu', label: 'Dhanu (Sagittarius)', hindi: 'धनु' },
-  { value: 'makar', label: 'Makar (Capricorn)', hindi: 'मकर' },
-  { value: 'kumbh', label: 'Kumbh (Aquarius)', hindi: 'कुंभ' },
-  { value: 'meen', label: 'Meen (Pisces)', hindi: 'मीन' },
+  { value: 'mesh', label: 'Mesh (Aries)' },
+  { value: 'vrishabh', label: 'Vrishabh (Taurus)' },
+  { value: 'mithun', label: 'Mithun (Gemini)' },
+  { value: 'kark', label: 'Kark (Cancer)' },
+  { value: 'simha', label: 'Simha (Leo)' },
+  { value: 'kanya', label: 'Kanya (Virgo)' },
+  { value: 'tula', label: 'Tula (Libra)' },
+  { value: 'vrishchik', label: 'Vrishchik (Scorpio)' },
+  { value: 'dhanu', label: 'Dhanu (Sagittarius)' },
+  { value: 'makar', label: 'Makar (Capricorn)' },
+  { value: 'kumbh', label: 'Kumbh (Aquarius)' },
+  { value: 'meen', label: 'Meen (Pisces)' },
 ];
 
 interface EnergizationSelectorProps {
@@ -42,6 +41,59 @@ interface EnergizationSelectorProps {
   optionRules: ConfiguratorOptionRules | null;
   onSelect: (option: EnergizationOption | null) => void;
   onFormChange: (form: EnergizationFormData) => void;
+}
+
+interface EnergOptionProps {
+  active: boolean;
+  title: string;
+  detail?: string | null;
+  foot?: string | null;
+  priceLabel: string;
+  hasVideo?: boolean;
+  onClick: () => void;
+  className?: string;
+}
+
+function EnergOptionRow({
+  active,
+  title,
+  detail,
+  foot,
+  priceLabel,
+  hasVideo = false,
+  onClick,
+  className,
+}: EnergOptionProps) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={cn('pvg-energ-option', active && 'pvg-energ-option--active', className)}
+    >
+      <span className="pvg-energ-option-main">
+        <span className={cn('pvg-energ-option-title', active && 'pvg-energ-option-title--active')}>
+          {title}
+        </span>
+        {detail ? <span className="pvg-energ-option-detail">{detail}</span> : null}
+        {(foot || hasVideo) && (
+          <span className="pvg-energ-option-foot">
+            {foot}
+            {hasVideo ? (
+              <span className="pvg-energ-foot-video">
+                <Video className="h-3 w-3" aria-hidden />
+                Includes video
+              </span>
+            ) : null}
+          </span>
+        )}
+      </span>
+      <span className={cn('pvg-energ-option-price', active && 'pvg-energ-option-price--active')}>
+        {priceLabel}
+      </span>
+    </button>
+  );
 }
 
 export default function EnergizationSelector({
@@ -54,7 +106,7 @@ export default function EnergizationSelector({
   const [options, setOptions] = useState<EnergizationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const energizationEnabled = optionRules?.energization_enabled ?? true;
+  const energizationEnabled = optionRules?.energization_enabled ?? false;
   const visibleOptions = energizationEnabled
     ? options.filter((option) => isEnergizationAllowed(optionRules, option.id))
     : [];
@@ -79,7 +131,7 @@ export default function EnergizationSelector({
         setLoading(false);
       }
     }
-    fetchOptions();
+    void fetchOptions();
   }, []);
 
   const formData: EnergizationFormData = energizationForm ?? {
@@ -94,176 +146,132 @@ export default function EnergizationSelector({
   };
 
   return (
-    <div>
-      {/* Skip option */}
-      <button
-        onClick={() => onSelect(null)}
-        className={cn(
-          'mt-3 w-full flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all duration-150',
-          'hover:border-accent',
-          !selected
-            ? 'border-accent bg-muted ring-1 ring-accent/30'
-            : 'border-border'
-        )}
-      >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">✕</span>
-        <span className="text-xs font-medium text-primary">Skip Energization</span>
-        <span className="text-[9px] text-muted-foreground ml-auto">Free</span>
-      </button>
-
-      {/* Tiers */}
+    <div className="pvg-energ-step">
       {loading ? (
-        <div className="mt-2 space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+        <div className="pvg-energ-grid">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-[4.25rem] w-full rounded-lg" />
           ))}
         </div>
       ) : error ? (
-        <div className="mt-3 flex flex-col items-center gap-2 py-6 text-center">
+        <div className="pvg-energ-error">
           <AlertCircle className="h-5 w-5 text-destructive" />
-          <p className="text-xs font-medium text-primary">{error}</p>
-          <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.reload()}>Retry</Button>
+          <p>{error}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
       ) : (
-        <div className="mt-2 space-y-2">
+        <div className="pvg-energ-grid" role="radiogroup" aria-label="Energization option">
+          <EnergOptionRow
+            active={!selected}
+            title="Skip energization"
+            detail="No pooja or energization added"
+            priceLabel="No charge"
+            onClick={() => onSelect(null)}
+            className="pvg-energ-option--span"
+          />
+
           {!energizationEnabled && (
-            <div className="rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
-              Energization is not enabled for this product.
-            </div>
+            <p className="pvg-energ-muted pvg-energ-option--span">
+              Energization is not available for this product.
+            </p>
           )}
 
           {visibleOptions.map((option) => {
             const isChosen = selected?.id === option.id;
             const includes = (option.includes ?? []) as string[];
+            const footParts = [
+              option.duration ? option.duration : null,
+              includes.length > 0 ? includes.slice(0, 2).join(' · ') : null,
+            ].filter(Boolean);
 
             return (
-              <button
+              <EnergOptionRow
                 key={option.id}
+                active={isChosen}
+                title={option.name}
+                detail={option.description}
+                foot={footParts.join(' · ') || null}
+                priceLabel={option.price > 0 ? `+${formatPrice(option.price)}` : 'Free'}
+                hasVideo={option.includes_video}
                 onClick={() => {
                   onSelect(option);
                   if (!option.includes_video && formData.record_ceremony) {
                     onFormChange({ ...formData, record_ceremony: false });
                   }
                 }}
-                className={cn(
-                  'w-full flex flex-col rounded-lg border p-2.5 text-left transition-all duration-150',
-                  'hover:border-accent',
-                  isChosen
-                    ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
-                    : 'border-border bg-card'
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Flame className={cn('h-3.5 w-3.5', isChosen ? 'text-accent' : 'text-muted-foreground')} />
-                    <span className={cn('text-xs font-semibold', isChosen ? 'text-accent' : 'text-primary')}>
-                      {option.name}
-                    </span>
-                    {option.duration && (
-                      <span className="text-[9px] text-muted-foreground">· {option.duration}</span>
-                    )}
-                  </div>
-                  <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
-                    {formatPrice(option.price)}
-                  </span>
-                </div>
-
-                {includes.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {includes.slice(0, 4).map((item, idx) => (
-                      <span key={idx} className="rounded-full bg-muted px-1.5 py-0.5 text-[8px] text-foreground">
-                        <Sparkles className="inline mr-0.5 h-2 w-2 text-accent" />{item}
-                      </span>
-                    ))}
-                    {includes.length > 4 && (
-                      <span className="text-[8px] text-muted-foreground">+{includes.length - 4} more</span>
-                    )}
-                  </div>
-                )}
-
-                {option.includes_video && (
-                  <span className="mt-1 inline-flex items-center gap-0.5 text-[9px] text-accent">
-                    <Video className="h-2.5 w-2.5" /> Includes video
-                  </span>
-                )}
-              </button>
+              />
             );
           })}
 
           {energizationEnabled && visibleOptions.length === 0 && (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="pvg-energ-muted pvg-energ-option--span">
               No energization options are enabled for this product.
             </p>
           )}
         </div>
       )}
 
-      {/* Vedic birth details form — compact */}
       {selected && (
-        <div className="mt-3 rounded-lg border border-border bg-muted p-3 space-y-2.5">
-          <h3 className="text-xs font-semibold text-primary flex items-center gap-1.5">
-            <Star className="h-3 w-3 text-accent" /> Vedic Birth Details
-          </h3>
+        <div className="pvg-energ-form">
+          <p className="pvg-energ-form-title">Vedic birth details</p>
+          <p className="pvg-energ-form-hint">Required for personalised pooja and mantra selection.</p>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="ener-dob" className="text-xs flex items-center gap-1">
-                <Calendar className="h-2.5 w-2.5 text-muted-foreground" />
-                DOB <span className="text-destructive">*</span>
+          <div className="pvg-energ-form-grid">
+            <div className="pvg-energ-field">
+              <Label htmlFor="ener-dob">
+                Date of birth <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="ener-dob"
                 type="date"
                 value={formData.dob}
-                onChange={(e) => updateForm('dob', e.target.value)}
-                className="h-7 text-xs"
+                onChange={(event) => updateForm('dob', event.target.value)}
+                className="pvg-energ-input"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="ener-gotra" className="text-xs flex items-center gap-1">
-                <User className="h-2.5 w-2.5 text-muted-foreground" />
-                Gotra
-              </Label>
+            <div className="pvg-energ-field">
+              <Label htmlFor="ener-gotra">Gotra</Label>
               <Input
                 id="ener-gotra"
                 type="text"
                 placeholder="e.g. Kashyap"
                 value={formData.gotra}
-                onChange={(e) => updateForm('gotra', e.target.value)}
-                className="h-7 text-xs"
+                onChange={(event) => updateForm('gotra', event.target.value)}
+                className="pvg-energ-input"
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="ener-rashi" className="text-xs">Rashi</Label>
+            <div className="pvg-energ-field">
+              <Label htmlFor="ener-rashi">Rashi</Label>
               <select
                 id="ener-rashi"
                 value={formData.rashi}
-                onChange={(e) => updateForm('rashi', e.target.value)}
-                className="h-7 w-full rounded-md border border-border bg-card px-1.5 text-xs text-foreground"
+                onChange={(event) => updateForm('rashi', event.target.value)}
+                className="pvg-energ-select"
               >
-                <option value="">Select</option>
-                {RASHI_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
+                <option value="">Select rashi</option>
+                {RASHI_OPTIONS.map((rashi) => (
+                  <option key={rashi.value} value={rashi.value}>
+                    {rashi.label}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
           {selected.includes_video && (
-            <div className="flex items-center gap-1.5">
+            <label className="pvg-energ-checkbox" htmlFor="ener-record">
               <input
                 id="ener-record"
                 type="checkbox"
                 checked={formData.record_ceremony}
-                onChange={(e) => updateForm('record_ceremony', e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-border text-accent focus:ring-accent"
+                onChange={(event) => updateForm('record_ceremony', event.target.checked)}
               />
-              <Label htmlFor="ener-record" className="text-xs text-foreground">
-                Record ceremony & send video
-              </Label>
-            </div>
+              <span>Record ceremony and send video</span>
+            </label>
           )}
         </div>
       )}

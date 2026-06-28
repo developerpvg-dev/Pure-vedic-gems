@@ -1,11 +1,10 @@
 'use client';
 
 /**
- * Step 5 — Metal & Size Selection (Compact)
- * Inline metal pills, compact size grid. Less vertical space.
+ * Step 5 — Metal & Size selection
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
@@ -47,19 +46,12 @@ interface MetalSizeSelectorProps {
   onChainLengthChange: (length: string) => void;
 }
 
-const SLUG_TO_RATE_KEY: Record<string, keyof GoldRateData> = {
-  gold_22k: 'gold_22k_per_gram',
-  gold_18k: 'gold_18k_per_gram',
-  gold_14k: 'gold_14k_per_gram',
-  silver_925: 'silver_per_gram',
-  panchdhatu: 'panchdhatu_per_gram',
-  platinum: 'platinum_per_gram',
-};
+type MetalEstimate = ReturnType<typeof getEstimatedMetalPrice>;
 
-function getRateForMetal(metalSlug: string, goldRate: GoldRateData): number {
-  const key = SLUG_TO_RATE_KEY[metalSlug];
-  if (key) return (goldRate[key] as number) ?? 0;
-  return 0;
+interface MetalPriceLine {
+  label: string;
+  detail?: string;
+  amount: number;
 }
 
 function getEstimatedMetalPrice(
@@ -113,35 +105,45 @@ function getEstimatedMetalPrice(
   };
 }
 
-function formatMountingSubtitle(
-  estimate: ReturnType<typeof getEstimatedMetalPrice>,
+function buildMetalPriceLines(
+  estimate: MetalEstimate,
   stoneLabel?: string | null
-): { primary: string; secondary?: string } {
-  if (estimate.total <= 0) return { primary: '' };
-  const stoneName = stoneLabel?.trim();
+): MetalPriceLine[] {
+  if (estimate.total <= 0) return [];
+
+  const lines: MetalPriceLine[] = [];
+  const stoneName = stoneLabel?.trim() || 'Diamond';
 
   if (estimate.pricingKind === 'fixed') {
-    const parts: string[] = [`Making ${formatPrice(estimate.makingCharge)}`];
-    if (estimate.diamondCharge > 0) {
-      parts.push(`${stoneName || 'Stone'} ${formatPrice(estimate.diamondCharge)}`);
+    if (estimate.makingCharge > 0) {
+      lines.push({
+        label: 'Making',
+        detail: 'Fixed sheet',
+        amount: estimate.makingCharge,
+      });
     }
-    return {
-      primary: parts.join(' + '),
-      secondary: 'Fixed sheet price',
-    };
+  } else if (estimate.weight > 0 && estimate.rate > 0) {
+    lines.push({
+      label: 'Metal',
+      detail: `${estimate.weight}g × ${formatPrice(estimate.rate)}/g`,
+      amount: estimate.metalPrice,
+    });
+    if (estimate.makingCharge > 0) {
+      lines.push({
+        label: estimate.laborRatePercent > 0 ? `Labor (${estimate.laborRatePercent}%)` : 'Labor',
+        amount: estimate.makingCharge,
+      });
+    }
   }
 
-  if (estimate.weight > 0 && estimate.rate > 0) {
-    return {
-      primary: `${estimate.weight}g × ${formatPrice(estimate.rate)}/g`,
-      secondary:
-        estimate.laborRatePercent > 0
-          ? `+ ${estimate.laborRatePercent}% labor ≈ ${formatPrice(estimate.total)}`
-          : `≈ ${formatPrice(estimate.total)}`,
-    };
+  if (estimate.diamondCharge > 0) {
+    lines.push({
+      label: stoneName,
+      amount: estimate.diamondCharge,
+    });
   }
 
-  return { primary: `≈ ${formatPrice(estimate.total)}` };
+  return lines;
 }
 
 function apiToMetalOption(item: Record<string, unknown>): MetalOption {
@@ -157,6 +159,146 @@ const FALLBACK_METALS: MetalOption[] = METAL_OPTIONS.map((m) => ({
   id: m.id,
   label: m.label,
 }));
+
+function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <p
+      className={cn(
+        'text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground',
+        className
+      )}
+    >
+      {children}
+    </p>
+  );
+}
+
+function MetalOptionCard({
+  option,
+  isSelected,
+  estimate,
+  stoneLabel,
+  hasRates,
+  onSelect,
+}: {
+  option: MetalOption;
+  isSelected: boolean;
+  estimate: MetalEstimate;
+  stoneLabel: string | null;
+  hasRates: boolean;
+  onSelect: () => void;
+}) {
+  const priceLines = hasRates ? buildMetalPriceLines(estimate, stoneLabel) : [];
+  const showTotal = hasRates && estimate.total > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      role="radio"
+      aria-checked={isSelected}
+      className={cn(
+        'pvg-metal-card group relative flex w-full flex-col rounded-xl border text-left transition-all duration-150',
+        'hover:border-accent/50 hover:shadow-sm',
+        isSelected
+          ? 'border-accent bg-accent/[0.05] shadow-[0_4px_16px_rgba(201,168,76,0.12)] ring-1 ring-accent/25'
+          : 'border-border/70 bg-white'
+      )}
+    >
+      <div className="flex items-start justify-between gap-2 px-3.5 pt-3.5 pb-2">
+        <div className="min-w-0">
+          <p
+            className={cn(
+              'text-[13px] font-semibold leading-snug',
+              isSelected ? 'text-accent' : 'text-primary'
+            )}
+          >
+            {option.label}
+          </p>
+          {option.purity ? (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{option.purity}</p>
+          ) : null}
+        </div>
+
+        <span
+          className={cn(
+            'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors',
+            isSelected
+              ? 'border-accent bg-accent text-accent-foreground'
+              : 'border-border/80 bg-white text-transparent group-hover:border-accent/40'
+          )}
+          aria-hidden
+        >
+          <Check className="h-3 w-3" strokeWidth={3} />
+        </span>
+      </div>
+
+      {priceLines.length > 0 ? (
+        <div className="border-t border-border/40 px-3.5 py-2.5">
+          <ul className="space-y-1.5">
+            {priceLines.map((line) => (
+              <li key={line.label} className="flex items-baseline justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-[11px] text-muted-foreground">{line.label}</span>
+                  {line.detail ? (
+                    <span className="mt-0.5 block truncate text-[10px] text-muted-foreground/75">
+                      {line.detail}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="shrink-0 text-[11px] font-medium tabular-nums text-foreground/90">
+                  {formatPrice(line.amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {showTotal ? (
+            <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-border/50 pt-2">
+              <span className="text-[11px] font-medium text-foreground/80">Est. mounting</span>
+              <span className="text-[12px] font-semibold tabular-nums text-foreground">
+                {formatPrice(estimate.total)}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="border-t border-border/40 px-3.5 py-2.5">
+          <p className="text-[11px] text-muted-foreground">Select to view estimate</p>
+        </div>
+      )}
+    </button>
+  );
+}
+
+function SizeReadout({
+  value,
+  unit,
+  active,
+}: {
+  value: string | null;
+  unit: string;
+  active: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex min-w-[4.5rem] items-baseline justify-end gap-1 rounded-lg border px-2.5 py-1.5',
+        active ? 'border-accent/35 bg-accent/[0.06]' : 'border-border/60 bg-white/80'
+      )}
+    >
+      <span
+        className={cn(
+          'text-base font-semibold tabular-nums leading-none',
+          active ? 'text-accent' : 'text-muted-foreground/50'
+        )}
+      >
+        {value ?? '—'}
+      </span>
+      {value ? <span className="text-[10px] text-muted-foreground">{unit}</span> : null}
+    </div>
+  );
+}
 
 export default function MetalSizeSelector({
   settingType,
@@ -174,14 +316,19 @@ export default function MetalSizeSelector({
   onChainLengthChange,
 }: MetalSizeSelectorProps) {
   const [metals, setMetals] = useState<MetalOption[]>(FALLBACK_METALS);
-  const [ringSizeSystem, setRingSizeSystem] = useState<RingSizeSystemId>(() => parseRingSizeValue(ringSize).system);
+  const [ringSizeSystem, setRingSizeSystem] = useState<RingSizeSystemId>(() =>
+    parseRingSizeValue(ringSize).system
+  );
 
   useEffect(() => {
     setRingSizeSystem(parseRingSizeValue(ringSize).system);
   }, [ringSize]);
 
   const parsedRingSize = useMemo(() => parseRingSizeValue(ringSize), [ringSize]);
-  const allowedRingSizeSystems = useMemo(() => getAllowedRingSizeSystems(optionRules), [optionRules]);
+  const allowedRingSizeSystems = useMemo(
+    () => getAllowedRingSizeSystems(optionRules),
+    [optionRules]
+  );
   const visibleMetals = useMemo(
     () =>
       metals.filter((option) => {
@@ -200,6 +347,7 @@ export default function MetalSizeSelector({
     () => RING_SIZE_SYSTEMS.find((item) => item.id === ringSizeSystem) ?? RING_SIZE_SYSTEMS[0],
     [ringSizeSystem]
   );
+  const stoneLabel = selectedDesign ? getStoneAddonLabelFromDesign(selectedDesign) : null;
 
   useEffect(() => {
     if (!allowedRingSizeSystems.includes(ringSizeSystem)) {
@@ -220,142 +368,88 @@ export default function MetalSizeSelector({
       .catch(() => {});
   }, []);
 
+  const ringSliderIndex = parsedRingSize.size
+    ? Math.max(0, activeRingSizeSystem.sizes.findIndex((s) => s.value === parsedRingSize.size))
+    : 0;
+
+  const chainSliderIndex = Math.max(0, CHAIN_LENGTHS.findIndex((l) => l.value === chainLength));
+
   return (
-    <div>
-      {/* Metal selection */}
-      <fieldset className="mt-1">
-        <legend className="mb-4 text-base font-semibold text-primary sm:text-lg">
-          Select Metal
-        </legend>
+    <div className="pvg-metal-step space-y-6">
+      <fieldset>
+        <SectionLabel className="mb-3">Select metal</SectionLabel>
         <div
-          className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
           role="radiogroup"
           aria-label="Metal type"
         >
-          {visibleMetals.map((opt) => {
-            const isSelected = metal === opt.id;
-            const estimate = getEstimatedMetalPrice(
-              opt.id,
-              selectedDesign,
-              goldRate,
-              laborRates,
-              pricingModes,
-              ratesBySlug
-            );
-            const stoneLabel = selectedDesign
-              ? getStoneAddonLabelFromDesign(selectedDesign)
-              : null;
-            const subtitle = goldRate ? formatMountingSubtitle(estimate, stoneLabel) : null;
-
-            return (
-              <button
-                key={opt.id}
-                onClick={() => onMetalChange(opt.id)}
-                role="radio"
-                aria-checked={isSelected}
-                className={cn(
-                  'relative flex w-full flex-col items-start rounded-2xl border-2 px-4 py-4 text-left transition-all duration-150',
-                  'hover:border-accent/70 hover:shadow-sm',
-                  isSelected
-                    ? 'border-accent bg-accent/8 shadow-[0_8px_24px_rgba(201,168,76,0.15)]'
-                    : 'border-border/80 bg-card'
-                )}
-              >
-                {isSelected && (
-                  <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                  </span>
-                )}
-
-                <span
-                  className={cn(
-                    'pr-8 text-base font-bold leading-tight sm:text-lg',
-                    isSelected ? 'text-accent' : 'text-primary'
-                  )}
-                >
-                  {opt.label}
-                </span>
-
-                {opt.purity && (
-                  <span className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {opt.purity}
-                  </span>
-                )}
-
-                {subtitle?.primary && (
-                  <div className="mt-3 w-full space-y-1 border-t border-border/50 pt-3">
-                    <p className="text-sm font-semibold leading-snug text-foreground">
-                      {subtitle.primary}
-                    </p>
-                    {subtitle.secondary && (
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        {subtitle.secondary}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </button>
-            );
-          })}
+          {visibleMetals.map((opt) => (
+            <MetalOptionCard
+              key={opt.id}
+              option={opt}
+              isSelected={metal === opt.id}
+              estimate={getEstimatedMetalPrice(
+                opt.id,
+                selectedDesign,
+                goldRate,
+                laborRates,
+                pricingModes,
+                ratesBySlug
+              )}
+              stoneLabel={stoneLabel}
+              hasRates={Boolean(goldRate)}
+              onSelect={() => onMetalChange(opt.id)}
+            />
+          ))}
         </div>
-        {visibleMetals.length === 0 && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            No metals are enabled for this product. Choose the loose stone option or contact us for a custom quote.
+        {visibleMetals.length === 0 ? (
+          <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+            No metals are enabled for this product. Choose the loose stone option or contact us for a
+            custom quote.
           </p>
-        )}
+        ) : null}
       </fieldset>
 
-      {/* Ring Size */}
-      {settingType === 'ring' && (
-        <fieldset className="mt-4">
-          <legend className="sr-only">Ring Size</legend>
-
-          {/* System switcher + live size display */}
+      {settingType === 'ring' ? (
+        <fieldset className="rounded-xl border border-border/60 bg-[#faf8f5]/80 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex gap-1">
-              {RING_SIZE_SYSTEMS.filter((system) => allowedRingSizeSystems.includes(system.id)).map((system) => (
-                <button
-                  key={system.id}
-                  onClick={() => { setRingSizeSystem(system.id); onRingSizeChange(null); }}
-                  className={cn(
-                    'rounded-lg border px-2.5 py-0.5 text-[10px] font-semibold transition-colors',
-                    ringSizeSystem === system.id
-                      ? 'border-accent bg-accent text-accent-foreground'
-                      : 'border-border text-muted-foreground hover:border-accent/60'
-                  )}
-                >
-                  {system.label}
-                </button>
-              ))}
-            </div>
-
-            <div className={cn(
-              'flex items-baseline gap-1 rounded-xl border px-3 py-1.5 transition-colors',
-              parsedRingSize.size
-                ? 'border-accent/40 bg-accent/6'
-                : 'border-border/50 bg-white/50'
-            )}>
-              <span className={cn(
-                'text-xl font-bold leading-none font-heading',
-                parsedRingSize.size ? 'text-accent' : 'text-muted-foreground/40'
-              )}>
-                {parsedRingSize.size ?? '—'}
-              </span>
-              <span className="text-[9px] text-muted-foreground">{activeRingSizeSystem.label}</span>
-            </div>
+            <SectionLabel>Ring size</SectionLabel>
+            <SizeReadout
+              value={parsedRingSize.size}
+              unit={activeRingSizeSystem.label}
+              active={Boolean(parsedRingSize.size)}
+            />
           </div>
 
-          {/* Gradient-filled range track */}
-          <div className="px-1">
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {RING_SIZE_SYSTEMS.filter((system) =>
+              allowedRingSizeSystems.includes(system.id)
+            ).map((system) => (
+              <button
+                key={system.id}
+                type="button"
+                onClick={() => {
+                  setRingSizeSystem(system.id);
+                  onRingSizeChange(null);
+                }}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-[11px] font-medium transition-colors',
+                  ringSizeSystem === system.id
+                    ? 'border-accent bg-accent text-accent-foreground'
+                    : 'border-border/70 bg-white text-muted-foreground hover:border-accent/50'
+                )}
+              >
+                {system.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="px-0.5">
             <input
               type="range"
               min={0}
               max={activeRingSizeSystem.sizes.length - 1}
-              value={
-                parsedRingSize.size
-                  ? Math.max(0, activeRingSizeSystem.sizes.findIndex((s) => s.value === parsedRingSize.size))
-                  : 0
-              }
+              value={ringSliderIndex}
               onChange={(e) => {
                 const idx = Number(e.target.value);
                 const sizeVal = activeRingSizeSystem.sizes[idx].value;
@@ -364,60 +458,51 @@ export default function MetalSizeSelector({
               className="pvg-range"
               style={{
                 background: (() => {
-                  const idx = parsedRingSize.size
-                    ? Math.max(0, activeRingSizeSystem.sizes.findIndex((s) => s.value === parsedRingSize.size))
-                    : 0;
-                  const pct = (idx / Math.max(1, activeRingSizeSystem.sizes.length - 1)) * 100;
-                  return `linear-gradient(to right, #C9A84C 0%, #C9A84C ${pct}%, rgba(61,43,31,0.12) ${pct}%, rgba(61,43,31,0.12) 100%)`;
+                  const pct =
+                    (ringSliderIndex / Math.max(1, activeRingSizeSystem.sizes.length - 1)) * 100;
+                  return `linear-gradient(to right, #C9A84C 0%, #C9A84C ${pct}%, rgba(61,43,31,0.1) ${pct}%, rgba(61,43,31,0.1) 100%)`;
                 })(),
               }}
               aria-label="Ring size"
             />
-            <div className="mt-1.5 flex justify-between text-[9px] text-muted-foreground/60">
+            <div className="mt-2 flex justify-between text-[10px] text-muted-foreground/70">
               <span>{activeRingSizeSystem.sizes[0].label}</span>
-              <span>{activeRingSizeSystem.sizes[Math.floor(activeRingSizeSystem.sizes.length / 2)].label}</span>
-              <span>{activeRingSizeSystem.sizes[activeRingSizeSystem.sizes.length - 1].label}</span>
+              <span>
+                {activeRingSizeSystem.sizes[Math.floor(activeRingSizeSystem.sizes.length / 2)].label}
+              </span>
+              <span>
+                {activeRingSizeSystem.sizes[activeRingSizeSystem.sizes.length - 1].label}
+              </span>
             </div>
           </div>
 
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            <a href="/tools/ring-size-guide" className="text-accent underline">Size guide</a>
-            {parsedRingSize.size && (
-              <> · Selected: {activeRingSizeSystem.label} {parsedRingSize.size}</>
-            )}
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            <a href="/tools/ring-size-guide" className="font-medium text-accent underline-offset-2 hover:underline">
+              Size guide
+            </a>
+            {parsedRingSize.size ? (
+              <span className="text-muted-foreground/80">
+                {' '}
+                · {activeRingSizeSystem.label} {parsedRingSize.size}
+              </span>
+            ) : null}
           </p>
         </fieldset>
-      )}
+      ) : null}
 
-      {/* Chain Length */}
-      {settingType === 'pendant' && (
-        <fieldset className="mt-4">
-          <legend className="sr-only">Chain Length</legend>
-
+      {settingType === 'pendant' ? (
+        <fieldset className="rounded-xl border border-border/60 bg-[#faf8f5]/80 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <span className="text-xs font-medium text-primary">Chain Length</span>
-            <div className={cn(
-              'flex items-baseline gap-1 rounded-xl border px-3 py-1.5 transition-colors',
-              chainLength
-                ? 'border-accent/40 bg-accent/6'
-                : 'border-border/50 bg-white/50'
-            )}>
-              <span className={cn(
-                'text-xl font-bold leading-none font-heading',
-                chainLength ? 'text-accent' : 'text-muted-foreground/40'
-              )}>
-                {chainLength ?? '—'}
-              </span>
-              {chainLength && <span className="text-[9px] text-muted-foreground">inches</span>}
-            </div>
+            <SectionLabel>Chain length</SectionLabel>
+            <SizeReadout value={chainLength} unit="in" active={Boolean(chainLength)} />
           </div>
 
-          <div className="px-1">
+          <div className="px-0.5">
             <input
               type="range"
               min={0}
               max={CHAIN_LENGTHS.length - 1}
-              value={Math.max(0, CHAIN_LENGTHS.findIndex((l) => l.value === chainLength))}
+              value={chainSliderIndex}
               onChange={(e) => {
                 const idx = Number(e.target.value);
                 onChainLengthChange(CHAIN_LENGTHS[idx].value);
@@ -425,27 +510,28 @@ export default function MetalSizeSelector({
               className="pvg-range"
               style={{
                 background: (() => {
-                  const idx = Math.max(0, CHAIN_LENGTHS.findIndex((l) => l.value === chainLength));
-                  const pct = (idx / Math.max(1, CHAIN_LENGTHS.length - 1)) * 100;
-                  return `linear-gradient(to right, #C9A84C 0%, #C9A84C ${pct}%, rgba(61,43,31,0.12) ${pct}%, rgba(61,43,31,0.12) 100%)`;
+                  const pct = (chainSliderIndex / Math.max(1, CHAIN_LENGTHS.length - 1)) * 100;
+                  return `linear-gradient(to right, #C9A84C 0%, #C9A84C ${pct}%, rgba(61,43,31,0.1) ${pct}%, rgba(61,43,31,0.1) 100%)`;
                 })(),
               }}
               aria-label="Chain length"
             />
-            <div className="mt-1.5 flex justify-between">
+            <div className="mt-2 flex justify-between">
               {CHAIN_LENGTHS.map((l) => (
-                <span key={l.value} className="text-[9px] text-muted-foreground/60">{l.value}&quot;</span>
+                <span key={l.value} className="text-[10px] text-muted-foreground/70">
+                  {l.value}&quot;
+                </span>
               ))}
             </div>
           </div>
         </fieldset>
-      )}
+      ) : null}
 
-      {settingType === 'bracelet' && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Standard bracelet size. Our team will confirm exact sizing.
+      {settingType === 'bracelet' ? (
+        <p className="rounded-xl border border-border/50 bg-[#faf8f5]/60 px-4 py-3 text-[12px] leading-relaxed text-muted-foreground">
+          Standard bracelet size. Our team will confirm exact sizing after you place the order.
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

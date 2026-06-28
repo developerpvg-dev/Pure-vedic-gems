@@ -9,6 +9,10 @@ import {
   rudrakshaMukhiImage,
 } from '@/lib/constants/rudraksha-category-images';
 import {
+  NAVARATNA_HOME_GRID_LIMIT,
+  pickNavaratnaHomeGridCategories,
+} from '@/lib/constants/navaratna-home-grid';
+import {
   RUDRAKSHA_HOME_GRID_SLUGS,
   isRudrakshaStorefrontSlug,
   pickRudrakshaHomeGridCategories,
@@ -101,10 +105,12 @@ const NAVARATNA_FALLBACK: HomeManagedCategory[] = [
   { id: 'red-coral', name: 'Red Coral', slug: 'red-coral', type: 'navaratna', sanskrit_name: 'Moonga', planet: 'Mars', image_url: null, hover_image_url: null, description: null, display_locations: 'Italy · Japan', color: '#EA580C', sort_order: 3 },
   { id: 'emerald', name: 'Emerald', slug: 'emerald', type: 'navaratna', sanskrit_name: 'Panna', planet: 'Mercury', image_url: null, hover_image_url: null, description: null, display_locations: 'Zambia · Colombia', color: '#16A34A', sort_order: 4 },
   { id: 'yellow-sapphire', name: 'Yellow Sapphire', slug: 'yellow-sapphire', type: 'navaratna', sanskrit_name: 'Pukhraj', planet: 'Jupiter', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Thailand', color: '#CA8A04', sort_order: 5 },
+  { id: 'white-sapphire', name: 'White Sapphire', slug: 'white-sapphire', type: 'navaratna', sanskrit_name: 'Shvet Pukhraj', planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lankan / Burma', color: '#E7E5E4', sort_order: 6 },
   { id: 'diamond', name: 'Diamond', slug: 'diamond', type: 'navaratna', sanskrit_name: 'Heera', planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: 'South Africa · India', color: '#A8A29E', sort_order: 6 },
   { id: 'blue-sapphire', name: 'Blue Sapphire', slug: 'blue-sapphire', type: 'navaratna', sanskrit_name: 'Neelam', planet: 'Saturn', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Burma · Kashmir', color: '#2563EB', sort_order: 7 },
   { id: 'hessonite', name: 'Hessonite', slug: 'hessonite', type: 'navaratna', sanskrit_name: 'Gomed', planet: 'Rahu', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Africa', color: '#92400E', sort_order: 8 },
   { id: 'cats-eye', name: "Cat's Eye", slug: 'cats-eye', type: 'navaratna', sanskrit_name: 'Lehsuniya', planet: 'Ketu', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Brazil', color: '#65A30D', sort_order: 9 },
+  { id: 'pitambari', name: 'Pitambari', slug: 'pitambari', type: 'navaratna', sanskrit_name: null, planet: 'Jupiter & Saturn', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lankan / Burma', color: '#E0B84C', sort_order: 10 },
 ];
 
 const UPRATNA_FALLBACK: HomeManagedCategory[] = [
@@ -234,6 +240,12 @@ function mergeWithFallback(items: HomeManagedCategory[], fallback: HomeManagedCa
   });
 }
 
+function buildNavaratnaHomeCategories(items: HomeManagedCategory[]) {
+  const merged = mergeWithFallback(items, NAVARATNA_FALLBACK);
+  const fallbackBySlug = new Map(NAVARATNA_FALLBACK.map((item) => [item.slug, item]));
+  return pickNavaratnaHomeGridCategories(merged, fallbackBySlug);
+}
+
 function buildRudrakshaHomeCategories(items: HomeManagedCategory[]) {
   const merged = mergeWithFallback(
     items.filter((category) => isRudrakshaStorefrontSlug(category.slug)),
@@ -277,7 +289,7 @@ export async function getHomeManagedCategories(): Promise<CategoryBucket> {
   }
 
   return {
-    navaratna: mergeWithFallback(grouped.navaratna, NAVARATNA_FALLBACK),
+    navaratna: buildNavaratnaHomeCategories(grouped.navaratna),
     upratna: mergeWithFallback(grouped.upratna, UPRATNA_FALLBACK),
     rudraksha: buildRudrakshaHomeCategories(grouped.rudraksha),
   };
@@ -582,7 +594,8 @@ function configureHref(product: HomeDirectorPick) {
 }
 
 export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCategory[] }) {
-  const rows = [categories.slice(0, 5), categories.slice(5, 9)].filter((row) => row.length > 0);
+  const visibleCategories = categories.slice(0, NAVARATNA_HOME_GRID_LIMIT);
+  const rows = [visibleCategories.slice(0, 5), visibleCategories.slice(5, NAVARATNA_HOME_GRID_LIMIT)].filter((row) => row.length > 0);
 
   return (
     <>
@@ -610,7 +623,7 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
           ))}
 
           <div className="navratna-tablet-grid" aria-label="Navaratna gemstone categories">
-            {categories.slice(0, 9).map((category) => (
+            {visibleCategories.map((category) => (
               <Link key={category.slug} href={managedCategoryHref(category)} className="gem-card-new">
                 <div className="gem-img-wrap">
                   {layeredImage(category.image_url, category.hover_image_url, category.name, fallbackGemBackground(category))}

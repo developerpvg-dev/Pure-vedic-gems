@@ -5,6 +5,10 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
 import { OrderActions } from '@/components/admin/OrderActions';
 import {
+  mergeConfigurationDetails,
+  type ConfigurationSnapshot,
+} from '@/lib/utils/configuration-snapshot';
+import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
   User, FileText, Hash, Calendar, Tag, ExternalLink,
   Settings,
@@ -80,6 +84,7 @@ interface FullConfig {
   metal: string | null;
   ring_size: string | null;
   chain_length: string | null;
+  custom_design_url: string | null;
   gem_price: number | null;
   making_charge: number | null;
   metal_price: number | null;
@@ -88,6 +93,7 @@ interface FullConfig {
   certification_fee: number | null;
   energization_fee: number | null;
   total_price: number | null;
+  configuration_snapshot: unknown;
   jewelry_designs: {
     name: string;
     setting_type: string;
@@ -162,6 +168,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         metal,
         ring_size,
         chain_length,
+        custom_design_url,
         gem_price,
         making_charge,
         metal_price,
@@ -170,6 +177,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         certification_fee,
         energization_fee,
         total_price,
+        configuration_snapshot,
         jewelry_designs ( name, setting_type, image_url, description ),
         certification_labs ( name, full_name ),
         energization_options ( name, description, duration )
@@ -288,6 +296,18 @@ export default async function OrderDetailPage({ params }: PageProps) {
               <div className="divide-y divide-[var(--pvg-border)]">
                 {items.map((item: OrderItemRecord, idx: number) => {
                   const cfg = item.configuration_id ? configMap.get(item.configuration_id) : null;
+                  const details: ConfigurationSnapshot | null = cfg || item.configuration_snapshot
+                    ? mergeConfigurationDetails({
+                        snapshot: item.configuration_snapshot ?? cfg?.configuration_snapshot,
+                        dbConfig: cfg,
+                      })
+                    : null;
+                  const selections = details?.selections;
+                  const pricing = details?.pricing;
+                  const designImage =
+                    cfg?.jewelry_designs?.image_url ?? details?.product?.image_url ?? null;
+                  const designName =
+                    selections?.design?.name ?? cfg?.jewelry_designs?.name ?? null;
 
                   return (
                     <div key={idx} className="p-4 sm:p-5">
@@ -324,7 +344,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                       </div>
 
                       {/* Full Configurator Details */}
-                      {cfg ? (
+                      {details ? (
                         <div className="mt-4 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden">
                           {/* Config header */}
                           <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-4 py-2.5">
@@ -332,36 +352,58 @@ export default async function OrderDetailPage({ params }: PageProps) {
                             <p className="text-xs font-bold uppercase tracking-wider text-amber-700">
                               Jewelry Configuration
                             </p>
-                            {cfg.setting_type && (
+                            {selections?.setting_type && (
                               <span className="ml-auto rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                                {SETTING_LABELS[cfg.setting_type] ?? cap(cfg.setting_type)}
+                                {SETTING_LABELS[selections.setting_type] ?? cap(selections.setting_type)}
                               </span>
                             )}
                           </div>
 
                           <div className="p-4 space-y-4">
+                            {details.summary && (
+                              <p className="text-xs text-amber-900/80">{details.summary}</p>
+                            )}
+
                             {/* Design info */}
-                            {cfg.jewelry_designs && (
+                            {(designName || selections?.custom_design_url) && (
                               <div className="flex items-start gap-3">
-                                {cfg.jewelry_designs.image_url && (
+                                {designImage && (
                                   <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-amber-200 bg-white">
                                     <Image
-                                      src={cfg.jewelry_designs.image_url}
-                                      alt={cfg.jewelry_designs.name}
+                                      src={designImage}
+                                      alt={designName ?? 'Design'}
                                       fill
                                       className="object-cover"
                                       sizes="56px"
                                     />
                                   </div>
                                 )}
-                                <div>
+                                <div className="min-w-0 flex-1">
                                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Design</p>
-                                  <p className="mt-0.5 font-semibold text-[var(--pvg-text)]">{cfg.jewelry_designs.name}</p>
-                                  <p className="text-xs text-[var(--pvg-muted)]">
-                                    {SETTING_LABELS[cfg.jewelry_designs.setting_type] ?? cap(cfg.jewelry_designs.setting_type)}
-                                  </p>
-                                  {cfg.jewelry_designs.description && (
+                                  {designName ? (
+                                    <p className="mt-0.5 font-semibold text-[var(--pvg-text)]">{designName}</p>
+                                  ) : null}
+                                  {cfg?.jewelry_designs?.setting_type && (
+                                    <p className="text-xs text-[var(--pvg-muted)]">
+                                      {SETTING_LABELS[cfg.jewelry_designs.setting_type] ?? cap(cfg.jewelry_designs.setting_type)}
+                                    </p>
+                                  )}
+                                  {cfg?.jewelry_designs?.description && (
                                     <p className="mt-0.5 text-xs text-[var(--pvg-muted)] line-clamp-2">{cfg.jewelry_designs.description}</p>
+                                  )}
+                                  {selections?.custom_design_url && (
+                                    <a
+                                      href={selections.custom_design_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-800 hover:underline"
+                                    >
+                                      Custom design file
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
+                                  {pricing?.design_note && (
+                                    <p className="mt-1 text-xs text-[var(--pvg-muted)]">{pricing.design_note}</p>
                                   )}
                                 </div>
                               </div>
@@ -369,52 +411,97 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
                             {/* Key specs grid */}
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                              {cfg.metal && (
+                              {selections?.metal && (
                                 <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Metal</p>
                                   <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {METAL_LABELS[cfg.metal] ?? cap(cfg.metal)}
+                                    {METAL_LABELS[selections.metal] ?? cap(selections.metal)}
                                   </p>
                                 </div>
                               )}
-                              {cfg.ring_size && (
+                              {selections?.ring_size && (
                                 <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Ring Size</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{cfg.ring_size}</p>
+                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{selections.ring_size}</p>
                                 </div>
                               )}
-                              {cfg.chain_length && (
+                              {selections?.chain_length && (
                                 <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Chain Length</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{cfg.chain_length}</p>
+                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{selections.chain_length}</p>
                                 </div>
                               )}
-                              {cfg.certification_labs && (
+                              {selections?.certification && (
                                 <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Certification</p>
                                   <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {cfg.certification_labs.name}
+                                    {selections.certification.name}
                                   </p>
-                                  {cfg.certification_labs.full_name && (
+                                  {cfg?.certification_labs?.full_name && (
                                     <p className="text-[10px] text-[var(--pvg-muted)]">{cfg.certification_labs.full_name}</p>
                                   )}
                                 </div>
                               )}
-                              {cfg.energization_options && (
+                              {selections?.certification_skipped && !selections?.certification && (
+                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Certification</p>
+                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">Skipped</p>
+                                </div>
+                              )}
+                              {selections?.energization && (
                                 <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100 sm:col-span-2">
                                   <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Energization / Pooja</p>
                                   <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {cfg.energization_options.name}
+                                    {selections.energization.name}
                                   </p>
-                                  {cfg.energization_options.duration && (
+                                  {cfg?.energization_options?.duration && (
                                     <p className="text-[10px] text-[var(--pvg-muted)]">Duration: {cfg.energization_options.duration}</p>
                                   )}
-                                  {cfg.energization_options.description && (
+                                  {cfg?.energization_options?.description && (
                                     <p className="text-[10px] text-[var(--pvg-muted)] line-clamp-2">{cfg.energization_options.description}</p>
                                   )}
                                 </div>
                               )}
+                              {details.delivery_eta?.label && (
+                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100 sm:col-span-2">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Delivery ETA</p>
+                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
+                                    {details.delivery_eta.label}
+                                  </p>
+                                </div>
+                              )}
+                              {item.delivery_eta_label && !details.delivery_eta?.label && (
+                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100 sm:col-span-2">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Delivery ETA</p>
+                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{item.delivery_eta_label}</p>
+                                </div>
+                              )}
                             </div>
+
+                            {selections?.energization_form && (
+                              <div className="rounded-lg border border-amber-100 bg-white/80 px-3 py-3">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                                  Vedic Birth Details
+                                </p>
+                                <div className="mt-2 grid gap-2 text-xs sm:grid-cols-3">
+                                  <div>
+                                    <p className="text-[var(--pvg-muted)]">Date of birth</p>
+                                    <p className="font-medium text-[var(--pvg-text)]">{selections.energization_form.dob}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[var(--pvg-muted)]">Gotra</p>
+                                    <p className="font-medium text-[var(--pvg-text)]">{selections.energization_form.gotra}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[var(--pvg-muted)]">Rashi</p>
+                                    <p className="font-medium text-[var(--pvg-text)]">{selections.energization_form.rashi}</p>
+                                  </div>
+                                </div>
+                                {selections.energization_form.record_ceremony && (
+                                  <p className="mt-2 text-[10px] font-medium text-amber-700">Ceremony video requested</p>
+                                )}
+                              </div>
+                            )}
 
                             {/* Pricing breakdown for this configuration */}
                             <div className="rounded-lg bg-white/80 border border-amber-100 overflow-hidden">
@@ -423,32 +510,38 @@ export default async function OrderDetailPage({ params }: PageProps) {
                               </p>
                               <div className="divide-y divide-amber-50 text-xs">
                                 {[
-                                  { label: 'Gem Price',          value: cfg.gem_price },
-                                  { label: 'Making Charge',      value: cfg.making_charge },
-                                  { label: 'Metal Price',        value: cfg.metal_price },
-                                  { label: 'Certification Fee',  value: cfg.certification_fee },
-                                  { label: 'Energization Fee',   value: cfg.energization_fee },
+                                  { label: 'Gem Price', value: pricing?.gem_price },
+                                  { label: 'Making Charge', value: pricing?.making_charge },
+                                  {
+                                    label: pricing?.stone_addon_label
+                                      ? `${pricing.stone_addon_label} add-on`
+                                      : 'Diamond add-on',
+                                    value: pricing?.diamond_charge,
+                                  },
+                                  { label: 'Metal Price', value: pricing?.metal_price },
+                                  { label: 'Certification Fee', value: pricing?.certification_fee },
+                                  { label: 'Energization Fee', value: pricing?.energization_fee },
+                                  { label: 'Custom Design Fee', value: pricing?.custom_design_fee },
                                 ].filter(l => (l.value ?? 0) > 0).map(l => (
                                   <div key={l.label} className="flex justify-between px-3 py-1.5 text-[var(--pvg-text)]">
                                     <span className="text-[var(--pvg-muted)]">{l.label}</span>
                                     <span className="font-medium">{fmt(l.value)}</span>
                                   </div>
                                 ))}
-                                {cfg.metal_weight_grams && cfg.gold_rate_per_gram ? (
+                                {pricing?.metal_weight_grams && pricing?.gold_rate_per_gram ? (
                                   <div className="flex justify-between px-3 py-1.5 text-[10px] text-[var(--pvg-muted)] italic">
-                                    <span>Metal: {cfg.metal_weight_grams}g at {fmt(cfg.gold_rate_per_gram)}/g</span>
-                                    <span>{fmt(cfg.metal_price)}</span>
+                                    <span>Metal: {pricing.metal_weight_grams}g at {fmt(pricing.gold_rate_per_gram)}/g</span>
+                                    <span>{fmt(pricing.metal_price)}</span>
                                   </div>
                                 ) : null}
                                 <div className="flex justify-between bg-amber-50 px-3 py-2 font-bold text-amber-800">
                                   <span>Configuration Total</span>
-                                  <span>{fmt(cfg.total_price)}</span>
+                                  <span>{fmt(pricing?.total ?? cfg?.total_price)}</span>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Summary fallback if no structured data matches */}
-                            {item.configuration_summary && !cfg.jewelry_designs && !cfg.metal && (
+                            {item.configuration_summary && !designName && !selections?.metal && (
                               <p className="text-xs text-[var(--pvg-muted)] italic">{item.configuration_summary}</p>
                             )}
                           </div>

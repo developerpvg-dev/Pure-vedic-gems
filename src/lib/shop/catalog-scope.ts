@@ -1,0 +1,56 @@
+/**
+ * Catalog listing scope — mirrors legacy WooCommerce category boundaries.
+ *
+ * Old site: /navratan/ruby/ listed 236 priced rubies only.
+ * Exclusive "On-Demand" SKUs lived under Exclusive Gems, not ruby/emerald grids.
+ */
+
+export const NAVARATNA_PRICED_SUBCATEGORIES = new Set([
+  'ruby',
+  'pearl',
+  'red-coral',
+  'emerald',
+  'yellow-sapphire',
+  'blue-sapphire',
+  'hessonite',
+  'cats-eye',
+  'white-sapphire',
+  'diamond',
+  'pitambari',
+]);
+
+export const QUOTE_ONLY_PRICE_MODES = ['on_demand', 'quote_required'] as const;
+
+/** Standard navaratna gem grids (ruby, emerald, …) exclude quote-only SKUs. */
+export function shouldHideQuoteOnlyFromListing(
+  category?: string | null,
+  subCategory?: string | null,
+): boolean {
+  const normalizedCategory = category?.toLowerCase().trim();
+  const normalizedSubCategory = subCategory?.toLowerCase().trim();
+
+  if (normalizedCategory !== 'navaratna') return false;
+  if (normalizedSubCategory === 'exclusive-gems') return false;
+
+  if (normalizedSubCategory && NAVARATNA_PRICED_SUBCATEGORIES.has(normalizedSubCategory)) {
+    return true;
+  }
+
+  return !normalizedSubCategory;
+}
+
+type FilterableQuery = {
+  not(column: string, operator: string, value: string): FilterableQuery;
+};
+
+/** Hide on-request exclusive gems from priced navaratna collection pages. */
+export function applyQuoteOnlyListingFilter<T extends FilterableQuery>(
+  query: T,
+  category?: string | null,
+  subCategory?: string | null,
+): T {
+  if (!shouldHideQuoteOnlyFromListing(category, subCategory)) {
+    return query;
+  }
+  return query.not('price_mode', 'in', '(on_demand,quote_required)') as T;
+}

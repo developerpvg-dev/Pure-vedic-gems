@@ -6,17 +6,23 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import { Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
+import {
+  getDesignConfiguratorNote,
+  getDesignDiamondChargeFromDesign,
+  getStoneAddonLabelFromDesign,
+} from '@/lib/utils/jewelry-design-fields';
 import { createClient } from '@/lib/supabase/client';
 import type { JewelryDesign } from '@/lib/types/database';
 import type { ProductCard } from '@/lib/types/product';
 import type { SettingType, GemCategory } from '@/lib/types/configurator';
 import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
+import { DesignImageLightbox } from '@/components/configurator/DesignImageLightbox';
+import { designImageSrc } from '@/lib/utils/design-image';
 import {
   designMatchesRudrakshaProduct,
   getRudrakshaDesignCategoriesForProduct,
@@ -60,6 +66,7 @@ export default function DesignSelector({
   const [error, setError] = useState<string | null>(null);
   const [customUploadError, setCustomUploadError] = useState<string | null>(null);
   const [customUploading, setCustomUploading] = useState(false);
+  const [previewDesign, setPreviewDesign] = useState<JewelryDesign | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const customDesignEnabled = optionRules?.jewelry_design_enabled ?? true;
   const rudrakshaFlow = isRudrakshaConfiguratorContext(gemCategory, selectedProduct);
@@ -108,6 +115,15 @@ export default function DesignSelector({
   }, [settingType, gemCategory, selectedProduct, rudrakshaFlow]);
 
   function getDisplayCharge(design: JewelryDesign): string {
+    const diamondAmount = getDesignDiamondChargeFromDesign(design.diamond_charges);
+    if (diamondAmount && diamondAmount > 0) {
+      const label = getStoneAddonLabelFromDesign(design) ?? 'Diamond';
+      return `+${formatPrice(diamondAmount)} ${label}`;
+    }
+
+    const note = getDesignConfiguratorNote(design);
+    if (note) return 'See note';
+
     const charges = design.making_charges as Record<string, number> | null;
     if (!charges) return 'Included';
     const values = Object.values(charges).filter((v) => typeof v === 'number' && v > 0);
@@ -117,6 +133,8 @@ export default function DesignSelector({
     if (min === max) return `+${formatPrice(min)}`;
     return `+${formatPrice(min)}–${formatPrice(max)}`;
   }
+
+  const selectedDesignNote = selected ? getDesignConfiguratorNote(selected) : null;
 
   function validateCustomFile(file: File): string | null {
     if (!ACCEPTED_CUSTOM_TYPES.includes(file.type)) {
@@ -185,10 +203,8 @@ export default function DesignSelector({
   function renderDesignCard(design: JewelryDesign) {
     const isChosen = selected?.id === design.id;
     return (
-      <button
+      <div
         key={design.id}
-        onClick={() => onSelectDesign(design)}
-        aria-pressed={isChosen}
         className={cn(
           'group relative overflow-hidden rounded-lg border text-left transition-all duration-150',
           'hover:border-accent hover:shadow-sm',
@@ -197,29 +213,47 @@ export default function DesignSelector({
             : 'border-border'
         )}
       >
-        <div className="relative aspect-square overflow-hidden bg-muted">
-          {design.image_url ? (
-            <Image
-              src={design.image_url}
-              alt={design.name}
-              fill
-              className="object-cover transition-transform duration-200 group-hover:scale-105"
-              sizes="(max-width: 640px) 33vw, 25vw"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-2xl">📿</div>
-          )}
-          {isChosen && (
-            <div className="absolute inset-0 bg-accent/15 flex items-center justify-center">
-              <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-semibold text-accent-foreground">✓</span>
-            </div>
-          )}
-        </div>
-        <div className="p-1.5">
-          <p className="truncate text-[11px] font-medium text-primary">{design.name}</p>
-          <p className="text-[9px] font-medium text-accent">{getDisplayCharge(design)}</p>
-        </div>
-      </button>
+        <button
+          type="button"
+          onClick={() => onSelectDesign(design)}
+          aria-pressed={isChosen}
+          className="w-full text-left"
+        >
+          <div className="relative aspect-square overflow-hidden bg-[#faf8f5]">
+            {design.image_url ? (
+              <img
+                src={designImageSrc(design.image_url)}
+                alt={design.name}
+                className="h-full w-full object-contain p-1.5"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-2xl">📿</div>
+            )}
+            {isChosen && (
+              <div className="absolute inset-0 flex items-center justify-center bg-accent/15">
+                <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-semibold text-accent-foreground">✓</span>
+              </div>
+            )}
+          </div>
+          <div className="p-1.5">
+            <p className="truncate text-[11px] font-medium text-primary">{design.name}</p>
+            <p className="text-[9px] font-medium text-accent">{getDisplayCharge(design)}</p>
+          </div>
+        </button>
+
+        {design.image_url ? (
+          <button
+            type="button"
+            onClick={() => setPreviewDesign(design)}
+            className="absolute right-1.5 top-1.5 z-10 rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm ring-1 ring-black/10 backdrop-blur-sm transition hover:bg-accent hover:text-accent-foreground"
+            aria-label={`View ${design.name} in full size`}
+          >
+            View
+          </button>
+        ) : null}
+      </div>
     );
   }
 
@@ -340,6 +374,17 @@ export default function DesignSelector({
             </div>
           )}
 
+          {selectedDesignNote && (
+            <div className="mt-3 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80">
+                Design note — {selected?.name}
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-amber-950/90">
+                {selectedDesignNote}
+              </p>
+            </div>
+          )}
+
           {designs.length === 0 && !customUploading && (
             <p className="mt-4 text-center text-xs text-muted-foreground">
               {rudrakshaFlow
@@ -349,6 +394,16 @@ export default function DesignSelector({
           )}
         </>
       )}
+
+      <DesignImageLightbox
+        open={previewDesign !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewDesign(null);
+        }}
+        imageUrl={previewDesign?.image_url ?? null}
+        title={previewDesign?.name ?? 'Design preview'}
+        subtitle={previewDesign ? getDisplayCharge(previewDesign) : undefined}
+      />
     </div>
   );
 }

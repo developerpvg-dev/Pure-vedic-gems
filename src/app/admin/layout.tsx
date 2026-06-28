@@ -18,6 +18,7 @@ const NAV_GROUPS = [
       { href: '/admin/customers', label: 'Customers', icon: Users },
       { href: '/admin/rewards', label: 'Rewards', icon: Gift },
       { href: '/admin/products', label: 'Products', icon: Package },
+      { href: '/admin/catalog-order', label: 'Catalog Order', icon: SlidersHorizontal },
       { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame },
       { href: '/admin/yagya-bookings', label: 'Yagya Bookings', icon: Flame },
       { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud },
