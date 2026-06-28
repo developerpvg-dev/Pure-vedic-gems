@@ -86,6 +86,7 @@ type JewelryDesignForPricing = {
   diamond_charges: unknown;
   labor_rates?: unknown;
   stone_addon_label?: string | null;
+  description?: string | null;
   product_scope: string;
   rudraksha_category: string | null;
   is_active: boolean;
@@ -370,24 +371,24 @@ export async function POST(request: NextRequest) {
     input.design_id && settingType !== 'loose'
       ? admin
           .from('jewelry_designs')
-          .select('id, name, setting_type, making_charges, estimated_metal_weight, diamond_charges, labor_rates, stone_addon_label, product_scope, rudraksha_category, is_active')
+          .select('id, name, setting_type, making_charges, estimated_metal_weight, diamond_charges, labor_rates, stone_addon_label, description, product_scope, rudraksha_category, is_active')
           .eq('id', input.design_id)
           .maybeSingle()
-      : Promise.resolve({ data: null }),
+      : Promise.resolve({ data: null, error: null }),
     input.certification_id
       ? admin
           .from('certification_labs')
           .select('id, name, extra_charge, turnaround_days, is_active')
           .eq('id', input.certification_id)
           .maybeSingle()
-      : Promise.resolve({ data: null }),
+      : Promise.resolve({ data: null, error: null }),
     input.energization_id
       ? admin
           .from('energization_options')
           .select('id, name, price, duration, includes_video, is_active')
           .eq('id', input.energization_id)
           .maybeSingle()
-      : Promise.resolve({ data: null }),
+      : Promise.resolve({ data: null, error: null }),
     getCurrentMetalRates(admin),
     admin.from('commerce_settings').select('values').limit(1).maybeSingle(),
   ]);

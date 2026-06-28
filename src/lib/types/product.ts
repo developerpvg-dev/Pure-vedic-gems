@@ -243,7 +243,7 @@ export interface ProductFilters {
   q?: string;
   featured?: boolean;
   directors_pick?: boolean;
-  sort_by?: 'price' | 'carat' | 'newest';
+  sort_by?: 'catalog' | 'price' | 'carat' | 'newest';
   sort_order?: 'asc' | 'desc';
   page?: number;
   per_page?: number;

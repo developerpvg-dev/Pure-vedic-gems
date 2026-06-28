@@ -195,7 +195,7 @@ export default function AdminCatalogOrderPage() {
                 <p className="truncate text-sm font-medium text-gray-900">{product.name}</p>
                 <p className="mt-0.5 text-xs text-gray-500">
                   {product.carat_weight ? `${product.carat_weight} ct · ` : ''}
-                  {formatPrice(product.price)}
+                  {product.price != null ? formatPrice(product.price) : 'Price on request'}
                   {product.legacy_woo_id ? ` · Woo #${product.legacy_woo_id}` : ''}
                 </p>
               </div>

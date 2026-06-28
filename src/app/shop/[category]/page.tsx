@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { knownSubcategoryHref, resolveShopCategoryPath, staticShopCategoryParams } from '@/lib/categories/shop';
+import { knownSubcategoryHref, resolveShopCategoryPath, staticShopCategoryParams, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
@@ -21,16 +21,7 @@ import { RudrakshaCategoryGrid } from '@/components/shop/RudrakshaCategoryGrid';
 
 export const revalidate = 60;
 
-interface ResolvedCategory {
-  category?: string;
-  sub_category?: string;
-  catalogSubcategories?: string[];
-  directorsPick?: boolean;
-  label: string;
-  desc: string;
-  canonicalPath?: string;
-  seoLanding?: SeoLandingPage;
-}
+interface ResolvedCategory extends ResolvedShopCategory {}
 
 async function resolveCategory(slug: string): Promise<ResolvedCategory | null> {
   return resolveShopCategoryPath(slug);

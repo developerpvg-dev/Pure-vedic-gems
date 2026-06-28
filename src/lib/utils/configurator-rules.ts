@@ -16,17 +16,17 @@ export interface ConfiguratorOptionRules {
   jewelry_design_enabled: boolean;
   metal_enabled: boolean;
   ring_size_enabled: boolean;
-  allowed_setting_types: SettingType[];
-  allowed_metals: string[];
-  allowed_ring_size_systems: RingSizeSystemId[];
-  allowed_ring_sizes: string[];
-  allowed_certification_lab_ids: string[];
-  allowed_energization_option_ids: string[];
-  legacy_certificate_options: unknown[];
-  legacy_energization_options: unknown[];
-  legacy_metal_options: unknown[];
-  legacy_setting_options: unknown[];
-  legacy_ring_size_options: unknown[];
+  allowed_setting_types: readonly SettingType[];
+  allowed_metals: readonly string[];
+  allowed_ring_size_systems: readonly RingSizeSystemId[];
+  allowed_ring_sizes: readonly string[];
+  allowed_certification_lab_ids: readonly string[];
+  allowed_energization_option_ids: readonly string[];
+  legacy_certificate_options: readonly unknown[];
+  legacy_energization_options: readonly unknown[];
+  legacy_metal_options: readonly unknown[];
+  legacy_setting_options: readonly unknown[];
+  legacy_ring_size_options: readonly unknown[];
 }
 
 export const RING_SIZE_SYSTEMS: RingSizeSystem[] = [
@@ -173,7 +173,7 @@ export function normalizeConfiguratorRules(input: unknown): ConfiguratorOptionRu
   };
 }
 
-export function isAllowedByList(value: string | null | undefined, allowedValues: string[]) {
+export function isAllowedByList(value: string | null | undefined, allowedValues: readonly string[]) {
   if (!value) return false;
   return allowedValues.length === 0 || allowedValues.includes(value);
 }

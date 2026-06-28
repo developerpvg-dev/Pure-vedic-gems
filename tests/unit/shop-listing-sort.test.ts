@@ -5,6 +5,12 @@ describe('shop listing sort', () => {
   it('uses in_stock first then display_order for catalog sort', () => {
     const orders: string[] = [];
     const query = {
+      eq() {
+        return this;
+      },
+      not() {
+        return this;
+      },
       order(column: string, options: { ascending: boolean }) {
         orders.push(`${column}:${options.ascending ? 'asc' : 'desc'}`);
         return this;
@@ -18,6 +24,12 @@ describe('shop listing sort', () => {
   it('keeps in_stock first for price sorts', () => {
     const orders: string[] = [];
     const query = {
+      eq() {
+        return this;
+      },
+      not() {
+        return this;
+      },
       order(column: string, options: { ascending: boolean }) {
         orders.push(`${column}:${options.ascending ? 'asc' : 'desc'}`);
         return this;

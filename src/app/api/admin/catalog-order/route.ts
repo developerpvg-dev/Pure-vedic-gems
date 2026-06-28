@@ -87,7 +87,8 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to validate products' }, { status: 500 });
   }
 
-  if ((existing?.length ?? 0) !== ids.length) {
+  const existingRows = Array.isArray(existing) ? existing : [];
+  if (existingRows.length !== ids.length) {
     return NextResponse.json({ error: 'One or more products do not belong to this category' }, { status: 400 });
   }
 
