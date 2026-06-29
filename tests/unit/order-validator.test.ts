@@ -12,6 +12,7 @@ const shippingAddress = {
   city: 'New Delhi',
   state: 'Delhi',
   pincode: '110001',
+  country_code: 'IN',
   country: 'India',
 };
 
@@ -57,7 +58,7 @@ describe('order validators', () => {
       ],
       contact,
       shipping_address: shippingAddress,
-      shipping_method: 'standard',
+      shipping_method: 'in_standard_insured',
       checkout_consent: {
         terms_accepted: true,
         privacy_accepted: true,

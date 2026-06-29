@@ -5,6 +5,7 @@ import { Loader2, Save, ChevronRight, MessageCircle } from 'lucide-react';
 
 const VALID_STATUSES = [
   'pending_payment', 'placed', 'confirmed', 'processing',
+  'design_assigned', 'design_in_progress', 'design_completed',
   'jewelry_making', 'certification', 'energization',
   'quality_check', 'shipped', 'delivered', 'cancelled', 'refunded',
   'payment_review',
@@ -15,6 +16,9 @@ const STATUS_LABELS: Record<string, string> = {
   placed: 'Placed',
   confirmed: 'Confirmed',
   processing: 'Processing',
+  design_assigned: 'Design Assigned',
+  design_in_progress: 'Design In Progress',
+  design_completed: 'Design Completed',
   jewelry_making: 'Jewelry Making',
   certification: 'Certification',
   energization: 'Energization',
@@ -36,6 +40,8 @@ interface OrderActionsProps {
   currentCarrier?: string | null;
   currentShippedAt?: string | null;
   currentDeliveryStatus?: string | null;
+  currentProductVideoUrl?: string | null;
+  currentPujaVideoUrl?: string | null;
   customerPhone: string | null;
   customerName: string | null;
   orderNumber: string;
@@ -51,6 +57,8 @@ export function OrderActions({
   currentCarrier,
   currentShippedAt,
   currentDeliveryStatus,
+  currentProductVideoUrl,
+  currentPujaVideoUrl,
   customerPhone,
   customerName,
   orderNumber,
@@ -63,6 +71,8 @@ export function OrderActions({
   const [carrier, setCarrier] = useState(currentCarrier ?? '');
   const [shippedAt, setShippedAt] = useState(currentShippedAt?.slice(0, 10) ?? '');
   const [deliveryStatus, setDeliveryStatus] = useState(currentDeliveryStatus ?? 'pending');
+  const [productVideoUrl, setProductVideoUrl] = useState(currentProductVideoUrl ?? '');
+  const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -142,6 +152,33 @@ export function OrderActions({
             </select>
           </div>
 
+          {/* Fulfillment videos */}
+          <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-3">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-violet-800">Customer videos</p>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">Product video URL</label>
+                <input
+                  value={productVideoUrl}
+                  onChange={(e) => setProductVideoUrl(e.target.value)}
+                  placeholder="YouTube, Google Drive, or Supabase video link"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">Customer sees a &quot;Watch Product Video&quot; button once saved.</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">Puja / energization video URL</label>
+                <input
+                  value={pujaVideoUrl}
+                  onChange={(e) => setPujaVideoUrl(e.target.value)}
+                  placeholder="Link to puja ceremony video"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">Shown after product video, before shipment tracking.</p>
+              </div>
+            </div>
+          </div>
+
           {/* Tracking */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">Carrier</label>
@@ -217,6 +254,8 @@ export function OrderActions({
           <button
             onClick={() => handleSave({
               status,
+              product_video_url: productVideoUrl || null,
+              puja_video_url: pujaVideoUrl || null,
               carrier: carrier || null,
               tracking_number: tracking || null,
               tracking_url: trackingUrl || null,
@@ -235,6 +274,8 @@ export function OrderActions({
           <button
             onClick={() => handleSave({
               status,
+              product_video_url: productVideoUrl || null,
+              puja_video_url: pujaVideoUrl || null,
               carrier: carrier || null,
               tracking_number: tracking || null,
               tracking_url: trackingUrl || null,

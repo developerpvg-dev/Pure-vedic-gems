@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { ADMIN_ROLE_OPTIONS, ROLE_LABELS } from '@/lib/admin/rbac';
+import { sendTeamInvitation, INVITE_ROLES } from '@/lib/admin/send-team-invitation';
 import { logAdminAction } from '@/lib/utils/admin-log';
 
 const VALID_ROLES = [...ADMIN_ROLE_OPTIONS];
@@ -17,57 +18,55 @@ export async function GET() {
     .order('created_at', { ascending: true });
 
   if (error) return NextResponse.json({ error: 'Failed to load team' }, { status: 500 });
-  return NextResponse.json({ members: data || [], roles: VALID_ROLES, roleLabels: ROLE_LABELS });
+  return NextResponse.json({
+    members: data || [],
+    roles: VALID_ROLES,
+    inviteRoles: INVITE_ROLES,
+    roleLabels: ROLE_LABELS,
+  });
 }
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdminAccess('settings.team');
   if ('error' in auth) return auth.error;
 
+  const normalizedRole = auth.member.normalizedRole;
+  if (normalizedRole !== 'owner' && normalizedRole !== 'admin') {
+    return NextResponse.json({ error: 'Only owners and admins can invite team members' }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => null) as { email?: string; name?: string; role?: string } | null;
-  const email = body?.email?.trim().toLowerCase();
-  const name = body?.name?.trim();
-  const role = body?.role?.trim().toLowerCase();
+  const email = body?.email?.trim().toLowerCase() ?? '';
+  const name = body?.name?.trim() ?? '';
+  const role = body?.role?.trim().toLowerCase() || 'sales';
 
-  if (!email || !name || !role) {
-    return NextResponse.json({ error: 'email, name, and role required' }, { status: 400 });
-  }
-  if (!VALID_ROLES.includes(role as (typeof VALID_ROLES)[number])) {
-    return NextResponse.json({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` }, { status: 400 });
-  }
-
-  const admin = createAdminClient();
-  const { data: { users }, error: listError } = await admin.auth.admin.listUsers();
-  if (listError) return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
-
-  const user = users.find((candidate) => candidate.email?.toLowerCase() === email);
-  if (!user) {
-    return NextResponse.json({ error: 'No user account found with this email. They must sign up first.' }, { status: 404 });
-  }
-
-  const { data: existing } = await admin.from('team_members').select('id').eq('id', user.id).maybeSingle();
-  if (existing) return NextResponse.json({ error: 'This user is already a team member' }, { status: 409 });
-
-  const { error } = await admin.from('team_members').insert({
-    id: user.id,
+  const result = await sendTeamInvitation({
+    email,
     name,
     role,
-    is_active: true,
-    permissions: {},
+    invitedByUserId: auth.user.id,
+    invitedByName: auth.member.name,
   });
 
-  if (error) return NextResponse.json({ error: 'Failed to add member' }, { status: 500 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
 
   await logAdminAction({
     userId: auth.user.id,
-    action: 'team_member_add',
-    resourceType: 'team_member',
-    resourceId: user.id,
-    details: { email, name, role },
+    action: 'team_invite_sent',
+    resourceType: 'team_invitation',
+    resourceId: email,
+    details: { email, name, role, expires_at: result.expiresAt },
     ipAddress: getRequestIp(request),
   });
 
-  return NextResponse.json({ success: true }, { status: 201 });
+  return NextResponse.json({
+    success: true,
+    inviteUrl: result.inviteUrl,
+    expiresAt: result.expiresAt,
+    message: result.message,
+  }, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {

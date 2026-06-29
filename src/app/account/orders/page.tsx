@@ -3,35 +3,17 @@ import Link from 'next/link';
 import { Package } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
-import { ReorderButton } from '@/components/account/ReorderButton';
+import { AccountOrderCard, type AccountOrderCardData } from '@/components/account/AccountOrderCard';
+import {
+  enrichManyOrderItemLists,
+  parseOrderItems,
+} from '@/lib/customer/orders';
 import type { Order } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'My Orders | PureVedicGems',
-};
-
-const STATUS_STEPS = [
-  'pending_payment',
-  'confirmed',
-  'processing',
-  'shipped',
-  'delivered',
-];
-
-function getStatusStep(status: string) {
-  return STATUS_STEPS.indexOf(status);
-}
-
-const STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = {
-  pending_payment: { label: 'Pending Payment', bg: '#fef9c3', text: '#854d0e' },
-  confirmed: { label: 'Confirmed', bg: '#dcfce7', text: '#166534' },
-  processing: { label: 'Processing', bg: '#dbeafe', text: '#1e40af' },
-  shipped: { label: 'Shipped', bg: '#ede9fe', text: '#5b21b6' },
-  delivered: { label: 'Delivered', bg: '#dcfce7', text: '#166534' },
-  cancelled: { label: 'Cancelled', bg: '#fee2e2', text: '#991b1b' },
-  refunded: { label: 'Refunded', bg: '#f3f4f6', text: '#374151' },
 };
 
 export default async function OrdersPage() {
@@ -49,6 +31,57 @@ export default async function OrdersPage() {
     .order('created_at', { ascending: false });
   const orders = (rawOrders ?? []) as Order[];
 
+  const parsedItemLists = orders.map((order) => parseOrderItems(order.items));
+  const enrichedLists = await enrichManyOrderItemLists(parsedItemLists, supabase);
+
+  const orderCards: AccountOrderCardData[] = orders.map((order, index) => {
+      const items = enrichedLists[index] ?? [];
+      const extras = order as Order & {
+        product_video_url?: string | null;
+        puja_video_url?: string | null;
+        assigned_designer_id?: string | null;
+        design_completed_at?: string | null;
+        carrier?: string | null;
+        payment_status?: string | null;
+      };
+      const shippingAddress = order.shipping_address as AccountOrderCardData['shipping_address'];
+
+      return {
+        id: order.id,
+        order_number: order.order_number,
+        status: order.status,
+        payment_status: extras.payment_status ?? null,
+        created_at: order.created_at,
+        total: order.total,
+        subtotal: order.subtotal,
+        jewelry_charges: order.jewelry_charges ?? 0,
+        metal_charges: order.metal_charges ?? 0,
+        certification_charges: order.certification_charges ?? 0,
+        energization_charges: order.energization_charges ?? 0,
+        shipping_cost: order.shipping_cost ?? 0,
+        discount: order.discount ?? 0,
+        coupon_code: order.coupon_code,
+        coupon_discount: order.coupon_discount ?? 0,
+        reward_discount: order.reward_discount ?? 0,
+        reward_points_redeemed: order.reward_points_redeemed ?? 0,
+        gst_amount: order.gst_amount ?? 0,
+        shipping_method: order.shipping_method,
+        shipping_address: shippingAddress,
+        special_instructions: order.special_instructions,
+        include_energization: order.include_energization ?? false,
+        energization_type: order.energization_type,
+        tracking_number: order.tracking_number,
+        tracking_url: order.tracking_url,
+        carrier: extras.carrier ?? null,
+        estimated_delivery: order.estimated_delivery,
+        product_video_url: extras.product_video_url ?? null,
+        puja_video_url: extras.puja_video_url ?? null,
+        assigned_designer_id: extras.assigned_designer_id ?? null,
+        design_completed_at: extras.design_completed_at ?? null,
+        items,
+      };
+  });
+
   return (
     <div className="pvg-account-stack">
       <AccountPageHeader
@@ -56,7 +89,7 @@ export default async function OrdersPage() {
         subtitle="Track and view your complete order history."
       />
 
-      {!orders || orders.length === 0 ? (
+      {!orderCards.length ? (
         <div className="pvg-account-card pvg-account-empty">
           <Package className="pvg-account-empty-icon h-14 w-14" aria-hidden="true" />
           <h2 className="pvg-account-empty-title">No orders yet</h2>
@@ -67,200 +100,9 @@ export default async function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => {
-            const items = Array.isArray(order.items) ? order.items : [];
-            const statusInfo =
-              STATUS_MAP[order.status] ??
-              STATUS_MAP['confirmed'];
-            const stepIdx = getStatusStep(order.status);
-
-            return (
-              <div key={order.id} className="pvg-account-card overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ede6d5] bg-[#faf8f4] px-5 py-4 md:px-6">
-                  <div>
-                    <p className="pvg-account-card-title text-lg">{order.order_number}</p>
-                    <p className="pvg-account-row-meta">
-                      Placed on{' '}
-                      {new Date(order.created_at).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
-                      style={{
-                        background: statusInfo.bg,
-                        color: statusInfo.text,
-                      }}
-                    >
-                      {statusInfo.label}
-                    </span>
-                    <span
-                      className="text-xl font-bold"
-                      style={{ color: 'var(--pvg-primary)' }}
-                    >
-                      ₹{order.total.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Order timeline (for active orders) */}
-                {stepIdx >= 0 && order.status !== 'cancelled' && (
-                  <div className="px-6 py-4">
-                    <div className="flex items-center">
-                      {STATUS_STEPS.map((step, i) => (
-                        <div key={step} className="flex flex-1 items-center">
-                          <div className="flex flex-col items-center">
-                            <div
-                              className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors"
-                              style={{
-                                background:
-                                  i <= stepIdx
-                                    ? 'var(--pvg-accent)'
-                                    : 'var(--pvg-bg-alt)',
-                                color:
-                                  i <= stepIdx
-                                    ? 'white'
-                                    : 'var(--pvg-muted)',
-                                border:
-                                  i <= stepIdx
-                                    ? 'none'
-                                    : '2px solid var(--pvg-border)',
-                              }}
-                            >
-                              {i < stepIdx ? '✓' : i + 1}
-                            </div>
-                            <span
-                              className="mt-1 hidden text-[9px] uppercase tracking-wider sm:block"
-                              style={{
-                                color:
-                                  i <= stepIdx
-                                    ? 'var(--pvg-primary)'
-                                    : 'var(--pvg-muted)',
-                                fontWeight: i === stepIdx ? 700 : 400,
-                              }}
-                            >
-                              {step.replace('_', ' ')}
-                            </span>
-                          </div>
-                          {i < STATUS_STEPS.length - 1 && (
-                            <div
-                              className="h-0.5 flex-1"
-                              style={{
-                                background:
-                                  i < stepIdx
-                                    ? 'var(--pvg-accent)'
-                                    : 'var(--pvg-border)',
-                              }}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Items list */}
-                {items.length > 0 && (
-                  <div
-                    className="divide-y px-6 pb-4"
-                    style={{ borderColor: 'var(--pvg-border)' }}
-                  >
-                    {(items as Array<{ name?: string; price?: number; quantity?: number }>)
-                      .slice(0, 3)
-                      .map((item, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between py-3"
-                        >
-                          <div>
-                            <p
-                              className="text-sm font-medium"
-                              style={{ color: 'var(--pvg-text)' }}
-                            >
-                              {item.name ?? 'Product'}
-                            </p>
-                            {item.quantity && item.quantity > 1 && (
-                              <p
-                                className="text-xs"
-                                style={{ color: 'var(--pvg-muted)' }}
-                              >
-                                Qty: {item.quantity}
-                              </p>
-                            )}
-                          </div>
-                          {item.price && (
-                            <p
-                              className="text-sm font-semibold"
-                              style={{ color: 'var(--pvg-primary)' }}
-                            >
-                              ₹{item.price.toLocaleString('en-IN')}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    {items.length > 3 && (
-                      <p
-                        className="pt-2 text-xs"
-                        style={{ color: 'var(--pvg-muted)' }}
-                      >
-                        +{items.length - 3} more item(s)
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Tracking */}
-                {order.tracking_number && (
-                  <div
-                    className="flex items-center justify-between border-t px-6 py-3"
-                    style={{ borderColor: 'var(--pvg-border)' }}
-                  >
-                    <div>
-                      <p
-                        className="text-xs font-semibold uppercase tracking-wider"
-                        style={{ color: 'var(--pvg-muted)' }}
-                      >
-                        Tracking
-                      </p>
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: 'var(--pvg-primary)' }}
-                      >
-                        {order.tracking_number}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {order.tracking_url && (
-                        <a
-                          href={order.tracking_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-lg px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all hover:-translate-y-0.5"
-                          style={{
-                            background: 'var(--pvg-primary)',
-                            color: 'var(--pvg-bg)',
-                          }}
-                        >
-                          Track Package
-                        </a>
-                      )}
-                      <ReorderButton orderId={order.id} />
-                    </div>
-                  </div>
-                )}
-
-                {!order.tracking_number && (
-                  <div className="flex items-center justify-end border-t px-6 py-3" style={{ borderColor: 'var(--pvg-border)' }}>
-                    <ReorderButton orderId={order.id} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {orderCards.map((order) => (
+            <AccountOrderCard key={order.id} order={order} />
+          ))}
         </div>
       )}
     </div>

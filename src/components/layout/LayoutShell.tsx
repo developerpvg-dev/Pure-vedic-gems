@@ -39,7 +39,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
   const isHome = pathname === '/';
-  const showHeaderSpacer = !isAdmin && !pageHasBuiltInHeaderOffset(pathname);
+  const showHeaderSpacer = !isAdmin && !isHome && !pageHasBuiltInHeaderOffset(pathname);
   const usesReferenceTheme = [
     '/policies',
     '/account',

@@ -7,7 +7,6 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { SHIPPING_METHODS } from '@/lib/validators/order';
 import type { ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { Coupon, ShippingMethod } from '@/lib/types/database';
 import { buildTaxBreakdown, calculateGstComponent, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
@@ -105,7 +104,8 @@ function isReservationActive(reservedUntil: string | null) {
 
 async function getShippingMethod(
   methodId: ShippingMethodId,
-  subtotal: number
+  subtotal: number,
+  countryCode?: string | null
 ): Promise<{ id: ShippingMethodId; cost: number; label: string }> {
   const supabase = createAdminClient();
   const { data } = await supabase
@@ -116,23 +116,31 @@ async function getShippingMethod(
     .maybeSingle();
 
   const method = data as ShippingMethod | null;
-  if (method) {
-    if (method.min_order_amount && subtotal < method.min_order_amount) {
-      throw new Error(`${method.label} is not available for this order total.`);
-    }
-    if (method.max_order_amount && subtotal > method.max_order_amount) {
-      throw new Error(`${method.label} is not available for this order total.`);
-    }
-    return {
-      id: method.id as ShippingMethodId,
-      label: method.label,
-      cost: method.free_above && subtotal >= method.free_above ? 0 : Number(method.cost),
-    };
+  if (!method) {
+    throw new Error('Invalid or unavailable shipping method.');
   }
 
-  const fallback = SHIPPING_METHODS.find((m) => m.id === methodId);
-  if (!fallback) throw new Error('Invalid shipping method.');
-  return fallback;
+  if (countryCode && method.country_code && method.country_code !== countryCode) {
+    throw new Error('Selected shipping method is not available for this country.');
+  }
+
+  if (method.min_order_amount && subtotal < method.min_order_amount) {
+    throw new Error(`${method.label} is not available for this order total.`);
+  }
+  if (method.max_order_amount && subtotal > method.max_order_amount) {
+    throw new Error(`${method.label} is not available for this order total.`);
+  }
+
+  const cost = Number(method.cost);
+  if (!Number.isFinite(cost) || cost <= 0) {
+    throw new Error('Selected shipping method is not available.');
+  }
+
+  return {
+    id: method.id as ShippingMethodId,
+    label: method.label,
+    cost,
+  };
 }
 
 function values<T>(input: T[] | null | undefined) {
@@ -146,10 +154,10 @@ function values<T>(input: T[] | null | undefined) {
  */
 export async function recalculateOrderTotal(
   items: OrderItemForPricing[],
-  shippingMethod: ShippingMethodId = 'standard',
+  shippingMethod: ShippingMethodId,
   couponCode?: string,
   energizationType?: string,
-  shippingAddress?: Pick<ShippingAddress, 'state'>,
+  shippingAddress?: Pick<ShippingAddress, 'state' | 'country_code'>,
   rewardOptions?: { customerId: string | null; pointsToRedeem?: number | null }
 ): Promise<PricingBreakdown> {
   const supabase = createAdminClient();
@@ -277,7 +285,11 @@ export async function recalculateOrderTotal(
   }
 
   // ── 4. Shipping cost ──────────────────────────────────────────────────
-  const shippingConfig = await getShippingMethod(shippingMethod, subtotal);
+  const shippingConfig = await getShippingMethod(
+    shippingMethod,
+    subtotal,
+    shippingAddress?.country_code ?? null
+  );
   const shippingCost = shippingConfig.cost;
 
   // ── 5. Coupon discount ────────────────────────────────────────────────

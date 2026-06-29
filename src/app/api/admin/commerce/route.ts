@@ -26,16 +26,25 @@ const shippingSchema = z.object({
   id: z.string().trim().min(2).max(40).regex(/^[a-z0-9_-]+$/).optional(),
   label: z.string().trim().min(2).max(160),
   description: z.string().trim().max(500).optional().nullable(),
-  cost: numberWithDefault(0),
-  free_above: nullableNumber,
+  cost: z.coerce.number().finite().positive('Shipping cost must be greater than zero'),
+  free_above: z.literal(null).optional(),
   min_order_amount: nullableNumber,
   max_order_amount: nullableNumber,
   estimated_days_min: nullableNumber,
   estimated_days_max: nullableNumber,
-  zones: csvList,
+  country_code: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+  zones: csvList.optional(),
   is_active: z.coerce.boolean().default(true),
   sort_order: z.coerce.number().int().default(0),
   metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+const shippingCountrySchema = z.object({
+  code: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+  name: z.string().trim().min(2).max(120),
+  requires_indian_pincode: z.coerce.boolean().default(false),
+  is_active: z.coerce.boolean().default(true),
+  sort_order: z.coerce.number().int().default(0),
 });
 
 const couponSchema = z.object({
@@ -87,15 +96,17 @@ export async function GET() {
   if ('error' in auth) return auth.error;
 
   const db = asUntypedSupabase(createAdminClient());
-  const [shippingMethods, coupons, currencyRates, commerceSettings] = await Promise.all([
+  const [shippingMethods, coupons, currencyRates, commerceSettings, shippingCountries] = await Promise.all([
     readTable(db, 'shipping_methods', []),
     readTable(db, 'coupons', []),
     readTable(db, 'currency_rates', []),
     readTable(db, 'commerce_settings', []),
+    readTable(db, 'shipping_countries', []),
   ]);
 
   return NextResponse.json({
     shippingMethods,
+    shippingCountries,
     coupons,
     currencyRates,
     commerceSettings: Array.isArray(commerceSettings) ? commerceSettings[0] ?? null : null,
@@ -117,11 +128,25 @@ export async function POST(request: NextRequest) {
   if (body.resource === 'shipping') {
     const parsed = shippingSchema.safeParse(body.payload);
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 });
-    const payload = { ...parsed.data, id: parsed.data.id ?? slugify(parsed.data.label), zones: parsed.data.zones.length ? parsed.data.zones : ['IN'], updated_at: now };
+    const payload = {
+      ...parsed.data,
+      id: parsed.data.id ?? slugify(parsed.data.label),
+      free_above: null,
+      zones: parsed.data.zones?.length ? parsed.data.zones : [parsed.data.country_code],
+      updated_at: now,
+    };
     const { data, error } = await db.from('shipping_methods').upsert(payload, { onConflict: 'id' }).select().single();
     if (error) return NextResponse.json({ error: 'Failed to save shipping method' }, { status: 500 });
     result = data;
     action = 'shipping_setting_change';
+  } else if (body.resource === 'shipping_country') {
+    const parsed = shippingCountrySchema.safeParse(body.payload);
+    if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 });
+    const payload = { ...parsed.data, updated_at: now };
+    const { data, error } = await db.from('shipping_countries').upsert(payload, { onConflict: 'code' }).select().single();
+    if (error) return NextResponse.json({ error: 'Failed to save shipping country' }, { status: 500 });
+    result = data;
+    action = 'shipping_country_change';
   } else if (body.resource === 'coupon') {
     const parsed = couponSchema.safeParse(body.payload);
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 });
@@ -175,6 +200,8 @@ export async function DELETE(request: NextRequest) {
   let error: unknown = null;
   if (resource === 'shipping') {
     ({ error } = await db.from('shipping_methods').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', id));
+  } else if (resource === 'shipping_country') {
+    ({ error } = await db.from('shipping_countries').update({ is_active: false, updated_at: new Date().toISOString() }).eq('code', id));
   } else if (resource === 'coupon') {
     ({ error } = await db.from('coupons').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', id));
   } else if (resource === 'currency') {

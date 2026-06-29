@@ -1,5 +1,7 @@
+import { HeroPreloadLinks } from '@/components/home/HeroPreloadLinks';
 import { PvgHeroSection } from '@/components/home/PvgHeroSection';
 import { PvgHomeInteractions } from '@/components/home/PvgHomeInteractions';
+import { getActiveHeroSlides } from '@/lib/hero-slides';
 import { createClient } from '@/lib/supabase/server';
 import {
   DirectorsPickSection,
@@ -33,7 +35,8 @@ async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
 }
 
 export default async function HomePage() {
-  const [categories, sectionCatalog, testimonials, khubCategories] = await Promise.all([
+  const [heroSlides, categories, sectionCatalog, testimonials, khubCategories] = await Promise.all([
+    getActiveHeroSlides(),
     getHomeManagedCategories(),
     getHomeSectionCatalog(),
     getHomeTestimonials(),
@@ -41,20 +44,23 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="pvg-react-home-root">
-      <PvgHeroSection />
-      <PvgReferenceSections
-        navaratnaSection={<NavaratnaHomeSection categories={categories.navaratna} />}
-        rudrakshaSection={<RudrakshaHomeSection categories={categories.rudraksha} featureCards={sectionCatalog.rudrakshaFeatures} />}
-        semipreciousSection={<SemipreciousHomeSection categories={categories.upratna} />}
-        exploreSection={<ExploreByCategorySection idols={sectionCatalog.exploreIdols} jewelry={sectionCatalog.exploreJewelry} />}
-        directorsPickSection={<DirectorsPickSection products={sectionCatalog.directorPicks} />}
-        testimonials={testimonials}
-        knowledgeBlogCategories={khubCategories}
-      />
-      <HomeVideosSection />
-      <WhyChooseUsSection />
-      <PvgHomeInteractions />
-    </div>
+    <>
+      <HeroPreloadLinks slides={heroSlides} />
+      <div className="pvg-react-home-root">
+        <PvgHeroSection slides={heroSlides} />
+        <PvgReferenceSections
+          navaratnaSection={<NavaratnaHomeSection categories={categories.navaratna} />}
+          rudrakshaSection={<RudrakshaHomeSection categories={categories.rudraksha} featureCards={sectionCatalog.rudrakshaFeatures} />}
+          semipreciousSection={<SemipreciousHomeSection categories={categories.upratna} />}
+          exploreSection={<ExploreByCategorySection idols={sectionCatalog.exploreIdols} jewelry={sectionCatalog.exploreJewelry} />}
+          directorsPickSection={<DirectorsPickSection products={sectionCatalog.directorPicks} />}
+          testimonials={testimonials}
+          knowledgeBlogCategories={khubCategories}
+        />
+        <HomeVideosSection />
+        <WhyChooseUsSection />
+        <PvgHomeInteractions />
+      </div>
+    </>
   );
 }

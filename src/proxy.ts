@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminRoutePermission, hasAdminPermission } from '@/lib/admin/rbac';
+import { getAdminRoutePermission, hasAdminPermission, normalizeAdminRole } from '@/lib/admin/rbac';
 
 const PROTECTED_CUSTOMER_ROUTES = ['/account'];
 const PROTECTED_ADMIN_ROUTES = ['/admin'];
@@ -61,6 +61,10 @@ export async function proxy(request: NextRequest) {
 
   const isAdminRoute = PROTECTED_ADMIN_ROUTES.some((prefix) => pathname.startsWith(prefix));
   if (isAdminRoute) {
+    if (pathname.startsWith('/admin/join')) {
+      return response;
+    }
+
     if (!user) {
       const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('auth', 'login');
@@ -80,6 +84,16 @@ export async function proxy(request: NextRequest) {
 
     if (!teamMember?.is_active) {
       return NextResponse.redirect(new URL('/account', request.url));
+    }
+
+    const normalizedRole = normalizeAdminRole(teamMember.role);
+    if (normalizedRole === 'designer') {
+      const allowed =
+        pathname.startsWith('/admin/designer') ||
+        pathname.startsWith('/admin/join');
+      if (!allowed) {
+        return NextResponse.redirect(new URL('/admin/designer', request.url));
+      }
     }
 
     const requiredPermission = getAdminRoutePermission(pathname);

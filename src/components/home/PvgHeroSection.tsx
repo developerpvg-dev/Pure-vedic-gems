@@ -2,43 +2,37 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-
-const SLIDES: Array<{
-  desktopImage: string;
-  mobileImage: string;
-  alt: string;
-}> = [
-  {
-    desktopImage: '/home/hero/pvgheropc1.webp',
-    mobileImage: '/home/hero/pvgherobg1.webp',
-    alt: 'Find Your Lucky Gem - Pure Vedic Gems',
-  },
-  {
-    desktopImage: '/home/hero/pvgheropc2.webp',
-    mobileImage: '/home/hero/pvgherobg2.webp',
-    alt: 'Create Your Perfect Gemstone Jewellery - Pure Vedic Gems',
-  },
-  {
-    desktopImage: '/home/hero/pvgheropc3.webp',
-    mobileImage: '/home/hero/pvgherobg3.webp',
-    alt: 'Swift Results & Blessed Life - Pure Vedic Gems',
-  },
-];
+import type { HeroSlide } from '@/lib/hero-slides';
 
 const SLIDE_INTERVAL_MS = 4500;
 
-export function PvgHeroSection() {
+type PvgHeroSectionProps = {
+  slides: HeroSlide[];
+};
+
+export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [paused, setPaused] = useState(false);
+  const activeSlides = slides.length > 0 ? slides : [];
 
   useEffect(() => {
-    if (paused) return undefined;
+    if (paused || activeSlides.length <= 1) return undefined;
     const timer = window.setInterval(() => {
-      setCurrentSlide((slide) => (slide + 1) % SLIDES.length);
+      setCurrentSlide((slide) => (slide + 1) % activeSlides.length);
     }, SLIDE_INTERVAL_MS);
 
     return () => window.clearInterval(timer);
-  }, [paused]);
+  }, [paused, activeSlides.length]);
+
+  useEffect(() => {
+    if (currentSlide >= activeSlides.length) {
+      setCurrentSlide(0);
+    }
+  }, [activeSlides.length, currentSlide]);
+
+  if (!activeSlides.length) {
+    return null;
+  }
 
   return (
     <section
@@ -50,17 +44,19 @@ export function PvgHeroSection() {
       onMouseLeave={() => setPaused(false)}
       onKeyDown={(event) => {
         if (event.key === 'ArrowLeft') {
-          setCurrentSlide((value) => (value - 1 + SLIDES.length) % SLIDES.length);
+          setCurrentSlide((value) => (value - 1 + activeSlides.length) % activeSlides.length);
         }
         if (event.key === 'ArrowRight') {
-          setCurrentSlide((value) => (value + 1) % SLIDES.length);
+          setCurrentSlide((value) => (value + 1) % activeSlides.length);
         }
       }}
     >
-      {/* Slide images */}
-      {SLIDES.map((item, index) => (
-        <div key={item.desktopImage} className={`hero-slide${index === currentSlide ? ' is-active' : ''}`} data-index={index}>
-          {/* Desktop image (≥768px) — hidden on mobile via CSS */}
+      {activeSlides.map((item, index) => (
+        <div
+          key={item.id}
+          className={`hero-slide${index === currentSlide ? ' is-active' : ''}`}
+          data-index={index}
+        >
           <Image
             src={item.desktopImage}
             alt={item.alt}
@@ -70,7 +66,6 @@ export function PvgHeroSection() {
             loading={index === 0 ? undefined : 'lazy'}
             sizes="(max-width: 767px) 1px, 100vw"
           />
-          {/* Mobile/tablet image (<768px) — hidden on desktop via CSS */}
           <Image
             src={item.mobileImage}
             alt=""
@@ -84,23 +79,26 @@ export function PvgHeroSection() {
         </div>
       ))}
 
-      {/* Dot nav */}
-      <div className="hero-controls" aria-label="Slide navigation">
-        <div className="hero-dots" id="heroDots">
-          {SLIDES.map((item, index) => (
-            <button
-              key={item.desktopImage}
-              type="button"
-              className={`hero-dot${index === currentSlide ? ' is-active' : ''}`}
-              data-index={index}
-              aria-label={`Go to slide ${index + 1}`}
-              onClick={() => setCurrentSlide(index)}
-            />
-          ))}
+      {activeSlides.length > 1 ? (
+        <div className="hero-controls" aria-label="Slide navigation">
+          <div className="hero-dots" id="heroDots">
+            {activeSlides.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`hero-dot${index === currentSlide ? ' is-active' : ''}`}
+                data-index={index}
+                aria-label={`Go to slide ${index + 1}`}
+                onClick={() => setCurrentSlide(index)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      <div key={`progress-${currentSlide}`} className="hero-progress-bar running" id="heroProgressBar" aria-hidden="true" />
+      {activeSlides.length > 1 ? (
+        <div key={`progress-${currentSlide}`} className="hero-progress-bar running" id="heroProgressBar" aria-hidden="true" />
+      ) : null}
     </section>
   );
 }

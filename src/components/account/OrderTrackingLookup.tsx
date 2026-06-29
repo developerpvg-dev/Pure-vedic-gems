@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ExternalLink, Loader2, PackageSearch, ShieldCheck } from 'lucide-react';
 import { ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/constants/order-status';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { OrderJourneyTimeline } from '@/components/account/OrderJourneyTimeline';
 
 interface TrackingEvent {
   status: string;
@@ -21,16 +22,30 @@ interface TrackingResult {
   order: {
     order_number: string;
     status: string;
+    payment_status?: string | null;
+    assigned_designer_id?: string | null;
+    design_completed_at?: string | null;
     tracking_number: string | null;
     tracking_url: string | null;
+    carrier?: string | null;
+    product_video_url?: string | null;
+    puja_video_url?: string | null;
     estimated_delivery: string | null;
     created_at: string;
   };
   events: TrackingEvent[];
 }
 
+const JOURNEY_EVENT_LABELS: Record<string, string> = {
+  design_assigned: 'Jewelry design assigned',
+  design_in_progress: 'Design in progress',
+  design_completed: 'Design completed',
+  product_video: 'Product video ready',
+  puja_video: 'Puja video ready',
+};
+
 function formatStatus(status: string) {
-  return ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replace(/_/g, ' ');
+  return JOURNEY_EVENT_LABELS[status] ?? ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replace(/_/g, ' ');
 }
 
 function formatDate(value: string | null | undefined) {
@@ -229,6 +244,20 @@ export function OrderTrackingLookup() {
                 </a>
               ) : null}
             </div>
+
+            <OrderJourneyTimeline
+              compact
+              status={result.order.status}
+              payment_status={result.order.payment_status}
+              assigned_designer_id={result.order.assigned_designer_id}
+              design_completed_at={result.order.design_completed_at}
+              product_video_url={result.order.product_video_url}
+              puja_video_url={result.order.puja_video_url}
+              tracking_number={result.order.tracking_number}
+              tracking_url={result.order.tracking_url}
+              carrier={result.order.carrier}
+              estimated_delivery={result.order.estimated_delivery}
+            />
 
             <div className="pvg-track-meta-grid">
               <div className="pvg-track-meta-item">

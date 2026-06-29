@@ -45,37 +45,65 @@ export const CheckoutConsentSchema = z.object({
   policy_version: z.string().trim().default('2026-05-16'),
 });
 
-// ─── Shipping Address ───────────────────────────────────────────────────────
-export const ShippingAddressSchema = z.object({
-  line1: z
-    .string()
-    .min(5, 'Address must be at least 5 characters')
-    .max(500, 'Address is too long')
-    .trim(),
-  line2: z
-    .string()
-    .max(500)
-    .trim()
-    .optional()
-    .default(''),
-  city: z
-    .string()
-    .min(2, 'City is required')
-    .max(100)
-    .trim(),
-  state: z
-    .string()
-    .min(2, 'State is required')
-    .max(100)
-    .trim(),
-  pincode: z
-    .string()
-    .regex(PINCODE_REGEX, 'Please enter a valid 6-digit Indian pincode'),
-  country: z
-    .string()
-    .trim()
-    .default('India'),
-});
+// ─── Shipping address (international) ─────────────────────────────────────────
+export const ShippingAddressSchema = z
+  .object({
+    line1: z
+      .string()
+      .min(5, 'Address must be at least 5 characters')
+      .max(500, 'Address is too long')
+      .trim(),
+    line2: z
+      .string()
+      .max(500)
+      .trim()
+      .optional()
+      .default(''),
+    city: z
+      .string()
+      .min(2, 'City is required')
+      .max(100)
+      .trim(),
+    state: z
+      .string()
+      .min(2, 'State / province is required')
+      .max(100)
+      .trim(),
+    pincode: z
+      .string()
+      .trim()
+      .min(2, 'Postal code is required')
+      .max(20, 'Postal code is too long'),
+    country_code: z
+      .string()
+      .trim()
+      .length(2, 'Country is required')
+      .transform((value) => value.toUpperCase()),
+    country: z
+      .string()
+      .trim()
+      .min(2, 'Country is required')
+      .max(120),
+  })
+  .superRefine((data, ctx) => {
+    if (data.country_code === 'IN' && !PINCODE_REGEX.test(data.pincode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['pincode'],
+        message: 'Please enter a valid 6-digit Indian pincode',
+      });
+    }
+  });
+
+// ─── Shipping method id (DB-backed plan) ────────────────────────────────────
+export const ShippingMethodIdSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(40)
+  .regex(/^[a-z0-9_-]+$/);
+
+export type ShippingMethodId = z.infer<typeof ShippingMethodIdSchema>;
 
 // ─── Cart Item (for order creation) ─────────────────────────────────────────
 export const OrderItemSchema = z.object({
@@ -105,23 +133,15 @@ export const EnergizationFieldsSchema = z.object({
   record_ceremony: z.boolean().default(false),
 });
 
-// ─── Shipping methods ───────────────────────────────────────────────────────
-export const SHIPPING_METHODS = [
-  { id: 'standard', label: 'Standard Delivery (5-7 days)', cost: 0 },
-  { id: 'express', label: 'Express Delivery (2-3 days)', cost: 250 },
-  { id: 'same_day', label: 'Same Day (Delhi NCR only)', cost: 500 },
-] as const;
-
-export type ShippingMethodId = (typeof SHIPPING_METHODS)[number]['id'];
+// ─── Shipping methods (loaded from DB at checkout; no hard-coded free options) ─
+export const SHIPPING_METHODS: Array<{ id: string; label: string; cost: number }> = [];
 
 // ─── Full Order Creation Request ────────────────────────────────────────────
 export const OrderCreateSchema = z.object({
   items: z.array(OrderItemSchema).min(1, 'Cart is empty'),
   contact: ContactInfoSchema,
   shipping_address: ShippingAddressSchema,
-  shipping_method: z
-    .enum(['standard', 'express', 'same_day'])
-    .default('standard'),
+  shipping_method: ShippingMethodIdSchema,
   energization: EnergizationFieldsSchema.optional(),
   special_instructions: z.string().max(1000).trim().optional(),
   coupon_code: z.string().max(50).trim().optional(),

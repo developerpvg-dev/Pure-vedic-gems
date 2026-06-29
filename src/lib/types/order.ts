@@ -7,6 +7,9 @@ export type OrderStatus =
   | 'placed'
   | 'confirmed'
   | 'processing'
+  | 'design_assigned'
+  | 'design_in_progress'
+  | 'design_completed'
   | 'jewelry_making'
   | 'certification'
   | 'energization'
@@ -73,6 +76,12 @@ export interface OrderRecord {
   tracking_number: string | null;
   tracking_url: string | null;
   carrier?: string | null;
+  assigned_designer_id?: string | null;
+  design_routed_at?: string | null;
+  design_completed_at?: string | null;
+  design_notes?: string | null;
+  product_video_url?: string | null;
+  puja_video_url?: string | null;
   estimated_delivery: string | null;
   shipped_at?: string | null;
   delivery_status?: string | null;

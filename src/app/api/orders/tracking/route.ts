@@ -45,11 +45,33 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
   const db = asUntypedSupabase(admin);
-  const { data: order, error } = await admin
+  const { data: orderRaw, error } = await db
     .from('orders')
-    .select('id, order_number, customer_id, guest_email, guest_phone, guest_access_token, status, tracking_number, tracking_url, estimated_delivery, created_at')
+    .select('id, order_number, customer_id, guest_email, guest_phone, guest_access_token, status, payment_status, assigned_designer_id, design_completed_at, tracking_number, tracking_url, carrier, product_video_url, puja_video_url, estimated_delivery, created_at')
     .eq('order_number', orderNumber)
     .single();
+
+  type TrackingOrderRow = {
+    id: string;
+    order_number: string;
+    customer_id: string | null;
+    guest_email: string | null;
+    guest_phone: string | null;
+    guest_access_token: string | null;
+    status: string;
+    payment_status?: string | null;
+    assigned_designer_id?: string | null;
+    design_completed_at?: string | null;
+    tracking_number: string | null;
+    tracking_url: string | null;
+    carrier?: string | null;
+    product_video_url?: string | null;
+    puja_video_url?: string | null;
+    estimated_delivery: string | null;
+    created_at: string;
+  };
+
+  const order = orderRaw as TrackingOrderRow | null;
 
   // Return the same payload + status for "not found" as for "access denied".
   if (error || !order) return NextResponse.json(TRACKING_DENIED, { status: 403 });
@@ -81,8 +103,14 @@ export async function POST(request: NextRequest) {
     order: {
       order_number: order.order_number,
       status: order.status,
+      payment_status: order.payment_status ?? null,
+      assigned_designer_id: order.assigned_designer_id ?? null,
+      design_completed_at: order.design_completed_at ?? null,
       tracking_number: order.tracking_number,
       tracking_url: order.tracking_url,
+      carrier: order.carrier ?? null,
+      product_video_url: order.product_video_url ?? null,
+      puja_video_url: order.puja_video_url ?? null,
       estimated_delivery: order.estimated_delivery,
       created_at: order.created_at,
     },

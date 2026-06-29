@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
 import { OrderActions } from '@/components/admin/OrderActions';
+import { OrderAssignDesigner } from '@/components/admin/OrderAssignDesigner';
 import {
   mergeConfigurationDetails,
   type ConfigurationSnapshot,
@@ -48,6 +49,9 @@ const ORDER_STATUS_STYLE: Record<string, string> = {
   placed:          'bg-blue-100 text-blue-800',
   confirmed:       'bg-indigo-100 text-indigo-800',
   processing:      'bg-yellow-100 text-yellow-800',
+  design_assigned: 'bg-indigo-100 text-indigo-800',
+  design_in_progress: 'bg-indigo-100 text-indigo-800',
+  design_completed: 'bg-indigo-100 text-indigo-800',
   jewelry_making:  'bg-yellow-100 text-yellow-800',
   certification:   'bg-cyan-100 text-cyan-800',
   energization:    'bg-violet-100 text-violet-800',
@@ -147,6 +151,20 @@ export default async function OrderDetailPage({ params }: PageProps) {
   const displayName  = o.guest_name  || profile?.full_name  || null;
   const displayEmail = o.guest_email || profile?.email      || null;
   const displayPhone = o.guest_phone || profile?.phone      || null;
+
+  const orderExtras = o as OrderRecord & {
+    assigned_designer_id?: string | null;
+    design_routed_at?: string | null;
+  };
+  let assignedDesignerName: string | null = null;
+  if (orderExtras.assigned_designer_id) {
+    const { data: designer } = await supabase
+      .from('team_members')
+      .select('name')
+      .eq('id', orderExtras.assigned_designer_id)
+      .maybeSingle();
+    assignedDesignerName = designer?.name ?? null;
+  }
 
   const addr  = o.shipping_address ?? {};
   const items: OrderItemRecord[] = Array.isArray(o.items) ? o.items : [];
@@ -595,6 +613,14 @@ export default async function OrderDetailPage({ params }: PageProps) {
         {/* ── RIGHT SIDEBAR ── */}
         <div className="space-y-5">
 
+          {/* Route to jewelry designer */}
+          <OrderAssignDesigner
+            orderId={o.id}
+            currentDesignerId={orderExtras.assigned_designer_id ?? null}
+            currentDesignerName={assignedDesignerName}
+            orderStatus={o.status}
+          />
+
           {/* Order Actions — Status update, notes, WhatsApp */}
           <OrderActions
             orderId={o.id}
@@ -606,6 +632,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
             currentCarrier={(o as unknown as Record<string, string | null>).carrier ?? null}
             currentShippedAt={(o as unknown as Record<string, string | null>).shipped_at ?? null}
             currentDeliveryStatus={(o as unknown as Record<string, string | null>).delivery_status ?? null}
+            currentProductVideoUrl={(o as unknown as Record<string, string | null>).product_video_url ?? null}
+            currentPujaVideoUrl={(o as unknown as Record<string, string | null>).puja_video_url ?? null}
             customerPhone={displayPhone}
             customerName={displayName}
             orderNumber={o.order_number}

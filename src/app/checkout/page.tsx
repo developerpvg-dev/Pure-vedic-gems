@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { useAuth } from '@/lib/hooks/useAuth';
-import type { ContactInfo, ShippingAddress, EnergizationFields } from '@/lib/validators/order';
+import type { ContactInfo, ShippingAddress, EnergizationFields, ShippingMethodId } from '@/lib/validators/order';
+import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import { ContactSection } from '@/components/checkout/ContactSection';
 import { ShippingSection } from '@/components/checkout/ShippingSection';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
@@ -40,7 +41,8 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('contact');
   const [contactData, setContactData] = useState<ContactInfo | null>(null);
   const [shippingData, setShippingData] = useState<ShippingAddress | null>(null);
-  const [shippingMethod, setShippingMethod] = useState<'standard' | 'express' | 'same_day'>('standard');
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethodId | null>(null);
+  const [selectedShippingPlan, setSelectedShippingPlan] = useState<SelectedShippingPlan | null>(null);
   const [energizationData, setEnergizationData] = useState<EnergizationFields>({
     include_energization: false,
     record_ceremony: false,
@@ -110,9 +112,14 @@ export default function CheckoutPage() {
     setCurrentStep('shipping');
   };
 
-  const handleShippingComplete = (data: ShippingAddress, method: 'standard' | 'express' | 'same_day') => {
+  const handleShippingComplete = (
+    data: ShippingAddress,
+    method: ShippingMethodId,
+    plan: SelectedShippingPlan
+  ) => {
     setShippingData(data);
     setShippingMethod(method);
+    setSelectedShippingPlan(plan);
     setCurrentStep('payment');
   };
 
@@ -230,6 +237,7 @@ export default function CheckoutPage() {
               isComplete={isShippingComplete}
               savedData={shippingData}
               savedMethod={shippingMethod}
+              savedPlan={selectedShippingPlan}
               onComplete={handleShippingComplete}
               onEdit={() => setCurrentStep('shipping')}
               disabled={!isContactComplete}
@@ -257,7 +265,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {currentStep === 'payment' && contactData && shippingData && (
+            {currentStep === 'payment' && contactData && shippingData && shippingMethod && (
               <>
                 <RewardPointsRedemption
                   userSignedIn={!!user}
@@ -288,7 +296,7 @@ export default function CheckoutPage() {
             <div className="lg:sticky pvg-sticky-below-header">
               <CheckoutOrderSummary
                 items={cart.items}
-                shippingMethod={shippingMethod}
+                selectedShippingPlan={selectedShippingPlan}
                 rewardPointsToRedeem={rewardPointsToRedeem}
                 rewards={rewardInfo}
               />
@@ -313,7 +321,7 @@ export default function CheckoutPage() {
                   </li>
                   <li className="pvg-checkout-trust-item">
                     <Truck />
-                    Insured shipping across India
+                    Insured shipping worldwide
                   </li>
                   <li className="pvg-checkout-trust-item">
                     <MessageCircle />

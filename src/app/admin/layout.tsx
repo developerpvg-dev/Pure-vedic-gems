@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+
+const DESIGNER_NAV = [
+  { href: '/admin/designer', label: 'Design Assignments', icon: Palette },
+];
 
 const NAV_GROUPS = [
   {
@@ -27,6 +31,7 @@ const NAV_GROUPS = [
   {
     label: 'Homepage Catalog',
     links: [
+      { href: '/admin/hero', label: 'Hero Slideshow', icon: Images },
       { href: '/admin/categories', label: 'Section Categories', icon: Gem },
       { href: '/admin/configurations', label: 'Configurations', icon: SlidersHorizontal },
       { href: '/admin/metals', label: 'Metals & Pricing', icon: CircleDollarSign },
@@ -60,7 +65,19 @@ const NAV_GROUPS = [
   },
 ];
 
-function NavContent({ pathname, setSidebarOpen }: { pathname: string; setSidebarOpen: (v: boolean) => void }) {
+function NavContent({
+  pathname,
+  setSidebarOpen,
+  isDesigner,
+}: {
+  pathname: string;
+  setSidebarOpen: (v: boolean) => void;
+  isDesigner: boolean;
+}) {
+  const navGroups = isDesigner
+    ? [{ label: 'Designer', links: DESIGNER_NAV }]
+    : NAV_GROUPS;
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
@@ -82,7 +99,7 @@ function NavContent({ pathname, setSidebarOpen }: { pathname: string; setSidebar
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
         <div className="space-y-5 pb-5">
-          {NAV_GROUPS.map((group) => (
+          {navGroups.map((group) => (
             <div key={group.label}>
               <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                 {group.label}
@@ -126,7 +143,22 @@ function NavContent({ pathname, setSidebarOpen }: { pathname: string; setSidebar
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesigner, setIsDesigner] = useState(false);
   const pathname = usePathname();
+  const isJoinPage = pathname?.startsWith('/admin/join');
+
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch('/api/admin/session');
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      setIsDesigner(data.role === 'designer');
+    })();
+  }, []);
+
+  if (isJoinPage) {
+    return <div className="min-h-screen bg-gray-50">{children}</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -144,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <NavContent pathname={pathname ?? ''} setSidebarOpen={setSidebarOpen} />
+        <NavContent pathname={pathname ?? ''} setSidebarOpen={setSidebarOpen} isDesigner={isDesigner} />
       </aside>
 
       {/* Main content */}

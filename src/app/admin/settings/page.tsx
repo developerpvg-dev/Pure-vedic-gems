@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BadgeIndianRupee, Loader2, Plus, Save, Shield, Truck, TicketPercent, UserPlus, Users, X } from 'lucide-react';
+import { BadgeIndianRupee, Loader2, Mail, Save, Shield, Truck, TicketPercent, UserPlus, Users, X } from 'lucide-react';
 
 type Tab = 'commerce' | 'team';
 
@@ -18,7 +18,19 @@ interface ShippingMethod {
   label: string;
   cost: number;
   free_above: number | null;
+  country_code?: string | null;
   zones: string[];
+  is_active: boolean;
+  sort_order: number;
+  estimated_days_min?: number | null;
+  estimated_days_max?: number | null;
+  description?: string | null;
+}
+
+interface ShippingCountry {
+  code: string;
+  name: string;
+  requires_indian_pincode: boolean;
   is_active: boolean;
   sort_order: number;
 }
@@ -49,30 +61,53 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
   sales: 'Sales',
   content: 'Content',
+  inventory: 'Inventory',
   finance: 'Finance',
   fulfillment: 'Fulfillment',
   support: 'Support',
+  designer: 'Jewelry Designer',
   director: 'Owner',
   manager: 'Admin',
   accounts: 'Finance',
 };
 
-const DEFAULT_ROLES = ['owner', 'admin', 'sales', 'content', 'finance', 'fulfillment', 'support'];
+const DEFAULT_INVITE_ROLES = ['admin', 'sales', 'content', 'inventory', 'finance', 'fulfillment', 'support', 'designer'];
 
 export default function SettingsPage() {
   const [tab, setTab] = useState<Tab>('commerce');
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [roles, setRoles] = useState<string[]>(DEFAULT_ROLES);
+  const [roles, setRoles] = useState<string[]>(DEFAULT_INVITE_ROLES);
+  const [inviteRoles, setInviteRoles] = useState<string[]>(DEFAULT_INVITE_ROLES);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [shippingCountries, setShippingCountries] = useState<ShippingCountry[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [memberForm, setMemberForm] = useState({ email: '', name: '', role: 'sales' });
-  const [shippingForm, setShippingForm] = useState({ id: '', label: '', cost: '0', free_above: '', zones: 'IN', sort_order: '0', is_active: true });
+  const [showInviteMember, setShowInviteMember] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: 'sales' });
+  const [inviteLink, setInviteLink] = useState('');
+  const [inviteModalError, setInviteModalError] = useState('');
+  const [shippingForm, setShippingForm] = useState({
+    id: '',
+    label: '',
+    description: '',
+    cost: '',
+    country_code: 'IN',
+    estimated_days_min: '',
+    estimated_days_max: '',
+    sort_order: '0',
+    is_active: true,
+  });
+  const [countryForm, setCountryForm] = useState({
+    code: '',
+    name: '',
+    requires_indian_pincode: false,
+    sort_order: '0',
+    is_active: true,
+  });
   const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', min_order_amount: '0', usage_limit: '', valid_until: '', is_active: true });
   const [currencyForm, setCurrencyForm] = useState({ base_currency: 'INR', currency: 'USD', rate: '', manual_override: true, is_active: true });
   const [settingsForm, setSettingsForm] = useState({ gst_enabled: true, tax_note: 'GST calculated at checkout', notify_admin_email: '' });
@@ -85,7 +120,8 @@ export default function SettingsPage() {
       if (teamRes.ok) {
         const data = await teamRes.json();
         setMembers(data.members || []);
-        setRoles(data.roles || DEFAULT_ROLES);
+        setRoles(data.roles || DEFAULT_INVITE_ROLES);
+        setInviteRoles(data.inviteRoles || DEFAULT_INVITE_ROLES);
       }
       if (!commerceRes.ok) {
         const data = await commerceRes.json().catch(() => ({}));
@@ -93,6 +129,7 @@ export default function SettingsPage() {
       } else {
         const data = await commerceRes.json();
         setShippingMethods(data.shippingMethods || []);
+        setShippingCountries(data.shippingCountries || []);
         setCoupons(data.coupons || []);
         setCurrencyRates(data.currencyRates || []);
         if (data.commerceSettings?.values) setSettingsForm((current) => ({ ...current, ...data.commerceSettings.values }));
@@ -133,24 +170,36 @@ export default function SettingsPage() {
     await loadAll();
   }
 
-  async function addMember(event: React.FormEvent) {
+  async function inviteMember(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
-    const res = await fetch('/api/admin/settings', {
+    setInviteLink('');
+    setInviteModalError('');
+    setMessage('');
+
+    const res = await fetch('/api/admin/team/invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(memberForm),
+      body: JSON.stringify(inviteForm),
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
+
     if (!res.ok) {
-      setMessage(data.error || 'Failed to add member');
+      setInviteModalError(data.error || 'Failed to send invitation');
       return;
     }
-    setShowAddMember(false);
-    setMemberForm({ email: '', name: '', role: 'sales' });
-    setMessage('Team member added');
+
+    setShowInviteMember(false);
+    setInviteForm({ email: '', name: '', role: 'sales' });
+    setInviteLink(data.inviteUrl || '');
+    setMessage(data.message || 'Invitation sent. The link expires in 15 minutes.');
     await loadAll();
+  }
+
+  function openInviteModal() {
+    setInviteModalError('');
+    setShowInviteMember(true);
   }
 
   async function updateMember(id: string, updates: Record<string, unknown>) {
@@ -185,24 +234,62 @@ export default function SettingsPage() {
 
       {tab === 'commerce' ? (
         <div className="grid gap-6 xl:grid-cols-2">
-          <section className="rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Truck className="h-4 w-4" /> Shipping Methods</h2>
+          <section className="rounded-lg border border-gray-200 bg-white p-5 xl:col-span-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Truck className="h-4 w-4" /> Shipping Countries</h2>
+            <p className="mt-1 text-sm text-gray-500">Countries shown in checkout. Each country can have multiple paid shipping plans.</p>
+            <form
+              onSubmit={(event) => { event.preventDefault(); void saveCommerce('shipping_country', countryForm); }}
+              className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+            >
+              <input required value={countryForm.code} onChange={(e) => setCountryForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="Code (IN)" maxLength={2} className="rounded-lg border border-gray-200 px-3 py-2 text-sm uppercase" />
+              <input required value={countryForm.name} onChange={(e) => setCountryForm((p) => ({ ...p, name: e.target.value }))} placeholder="Country name" className="rounded-lg border border-gray-200 px-3 py-2 text-sm sm:col-span-2" />
+              <input value={countryForm.sort_order} onChange={(e) => setCountryForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder="Sort" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={countryForm.requires_indian_pincode} onChange={(e) => setCountryForm((p) => ({ ...p, requires_indian_pincode: e.target.checked }))} /> Indian pincode</label>
+              <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2 lg:col-span-5"><Save className="h-4 w-4" /> Save Country</button>
+            </form>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {shippingCountries.map((country) => (
+                <div key={country.code} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-semibold text-gray-900">{country.name}</p>
+                    <p className="text-xs text-gray-500">{country.code} · sort {country.sort_order}</p>
+                  </div>
+                  <button onClick={() => disableCommerce('shipping_country', country.code)} className="text-xs font-semibold text-red-600">Disable</button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white p-5 xl:col-span-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Truck className="h-4 w-4" /> Shipping Plans</h2>
             <form
               onSubmit={(event) => { event.preventDefault(); void saveCommerce('shipping', shippingForm); }}
-              className="mt-4 grid gap-3 sm:grid-cols-2"
+              className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
             >
-              <input value={shippingForm.id} onChange={(e) => setShippingForm((p) => ({ ...p, id: e.target.value }))} placeholder="ID auto from label" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-              <input required value={shippingForm.label} onChange={(e) => setShippingForm((p) => ({ ...p, label: e.target.value }))} placeholder="Label" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-              <input value={shippingForm.cost} onChange={(e) => setShippingForm((p) => ({ ...p, cost: e.target.value }))} placeholder="Cost" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-              <input value={shippingForm.free_above} onChange={(e) => setShippingForm((p) => ({ ...p, free_above: e.target.value }))} placeholder="Free above" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-              <input value={shippingForm.zones} onChange={(e) => setShippingForm((p) => ({ ...p, zones: e.target.value }))} placeholder="Zones: IN,UK" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <input value={shippingForm.id} onChange={(e) => setShippingForm((p) => ({ ...p, id: e.target.value }))} placeholder="Plan ID (optional)" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <input required value={shippingForm.label} onChange={(e) => setShippingForm((p) => ({ ...p, label: e.target.value }))} placeholder="Plan label" className="rounded-lg border border-gray-200 px-3 py-2 text-sm sm:col-span-2" />
+              <select value={shippingForm.country_code} onChange={(e) => setShippingForm((p) => ({ ...p, country_code: e.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                {shippingCountries.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
+              </select>
+              <input required value={shippingForm.cost} onChange={(e) => setShippingForm((p) => ({ ...p, cost: e.target.value }))} placeholder="Cost (INR)" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <input value={shippingForm.estimated_days_min} onChange={(e) => setShippingForm((p) => ({ ...p, estimated_days_min: e.target.value }))} placeholder="Min days" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <input value={shippingForm.estimated_days_max} onChange={(e) => setShippingForm((p) => ({ ...p, estimated_days_max: e.target.value }))} placeholder="Max days" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
               <input value={shippingForm.sort_order} onChange={(e) => setShippingForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder="Sort" className="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-              <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2"><Save className="h-4 w-4" /> Save Shipping</button>
+              <input value={shippingForm.description} onChange={(e) => setShippingForm((p) => ({ ...p, description: e.target.value }))} placeholder="Description" className="rounded-lg border border-gray-200 px-3 py-2 text-sm sm:col-span-2 lg:col-span-4" />
+              <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 sm:col-span-2 lg:col-span-4"><Save className="h-4 w-4" /> Save Shipping Plan</button>
             </form>
             <div className="mt-4 space-y-2">
-              {shippingMethods.map((method, index) => (
+              {shippingMethods.filter((method) => method.is_active).map((method, index) => (
                 <div key={method.id || `${method.label}-${index}`} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
-                  <div><p className="font-semibold text-gray-900">{method.label}</p><p className="text-xs text-gray-500">₹{method.cost} · {method.zones?.join(', ') || 'All zones'}</p></div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{method.label}</p>
+                    <p className="text-xs text-gray-500">
+                      ₹{method.cost} · {method.country_code || method.zones?.join(', ') || 'No country'}
+                      {method.estimated_days_min != null && method.estimated_days_max != null
+                        ? ` · ${method.estimated_days_min}-${method.estimated_days_max} days`
+                        : ''}
+                    </p>
+                  </div>
                   <button onClick={() => disableCommerce('shipping', method.id)} className="text-xs font-semibold text-red-600">Disable</button>
                 </div>
               ))}
@@ -255,10 +342,21 @@ export default function SettingsPage() {
         </div>
       ) : (
         <section className="rounded-lg border border-gray-200 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Users className="h-4 w-4" /> Team & RBAC</h2>
-            <button onClick={() => setShowAddMember(true)} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" /> Add Member</button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Users className="h-4 w-4" /> Team & RBAC</h2>
+              <p className="mt-1 text-xs text-gray-500">All team members are invited by email. The link is valid for 15 minutes.</p>
+            </div>
+            <button onClick={openInviteModal} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
+              <UserPlus className="h-4 w-4" /> Invite Team Member
+            </button>
           </div>
+          {inviteLink ? (
+            <div className="border-b border-indigo-100 bg-indigo-50 px-5 py-3 text-sm text-indigo-900">
+              <p className="font-semibold">Invitation link (15 min):</p>
+              <p className="mt-1 break-all font-mono text-xs">{inviteLink}</p>
+            </div>
+          ) : null}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold text-gray-500"><th className="p-3">Name</th><th className="p-3">Role</th><th className="p-3">Status</th><th className="p-3">Joined</th><th className="p-3">Actions</th></tr></thead>
@@ -278,15 +376,56 @@ export default function SettingsPage() {
         </section>
       )}
 
-      {showAddMember && (
+      {showInviteMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <form onSubmit={addMember} className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between"><h2 className="text-lg font-bold text-gray-900">Add Team Member</h2><button type="button" onClick={() => setShowAddMember(false)}><X className="h-5 w-5 text-gray-400" /></button></div>
+          <form onSubmit={inviteMember} className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Invite Team Member</h2>
+              <button type="button" onClick={() => setShowInviteMember(false)} aria-label="Close">
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-gray-500">
+              They will receive an email with a secure link to create their account. The link expires in 15 minutes.
+            </p>
             <div className="mt-4 space-y-3">
-              <input type="email" required value={memberForm.email} onChange={(e) => setMemberForm((p) => ({ ...p, email: e.target.value }))} placeholder="User email" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm" />
-              <input required value={memberForm.name} onChange={(e) => setMemberForm((p) => ({ ...p, name: e.target.value }))} placeholder="Display name" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm" />
-              <select value={memberForm.role} onChange={(e) => setMemberForm((p) => ({ ...p, role: e.target.value }))} className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm">{roles.map((role) => <option key={role} value={role}>{ROLE_LABELS[role] || role}</option>)}</select>
-              <button disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white disabled:opacity-50"><Plus className="h-4 w-4" /> Add Member</button>
+              <input
+                type="email"
+                required
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm((p) => ({ ...p, email: e.target.value }))}
+                placeholder="Email address"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
+              />
+              <input
+                required
+                value={inviteForm.name}
+                onChange={(e) => setInviteForm((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Display name"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
+              />
+              <select
+                value={inviteForm.role}
+                onChange={(e) => setInviteForm((p) => ({ ...p, role: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"
+              >
+                {inviteRoles.map((role) => (
+                  <option key={role} value={role}>{ROLE_LABELS[role] || role}</option>
+                ))}
+              </select>
+
+              {inviteModalError ? (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{inviteModalError}</p>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                {saving ? 'Sending…' : 'Send invitation'}
+              </button>
             </div>
           </form>
         </div>

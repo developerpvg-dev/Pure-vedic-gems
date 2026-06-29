@@ -9,6 +9,7 @@ export const ADMIN_ROLE_OPTIONS = [
   'finance',
   'fulfillment',
   'support',
+  'designer',
 ] as const;
 
 export type CanonicalAdminRole = (typeof ADMIN_ROLE_OPTIONS)[number];
@@ -24,6 +25,7 @@ export type AdminPermission =
   | 'orders.read'
   | 'orders.write'
   | 'orders.tracking'
+  | 'orders.design'
   | 'leads.read'
   | 'leads.write'
   | 'content.manage'
@@ -41,6 +43,7 @@ export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
   finance: 'Finance',
   fulfillment: 'Fulfillment',
   support: 'Support',
+  designer: 'Jewelry Designer',
 };
 
 const LEGACY_ROLE_MAP: Record<string, CanonicalAdminRole> = {
@@ -89,6 +92,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
   finance: ['dashboard.read', 'orders.read', 'finance.read', 'compliance.manage'],
   fulfillment: ['dashboard.read', 'products.read', 'orders.read', 'orders.write', 'orders.tracking', 'compliance.manage'],
   support: ['dashboard.read', 'products.read', 'orders.read', 'orders.tracking', 'leads.read', 'leads.write', 'compliance.manage'],
+  designer: ['dashboard.read', 'orders.read', 'orders.design'],
 };
 
 export function normalizeAdminRole(role: string | null | undefined): CanonicalAdminRole | null {
@@ -135,6 +139,7 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/products/new')) return 'products.write';
   if (/^\/admin\/products\/[^/]+$/.test(pathname)) return 'products.write';
   if (pathname.startsWith('/admin/products')) return 'products.read';
+  if (pathname.startsWith('/admin/designer')) return 'orders.design';
   if (pathname.startsWith('/admin/orders')) return 'orders.read';
   if (pathname.startsWith('/admin/customers')) return 'leads.read';
   if (pathname.startsWith('/admin/consultation-plans')) return 'leads.read';

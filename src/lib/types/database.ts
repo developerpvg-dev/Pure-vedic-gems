@@ -1018,6 +1018,7 @@ export interface Database {
           estimated_days_min: number | null;
           estimated_days_max: number | null;
           zones: string[];
+          country_code: string | null;
           is_active: boolean;
           sort_order: number;
           metadata: Json;

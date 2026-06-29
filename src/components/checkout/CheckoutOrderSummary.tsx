@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils/format';
-import { SHIPPING_METHODS, type ShippingMethodId } from '@/lib/validators/order';
+import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import type { CartItem } from '@/lib/types/cart';
 import { estimateClientTax } from '@/lib/utils/tax';
 import type { CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
@@ -10,19 +10,19 @@ import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemp
 
 interface CheckoutOrderSummaryProps {
   items: CartItem[];
-  shippingMethod: ShippingMethodId;
+  selectedShippingPlan: SelectedShippingPlan | null;
   rewardPointsToRedeem?: number;
   rewards?: CheckoutRewardState | null;
 }
 
 export function CheckoutOrderSummary({
   items,
-  shippingMethod,
+  selectedShippingPlan,
   rewardPointsToRedeem = 0,
   rewards = null,
 }: CheckoutOrderSummaryProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.cost ?? 0;
+  const shipping = selectedShippingPlan?.cost ?? 0;
   const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
   const gst = estimateClientTax(items, shipping);
   const total = Math.max(0, subtotal - rewardDiscount + shipping + gst);
@@ -86,10 +86,13 @@ export function CheckoutOrderSummary({
           </div>
           <div className="pvg-checkout-line">
             <span>Shipping</span>
-            <span className={shipping === 0 ? 'text-green-700 font-semibold' : ''}>
-              {shipping === 0 ? 'FREE' : formatPrice(shipping)}
+            <span>
+              {selectedShippingPlan ? formatPrice(shipping) : 'Select at checkout'}
             </span>
           </div>
+          {selectedShippingPlan ? (
+            <p className="text-xs text-[var(--pvg-muted)] -mt-1">{selectedShippingPlan.label}</p>
+          ) : null}
           {rewardDiscount > 0 && (
             <div className="pvg-checkout-line pvg-checkout-line--discount">
               <span>Reward points</span>
