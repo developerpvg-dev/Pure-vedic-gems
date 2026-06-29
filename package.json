@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next dev",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=2048 next dev",
+    "dev:clean": "node scripts/clean-dev-cache.mjs && cross-env NODE_OPTIONS=--max-old-space-size=2048 next dev",
+    "clean": "node scripts/clean-dev-cache.mjs",
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=3072' next build",
     "prebuild": "node scripts/convert-images-to-webp.mjs",
     "start": "next start",

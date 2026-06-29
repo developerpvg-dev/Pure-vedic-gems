@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LoginSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { logCustomerActivity } from '@/lib/customers/activity';
+import {
+  customerStatusBlockMessage,
+  getCustomerAccountStatus,
+  isCustomerAccountAccessible,
+} from '@/lib/customers/account-status';
 
 export async function POST(req: NextRequest) {
   const ip =
@@ -45,6 +51,23 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    const accountStatus = await getCustomerAccountStatus(data.user.id);
+    if (!isCustomerAccountAccessible(accountStatus)) {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        { error: customerStatusBlockMessage(accountStatus) },
+        { status: 403 }
+      );
+    }
+
+    void logCustomerActivity({
+      customerId: data.user.id,
+      eventType: 'login',
+      title: 'Logged in',
+      subtitle: data.user.email ?? 'Email sign-in',
+      metadata: { method: 'email_password' },
+    });
     return NextResponse.json({
       success: true,
       user: { id: data.user.id, email: data.user.email },

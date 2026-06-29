@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation';
+import { sendAdminOrderAlertEmail } from '@/lib/resend/send-admin-order-alert';
+import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
+import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import type { Json, Order, PaymentEvent } from '@/lib/types/database';
@@ -124,9 +127,28 @@ export async function markOrderPaymentReview({
     })
     .eq('id', order.id);
 
+  const adminRecipient = getAdminNotificationEmail() ?? 'admin';
+  const messageId = await sendAdminOperationalAlertEmail({
+    subject: `Payment review required — ${order.order_number}`,
+    preview: `Order ${order.order_number} needs payment review`,
+    heading: 'Payment Amount Mismatch',
+    paragraphs: [
+      'A paid order could not be auto-finalized because the gateway amount did not match the expected order total.',
+      'Please review the payment in Razorpay and the admin order panel before fulfilling.',
+    ],
+    details: [
+      { label: 'Order number', value: order.order_number },
+      { label: 'Expected (paise)', value: expectedPaise ?? null },
+      { label: 'Received (paise)', value: amountPaise ?? null },
+      { label: 'Razorpay payment ID', value: razorpayPaymentId ?? null },
+      { label: 'Reason', value: reason },
+    ],
+    cta: { label: 'Review order', href: `${getEmailSiteUrl()}/admin/orders/${order.id}` },
+  });
+
   await supabase.from('notification_log').insert({
     type: 'amount_mismatch',
-    recipient: process.env.ADMIN_NOTIFICATION_EMAIL ?? 'admin',
+    recipient: adminRecipient,
     template: 'amount_mismatch_alert',
     context: {
       order_id: order.id,
@@ -135,8 +157,9 @@ export async function markOrderPaymentReview({
       received_paise: amountPaise ?? null,
       razorpay_payment_id: razorpayPaymentId ?? null,
       reason,
+      resend_message_id: messageId,
     },
-    status: 'queued',
+    status: messageId ? 'sent' : getAdminNotificationEmail() ? 'failed' : 'skipped',
   });
 }
 
@@ -290,7 +313,7 @@ async function sendVerifiedOrderNotifications(order: Order) {
   const adminNotificationSentAt = latestOrder?.admin_notification_sent_at ?? order.admin_notification_sent_at;
 
   if (recipient && !confirmationEmailSentAt) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
+    const siteUrl = getEmailSiteUrl();
     const messageId = await sendOrderConfirmationEmail(recipient.email, {
       customerName: recipient.name,
       orderNumber: order.order_number,
@@ -336,22 +359,41 @@ async function sendVerifiedOrderNotifications(order: Order) {
   }
 
   if (!adminNotificationSentAt) {
+    let adminMessageId: string | null = null;
+    if (recipient) {
+      adminMessageId = await sendAdminOrderAlertEmail({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        total: Number(order.total ?? 0),
+        customerName: recipient.name,
+        customerEmail: recipient.email,
+        itemCount: orderItems(order).length,
+        paymentMethod: order.payment_method,
+      });
+    }
+
+    const adminRecipient = getAdminNotificationEmail() ?? 'admin';
     await supabase.from('notification_log').insert({
       type: 'admin_order',
-      recipient: process.env.ADMIN_NOTIFICATION_EMAIL ?? 'admin',
+      recipient: adminRecipient,
       template: 'verified_order_received',
       context: {
         order_id: order.id,
         order_number: order.order_number,
         total: order.total,
-        customer: order.guest_name ?? order.customer_id ?? 'unknown',
+        customer: recipient?.name ?? order.guest_name ?? order.customer_id ?? 'unknown',
+        customer_email: recipient?.email ?? order.guest_email ?? null,
+        resend_message_id: adminMessageId,
       },
-      status: 'queued',
+      status: adminMessageId ? 'sent' : getAdminNotificationEmail() ? 'failed' : 'skipped',
     });
-    await supabase
-      .from('orders')
-      .update({ admin_notification_sent_at: new Date().toISOString() })
-      .eq('id', order.id);
+
+    if (adminMessageId || !getAdminNotificationEmail()) {
+      await supabase
+        .from('orders')
+        .update({ admin_notification_sent_at: new Date().toISOString() })
+        .eq('id', order.id);
+    }
   }
 
   await createInAppNotifications([

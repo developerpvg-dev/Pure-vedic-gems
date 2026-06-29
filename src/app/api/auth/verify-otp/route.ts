@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OTPSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import {
+  customerStatusBlockMessage,
+  getCustomerAccountStatus,
+  isCustomerAccountAccessible,
+} from '@/lib/customers/account-status';
 
 export async function POST(req: NextRequest) {
   const ip =
@@ -43,6 +48,17 @@ export async function POST(req: NextRequest) {
       { error: 'Invalid or expired OTP. Please try again.' },
       { status: 400 }
     );
+  }
+
+  if (data.user?.id) {
+    const accountStatus = await getCustomerAccountStatus(data.user.id);
+    if (!isCustomerAccountAccessible(accountStatus)) {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        { error: customerStatusBlockMessage(accountStatus) },
+        { status: 403 }
+      );
+    }
   }
 
   return NextResponse.json({

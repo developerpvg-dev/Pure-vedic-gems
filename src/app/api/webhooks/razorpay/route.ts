@@ -10,6 +10,8 @@ import {
   upsertPaymentEvent,
 } from '@/lib/orders/payment-finalization';
 import type { Json, Order } from '@/lib/types/database';
+import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
+import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -279,17 +281,33 @@ async function handleRefundProcessed(payload: UnknownRecord) {
       .update({ payment_status: 'refunded', status: 'refunded' })
       .eq('id', refundOrder.id);
 
+    const refundAmount = typeof entity?.amount === 'number' ? entity.amount : null;
+    const messageId = await sendAdminOperationalAlertEmail({
+      subject: `Refund processed — ${refundOrder.order_number}`,
+      preview: `Refund processed for order ${refundOrder.order_number}`,
+      heading: 'Refund Processed',
+      paragraphs: ['Razorpay reported a successful refund for a customer order. Please verify ledger and fulfillment status in admin.'],
+      details: [
+        { label: 'Order number', value: refundOrder.order_number },
+        { label: 'Refund ID', value: refundId },
+        { label: 'Refund amount (paise)', value: refundAmount },
+        { label: 'Payment ID', value: paymentId },
+      ],
+      cta: { label: 'Open order', href: `${getEmailSiteUrl()}/admin/orders/${refundOrder.id}` },
+    });
+
     await supabase.from('notification_log').insert({
       type: 'webhook',
-      recipient: process.env.ADMIN_NOTIFICATION_EMAIL ?? 'admin',
+      recipient: getAdminNotificationEmail() ?? 'admin',
       template: 'refund_processed',
       context: {
         order_id: refundOrder.id,
         order_number: refundOrder.order_number,
         refund_id: refundId,
-        refund_amount: typeof entity?.amount === 'number' ? entity.amount : null,
+        refund_amount: refundAmount,
+        resend_message_id: messageId,
       },
-      status: 'queued',
+      status: messageId ? 'sent' : getAdminNotificationEmail() ? 'failed' : 'skipped',
     });
   }
 

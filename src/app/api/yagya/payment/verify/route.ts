@@ -6,6 +6,7 @@ import { verifyPaymentSignature } from '@/lib/razorpay/verify';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { yagyaPaymentVerifySchema } from '@/lib/validators/yagya';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { sendYagyaBookingEmails } from '@/lib/resend/send-yagya-booking';
 import { hasValidBookingToken } from '@/lib/security/booking-token';
 import type { YagyaBooking, Json } from '@/lib/types/database';
 
@@ -204,6 +205,24 @@ export async function POST(request: NextRequest) {
     console.error('[Yagya payment] Finalize failed:', updateError);
     return NextResponse.json({ error: 'Failed to finalize yagya payment' }, { status: 500 });
   }
+
+  void sendYagyaBookingEmails({
+    id: updated.id,
+    bookingNumber: updated.booking_number,
+    fullName: updated.full_name,
+    email: updated.email,
+    phone: updated.phone,
+    yagyaTitle: updated.yagya_title_snapshot,
+    amountInr: updated.amount_inr,
+    currency: updated.currency,
+    razorpayPaymentId: updated.razorpay_payment_id,
+    preferredDate: updated.preferred_date,
+    sankalpName: updated.sankalp_name,
+    gotra: updated.gotra,
+    rashi: updated.rashi,
+    nakshatra: updated.nakshatra,
+    message: updated.message,
+  });
 
   await createInAppNotifications([
     ...(updated.customer_id

@@ -46,7 +46,7 @@ export function AdminStatCard({
         </div>
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-          <p className="mt-1 truncate text-xl font-bold tabular-nums text-gray-900 sm:text-2xl">{value}</p>
+          <p className="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-gray-900 sm:text-xl">{value}</p>
           {subtext ? <p className="mt-0.5 text-xs text-gray-400">{subtext}</p> : null}
         </div>
       </div>
@@ -70,11 +70,11 @@ export function AdminAnalyticsPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+    <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 border-b border-gray-100 px-4 py-3.5 text-left transition hover:bg-gray-50 sm:px-5"
+        className={`flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-gray-50 sm:px-5 ${open ? 'border-b border-gray-100' : ''}`}
       >
         <div>
           <h2 className="text-sm font-bold text-gray-900">{title}</h2>
@@ -85,7 +85,7 @@ export function AdminAnalyticsPanel({
           {open ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
         </div>
       </button>
-      {open ? <div className="space-y-5 p-4 sm:p-5">{children}</div> : null}
+      {open ? <div className="min-w-0 p-4 sm:p-5">{children}</div> : null}
     </section>
   );
 }

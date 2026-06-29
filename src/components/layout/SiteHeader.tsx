@@ -61,6 +61,19 @@ function FlagGB() {
     />
   );
 }
+function FlagAE() {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/flags/uae.svg"
+      alt=""
+      width={22}
+      height={15}
+      aria-hidden="true"
+      style={{ borderRadius: '2px', flexShrink: 0, display: 'block', objectFit: 'cover' }}
+    />
+  );
+}
 function SearchSvg() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -313,9 +326,14 @@ function TopbarMarqueeItems() {
         +91-9310172512
       </span>
       <span className="pvg-topbar-dot">◆</span>
-      <span className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last">
+      <span className="pvg-topbar-item pvg-topbar-item-phone">
         <FlagGB />
         +447831491778
+      </span>
+      <span className="pvg-topbar-dot">◆</span>
+      <span className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last">
+        <FlagAE />
+        +971-526686526
       </span>
     </>
   );
@@ -733,15 +751,25 @@ export function SiteHeader() {
               </a>
               <a href="tel:+447831491778" className="pvg-topbar-phone-link" aria-label="Call UK +447831491778" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
-                paddingLeft: '18px', fontSize: '13px', fontWeight: 600,
-                color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', flexShrink: 0,
+                padding: '0 18px', fontSize: '13px', fontWeight: 600,
+                color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap',
+                borderRight: '1px solid rgba(255,255,255,0.14)', flexShrink: 0,
                 fontFamily: "'Roboto', sans-serif",
               }}>
                 <FlagGB />
                 +447831491778
               </a>
+              <a href="tel:+971526686526" className="pvg-topbar-phone-link" aria-label="Call Dubai +971-526686526" style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                paddingLeft: '18px', fontSize: '13px', fontWeight: 600,
+                color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap', flexShrink: 0,
+                fontFamily: "'Roboto', sans-serif",
+              }}>
+                <FlagAE />
+                +971-526686526
+              </a>
             </div>
-            {/* Right: India | UK */}
+            {/* Right: India | UK | Dubai */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0,
               borderLeft: '1px solid rgba(255,255,255,0.14)', paddingLeft: '18px',
@@ -752,6 +780,10 @@ export function SiteHeader() {
               <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '16px', fontWeight: 200, lineHeight: 1 }}>|</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
                 <FlagGB /> UK
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '16px', fontWeight: 200, lineHeight: 1 }}>|</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
+                <FlagAE /> Dubai
               </span>
             </div>
           </div>

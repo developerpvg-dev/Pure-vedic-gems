@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { enquiryCreateSchema } from '@/lib/validators/enquiry';
+import { sendEnquiryEmails } from '@/lib/resend/send-enquiry';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 
 // Simple in-memory rate limiter (per IP, 3 requests per minute)
 const rateMap = new Map<string, { count: number; resetAt: number }>();
@@ -61,6 +63,32 @@ export async function POST(request: NextRequest) {
     console.error('Enquiry insert error:', error);
     return NextResponse.json({ error: 'Failed to submit enquiry' }, { status: 500 });
   }
+
+  void Promise.allSettled([
+    sendEnquiryEmails({
+      id: data.id,
+      name: parsed.data.name,
+      email: parsed.data.email,
+      phone: parsed.data.phone || null,
+      subject: parsed.data.subject || null,
+      message: parsed.data.message,
+      source: parsed.data.source,
+      productId: parsed.data.product_id || null,
+    }),
+    createInAppNotifications([
+      {
+        audience: 'admin',
+        recipientRole: 'sales',
+        type: 'new_enquiry',
+        title: 'New enquiry received',
+        message: `${parsed.data.name} submitted an enquiry.`,
+        href: '/admin/leads?type=enquiry',
+        entityType: 'enquiry',
+        entityId: data.id,
+        metadata: { source: parsed.data.source, subject: parsed.data.subject ?? null },
+      },
+    ]),
+  ]);
 
   return NextResponse.json({ success: true, id: data.id }, { status: 201 });
 }

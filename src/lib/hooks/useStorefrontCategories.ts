@@ -40,9 +40,12 @@ export function useStorefrontCategories(): StorefrontCategoryGroup[] {
     const cached = readCachedGroups();
     if (cached && alive) {
       setGroups(cached);
+      return () => {
+        alive = false;
+      };
     }
 
-    fetch('/api/categories?scope=storefront', { cache: 'no-store' })
+    fetch('/api/categories?scope=storefront')
       .then((response) => response.json())
       .then((data) => {
         if (!alive) return;

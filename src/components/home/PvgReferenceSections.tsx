@@ -238,7 +238,7 @@ export function PvgReferenceSections({
 
           <div className="about-copy-extra">
             <blockquote className="who-quote">
-              "We do not merely sell gemstones. We deliver precise cosmic remedies — authenticated by science, consecrated by Vedic tradition, and aligned to the cosmic forces of the universe."
+              "We do not merely sell gemstones. We deliver precise cosmic remedies — authenticated by scientific research, consecrated by Vedic tradition, and aligned to the cosmic forces of the universe."
             </blockquote>
 
             <div className="about-stats" aria-label="Key achievements">

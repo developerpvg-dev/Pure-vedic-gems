@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RegisterSchema } from '@/lib/validators/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { sendWelcomeEmail } from '@/lib/resend/send-welcome';
 
 export async function POST(req: NextRequest) {
   const ip =
@@ -77,6 +78,12 @@ export async function POST(req: NextRequest) {
       },
       { onConflict: 'id', ignoreDuplicates: true }
     );
+
+  void sendWelcomeEmail({
+    email,
+    fullName: full_name,
+    requiresEmailVerification: !authData.session,
+  });
 
   return NextResponse.json({
     success: true,

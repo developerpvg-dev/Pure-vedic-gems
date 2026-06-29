@@ -38,6 +38,27 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (isCustomerRoute && user) {
+    const adminClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const { data: profile } = await adminClient
+      .from('customer_profiles')
+      .select('account_status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.account_status && profile.account_status !== 'active') {
+      await supabase.auth.signOut();
+      const loginUrl = new URL('/', request.url);
+      loginUrl.searchParams.set('auth', 'login');
+      loginUrl.searchParams.set('account', profile.account_status);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   const isAdminRoute = PROTECTED_ADMIN_ROUTES.some((prefix) => pathname.startsWith(prefix));
   if (isAdminRoute) {
     if (!user) {

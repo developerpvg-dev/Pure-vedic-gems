@@ -3,20 +3,30 @@
  * Sent via Resend after successful payment.
  */
 
+import { Section, Text, Link, Hr, Row, Column, Heading } from '@react-email/components';
+import { EmailLayout } from '@/lib/resend/templates/EmailLayout';
+import { getEmailSiteUrl, getWhatsAppUrl } from '@/lib/resend/email-config';
 import {
-  Html,
-  Head,
-  Preview,
-  Body,
-  Container,
-  Section,
-  Text,
-  Link,
-  Hr,
-  Row,
-  Column,
-  Heading,
-} from '@react-email/components';
+  contentStyle,
+  h1Style,
+  h2Style,
+  textStyle,
+  highlightBoxStyle,
+  highlightLabelStyle,
+  highlightValueStyle,
+  itemRowStyle,
+  itemNameStyle,
+  itemPriceStyle,
+  dividerStyle,
+  totalRowStyle,
+  totalLabelStyle,
+  totalValueStyle,
+  grandTotalLabelStyle,
+  grandTotalValueStyle,
+  addressStyle,
+  primaryButtonStyle,
+  secondaryButtonStyle,
+} from '@/lib/resend/templates/shared/styles';
 
 interface OrderItem {
   name: string;
@@ -65,25 +75,18 @@ export function OrderConfirmationEmail({
   shippingAddress,
   siteUrl,
 }: OrderConfirmationEmailProps) {
-  const trackUrl = `${siteUrl}/account/orders`;
-  const whatsappUrl = `https://wa.me/919871582404?text=Hi%2C%20I%20just%20placed%20order%20${encodeURIComponent(orderNumber)}`;
+  const resolvedSiteUrl = siteUrl || getEmailSiteUrl();
+  const trackUrl = `${resolvedSiteUrl}/account/orders`;
+  const whatsappUrl = getWhatsAppUrl(`Hi, I just placed order ${orderNumber}`);
 
   return (
-    <Html>
-      <Head />
-      <Preview>Your PureVedicGems order {orderNumber} is confirmed!</Preview>
-      <Body style={bodyStyle}>
-        <Container style={containerStyle}>
-          {/* Header */}
-          <Section style={headerStyle}>
-            <Text style={logoStyle}>PureVedicGems</Text>
-            <Text style={taglineStyle}>Heritage Vedic Gemstones Since 1937</Text>
-          </Section>
-
-          {/* Greeting */}
-          <Section style={contentStyle}>
+    <EmailLayout
+      preview={`Your PureVedicGems order ${orderNumber} is confirmed`}
+      footerNote="This email was sent because you placed an order on PureVedicGems. If you did not make this purchase, please contact us immediately."
+    >
+      <Section style={contentStyle}>
             <Heading as="h1" style={h1Style}>
-              Order Confirmed ✨
+              Order Confirmed
             </Heading>
             <Text style={textStyle}>
               Dear {customerName},
@@ -94,10 +97,9 @@ export function OrderConfirmationEmail({
               utmost care.
             </Text>
 
-            {/* Order Number */}
-            <Section style={orderBoxStyle}>
-              <Text style={orderLabelStyle}>Order Number</Text>
-              <Text style={orderNumberStyle}>{orderNumber}</Text>
+            <Section style={highlightBoxStyle}>
+              <Text style={highlightLabelStyle}>Order Number</Text>
+              <Text style={highlightValueStyle}>{orderNumber}</Text>
             </Section>
 
             {/* Items */}
@@ -172,213 +174,12 @@ export function OrderConfirmationEmail({
 
             <Section style={{ textAlign: 'center' as const, marginTop: '16px' }}>
               <Link href={whatsappUrl} style={secondaryButtonStyle}>
-                💬 Need Help? WhatsApp Us
+                Need Help? WhatsApp Us
               </Link>
             </Section>
-          </Section>
-
-          {/* Footer */}
-          <Section style={footerStyle}>
-            <Text style={footerTextStyle}>
-              Pure Vedic Gems Pvt. Ltd. · Est. 1937
-            </Text>
-            <Text style={footerTextStyle}>
-              📞 +91-9871582404 · 📧 info@purevedicgems.com
-            </Text>
-            <Text style={{ ...footerTextStyle, fontSize: '11px', color: '#999' }}>
-              This email was sent because you placed an order on PureVedicGems.
-              If you did not make this purchase, please contact us immediately.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      </Section>
+    </EmailLayout>
   );
 }
-
-// ─── Styles ─────────────────────────────────────────────────────────────────
-
-const bodyStyle = {
-  backgroundColor: '#FDF7EE',
-  fontFamily: "'DM Sans', 'Helvetica Neue', Arial, sans-serif",
-  margin: 0,
-  padding: 0,
-};
-
-const containerStyle = {
-  maxWidth: '600px',
-  margin: '0 auto',
-  backgroundColor: '#FFFFFF',
-};
-
-const headerStyle = {
-  backgroundColor: '#3D2B1F',
-  padding: '32px 24px',
-  textAlign: 'center' as const,
-};
-
-const logoStyle = {
-  color: '#C9A84C',
-  fontSize: '28px',
-  fontWeight: '700' as const,
-  fontFamily: "'Playfair Display', Georgia, serif",
-  margin: 0,
-  letterSpacing: '1px',
-};
-
-const taglineStyle = {
-  color: 'rgba(255,255,255,0.7)',
-  fontSize: '12px',
-  margin: '4px 0 0 0',
-  letterSpacing: '2px',
-  textTransform: 'uppercase' as const,
-};
-
-const contentStyle = {
-  padding: '32px 24px',
-};
-
-const h1Style = {
-  color: '#3D2B1F',
-  fontSize: '24px',
-  fontWeight: '700' as const,
-  fontFamily: "'Playfair Display', Georgia, serif",
-  marginBottom: '16px',
-};
-
-const h2Style = {
-  color: '#3D2B1F',
-  fontSize: '18px',
-  fontWeight: '600' as const,
-  fontFamily: "'Playfair Display', Georgia, serif",
-  marginTop: '28px',
-  marginBottom: '12px',
-};
-
-const textStyle = {
-  color: '#261A10',
-  fontSize: '15px',
-  lineHeight: '24px',
-  margin: '0 0 12px 0',
-};
-
-const orderBoxStyle = {
-  backgroundColor: '#FDF7EE',
-  border: '1px solid rgba(201,168,76,0.3)',
-  borderRadius: '8px',
-  padding: '20px',
-  textAlign: 'center' as const,
-  margin: '20px 0',
-};
-
-const orderLabelStyle = {
-  color: '#7A6250',
-  fontSize: '12px',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '2px',
-  margin: '0 0 4px 0',
-};
-
-const orderNumberStyle = {
-  color: '#3D2B1F',
-  fontSize: '22px',
-  fontWeight: '700' as const,
-  fontFamily: "'Playfair Display', Georgia, serif",
-  margin: 0,
-};
-
-const itemRowStyle = {
-  padding: '8px 0',
-};
-
-const itemNameStyle = {
-  color: '#261A10',
-  fontSize: '14px',
-  margin: 0,
-};
-
-const itemPriceStyle = {
-  color: '#3D2B1F',
-  fontSize: '14px',
-  fontWeight: '600' as const,
-  margin: 0,
-};
-
-const dividerStyle = {
-  borderColor: 'rgba(61,43,31,0.12)',
-  margin: '16px 0',
-};
-
-const totalRowStyle = {
-  padding: '4px 0',
-};
-
-const totalLabelStyle = {
-  color: '#7A6250',
-  fontSize: '14px',
-  margin: 0,
-};
-
-const totalValueStyle = {
-  color: '#261A10',
-  fontSize: '14px',
-  margin: 0,
-};
-
-const grandTotalLabelStyle = {
-  color: '#3D2B1F',
-  fontSize: '16px',
-  fontWeight: '700' as const,
-  margin: 0,
-};
-
-const grandTotalValueStyle = {
-  color: '#C9A84C',
-  fontSize: '20px',
-  fontWeight: '700' as const,
-  margin: 0,
-};
-
-const addressStyle = {
-  color: '#261A10',
-  fontSize: '14px',
-  lineHeight: '22px',
-  margin: 0,
-};
-
-const primaryButtonStyle = {
-  backgroundColor: '#C9A84C',
-  color: '#FFFFFF',
-  padding: '14px 32px',
-  borderRadius: '6px',
-  textDecoration: 'none',
-  fontWeight: '600' as const,
-  fontSize: '15px',
-  display: 'inline-block',
-};
-
-const secondaryButtonStyle = {
-  backgroundColor: 'transparent',
-  color: '#3D2B1F',
-  padding: '12px 28px',
-  border: '1px solid rgba(61,43,31,0.2)',
-  borderRadius: '6px',
-  textDecoration: 'none',
-  fontWeight: '500' as const,
-  fontSize: '14px',
-  display: 'inline-block',
-};
-
-const footerStyle = {
-  backgroundColor: '#FDF7EE',
-  padding: '24px',
-  textAlign: 'center' as const,
-};
-
-const footerTextStyle = {
-  color: '#7A6250',
-  fontSize: '12px',
-  margin: '0 0 6px 0',
-};
 
 export default OrderConfirmationEmail;

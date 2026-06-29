@@ -471,6 +471,10 @@ export interface Database {
           rashi: string | null;
           addresses: Json;
           default_address_index: number;
+          account_status: string;
+          status_reason: string | null;
+          status_changed_at: string | null;
+          status_changed_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -487,6 +491,10 @@ export interface Database {
           rashi?: string | null;
           addresses?: Json;
           default_address_index?: number;
+          account_status?: string;
+          status_reason?: string | null;
+          status_changed_at?: string | null;
+          status_changed_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -503,6 +511,10 @@ export interface Database {
           rashi?: string | null;
           addresses?: Json;
           default_address_index?: number;
+          account_status?: string;
+          status_reason?: string | null;
+          status_changed_at?: string | null;
+          status_changed_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -2467,6 +2479,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      customer_activity_log: {
+        Row: {
+          id: string;
+          customer_id: string;
+          event_type: string;
+          title: string;
+          subtitle: string | null;
+          entity_type: string | null;
+          entity_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          event_type: string;
+          title: string;
+          subtitle?: string | null;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          customer_id?: string;
+          event_type?: string;
+          title?: string;
+          subtitle?: string | null;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       admin_activity_log: {
         Row: {
           id: string;
@@ -2805,6 +2853,60 @@ export interface Database {
           context?: Json | null;
           status?: string;
           error_message?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      in_app_notifications: {
+        Row: {
+          id: string;
+          recipient_user_id: string | null;
+          recipient_role: string | null;
+          audience: string;
+          type: string;
+          title: string;
+          message: string;
+          href: string | null;
+          entity_type: string | null;
+          entity_id: string | null;
+          metadata: Json;
+          read_at: string | null;
+          is_active: boolean;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient_user_id?: string | null;
+          recipient_role?: string | null;
+          audience: string;
+          type: string;
+          title: string;
+          message: string;
+          href?: string | null;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          metadata?: Json;
+          read_at?: string | null;
+          is_active?: boolean;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient_user_id?: string | null;
+          recipient_role?: string | null;
+          audience?: string;
+          type?: string;
+          title?: string;
+          message?: string;
+          href?: string | null;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          metadata?: Json;
+          read_at?: string | null;
+          is_active?: boolean;
+          expires_at?: string | null;
           created_at?: string;
         };
         Relationships: [];

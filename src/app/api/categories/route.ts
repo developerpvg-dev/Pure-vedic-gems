@@ -123,7 +123,24 @@ function buildStorefrontGroups(gemRows: GemCategoryRow[], catalogRows: CatalogCa
   });
 }
 
-const DB_TIMEOUT_MS = 5000;
+const DB_TIMEOUT_MS = process.env.NODE_ENV === 'development' ? 15_000 : 8_000;
+const STOREFRONT_CACHE_MS = process.env.NODE_ENV === 'development' ? 120_000 : 300_000;
+
+type StorefrontPayload = {
+  categories: GemCategoryRow[];
+  groups: StorefrontCategoryGroup[];
+};
+
+let storefrontCache: { expiresAt: number; payload: StorefrontPayload } | null = null;
+
+function readStorefrontCache(): StorefrontPayload | null {
+  if (!storefrontCache || Date.now() > storefrontCache.expiresAt) return null;
+  return storefrontCache.payload;
+}
+
+function writeStorefrontCache(payload: StorefrontPayload) {
+  storefrontCache = { expiresAt: Date.now() + STOREFRONT_CACHE_MS, payload };
+}
 
 type DbResult<TRow> = { data: TRow[] | null; error: { message: string } | null };
 
@@ -175,6 +192,13 @@ export async function GET(request: NextRequest) {
 
   // ── Storefront scope: all six groups ──────────────────────────────────
   if (scope === 'storefront') {
+    const cached = readStorefrontCache();
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      });
+    }
+
     try {
       const [gemResult, catalogResult] = await Promise.race([
         Promise.all([
@@ -191,10 +215,11 @@ export async function GET(request: NextRequest) {
       if (catalogResult.error) console.error('[categories] product_categories error:', catalogResult.error);
 
       const groups = buildStorefrontGroups(gemRows, catalogRows);
-      return NextResponse.json(
-        { categories: gemRows, groups },
-        { headers: { 'Cache-Control': 'no-store' } }
-      );
+      const payload = { categories: gemRows, groups };
+      writeStorefrontCache(payload);
+      return NextResponse.json(payload, {
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      });
     } catch (err) {
       console.error('[categories] Storefront fetch failed, using fallback:', (err as Error).message);
       return NextResponse.json(

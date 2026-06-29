@@ -18,7 +18,117 @@ export function labelize(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-const CHART_HEIGHT = 128;
+export function fmtInrCompact(value: number) {
+  if (value >= 10_000_000) return `₹${(value / 10_000_000).toFixed(2)} Cr`;
+  if (value >= 100_000) return `₹${(value / 100_000).toFixed(2)} L`;
+  return fmtInr(value);
+}
+
+const CHART_HEIGHT = 96;
+
+export function SignupTrendChart({ data }: { data: TrendPoint[] }) {
+  if (data.length === 0) {
+    return (
+      <div className="flex min-h-[140px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
+        No signup data for this period
+      </div>
+    );
+  }
+
+  const totalSignups = data.reduce((sum, point) => sum + point.orders, 0);
+  const peakSignups = Math.max(...data.map((point) => point.orders), 0);
+  const peakDay = data.find((point) => point.orders === peakSignups && peakSignups > 0);
+  const activeDays = data.filter((point) => point.orders > 0).length;
+
+  if (totalSignups === 0) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gradient-to-b from-gray-50 to-white p-5">
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <p className="text-3xl font-bold tabular-nums text-gray-300">0</p>
+          <p className="mt-2 text-sm font-medium text-gray-700">No new signups in the last 30 days</p>
+          <p className="mt-1 text-xs text-gray-500">The chart will populate when customers register.</p>
+        </div>
+        <div className="mt-2 flex justify-between gap-1 border-t border-gray-100 pt-3 text-[10px] text-gray-400">
+          <span>{data[0]?.label}</span>
+          <span>{data[Math.floor(data.length / 2)]?.label}</span>
+          <span>{data[data.length - 1]?.label}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const maxSignups = Math.max(peakSignups, 1);
+  const useHorizontalScroll = data.length > 14;
+
+  return (
+    <div className="space-y-4 rounded-lg border border-gray-100 bg-gradient-to-b from-emerald-50/40 to-white p-4">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-gray-100">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total signups</p>
+          <p className="mt-1 text-xl font-bold tabular-nums text-emerald-700">{totalSignups}</p>
+        </div>
+        <div className="rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-gray-100">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Peak day</p>
+          <p className="mt-1 text-sm font-bold text-gray-900">{peakDay?.label ?? '—'}</p>
+          <p className="text-xs tabular-nums text-emerald-700">{peakSignups} signup{peakSignups === 1 ? '' : 's'}</p>
+        </div>
+        <div className="rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-gray-100">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Active days</p>
+          <p className="mt-1 text-xl font-bold tabular-nums text-gray-900">{activeDays}</p>
+        </div>
+      </div>
+
+      <div className={useHorizontalScroll ? '-mx-1 overflow-x-auto pb-1 [scrollbar-width:thin]' : ''}>
+        <div
+          className={`flex items-end gap-1.5 sm:gap-2 ${useHorizontalScroll ? 'px-1' : 'w-full'}`}
+          style={
+            useHorizontalScroll
+              ? { minWidth: '100%', width: `${Math.max(data.length * 44, 320)}px` }
+              : undefined
+          }
+        >
+          {data.map((point) => {
+            const barHeight = Math.max(Math.round((point.orders / maxSignups) * CHART_HEIGHT), point.orders > 0 ? 10 : 4);
+            return (
+              <div
+                key={point.date}
+                className={`flex min-w-0 flex-col items-center justify-end gap-1 ${useHorizontalScroll ? 'shrink-0' : 'flex-1'}`}
+                style={useHorizontalScroll ? { width: 40 } : undefined}
+              >
+                <span className="h-4 text-[10px] font-semibold tabular-nums text-emerald-700">
+                  {point.orders > 0 ? point.orders : ''}
+                </span>
+                <div
+                  className="flex w-full items-end justify-center rounded-t-md bg-emerald-100/80"
+                  style={{ height: CHART_HEIGHT }}
+                >
+                  <div
+                    className="w-[72%] rounded-t-md bg-emerald-500 transition-colors hover:bg-emerald-600"
+                    style={{ height: barHeight }}
+                    title={`${point.label}: ${point.orders} signup(s)`}
+                  />
+                </div>
+                <span
+                  className="max-w-full truncate text-center text-[9px] leading-tight text-gray-500 sm:text-[10px]"
+                  title={point.label}
+                >
+                  {point.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
+          New customer signups per day
+        </span>
+      </p>
+    </div>
+  );
+}
 
 export function RevenueTrendChart({ data }: { data: TrendPoint[] }) {
   if (data.length === 0) {
