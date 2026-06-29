@@ -1,4 +1,5 @@
 import type { ProductCard } from '@/lib/types/product';
+import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
 
 export const RUDRAKSHA_DESIGN_CATEGORIES = {
   one_mukhi: {
@@ -43,6 +44,7 @@ export function isRudrakshaConfiguratorContext(
   gemCategory: string | null,
   product: Pick<ProductCard, 'category' | 'sub_category' | 'product_type'> | null
 ): boolean {
+  if (!RUDRAKSHA_CONFIGURATOR_ENABLED) return false;
   if (gemCategory === 'rudraksha') return true;
   if (product?.category === 'rudraksha') return true;
   if (product?.product_type === 'rudraksha') return true;
@@ -85,5 +87,48 @@ export function designMatchesRudrakshaProduct(
 ): boolean {
   if (!designCategory) return false;
   const allowed = getRudrakshaDesignCategoriesForProduct(product);
+  return allowed.includes(designCategory as RudrakshaDesignCategory);
+}
+
+/** Total bead count when building a multi-rudraksha pendant. */
+export function countRudrakshaBeadsInSelection(
+  primary: { id?: string } | null,
+  combo: { id?: string }[] = []
+): number {
+  const ids = new Set<string>();
+  if (primary?.id) ids.add(primary.id);
+  for (const item of combo) {
+    if (item?.id) ids.add(item.id);
+  }
+  return ids.size;
+}
+
+/** Design categories allowed for a primary bead plus optional combo beads. */
+export function getRudrakshaDesignCategoriesForSelection(
+  primary: (Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+    id?: string;
+  }) | null,
+  combo: (Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+    id?: string;
+  })[] = []
+): RudrakshaDesignCategory[] {
+  const beadCount = countRudrakshaBeadsInSelection(primary, combo);
+
+  if (beadCount >= 3) return ['multiple_beads'];
+
+  return getRudrakshaDesignCategoriesForProduct(primary);
+}
+
+export function designMatchesRudrakshaSelection(
+  designCategory: string | null | undefined,
+  primary: Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+    id?: string;
+  } | null,
+  combo: (Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+    id?: string;
+  })[] = []
+): boolean {
+  if (!designCategory) return false;
+  const allowed = getRudrakshaDesignCategoriesForSelection(primary, combo);
   return allowed.includes(designCategory as RudrakshaDesignCategory);
 }

@@ -920,7 +920,7 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
         <div className="container">
           <div className="section-head" style={{ position: 'relative', zIndex: 1 }}>
             <h2 className="section-title" id="semi-heading">Semi-Precious Gemstones</h2>
-            <p className="navratna-subtitle">Uparatnas - Vedic Complementary Healing Crystals</p>
+            <p className="navratna-subtitle">Uparatnas - Vedic Complementary Healing Substitute Gems</p>
             <div className="section-rule-center" />
           </div>
 

@@ -6,6 +6,7 @@ import type { ProductCard } from '@/lib/types/product';
 
 interface Props {
   params: Promise<{ productId: string }>;
+  searchParams: Promise<{ combo?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -36,8 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * /configure/[productId] — Start configurator with a pre-selected gemstone.
  * Product is fetched server-side and passed to the client component.
  */
-export default async function ConfigureProductPage({ params }: Props) {
+export default async function ConfigureProductPage({ params, searchParams }: Props) {
   const { productId } = await params;
+  const { combo } = await searchParams;
+  const comboProductIds = combo
+    ? combo.split(',').map((id) => id.trim()).filter(Boolean)
+    : [];
 
   // Validate UUID format
   const uuidRegex =
@@ -65,5 +70,10 @@ export default async function ConfigureProductPage({ params }: Props) {
     notFound();
   }
 
-  return <ConfiguratorClient preselectedProduct={product as ProductCard} />;
+  return (
+    <ConfiguratorClient
+      preselectedProduct={product as ProductCard}
+      comboProductIds={comboProductIds}
+    />
+  );
 }

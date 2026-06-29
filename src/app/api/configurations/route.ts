@@ -33,6 +33,16 @@ const ConfigurationSchema = z.object({
     .nullable()
     .optional()
     .transform((value) => (value ? value : null)),
+  custom_design_brief: z
+    .object({
+      description: z.string().min(10),
+      contact_phone: z.string().min(8),
+      preferred_metal: z.string().optional(),
+      additional_notes: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  rudraksha_combo_product_ids: z.array(z.string().uuid()).optional().default([]),
   metal: z.string().nullable(),
   ring_size: z.string().nullable().optional(),
   chain_length: z.string().nullable().optional(),
@@ -249,6 +259,8 @@ function buildSnapshot(args: {
       setting_type: args.settingType,
       design: args.design ? { id: args.design.id, name: args.design.name } : null,
       custom_design_url: args.input.custom_design_url ?? null,
+      custom_design_brief: args.input.custom_design_brief ?? null,
+      rudraksha_combo_product_ids: args.input.rudraksha_combo_product_ids ?? [],
       metal: args.settingType === 'loose' ? null : args.input.metal,
       ring_size: args.settingType === 'ring' ? args.input.ring_size ?? null : null,
       chain_length: args.settingType === 'pendant' ? args.input.chain_length ?? null : null,
@@ -329,6 +341,12 @@ export async function POST(request: NextRequest) {
   }
 
   const hasCustomDesign = !!input.custom_design_url && settingType !== 'loose';
+  if (hasCustomDesign && !input.custom_design_brief) {
+    return NextResponse.json(
+      { error: 'Please provide design details for your custom design request.' },
+      { status: 400 }
+    );
+  }
   if (settingType !== 'loose') {
     if (!rules.jewelry_design_enabled) {
       return NextResponse.json({ error: 'Jewellery settings are not enabled for this product.' }, { status: 400 });

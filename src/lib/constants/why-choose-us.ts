@@ -22,7 +22,7 @@ export const WHY_CHOOSE_US_PROMISES = [
   {
     icon: '/whychooseus/Scientific%20Research.png',
     title: 'Scientific Research',
-    copy: 'Research based guidance from Rudrakshas, Yagyas and Vedic Astrology.',
+    copy: 'Research-based guidance from ancient sacred Vedic scriptures.',
   },
   {
     icon: '/whychooseus/genuine%20vedic%20astrologers.png',

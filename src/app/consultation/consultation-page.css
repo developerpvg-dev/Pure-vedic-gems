@@ -5,14 +5,14 @@
   overflow-x: hidden;
   background: #faf8f4;
   padding-bottom: 5rem;
-  padding-top: 7rem;
+  padding-top: calc(var(--pvg-site-header-offset) + 1rem);
   font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
   color: #15110d;
 }
 
 @media (min-width: 1024px) {
   .pvg-consultation-page {
-    padding-top: 7.5rem;
+    padding-top: calc(var(--pvg-site-header-offset) + 1.25rem);
   }
 }
 

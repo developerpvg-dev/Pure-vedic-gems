@@ -16,7 +16,7 @@ interface DashboardStats {
   pendingOrders: number;
   newEnquiries: number;
   activeProducts: number;
-  lowStockProducts: number;
+  outOfStockProducts: number;
   totalConsultations: number;
   consultationRevenue: number;
 }
@@ -49,7 +49,7 @@ interface RecentOrder {
   created_at: string;
 }
 
-interface LowStockProduct {
+interface OutOfStockProduct {
   id: string;
   sku: string | null;
   name: string;
@@ -71,7 +71,7 @@ interface DashboardData {
   productCategories: Record<string, number>;
   teamRoles: Record<string, number>;
   chartData: ChartDay[];
-  lowStockProducts: LowStockProduct[];
+  outOfStockProducts: OutOfStockProduct[];
   recentOrders: RecentOrder[];
 }
 
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const { stats, pipeline, chartData, lowStockProducts, recentOrders } = data;
+  const { stats, pipeline, chartData, outOfStockProducts, recentOrders } = data;
 
   const PIPELINE_STAGES = [
     'placed', 'confirmed', 'processing', 'jewelry_making',
@@ -387,7 +387,7 @@ export default function AdminDashboard() {
           {[
             { href: '/admin/orders', label: 'Orders', desc: 'Trends & pipeline', icon: ShoppingCart },
             { href: '/admin/finance', label: 'Finance', desc: 'Revenue breakdown', icon: DollarSign },
-            { href: '/admin/products?stock=low', label: 'Products', desc: 'Catalog & inventory', icon: Package },
+            { href: '/admin/products?stock=out', label: 'Products', desc: 'Catalog & inventory', icon: Package },
             { href: '/admin/leads', label: 'Leads', desc: 'Enquiries & consults', icon: MessageSquare },
             { href: '/admin/customers', label: 'Customers', desc: 'CRM & signup trend', icon: Users },
             { href: '/admin/yagya-bookings', label: 'Yagya Bookings', desc: 'Payments & services', icon: TrendingUp },
@@ -421,36 +421,36 @@ export default function AdminDashboard() {
 
       <RoleChartGrid data={data} />
 
-      {stats.lowStockProducts > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+      {stats.outOfStockProducts > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-amber-900">
+              <div className="flex items-center gap-2 text-red-900">
                 <AlertCircle className="h-5 w-5" />
-                <h2 className="text-base font-bold">Low Stock Inventory</h2>
+                <h2 className="text-base font-bold">Out of Stock Products</h2>
               </div>
-              <p className="mt-1 text-sm text-amber-800">
-                {stats.lowStockProducts} active product{stats.lowStockProducts === 1 ? '' : 's'} have stock below 5.
+              <p className="mt-1 text-sm text-red-800">
+                {stats.outOfStockProducts} active product{stats.outOfStockProducts === 1 ? '' : 's'} are currently out of stock.
               </p>
             </div>
             <Link
-              href="/admin/products?stock=low"
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+              href="/admin/products?stock=out"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
             >
               Review Stock <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {lowStockProducts.map((product) => (
+            {outOfStockProducts.map((product) => (
               <Link
                 key={product.id}
                 href={`/admin/products/${product.id}`}
-                className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm transition hover:border-amber-300"
+                className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm transition hover:border-red-300"
               >
                 <p className="truncate font-semibold text-gray-900">{product.name}</p>
                 <p className="mt-0.5 text-xs text-gray-500">{product.sku || product.category || 'Product'}</p>
-                <p className="mt-2 text-xs font-bold uppercase tracking-wide text-amber-700">
-                  {product.stock_quantity} unit{product.stock_quantity === 1 ? '' : 's'} left
+                <p className="mt-2 text-xs font-bold uppercase tracking-wide text-red-700">
+                  Out of stock
                 </p>
               </Link>
             ))}

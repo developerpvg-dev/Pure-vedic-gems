@@ -85,7 +85,7 @@ export function AdminAnalyticsPanel({
           {open ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
         </div>
       </button>
-      {open ? <div className="min-w-0 p-4 sm:p-5">{children}</div> : null}
+      {open ? <div className="min-w-0 space-y-5 overflow-hidden p-4 sm:p-5">{children}</div> : null}
     </section>
   );
 }

@@ -6,7 +6,12 @@ import Link from 'next/link';
 import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminPageHeader } from '@/components/admin/AdminPageShell';
-import { KNOWN_GEM_SUBCATEGORIES, knownSubcategoryHref } from '@/lib/categories/shop';
+import {
+  CATALOG_ORDER_CATEGORIES,
+  catalogOrderStorefrontHref,
+  getCatalogOrderSubcategories,
+  reorderWithInsertAt,
+} from '@/lib/admin/catalog-order-categories';
 import { formatPrice } from '@/lib/utils/format';
 
 type CatalogProduct = {
@@ -23,22 +28,82 @@ type CatalogProduct = {
   carat_weight: number | null;
 };
 
-const NAVARATNA_OPTIONS = Object.entries(KNOWN_GEM_SUBCATEGORIES)
-  .filter(([, meta]) => meta.category === 'navaratna')
-  .map(([slug, meta]) => ({ slug, label: meta.label }));
+function PositionInput({
+  position,
+  max,
+  onCommit,
+}: {
+  position: number;
+  max: number;
+  onCommit: (targetPosition: number) => void;
+}) {
+  const [value, setValue] = useState(String(position));
+
+  useEffect(() => {
+    setValue(String(position));
+  }, [position]);
+
+  function commit() {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed)) {
+      setValue(String(position));
+      return;
+    }
+    onCommit(parsed);
+  }
+
+  return (
+    <input
+      type="number"
+      min={1}
+      max={max}
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commit();
+          (event.target as HTMLInputElement).blur();
+        }
+      }}
+      aria-label={`Display position, currently ${position}`}
+      className="w-14 rounded-lg border border-gray-300 px-2 py-1 text-center text-sm font-semibold tabular-nums text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+    />
+  );
+}
 
 export default function AdminCatalogOrderPage() {
-  const [subCategory, setSubCategory] = useState(NAVARATNA_OPTIONS[0]?.slug ?? 'ruby');
+  const [category, setCategory] = useState('navaratna');
+  const subcategoryOptions = useMemo(() => getCatalogOrderSubcategories(category), [category]);
+  const [subCategory, setSubCategory] = useState('ruby');
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const category = 'navaratna';
-  const selectedLabel = NAVARATNA_OPTIONS.find((opt) => opt.slug === subCategory)?.label ?? subCategory;
+  const selectedLabel =
+    subcategoryOptions.find((opt) => opt.slug === subCategory)?.label ?? subCategory;
+
+  useEffect(() => {
+    const first = subcategoryOptions[0]?.slug;
+    if (!first) {
+      setSubCategory('');
+      return;
+    }
+    if (!subcategoryOptions.some((opt) => opt.slug === subCategory)) {
+      setSubCategory(first);
+    }
+  }, [subCategory, subcategoryOptions]);
 
   const loadProducts = useCallback(async () => {
+    if (!category || !subCategory) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const params = new URLSearchParams({ category, sub_category: subCategory });
@@ -53,7 +118,7 @@ export default function AdminCatalogOrderPage() {
     } finally {
       setLoading(false);
     }
-  }, [subCategory]);
+  }, [category, subCategory]);
 
   useEffect(() => {
     void loadProducts();
@@ -63,13 +128,21 @@ export default function AdminCatalogOrderPage() {
     return list.map((product, index) => ({ ...product, display_order: index }));
   }, []);
 
+  const applyOrder = useCallback(
+    (next: CatalogProduct[]) => {
+      setProducts(reindex(next));
+      setDirty(true);
+    },
+    [reindex]
+  );
+
   const moveItem = (from: number, to: number) => {
     if (from === to || from < 0 || to < 0 || from >= products.length || to >= products.length) return;
-    const next = [...products];
-    const [item] = next.splice(from, 1);
-    next.splice(to, 0, item);
-    setProducts(reindex(next));
-    setDirty(true);
+    applyOrder(reorderWithInsertAt(products, from, to + 1));
+  };
+
+  const moveToPosition = (from: number, targetPosition: number) => {
+    applyOrder(reorderWithInsertAt(products, from, targetPosition));
   };
 
   const saveOrder = async () => {
@@ -99,13 +172,16 @@ export default function AdminCatalogOrderPage() {
     }
   };
 
-  const storefrontHref = useMemo(() => knownSubcategoryHref(subCategory), [subCategory]);
+  const storefrontHref = useMemo(
+    () => (subCategory ? catalogOrderStorefrontHref(category, subCategory) : '/shop'),
+    [category, subCategory]
+  );
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="Catalog Display Order"
-        description="Drag or use arrows to set how products appear in each Navaratna collection. Out-of-stock items still appear last on the storefront."
+        description="Set how products appear in each shop collection. Type a position number to insert a product — others shift down automatically. Out-of-stock items still sort last on the storefront."
         actions={(
           <>
             <Link
@@ -130,21 +206,49 @@ export default function AdminCatalogOrderPage() {
       />
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <label htmlFor="sub-category" className="block text-sm font-medium text-gray-700">
-          Navaratna category
-        </label>
-        <select
-          id="sub-category"
-          value={subCategory}
-          onChange={(event) => setSubCategory(event.target.value)}
-          className="mt-2 w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        >
-          {NAVARATNA_OPTIONS.map((option) => (
-            <option key={option.slug} value={option.slug}>{option.label}</option>
-          ))}
-        </select>
-        <p className="mt-2 text-xs text-gray-500">
-          {products.length} active products · positions 0–{Math.max(products.length - 1, 0)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm font-medium text-gray-700">Product category</span>
+            <select
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                setDirty(false);
+              }}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            >
+              {CATALOG_ORDER_CATEGORIES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-gray-700">Sub-category</span>
+            <select
+              value={subCategory}
+              onChange={(event) => setSubCategory(event.target.value)}
+              disabled={subcategoryOptions.length === 0}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              {subcategoryOptions.length === 0 ? (
+                <option value="">No sub-categories defined</option>
+              ) : (
+                subcategoryOptions.map((option) => (
+                  <option key={option.slug} value={option.slug}>
+                    {option.label}
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+        </div>
+
+        <p className="mt-3 text-xs text-gray-500">
+          {products.length} active product{products.length === 1 ? '' : 's'} in {selectedLabel || 'this collection'}.
+          Positions are 1–{Math.max(products.length, 1)} (lower = shown first).
         </p>
       </div>
 
@@ -152,9 +256,13 @@ export default function AdminCatalogOrderPage() {
         <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
           <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
         </div>
+      ) : subcategoryOptions.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500">
+          This category has no sub-categories configured for catalog ordering.
+        </div>
       ) : products.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500">
-          No active products in this category.
+          No active products in this collection.
         </div>
       ) : (
         <ul className="space-y-2">
@@ -181,9 +289,14 @@ export default function AdminCatalogOrderPage() {
                 <GripVertical className="h-5 w-5" />
               </button>
 
-              <span className="w-8 shrink-0 text-center text-sm font-semibold tabular-nums text-gray-500">
-                {index + 1}
-              </span>
+              <div className="flex shrink-0 flex-col items-center gap-1">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Pos</span>
+                <PositionInput
+                  position={index + 1}
+                  max={products.length}
+                  onCommit={(targetPosition) => moveToPosition(index, targetPosition)}
+                />
+              </div>
 
               <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                 {product.thumbnail_url ? (
@@ -200,9 +313,11 @@ export default function AdminCatalogOrderPage() {
                 </p>
               </div>
 
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                product.in_stock ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-              }`}>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  product.in_stock ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                }`}
+              >
                 {product.in_stock ? 'In stock' : 'Out of stock'}
               </span>
 
@@ -212,7 +327,7 @@ export default function AdminCatalogOrderPage() {
                   onClick={() => moveItem(index, index - 1)}
                   disabled={index === 0}
                   className="rounded border border-gray-200 p-1 text-gray-600 hover:bg-gray-50 disabled:opacity-30"
-                  aria-label="Move up"
+                  aria-label="Move up one"
                 >
                   <ArrowUp className="h-4 w-4" />
                 </button>
@@ -221,7 +336,7 @@ export default function AdminCatalogOrderPage() {
                   onClick={() => moveItem(index, index + 1)}
                   disabled={index === products.length - 1}
                   className="rounded border border-gray-200 p-1 text-gray-600 hover:bg-gray-50 disabled:opacity-30"
-                  aria-label="Move down"
+                  aria-label="Move down one"
                 >
                   <ArrowDown className="h-4 w-4" />
                 </button>

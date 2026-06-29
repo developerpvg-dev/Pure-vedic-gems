@@ -65,6 +65,29 @@ function snapshotSummary(snapshot: unknown) {
   return typeof summary === 'string' ? summary : null;
 }
 
+function snapshotCustomDesignBrief(snapshot: unknown) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null;
+  const selections = (snapshot as Record<string, unknown>).selections;
+  if (!selections || typeof selections !== 'object' || Array.isArray(selections)) return null;
+  const brief = (selections as Record<string, unknown>).custom_design_brief;
+  if (!brief || typeof brief !== 'object' || Array.isArray(brief)) return null;
+  const description = (brief as Record<string, unknown>).description;
+  const contactPhone = (brief as Record<string, unknown>).contact_phone;
+  if (typeof description !== 'string' || typeof contactPhone !== 'string') return null;
+  return {
+    description,
+    contact_phone: contactPhone,
+    preferred_metal:
+      typeof (brief as Record<string, unknown>).preferred_metal === 'string'
+        ? String((brief as Record<string, unknown>).preferred_metal)
+        : undefined,
+    additional_notes:
+      typeof (brief as Record<string, unknown>).additional_notes === 'string'
+        ? String((brief as Record<string, unknown>).additional_notes)
+        : undefined,
+  };
+}
+
 export default function AdminConfigurationsPage() {
   const [rows, setRows] = useState<ConfigurationRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +208,26 @@ export default function AdminConfigurationsPage() {
                           {row.product?.tag_number ? ` · Tag ${row.product.tag_number}` : ''}
                         </p>
                         {snapshotSummary(row.configuration_snapshot) && (
-                          <p className="mt-2 max-w-xs text-xs leading-relaxed text-gray-500">{snapshotSummary(row.configuration_snapshot)}</p>
+                          <p className="mt-2 max-w-xs text-xs leading-relaxed text-gray-500">
+                            {snapshotSummary(row.configuration_snapshot)}
+                          </p>
+                        )}
+                        {snapshotCustomDesignBrief(row.configuration_snapshot) && (
+                          <div className="mt-2 max-w-sm rounded-lg border border-amber-100 bg-amber-50/70 p-2 text-xs text-amber-950">
+                            <p className="font-semibold">Custom design request</p>
+                            <p className="mt-1 leading-relaxed">
+                              {snapshotCustomDesignBrief(row.configuration_snapshot)?.description}
+                            </p>
+                            <p className="mt-1 text-amber-800">
+                              Contact: {snapshotCustomDesignBrief(row.configuration_snapshot)?.contact_phone}
+                            </p>
+                            {snapshotCustomDesignBrief(row.configuration_snapshot)?.preferred_metal ? (
+                              <p className="mt-1 text-amber-800">
+                                Preferred metal:{' '}
+                                {snapshotCustomDesignBrief(row.configuration_snapshot)?.preferred_metal}
+                              </p>
+                            ) : null}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-4 text-xs text-gray-600">

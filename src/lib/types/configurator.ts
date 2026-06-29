@@ -156,6 +156,13 @@ export interface EnergizationFormData {
   record_ceremony: boolean;
 }
 
+export interface CustomDesignBrief {
+  description: string;
+  contact_phone: string;
+  preferred_metal?: string;
+  additional_notes?: string;
+}
+
 // ─── Configurator State ─────────────────────────────────────────────────────
 
 export interface ConfiguratorState {
@@ -170,6 +177,10 @@ export interface ConfiguratorState {
   selected_design: JewelryDesign | null;
   /** Step 4b: Custom uploaded design file URL */
   custom_design_url: string | null;
+  /** Step 4c: Customer notes for a custom design request */
+  custom_design_brief: CustomDesignBrief | null;
+  /** Rudraksha combo: additional beads for multi-bead pendant designs */
+  rudraksha_combo_products: ProductCard[];
   /** Step 5: Metal selection */
   metal: MetalId | null;
   /** Step 5: Ring size (for rings) */
@@ -196,6 +207,10 @@ export type ConfiguratorAction =
   | { type: 'SET_SETTING_TYPE'; payload: SettingType }
   | { type: 'SET_DESIGN'; payload: JewelryDesign }
   | { type: 'SET_CUSTOM_DESIGN_URL'; payload: string }
+  | { type: 'SET_CUSTOM_DESIGN_BRIEF'; payload: CustomDesignBrief }
+  | { type: 'CLEAR_CUSTOM_DESIGN' }
+  | { type: 'SET_RUDRAKSHA_COMBO'; payload: ProductCard[] }
+  | { type: 'TOGGLE_RUDRAKSHA_COMBO'; payload: ProductCard }
   | { type: 'SET_METAL'; payload: MetalId }
   | { type: 'SET_RING_SIZE'; payload: string | null }
   | { type: 'SET_CHAIN_LENGTH'; payload: string }

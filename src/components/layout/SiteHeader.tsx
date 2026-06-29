@@ -528,6 +528,11 @@ export function SiteHeader() {
           right: 0 !important;
           top: -1px !important;
         }
+        .pvg-mob-notify-wrap,
+        .pvg-action-pill .relative,
+        .pvg-mob-action-pill .relative {
+          overflow: visible !important;
+        }
         .pvg-mob-account-shell {
           display: inline-flex;
           align-items: center;

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { canIncreaseQuantity, getMaxAvailableQuantity } from '@/lib/cart/client';
+import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { productHref } from '@/lib/categories/storefront';
@@ -82,6 +83,15 @@ function CartItemRow({
               </p>
             )}
           </div>
+        )}
+        {RUDRAKSHA_CONFIGURATOR_ENABLED && !item.configuration_id && item.category === 'rudraksha' && (
+          <Link
+            href={`/configure/${item.product_id}`}
+            className="mt-2 inline-flex items-center gap-1 rounded-lg border border-[var(--pvg-accent)]/30 bg-brand-gold-light px-2.5 py-1 text-[11px] font-semibold text-[var(--pvg-accent)] transition hover:bg-brand-gold-light/80"
+          >
+            <Settings2 className="h-3 w-3" />
+            Configure Pendant
+          </Link>
         )}
 
         {/* Qty + price row */}
@@ -276,6 +286,15 @@ function EmptyCart() {
 export default function CartPage() {
   const { cart, removeItem, updateQty } = useCart();
   const { items, subtotal, item_count } = cart;
+  const rudrakshaWithoutConfig = RUDRAKSHA_CONFIGURATOR_ENABLED
+    ? items.filter((item) => item.category === 'rudraksha' && !item.configuration_id)
+    : [];
+  const comboConfigureHref =
+    rudrakshaWithoutConfig.length >= 2
+      ? `/configure/${rudrakshaWithoutConfig[0].product_id}?combo=${rudrakshaWithoutConfig
+          .map((item) => item.product_id)
+          .join(',')}`
+      : null;
 
   return (
     <main className="min-h-screen bg-brand-bg px-4 pb-24 md:px-6 lg:px-10">
@@ -298,6 +317,24 @@ export default function CartPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
             {/* ── Items ── */}
             <div>
+              {comboConfigureHref && (
+                <div className="mb-4 rounded-2xl border border-[var(--pvg-accent)]/25 bg-brand-gold-light px-4 py-3">
+                  <p className="text-sm font-semibold text-[var(--pvg-primary)]">
+                    Design a multi-bead Rudraksha pendant
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--pvg-muted)]">
+                    You have {rudrakshaWithoutConfig.length} Rudraksha beads in your cart. Configure a
+                    pendant that combines them.
+                  </p>
+                  <Link
+                    href={comboConfigureHref}
+                    className="mt-3 inline-flex items-center gap-1 rounded-lg bg-[var(--pvg-primary)] px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                  >
+                    <Settings2 className="h-3.5 w-3.5" />
+                    Configure Multi-Bead Pendant
+                  </Link>
+                </div>
+              )}
               <div className="rounded-2xl border border-[var(--pvg-border)] bg-brand-surface px-5 py-2">
                 {items.map((item) => (
                   <CartItemRow

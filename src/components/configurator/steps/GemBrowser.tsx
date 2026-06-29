@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { buildProductMeta, formatProductListPrice } from '@/lib/utils/format';
 import { isProductPriceOnRequest, isProductPurchasable } from '@/lib/shop/product-pricing';
 import { productHref } from '@/lib/categories/storefront';
+import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
 import { toast } from 'sonner';
 import type { ProductCard } from '@/lib/types/product';
 import type { ProductListResponse } from '@/lib/types/product';
@@ -23,6 +24,10 @@ interface GemBrowserProps {
   category: GemCategory;
   selected: ProductCard | null;
   onSelect: (product: ProductCard) => void;
+  rudrakshaMode?: boolean;
+  comboProducts?: ProductCard[];
+  onToggleCombo?: (product: ProductCard) => void;
+  onContinueRudraksha?: () => void;
 }
 
 const PRICE_RANGES = [
@@ -55,6 +60,12 @@ async function resolveCatalogFilters(category: GemCategory): Promise<{
     return { category };
   }
 
+  if (category === 'rudraksha' || isRudrakshaStorefrontSlug(category)) {
+    return category === 'rudraksha'
+      ? { category: 'rudraksha' }
+      : { category: 'rudraksha', sub_category: category };
+  }
+
   try {
     const catRes = await fetch('/api/categories');
     const catData = await catRes.json();
@@ -79,7 +90,15 @@ function pageWindow(page: number, totalPages: number) {
   );
 }
 
-export default function GemBrowser({ category, selected, onSelect }: GemBrowserProps) {
+export default function GemBrowser({
+  category,
+  selected,
+  onSelect,
+  rudrakshaMode = false,
+  comboProducts = [],
+  onToggleCombo,
+  onContinueRudraksha,
+}: GemBrowserProps) {
   const [products, setProducts] = useState<ProductCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +181,44 @@ export default function GemBrowser({ category, selected, onSelect }: GemBrowserP
   const pageNumbers = useMemo(() => pageWindow(page, totalPages), [page, totalPages]);
   const rangeStart = totalCount === 0 ? 0 : (page - 1) * PER_PAGE + 1;
   const rangeEnd = Math.min(page * PER_PAGE, totalCount);
+  const selectedBeadCount =
+    (selected ? 1 : 0) + comboProducts.filter((item) => item.id !== selected?.id).length;
+
+  function handleProductClick(product: ProductCard, onRequest: boolean) {
+    if (onRequest) {
+      toast.info('This bead is available on request', {
+        description: 'Open the product page to enquire via WhatsApp or contact form.',
+        action: {
+          label: 'View bead',
+          onClick: () => {
+            window.location.href = productHref(product);
+          },
+        },
+      });
+      return;
+    }
+
+    if (!rudrakshaMode) {
+      onSelect(product);
+      return;
+    }
+
+    if (selected?.id === product.id) {
+      return;
+    }
+
+    if (!selected) {
+      onSelect(product);
+      return;
+    }
+
+    onToggleCombo?.(product);
+  }
+
+  function isProductInRudrakshaSelection(productId: string) {
+    if (selected?.id === productId) return true;
+    return comboProducts.some((item) => item.id === productId);
+  }
 
   return (
     <div>
@@ -206,6 +263,20 @@ export default function GemBrowser({ category, selected, onSelect }: GemBrowserP
         </select>
       </div>
 
+      {!loading && !error && rudrakshaMode && (
+        <div className="mt-2 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+          <p className="text-[11px] text-muted-foreground">
+            Select one or more Rudraksha beads. Choose 3 or more to unlock multi-bead pendant designs.
+          </p>
+          {selectedBeadCount > 0 && (
+            <p className="mt-1 text-xs font-semibold text-primary">
+              {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'} selected
+              {selectedBeadCount >= 3 ? ' · Multi-bead designs available' : ''}
+            </p>
+          )}
+        </div>
+      )}
+
       {!loading && !error && totalCount > 0 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
           Showing {rangeStart}–{rangeEnd} of {totalCount} stone{totalCount === 1 ? '' : 's'}
@@ -240,28 +311,17 @@ export default function GemBrowser({ category, selected, onSelect }: GemBrowserP
           <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {products.map((product) => {
-                const isChosen = selected?.id === product.id;
+                const isChosen = rudrakshaMode
+                  ? isProductInRudrakshaSelection(product.id)
+                  : selected?.id === product.id;
+                const isPrimary = selected?.id === product.id;
                 const priceDisplay = formatProductListPrice(product);
                 const onRequest = isProductPriceOnRequest(product);
                 return (
                   <button
                     key={product.id}
                     type="button"
-                    onClick={() => {
-                      if (onRequest) {
-                        toast.info('This stone is available on request', {
-                          description: 'Open the product page to enquire via WhatsApp or contact form.',
-                          action: {
-                            label: 'View stone',
-                            onClick: () => {
-                              window.location.href = productHref(product);
-                            },
-                          },
-                        });
-                        return;
-                      }
-                      onSelect(product);
-                    }}
+                    onClick={() => handleProductClick(product, onRequest)}
                     aria-pressed={isChosen}
                     aria-disabled={onRequest}
                     className={cn(
@@ -294,7 +354,7 @@ export default function GemBrowser({ category, selected, onSelect }: GemBrowserP
                       {isChosen && (
                         <div className="absolute inset-0 flex items-center justify-center bg-accent/15">
                           <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-semibold text-accent-foreground">
-                            ✓
+                            {rudrakshaMode && isPrimary ? 'Primary' : '✓'}
                           </span>
                         </div>
                       )}
@@ -382,6 +442,13 @@ export default function GemBrowser({ category, selected, onSelect }: GemBrowserP
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </nav>
+            )}
+            {rudrakshaMode && selected && onContinueRudraksha && (
+              <div className="mt-4 flex justify-end">
+                <Button type="button" size="sm" className="h-9 px-4 text-xs" onClick={onContinueRudraksha}>
+                  Continue with {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'}
+                </Button>
+              </div>
             )}
           </>
         )}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { AdminFilterOptions } from '@/lib/admin/product-filters';
+import { CANONICAL_CATEGORY_OPTIONS } from '@/lib/constants/product-taxonomy';
 import type { ShopFilterOption } from '@/lib/shop/filters';
 
 export type AdminProductFilterState = {
@@ -103,65 +104,81 @@ function label(value: string) {
 }
 
 function selectClassName() {
-  return 'rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500';
+  return 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30';
 }
 
 function inputClassName() {
-  return 'rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-500';
+  return 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30';
 }
 
 function optionLabel(options: ShopFilterOption[], value: string) {
   return options.find((option) => option.value === value)?.label ?? label(value);
 }
 
-function FilterSelect({
+function FilterField({
   labelText,
-  value,
-  onChange,
-  placeholder,
-  options,
+  children,
+  hint,
 }: {
   labelText: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  options: ShopFilterOption[];
+  children: React.ReactNode;
+  hint?: string;
 }) {
-  if (options.length === 0) return null;
-
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-gray-500">{labelText}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${selectClassName()}`}>
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}{option.count > 0 ? ` (${option.count})` : ''}
-          </option>
-        ))}
-      </select>
+    <label className="block min-w-0">
+      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        {labelText}
+      </span>
+      {children}
+      {hint ? <span className="mt-1 block text-[10px] text-gray-400">{hint}</span> : null}
     </label>
   );
 }
 
+function FilterSelect({
+  value,
+  onChange,
+  placeholder,
+  options,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  options: ShopFilterOption[];
+  disabled?: boolean;
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${selectClassName()} disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400`}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+          {option.count > 0 ? ` (${option.count})` : ''}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function TriStateSelect({
-  labelText,
   value,
   onChange,
 }: {
-  labelText: string;
   value: string;
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-gray-500">{labelText}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={`w-full ${selectClassName()}`}>
-        <option value="">Any</option>
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
-    </label>
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={selectClassName()}>
+      <option value="">Any</option>
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
   );
 }
 
@@ -235,6 +252,9 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
 
   const sortValue = `${filters.sort_by}-${filters.sort_order}`;
   const activeCount = countActiveAdminFilters(filters);
+  const categoryLabel =
+    CANONICAL_CATEGORY_OPTIONS.find((c) => c.value === filters.category)?.label ??
+    label(filters.category);
 
   const activeBadges = useMemo(() => {
     const badges: Array<{ key: keyof AdminProductFilterState; label: string }> = [];
@@ -260,10 +280,15 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
       if (key === 'status') display = value === 'active' ? 'Active' : 'Inactive';
       else if (key === 'availability') display = label(value);
       else if (key === 'stock') display = value === 'low' ? 'Low stock' : 'Out of stock';
-      else if (['featured', 'directors_pick', 'configurator_enabled'].includes(key)) display = value === 'true' ? 'Yes' : 'No';
-      else if (key === 'min_price' || key === 'max_price') display = `₹${Number(value).toLocaleString('en-IN')}`;
-      else if (key === 'min_carat' || key === 'max_carat') display = `${value} ct`;
-      else if (optionMap[key]) display = optionLabel(optionMap[key] ?? [], value);
+      else if (['featured', 'directors_pick', 'configurator_enabled'].includes(key)) {
+        display = value === 'true' ? 'Yes' : 'No';
+      } else if (key === 'min_price' || key === 'max_price') {
+        display = `₹${Number(value).toLocaleString('en-IN')}`;
+      } else if (key === 'min_carat' || key === 'max_carat') {
+        display = `${value} ct`;
+      } else if (optionMap[key]) {
+        display = optionLabel(optionMap[key] ?? [], value);
+      }
 
       badges.push({ key, label: `${FILTER_LABELS[key]}: ${display}` });
     }
@@ -282,214 +307,310 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
     else onChange({ [key]: '' });
   }
 
+  const advancedActiveCount = [
+    filters.product_type,
+    filters.availability,
+    filters.stock,
+    filters.origin,
+    filters.planet,
+    filters.shape,
+    filters.quality_label,
+    filters.certificate_lab,
+    filters.treatment,
+    filters.price_mode,
+    filters.min_price,
+    filters.max_price,
+    filters.min_carat,
+    filters.max_carat,
+    filters.featured,
+    filters.directors_pick,
+    filters.configurator_enabled,
+  ].filter(Boolean).length;
+
   return (
     <div className="mt-6 space-y-3">
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        className="grid gap-2 lg:grid-cols-[1fr_160px_130px_170px_140px_160px_auto]"
-      >
-        <div className="relative lg:col-span-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={filters.search}
-            onChange={(e) => onChange({ search: e.target.value })}
-            placeholder="Search SKU, tag, legacy ID, name, slug..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-          />
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <FilterField labelText="Search">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) => onChange({ search: e.target.value })}
+                  placeholder="SKU, tag, name, slug…"
+                  className={`${inputClassName()} pl-9`}
+                />
+              </div>
+            </FilterField>
+          </div>
+
+          <div className="lg:col-span-3">
+            <FilterField labelText="Category">
+              <FilterSelect
+                value={filters.category}
+                onChange={(value) => onChange({ category: value, sub_category: '' })}
+                placeholder="All categories"
+                options={filterOptions?.categories ?? []}
+              />
+            </FilterField>
+          </div>
+
+          <div className="lg:col-span-3">
+            <FilterField
+              labelText="Sub-category"
+              hint={
+                filters.category
+                  ? `All ${categoryLabel || 'category'} sub-types`
+                  : 'Choose a category first'
+              }
+            >
+              <FilterSelect
+                value={filters.sub_category}
+                onChange={(value) => onChange({ sub_category: value })}
+                placeholder={filters.category ? 'All sub-categories' : 'Select category first'}
+                options={filterOptions?.subcategories ?? []}
+                disabled={!filters.category}
+              />
+            </FilterField>
+          </div>
+
+          <div className="lg:col-span-2">
+            <FilterField labelText="Status">
+              <select
+                value={filters.status}
+                onChange={(e) => onChange({ status: e.target.value })}
+                className={selectClassName()}
+              >
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </FilterField>
+          </div>
         </div>
 
-        <select
-          value={filters.category}
-          onChange={(e) => onChange({ category: e.target.value, sub_category: '' })}
-          className={selectClassName()}
-        >
-          <option value="">All categories</option>
-          {(filterOptions?.categories ?? []).map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}{option.count > 0 ? ` (${option.count})` : ''}
-            </option>
-          ))}
-        </select>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterField labelText="Sort">
+              <select
+                value={sortValue}
+                onChange={(e) => updateSort(e.target.value)}
+                className={`${selectClassName()} min-w-[160px]`}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+          </div>
 
-        <select value={filters.status} onChange={(e) => onChange({ status: e.target.value })} className={selectClassName()}>
-          <option value="">All status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-
-        <select value={filters.availability} onChange={(e) => onChange({ availability: e.target.value })} className={selectClassName()}>
-          <option value="">All availability</option>
-          {AVAILABILITY_OPTIONS.map((option) => (
-            <option key={option} value={option}>{label(option)}</option>
-          ))}
-        </select>
-
-        <select value={filters.stock} onChange={(e) => onChange({ stock: e.target.value })} className={selectClassName()}>
-          <option value="">All stock</option>
-          <option value="low">Low stock (&lt; 5)</option>
-          <option value="out">Out of stock</option>
-        </select>
-
-        <select value={sortValue} onChange={(e) => updateSort(e.target.value)} className={selectClassName()}>
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((open) => !open)}
-          className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-            advancedOpen ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Advanced
-          {activeCount > 0 && (
-            <span className="rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-              {activeCount}
-            </span>
-          )}
-          {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-      </form>
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((open) => !open)}
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              advancedOpen
+                ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-200'
+                : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100'
+            }`}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            More filters
+            {advancedActiveCount > 0 && (
+              <span className="rounded-full bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                {advancedActiveCount}
+              </span>
+            )}
+            {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
 
       {advancedOpen && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-800">Advanced filters</p>
+        <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-800">Additional filters</p>
             {activeCount > 0 && (
               <button
                 type="button"
                 onClick={onClear}
                 className="text-xs font-medium text-amber-700 hover:text-amber-800"
               >
-                Clear all filters
+                Clear all
               </button>
             )}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <FilterSelect
-              labelText="Sub-category"
-              value={filters.sub_category}
-              onChange={(value) => onChange({ sub_category: value })}
-              placeholder="All sub-categories"
-              options={filterOptions?.subcategories ?? []}
-            />
-            <FilterSelect
-              labelText="Product type"
-              value={filters.product_type}
-              onChange={(value) => onChange({ product_type: value })}
-              placeholder="All types"
-              options={filterOptions?.productTypes ?? []}
-            />
-            <FilterSelect
-              labelText="Origin"
-              value={filters.origin}
-              onChange={(value) => onChange({ origin: value })}
-              placeholder="Any origin"
-              options={filterOptions?.origins ?? []}
-            />
-            <FilterSelect
-              labelText="Planet"
-              value={filters.planet}
-              onChange={(value) => onChange({ planet: value })}
-              placeholder="Any planet"
-              options={filterOptions?.planets ?? []}
-            />
-            <FilterSelect
-              labelText="Shape"
-              value={filters.shape}
-              onChange={(value) => onChange({ shape: value })}
-              placeholder="Any shape"
-              options={filterOptions?.shapes ?? []}
-            />
-            <FilterSelect
-              labelText="Quality label"
-              value={filters.quality_label}
-              onChange={(value) => onChange({ quality_label: value })}
-              placeholder="Any quality"
-              options={filterOptions?.qualityLabels ?? []}
-            />
-            <FilterSelect
-              labelText="Certificate lab"
-              value={filters.certificate_lab}
-              onChange={(value) => onChange({ certificate_lab: value })}
-              placeholder="Any lab"
-              options={filterOptions?.certificateLabs ?? []}
-            />
-            <FilterSelect
-              labelText="Treatment"
-              value={filters.treatment}
-              onChange={(value) => onChange({ treatment: value })}
-              placeholder="Any treatment"
-              options={filterOptions?.treatments ?? []}
-            />
-            <FilterSelect
-              labelText="Price mode"
-              value={filters.price_mode}
-              onChange={(value) => onChange({ price_mode: value })}
-              placeholder="Any price mode"
-              options={filterOptions?.priceModes ?? []}
-            />
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="space-y-3 rounded-lg border border-gray-100 bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Inventory</p>
+              <FilterField labelText="Availability">
+                <select
+                  value={filters.availability}
+                  onChange={(e) => onChange({ availability: e.target.value })}
+                  className={selectClassName()}
+                >
+                  <option value="">Any</option>
+                  {AVAILABILITY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {label(option)}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField labelText="Stock level">
+                <select
+                  value={filters.stock}
+                  onChange={(e) => onChange({ stock: e.target.value })}
+                  className={selectClassName()}
+                >
+                  <option value="">Any</option>
+                  <option value="low">Low stock (&lt; 5)</option>
+                  <option value="out">Out of stock</option>
+                </select>
+              </FilterField>
+              <FilterField labelText="Product type">
+                <FilterSelect
+                  value={filters.product_type}
+                  onChange={(value) => onChange({ product_type: value })}
+                  placeholder="Any type"
+                  options={filterOptions?.productTypes ?? []}
+                />
+              </FilterField>
+            </div>
 
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-gray-500">Min price (₹)</span>
-              <input
-                type="number"
-                min={0}
-                value={filters.min_price}
-                onChange={(e) => onChange({ min_price: e.target.value })}
-                placeholder="0"
-                className={`w-full ${inputClassName()}`}
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-gray-500">Max price (₹)</span>
-              <input
-                type="number"
-                min={0}
-                value={filters.max_price}
-                onChange={(e) => onChange({ max_price: e.target.value })}
-                placeholder="No limit"
-                className={`w-full ${inputClassName()}`}
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-gray-500">Min carat</span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={filters.min_carat}
-                onChange={(e) => onChange({ min_carat: e.target.value })}
-                placeholder="0"
-                className={`w-full ${inputClassName()}`}
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-gray-500">Max carat</span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={filters.max_carat}
-                onChange={(e) => onChange({ max_carat: e.target.value })}
-                placeholder="No limit"
-                className={`w-full ${inputClassName()}`}
-              />
-            </label>
+            <div className="space-y-3 rounded-lg border border-gray-100 bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Gem details</p>
+              <FilterField labelText="Origin">
+                <FilterSelect
+                  value={filters.origin}
+                  onChange={(value) => onChange({ origin: value })}
+                  placeholder="Any origin"
+                  options={filterOptions?.origins ?? []}
+                />
+              </FilterField>
+              <FilterField labelText="Planet">
+                <FilterSelect
+                  value={filters.planet}
+                  onChange={(value) => onChange({ planet: value })}
+                  placeholder="Any planet"
+                  options={filterOptions?.planets ?? []}
+                />
+              </FilterField>
+              <FilterField labelText="Shape">
+                <FilterSelect
+                  value={filters.shape}
+                  onChange={(value) => onChange({ shape: value })}
+                  placeholder="Any shape"
+                  options={filterOptions?.shapes ?? []}
+                />
+              </FilterField>
+              <FilterField labelText="Treatment">
+                <FilterSelect
+                  value={filters.treatment}
+                  onChange={(value) => onChange({ treatment: value })}
+                  placeholder="Any treatment"
+                  options={filterOptions?.treatments ?? []}
+                />
+              </FilterField>
+            </div>
 
-            <TriStateSelect labelText="Featured" value={filters.featured} onChange={(value) => onChange({ featured: value })} />
-            <TriStateSelect labelText="Director's pick" value={filters.directors_pick} onChange={(value) => onChange({ directors_pick: value })} />
-            <TriStateSelect labelText="Configurator enabled" value={filters.configurator_enabled} onChange={(value) => onChange({ configurator_enabled: value })} />
+            <div className="space-y-3 rounded-lg border border-gray-100 bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Pricing & flags</p>
+              <div className="grid grid-cols-2 gap-2">
+                <FilterField labelText="Min ₹">
+                  <input
+                    type="number"
+                    min={0}
+                    value={filters.min_price}
+                    onChange={(e) => onChange({ min_price: e.target.value })}
+                    placeholder="0"
+                    className={inputClassName()}
+                  />
+                </FilterField>
+                <FilterField labelText="Max ₹">
+                  <input
+                    type="number"
+                    min={0}
+                    value={filters.max_price}
+                    onChange={(e) => onChange({ max_price: e.target.value })}
+                    placeholder="No limit"
+                    className={inputClassName()}
+                  />
+                </FilterField>
+                <FilterField labelText="Min ct">
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={filters.min_carat}
+                    onChange={(e) => onChange({ min_carat: e.target.value })}
+                    placeholder="0"
+                    className={inputClassName()}
+                  />
+                </FilterField>
+                <FilterField labelText="Max ct">
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={filters.max_carat}
+                    onChange={(e) => onChange({ max_carat: e.target.value })}
+                    placeholder="No limit"
+                    className={inputClassName()}
+                  />
+                </FilterField>
+              </div>
+              <FilterField labelText="Quality">
+                <FilterSelect
+                  value={filters.quality_label}
+                  onChange={(value) => onChange({ quality_label: value })}
+                  placeholder="Any quality"
+                  options={filterOptions?.qualityLabels ?? []}
+                />
+              </FilterField>
+              <FilterField labelText="Cert lab">
+                <FilterSelect
+                  value={filters.certificate_lab}
+                  onChange={(value) => onChange({ certificate_lab: value })}
+                  placeholder="Any lab"
+                  options={filterOptions?.certificateLabs ?? []}
+                />
+              </FilterField>
+              <FilterField labelText="Price mode">
+                <FilterSelect
+                  value={filters.price_mode}
+                  onChange={(value) => onChange({ price_mode: value })}
+                  placeholder="Any mode"
+                  options={filterOptions?.priceModes ?? []}
+                />
+              </FilterField>
+              <div className="grid grid-cols-3 gap-2">
+                <FilterField labelText="Featured">
+                  <TriStateSelect value={filters.featured} onChange={(value) => onChange({ featured: value })} />
+                </FilterField>
+                <FilterField labelText="Director's pick">
+                  <TriStateSelect
+                    value={filters.directors_pick}
+                    onChange={(value) => onChange({ directors_pick: value })}
+                  />
+                </FilterField>
+                <FilterField labelText="Configurator">
+                  <TriStateSelect
+                    value={filters.configurator_enabled}
+                    onChange={(value) => onChange({ configurator_enabled: value })}
+                  />
+                </FilterField>
+              </div>
+            </div>
           </div>
 
           {(filterOptions?.priceRanges.length ?? 0) > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-medium text-gray-500">Quick price ranges</p>
+            <div className="mt-4 rounded-lg border border-gray-100 bg-white p-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Quick price</p>
               <div className="flex flex-wrap gap-2">
                 {filterOptions!.priceRanges.map((range) => (
                   <button
@@ -499,7 +620,7 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
                       const [min, max] = range.value.split('-');
                       onChange({ min_price: min ?? '', max_price: max ?? '' });
                     }}
-                    className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-amber-300 hover:bg-amber-50"
+                    className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 transition hover:border-amber-300 hover:bg-amber-50"
                   >
                     {range.label} ({range.count})
                   </button>
@@ -509,8 +630,8 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
           )}
 
           {(filterOptions?.caratRanges.length ?? 0) > 0 && (
-            <div className="mt-3">
-              <p className="mb-2 text-xs font-medium text-gray-500">Quick carat ranges</p>
+            <div className="mt-3 rounded-lg border border-gray-100 bg-white p-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">Quick carat</p>
               <div className="flex flex-wrap gap-2">
                 {filterOptions!.caratRanges.map((range) => (
                   <button
@@ -520,7 +641,7 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
                       const [min, max] = range.value.split('-');
                       onChange({ min_carat: min ?? '', max_carat: max ?? '' });
                     }}
-                    className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-amber-300 hover:bg-amber-50"
+                    className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 transition hover:border-amber-300 hover:bg-amber-50"
                   >
                     {range.label} ({range.count})
                   </button>

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
-import { LOW_STOCK_THRESHOLD } from '@/lib/inventory/stock-alerts';
 
 /**
  * GET /api/admin/dashboard
@@ -29,7 +28,7 @@ export async function GET() {
     { data: enquiryCount },
     { data: productCount },
     { data: weeklyOrders },
-    { data: lowStockProducts, count: lowStockCount },
+    { data: outOfStockProducts, count: outOfStockCount },
     { data: consultations },
     { data: enquiries },
     { data: catalogProducts },
@@ -66,13 +65,13 @@ export async function GET() {
       .select('id, total, created_at, payment_status')
       .gte('created_at', weekISO)
       .order('created_at', { ascending: true }),
-    // Low-stock products for inventory attention
+    // Out-of-stock products for inventory attention
     supabase
       .from('products')
       .select('id, sku, name, category, sub_category, stock_quantity, availability_status', { count: 'exact' })
       .eq('is_active', true)
-      .lt('stock_quantity', LOW_STOCK_THRESHOLD)
-      .order('stock_quantity', { ascending: true })
+      .lte('stock_quantity', 0)
+      .order('name', { ascending: true })
       .limit(8),
     // Consultation funnel and paid-plan revenue
     supabase
@@ -197,7 +196,7 @@ export async function GET() {
       pendingOrders,
       newEnquiries: enquiryCount ?? 0,
       activeProducts: productCount ?? 0,
-      lowStockProducts: lowStockCount ?? 0,
+      outOfStockProducts: outOfStockCount ?? 0,
       totalConsultations: consultations?.length ?? 0,
       consultationRevenue: (consultations ?? [])
         .filter((consultation) => consultation.payment_status === 'captured')
@@ -212,7 +211,7 @@ export async function GET() {
     productCategories,
     teamRoles,
     chartData,
-    lowStockProducts: lowStockProducts ?? [],
+    outOfStockProducts: outOfStockProducts ?? [],
     recentOrders: (recentOrders ?? []).map((o) => {
       const profile = o.customer_id ? recentProfileById.get(o.customer_id) : undefined;
       return {

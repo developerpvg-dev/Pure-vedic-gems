@@ -33,6 +33,8 @@ import {
   type ConfiguratorOptionRules,
 } from '@/lib/utils/configurator-rules';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
+import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
+import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
 import {
   resolveLaborRatesForJewelry,
   type JewelrySettingMetalProfiles,
@@ -313,17 +315,33 @@ export default function ConfiguratorWrapper({
             }}
           />
         );
-      case 2:
+      case 2: {
+        const rudrakshaBrowseMode =
+          RUDRAKSHA_CONFIGURATOR_ENABLED &&
+          (state.gem_category === 'rudraksha' ||
+            (state.gem_category ? isRudrakshaStorefrontSlug(state.gem_category) : false));
         return (
           <GemBrowser
             category={state.gem_category!}
             selected={state.selected_product}
+            {...(rudrakshaBrowseMode
+              ? {
+                  rudrakshaMode: true,
+                  comboProducts: state.rudraksha_combo_products,
+                  onToggleCombo: (product) =>
+                    dispatch({ type: 'TOGGLE_RUDRAKSHA_COMBO', payload: product }),
+                  onContinueRudraksha: () => dispatch({ type: 'NEXT_STEP' }),
+                }
+              : {})}
             onSelect={(product) => {
               dispatch({ type: 'SET_PRODUCT', payload: product });
-              dispatch({ type: 'NEXT_STEP' });
+              if (!rudrakshaBrowseMode) {
+                dispatch({ type: 'NEXT_STEP' });
+              }
             }}
           />
         );
+      }
       case 3:
         return (
           <SettingTypeSelector
@@ -341,16 +359,23 @@ export default function ConfiguratorWrapper({
             settingType={state.setting_type!}
             gemCategory={state.gem_category}
             selectedProduct={state.selected_product}
+            rudrakshaComboProducts={state.rudraksha_combo_products}
             optionRules={optionRules}
             selected={state.selected_design}
             customDesignUrl={state.custom_design_url}
+            customDesignBrief={state.custom_design_brief}
             onSelectDesign={(design) => {
               dispatch({ type: 'SET_DESIGN', payload: design });
               dispatch({ type: 'NEXT_STEP' });
             }}
             onCustomDesignUpload={(url) => {
               dispatch({ type: 'SET_CUSTOM_DESIGN_URL', payload: url });
-              dispatch({ type: 'NEXT_STEP' });
+            }}
+            onCustomDesignBriefSubmit={(brief) => {
+              dispatch({ type: 'SET_CUSTOM_DESIGN_BRIEF', payload: brief });
+            }}
+            onClearCustomDesign={() => {
+              dispatch({ type: 'CLEAR_CUSTOM_DESIGN' });
             }}
           />
         );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ComponentType } from 'react';
 import Link from 'next/link';
 import {
@@ -375,7 +376,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   return (
     <div className="pvg-consultation-page px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <section className="mx-auto max-w-4xl pb-8 pt-10 text-center sm:pt-12 lg:pt-14" aria-labelledby="consultation-heading">
+        <section className="mx-auto max-w-4xl pb-8 pt-4 text-center sm:pt-6 lg:pt-8" aria-labelledby="consultation-heading">
           <h1 className="section-title" id="consultation-heading">
             Book a Vedic Consultation
           </h1>
@@ -586,56 +587,81 @@ function PlanDetailsDialog({ plan, index, onClose, onSelect }: { plan: Consultat
   const { theme } = getPlanTheme(plan, Math.max(index, 0));
   const paragraphs = getPlanDetails(plan).split('\n').map((line) => line.trim()).filter(Boolean);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <p className={`text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>Plan Details</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">{plan.title}</h2>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close plan details">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="grid gap-5 p-5 md:grid-cols-[220px_minmax(0,1fr)]">
-          <div className={`grid min-h-56 place-items-center rounded-lg ${theme.soft}`}>
-            {metadata.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={metadata.image_url} alt={plan.title} className="max-h-52 w-full object-contain p-3" />
-            ) : (
-              <ModeIcon className={`h-16 w-16 ${theme.text}`} />
-            )}
-          </div>
-          <div>
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${theme.soft} ${theme.text}`}>
-                <ModeIcon className="h-3.5 w-3.5" />
-                {mode.label}
-              </span>
-              {plan.duration_minutes && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{plan.duration_minutes} min</span>}
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10001] overflow-y-auto bg-slate-950/55"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div className="flex min-h-full items-start justify-center p-3 pt-[calc(var(--pvg-site-header-offset)+0.75rem)] sm:items-center sm:p-4 sm:pt-4">
+        <div
+          className="flex max-h-[calc(100dvh-var(--pvg-site-header-offset)-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[min(90dvh,calc(100dvh-2rem))]"
+          onClick={(event) => event.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="plan-details-title"
+        >
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
+            <div className="min-w-0 pr-3">
+              <p className={`text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>Plan Details</p>
+              <h2 id="plan-details-title" className="mt-1 text-lg font-black text-slate-950 sm:text-xl">{plan.title}</h2>
             </div>
-            <p className={`text-3xl font-black ${theme.text}`}>{formatInr(plan.amount_inr)}</p>
-            <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
-              {paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              {getPlanHighlights(plan).map((highlight) => (
-                <p key={highlight} className="flex items-start gap-2 text-sm text-slate-700">
-                  <CheckCircle className={`mt-0.5 h-4 w-4 shrink-0 ${theme.text}`} />
-                  {highlight}
-                </p>
-              ))}
-            </div>
-            <button type="button" onClick={onSelect} className={`mt-6 w-full rounded-lg px-5 py-3 text-sm font-black transition ${theme.button}`}>
-              Select This Plan
+            <button type="button" onClick={onClose} className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close plan details">
+              <X className="h-5 w-5" />
             </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="grid gap-5 p-4 sm:p-5 md:grid-cols-[220px_minmax(0,1fr)]">
+              <div className={`grid min-h-44 place-items-center rounded-lg sm:min-h-56 ${theme.soft}`}>
+                {metadata.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={metadata.image_url} alt={plan.title} className="max-h-44 w-full object-contain p-3 sm:max-h-52" />
+                ) : (
+                  <ModeIcon className={`h-16 w-16 ${theme.text}`} />
+                )}
+              </div>
+              <div>
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${theme.soft} ${theme.text}`}>
+                    <ModeIcon className="h-3.5 w-3.5" />
+                    {mode.label}
+                  </span>
+                  {plan.duration_minutes && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{plan.duration_minutes} min</span>}
+                </div>
+                <p className={`text-3xl font-black ${theme.text}`}>{formatInr(plan.amount_inr)}</p>
+                <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
+                  {paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+                <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                  {getPlanHighlights(plan).map((highlight) => (
+                    <p key={highlight} className="flex items-start gap-2 text-sm text-slate-700">
+                      <CheckCircle className={`mt-0.5 h-4 w-4 shrink-0 ${theme.text}`} />
+                      {highlight}
+                    </p>
+                  ))}
+                </div>
+                <button type="button" onClick={onSelect} className={`mt-6 w-full rounded-lg px-5 py-3 text-sm font-black transition ${theme.button}`}>
+                  Select This Plan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

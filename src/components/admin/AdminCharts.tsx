@@ -144,11 +144,11 @@ export function RevenueTrendChart({ data }: { data: TrendPoint[] }) {
   const barWidth = Math.max(44, Math.min(72, Math.floor(640 / Math.max(data.length, 1))));
 
   return (
-    <div className="space-y-3">
-      <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:thin]">
+    <div className="min-w-0 space-y-3">
+      <div className="min-w-0 max-w-full overflow-x-auto pb-1 [scrollbar-width:thin]">
         <div
           className="flex items-end gap-2 px-1"
-          style={{ minWidth: '100%', width: `${Math.max(data.length * (barWidth + 8), 320)}px`, height: CHART_HEIGHT + 40 }}
+          style={{ minWidth: '100%', width: `${Math.max(data.length * (barWidth + 8), 280)}px`, height: CHART_HEIGHT + 40 }}
         >
           {data.map((point) => {
             const revenueHeight = Math.max(((point.capturedRevenue ?? point.revenue) / maxRevenue) * CHART_HEIGHT, 4);

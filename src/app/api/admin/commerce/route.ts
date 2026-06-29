@@ -5,6 +5,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import type { Json } from '@/lib/types/database';
 import { asUntypedSupabase, type UntypedSupabase } from '@/lib/supabase/untyped';
+import { normalizeCurrencyRates } from '@/lib/admin/commerce-currency';
 
 const nullableNumber = z.preprocess(
   (value) => (value === '' || value === null || value === undefined ? null : Number(value)),
@@ -108,9 +109,52 @@ export async function GET() {
     shippingMethods,
     shippingCountries,
     coupons,
-    currencyRates,
+    currencyRates: normalizeCurrencyRates(currencyRates),
     commerceSettings: Array.isArray(commerceSettings) ? commerceSettings[0] ?? null : null,
   });
+}
+
+async function saveCurrencyRate(
+  db: UntypedSupabase,
+  data: z.infer<typeof currencySchema>,
+  now: string
+) {
+  const currency = data.currency;
+  const rate = currency === 'INR' ? 1 : data.rate;
+
+  const modernPayload = {
+    ...data,
+    currency,
+    rate,
+    base_currency: data.base_currency || 'INR',
+    updated_at: now,
+    fetched_at: now,
+  };
+
+  let result = await db
+    .from('currency_rates')
+    .upsert(modernPayload, { onConflict: 'base_currency,currency' })
+    .select()
+    .single();
+
+  if (result.error) {
+    result = await db
+      .from('currency_rates')
+      .upsert(
+        {
+          currency,
+          rate_to_inr: rate,
+          manual_override: data.manual_override,
+          source: data.source,
+          fetched_at: now,
+        },
+        { onConflict: 'currency' }
+      )
+      .select()
+      .single();
+  }
+
+  return result;
 }
 
 export async function POST(request: NextRequest) {
@@ -163,7 +207,7 @@ export async function POST(request: NextRequest) {
   } else if (body.resource === 'currency') {
     const parsed = currencySchema.safeParse(body.payload);
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 });
-    const { data, error } = await db.from('currency_rates').upsert({ ...parsed.data, updated_at: now }, { onConflict: 'base_currency,currency' }).select().single();
+    const { data, error } = await saveCurrencyRate(db, parsed.data, now);
     if (error) return NextResponse.json({ error: 'Failed to save currency rate' }, { status: 500 });
     result = data;
     action = 'currency_rate_change';
@@ -205,7 +249,13 @@ export async function DELETE(request: NextRequest) {
   } else if (resource === 'coupon') {
     ({ error } = await db.from('coupons').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', id));
   } else if (resource === 'currency') {
-    ({ error } = await db.from('currency_rates').delete().eq('id', id));
+    const isUuid = /^[0-9a-f-]{36}$/i.test(id);
+    if (isUuid) {
+      ({ error } = await db.from('currency_rates').delete().eq('id', id));
+    }
+    if (!isUuid || error) {
+      ({ error } = await db.from('currency_rates').delete().eq('currency', id.toUpperCase()));
+    }
   } else {
     return NextResponse.json({ error: 'Unknown resource' }, { status: 400 });
   }

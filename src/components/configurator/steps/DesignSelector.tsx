@@ -2,7 +2,6 @@
 
 /**
  * Step 4 — Select Design (Compact)
- * Smaller gallery cards, tighter grid layout.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -19,13 +18,14 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import type { JewelryDesign } from '@/lib/types/database';
 import type { ProductCard } from '@/lib/types/product';
-import type { SettingType, GemCategory } from '@/lib/types/configurator';
+import type { CustomDesignBrief, SettingType, GemCategory } from '@/lib/types/configurator';
 import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
 import { DesignImageLightbox } from '@/components/configurator/DesignImageLightbox';
+import CustomDesignDetailsForm from '@/components/configurator/CustomDesignDetailsForm';
 import { designImageSrc } from '@/lib/utils/design-image';
 import {
-  designMatchesRudrakshaProduct,
-  getRudrakshaDesignCategoriesForProduct,
+  designMatchesRudrakshaSelection,
+  getRudrakshaDesignCategoriesForSelection,
   isRudrakshaConfiguratorContext,
   RUDRAKSHA_DESIGN_CATEGORIES,
   type RudrakshaDesignCategory,
@@ -35,11 +35,15 @@ interface DesignSelectorProps {
   settingType: SettingType;
   gemCategory: GemCategory | null;
   selectedProduct: ProductCard | null;
+  rudrakshaComboProducts?: ProductCard[];
   selected: JewelryDesign | null;
   customDesignUrl: string | null;
+  customDesignBrief: CustomDesignBrief | null;
   optionRules: ConfiguratorOptionRules | null;
   onSelectDesign: (design: JewelryDesign) => void;
   onCustomDesignUpload: (url: string) => void;
+  onCustomDesignBriefSubmit: (brief: CustomDesignBrief) => void;
+  onClearCustomDesign: () => void;
 }
 
 const MAX_CUSTOM_FILE_SIZE = 10 * 1024 * 1024;
@@ -55,11 +59,15 @@ export default function DesignSelector({
   settingType,
   gemCategory,
   selectedProduct,
+  rudrakshaComboProducts = [],
   selected,
   customDesignUrl,
+  customDesignBrief,
   optionRules,
   onSelectDesign,
   onCustomDesignUpload,
+  onCustomDesignBriefSubmit,
+  onClearCustomDesign,
 }: DesignSelectorProps) {
   const [designs, setDesigns] = useState<JewelryDesign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,8 +79,9 @@ export default function DesignSelector({
   const customDesignEnabled = optionRules?.jewelry_design_enabled ?? true;
   const rudrakshaFlow = isRudrakshaConfiguratorContext(gemCategory, selectedProduct);
   const allowedRudrakshaCategories = rudrakshaFlow
-    ? getRudrakshaDesignCategoriesForProduct(selectedProduct)
+    ? getRudrakshaDesignCategoriesForSelection(selectedProduct, rudrakshaComboProducts)
     : [];
+  const showCustomDetailsForm = !!customDesignUrl && !customDesignBrief;
 
   useEffect(() => {
     async function fetchDesigns() {
@@ -99,7 +108,11 @@ export default function DesignSelector({
         let rows = (data as JewelryDesign[]) ?? [];
         if (rudrakshaFlow) {
           rows = rows.filter((design) =>
-            designMatchesRudrakshaProduct(design.rudraksha_category, selectedProduct)
+            designMatchesRudrakshaSelection(
+              design.rudraksha_category,
+              selectedProduct,
+              rudrakshaComboProducts
+            )
           );
         }
 
@@ -112,7 +125,7 @@ export default function DesignSelector({
       }
     }
     fetchDesigns();
-  }, [settingType, gemCategory, selectedProduct, rudrakshaFlow]);
+  }, [settingType, gemCategory, selectedProduct, rudrakshaComboProducts, rudrakshaFlow]);
 
   function getDisplayCharge(design: JewelryDesign): string {
     const diamondAmount = getDesignDiamondChargeFromDesign(design.diamond_charges);
@@ -190,14 +203,47 @@ export default function DesignSelector({
     }
   }
 
-  async function handleCustomFileChange(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
+  async function handleCustomFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.currentTarget.value = '';
     if (!file) return;
 
     await uploadCustomFile(file);
+  }
+
+  function renderCustomUploadTile() {
+    return (
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={customUploading || !customDesignEnabled}
+        className={cn(
+          'group flex min-h-[152px] flex-col items-center justify-center rounded-lg border-2 border-dashed p-3 text-center transition-all',
+          'hover:border-accent hover:bg-accent/5',
+          customDesignUrl ? 'border-accent bg-accent/5' : 'border-border',
+          customUploading && 'cursor-wait opacity-80',
+          !customDesignEnabled && 'cursor-not-allowed opacity-50'
+        )}
+      >
+        {customUploading ? (
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        ) : (
+          <Upload className="h-6 w-6 text-muted-foreground group-hover:text-accent" />
+        )}
+        <span className="mt-2 text-[11px] font-semibold text-primary">
+          {customUploading
+            ? 'Uploading...'
+            : !customDesignEnabled
+              ? 'Custom unavailable'
+              : customDesignUrl
+                ? 'Reference uploaded ✓'
+                : 'Upload Custom Design'}
+        </span>
+        <span className="mt-1 text-[9px] text-muted-foreground">
+          Share a sketch or reference image
+        </span>
+      </button>
+    );
   }
 
   function renderDesignCard(design: JewelryDesign) {
@@ -278,119 +324,131 @@ export default function DesignSelector({
 
   return (
     <div>
-      {loading ? (
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="space-y-1">
-              <Skeleton className="aspect-square w-full rounded-lg" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="mt-4 flex flex-col items-center gap-2 py-8 text-center">
-          <AlertCircle className="h-6 w-6 text-destructive" />
-          <p className="text-xs font-medium text-primary">{error}</p>
-          <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.reload()}>Retry</Button>
-        </div>
-      ) : (
-        <>
-          {rudrakshaFlow && allowedRudrakshaCategories.length > 0 && (
-            <div className="mb-3 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
-              <p className="text-xs font-semibold text-primary">Rudraksha mounting options</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                For your bead:{' '}
-                {allowedRudrakshaCategories
-                  .map((category) => RUDRAKSHA_DESIGN_CATEGORIES[category].label)
-                  .join(' · ')}
-              </p>
-            </div>
-          )}
+      {showCustomDetailsForm && customDesignUrl ? (
+        <CustomDesignDetailsForm
+          imageUrl={customDesignUrl}
+          initial={customDesignBrief}
+          onSubmit={onCustomDesignBriefSubmit}
+          onCancel={onClearCustomDesign}
+        />
+      ) : null}
 
-          {rudrakshaFlow && groupedDesigns && groupedDesigns.length > 0 ? (
-            <div className="mt-3 space-y-4">
-              {groupedDesigns.map((group) => (
-                <div key={group.category}>
-                  <div className="mb-2">
-                    <p className="text-xs font-semibold text-primary">{group.meta.label}</p>
-                    <p className="text-[11px] text-muted-foreground">{group.meta.description}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                    {group.items.map((design) => renderDesignCard(design))}
-                  </div>
+      {!showCustomDetailsForm && customDesignBrief && customDesignUrl ? (
+        <div className="mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5">
+          <p className="text-xs font-semibold text-green-900">Custom design request saved</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-green-800">
+            Our design team will contact you soon at {customDesignBrief.contact_phone} to discuss your
+            custom piece.
+          </p>
+          <button
+            type="button"
+            onClick={onClearCustomDesign}
+            className="mt-2 text-[11px] font-medium text-green-900 underline"
+          >
+            Upload a different reference
+          </button>
+        </div>
+      ) : null}
+
+      {!showCustomDetailsForm && (
+        <>
+          {loading ? (
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-1">
+                  <Skeleton className="aspect-square w-full rounded-lg" />
+                  <Skeleton className="h-3 w-3/4" />
                 </div>
               ))}
             </div>
+          ) : error ? (
+            <div className="mt-4 flex flex-col items-center gap-2 py-8 text-center">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+              <p className="text-xs font-medium text-primary">{error}</p>
+              <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
           ) : (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-              {designs.map((design) => renderDesignCard(design))}
-
-              {!rudrakshaFlow && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={customUploading || !customDesignEnabled}
-                  className={cn(
-                    'group flex min-h-[152px] flex-col items-center justify-center rounded-lg border-2 border-dashed p-3 text-center transition-all',
-                    'hover:border-accent hover:bg-accent/5',
-                    customDesignUrl ? 'border-accent bg-accent/5' : 'border-border',
-                    customUploading && 'cursor-wait opacity-80',
-                    !customDesignEnabled && 'cursor-not-allowed opacity-50'
+            <>
+              {rudrakshaFlow && allowedRudrakshaCategories.length > 0 && (
+                <div className="mb-3 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+                  <p className="text-xs font-semibold text-primary">Rudraksha mounting options</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Showing designs for:{' '}
+                    {allowedRudrakshaCategories
+                      .map((category) => RUDRAKSHA_DESIGN_CATEGORIES[category].label)
+                      .join(' · ')}
+                  </p>
+                  {rudrakshaComboProducts.length > 0 && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Combo beads:{' '}
+                      {[selectedProduct?.name, ...rudrakshaComboProducts.map((item) => item.name)]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </p>
                   )}
-                >
-                  {customUploading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-accent" />
-                  ) : (
-                    <Upload className="h-6 w-6 text-muted-foreground group-hover:text-accent" />
-                  )}
-                  <span className="mt-2 text-[11px] font-semibold text-primary">
-                    {customUploading
-                      ? 'Uploading...'
-                      : !customDesignEnabled
-                        ? 'Custom unavailable'
-                        : customDesignUrl
-                          ? 'Custom Uploaded ✓'
-                          : 'Upload Custom'}
-                  </span>
-                  <span className="mt-1 text-[9px] text-muted-foreground">
-                    Tap once to choose your file directly
-                  </span>
-                </button>
+                </div>
               )}
-            </div>
-          )}
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPTED_CUSTOM_EXTENSIONS}
-            onChange={handleCustomFileChange}
-            className="hidden"
-          />
+              {rudrakshaFlow && groupedDesigns && groupedDesigns.length > 0 ? (
+                <div className="mt-3 space-y-4">
+                  {groupedDesigns.map((group) => (
+                    <div key={group.category}>
+                      <div className="mb-2">
+                        <p className="text-xs font-semibold text-primary">{group.meta.label}</p>
+                        <p className="text-[11px] text-muted-foreground">{group.meta.description}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                        {group.items.map((design) => renderDesignCard(design))}
+                        {group.category === allowedRudrakshaCategories[allowedRudrakshaCategories.length - 1]
+                          ? renderCustomUploadTile()
+                          : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {designs.map((design) => renderDesignCard(design))}
+                  {renderCustomUploadTile()}
+                </div>
+              )}
 
-          {customUploadError && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              <AlertCircle className="h-4 w-4" />
-              {customUploadError}
-            </div>
-          )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_CUSTOM_EXTENSIONS}
+                onChange={handleCustomFileChange}
+                className="hidden"
+              />
 
-          {selectedDesignNote && (
-            <div className="mt-3 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80">
-                Design note — {selected?.name}
-              </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-amber-950/90">
-                {selectedDesignNote}
-              </p>
-            </div>
-          )}
+              {customUploadError && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <AlertCircle className="h-4 w-4" />
+                  {customUploadError}
+                </div>
+              )}
 
-          {designs.length === 0 && !customUploading && (
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              {rudrakshaFlow
-                ? 'No mounting designs match this Rudraksha type yet.'
-                : 'No designs available. Upload a custom design.'}
-            </p>
+              {selectedDesignNote && (
+                <div className="mt-3 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80">
+                    Design note — {selected?.name}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-amber-950/90">
+                    {selectedDesignNote}
+                  </p>
+                </div>
+              )}
+
+              {designs.length === 0 && !customUploading && (
+                <p className="mt-4 text-center text-xs text-muted-foreground">
+                  {rudrakshaFlow
+                    ? 'No mounting designs match this Rudraksha selection yet. Upload a custom design.'
+                    : 'No designs available. Upload a custom design.'}
+                </p>
+              )}
+            </>
           )}
         </>
       )}

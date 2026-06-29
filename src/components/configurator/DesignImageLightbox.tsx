@@ -25,7 +25,7 @@ export function DesignImageLightbox({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="!top-[7.25rem] !left-1/2 !z-[60] !max-h-[calc(100dvh-8.5rem)] !w-[min(88vw,460px)] !max-w-[min(88vw,460px)] !-translate-x-1/2 !translate-y-0 overflow-visible border-0 bg-transparent p-0 shadow-none ring-0 sm:!max-w-[min(88vw,460px)] lg:!top-[8.5rem]"
+        className="!top-1/2 !left-1/2 !z-[60] !max-h-[min(92dvh,720px)] !w-[min(92vw,520px)] !max-w-[min(92vw,520px)] !-translate-x-1/2 !-translate-y-1/2 overflow-visible border-0 bg-transparent p-0 shadow-none ring-0 sm:!max-w-[min(92vw,520px)]"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
 
@@ -42,7 +42,7 @@ export function DesignImageLightbox({
           <img
             src={src}
             alt={title}
-            className="mx-auto block h-auto w-full max-h-[min(46vh,360px)] object-contain object-center"
+            className="mx-auto block h-auto w-full max-h-[min(78dvh,560px)] object-contain object-center"
             decoding="async"
           />
         </div>

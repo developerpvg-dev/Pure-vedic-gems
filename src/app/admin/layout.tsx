@@ -3,12 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-
-const DESIGNER_NAV = [
-  { href: '/admin/designer', label: 'Design Assignments', icon: Palette },
-];
+import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 
 const NAV_GROUPS = [
   {
@@ -23,6 +20,7 @@ const NAV_GROUPS = [
       { href: '/admin/rewards', label: 'Rewards', icon: Gift },
       { href: '/admin/products', label: 'Products', icon: Package },
       { href: '/admin/catalog-order', label: 'Catalog Order', icon: SlidersHorizontal },
+      { href: '/admin/directors-pick', label: "Director's Pick", icon: Star },
       { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame },
       { href: '/admin/yagya-bookings', label: 'Yagya Bookings', icon: Flame },
       { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud },
@@ -65,25 +63,12 @@ const NAV_GROUPS = [
   },
 ];
 
-function NavContent({
-  pathname,
-  setSidebarOpen,
-  isDesigner,
-}: {
-  pathname: string;
-  setSidebarOpen: (v: boolean) => void;
-  isDesigner: boolean;
-}) {
-  const navGroups = isDesigner
-    ? [{ label: 'Designer', links: DESIGNER_NAV }]
-    : NAV_GROUPS;
-
+function AdminNavContent({ pathname, setSidebarOpen }: { pathname: string; setSidebarOpen: (v: boolean) => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
         <Link href="/admin" className="leading-tight" onClick={() => setSidebarOpen(false)}>
           <span className="block text-base font-bold text-gray-950">PVG Admin</span>
-          <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-amber-700">Control Room</span>
         </Link>
         <div className="flex items-center gap-2">
           <NotificationBell variant="admin" />
@@ -99,7 +84,7 @@ function NavContent({
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
         <div className="space-y-5 pb-5">
-          {navGroups.map((group) => (
+          {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                 {group.label}
@@ -143,16 +128,17 @@ function NavContent({
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDesigner, setIsDesigner] = useState(false);
+  const [sessionRole, setSessionRole] = useState<string | null>(null);
   const pathname = usePathname();
   const isJoinPage = pathname?.startsWith('/admin/join');
+  const isDesignerRoute = pathname?.startsWith('/admin/designer');
 
   useEffect(() => {
     void (async () => {
       const res = await fetch('/api/admin/session');
       if (!res.ok) return;
       const data = await res.json().catch(() => ({}));
-      setIsDesigner(data.role === 'designer');
+      setSessionRole(data.role ?? null);
     })();
   }, []);
 
@@ -160,9 +146,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <div className="min-h-screen bg-gray-50">{children}</div>;
   }
 
+  if (sessionRole === 'designer' || (sessionRole === null && isDesignerRoute)) {
+    return <DesignerAdminLayout>{children}</DesignerAdminLayout>;
+  }
+
+  if (sessionRole === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -170,18 +167,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
 
-      {/* Sidebar — fixed on desktop, slide-over on mobile */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-gray-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <NavContent pathname={pathname ?? ''} setSidebarOpen={setSidebarOpen} isDesigner={isDesigner} />
+        <AdminNavContent pathname={pathname ?? ''} setSidebarOpen={setSidebarOpen} />
       </aside>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col lg:ml-64">
-        {/* Mobile top bar */}
+      <div className="flex min-w-0 flex-1 flex-col lg:ml-64">
         <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
           <button
             type="button"
@@ -196,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

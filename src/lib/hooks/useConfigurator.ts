@@ -53,6 +53,8 @@ export function createConfiguratorState(
     setting_type: null,
     selected_design: null,
     custom_design_url: null,
+    custom_design_brief: null,
+    rudraksha_combo_products: [],
     metal: null,
     ring_size: null,
     chain_length: null,
@@ -91,6 +93,7 @@ export function sanitizeConfiguratorSelections(
   if (next.setting_type === 'loose') {
     next.selected_design = null;
     next.custom_design_url = null;
+    next.custom_design_brief = null;
     next.metal = null;
     next.ring_size = null;
     next.chain_length = null;
@@ -267,9 +270,11 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
           gem_category: action.payload,
           // Reset downstream selections when category changes
           selected_product: null,
+          rudraksha_combo_products: [],
           setting_type: null,
           selected_design: null,
           custom_design_url: null,
+          custom_design_brief: null,
           metal: null,
           ring_size: null,
           chain_length: null,
@@ -293,6 +298,7 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
                 setting_type: 'pendant' as const,
                 selected_design: null,
                 custom_design_url: null,
+                custom_design_brief: null,
                 metal: null,
                 chain_length: null,
               }
@@ -307,6 +313,7 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
           // Reset downstream if setting type changes
           selected_design: null,
           custom_design_url: null,
+          custom_design_brief: null,
           metal: null,
           ring_size: null,
           chain_length: null,
@@ -317,6 +324,7 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
           ...state,
           selected_design: action.payload,
           custom_design_url: null,
+          custom_design_brief: null,
         };
 
       case 'SET_CUSTOM_DESIGN_URL':
@@ -324,7 +332,46 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
           ...state,
           custom_design_url: action.payload,
           selected_design: null,
+          custom_design_brief: null,
         };
+
+      case 'SET_CUSTOM_DESIGN_BRIEF':
+        return {
+          ...state,
+          custom_design_brief: action.payload,
+        };
+
+      case 'CLEAR_CUSTOM_DESIGN':
+        return {
+          ...state,
+          custom_design_url: null,
+          custom_design_brief: null,
+        };
+
+      case 'SET_RUDRAKSHA_COMBO':
+        return {
+          ...state,
+          rudraksha_combo_products: action.payload,
+          selected_design: null,
+          custom_design_url: null,
+          custom_design_brief: null,
+        };
+
+      case 'TOGGLE_RUDRAKSHA_COMBO': {
+        const product = action.payload;
+        const exists = state.rudraksha_combo_products.some((p) => p.id === product.id);
+        const primaryId = state.selected_product?.id;
+        const nextCombo = exists
+          ? state.rudraksha_combo_products.filter((p) => p.id !== product.id)
+          : [...state.rudraksha_combo_products, product].filter((p) => p.id !== primaryId);
+        return {
+          ...state,
+          rudraksha_combo_products: nextCombo,
+          selected_design: null,
+          custom_design_url: null,
+          custom_design_brief: null,
+        };
+      }
 
       case 'SET_METAL':
         return { ...state, metal: action.payload };
@@ -501,7 +548,12 @@ export function useConfigurator(
       if (step === 2) return !!state.gem_category;
       if (step === 3) return !!state.selected_product;
       if (step === 4) return !!state.setting_type && state.setting_type !== 'loose';
-      if (step === 5) return !!state.selected_design || !!state.custom_design_url;
+      if (step === 5) {
+        return (
+          !!state.selected_design ||
+          (!!state.custom_design_url && !!state.custom_design_brief)
+        );
+      }
       if (step === 6) {
         if (state.setting_type === 'loose') return !!state.setting_type;
         return !!state.metal;
@@ -515,6 +567,7 @@ export function useConfigurator(
       state.setting_type,
       state.selected_design,
       state.custom_design_url,
+      state.custom_design_brief,
       state.metal,
       state.selected_lab,
       state.certification_skipped,
@@ -533,7 +586,7 @@ export function useConfigurator(
       case 4:
         return (
           (!!state.selected_design && isDesignCompatibleWithSetting(state)) ||
-          !!state.custom_design_url
+          (!!state.custom_design_url && !!state.custom_design_brief)
         );
       case 5:
         return !!state.metal && (
@@ -557,6 +610,7 @@ export function useConfigurator(
     state.setting_type,
     state.selected_design,
     state.custom_design_url,
+    state.custom_design_brief,
     state.metal,
     state.chain_length,
     state.ring_size,
@@ -573,7 +627,7 @@ export function useConfigurator(
     }
 
     const hasValidDesign =
-      !!state.custom_design_url ||
+      (!!state.custom_design_url && !!state.custom_design_brief) ||
       (!!state.selected_design && isDesignCompatibleWithSetting(state));
 
     return (

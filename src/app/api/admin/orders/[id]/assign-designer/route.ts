@@ -78,7 +78,15 @@ export async function POST(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: 'Failed to assign designer' }, { status: 500 });
+    console.error('[assign-designer] Update error:', error);
+    const detail = error.message || 'Database update failed';
+    const hint = detail.includes('orders_status') || detail.includes('check constraint')
+      ? ' Run supabase/week25_design_order_statuses.sql in Supabase.'
+      : '';
+    return NextResponse.json(
+      { error: `Failed to assign designer: ${detail}${hint}` },
+      { status: 500 },
+    );
   }
 
   await db.from('order_tracking_events').insert({

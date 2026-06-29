@@ -87,6 +87,13 @@ export default function GemCategorySelector({
 
   const filteredNavaratna = filterBySearch(navaratna);
   const filteredUpratna = filterBySearch(upratna);
+  /* RUDRAKSHA_CONFIGURATOR — re-enable with RUDRAKSHA_CONFIGURATOR_ENABLED
+  const rudraksha = useMemo(
+    () => categories.filter((c) => c.type === 'rudraksha'),
+    [categories]
+  );
+  const filteredRudraksha = filterBySearch(rudraksha);
+  */
 
   const renderGemTile = (gem: ExtendedCategoryOption, compactImage = false) => {
     const isSelected = selected === gem.id;
@@ -201,6 +208,30 @@ export default function GemCategorySelector({
           </div>
         </div>
       )}
+
+      {/* RUDRAKSHA_CONFIGURATOR — uncomment when RUDRAKSHA_CONFIGURATOR_ENABLED is true
+      {(filteredRudraksha.length > 0 || !searchQuery.trim()) && (
+        <div className="mt-4">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-[1.2px] text-accent">
+            Rudraksha — Sacred Beads
+          </h3>
+          <div role="radiogroup" aria-label="Rudraksha categories" className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {renderGemTile(
+              {
+                id: 'rudraksha',
+                name: 'All Rudraksha',
+                sanskrit: '',
+                planet: '',
+                color: '#5C4A2A',
+                type: 'rudraksha',
+              },
+              false
+            )}
+            {filteredRudraksha.map((gem) => renderGemTile(gem, false))}
+          </div>
+        </div>
+      )}
+      */}
 
       {filteredNavaratna.length === 0 && filteredUpratna.length === 0 && (
         <p className="mt-6 text-center text-xs text-muted-foreground">

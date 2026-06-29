@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Json, Order, RewardPointTransaction, RewardSettings } from '@/lib/types/database';
+import { calculateEarnedPointsPreview, roundedRupees } from '@/lib/rewards/rules';
 
 export interface RewardBalance {
   available_points: number;
@@ -7,6 +8,7 @@ export interface RewardBalance {
   pending_redeemed_points: number;
   lifetime_earned_points: number;
   lifetime_redeemed_points: number;
+  expired_points: number;
 }
 
 export interface RewardRedemptionQuote {
@@ -42,8 +44,8 @@ const FALLBACK_SETTINGS: RewardSettings = {
   updated_by: null,
 };
 
-function roundedRupees(value: number) {
-  return Math.max(0, Math.round(value));
+function roundedRupeesLocal(value: number) {
+  return roundedRupees(value);
 }
 
 function asPositiveInteger(value: number | null | undefined) {
@@ -83,18 +85,33 @@ export async function getRewardBalance(customerId: string): Promise<RewardBalanc
   const supabase = createAdminClient();
   const { data } = await supabase
     .from('reward_point_transactions')
-    .select('points, status')
+    .select('points, status, type, expires_at')
     .eq('customer_id', customerId);
 
-  const rows = (data ?? []) as Array<Pick<RewardPointTransaction, 'points' | 'status'>>;
+  const rows = (data ?? []) as Array<
+    Pick<RewardPointTransaction, 'points' | 'status' | 'type' | 'expires_at'>
+  >;
+  const now = Date.now();
   let confirmedPoints = 0;
   let pendingRedeemedPoints = 0;
   let lifetimeEarnedPoints = 0;
   let lifetimeRedeemedPoints = 0;
+  let expiredPoints = 0;
 
   for (const row of rows) {
     const points = Number(row.points ?? 0);
+    const isExpiredEarned =
+      row.type === 'earned' &&
+      row.expires_at &&
+      new Date(row.expires_at).getTime() < now;
+
     if (row.status === 'confirmed') {
+      if (isExpiredEarned && points > 0) {
+        expiredPoints += points;
+        lifetimeEarnedPoints += points;
+        continue;
+      }
+
       confirmedPoints += points;
       if (points > 0) lifetimeEarnedPoints += points;
       if (points < 0) lifetimeRedeemedPoints += Math.abs(points);
@@ -109,6 +126,7 @@ export async function getRewardBalance(customerId: string): Promise<RewardBalanc
     pending_redeemed_points: pendingRedeemedPoints,
     lifetime_earned_points: lifetimeEarnedPoints,
     lifetime_redeemed_points: lifetimeRedeemedPoints,
+    expired_points: expiredPoints,
   };
 }
 
@@ -135,7 +153,7 @@ export async function quoteRewardRedemption({
     throw new Error(`Redeem at least ${settings.min_redeem_points} reward point(s).`);
   }
 
-  const maxByPercent = roundedRupees(eligibleAmount * (Number(settings.max_redeem_percent) / 100));
+  const maxByPercent = roundedRupeesLocal(eligibleAmount * (Number(settings.max_redeem_percent) / 100));
   const maxByFixed = settings.max_redeem_points_per_order * Number(settings.point_value_inr);
   const maxDiscount = Math.min(eligibleAmount, maxByPercent, maxByFixed);
   const maxPointsByDiscount = Math.floor(maxDiscount / Number(settings.point_value_inr));
@@ -149,7 +167,7 @@ export async function quoteRewardRedemption({
   return {
     requested_points: requested,
     points_to_redeem: pointsToRedeem,
-    discount_amount: roundedRupees(pointsToRedeem * Number(settings.point_value_inr)),
+    discount_amount: roundedRupeesLocal(pointsToRedeem * Number(settings.point_value_inr)),
     balance,
     settings,
   };
@@ -214,7 +232,7 @@ export async function addManualRewardAdjustment({
       type: 'adjustment',
       status: 'confirmed',
       points: normalizedPoints,
-      amount_inr: roundedRupees(Math.abs(normalizedPoints) * Number(settings.point_value_inr)),
+      amount_inr: roundedRupeesLocal(Math.abs(normalizedPoints) * Number(settings.point_value_inr)),
       description: description.trim() || 'Manual reward points adjustment',
       created_by: adminUserId,
       metadata: { source: 'admin_panel' } as Json,
@@ -250,9 +268,8 @@ export async function cancelRewardRedemption(orderId: string) {
 
 export function calculateOrderEarnedPoints(order: Pick<Order, 'subtotal' | 'reward_points_redeemed'>, settings: RewardSettings) {
   if (!settings.is_active) return 0;
-  const redeemedPoints = Number(order.reward_points_redeemed ?? 0);
   if (Number(order.subtotal ?? 0) <= 0) return 0;
-  return redeemedPoints > 0 ? Math.max(0, settings.earn_points_per_order - redeemedPoints) : settings.earn_points_per_order;
+  return calculateEarnedPointsPreview(settings, Number(order.reward_points_redeemed ?? 0));
 }
 
 export async function awardOrderRewardPoints(order: Order) {

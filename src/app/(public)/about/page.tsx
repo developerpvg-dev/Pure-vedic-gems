@@ -18,7 +18,7 @@ import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
 export const metadata: Metadata = {
   title: 'About Pure Vedic Gems | Heritage Since 1937 — Four Generations',
   description:
-    'Pure Vedic Gems: a trusted four-generation family heritage since 1937 in certified natural gemstones, genuine Rudrakshas, Vedic astrology, custom jewellery, and energization — serving 40+ countries worldwide.',
+    'Pure Vedic Gems: India\'s oldest trusted name since 1937 in Astro-Jyotish gemstones, authentic Rudrakshas, Vedic astrologers, custom jewellery, research centre, and energization — serving 40+ countries worldwide.',
 };
 
 const GENERATIONS = [
@@ -99,7 +99,7 @@ export default function AboutPage() {
     <main className="pvg-simple-page pvg-info-page font-body bg-[#fdf7ee] text-[#261a10]">
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden bg-[#fdf7ee] px-4 pb-0 pt-32 sm:px-6 lg:pt-40">
+      <section className="relative isolate overflow-hidden bg-[#fdf7ee] px-4 pb-0 pt-4 sm:px-6 lg:pt-6">
         {/* Subtle gold radiating background */}
         <div className="pointer-events-none absolute inset-0 -z-10"
           style={{ background: 'radial-gradient(ellipse 70% 50% at 60% 0%, rgba(201,168,76,0.13) 0%, transparent 70%), radial-gradient(ellipse 40% 30% at 5% 20%, rgba(138,100,0,0.07) 0%, transparent 60%)' }} />
@@ -108,7 +108,7 @@ export default function AboutPage() {
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-transparent via-[#c9a84c] to-transparent" />
 
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-7 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+          <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr] lg:items-center">
 
             <ScrollReveal className="lg:col-start-1 lg:row-start-1">
               <div>
@@ -144,10 +144,10 @@ export default function AboutPage() {
             <ScrollReveal delay={80} className="lg:col-start-1 lg:row-start-2">
               <div>
                 <p className="mt-5 max-w-2xl text-base leading-8 text-[#5a4a3a] md:text-[17px]">
-                  Pure Vedic Gems Pvt. Ltd. is India&apos;s oldest and most trusted name in genuine gemstones, authentic Rudrakshas, vedic astrology, custom jewellery, and in-house energization &ndash; a four-generation family legacy now serving 40+ countries worldwide.
+                  Pure Vedic Gems Pvt. Ltd. is India&apos;s oldest and most trusted name for genuine Astro-Jyotish gemstones, finest quality authentic Rudrakshas, world renowned genuine Vedic astrologers, custom Vedic jewellery manufacturing, and in-house Vedic research centre and Vedic Temple setup for Purification and Energization rituals as per ancient scriptures &ndash; a four-generation family legacy now serving 40+ countries worldwide.
                 </p>
                 <p className="mt-4 max-w-2xl text-base leading-8 text-[#5a4a3a] md:text-[17px]">
-                  Founded in Lahore in <strong className="text-[#261a10]">1937</strong>{' '}by Late Shri Gandaram Mehra, our journey spans over 87 years of uncompromising quality, certified gemology, and Vedic wisdom. Every gemstone we offer is individually sourced, lab-tested, and energized &ndash; ensuring that what reaches you is nothing short of the finest.
+                  Founded in Lahore in <strong className="text-[#261a10]">1937</strong>{' '}by Late Shri Gandaram Mehra, our journey spans over 87 years of uncompromising quality, certified astro-gemology, oldest experience and Vedic wisdom. Every gemstone and rudraksha we offer is individually sourced, lab-tested, and purified &amp; energized &ndash; ensuring that what reaches you is nothing short of the finest.
                 </p>
                 <div className="mt-8 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
                   <Link href="/consultation"
@@ -166,7 +166,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── OUR STORY / HISTORY ──────────────────────────────────────── */}
-      <section className="px-4 pb-8 pt-4 sm:px-6 lg:pb-10 lg:pt-6">
+      <section className="px-4 pb-6 pt-2 sm:px-6 lg:pb-8 lg:pt-4">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
 
@@ -210,16 +210,10 @@ export default function AboutPage() {
                     Ever since its foundation in Lahore (now Pakistan), <strong className="text-[#261a10]">Shakti Dia Gems&apos;</strong> focus has always been on perfection. In <strong className="text-[#8a6400]">1937</strong>, its founder Late Shri Gandaram Mehra entered the gems and jewellery business, and since then, there has been no looking back.
                   </p>
                   <p>
-                    Shakti Dia Gems rapidly established a reputation for absolute reliability and exquisite craftsmanship. Today, through its evolution into <strong className="text-[#261a10]">Pure Vedic Gems</strong>, it is a name that has won the trust of over <strong className="text-[#8a6400]">three generations</strong> of jewellery and gemstone lovers across India and the world.
+                    <strong className="text-[#261a10]">Shakti Dia Gems Pvt. Ltd.</strong> rapidly established a reputation for absolute reliability and exquisite craftsmanship. Today, through its evolution into <strong className="text-[#261a10]">Pure Vedic Gems Pvt. Ltd.</strong>, it is a name that has won the trust of over <strong className="text-[#8a6400]">three generations</strong> of jewellery and gemstone lovers across India and the world.
                   </p>
                   <p>
-                    The legacy traces its roots to Late Shri Gandaram Mehra, whose brilliance was matched only by the gems and diamonds he perfected. His son <strong className="text-[#261a10]">Mr. Vimal Mehra</strong> and now grandson <strong className="text-[#261a10]">Mr. Vikas Mehra</strong> — Certified Gemologist and Jewellery Designer — inherited his mastery and integrity, becoming legends in their own right.
-                  </p>
-                </div>
-                <div className="mt-8 flex items-center gap-4 rounded-2xl border border-[#e8d5a3] bg-[#fff8e6] p-5">
-                  <Gem className="h-8 w-8 shrink-0 text-[#8a6400]" />
-                  <p className="text-sm leading-6 text-[#5a4a3a]">
-                    <strong className="text-[#261a10]">Shakti Dia Gems Pvt. Ltd.</strong> has been wholesaling and retailing gems, diamonds, and jewellery for more than <strong className="text-[#8a6400]">87 years</strong>.
+                    The legacy traces its roots to Late Shri Gandaram Mehra, whose brilliance was matched only by the gems, jewellery and diamonds he perfected. His son <strong className="text-[#261a10]">Mr. Vimal Mehra</strong> followed his footsteps and then his grandson <strong className="text-[#261a10]">Mr. Vikas Mehra</strong> &mdash; a Certified Astro-Gemologist and Vedic Sciences expert &mdash; inherited his mastery and integrity, becoming legends in their own right. The latest generation joining the family&apos;s legacy and taking the name to new heights is <strong className="text-[#261a10]">Mr. Vrayas Mehra</strong> (GIA Certified Gemologist).
                   </p>
                 </div>
               </div>

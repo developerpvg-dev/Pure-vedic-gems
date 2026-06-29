@@ -285,7 +285,7 @@ export function PvgReferenceSections({
         <div>
           <h2 className="section-title" id="cert-heading" style={toStyle("margin-bottom: 0;")}>Certificates of<br /><em>Immutable Trust</em></h2>
           <div className="section-rule-left" style={toStyle("width:60px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin:14px 0 0;")}></div>
-          <p className="who-body" style={toStyle("margin-top: 18px; color: var(--muted);")}>Every gemstone we deliver is accompanied by a certificate from the world's most respected independent gem laboratories. These documents are your permanent proof of origin, treatment status, and quality — issued without bias.</p>
+          <p className="who-body" style={toStyle("margin-top: 18px; color: var(--muted);")}>Every gemstone we deliver is accompanied by a certificate from the world's most respected and trusted independent gem laboratories. These documents are your permanent proof of origin, treatment status, and quality — issued without bias.</p>
 
           <div className="cert-logos-wrap">
             <div className="cert-logos-grid">

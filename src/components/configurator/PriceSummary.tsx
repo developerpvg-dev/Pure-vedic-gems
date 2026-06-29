@@ -100,6 +100,8 @@ export default function PriceSummary({
           setting_type: state.setting_type,
           design_id: state.selected_design?.id ?? null,
           custom_design_url: state.custom_design_url,
+          custom_design_brief: state.custom_design_brief,
+          rudraksha_combo_product_ids: state.rudraksha_combo_products.map((item) => item.id),
           metal: state.metal,
           ring_size: state.ring_size,
           chain_length: state.chain_length,
@@ -159,12 +161,21 @@ export default function PriceSummary({
         configuration_id,
         configuration_summary: configuration_summary ?? parts.join(' · '),
         configuration_snapshot,
-        configuration_edit_url: `/configure/${state.selected_product.id}`,
+        configuration_edit_url:
+          state.rudraksha_combo_products.length > 0
+            ? `/configure/${state.selected_product.id}?combo=${[
+                state.selected_product.id,
+                ...state.rudraksha_combo_products.map((item) => item.id),
+              ].join(',')}`
+            : `/configure/${state.selected_product.id}`,
         delivery_eta_label: delivery_eta?.label,
       });
 
       toast.success('Added to cart', {
-        description: state.selected_product.name,
+        description:
+          state.custom_design_url && state.custom_design_brief
+            ? 'Our design team will contact you soon to discuss your custom design.'
+            : state.selected_product.name,
       });
 
       window.requestAnimationFrame(() => {

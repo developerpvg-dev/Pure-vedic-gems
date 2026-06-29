@@ -5,7 +5,7 @@
  * Product-routed sessions start at "Choose Setting Type" with the stone pre-selected.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { useManualMetalPrices } from '@/lib/hooks/useManualMetalPrices';
 import {
@@ -21,18 +21,22 @@ import type { JewelrySettingMetalProfiles } from '@/lib/utils/jewelry-setting-me
 interface ConfiguratorClientProps {
   /** Pre-selected product (routed from PDP "Configure" button) */
   preselectedProduct?: ProductCard | null;
+  /** Additional Rudraksha product IDs for multi-bead pendant configuration */
+  comboProductIds?: string[];
 }
 
 interface ConfiguratorSessionProps {
   initialState: ConfiguratorState;
   startStep: number;
   storageKey: string;
+  comboProductIds?: string[];
 }
 
 function ConfiguratorSession({
   initialState,
   startStep,
   storageKey,
+  comboProductIds = [],
 }: ConfiguratorSessionProps) {
   const { metalPrices, laborRates, pricingModes, ratesBySlug } = useManualMetalPrices();
   const { data: profileData } = useSWR<{ profiles: JewelrySettingMetalProfiles }>(
@@ -49,6 +53,37 @@ function ConfiguratorSession({
       ratesBySlug,
       settingProfiles: profileData?.profiles ?? null,
     });
+
+  useEffect(() => {
+    if (!comboProductIds.length || !initialState.selected_product) return;
+
+    let cancelled = false;
+
+    async function loadComboProducts() {
+      const extraIds = comboProductIds.filter((id) => id !== initialState.selected_product?.id);
+      if (!extraIds.length) return;
+
+      const products = await Promise.all(
+        extraIds.map(async (id) => {
+          const res = await fetch(`/api/products/${id}`);
+          if (!res.ok) return null;
+          const data = (await res.json()) as { product?: ProductCard };
+          return data.product ?? null;
+        })
+      );
+
+      if (cancelled) return;
+      const valid = products.filter((product): product is ProductCard => product !== null);
+      if (valid.length > 0) {
+        dispatch({ type: 'SET_RUDRAKSHA_COMBO', payload: valid });
+      }
+    }
+
+    void loadComboProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, [comboProductIds, dispatch, initialState.selected_product]);
 
   return (
     <ConfiguratorWrapper
@@ -70,6 +105,7 @@ function ConfiguratorSession({
 
 export default function ConfiguratorClient({
   preselectedProduct,
+  comboProductIds = [],
 }: ConfiguratorClientProps) {
   const session = useMemo(() => {
     if (!preselectedProduct) {
@@ -105,6 +141,7 @@ export default function ConfiguratorClient({
       initialState={session.initialState}
       startStep={session.startStep}
       storageKey={session.storageKey}
+      comboProductIds={comboProductIds}
     />
   );
 }

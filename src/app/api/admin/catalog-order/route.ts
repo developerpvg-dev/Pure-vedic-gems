@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
+import { resolveCatalogOrderPair } from '@/lib/admin/catalog-order-categories';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
-import { KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
 
 const querySchema = z.object({
   category: z.string().trim().min(1),
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { category, sub_category } = parsed.data;
-  const known = KNOWN_GEM_SUBCATEGORIES[sub_category];
-  if (!known || known.category !== category) {
+  const known = resolveCatalogOrderPair(category, sub_category);
+  if (!known) {
     return NextResponse.json({ error: 'Unknown category / sub_category pair' }, { status: 400 });
   }
 
@@ -68,8 +68,8 @@ export async function PUT(request: NextRequest) {
   }
 
   const { category, sub_category, items } = parsed.data;
-  const known = KNOWN_GEM_SUBCATEGORIES[sub_category];
-  if (!known || known.category !== category) {
+  const known = resolveCatalogOrderPair(category, sub_category);
+  if (!known) {
     return NextResponse.json({ error: 'Unknown category / sub_category pair' }, { status: 400 });
   }
 
