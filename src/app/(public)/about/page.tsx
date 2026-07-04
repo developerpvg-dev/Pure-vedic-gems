@@ -327,10 +327,10 @@ export default function AboutPage() {
               <div>
                 <div className="space-y-4 text-[15px] leading-8 text-[#5a4a3a]">
                   <p>
-                    <strong className="text-[#261a10]">Mr. Vikas Mehra</strong>, Director of Pure Vedic Gems, is a stern believer, follower, and researcher of Ancient Vedic Karmic Remedies — Yagya, Mantra, Yantra, Yoga, Daan, Ayurveda, and Ratna Dharana (healing with Vedic Astro-Planetary Gemstones).
+                    <strong className="text-[#261a10]">Mr. Vikas Mehra</strong> (Director of Pure Vedic Gems Pvt. Ltd.), is a stern believer, follower, and researcher of Ancient Vedic Karmic Remedies — like Yagya, Mantra, Yantra, Yoga, Daan, Ayurveda, and Ratna and Rudraksha Dharana (healing with Vedic Astro-Planetary Gemstones and Rudrakshas).
                   </p>
                   <p>
-                    He has been researching these ancient sciences of Vedic healing practised by our sacred ancestors (Vedic Scholars and Seers) for thousands of years, and is committed to providing everyone these ancient remedies in the most genuine, accurate, effective, and authentic form.
+                    He has been researching these ancient sciences of Vedic healing practiced by our sacred ancestors (Vedic Scholars and Seers) for thousands of years, and is committed to providing everyone these ancient remedies in the most genuine, accurate, effective, and authentic form.
                   </p>
                   <p>
                     He is also blessed with the astrological configuration in his horoscope required to have a keen interest and deep understanding of these ancient alternative healing sciences and occult practices.
@@ -351,15 +351,25 @@ export default function AboutPage() {
             <ScrollReveal className="lg:col-span-2">
               <div className="flex h-full flex-col justify-center">
                 <h2 className="text-3xl font-black leading-tight tracking-tight text-[#261a10] sm:text-4xl lg:text-[2.45rem]">
-                  Our Specialization: <span className="text-[#8a6400]">India&apos;s Oldest Gemstone &amp; Rudraksha Sellers</span>
+                  Our Specialization:{' '}
+                  <span className="text-[#8a6400]">
+                    India&apos;s Oldest Astro Healing Gemstones, Rudrakshas and authentic spiritual healing products selling company
+                  </span>
                 </h2>
                 <div className="mt-4 h-px w-24 bg-[#c9a84c]" />
                 <div className="mt-6 space-y-4 text-[15px] leading-8 text-[#5a4a3a]">
                   <p>
-                    Pure Vedic Gems is associated with all kinds of gems, diamonds, and jewellery from generations and is the <strong className="text-[#261a10]">leading company in precious and semi-precious gems, diamonds, and Rudrakshas</strong> at the most genuine prices.
+                    Pure Vedic Gems Pvt. Ltd. is associated with all kinds of gems, diamonds, spiritual healing products and jewellery from generations and is the{' '}
+                    <strong className="text-[#261a10]">leading company in precious and semi-precious gems, diamonds, and Rudrakshas</strong> at the most genuine prices.
                   </p>
                   <p>
-                    We are backed by <strong className="text-[#8a6400]">GIA, EGL, and IIG Graduates</strong>, Certified Jewellery Designers, and experienced Ancient Vedic Astrological Remedial Experts. Our core work includes <strong className="text-[#261a10]">01</strong> certified natural Navaratna &amp; Uparatna Jyotish gemstones, <strong className="text-[#261a10]">02</strong> original Rudrakshas from 1 to 21 Mukhi including rare malas, <strong className="text-[#261a10]">03</strong> Gemstone &amp; Rudraksha recommendation by Vedic astrologers, <strong className="text-[#261a10]">04</strong> custom Astro-Rashi jewellery, and <strong className="text-[#261a10]">05</strong> gemstone purification, energization, puja, and havan services.
+                    We are backed by <strong className="text-[#8a6400]">GIA, EGL, and IIG Graduates</strong>, Certified Jewellery Designers, and experienced Ancient Vedic Astrological Remedial Experts. Our core work includes{' '}
+                    <strong className="text-[#261a10]">01</strong> certified natural Navaratna &amp; Uparatna Jyotish gemstones,{' '}
+                    <strong className="text-[#261a10]">02</strong> original finest quality Rudrakshas from 1 to 21 Mukhi including rare malas,{' '}
+                    <strong className="text-[#261a10]">03</strong> providing genuine yagya therapy services,{' '}
+                    <strong className="text-[#261a10]">04</strong> gemstones, Rudrakshas and yagya recommendation by Learned Vedic astrologers,{' '}
+                    <strong className="text-[#261a10]">05</strong> making of custom Astro-Rashi jewellery, and{' '}
+                    <strong className="text-[#261a10]">06</strong> gemstone purification, energization, puja, and authentic ritual services.
                   </p>
                 </div>
               </div>
@@ -405,7 +415,7 @@ export default function AboutPage() {
 
             <ScrollReveal direction="right">
               <Image
-                src="/aboutus/sourcing-advantage.png"
+                src="/aboutus/flow.png"
                 alt="Direct sourcing flowchart — mines and farms to Pure Vedic Gems and customers, bypassing middlemen"
                 width={1024}
                 height={621}

@@ -1,7 +1,7 @@
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
-import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
+import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopPagination } from '@/components/shop/ShopPagination';
@@ -14,10 +14,6 @@ const CARD_SELECT = `
   in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled,
   product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number
 `;
-
-function buildSearchTerm(query: string) {
-  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
-}
 
 function CategoryHeader({ label, desc }: { label: string; desc: string }) {
   return (
@@ -65,26 +61,7 @@ export async function CategoryProductListing({
     if (filters.featured) query = query.eq('featured', true);
     if (filters.product_type) query = query.eq('product_type', filters.product_type);
     query = applyShopAvailabilityFilter(query, filters);
-    if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);
-    if (filters.max_price !== undefined) query = query.lte('price', filters.max_price);
-    if (filters.min_carat !== undefined) query = query.gte('carat_weight', filters.min_carat);
-    if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat);
-    if (filters.origin) query = query.eq('origin', filters.origin);
-    if (filters.shape) query = query.eq('shape', filters.shape);
-    if (filters.planet) query = query.eq('planet', filters.planet);
-    if (filters.certification) query = query.eq('certification', filters.certification);
-    if (filters.certificate_lab) query = query.eq('certificate_lab', filters.certificate_lab);
-    if (filters.quality_label) query = query.eq('quality_label', filters.quality_label);
-    if (filters.treatment) query = query.eq('treatment', filters.treatment);
-    if (filters.price_mode) query = query.eq('price_mode', filters.price_mode);
-    if (filters.configurator_enabled !== undefined) query = query.eq('configurator_enabled', filters.configurator_enabled);
-    if (filters.q) {
-      const searchTerm = buildSearchTerm(filters.q);
-      query = query.or(
-        `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
-      );
-    }
-
+    query = applyShopProductFilters(query, filters);
     query = applyShopListingSort(query, filters, { directorsPick: meta.directorsPick });
 
     const perPage = filters.per_page;

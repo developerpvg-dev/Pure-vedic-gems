@@ -68,7 +68,7 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   processing: { label: 'Processing', bg: '#dbeafe', text: '#1e40af' },
   design_assigned: { label: 'Design Assigned', bg: '#e0e7ff', text: '#3730a3' },
   design_in_progress: { label: 'Design In Progress', bg: '#e0e7ff', text: '#3730a3' },
-  design_completed: { label: 'Design Completed', bg: '#e0e7ff', text: '#3730a3' },
+  design_completed: { label: 'Product Completed', bg: '#e0e7ff', text: '#3730a3' },
   jewelry_making: { label: 'Jewelry Making', bg: '#dbeafe', text: '#1e40af' },
   certification: { label: 'Certification', bg: '#dbeafe', text: '#1e40af' },
   energization: { label: 'Energization', bg: '#dbeafe', text: '#1e40af' },

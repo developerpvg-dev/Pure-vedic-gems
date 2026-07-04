@@ -11,6 +11,15 @@ describe('shop listing sort', () => {
       not() {
         return this;
       },
+      gte() {
+        return this;
+      },
+      lte() {
+        return this;
+      },
+      or() {
+        return this;
+      },
       order(column: string, options: { ascending: boolean }) {
         orders.push(`${column}:${options.ascending ? 'asc' : 'desc'}`);
         return this;
@@ -28,6 +37,15 @@ describe('shop listing sort', () => {
         return this;
       },
       not() {
+        return this;
+      },
+      gte() {
+        return this;
+      },
+      lte() {
+        return this;
+      },
+      or() {
         return this;
       },
       order(column: string, options: { ascending: boolean }) {

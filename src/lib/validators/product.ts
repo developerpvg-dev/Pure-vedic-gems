@@ -145,6 +145,8 @@ export const productFiltersSchema = z
     max_price: optionalNonNegativeNumber,
     min_carat: optionalNonNegativeNumber,
     max_carat: optionalNonNegativeNumber,
+    min_ratti: optionalNonNegativeNumber,
+    max_ratti: optionalNonNegativeNumber,
     origin: optionalString(100),
     shape: optionalString(100),
     planet: z.enum(PLANETS).optional(),
@@ -169,6 +171,10 @@ export const productFiltersSchema = z
   .refine(
     (data) => data.min_carat === undefined || data.max_carat === undefined || data.min_carat <= data.max_carat,
     { message: 'min_carat must be less than or equal to max_carat', path: ['min_carat'] }
+  )
+  .refine(
+    (data) => data.min_ratti === undefined || data.max_ratti === undefined || data.min_ratti <= data.max_ratti,
+    { message: 'min_ratti must be less than or equal to max_ratti', path: ['min_ratti'] }
   );
 
 export type ProductFiltersInput = z.input<typeof productFiltersSchema>;

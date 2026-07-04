@@ -151,8 +151,10 @@ export interface GoldRateData {
 
 export interface EnergizationFormData {
   dob: string;
+  birth_time: string;
+  birth_place: string;
   gotra: string;
-  rashi: string;
+  rashi?: string;
   record_ceremony: boolean;
 }
 

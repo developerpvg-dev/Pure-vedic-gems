@@ -328,7 +328,7 @@ function TopbarMarqueeItems() {
       <span className="pvg-topbar-dot">◆</span>
       <span className="pvg-topbar-item pvg-topbar-item-phone">
         <FlagGB />
-        +447831491778
+        +44-7831491778
       </span>
       <span className="pvg-topbar-dot">◆</span>
       <span className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last">
@@ -754,7 +754,7 @@ export function SiteHeader() {
                 <FlagIN />
                 +91-9310172512
               </a>
-              <a href="tel:+447831491778" className="pvg-topbar-phone-link" aria-label="Call UK +447831491778" style={{
+              <a href="tel:+447831491778" className="pvg-topbar-phone-link" aria-label="Call UK +44-7831491778" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
                 padding: '0 18px', fontSize: '13px', fontWeight: 600,
                 color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap',
@@ -762,7 +762,7 @@ export function SiteHeader() {
                 fontFamily: "'Roboto', sans-serif",
               }}>
                 <FlagGB />
-                +447831491778
+                +44-7831491778
               </a>
               <a href="tel:+971526686526" className="pvg-topbar-phone-link" aria-label="Call Dubai +971-526686526" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',

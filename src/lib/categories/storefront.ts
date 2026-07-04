@@ -59,8 +59,8 @@ export function storefrontGroupHref(slug: StorefrontCategoryGroupSlug | 'gemston
   return `/shop/${slug}`;
 }
 
-export function storefrontSubcategoryHref(parentSlug: StorefrontCategoryGroupSlug, subcategorySlug: string) {
-  return `${storefrontGroupHref(parentSlug)}/${subcategorySlug}`;
+export function storefrontSubcategoryHref(_parentSlug: StorefrontCategoryGroupSlug, subcategorySlug: string) {
+  return `/shop/${subcategorySlug}`;
 }
 
 export function catalogFamilyToStorefrontGroupSlug(family: CatalogFamily | string | null | undefined) {
@@ -73,7 +73,10 @@ export function productCategoryToStorefrontGroupSlug(category: string | null | u
   return PRODUCT_CATEGORY_TO_GROUP[category.toLowerCase()] ?? category.toLowerCase();
 }
 
-export function productHref(product: { category?: string | null; slug: string }) {
+export function productHref(product: { category?: string | null; sub_category?: string | null; slug: string }) {
+  if (product.sub_category) {
+    return `/shop/${product.sub_category}/${product.slug}`;
+  }
   const groupSlug = productCategoryToStorefrontGroupSlug(product.category) ?? product.category ?? 'gemstones';
   return `/shop/${groupSlug}/${product.slug}`;
 }
@@ -148,7 +151,7 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     subcategories: RUDRAKSHA_STOREFRONT_SLUGS.map((slug) => ({
       slug,
       label: rudrakshaSubcategoryLabel(slug),
-      href: `/shop/rudraksha/${slug}`,
+      href: `/shop/${slug}`,
       image: rudrakshaMukhiImage(slug) ?? undefined,
     })),
   },

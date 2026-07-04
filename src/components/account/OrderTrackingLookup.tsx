@@ -37,9 +37,9 @@ interface TrackingResult {
 }
 
 const JOURNEY_EVENT_LABELS: Record<string, string> = {
-  design_assigned: 'Jewelry design assigned',
-  design_in_progress: 'Design in progress',
-  design_completed: 'Design completed',
+  design_assigned: 'Product crafting started',
+  design_in_progress: 'Product in progress',
+  design_completed: 'Product completed',
   product_video: 'Product video ready',
   puja_video: 'Puja video ready',
 };

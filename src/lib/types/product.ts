@@ -231,6 +231,8 @@ export interface ProductFilters {
   max_price?: number;
   min_carat?: number;
   max_carat?: number;
+  min_ratti?: number;
+  max_ratti?: number;
   origin?: string;
   shape?: string;
   planet?: string;

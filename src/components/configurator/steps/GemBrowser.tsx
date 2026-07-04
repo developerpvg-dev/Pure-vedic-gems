@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { buildProductMeta, formatProductListPrice } from '@/lib/utils/format';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { isProductPriceOnRequest, isProductPurchasable } from '@/lib/shop/product-pricing';
 import { productHref } from '@/lib/categories/storefront';
 import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
@@ -361,7 +362,7 @@ export default function GemBrowser({
                     </div>
                     <div className="p-1.5">
                       <p className="truncate text-[11px] font-medium leading-tight text-primary">
-                        {product.name}
+                        {formatProductDisplayName(product.name)}
                       </p>
                       <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
                         {buildProductMeta({

@@ -83,7 +83,12 @@ export default function PriceSummary({
 
     if (
       state.selected_energization &&
-      (!state.energization_form?.dob || !state.energization_form.gotra || !state.energization_form.rashi)
+      (
+        !state.energization_form?.dob ||
+        !state.energization_form.birth_time ||
+        !state.energization_form.birth_place ||
+        !state.energization_form.gotra
+      )
     ) {
       toast.error('Please complete the Vedic birth details for energization.');
       return;

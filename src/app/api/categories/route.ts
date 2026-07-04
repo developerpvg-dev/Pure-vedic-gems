@@ -66,12 +66,11 @@ function gemLabel(category: GemCategoryRow) {
 }
 
 function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
-  const parentSlug = category.type === 'upratna' ? 'upratna' : category.type === 'rudraksha' ? 'rudraksha' : 'navaratna';
   const image = resolveCategoryNavImage(category.slug, category.image_url);
   return {
     slug: category.slug,
     label: gemLabel(category),
-    href: storefrontSubcategoryHref(parentSlug, category.slug),
+    href: `/shop/${category.slug}`,
     swatch: category.color,
     image,
     meta: category.type === 'navaratna' ? category.planet ?? null : null,
@@ -80,16 +79,11 @@ function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
 
 function catalogToSubcategory(category: CatalogCategoryRow): StorefrontSubCategory {
   const parentSlug = catalogFamilyToStorefrontGroupSlug(category.family) ?? 'jewelry';
-  const legacySinglePath = `/shop/${category.slug}`;
   const isParentCategory = category.slug === category.family || category.slug === parentSlug;
   return {
     slug: category.slug,
     label: category.name,
-    href: isParentCategory
-      ? `/shop/${parentSlug}`
-      : category.canonical_path && category.canonical_path !== legacySinglePath
-      ? category.canonical_path
-      : storefrontSubcategoryHref(parentSlug, category.slug),
+    href: isParentCategory ? `/shop/${parentSlug}` : `/shop/${category.slug}`,
     meta: category.homepage_subtitle ?? category.description,
   };
 }

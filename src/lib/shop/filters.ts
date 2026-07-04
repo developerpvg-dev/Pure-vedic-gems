@@ -4,6 +4,7 @@ import {
   CANONICAL_CATEGORY_OPTIONS,
   PRICE_MODES,
   PRODUCT_TYPE_OPTIONS,
+  QUALITY_TIERS,
 } from '@/lib/constants/product-taxonomy';
 import type { ProductFilters } from '@/lib/types/product';
 
@@ -20,12 +21,14 @@ export type ShopFilterOptions = {
   availabilityStatuses: ShopFilterOption[];
   priceRanges: ShopFilterOption[];
   caratRanges: ShopFilterOption[];
+  rattiRanges: ShopFilterOption[];
   origins: ShopFilterOption[];
   planets: ShopFilterOption[];
   shapes: ShopFilterOption[];
   certifications: ShopFilterOption[];
   certificateLabs: ShopFilterOption[];
   treatments: ShopFilterOption[];
+  qualityTiers: ShopFilterOption[];
   qualityLabels: ShopFilterOption[];
   priceModes: ShopFilterOption[];
   configuratorOptions: ShopFilterOption[];
@@ -46,6 +49,7 @@ type FacetRow = {
   availability_status: string | null;
   price: number | null;
   carat_weight: number | null;
+  ratti_weight: number | null;
   origin: string | null;
   planet: string | null;
   shape: string | null;
@@ -64,12 +68,14 @@ const EMPTY_FILTER_OPTIONS: ShopFilterOptions = {
   availabilityStatuses: [],
   priceRanges: [],
   caratRanges: [],
+  rattiRanges: [],
   origins: [],
   planets: [],
   shapes: [],
   certifications: [],
   certificateLabs: [],
   treatments: [],
+  qualityTiers: [],
   qualityLabels: [],
   priceModes: [],
   configuratorOptions: [],
@@ -92,6 +98,18 @@ const CARAT_RANGE_PRESETS = [
   { label: '5 - 10 ct', value: '5-10', min: 5, max: 10 },
   { label: '10 ct+', value: '10-', min: 10, max: null },
 ];
+
+const RATTI_RANGE_PRESETS = [
+  { label: 'Under 3 ratti', value: '0-3', min: 0, max: 3 },
+  { label: '3 - 5 ratti', value: '3-5', min: 3, max: 5 },
+  { label: '5 - 7 ratti', value: '5-7', min: 5, max: 7 },
+  { label: '7 - 10 ratti', value: '7-10', min: 7, max: 10 },
+  { label: '10 ratti+', value: '10-', min: 10, max: null },
+];
+
+const QUALITY_TIER_LOOKUP = new Map(
+  QUALITY_TIERS.map((tier) => [tier.toLowerCase(), tier]),
+);
 
 function buildSearchTerm(query: string) {
   return `%${query.replace(/[%,]/g, ' ').trim()}%`;
@@ -123,7 +141,11 @@ function collectOptions(rows: FacetRow[], key: keyof FacetRow, labels: Record<st
   return sortedOptions(counts, labels);
 }
 
-function rangeOptions(rows: FacetRow[], key: 'price' | 'carat_weight', ranges: typeof PRICE_RANGE_PRESETS) {
+function rangeOptions(
+  rows: FacetRow[],
+  key: 'price' | 'carat_weight' | 'ratti_weight',
+  ranges: typeof PRICE_RANGE_PRESETS,
+) {
   const values = rows
     .map((row) => row[key])
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
@@ -143,6 +165,31 @@ function configuratorOptions(rows: FacetRow[]) {
   return count > 0 ? [{ value: 'true', label: 'Configurable jewellery', count }] : [];
 }
 
+function qualityTierOptions(rows: FacetRow[]) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const raw = row.quality_label?.trim();
+    if (!raw) continue;
+    const canonical = QUALITY_TIER_LOOKUP.get(raw.toLowerCase());
+    if (!canonical) continue;
+    counts.set(canonical, (counts.get(canonical) ?? 0) + 1);
+  }
+  return QUALITY_TIERS
+    .filter((tier) => counts.has(tier))
+    .map((tier) => ({ value: tier, label: tier, count: counts.get(tier) ?? 0 }));
+}
+
+function otherQualityLabelOptions(rows: FacetRow[]) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const raw = row.quality_label?.trim();
+    if (!raw) continue;
+    if (QUALITY_TIER_LOOKUP.has(raw.toLowerCase())) continue;
+    counts.set(raw, (counts.get(raw) ?? 0) + 1);
+  }
+  return sortedOptions(counts);
+}
+
 export async function getShopFilterOptions(
   scope: ShopFilterScope,
   filters: Pick<ProductFilters, 'q' | 'directors_pick'> = {}
@@ -152,7 +199,7 @@ export async function getShopFilterOptions(
 
   let query = supabase
     .from('products')
-    .select('category, sub_category, product_type, availability_status, price, carat_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, price_mode, configurator_enabled')
+    .select('category, sub_category, product_type, availability_status, price, carat_weight, ratti_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, price_mode, configurator_enabled')
     .eq('is_active', true)
     .limit(2000);
 
@@ -178,13 +225,15 @@ export async function getShopFilterOptions(
     availabilityStatuses: collectOptions(rows, 'availability_status', AVAILABILITY_LABELS),
     priceRanges: rangeOptions(rows, 'price', PRICE_RANGE_PRESETS),
     caratRanges: rangeOptions(rows, 'carat_weight', CARAT_RANGE_PRESETS),
+    rattiRanges: rangeOptions(rows, 'ratti_weight', RATTI_RANGE_PRESETS),
     origins: collectOptions(rows, 'origin'),
     planets: collectOptions(rows, 'planet'),
     shapes: collectOptions(rows, 'shape'),
     certifications: collectOptions(rows, 'certification'),
     certificateLabs: collectOptions(rows, 'certificate_lab'),
     treatments: collectOptions(rows, 'treatment'),
-    qualityLabels: collectOptions(rows, 'quality_label'),
+    qualityTiers: qualityTierOptions(rows),
+    qualityLabels: otherQualityLabelOptions(rows),
     priceModes: collectOptions(rows, 'price_mode', Object.fromEntries(PRICE_MODES.map((mode) => [mode, titleize(mode)]))),
     configuratorOptions: configuratorOptions(rows),
   };

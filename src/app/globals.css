@@ -8,6 +8,7 @@
 @import "./homepage-fixes.css";
 @import "./product-page.css";
 @import "./knowledge-pages.css";
+@import "./category-hub.css";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1,6 +1,8 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import '@/app/shop-filter-bar.css';
+
+import { FormEvent, useCallback, useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react';
@@ -38,12 +40,14 @@ type FilterKey =
   | 'availability_status'
   | 'price'
   | 'carat'
+  | 'ratti'
   | 'origin'
   | 'planet'
   | 'shape'
   | 'certification'
   | 'certificate_lab'
   | 'treatment'
+  | 'quality_tier'
   | 'quality_label'
   | 'price_mode'
   | 'configurator_enabled';
@@ -62,16 +66,53 @@ const FILTER_LABELS: Record<FilterKey | 'q', string> = {
   product_type: 'Type',
   availability_status: 'Availability',
   price: 'Price',
-  carat: 'Weight',
-  origin: 'Origin',
+  carat: 'Weight (ct)',
+  ratti: 'Ratti',
+  origin: 'Country of Origin',
   planet: 'Planet',
   shape: 'Shape',
   certification: 'Certificate',
   certificate_lab: 'Lab',
   treatment: 'Treatment',
+  quality_tier: 'Grade',
   quality_label: 'Quality',
   price_mode: 'Price mode',
   configurator_enabled: 'Jewellery',
+};
+
+const INLINE_FILTER_ORDER: FilterKey[] = [
+  'price',
+  'carat',
+  'ratti',
+  'certification',
+  'origin',
+  'quality_tier',
+  'category',
+  'sub_category',
+];
+
+const INLINE_FILTER_LABELS: Partial<Record<FilterKey, string>> = {
+  price: 'Price',
+  carat: 'Weight (Carat)',
+  ratti: 'Weight (Ratti)',
+  certification: 'Certification',
+  origin: 'Origins',
+  quality_tier: 'Grade',
+  category: 'Category',
+  sub_category: 'Family',
+  certificate_lab: 'Lab',
+  shape: 'Shape',
+  treatment: 'Treatment',
+  planet: 'Planet',
+  availability_status: 'Availability',
+  product_type: 'Type',
+  quality_label: 'Quality',
+  price_mode: 'Price mode',
+  configurator_enabled: 'Jewellery',
+};
+
+const FILTER_PARAM_KEYS: Partial<Record<FilterKey, string>> = {
+  quality_tier: 'quality_label',
 };
 
 function useFilters() {
@@ -211,13 +252,32 @@ function MobileCategoryNav() {
   );
 }
 
-function FilterSelect({ definition, value, onChange }: { definition: FilterDefinition; value: string; onChange: (value: string) => void }) {
+function InlineFilterChip({
+  definition,
+  value,
+  onChange,
+}: {
+  definition: FilterDefinition;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const label = INLINE_FILTER_LABELS[definition.key] ?? definition.label;
+  const isActive = Boolean(value);
+
   return (
     <Select value={value} onValueChange={(nextValue) => onChange(nextValue ?? '')}>
-      <SelectTrigger className="h-10 min-w-35 shrink-0 rounded-md border-brand-border bg-white text-[12px] font-medium text-brand-text shadow-none">
-        <SelectValue placeholder={definition.placeholder} />
+      <SelectTrigger
+        className={`shop-filter-chip ${isActive ? 'shop-filter-chip--active' : ''}`}
+      >
+        <SelectValue className="shop-filter-chip__value" placeholder={definition.placeholder} />
+        <span className="shop-filter-chip__label">{label}</span>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent
+        className="shop-filter-dropdown z-[1010]"
+        align="start"
+        alignItemWithTrigger={false}
+        sideOffset={6}
+      >
         <SelectItem value="">{definition.placeholder}</SelectItem>
         {definition.options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
@@ -229,26 +289,54 @@ function FilterSelect({ definition, value, onChange }: { definition: FilterDefin
   );
 }
 
+function PanelFilterSelect({
+  definition,
+  value,
+  onChange,
+}: {
+  definition: FilterDefinition;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="shop-filter-panel-select">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        aria-label={definition.label}
+        className="shop-filter-panel-select__input"
+      >
+        <option value="">{definition.placeholder}</option>
+        {definition.options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}{option.count > 0 ? ` (${option.count})` : ''}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function ActiveFilters({
   definitions,
-  get,
+  getValue,
   onClear,
 }: {
   definitions: FilterDefinition[];
-  get: (key: string) => string;
+  getValue: (key: FilterKey | 'q') => string;
   onClear: (key: FilterKey | 'q') => void;
 }) {
   const optionMap = new Map(definitions.map((definition) => [definition.key, definition.options]));
   const activeEntries: Array<[FilterKey | 'q', string]> = [
-    ['q', get('q')],
-    ...definitions.map((definition) => [definition.key, get(definition.key)] as [FilterKey, string]),
+    ['q', getValue('q')],
+    ...definitions.map((definition) => [definition.key, getValue(definition.key)] as [FilterKey, string]),
   ];
   const entries = activeEntries.filter(([, value]) => value !== '');
 
   if (entries.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="shop-filter-active">
       {entries.map(([key, value]) => (
         <Badge
           key={key}
@@ -273,10 +361,46 @@ function ActiveFilters({
 }
 
 function shouldRenderFilter(definition: FilterDefinition, currentValue: string) {
-  if (definition.key === 'price' || definition.key === 'carat' || definition.key === 'configurator_enabled') {
+  if (
+    definition.key === 'price'
+    || definition.key === 'carat'
+    || definition.key === 'ratti'
+    || definition.key === 'configurator_enabled'
+  ) {
     return definition.options.length > 0 || currentValue !== '';
   }
   return definition.options.length > 1 || currentValue !== '';
+}
+
+function getFilterParamKey(key: FilterKey) {
+  return FILTER_PARAM_KEYS[key] ?? key;
+}
+
+const FILTER_SHEET_CLASS =
+  'flex h-full max-h-[100dvh] w-full max-w-md flex-col gap-0 overflow-hidden border-brand-border bg-brand-bg p-0 sm:max-w-sm';
+
+function FilterSheetPanel({
+  title,
+  children,
+  footer,
+}: {
+  title: string;
+  children: ReactNode;
+  footer: ReactNode;
+}) {
+  return (
+      <SheetContent side="right" className={FILTER_SHEET_CLASS}>
+      <SheetHeader className="shrink-0 border-b border-brand-border px-5 py-4 pr-14">
+        <SheetTitle className="text-lg text-brand-primary">{title}</SheetTitle>
+      </SheetHeader>
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+        {children}
+      </div>
+      <div className="shrink-0 space-y-3 border-t border-brand-border px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {footer}
+      </div>
+    </SheetContent>
+  );
 }
 
 interface FilterBarProps {
@@ -293,19 +417,32 @@ export function FilterBar({
   showSubcategoryFilter = false,
 }: FilterBarProps) {
   const { get, updateParam, clearAll } = useFilters();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [desktopSheetOpen, setDesktopSheetOpen] = useState(false);
   const [searchText, setSearchText] = useState(get('q'));
 
   useEffect(() => {
     setSearchText(get('q'));
   }, [get]);
 
+  const getFilterValue = useCallback(
+    (key: FilterKey) => get(getFilterParamKey(key)),
+    [get],
+  );
+
+  const readFilterValue = useCallback(
+    (key: FilterKey | 'q') => (key === 'q' ? get('q') : getFilterValue(key)),
+    [get, getFilterValue],
+  );
+
   const definitions = useMemo<FilterDefinition[]>(() => [
     ...(showCategoryFilter ? [{ key: 'category' as const, label: 'Category', placeholder: 'All categories', options: facets.categories }] : []),
     ...(showSubcategoryFilter ? [{ key: 'sub_category' as const, label: 'Family', placeholder: 'All families', options: facets.subcategories }] : []),
+    { key: 'quality_tier', label: 'Grade', placeholder: 'Any grade', options: facets.qualityTiers },
+    { key: 'origin', label: 'Country of Origin', placeholder: 'Any origin', options: facets.origins },
+    { key: 'ratti', label: 'Ratti', placeholder: 'Any ratti', options: facets.rattiRanges },
     { key: 'price', label: 'Price', placeholder: 'Any price', options: facets.priceRanges },
-    { key: 'carat', label: 'Weight', placeholder: 'Any weight', options: facets.caratRanges },
-    { key: 'origin', label: 'Origin', placeholder: 'Any origin', options: facets.origins },
+    { key: 'carat', label: 'Weight (ct)', placeholder: 'Any weight', options: facets.caratRanges },
     { key: 'planet', label: 'Planet', placeholder: 'Any planet', options: facets.planets },
     { key: 'shape', label: 'Shape', placeholder: 'Any shape', options: facets.shapes },
     { key: 'certification', label: 'Certificate', placeholder: 'Any certificate', options: facets.certifications },
@@ -318,14 +455,12 @@ export function FilterBar({
     { key: 'configurator_enabled', label: 'Jewellery', placeholder: 'Any jewellery option', options: facets.configuratorOptions },
   ], [facets, showCategoryFilter, showSubcategoryFilter]);
 
-  const visibleDefinitions = definitions.filter((definition) => shouldRenderFilter(definition, get(definition.key)));
-  const primaryOrder: FilterKey[] = ['category', 'sub_category', 'price', 'carat', 'origin', 'availability_status'];
-  const primaryDefinitions = primaryOrder
+  const visibleDefinitions = definitions.filter((definition) => shouldRenderFilter(definition, getFilterValue(definition.key)));
+  const inlineDefinitions = INLINE_FILTER_ORDER
     .map((key) => visibleDefinitions.find((definition) => definition.key === key))
-    .filter((definition): definition is FilterDefinition => Boolean(definition))
-    .slice(0, 4);
-  const primaryKeys = new Set(primaryDefinitions.map((definition) => definition.key));
-  const moreDefinitions = visibleDefinitions.filter((definition) => !primaryKeys.has(definition.key));
+    .filter((definition): definition is FilterDefinition => Boolean(definition));
+  const inlineKeys = new Set(inlineDefinitions.map((definition) => definition.key));
+  const sheetDefinitions = visibleDefinitions.filter((definition) => !inlineKeys.has(definition.key));
 
   function updateDefinition(definition: FilterDefinition, nextValue: string) {
     if (definition.key === 'price') {
@@ -338,8 +473,17 @@ export function FilterBar({
       updateParam({ carat: nextValue, min_carat: minCarat ?? '', max_carat: maxCarat ?? '' });
       return;
     }
+    if (definition.key === 'ratti') {
+      const [minRatti, maxRatti] = nextValue.split('-');
+      updateParam({ ratti: nextValue, min_ratti: minRatti ?? '', max_ratti: maxRatti ?? '' });
+      return;
+    }
     if (definition.key === 'category') {
       updateParam({ category: nextValue, sub_category: '' });
+      return;
+    }
+    if (definition.key === 'quality_tier') {
+      updateParam({ quality_label: nextValue });
       return;
     }
     updateParam({ [definition.key]: nextValue });
@@ -348,7 +492,9 @@ export function FilterBar({
   function clearFilter(key: FilterKey | 'q') {
     if (key === 'price') updateParam({ price: '', min_price: '', max_price: '' });
     else if (key === 'carat') updateParam({ carat: '', min_carat: '', max_carat: '' });
+    else if (key === 'ratti') updateParam({ ratti: '', min_ratti: '', max_ratti: '' });
     else if (key === 'category') updateParam({ category: '', sub_category: '' });
+    else if (key === 'quality_tier') updateParam({ quality_label: '' });
     else updateParam({ [key]: '' });
   }
 
@@ -359,198 +505,194 @@ export function FilterBar({
 
   const sortValue = get('sort') || `${get('sort_by') || 'catalog'}-${get('sort_order') || 'asc'}`;
 
-  const activeFilterCount = useMemo(() => {
+  const filterOnlyCount = useMemo(() => {
     let count = 0;
-    if (get('q')) count += 1;
     for (const definition of visibleDefinitions) {
-      if (get(definition.key)) count += 1;
+      if (getFilterValue(definition.key)) count += 1;
     }
     return count;
-  }, [get, visibleDefinitions]);
+  }, [getFilterValue, visibleDefinitions]);
 
-  const filterSheetContent = (
-    <>
-      <div className="lg:hidden">
-        <p className="mb-2 text-[11px] font-medium text-brand-muted">Browse</p>
-        <MobileCategoryNav />
-        <div className="my-5 border-t border-brand-border" />
-      </div>
-      <div className="grid gap-4">
-        {visibleDefinitions.map((definition) => (
-          <div key={definition.key}>
-            <p className="mb-2 text-[11px] font-medium text-brand-muted">
-              {definition.label}
-            </p>
-            <FilterSelect
-              definition={definition}
-              value={get(definition.key)}
-              onChange={(nextValue) => updateDefinition(definition, nextValue)}
-            />
-          </div>
-        ))}
-        <div>
-          <p className="mb-2 text-[11px] font-medium text-brand-muted">Sort by</p>
-          <Select
-            value={sortValue}
-            onValueChange={(nextValue) => {
-              const selectedSort = nextValue ?? 'catalog-asc';
-              const [sortBy, sortOrder] = selectedSort.split('-');
-              updateParam({ sort: selectedSort, sort_by: sortBy ?? 'catalog', sort_order: sortOrder ?? 'asc' });
-            }}
-          >
-            <SelectTrigger className="h-10 w-full rounded-md border-brand-border bg-white text-[12px] font-medium text-brand-text shadow-none">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => {
-          clearAll();
-          setSheetOpen(false);
-        }}
-        className="mt-6 w-full rounded-md border border-brand-border py-2.5 text-[12px] font-medium text-brand-muted transition hover:border-brand-primary hover:text-brand-primary"
-      >
-        Clear filters
+  const sheetActiveCount = useMemo(() => {
+    let count = 0;
+    for (const definition of sheetDefinitions) {
+      if (getFilterValue(definition.key)) count += 1;
+    }
+    return count;
+  }, [getFilterValue, sheetDefinitions]);
+
+  const inlineSearch = (
+    <form onSubmit={submitSearch} className="shop-filter-bar__search">
+      <input
+        value={searchText}
+        onChange={(event) => setSearchText(event.target.value)}
+        placeholder="Search products, SKU, tag..."
+        aria-label="Search products"
+      />
+      {searchText ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSearchText('');
+            updateParam({ q: '' });
+          }}
+          className="shop-filter-bar__search-clear"
+          aria-label="Clear search"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
+      <button type="submit" className="shop-filter-bar__search-submit" aria-label="Search">
+        <Search className="shop-filter-bar__search-icon" aria-hidden />
       </button>
+    </form>
+  );
+
+  const filterFields = (items: FilterDefinition[]) => (
+    <div className="grid gap-4">
+      {items.map((definition) => (
+        <div key={definition.key}>
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-brand-muted">
+            {INLINE_FILTER_LABELS[definition.key] ?? definition.label}
+          </p>
+          <PanelFilterSelect
+            definition={definition}
+            value={getFilterValue(definition.key)}
+            onChange={(nextValue) => updateDefinition(definition, nextValue)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+
+  const sortField = (
+    <div>
+      <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-brand-muted">Sort by</p>
+      <select
+        value={sortValue}
+        onChange={(event) => {
+          const selectedSort = event.target.value || 'catalog-asc';
+          const [sortBy, sortOrder] = selectedSort.split('-');
+          updateParam({ sort: selectedSort, sort_by: sortBy ?? 'catalog', sort_order: sortOrder ?? 'asc' });
+        }}
+        aria-label="Sort products"
+        className="shop-filter-panel-select__input"
+      >
+        {SORT_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const filterSheetContent = (items: FilterDefinition[], includeBrowse = false) => (
+    <>
+      {includeBrowse ? (
+        <div className="lg:hidden">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-brand-muted">Browse</p>
+          <MobileCategoryNav />
+          <div className="my-5 border-t border-brand-border" />
+        </div>
+      ) : null}
+      {filterFields(items)}
+      <div className="mt-4 lg:hidden">{sortField}</div>
     </>
   );
 
-  return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-brand-border bg-white px-3 py-3 shadow-[0_10px_26px_rgba(61,43,31,0.06)]">
-        {/* Mobile: search + Filter button */}
-        <div className="flex items-center gap-2 lg:hidden">
-          <form onSubmit={submitSearch} className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted" />
-            <input
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="Search products, SKU, tag..."
-              className="h-10 w-full rounded-md border border-brand-border bg-brand-bg/60 pl-9 pr-9 text-[13px] text-brand-text outline-none transition focus:border-brand-accent"
-            />
-            {searchText ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchText('');
-                  updateParam({ q: '' });
-                }}
-                className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-brand-muted transition hover:bg-brand-gold-light hover:text-brand-primary"
-                aria-label="Clear search"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            ) : null}
-          </form>
+  const mobileFilterSheet = (
+    <FilterSheetPanel
+      title="Filters"
+      footer={(
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              clearAll();
+              setMobileSheetOpen(false);
+            }}
+            className="w-full rounded-sm border border-brand-border py-2.5 text-[12px] font-medium text-brand-muted transition hover:border-brand-primary hover:text-brand-primary"
+          >
+            Clear filters
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileSheetOpen(false)}
+            className="w-full rounded-sm bg-[#7A1515] py-2.5 text-[12px] font-semibold text-white transition hover:bg-[#5f1010]"
+          >
+            Show results{total != null ? ` (${total.toLocaleString('en-IN')})` : ''}
+          </button>
+        </>
+      )}
+    >
+      {filterSheetContent(visibleDefinitions, true)}
+    </FilterSheetPanel>
+  );
 
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger className="relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md border border-brand-border bg-white px-3 text-[12px] font-semibold text-brand-primary transition hover:border-brand-accent hover:text-brand-accent">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filter
-              {activeFilterCount > 0 ? (
-                <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[#7A1515] px-1 text-[9px] font-bold text-white">
-                  {activeFilterCount}
-                </span>
+  const desktopFilterSheet = (
+    <FilterSheetPanel
+      title="More filters"
+      footer={(
+        <button
+          type="button"
+          onClick={clearAll}
+          className="w-full rounded-sm border border-brand-border py-2.5 text-[12px] font-medium text-brand-muted transition hover:border-brand-primary hover:text-brand-primary"
+        >
+          Clear filters
+        </button>
+      )}
+    >
+      {filterSheetContent(sheetDefinitions)}
+    </FilterSheetPanel>
+  );
+
+  return (
+    <div className="shop-filter-bar space-y-2">
+      <div className="shop-filter-bar__grid">
+        {inlineSearch}
+
+        <div className="shop-filter-bar__controls">
+          <div className="shop-filter-bar__actions">
+          <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+            <SheetTrigger
+              className="shop-filter-more-btn shop-filter-bar__sheet-btn shop-filter-bar__sheet-btn--mobile relative"
+              aria-label="Open filters"
+            >
+              <SlidersHorizontal className="shop-filter-more-btn__icon" aria-hidden />
+              <span className="shop-filter-more-btn__label">Filters</span>
+              {filterOnlyCount > 0 ? (
+                <span className="shop-filter-bar__icon-btn-badge">{filterOnlyCount}</span>
               ) : null}
             </SheetTrigger>
-            <SheetContent side="right" className="w-[92vw] max-w-md overflow-y-auto border-brand-border bg-brand-bg px-5 pb-8 pt-5">
-              <SheetHeader className="px-0 pb-2 pt-0">
-                <SheetTitle className="text-lg text-brand-primary">Filters</SheetTitle>
-              </SheetHeader>
-              {filterSheetContent}
-              <button
-                type="button"
-                onClick={() => setSheetOpen(false)}
-                className="mt-4 w-full rounded-md bg-[#7A1515] py-2.5 text-[12px] font-semibold text-white transition hover:bg-[#5f1010]"
-              >
-                Show results{total != null ? ` (${total.toLocaleString('en-IN')})` : ''}
-              </button>
-            </SheetContent>
+            {mobileFilterSheet}
           </Sheet>
-        </div>
 
-        {total != null ? (
-          <p className="mt-2 text-[11px] text-brand-muted lg:hidden">
-            {total.toLocaleString('en-IN')} item{total === 1 ? '' : 's'}
-          </p>
-        ) : null}
+          <Sheet open={desktopSheetOpen} onOpenChange={setDesktopSheetOpen}>
+            <SheetTrigger
+              className="shop-filter-more-btn shop-filter-bar__sheet-btn shop-filter-bar__sheet-btn--desktop relative"
+              aria-label="More filters"
+            >
+              <SlidersHorizontal className="shop-filter-more-btn__icon" aria-hidden />
+              <span className="shop-filter-more-btn__label">More filters</span>
+              {sheetActiveCount > 0 ? (
+                <span className="shop-filter-bar__icon-btn-badge">{sheetActiveCount}</span>
+              ) : null}
+            </SheetTrigger>
+            {desktopFilterSheet}
+          </Sheet>
 
-        {/* Desktop: inline filters */}
-        <div className="hidden items-center gap-2 lg:flex">
-          <form onSubmit={submitSearch} className="relative min-w-72 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted" />
-            <input
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="Search products, SKU, tag..."
-              className="h-10 w-full rounded-md border border-brand-border bg-brand-bg/60 pl-9 pr-9 text-[13px] text-brand-text outline-none transition focus:border-brand-accent"
-            />
-            {searchText ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchText('');
-                  updateParam({ q: '' });
-                }}
-                className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-brand-muted transition hover:bg-brand-gold-light hover:text-brand-primary"
-                aria-label="Clear search"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            ) : null}
-          </form>
+          <div className="shop-filter-bar__chips">
+            {inlineDefinitions.map((definition) => (
+              <InlineFilterChip
+                key={definition.key}
+                definition={definition}
+                value={getFilterValue(definition.key)}
+                onChange={(nextValue) => updateDefinition(definition, nextValue)}
+              />
+            ))}
+          </div>
+          </div>
 
-          {primaryDefinitions.map((definition) => (
-            <FilterSelect
-              key={definition.key}
-              definition={definition}
-              value={get(definition.key)}
-              onChange={(nextValue) => updateDefinition(definition, nextValue)}
-            />
-          ))}
-
-          {moreDefinitions.length > 0 ? (
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-brand-border bg-white px-3 text-[12px] font-medium text-brand-primary transition hover:border-brand-accent hover:text-brand-accent">
-                <SlidersHorizontal className="h-4 w-4" />
-                More filters
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[92vw] max-w-md overflow-y-auto border-brand-border bg-brand-bg px-5 pb-8 pt-5">
-                <SheetHeader className="px-0 pb-2 pt-0">
-                  <SheetTitle className="text-lg text-brand-primary">More filters</SheetTitle>
-                </SheetHeader>
-                <div className="grid gap-4">
-                  {moreDefinitions.map((definition) => (
-                    <div key={definition.key}>
-                      <p className="mb-2 text-[11px] font-medium text-brand-muted">
-                        {definition.label}
-                      </p>
-                      <FilterSelect
-                        definition={definition}
-                        value={get(definition.key)}
-                        onChange={(nextValue) => updateDefinition(definition, nextValue)}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={clearAll}
-                  className="mt-6 w-full rounded-md border border-brand-border py-2.5 text-[12px] font-medium text-brand-muted transition hover:border-brand-primary hover:text-brand-primary"
-                >
-                  Clear filters
-                </button>
-              </SheetContent>
-            </Sheet>
-          ) : null}
-
+          <div className="shop-filter-bar__sort-wrap">
           <Select
             value={sortValue}
             onValueChange={(nextValue) => {
@@ -559,10 +701,11 @@ export function FilterBar({
               updateParam({ sort: selectedSort, sort_by: sortBy ?? 'catalog', sort_order: sortOrder ?? 'asc' });
             }}
           >
-            <SelectTrigger className="h-10 min-w-42 shrink-0 rounded-md border-brand-border bg-white text-[12px] font-medium text-brand-text shadow-none">
-              <SelectValue placeholder="Sort" />
+            <SelectTrigger className="shop-filter-sort">
+              <span>Sort By</span>
+              <SelectValue className="sr-only" placeholder="Sort By" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="shop-filter-dropdown z-[1010]" align="start" alignItemWithTrigger={false}>
               {SORT_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
               ))}
@@ -570,14 +713,19 @@ export function FilterBar({
           </Select>
 
           {total != null ? (
-            <span className="shrink-0 whitespace-nowrap pl-1 text-[12px] text-brand-muted">
+            <span className="shop-filter-bar__count">
               {total.toLocaleString('en-IN')} item{total === 1 ? '' : 's'}
             </span>
           ) : null}
+          </div>
         </div>
       </div>
 
-      <ActiveFilters definitions={visibleDefinitions} get={get} onClear={clearFilter} />
+      <ActiveFilters
+        definitions={visibleDefinitions}
+        getValue={readFilterValue}
+        onClear={clearFilter}
+      />
     </div>
   );
 }

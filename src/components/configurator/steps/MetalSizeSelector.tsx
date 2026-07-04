@@ -29,6 +29,7 @@ import {
 import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
 import { resolveMetalRatePerGram } from '@/lib/hooks/useManualMetalPrices';
 import type { MetalPricingMode } from '@/lib/utils/metal-pricing-config';
+import MetalTrustMarquee from '@/components/configurator/MetalTrustMarquee';
 
 interface MetalSizeSelectorProps {
   settingType: SettingType;
@@ -376,6 +377,8 @@ export default function MetalSizeSelector({
 
   return (
     <div className="pvg-metal-step space-y-6">
+      {visibleMetals.length > 0 ? <MetalTrustMarquee /> : null}
+
       <fieldset>
         <SectionLabel className="mb-3">Select metal</SectionLabel>
         <div

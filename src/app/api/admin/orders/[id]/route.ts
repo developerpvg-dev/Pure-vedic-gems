@@ -124,7 +124,12 @@ export async function PUT(
 
   // Build update object — only include provided fields
   const updates: Record<string, unknown> = {};
-  if (status !== undefined) updates.status = status;
+  if (status !== undefined) {
+    updates.status = status;
+    if (status === 'design_completed') {
+      updates.design_completed_at = new Date().toISOString();
+    }
+  }
   if (tracking_number !== undefined) updates.tracking_number = tracking_number;
   if (tracking_url !== undefined) updates.tracking_url = tracking_url;
   if (carrier !== undefined) updates.carrier = carrier;
@@ -186,7 +191,7 @@ export async function PUT(
     puja_video_url &&
     puja_video_url !== current.puja_video_url;
 
-  if (trackingChanged || (status && status !== current.status)) {
+  if (trackingChanged || productVideoAdded || pujaVideoAdded || (status && status !== current.status)) {
     await db.from('order_tracking_events').insert({
       order_id: id,
       status: delivery_status || status || updatedOrder.status,

@@ -8,8 +8,8 @@ export type DesignOrderStatus = (typeof DESIGN_ORDER_STATUSES)[number];
 
 export const DESIGNER_STATUS_OPTIONS: Array<{ value: DesignOrderStatus; label: string }> = [
   { value: 'design_assigned', label: 'Assigned — not started' },
-  { value: 'design_in_progress', label: 'Design in progress' },
-  { value: 'design_completed', label: 'Design completed' },
+  { value: 'design_in_progress', label: 'Product in progress' },
+  { value: 'design_completed', label: 'Product completed' },
 ];
 
 export function isDesignPhaseStatus(status: string) {

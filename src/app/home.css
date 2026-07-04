@@ -6519,9 +6519,8 @@ main:has(> .pvg-react-home-root) {
 
 .pvg-hero-clean .hero-slide-img,
 .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
-  object-fit: cover !important;
-  object-position: center top !important;
-  transform: none !important;
+  object-fit: contain !important;
+  object-position: center center !important;
 }
 
 @media (max-width: 640px) {
@@ -6586,9 +6585,8 @@ main:has(> .pvg-react-home-root) {
 
 .pvg-react-home-root .pvg-hero-clean .hero-slide-img,
 .pvg-react-home-root .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
-  object-fit: cover !important;
-  object-position: center top !important;
-  transform: none !important;
+  object-fit: contain !important;
+  object-position: center center !important;
   top: 0 !important;
 }
 
@@ -7083,17 +7081,18 @@ main:has(> .pvg-react-home-root) {
 /* Desktop compact pass requested after visual review */
 @media (min-width: 1025px) {
   .pvg-react-home-root .pvg-hero-clean {
-    aspect-ratio: 1672 / 941 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
+    width: 100% !important;
+    height: clamp(500px, 42vw, 660px) !important;
+    min-height: 500px !important;
+    max-height: 660px !important;
+    aspect-ratio: auto !important;
     background: #1c0202 !important;
   }
 
   .pvg-react-home-root .pvg-hero-clean .hero-slide-img,
   .pvg-react-home-root .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
     object-fit: cover !important;
-    object-position: center top !important;
+    object-position: center center !important;
   }
 
   .pvg-react-home-root .navratna-section,
@@ -7142,7 +7141,8 @@ main:has(> .pvg-react-home-root) {
 
   .pvg-react-home-root .navratna-section .section-head,
   .pvg-react-home-root .semiprecious-section .section-head,
-  .pvg-react-home-root .explore-section .section-head {
+  .pvg-react-home-root .explore-section .section-head,
+  .pvg-react-home-root .gem-cfg-section .section-head {
     margin-bottom: 16px !important;
   }
 
@@ -7752,9 +7752,13 @@ a.pvg-footer-link:hover {
 
 @media (min-width: 1025px) {
   .pvg-react-home-root .pvg-hero-clean {
-    height: clamp(430px, 42vw, 600px) !important;
-    min-height: 430px !important;
-    max-height: 600px !important;
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    height: clamp(500px, 42vw, 660px) !important;
+    min-height: 500px !important;
+    max-height: 660px !important;
     aspect-ratio: auto !important;
     background: #1c0202 !important;
   }
@@ -7762,8 +7766,7 @@ a.pvg-footer-link:hover {
   .pvg-react-home-root .pvg-hero-clean .hero-slide-img,
   .pvg-react-home-root .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
     object-fit: cover !important;
-    object-position: center top !important;
-    transform: none !important;
+    object-position: center center !important;
   }
 
   .pvg-react-home-root .pvg-hero-img-desktop {
@@ -8540,33 +8543,6 @@ a.pvg-footer-link:hover {
    LINEAR CONFIGURATOR � FROM GEM TO JEWELLERY
    Replaces the two-column arc layout to match the approved design
 ============================================================ */
-.pvg-react-home-root .cfg-lin-head {
-  text-align: center;
-  margin-bottom: 44px;
-}
-.pvg-react-home-root .cfg-lin-title {
-  font-family: var(--font-display);
-  font-size: clamp(30px, 4vw, 52px);
-  font-weight: 800;
-  color: var(--charcoal);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-}
-.pvg-react-home-root .cfg-lin-sub {
-  font-family: var(--font-body);
-  font-size: clamp(14px, 1.6vw, 17px);
-  font-style: italic;
-  color: var(--muted);
-  margin-bottom: 0;
-}
-.pvg-react-home-root .cfg-lin-rule {
-  width: 48px;
-  height: 2px;
-  background: var(--gold);
-  margin: 14px auto 0;
-  border-radius: 2px;
-}
 
 /* 6-step horizontal row */
 .pvg-react-home-root .cfg-lin-steps {

@@ -13,6 +13,7 @@ import {
   isProductStockUnavailable,
   resolveProductCartPrice,
 } from '@/lib/shop/product-pricing';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { formatCarats, formatPrice } from '@/lib/utils/format';
 import { productHref } from '@/lib/categories/storefront';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem, isInCart } = useCart();
+  const displayName = formatProductDisplayName(product.name);
   const inCart = isInCart(product.id);
   const href = productHref(product);
   const imageSrc = getImageSrc(product);
@@ -68,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
       slug: product.slug,
       sku: product.sku,
       tag_number: product.tag_number ?? null,
-      name: product.name,
+      name: displayName,
       category: product.category,
       image_url: imageSrc,
       price: resolvedPrice,
@@ -87,7 +89,7 @@ export function ProductCard({ product }: ProductCardProps) {
       category: product.category,
       source: 'product_card',
     });
-    toast.success(`${product.name} added to cart`, {
+    toast.success(`${displayName} added to cart`, {
       description: 'View your cart to proceed to checkout.',
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
@@ -110,7 +112,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <Link href={href} className="absolute inset-0 block">
           <Image
             src={imageSrc}
-            alt={product.name}
+            alt={displayName}
             fill
             className={`object-cover transition-transform duration-500 group-hover:scale-[1.04]${isUnavailable ? ' opacity-60' : ''}`}
             sizes="(min-width: 1536px) 20vw, (min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 46vw"
@@ -136,7 +138,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="absolute right-1.5 top-1.5 z-10 sm:right-2 sm:top-2">
           <WishlistButton
             productId={product.id}
-            productName={product.name}
+            productName={displayName}
             className="h-7 w-7 rounded-full border-0 bg-white/90 shadow-sm hover:bg-white sm:h-8 sm:w-8"
             iconClassName="h-3.5 w-3.5 sm:h-4 sm:w-4"
           />
@@ -206,7 +208,7 @@ export function ProductCard({ product }: ProductCardProps) {
           href={href}
           className="line-clamp-2 min-h-8 text-[11px] font-semibold leading-snug text-gray-900 transition-colors hover:text-brand-accent sm:line-clamp-1 sm:min-h-0 sm:text-[13px]"
         >
-          {product.name}
+          {displayName}
         </Link>
 
         {/* Out of stock label */}

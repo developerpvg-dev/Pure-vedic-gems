@@ -156,3 +156,13 @@ export const AVAILABILITY_STATUS_OPTIONS = [
   { value: 'on_demand', label: 'On demand' },
   { value: 'archived', label: 'Archived' },
 ] as const;
+
+/** Commercial quality tiers used for shop grade filters (Economy → Collector). */
+export const QUALITY_TIERS = [
+  'Economy',
+  'Good',
+  'Premium',
+  'Luxury',
+  'Super Luxury',
+  'Collector',
+] as const;

@@ -19,6 +19,7 @@ import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
 import { buildMetadata } from '@/lib/utils/seo';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import {
@@ -106,6 +107,7 @@ function ProductJsonLd({
   };
   const structuredPrice = productStructuredOfferPrice(pricing);
   const offerAvailability = productOfferAvailability(pricing);
+  const displayName = formatProductDisplayName(product.name);
   const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
   const averageRating = ratedReviews.length > 0
     ? ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
@@ -114,7 +116,7 @@ function ProductJsonLd({
   const schema = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
-    name: product.name,
+    name: displayName,
     description: product.short_desc ?? product.meta_description ?? '',
     sku: product.sku,
     image: images.length > 0 ? images : undefined,
@@ -170,8 +172,11 @@ export async function generateMetadata({
   const href = productHref(product);
 
   return buildMetadata({
-    title: product.meta_title ?? `${product.name} | PureVedicGems`,
-    description: product.meta_description ?? product.short_desc ?? `Buy ${product.name} at PureVedicGems`,
+    title: product.meta_title ?? `${formatProductDisplayName(product.name)} | PureVedicGems`,
+    description:
+      product.meta_description ??
+      product.short_desc ??
+      `Buy ${formatProductDisplayName(product.name)} at PureVedicGems`,
     path: href,
     image: imageUrl,
   });
@@ -383,6 +388,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
   const images = extractImages(product.images as Json);
   const skuMeta = buildSKUMeta(product);
+  const displayName = formatProductDisplayName(product.name);
   const related = (relatedResult.data ?? []) as unknown as ProductCardType[];
   const expert = expertResult.data as {
     id: string; name: string; title: string | null;
@@ -393,7 +399,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   const categoryListingHref = product.sub_category ? `${parentCategoryHref}/${product.sub_category}` : parentCategoryHref;
   const recentlyViewedProduct: RecentlyViewedProduct = {
     id: product.id,
-    name: product.name,
+    name: displayName,
     href,
     imageUrl: product.thumbnail_url ?? images[0] ?? null,
     price: product.price,
@@ -431,7 +437,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
               {categoryLabel}
             </Link>
             <span>/</span>
-            <span className="line-clamp-1 text-brand-primary">{product.name}</span>
+            <span className="line-clamp-1 text-brand-primary">{displayName}</span>
           </nav>
 
           {/* ── Main Grid: Gallery | Info — true 50/50 on desktop ── */}
@@ -439,7 +445,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
             {/* ─── Left: Gallery ─── */}
             <div className="min-w-0 md:sticky md:top-24 md:self-start lg:top-22.5">
-              <ProductGallery images={images} productName={product.name} videoUrl={product.video_url} />
+              <ProductGallery images={images} productName={displayName} videoUrl={product.video_url} />
             </div>
 
             {/* ─── Right: Info panel ─── */}
@@ -460,7 +466,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                 </div>
 
                 <h1 className="product-detail-title break-words text-[clamp(18px,4.8vw,34px)] font-normal leading-snug text-[#7A1515] lg:leading-tight">
-                  {product.name}
+                  {displayName}
                 </h1>
 
                 {skuMeta && (

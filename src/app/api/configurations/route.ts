@@ -52,8 +52,10 @@ const ConfigurationSchema = z.object({
   energization_form: z
     .object({
       dob: z.string(),
+      birth_time: z.string(),
+      birth_place: z.string(),
       gotra: z.string(),
-      rashi: z.string(),
+      rashi: z.string().optional(),
       record_ceremony: z.boolean().optional().default(false),
     })
     .nullable()
@@ -380,8 +382,16 @@ export async function POST(request: NextRequest) {
   if (input.energization_id && !isEnergizationAllowed(rules, input.energization_id)) {
     return NextResponse.json({ error: 'This energization option is not available for the selected product.' }, { status: 400 });
   }
-  if (input.energization_id && !input.energization_form?.dob) {
-    return NextResponse.json({ error: 'Date of birth is required for energization.' }, { status: 400 });
+  if (
+    input.energization_id &&
+    (
+      !input.energization_form?.dob ||
+      !input.energization_form.birth_time ||
+      !input.energization_form.birth_place ||
+      !input.energization_form.gotra
+    )
+  ) {
+    return NextResponse.json({ error: 'Complete all Vedic birth details for energization.' }, { status: 400 });
   }
 
   const [designResult, certificationResult, energizationResult, metalPricing, commerceResult] =

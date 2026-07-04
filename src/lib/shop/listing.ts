@@ -3,8 +3,64 @@ import type { ProductFilters } from '@/lib/types/product';
 type SortableQuery = {
   eq(column: string, value: unknown): SortableQuery;
   not(column: string, operator: string, value: string): SortableQuery;
+  gte(column: string, value: number): SortableQuery;
+  lte(column: string, value: number): SortableQuery;
+  or(filters: string): SortableQuery;
   order(column: string, options: { ascending: boolean }): SortableQuery;
 };
+
+function buildShopSearchTerm(query: string) {
+  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
+}
+
+/** Apply shared product listing filters (price, weight, origin, grade, etc.). */
+export function applyShopProductFilters<T extends SortableQuery>(
+  query: T,
+  filters: Pick<
+    ProductFilters,
+    | 'min_price'
+    | 'max_price'
+    | 'min_carat'
+    | 'max_carat'
+    | 'min_ratti'
+    | 'max_ratti'
+    | 'origin'
+    | 'shape'
+    | 'planet'
+    | 'certification'
+    | 'certificate_lab'
+    | 'quality_label'
+    | 'treatment'
+    | 'price_mode'
+    | 'configurator_enabled'
+    | 'q'
+  >,
+): T {
+  if (filters.min_price !== undefined) query = query.gte('price', filters.min_price) as T;
+  if (filters.max_price !== undefined) query = query.lte('price', filters.max_price) as T;
+  if (filters.min_carat !== undefined) query = query.gte('carat_weight', filters.min_carat) as T;
+  if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat) as T;
+  if (filters.min_ratti !== undefined) query = query.gte('ratti_weight', filters.min_ratti) as T;
+  if (filters.max_ratti !== undefined) query = query.lte('ratti_weight', filters.max_ratti) as T;
+  if (filters.origin) query = query.eq('origin', filters.origin) as T;
+  if (filters.shape) query = query.eq('shape', filters.shape) as T;
+  if (filters.planet) query = query.eq('planet', filters.planet) as T;
+  if (filters.certification) query = query.eq('certification', filters.certification) as T;
+  if (filters.certificate_lab) query = query.eq('certificate_lab', filters.certificate_lab) as T;
+  if (filters.quality_label) query = query.eq('quality_label', filters.quality_label) as T;
+  if (filters.treatment) query = query.eq('treatment', filters.treatment) as T;
+  if (filters.price_mode) query = query.eq('price_mode', filters.price_mode) as T;
+  if (filters.configurator_enabled !== undefined) {
+    query = query.eq('configurator_enabled', filters.configurator_enabled) as T;
+  }
+  if (filters.q) {
+    const searchTerm = buildShopSearchTerm(filters.q);
+    query = query.or(
+      `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`,
+    ) as T;
+  }
+  return query;
+}
 
 /** Show all active products unless a specific availability filter or configurator mode applies. */
 export function applyShopAvailabilityFilter<T extends SortableQuery>(

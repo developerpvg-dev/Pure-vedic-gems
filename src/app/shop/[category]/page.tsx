@@ -1,29 +1,42 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { knownSubcategoryHref, resolveShopCategoryPath, staticShopCategoryParams, type ResolvedShopCategory } from '@/lib/categories/shop';
+import { resolveShopCategoryPath, staticShopCategoryParams, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
+import {
+  categoryPageMetadata,
+  fetchShopCategoryPage,
+  shopCategoryHref,
+  shopCategoryLabel,
+} from '@/lib/categories/shop-category-page';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
-import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
+import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
-import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { ShopPagination } from '@/components/shop/ShopPagination';
+import { CategoryHubHeader } from '@/components/shop/CategoryHub';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { breadcrumbJsonLd, buildMetadata, collectionPageJsonLd, faqJsonLd, itemListJsonLd } from '@/lib/utils/seo';
+import {
+  breadcrumbJsonLd,
+  buildMetadata,
+  collectionPageJsonLd,
+  faqJsonLd,
+  itemListJsonLd,
+  howToJsonLd,
+} from '@/lib/utils/seo';
 import type { SeoLandingPage } from '@/lib/constants/seo-landing-pages';
 import type { ProductCard } from '@/lib/types/product';
 import { RudrakshaCategoryGrid } from '@/components/shop/RudrakshaCategoryGrid';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { MessageCircleQuestion } from 'lucide-react';
 
 export const revalidate = 60;
 
-interface ResolvedCategory extends ResolvedShopCategory {}
-
-async function resolveCategory(slug: string): Promise<ResolvedCategory | null> {
+async function resolveCategory(slug: string): Promise<ResolvedShopCategory | null> {
   return resolveShopCategoryPath(slug);
 }
 
@@ -37,12 +50,23 @@ export async function generateMetadata({
   params: Promise<{ category: string }>;
 }): Promise<Metadata> {
   const { category } = await params;
+  const hubPage = await fetchShopCategoryPage(category);
+  if (hubPage) {
+    const meta = categoryPageMetadata(hubPage);
+    return buildMetadata({
+      title: meta.title,
+      description: meta.description,
+      path: meta.path,
+      image: meta.image,
+    });
+  }
+
   const meta = await resolveCategory(category);
   if (!meta) return {};
   return buildMetadata({
     title: meta.seoLanding?.seoTitle ?? meta.seoTitle ?? `${meta.label} | PureVedicGems`,
     description: meta.desc,
-    path: meta.canonicalPath ?? `/shop/${category}`,
+    path: meta.canonicalPath ?? shopCategoryHref(category),
   });
 }
 
@@ -53,20 +77,18 @@ const CARD_SELECT = `
   product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number
 `;
 
-function buildSearchTerm(query: string) {
-  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
-}
-
 async function CategoryProducts({
   categorySlug,
   searchParams,
   label,
   desc,
+  hubPage,
 }: {
   categorySlug: string;
   searchParams: Record<string, string>;
   label: string;
   desc: string;
+  hubPage: Awaited<ReturnType<typeof fetchShopCategoryPage>>;
 }) {
   const meta = await resolveCategory(categorySlug);
   const parsed = productFiltersSchema.safeParse(searchParams);
@@ -99,27 +121,7 @@ async function CategoryProducts({
       meta?.category ?? filters.category,
       meta?.sub_category ?? filters.sub_category,
     );
-
-    // Additional user-applied filters
-    if (filters.min_price !== undefined) query = query.gte('price', filters.min_price);
-    if (filters.max_price !== undefined) query = query.lte('price', filters.max_price);
-    if (filters.min_carat !== undefined) query = query.gte('carat_weight', filters.min_carat);
-    if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat);
-    if (filters.origin) query = query.eq('origin', filters.origin);
-    if (filters.shape) query = query.eq('shape', filters.shape);
-    if (filters.planet) query = query.eq('planet', filters.planet);
-    if (filters.certification) query = query.eq('certification', filters.certification);
-    if (filters.certificate_lab) query = query.eq('certificate_lab', filters.certificate_lab);
-    if (filters.quality_label) query = query.eq('quality_label', filters.quality_label);
-    if (filters.treatment) query = query.eq('treatment', filters.treatment);
-    if (filters.price_mode) query = query.eq('price_mode', filters.price_mode);
-    if (filters.configurator_enabled !== undefined) query = query.eq('configurator_enabled', filters.configurator_enabled);
-    if (filters.q) {
-      const searchTerm = buildSearchTerm(filters.q);
-      query = query.or(
-        `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
-      );
-    }
+    query = applyShopProductFilters(query, filters);
 
     query = applyShopListingSort(query, filters, { directorsPick: meta?.directorsPick });
 
@@ -140,24 +142,122 @@ async function CategoryProducts({
     primaryGemSlugs: meta?.seoLanding?.primaryGemSlugs,
   }, filters);
   const totalPages = Math.ceil(total / filters.per_page);
-  const basePath = meta?.canonicalPath ?? `/shop/${categorySlug}`;
+  const basePath = meta?.canonicalPath ?? shopCategoryHref(categorySlug);
+  const displayLabel = hubPage ? shopCategoryLabel(hubPage) : label;
+  const displayIntro = hubPage?.intro_text ?? desc;
+
+  const contentSections = hubPage
+    ? [
+        { id: 'about' as const, title: `About ${displayLabel}`, html: hubPage.about_html },
+        { id: 'how-to-wear' as const, title: `How To Wear ${displayLabel}`, html: hubPage.how_to_wear_html },
+        { id: 'who-should-wear' as const, title: `Who Should Wear ${displayLabel}`, html: hubPage.who_should_wear_html },
+        { id: 'benefits' as const, title: `${displayLabel} Benefits`, html: hubPage.benefits_html },
+        { id: 'types' as const, title: `${displayLabel} Types`, html: hubPage.types_html },
+        { id: 'quality-price' as const, title: `${displayLabel} Quality & Price`, html: hubPage.quality_price_html },
+        { id: 'jewellery' as const, title: `${displayLabel} Jewellery`, html: hubPage.jewellery_html },
+        { id: 'cleaning-care' as const, title: `${displayLabel} Cleaning & Care`, html: hubPage.cleaning_care_html },
+        { id: 'buyer-beware' as const, title: 'Buyer Beware', html: hubPage.buyer_beware_html },
+      ]
+    : [];
+
+  const faqs = hubPage?.faqs ?? [];
+  const howToSteps = hubPage?.how_to_wear_html
+    ? hubPage.how_to_wear_html.replace(/<[^>]+>/g, ' ').split(/\.\s+/).filter((s) => s.trim().length > 20).slice(0, 5)
+    : [];
 
   return (
     <>
-      {meta?.seoLanding ? <SeoLandingHeader landing={meta.seoLanding} total={total} /> : <CategoryHeader label={label} desc={desc} />}
+      {meta?.seoLanding ? (
+        <SeoLandingHeader landing={meta.seoLanding} total={total} />
+      ) : hubPage ? (
+        <CategoryHubHeader
+          label={displayLabel}
+          intro={displayIntro}
+          imageUrl={hubPage.hero_image_url ?? hubPage.image_url}
+          benefits={hubPage.hero_benefits ?? []}
+          sections={contentSections}
+          faqs={faqs}
+        />
+      ) : (
+        <CategoryHeader label={label} desc={desc} />
+      )}
+
       {meta?.category === 'rudraksha' && !meta?.sub_category && !meta?.catalogSubcategories?.length ? (
         <RudrakshaCategoryGrid />
       ) : null}
-      <FilterBar
-        total={total}
-        facets={facets}
-        showCategoryFilter={!meta?.category}
-        showSubcategoryFilter={Boolean(meta?.category && !meta.sub_category && !meta.seoLanding)}
-      />
-      <div className="mt-6">
-        <ProductGrid products={products} />
-      </div>
+
+      <section id="collection" className="category-hub-collection scroll-mt-40">
+        <div className="category-hub-collection__head">
+          <div>
+            <h2 className="category-hub-collection__title">{displayLabel} Online Collection</h2>
+            <p className="category-hub-collection__meta">
+              {total} certified products · Expert consultation available
+            </p>
+          </div>
+          <Link href="/consultation" className="category-hub-collection__cta hidden sm:inline-flex">
+            <MessageCircleQuestion className="category-hub-collection__cta-icon" aria-hidden />
+            Ask an Expert
+          </Link>
+        </div>
+
+        <FilterBar
+          total={total}
+          facets={facets}
+          showCategoryFilter={!meta?.category}
+          showSubcategoryFilter={false}
+        />
+        <div className="mt-6">
+          <ProductGrid products={products} />
+        </div>
+      </section>
+
       {meta?.seoLanding ? <SeoLandingFooter landing={meta.seoLanding} products={products} /> : null}
+
+      {hubPage ? (
+        <JsonLd
+          data={[
+            breadcrumbJsonLd([
+              { name: 'Home', href: '/' },
+              { name: 'Shop', href: '/shop' },
+              { name: displayLabel, href: basePath },
+            ]),
+            collectionPageJsonLd({
+              title: hubPage.seo_title ?? displayLabel,
+              description: hubPage.seo_description ?? displayIntro,
+              path: basePath,
+            }),
+            ...(faqJsonLd(faqs) ? [faqJsonLd(faqs)!] : []),
+            ...(itemListJsonLd(
+              products.slice(0, 12).map((product, index) => ({
+                name: formatProductDisplayName(product.name),
+                href: productHref(product),
+                position: index + 1,
+              })),
+            )
+              ? [
+                  itemListJsonLd(
+                    products.slice(0, 12).map((product, index) => ({
+                      name: formatProductDisplayName(product.name),
+                      href: productHref(product),
+                      position: index + 1,
+                    })),
+                  )!,
+                ]
+              : []),
+            ...(howToSteps.length >= 2
+              ? [
+                  howToJsonLd({
+                    name: `How to wear ${displayLabel}`,
+                    description: `Vedic wearing guide for ${displayLabel}`,
+                    steps: howToSteps,
+                    path: `${basePath}#how-to-wear`,
+                  }),
+                ]
+              : []),
+          ]}
+        />
+      ) : null}
+
       <ShopPagination page={filters.page} totalPages={totalPages} searchParams={searchParams} basePath={basePath} />
     </>
   );
@@ -166,12 +266,8 @@ async function CategoryProducts({
 function CategoryHeader({ label, desc }: { label: string; desc: string }) {
   return (
     <div className="mb-4 rounded-lg border border-brand-border bg-[linear-gradient(135deg,#fffdf8_0%,#fff5df_52%,#f8eee0_100%)] px-5 py-4">
-      <h1 className="font-heading text-xl text-brand-primary md:text-2xl">
-        {label}
-      </h1>
-      <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-amber-700">
-        {desc}
-      </p>
+      <h1 className="font-heading text-xl text-brand-primary md:text-2xl">{label}</h1>
+      <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-amber-700">{desc}</p>
     </div>
   );
 }
@@ -185,9 +281,7 @@ function SeoLandingHeader({ landing, total }: { landing: SeoLandingPage; total: 
           <h1 className="font-heading text-brand-primary" style={{ fontSize: 'clamp(30px, 4vw, 48px)', lineHeight: 1.05 }}>
             {landing.title}
           </h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-muted md:text-base">
-            {landing.intro}
-          </p>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-muted md:text-base">{landing.intro}</p>
         </div>
         <div className="border border-brand-border bg-brand-bg-alt p-4">
           <p className="text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Available Matches</p>
@@ -202,20 +296,20 @@ function SeoLandingHeader({ landing, total }: { landing: SeoLandingPage; total: 
           </span>
         ))}
       </div>
-      <p className="mt-4 border-l-2 border-brand-accent pl-4 text-sm leading-7 text-brand-primary">
-        {landing.advisory}
-      </p>
+      <p className="mt-4 border-l-2 border-brand-accent pl-4 text-sm leading-7 text-brand-primary">{landing.advisory}</p>
     </section>
   );
 }
 
 function SeoLandingFooter({ landing, products }: { landing: SeoLandingPage; products: ProductCard[] }) {
   const faq = faqJsonLd(landing.faqs);
-  const itemList = itemListJsonLd(products.slice(0, 12).map((product, index) => ({
-    name: product.name,
-    href: productHref(product),
-    position: index + 1,
-  })));
+  const itemList = itemListJsonLd(
+    products.slice(0, 12).map((product, index) => ({
+      name: formatProductDisplayName(product.name),
+      href: productHref(product),
+      position: index + 1,
+    })),
+  );
 
   return (
     <section className="mt-10 space-y-6">
@@ -224,7 +318,9 @@ function SeoLandingFooter({ landing, products }: { landing: SeoLandingPage; prod
           <p className="text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Supporting Options</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {landing.supportingGemNames.map((gem) => (
-              <span key={gem} className="border border-brand-border px-3 py-2 text-xs font-semibold text-brand-muted">{gem}</span>
+              <span key={gem} className="border border-brand-border px-3 py-2 text-xs font-semibold text-brand-muted">
+                {gem}
+              </span>
             ))}
           </div>
         </div>
@@ -232,7 +328,11 @@ function SeoLandingFooter({ landing, products }: { landing: SeoLandingPage; prod
           <p className="text-[11px] font-bold uppercase tracking-[2px] text-brand-accent">Related Knowledge</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {landing.relatedKnowledge.map((item) => (
-              <Link key={item.href} href={item.href} className="border border-brand-primary px-3 py-2 text-xs font-bold uppercase tracking-[1.2px] text-brand-primary transition hover:bg-brand-primary hover:text-brand-bg">
+              <Link
+                key={item.href}
+                href={item.href}
+                className="border border-brand-primary px-3 py-2 text-xs font-bold uppercase tracking-[1.2px] text-brand-primary transition hover:bg-brand-primary hover:text-brand-bg"
+              >
                 {item.label}
               </Link>
             ))}
@@ -255,17 +355,26 @@ function SeoLandingFooter({ landing, products }: { landing: SeoLandingPage; prod
         </div>
       </div>
 
-      <JsonLd data={[
-        breadcrumbJsonLd([{ name: 'Home', href: '/' }, { name: 'Shop', href: '/shop' }, { name: landing.title, href: landing.href }]),
-        collectionPageJsonLd({
-          title: landing.title,
-          description: landing.description,
-          path: landing.href,
-          items: landing.primaryGemNames.map((name, index) => ({ name, href: knownSubcategoryHref(landing.primaryGemSlugs[index] ?? '') })),
-        }),
-        ...(faq ? [faq] : []),
-        ...(itemList ? [itemList] : []),
-      ]} />
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', href: '/' },
+            { name: 'Shop', href: '/shop' },
+            { name: landing.title, href: landing.href },
+          ]),
+          collectionPageJsonLd({
+            title: landing.title,
+            description: landing.description,
+            path: landing.href,
+            items: landing.primaryGemNames.map((name, index) => ({
+              name,
+              href: shopCategoryHref(landing.primaryGemSlugs[index] ?? ''),
+            })),
+          }),
+          ...(faq ? [faq] : []),
+          ...(itemList ? [itemList] : []),
+        ]}
+      />
     </section>
   );
 }
@@ -282,58 +391,59 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   if (!meta) {
     notFound();
   }
+
+  const hubPage = await fetchShopCategoryPage(category);
   const rawParams = await searchParams;
   const sParams = Object.fromEntries(
-    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')])
+    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')]),
   ) as Record<string, string>;
-  const currentPath = `/shop/${category}`;
+  const currentPath = shopCategoryHref(category);
+
   if (meta.canonicalPath && meta.canonicalPath !== currentPath) {
     const query = new URLSearchParams(sParams).toString();
     redirect(`${meta.canonicalPath}${query ? `?${query}` : ''}`);
   }
 
+  const displayLabel = hubPage ? shopCategoryLabel(hubPage) : meta.label;
+
   return (
-    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-32.5 md:px-6 lg:px-10">
+    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-28 md:px-6 md:pt-32 lg:px-10">
       <div className="mx-auto max-w-350">
-        {/* Breadcrumb */}
-        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-brand-muted">
-          <Link href="/" className="transition hover:text-brand-accent">Home</Link>
+        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-brand-muted" aria-label="Breadcrumb">
+          <Link href="/" className="transition hover:text-brand-accent">
+            Home
+          </Link>
           <span>/</span>
-          <Link href="/shop" className="transition hover:text-brand-accent">Shop</Link>
+          <Link href="/shop" className="transition hover:text-brand-accent">
+            Shop
+          </Link>
           <span>/</span>
-          <span className="text-brand-primary">{meta.label}</span>
+          <span className="text-brand-primary">{displayLabel}</span>
         </nav>
 
-        {/* Sidebar + Grid layout */}
-        <div className="flex gap-8">
-          <ShopSidebar />
-          <div className="min-w-0 flex-1">
-            <Suspense
-              fallback={
-                <div className="space-y-6">
-                  <div className="h-12 w-full animate-pulse rounded-xl bg-brand-border" />
-                  <div className="rounded-xl border border-brand-border bg-brand-surface p-5">
-                    <div className="h-6 w-48 animate-pulse rounded bg-brand-border" />
-                    <div className="mt-2 h-4 w-80 animate-pulse rounded bg-brand-border" />
+        <Suspense
+          fallback={
+            <div className="space-y-6">
+              <div className="h-48 w-full animate-pulse rounded-2xl bg-brand-border" />
+              <div className="h-12 w-full animate-pulse rounded-xl bg-brand-border" />
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-xl border border-brand-border">
+                    <div className="relative animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                    {Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="overflow-hidden rounded-xl border border-brand-border">
-                        <div className="relative animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />
-                        <div className="space-y-2 p-3">
-                          <div className="h-3 w-2/3 animate-pulse rounded bg-brand-border" />
-                          <div className="h-5 w-1/3 animate-pulse rounded bg-brand-border" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              }
-            >
-              <CategoryProducts categorySlug={category} searchParams={sParams} label={meta.label} desc={meta.desc} />
-            </Suspense>
-          </div>
-        </div>
+                ))}
+              </div>
+            </div>
+          }
+        >
+          <CategoryProducts
+            categorySlug={category}
+            searchParams={sParams}
+            label={meta.label}
+            desc={meta.desc}
+            hubPage={hubPage}
+          />
+        </Suspense>
       </div>
     </main>
   );

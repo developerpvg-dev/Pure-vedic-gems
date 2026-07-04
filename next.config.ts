@@ -136,10 +136,40 @@ const nextConfig: NextConfig = {
       { source: '/disclaimer', destination: '/policies/legal-notice', statusCode: 301 },
       { source: '/disclaimer/', destination: '/policies/legal-notice', statusCode: 301 },
 
-      // Pitambari moved from Upratna to Navaratna (legacy /product-category/navratan/pitambari/)
-      ...['/shop/upratna/pitambari'].flatMap((source) => [
-        { source, destination: '/shop/navaratna/pitambari', statusCode: 301 },
-        { source: `${source}/`, destination: '/shop/navaratna/pitambari', statusCode: 301 },
+      // Pitambari moved from Upratna to Navaratna — flat category URL
+      ...['/shop/upratna/pitambari', '/shop/navaratna/pitambari'].flatMap((source) => [
+        { source, destination: '/shop/pitambari', statusCode: 301 },
+        { source: `${source}/`, destination: '/shop/pitambari', statusCode: 301 },
+      ]),
+
+      // Flat category URLs — redirect nested parent/child paths to /shop/{slug}
+      ...[
+        'ruby', 'pearl', 'red-coral', 'emerald', 'yellow-sapphire', 'diamond', 'blue-sapphire',
+        'hessonite', 'cats-eye', 'white-sapphire', 'pitambari', 'exclusive-gems',
+        'opal', 'turquoise', 'amethyst', 'moonstone', 'garnet', 'peridot', 'tanzanite',
+        'lapis-lazuli', 'citrine', 'aquamarine', 'blue-topaz', 'white-topaz', 'zircon',
+        'iolite', 'tourmaline', 'diopside', 'malachite', 'tiger-eye', 'kyanite', 'sunstone',
+        'hakik', 'white-coral', 'spinel', 'chrysoberyl', 'rose-quartz',
+        '1-mukhi', '2-mukhi', '3-mukhi', '4-mukhi', '5-mukhi', '6-mukhi', '7-mukhi',
+        '8-mukhi', '9-mukhi', '10-mukhi', '11-mukhi', '12-mukhi', '13-mukhi', '14-mukhi',
+        '15-mukhi', '16-mukhi', '17-mukhi', '18-mukhi', '19-mukhi', '20-mukhi', '21-mukhi',
+        'gauri-shankar', 'ganesh-rudraksha', 'nir-mukhi', 'garbh-gauri', 'sawar-rudraksha',
+        'shree-yantra', 'durga-devi', 'hanuman', 'shiv-ji', 'shivling', 'ganesha', 'lakshmi',
+        'nandi', 'saraswati', 'vishnu', 'bracelets', 'diamond-jewellery', 'malas',
+        'exclusive-rudraksha-malas', 'ready-rudraksha-jewelry-stock', 'astro-gems-stock',
+      ].flatMap((slug) => [
+        { source: `/shop/navaratna/${slug}`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/navaratna/${slug}/`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/upratna/${slug}`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/upratna/${slug}/`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/rudraksha/${slug}`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/rudraksha/${slug}/`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/idols/${slug}`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/idols/${slug}/`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/jewelry/${slug}`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/jewelry/${slug}/`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/malas/${slug}`, destination: `/shop/${slug}`, statusCode: 301 },
+        { source: `/shop/malas/${slug}/`, destination: `/shop/${slug}`, statusCode: 301 },
       ]),
 
       // Legacy yagya / pooja payment & landing pages -> migrated yagya pages.

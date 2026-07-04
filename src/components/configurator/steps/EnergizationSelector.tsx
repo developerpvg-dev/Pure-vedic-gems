@@ -20,21 +20,6 @@ import {
   type ConfiguratorOptionRules,
 } from '@/lib/utils/configurator-rules';
 
-const RASHI_OPTIONS = [
-  { value: 'mesh', label: 'Mesh (Aries)' },
-  { value: 'vrishabh', label: 'Vrishabh (Taurus)' },
-  { value: 'mithun', label: 'Mithun (Gemini)' },
-  { value: 'kark', label: 'Kark (Cancer)' },
-  { value: 'simha', label: 'Simha (Leo)' },
-  { value: 'kanya', label: 'Kanya (Virgo)' },
-  { value: 'tula', label: 'Tula (Libra)' },
-  { value: 'vrishchik', label: 'Vrishchik (Scorpio)' },
-  { value: 'dhanu', label: 'Dhanu (Sagittarius)' },
-  { value: 'makar', label: 'Makar (Capricorn)' },
-  { value: 'kumbh', label: 'Kumbh (Aquarius)' },
-  { value: 'meen', label: 'Meen (Pisces)' },
-];
-
 interface EnergizationSelectorProps {
   selected: EnergizationOption | null;
   energizationForm: EnergizationFormData | null;
@@ -136,8 +121,9 @@ export default function EnergizationSelector({
 
   const formData: EnergizationFormData = energizationForm ?? {
     dob: '',
+    birth_time: '',
+    birth_place: '',
     gotra: '',
-    rashi: '',
     record_ceremony: false,
   };
 
@@ -245,20 +231,30 @@ export default function EnergizationSelector({
             </div>
 
             <div className="pvg-energ-field">
-              <Label htmlFor="ener-rashi">Rashi</Label>
-              <select
-                id="ener-rashi"
-                value={formData.rashi}
-                onChange={(event) => updateForm('rashi', event.target.value)}
-                className="pvg-energ-select"
-              >
-                <option value="">Select rashi</option>
-                {RASHI_OPTIONS.map((rashi) => (
-                  <option key={rashi.value} value={rashi.value}>
-                    {rashi.label}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="ener-birth-time">
+                Time of birth <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="ener-birth-time"
+                type="time"
+                value={formData.birth_time}
+                onChange={(event) => updateForm('birth_time', event.target.value)}
+                className="pvg-energ-input"
+              />
+            </div>
+
+            <div className="pvg-energ-field">
+              <Label htmlFor="ener-birth-place">
+                Place of birth <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="ener-birth-place"
+                type="text"
+                placeholder="City, State"
+                value={formData.birth_place}
+                onChange={(event) => updateForm('birth_place', event.target.value)}
+                className="pvg-energ-input"
+              />
             </div>
           </div>
 

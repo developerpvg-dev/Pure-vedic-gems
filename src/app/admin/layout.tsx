@@ -31,6 +31,7 @@ const NAV_GROUPS = [
     links: [
       { href: '/admin/hero', label: 'Hero Slideshow', icon: Images },
       { href: '/admin/categories', label: 'Section Categories', icon: Gem },
+      { href: '/admin/shop-category-pages', label: 'Category Hub Pages', icon: Sparkles },
       { href: '/admin/configurations', label: 'Configurations', icon: SlidersHorizontal },
       { href: '/admin/metals', label: 'Metals & Pricing', icon: CircleDollarSign },
       { href: '/admin/designs', label: 'Jewelry Designs', icon: Palette },

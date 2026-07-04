@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Loader2, Save, ChevronRight, MessageCircle } from 'lucide-react';
+import { Loader2, Save, ChevronRight, MessageCircle, PackageCheck } from 'lucide-react';
 
 const VALID_STATUSES = [
   'pending_payment', 'placed', 'confirmed', 'processing',
@@ -16,9 +16,9 @@ const STATUS_LABELS: Record<string, string> = {
   placed: 'Placed',
   confirmed: 'Confirmed',
   processing: 'Processing',
-  design_assigned: 'Design Assigned',
-  design_in_progress: 'Design In Progress',
-  design_completed: 'Design Completed',
+  design_assigned: 'Product Crafting Started',
+  design_in_progress: 'Product In Progress',
+  design_completed: 'Product Completed',
   jewelry_making: 'Jewelry Making',
   certification: 'Certification',
   energization: 'Energization',
@@ -42,6 +42,7 @@ interface OrderActionsProps {
   currentDeliveryStatus?: string | null;
   currentProductVideoUrl?: string | null;
   currentPujaVideoUrl?: string | null;
+  currentDesignCompletedAt?: string | null;
   customerPhone: string | null;
   customerName: string | null;
   orderNumber: string;
@@ -59,6 +60,7 @@ export function OrderActions({
   currentDeliveryStatus,
   currentProductVideoUrl,
   currentPujaVideoUrl,
+  currentDesignCompletedAt,
   customerPhone,
   customerName,
   orderNumber,
@@ -73,6 +75,7 @@ export function OrderActions({
   const [deliveryStatus, setDeliveryStatus] = useState(currentDeliveryStatus ?? 'pending');
   const [productVideoUrl, setProductVideoUrl] = useState(currentProductVideoUrl ?? '');
   const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
+  const [designCompletedAt, setDesignCompletedAt] = useState(currentDesignCompletedAt ?? '');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -98,6 +101,9 @@ export function OrderActions({
         return;
       }
       if (updates.status) setStatus(updates.status as string);
+      if (updates.status === 'design_completed') {
+        setDesignCompletedAt(new Date().toISOString());
+      }
       setSuccess('Updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch {
@@ -109,6 +115,27 @@ export function OrderActions({
 
   const advanceStatus = () => {
     if (nextStatus) handleSave({ status: nextStatus });
+  };
+
+  const markProductCompleted = () => {
+    handleSave({ status: 'design_completed' });
+  };
+
+  const productCompleted =
+    !!designCompletedAt ||
+    status === 'design_completed' ||
+    ['jewelry_making', 'certification', 'energization', 'quality_check', 'shipped', 'delivered'].includes(status);
+
+  const formatCompletedDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   const whatsappMessage = encodeURIComponent(
@@ -137,6 +164,36 @@ export function OrderActions({
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
+
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-800">
+              <PackageCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              Product completed
+            </p>
+            {productCompleted ? (
+              <p className="text-sm text-indigo-900">
+                Marked complete
+                {designCompletedAt ? (
+                  <span className="mt-0.5 block text-xs font-normal text-indigo-700/90">
+                    {formatCompletedDate(designCompletedAt)}
+                  </span>
+                ) : null}
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={markProductCompleted}
+                disabled={saving || status === 'cancelled' || status === 'refunded'}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
+                Mark product completed
+              </button>
+            )}
+            <p className="mt-2 text-[11px] text-indigo-700/80">
+              Updates step 4 on the customer order tracking timeline.
+            </p>
+          </div>
 
           {/* Manual status select */}
           <div>

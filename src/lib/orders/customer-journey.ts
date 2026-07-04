@@ -5,8 +5,8 @@ export const CUSTOMER_JOURNEY_STEPS = [
   { key: 'payment', label: 'Payment', shortLabel: 'Pay' },
   { key: 'confirmed', label: 'Confirmed', shortLabel: 'OK' },
   { key: 'processing', label: 'Processing', shortLabel: 'Prep' },
-  { key: 'jewelry_design', label: 'Jewelry Design', shortLabel: 'Design' },
-  { key: 'product_video', label: 'Product Video', shortLabel: 'Product' },
+  { key: 'jewelry_design', label: 'Product Completed', shortLabel: 'Product' },
+  { key: 'product_video', label: 'Product Video', shortLabel: 'Video' },
   { key: 'puja_video', label: 'Puja Video', shortLabel: 'Puja' },
   { key: 'shipped', label: 'Shipped', shortLabel: 'Ship' },
   { key: 'delivered', label: 'Delivered', shortLabel: 'Done' },
@@ -89,11 +89,8 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
   const activeIndex = firstOpen === -1 ? CUSTOMER_JOURNEY_STEPS.length - 1 : firstOpen;
 
   let designDetail: string | null = null;
-  if (order.status === 'design_assigned') designDetail = 'With our jewelry designer';
-  if (order.status === 'design_in_progress') designDetail = 'Design in progress';
-  if (order.status === 'design_completed' || order.design_completed_at) {
-    designDetail = 'Design approved';
-  }
+  if (order.status === 'design_assigned') designDetail = 'Being crafted';
+  if (order.status === 'design_in_progress') designDetail = 'In progress';
 
   const milestones: JourneyMilestone[] = CUSTOMER_JOURNEY_STEPS.map((step, index) => ({
     key: step.key,

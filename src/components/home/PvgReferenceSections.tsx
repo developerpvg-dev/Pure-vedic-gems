@@ -8,6 +8,7 @@ import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySecti
 import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 import { TrustCardsSection } from '@/components/home/TrustCardsSection';
+import { CredentialsMarqueeBanner } from '@/components/home/CredentialsMarqueeBanner';
 import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
 
 const WHO_WE_ARE_IMG_VERSION = '20260614';
@@ -40,7 +41,7 @@ const WHO_WE_ARE_STACK_IMAGES = [
     fetchPriority: 'high' as const,
   },
 ] as const;
-const CONFIGURATOR_STEPS_IMG_VERSION = '20260611b';
+const CONFIGURATOR_STEPS_IMG_VERSION = '20260702a';
 const CERT_STACK_IMG_VERSION = '20260611';
 
 function toStyle(value: string): CSSProperties {
@@ -178,6 +179,8 @@ export function PvgReferenceSections({
 
   
   <TrustCardsSection />
+
+  <CredentialsMarqueeBanner />
 
   <section className="pvg-welcome-section" aria-label="Welcome to Pure Vedic Science and Research Centre">
     <div className="container">
@@ -635,11 +638,11 @@ export function PvgReferenceSections({
   <section className="gem-cfg-section" id="configurator" aria-labelledby="config-heading">
     <div className="container">
 
-      {/* Heading */}
-      <div className="cfg-lin-head">
-        <h2 className="cfg-lin-title" id="config-heading">From Gem to Jewellery</h2>
-        <p className="cfg-lin-sub">A story of transformation. From nature&apos;s rarest wonders to timeless treasures.</p>
-        <div className="cfg-lin-rule"></div>
+      {/* Heading — match Navaratna section typography */}
+      <div className="section-head">
+        <h2 className="section-title" id="config-heading">From Gem to Jewellery</h2>
+        <p className="navratna-subtitle">A story of transformation. From nature&apos;s rarest wonders to timeless treasures.</p>
+        <div className="section-rule-center" />
       </div>
 
       {/* 6-step horizontal flow */}
@@ -647,7 +650,7 @@ export function PvgReferenceSections({
         {([
           ['Select Gemstone',    "Handpicked from nature's finest for its rarity and energy."],
           ['Setting Type',       'Choose the setting that complements your style.'],
-          ['Metal & Size',       'Select your preferred metal and the perfect size.'],
+          ['Metal & Size',       'Select your preferred metal and size — all gold & silver is BIS hallmarked.'],
           ['Select Design',      'Bring your vision to life with a design that reflects you.'],
           ['Certification Lab',  'Tested and certified for authenticity and quality.'],
           ['Energization & Puja','Blessed with Vedic rituals for positive energy and protection.'],
@@ -689,6 +692,16 @@ export function PvgReferenceSections({
 
         <div className="cfg-lin-trust-item" role="listitem">
           <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <rect x="4" y="6" width="16" height="12" rx="2"/>
+            <path d="M8 10h8M8 14h5" strokeLinecap="round"/>
+            <circle cx="17" cy="15" r="3"/>
+            <path d="M16 15l1 1 2-2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="cfg-lin-trust-text"><strong>BIS Hallmarked</strong><span>Govt. Certified Purity</span></span>
+        </div>
+
+        <div className="cfg-lin-trust-item" role="listitem">
+          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <circle cx="12" cy="12" r="9"/>
             <path d="M12 6c0 3.3-2.7 6-6 6" strokeLinecap="round"/>
             <path d="M12 6c0 3.3 2.7 6 6 6" strokeLinecap="round"/>
@@ -718,15 +731,6 @@ export function PvgReferenceSections({
             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round"/>
           </svg>
           <span className="cfg-lin-trust-text"><strong>Secure &amp; Insured</strong><span>Worldwide Delivery</span></span>
-        </div>
-
-        <div className="cfg-lin-trust-item" role="listitem">
-          <svg className="cfg-lin-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-            <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/>
-            <line x1="12" y1="22" x2="12" y2="7"/>
-            <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
-          </svg>
-          <span className="cfg-lin-trust-text"><strong>Exquisite Packaging</strong><span>Perfect for Gifting</span></span>
         </div>
 
       </div>

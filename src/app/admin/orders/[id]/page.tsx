@@ -634,6 +634,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             currentDeliveryStatus={(o as unknown as Record<string, string | null>).delivery_status ?? null}
             currentProductVideoUrl={(o as unknown as Record<string, string | null>).product_video_url ?? null}
             currentPujaVideoUrl={(o as unknown as Record<string, string | null>).puja_video_url ?? null}
+            currentDesignCompletedAt={(o as unknown as Record<string, string | null>).design_completed_at ?? null}
             customerPhone={displayPhone}
             customerName={displayName}
             orderNumber={o.order_number}

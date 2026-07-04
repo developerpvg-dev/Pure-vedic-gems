@@ -8,6 +8,7 @@ import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { toast } from 'sonner';
 import type { Product } from '@/lib/types/product';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import {
   isProductPriceOnRequest,
@@ -30,6 +31,7 @@ function getImageSrc(product: Product): string {
 
 export function AddToCartBar({ product }: AddToCartBarProps) {
   const { addItem, isInCart, getItemQty, updateQty, getItemKey } = useCart();
+  const displayName = formatProductDisplayName(product.name);
   const inCart = isInCart(product.id);
   const cartQty = getItemQty(product.id);
   const cartItemKey = getItemKey(product.id);
@@ -71,7 +73,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       slug: product.slug,
       sku: product.sku,
       tag_number: product.tag_number ?? null,
-      name: product.name,
+      name: displayName,
       category: product.category,
       image_url: getImageSrc(product),
       price: cartPrice,
@@ -90,19 +92,19 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       category: product.category,
       source: 'product_detail',
     });
-    toast.success(`${product.name} added to cart`, {
+    toast.success(`${displayName} added to cart`, {
       description: 'View your cart to proceed to checkout.',
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
-  }, [addItem, product, isUnavailable]);
+  }, [addItem, cartPrice, displayName, isUnavailable, product]);
 
   const waLink = `https://wa.me/919871582404?text=${encodeURIComponent(
-    `Hi, I'm interested in: ${product.name} (SKU: ${product.sku}). Please share more details.`
+    `Hi, I'm interested in: ${displayName} (SKU: ${product.sku}). Please share more details.`
   )}`;
 
   const handleShare = async () => {
     if (navigator.share) {
-      await navigator.share({ title: product.name, url: window.location.href });
+      await navigator.share({ title: displayName, url: window.location.href });
     } else {
       await navigator.clipboard.writeText(window.location.href);
       toast.success('Link copied to clipboard');
@@ -208,7 +210,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
 
         <WishlistButton
           productId={product.id}
-          productName={product.name}
+          productName={displayName}
           className="h-9 w-9 shrink-0 lg:h-10 lg:w-10"
           stopPropagation={false}
         />

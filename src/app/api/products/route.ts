@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
-import { buildIlikePattern } from '@/lib/utils/search';
-import { applyShopAvailabilityFilter, applyShopListingSort } from '@/lib/shop/listing';
+import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
 import type { ProductListResponse } from '@/lib/types/product';
 import { isConfiguratorGemCatalogScope } from '@/lib/shop/configurator';
@@ -55,38 +54,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('sub_category', filters.sub_category);
     }
     query = applyQuoteOnlyListingFilter(query, filters.category, filters.sub_category);
-    if (filters.min_price !== undefined) {
-      query = query.gte('price', filters.min_price);
-    }
-    if (filters.max_price !== undefined) {
-      query = query.lte('price', filters.max_price);
-    }
-    if (filters.min_carat !== undefined) {
-      query = query.gte('carat_weight', filters.min_carat);
-    }
-    if (filters.max_carat !== undefined) {
-      query = query.lte('carat_weight', filters.max_carat);
-    }
-    if (filters.origin) {
-      query = query.eq('origin', filters.origin);
-    }
-    if (filters.planet) {
-      query = query.eq('planet', filters.planet);
-    }
-    if (filters.certification) {
-      query = query.eq('certification', filters.certification);
-    }
-    if (filters.treatment) {
-      query = query.eq('treatment', filters.treatment);
-    }
-    if (filters.q) {
-      const searchTerm = buildIlikePattern(filters.q);
-      if (searchTerm) {
-        query = query.or(
-          `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
-        );
-      }
-    }
+    query = applyShopProductFilters(query, filters);
     if (filters.featured !== undefined) {
       query = query.eq('featured', filters.featured);
     }

@@ -5,8 +5,10 @@
 
 export interface ConfigurationSnapshotEnergizationForm {
   dob: string;
+  birth_time?: string;
+  birth_place?: string;
   gotra: string;
-  rashi: string;
+  rashi?: string;
   record_ceremony?: boolean;
 }
 

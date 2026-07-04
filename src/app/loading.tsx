@@ -5,7 +5,7 @@ export default function Loading() {
         <div className="pvg-loader-orbit" aria-hidden="true">
           <span className="pvg-loader-gem" />
         </div>
-        <p className="pvg-loader-title">Preparing your page</p>
+        <p className="pvg-loader-title">Curating certified treasures</p>
         <div className="pvg-loader-line" aria-hidden="true" />
       </div>
     </main>

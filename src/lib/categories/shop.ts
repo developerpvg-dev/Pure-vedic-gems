@@ -139,6 +139,18 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, KnownGemSubcategoryMeta> = 
   malachite: { category: 'upratna', label: 'Malachite', desc: 'Malachite semi-precious gemstones and spiritual accessories.' },
   opal: { category: 'upratna', label: 'Opal', desc: 'Opal semi-precious gemstones and Venus-aligned alternatives.' },
   tanzanite: { category: 'upratna', label: 'Tanzanite', desc: 'Tanzanite semi-precious gemstones and Vedic alternatives.' },
+  'blue-topaz': { category: 'upratna', label: 'Blue Topaz', desc: 'Blue Topaz semi-precious gemstones and Vedic alternatives.' },
+  'white-topaz': { category: 'upratna', label: 'White Topaz', desc: 'White Topaz semi-precious gemstones and Vedic alternatives.' },
+  zircon: { category: 'upratna', label: 'Zircon', desc: 'Zircon semi-precious gemstones and Vedic alternatives.' },
+  iolite: { category: 'upratna', label: 'Iolite (Neeli)', desc: 'Iolite semi-precious gemstones and Vedic alternatives.' },
+  tourmaline: { category: 'upratna', label: 'Tourmaline', desc: 'Tourmaline semi-precious gemstones and Vedic alternatives.' },
+  diopside: { category: 'upratna', label: 'Diopside', desc: 'Diopside semi-precious gemstones and Vedic alternatives.' },
+  kyanite: { category: 'upratna', label: 'Kyanite', desc: 'Kyanite semi-precious gemstones and Vedic alternatives.' },
+  sunstone: { category: 'upratna', label: 'Sunstone', desc: 'Sunstone semi-precious gemstones and Vedic alternatives.' },
+  hakik: { category: 'upratna', label: 'Hakik (Agate)', desc: 'Hakik (Agate) semi-precious gemstones and spiritual accessories.' },
+  'white-coral': { category: 'upratna', label: 'White Coral', desc: 'White Coral semi-precious gemstones and Vedic alternatives.' },
+  spinel: { category: 'upratna', label: 'Spinel', desc: 'Spinel semi-precious gemstones and Vedic alternatives.' },
+  chrysoberyl: { category: 'upratna', label: 'Chrysoberyl', desc: 'Chrysoberyl semi-precious gemstones and Vedic alternatives.' },
 };
 
 export const KNOWN_CATALOG_SUBCATEGORIES: Record<string, { category: 'rudraksha' | 'idol' | 'jewelry' | 'mala'; label: string }> = {
@@ -249,6 +261,10 @@ function gemLabel(category: GemCategoryRow) {
   return category.sanskrit_name ? `${category.name} (${category.sanskrit_name})` : category.name;
 }
 
+function flatCategoryPath(slug: string) {
+  return `/shop/${slug}`;
+}
+
 function resolvedGemCategory(category: GemCategoryRow): ResolvedShopCategory {
   const parentSlug = gemParentSlug(category.type);
   return {
@@ -257,7 +273,7 @@ function resolvedGemCategory(category: GemCategoryRow): ResolvedShopCategory {
     parentSlug,
     label: gemLabel(category),
     desc: category.description || `Explore our collection of natural ${category.name} gemstones.`,
-    canonicalPath: storefrontSubcategoryHref(parentSlug, category.slug),
+    canonicalPath: flatCategoryPath(category.slug),
   };
 }
 
@@ -270,7 +286,7 @@ function resolvedProductCategory(category: ProductCategoryRow): ResolvedShopCate
     label: category.name,
     desc: category.description || `Explore our collection of ${category.name}.`,
     canonicalPath: category.parent_id
-      ? storefrontSubcategoryHref(parentSlug as StorefrontCategoryGroupSlug, category.slug)
+      ? flatCategoryPath(category.slug)
       : storefrontGroupHref(parentSlug as StorefrontCategoryGroupSlug),
   };
 }
@@ -286,7 +302,7 @@ function knownGemCategory(slug: string, expectedType?: GemCategoryRow['type']): 
     label: known.label,
     desc: known.desc,
     seoTitle: known.seoTitle,
-    canonicalPath: storefrontSubcategoryHref(parentSlug, slug),
+    canonicalPath: flatCategoryPath(slug),
   };
 }
 
@@ -300,7 +316,7 @@ function knownCatalogCategory(slug: string, expectedFamilies?: CatalogFamily[]):
     parentSlug,
     label: known.label,
     desc: `Explore our collection of ${known.label}.`,
-    canonicalPath: storefrontSubcategoryHref(parentSlug, slug),
+    canonicalPath: flatCategoryPath(slug),
   };
 }
 
@@ -340,6 +356,40 @@ async function findProductCategory(slug: string, expectedFamilies?: CatalogFamil
   return data ? resolvedProductCategory(data as ProductCategoryRow) : null;
 }
 
+/**
+ * Last-resort resolver for categories created entirely through the admin
+ * "Category Hub Pages" CMS (shop_category_pages) without a matching row in
+ * gem_categories / product_categories, and without a hardcoded entry above.
+ * This lets a brand-new category go live at /shop/{slug} purely from the CMS.
+ */
+async function findShopCategoryPageFallback(slug: string): Promise<ResolvedShopCategory | null> {
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from('shop_category_pages')
+    .select('slug, name, sanskrit_name, product_category, intro_text')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const row = data as { slug: string; name: string; sanskrit_name: string | null; product_category: string; intro_text: string | null };
+  const label = row.sanskrit_name ? `${row.name} (${row.sanskrit_name})` : row.name;
+  const parentSlug = (catalogFamilyToStorefrontGroupSlug(row.product_category as CatalogFamily) ??
+    (row.product_category === 'upratna' ? 'upratna' : 'navaratna')) as StorefrontCategoryGroupSlug;
+
+  return {
+    category: row.product_category || undefined,
+    sub_category: row.slug,
+    parentSlug,
+    label,
+    desc: row.intro_text || `Explore our collection of ${row.name}.`,
+    canonicalPath: flatCategoryPath(row.slug),
+  };
+}
+
 export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: string): Promise<ResolvedShopCategory | null> {
   if (childSlug) {
     const parentSlug = normalizeStorefrontGroupSlug(parentOrSlug);
@@ -356,9 +406,11 @@ export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: 
     }
 
     const expectedFamilies = GROUP_TO_CATALOG_FAMILIES[parentSlug];
-    return (
+    const nested = (
       await findProductCategory(childSlug, expectedFamilies)
     ) ?? knownCatalogCategory(childSlug, expectedFamilies) ?? null;
+    if (nested) return nested;
+    return null;
   }
 
   const seoLanding = getSeoLandingPageBySlug(parentOrSlug);
@@ -391,7 +443,9 @@ export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: 
     await findGemCategory(parentOrSlug)
   ) ?? (
     await findProductCategory(parentOrSlug)
-  ) ?? knownCatalogCategory(parentOrSlug) ?? null;
+  ) ?? knownCatalogCategory(parentOrSlug) ?? (
+    await findShopCategoryPageFallback(parentOrSlug)
+  ) ?? null;
 }
 
 export function staticShopCategoryParams() {

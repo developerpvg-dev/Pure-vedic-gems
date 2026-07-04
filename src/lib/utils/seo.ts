@@ -4,6 +4,7 @@ import {
   productOfferAvailability,
   productStructuredOfferPrice,
 } from '@/lib/shop/product-pricing';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export type JsonLd = Record<string, unknown>;
 
@@ -74,13 +75,14 @@ export function buildMetadata({ title, description, path = '/', image, type = 'w
 }
 
 export function productMetadata(product: Product | ProductCard, path: string): Metadata {
+  const displayName = formatProductDisplayName(product.name);
   const gemDetails = [product.carat_weight ? `${product.carat_weight} carat` : null, product.origin, product.planet]
     .filter(Boolean)
     .join(' ');
-  const title = `${product.name}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
+  const title = `${displayName}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
   const description =
     productDescription(product) ||
-    `Shop ${product.name}${gemDetails ? ` (${gemDetails})` : ''} from ${BRAND_NAME}. Certified gemstone details, pricing, and expert guidance.`;
+    `Shop ${displayName}${gemDetails ? ` (${gemDetails})` : ''} from ${BRAND_NAME}. Certified gemstone details, pricing, and expert guidance.`;
 
   return buildMetadata({ title, description, path, image: product.thumbnail_url });
 }
@@ -168,7 +170,7 @@ export function productJsonLd(product: Product | ProductCard, path: string): Jso
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.name,
+    name: formatProductDisplayName(product.name),
     sku: product.sku,
     image: product.thumbnail_url ? [absoluteUrl(product.thumbnail_url)] : undefined,
     brand: { '@type': 'Brand', name: BRAND_NAME },
