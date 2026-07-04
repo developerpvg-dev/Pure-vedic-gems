@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { ResilientImage } from '@/components/ui/ResilientImage';
 import { ShoppingBag, Eye, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { WishlistButton } from '@/components/shop/WishlistButton';
@@ -110,8 +110,9 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* ── Image ── */}
       <div className="relative overflow-hidden bg-[#f2f2f2]" style={{ paddingBottom: '115%' }}>
         <Link href={href} className="absolute inset-0 block">
-          <Image
+          <ResilientImage
             src={imageSrc}
+            fallbackSrc="/placeholder-gem.png"
             alt={displayName}
             fill
             className={`object-cover transition-transform duration-500 group-hover:scale-[1.04]${isUnavailable ? ' opacity-60' : ''}`}

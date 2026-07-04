@@ -45,28 +45,36 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
   let total = 0;
 
   if (supabase) {
-    let query = supabase
-      .from('products')
-      .select(CARD_SELECT, { count: 'exact' })
-      .eq('is_active', true);
+    try {
+      let query = supabase
+        .from('products')
+        .select(CARD_SELECT, { count: 'exact' })
+        .eq('is_active', true);
 
-    if (filters.category) query = query.eq('category', filters.category);
-    if (filters.featured) query = query.eq('featured', true);
-    if (filters.directors_pick) query = query.eq('is_directors_pick', true);
-    if (filters.product_type) query = query.eq('product_type', filters.product_type);
-    query = applyShopAvailabilityFilter(query, filters);
-    if (filters.sub_category) query = query.eq('sub_category', filters.sub_category);
-    query = applyShopProductFilters(query, filters);
+      if (filters.category) query = query.eq('category', filters.category);
+      if (filters.featured) query = query.eq('featured', true);
+      if (filters.directors_pick) query = query.eq('is_directors_pick', true);
+      if (filters.product_type) query = query.eq('product_type', filters.product_type);
+      query = applyShopAvailabilityFilter(query, filters);
+      if (filters.sub_category) query = query.eq('sub_category', filters.sub_category);
+      query = applyShopProductFilters(query, filters);
 
-    query = applyShopListingSort(query, filters);
+      query = applyShopListingSort(query, filters);
 
-    const from = (page - 1) * perPage;
-    const to = from + perPage - 1;
-    query = query.range(from, to);
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      query = query.range(from, to);
 
-    const { data, count } = await query;
-    products = (data ?? []) as ProductCard[];
-    total = count ?? 0;
+      const { data, count, error } = await query;
+      if (error) {
+        console.warn('[shop] product query failed:', error.message);
+      } else {
+        products = (data ?? []) as ProductCard[];
+        total = count ?? 0;
+      }
+    } catch (error) {
+      console.warn('[shop] product query timed out:', error);
+    }
   }
   const totalPages = Math.ceil(total / perPage);
   const facets = await getShopFilterOptions({}, filters);

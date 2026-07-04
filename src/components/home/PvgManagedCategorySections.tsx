@@ -18,7 +18,9 @@ import {
   pickRudrakshaHomeGridCategories,
   rudrakshaSubcategoryLabel,
 } from '@/lib/constants/rudraksha-subcategories';
+import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
+import { ResilientImage } from '@/components/ui/ResilientImage';
 
 export type HomeManagedCategory = {
   id: string;
@@ -171,12 +173,6 @@ const DIRECTOR_PICK_FALLBACK: HomeDirectorPick[] = [
   { id: 'diamond', name: 'Natural Diamond - Heera', slug: 'natural-diamond-heera', category: 'navaratna', sub_category: 'diamond', price: 486000, carat_weight: 1.21, origin: 'South Africa', shape: 'Round Brilliant', treatment: 'Natural', certification: 'IGI Cert.', certificate_lab: 'IGI', quality_label: 'VVS', thumbnail_url: null, images: [], display_order: 5 },
 ];
 
-const FALLBACK_BUCKETS: CategoryBucket = {
-  navaratna: NAVARATNA_FALLBACK,
-  upratna: UPRATNA_FALLBACK,
-  rudraksha: RUDRAKSHA_FALLBACK,
-};
-
 function normalizeCategory(row: Record<string, unknown>): HomeManagedCategory | null {
   const rawType = String(row.type ?? '');
   if (rawType !== 'navaratna' && rawType !== 'upratna' && rawType !== 'rudraksha') return null;
@@ -221,24 +217,39 @@ function safeDecodeForComparison(value: string) {
   }
 }
 
+function withLocalNavImages(categories: HomeManagedCategory[]) {
+  return categories.map((category) => ({
+    ...category,
+    image_url: resolveCategoryNavImage(category.slug, category.image_url),
+  }));
+}
+
 function mergeWithFallback(items: HomeManagedCategory[], fallback: HomeManagedCategory[]) {
-  if (!items.length) return fallback;
+  if (!items.length) return withLocalNavImages(fallback);
 
   const fallbackBySlug = new Map(fallback.map((item) => [item.slug, item]));
-  return items.map((item) => {
-    const fallbackItem = fallbackBySlug.get(item.slug);
-    return {
-      ...item,
-      name: item.name || fallbackItem?.name || item.slug,
-      sanskrit_name: item.sanskrit_name ?? fallbackItem?.sanskrit_name ?? null,
-      image_url: item.image_url ?? null,
-      display_locations: item.display_locations ?? fallbackItem?.display_locations ?? (item.type === 'upratna' ? UPRATNA_DEFAULT_LOCATIONS : item.description ?? null),
-      color: item.color ?? fallbackItem?.color ?? null,
-      featured_on_homepage: item.featured_on_homepage ?? fallbackItem?.featured_on_homepage ?? true,
-      is_rare: item.is_rare ?? fallbackItem?.is_rare ?? false,
-    };
-  });
+  return withLocalNavImages(
+    items.map((item) => {
+      const fallbackItem = fallbackBySlug.get(item.slug);
+      return {
+        ...item,
+        name: item.name || fallbackItem?.name || item.slug,
+        sanskrit_name: item.sanskrit_name ?? fallbackItem?.sanskrit_name ?? null,
+        image_url: item.image_url ?? fallbackItem?.image_url ?? null,
+        display_locations: item.display_locations ?? fallbackItem?.display_locations ?? (item.type === 'upratna' ? UPRATNA_DEFAULT_LOCATIONS : item.description ?? null),
+        color: item.color ?? fallbackItem?.color ?? null,
+        featured_on_homepage: item.featured_on_homepage ?? fallbackItem?.featured_on_homepage ?? true,
+        is_rare: item.is_rare ?? fallbackItem?.is_rare ?? false,
+      };
+    }),
+  );
 }
+
+const FALLBACK_BUCKETS: CategoryBucket = {
+  navaratna: withLocalNavImages(NAVARATNA_FALLBACK),
+  upratna: withLocalNavImages(UPRATNA_FALLBACK),
+  rudraksha: withLocalNavImages(RUDRAKSHA_FALLBACK),
+};
 
 function buildNavaratnaHomeCategories(items: HomeManagedCategory[]) {
   const merged = mergeWithFallback(items, NAVARATNA_FALLBACK);
@@ -261,38 +272,47 @@ function buildRudrakshaHomeCategories(items: HomeManagedCategory[]) {
 export async function getHomeManagedCategories(): Promise<CategoryBucket> {
   const supabase = createOptionalPublicClient();
   if (!supabase) return FALLBACK_BUCKETS;
-  const client = supabase;
 
-  async function runQuery(columns: string) {
-    return client
-      .from('gem_categories')
-      .select(columns)
-      .eq('is_active', true)
-      .order('type', { ascending: true })
-      .order('sort_order', { ascending: true });
+  try {
+    const client = supabase;
+
+    async function runQuery(columns: string) {
+      return client
+        .from('gem_categories')
+        .select(columns)
+        .eq('is_active', true)
+        .order('type', { ascending: true })
+        .order('sort_order', { ascending: true });
+    }
+
+    let { data, error } = await runQuery(CATEGORY_COLUMNS_WITH_LOCATIONS);
+
+    if (error && 'code' in error && error.code === 'PGRST204') {
+      const retry = await runQuery(CATEGORY_COLUMNS_BASE);
+      data = retry.data;
+      error = retry.error;
+    }
+
+    if (error || !data) {
+      console.warn('[home] gem_categories unavailable, using local fallbacks:', error?.message);
+      return FALLBACK_BUCKETS;
+    }
+
+    const grouped: CategoryBucket = { navaratna: [], upratna: [], rudraksha: [] };
+    for (const row of data as unknown as Record<string, unknown>[]) {
+      const category = normalizeCategory(row);
+      if (category) grouped[category.type].push(category);
+    }
+
+    return {
+      navaratna: buildNavaratnaHomeCategories(grouped.navaratna),
+      upratna: mergeWithFallback(grouped.upratna, UPRATNA_FALLBACK),
+      rudraksha: buildRudrakshaHomeCategories(grouped.rudraksha),
+    };
+  } catch (error) {
+    console.warn('[home] gem_categories fetch failed, using local fallbacks:', error);
+    return FALLBACK_BUCKETS;
   }
-
-  let { data, error } = await runQuery(CATEGORY_COLUMNS_WITH_LOCATIONS);
-
-  if (error && 'code' in error && error.code === 'PGRST204') {
-    const retry = await runQuery(CATEGORY_COLUMNS_BASE);
-    data = retry.data;
-    error = retry.error;
-  }
-
-  if (error || !data) return FALLBACK_BUCKETS;
-
-  const grouped: CategoryBucket = { navaratna: [], upratna: [], rudraksha: [] };
-  for (const row of data as unknown as Record<string, unknown>[]) {
-    const category = normalizeCategory(row);
-    if (category) grouped[category.type].push(category);
-  }
-
-  return {
-    navaratna: buildNavaratnaHomeCategories(grouped.navaratna),
-    upratna: mergeWithFallback(grouped.upratna, UPRATNA_FALLBACK),
-    rudraksha: buildRudrakshaHomeCategories(grouped.rudraksha),
-  };
 }
 
 function normalizeCatalogCategory(row: Record<string, unknown>): HomeCatalogCategory | null {
@@ -353,52 +373,57 @@ function ensureDirectorPickCount(items: HomeDirectorPick[]) {
 }
 
 export async function getHomeSectionCatalog(): Promise<HomeSectionCatalog> {
-  const supabase = createOptionalPublicClient();
-  if (!supabase) {
-    return {
-      rudrakshaFeatures: RUDRAKSHA_FEATURE_FALLBACK,
-      exploreIdols: EXPLORE_IDOL_FALLBACK,
-      exploreJewelry: EXPLORE_JEWELRY_FALLBACK,
-      directorPicks: DIRECTOR_PICK_FALLBACK,
-    };
-  }
-
-  const db = supabase as unknown as UntypedDb;
-
-  const catalogColumns = 'id, slug, name, family, description, image_url, hover_image_url, homepage_subtitle, homepage_badge, show_on_homepage, homepage_slot, cta_label, accent_color, canonical_path, sort_order, is_active';
-  const productColumns = 'id, name, slug, category, sub_category, price, carat_weight, origin, shape, treatment, certification, certificate_lab, quality_label, thumbnail_url, images, display_order';
-
-  const [catalogResult, picksResult] = await Promise.all([
-    db
-      .from('product_categories')
-      .select(catalogColumns)
-      .eq('is_active', true)
-      .eq('show_on_homepage', true)
-      .order('sort_order', { ascending: true }),
-    db
-      .from('products')
-      .select(productColumns)
-      .eq('is_active', true)
-      .eq('is_directors_pick', true)
-      .order('display_order', { ascending: true })
-      .limit(5),
-  ]);
-
-  const categories = catalogResult.error ? [] : ((catalogResult.data ?? []) as Record<string, unknown>[])
-    .map(normalizeCatalogCategory)
-    .filter((item): item is HomeCatalogCategory => Boolean(item));
-
-  const rudrakshaFeatures = categories.filter((category) => category.homepage_slot === 'rudraksha_feature');
-  const exploreIdols = categories.filter((category) => category.homepage_slot === 'explore_idol' || category.family === 'idol');
-  const exploreJewelry = categories.filter((category) => category.homepage_slot === 'explore_jewelry' || category.family === 'jewelry' || category.family === 'mala');
-  const directorPicks = picksResult.error ? [] : ((picksResult.data ?? []) as Record<string, unknown>[]).map(normalizeDirectorPick);
-
-  return {
-    rudrakshaFeatures: rudrakshaFeatures.length ? rudrakshaFeatures : RUDRAKSHA_FEATURE_FALLBACK,
-    exploreIdols: exploreIdols.length ? exploreIdols : EXPLORE_IDOL_FALLBACK,
-    exploreJewelry: exploreJewelry.length ? exploreJewelry : EXPLORE_JEWELRY_FALLBACK,
-    directorPicks: ensureDirectorPickCount(directorPicks),
+  const emptyCatalog: HomeSectionCatalog = {
+    rudrakshaFeatures: RUDRAKSHA_FEATURE_FALLBACK,
+    exploreIdols: EXPLORE_IDOL_FALLBACK,
+    exploreJewelry: EXPLORE_JEWELRY_FALLBACK,
+    directorPicks: DIRECTOR_PICK_FALLBACK,
   };
+
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return emptyCatalog;
+
+  try {
+    const db = supabase as unknown as UntypedDb;
+
+    const catalogColumns = 'id, slug, name, family, description, image_url, hover_image_url, homepage_subtitle, homepage_badge, show_on_homepage, homepage_slot, cta_label, accent_color, canonical_path, sort_order, is_active';
+    const productColumns = 'id, name, slug, category, sub_category, price, carat_weight, origin, shape, treatment, certification, certificate_lab, quality_label, thumbnail_url, images, display_order';
+
+    const [catalogResult, picksResult] = await Promise.all([
+      db
+        .from('product_categories')
+        .select(catalogColumns)
+        .eq('is_active', true)
+        .eq('show_on_homepage', true)
+        .order('sort_order', { ascending: true }),
+      db
+        .from('products')
+        .select(productColumns)
+        .eq('is_active', true)
+        .eq('is_directors_pick', true)
+        .order('display_order', { ascending: true })
+        .limit(5),
+    ]);
+
+    const categories = catalogResult.error ? [] : ((catalogResult.data ?? []) as Record<string, unknown>[])
+      .map(normalizeCatalogCategory)
+      .filter((item): item is HomeCatalogCategory => Boolean(item));
+
+    const rudrakshaFeatures = categories.filter((category) => category.homepage_slot === 'rudraksha_feature');
+    const exploreIdols = categories.filter((category) => category.homepage_slot === 'explore_idol' || category.family === 'idol');
+    const exploreJewelry = categories.filter((category) => category.homepage_slot === 'explore_jewelry' || category.family === 'jewelry' || category.family === 'mala');
+    const directorPicks = picksResult.error ? [] : ((picksResult.data ?? []) as Record<string, unknown>[]).map(normalizeDirectorPick);
+
+    return {
+      rudrakshaFeatures: rudrakshaFeatures.length ? rudrakshaFeatures : RUDRAKSHA_FEATURE_FALLBACK,
+      exploreIdols: exploreIdols.length ? exploreIdols : EXPLORE_IDOL_FALLBACK,
+      exploreJewelry: exploreJewelry.length ? exploreJewelry : EXPLORE_JEWELRY_FALLBACK,
+      directorPicks: ensureDirectorPickCount(directorPicks),
+    };
+  } catch (error) {
+    console.warn('[home] section catalog fetch failed, using local fallbacks:', error);
+    return emptyCatalog;
+  }
 }
 
 function categoryLabel(category: HomeManagedCategory) {
@@ -414,13 +439,34 @@ function fallbackGemBackground(category: HomeManagedCategory) {
   return `radial-gradient(circle at 35% 30%, ${color}, #6B4800 55%, #2A1800 100%)`;
 }
 
-function layeredImage(mainUrl: string | null, hoverUrl: string | null, alt: string, fallbackBackground: string, className = '') {
+function layeredImage(
+  mainUrl: string | null,
+  hoverUrl: string | null,
+  alt: string,
+  fallbackBackground: string,
+  className = '',
+  fallbackImageUrl: string | null = null,
+) {
   const mainClassName = ['pvg-main-img', hoverUrl ? 'has-hover-image' : '', className].filter(Boolean).join(' ');
   const hoverClassName = ['pvg-hover-img', className].filter(Boolean).join(' ');
+  const localFallback = fallbackImageUrl ?? '';
   return (
     <>
       {mainUrl ? (
-        <Image src={mainUrl} alt={alt} width={400} height={400} className={mainClassName} loading="lazy" sizes="(max-width: 768px) 120px, 180px" />
+        localFallback ? (
+          <ResilientImage
+            src={mainUrl}
+            fallbackSrc={localFallback}
+            alt={alt}
+            width={400}
+            height={400}
+            className={mainClassName}
+            loading="lazy"
+            sizes="(max-width: 768px) 120px, 180px"
+          />
+        ) : (
+          <Image src={mainUrl} alt={alt} width={400} height={400} className={mainClassName} loading="lazy" sizes="(max-width: 768px) 120px, 180px" />
+        )
       ) : (
         <span className={mainClassName} role="img" aria-label={alt} style={{ background: fallbackBackground }} />
       )}
@@ -613,7 +659,14 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
               {row.map((category) => (
                 <Link key={category.slug} href={managedCategoryHref(category)} className="gem-card-new">
                   <div className="gem-img-wrap">
-                    {layeredImage(category.image_url, category.hover_image_url, category.name, fallbackGemBackground(category))}
+                    {layeredImage(
+                      category.image_url,
+                      category.hover_image_url,
+                      category.name,
+                      fallbackGemBackground(category),
+                      '',
+                      resolveCategoryNavImage(category.slug, null),
+                    )}
                   </div>
                   <div className="gem-name-primary">{categoryLabel(category)}</div>
                   <div className="gem-origin">{locationLabel(category)}</div>
@@ -626,7 +679,14 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
             {visibleCategories.map((category) => (
               <Link key={category.slug} href={managedCategoryHref(category)} className="gem-card-new">
                 <div className="gem-img-wrap">
-                  {layeredImage(category.image_url, category.hover_image_url, category.name, fallbackGemBackground(category))}
+                  {layeredImage(
+                    category.image_url,
+                    category.hover_image_url,
+                    category.name,
+                    fallbackGemBackground(category),
+                    '',
+                    resolveCategoryNavImage(category.slug, null),
+                  )}
                 </div>
                 <div className="gem-name-primary">{categoryLabel(category)}</div>
                 <div className="gem-origin">{locationLabel(category)}</div>
@@ -684,7 +744,14 @@ export function RudrakshaHomeSection({
                   return (
                     <Link key={category.slug} href={managedCategoryHref(category)} className="rudra-item-card">
                       <div className="rudra-circ-wrap">
-                        {layeredImage(imageUrl, category.hover_image_url, `${category.name} Rudraksha`, fallbackGemBackground(category), 'rudra-item-img')}
+                        {layeredImage(
+                          imageUrl,
+                          category.hover_image_url,
+                          `${category.name} Rudraksha`,
+                          fallbackGemBackground(category),
+                          'rudra-item-img',
+                          resolveCategoryNavImage(category.slug, null) ?? rudrakshaMukhiImage(category.slug),
+                        )}
                       </div>
                       <div className="rudra-item-name">{category.name}</div>
                       {isRare ? <div className="rudra-item-meta">Rare</div> : null}
@@ -825,7 +892,8 @@ export function ExploreByCategorySection({
 }
 
 function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
-  const imageUrl = product.thumbnail_url ?? product.images[0] ?? directorFallbackImage(product);
+  const fallbackImage = directorFallbackImage(product);
+  const imageUrl = product.thumbnail_url ?? product.images[0] ?? fallbackImage;
   const reviews = directorReviewCount(product);
   const comparePrice = directorComparePrice(product.price);
   const discount = directorDiscount(product.price);
@@ -833,7 +901,15 @@ function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
     <article className="director-pick-card">
       <Link href={productHref(product)} className="director-pick-media" style={!imageUrl ? { background: 'linear-gradient(145deg, #faf7ef, #efe3cf)' } : undefined}>
         {imageUrl ? (
-          <Image fill src={imageUrl} alt={product.name} loading="lazy" sizes="(max-width: 768px) 92vw, (max-width: 1200px) 42vw, 250px" style={{ objectFit: 'cover', boxSizing: 'border-box' }} />
+          <ResilientImage
+            fill
+            src={imageUrl}
+            fallbackSrc={fallbackImage}
+            alt={product.name}
+            loading="lazy"
+            sizes="(max-width: 768px) 92vw, (max-width: 1200px) 42vw, 250px"
+            style={{ objectFit: 'cover', boxSizing: 'border-box' }}
+          />
         ) : (
           <div className="director-pick-gem-fallback" />
         )}
