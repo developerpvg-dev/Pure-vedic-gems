@@ -813,10 +813,12 @@ function buildIdolContent(slug: string, label: string): RichGemSections | null {
     hero_benefits: toHeroBenefits(meta.heroBenefits),
     seo_description: `Buy ${label} online at ${BRAND}. Authentic ${meta.materials.slice(0, 2).join(' & ')} murti, traditional placement guidance, puja significance, and worldwide delivery for your home temple.`,
     meta_keywords: idolKeywords(slug, label, meta.deity),
-    about_html: p(
-      `${meta.deity} — ${meta.significance}`,
-      `${BRAND} offers ${label} in premium materials for home mandirs, office altars, and gifting. Our heritage in sacred items dates to 1937.`,
-    ),
+    about_html:
+      p(
+        `${meta.deity} — ${meta.significance}`,
+        `${BRAND} offers ${label} in premium materials for home mandirs, office altars, and gifting. Our heritage in sacred items dates to 1937.`,
+        `Anyone establishing a home temple, upgrading an altar, or seeking a meaningful spiritual gift will benefit from ${label}. No astrological restriction — devotion and cleanliness matter most.`,
+      ),
     benefits_html:
       h3('Worship Significance') +
       ul([
@@ -825,9 +827,6 @@ function buildIdolContent(slug: string, label: string): RichGemSections | null {
         'Supports festival observances and life-cycle samskaras',
         'Creates a sanctified space for meditation and children’s cultural education',
       ]),
-    who_should_wear_html: p(
-      `Anyone establishing a home temple, upgrading an altar, or seeking a meaningful spiritual gift will benefit from ${label}. No astrological restriction — devotion and cleanliness matter most.`,
-    ),
     how_to_wear_html:
       h3('Placement & Installation') +
       ul([
@@ -835,18 +834,7 @@ function buildIdolContent(slug: string, label: string): RichGemSections | null {
         'Install on Pratishtha day or during auspicious muhurta when possible',
         'Perform simple pran pratishtha with mantra, diya, and offerings',
         meta.worshipNotes,
-      ]),
-    types_html:
-      h3('Materials Available') +
-      ul(meta.materials.map((m) => `${m} — durable, traditional finish suitable for abhishek or dry worship`)),
-    quality_price_html: p(
-      `Price depends on material, weight, detailing, and finish (hand-polished vs machine). Panchdhatu and silver command premium; brass offers excellent daily puja value.`,
-      `${BRAND} lists dimensions and weight for informed comparison.`,
-    ),
-    jewellery_html: p(
-      `Smaller ${label} idols suit car dashboards and travel altars. Larger murtis anchor main home temples. Pair with matching puja thali, diya, and bell from our collection.`,
-    ),
-    cleaning_care_html:
+      ]) +
       h3('Care & Cleaning') +
       ul([
         'Brass/Panchdhatu: tamarind or lemon-salt paste, rinse, dry immediately',
@@ -854,6 +842,16 @@ function buildIdolContent(slug: string, label: string): RichGemSections | null {
         'Apply sandalwood or kumkum tilak after cleaning — never leave wet on metal',
         'Keep altar dust-free; incense residue wipes with soft dry cloth',
       ]),
+    types_html:
+      h3('Materials Available') +
+      ul(meta.materials.map((m) => `${m} — durable, traditional finish suitable for abhishek or dry worship`)) +
+      p(
+        `Smaller ${label} idols suit car dashboards and travel altars. Larger murtis anchor main home temples. Pair with matching puja thali, diya, and bell from our collection.`,
+      ),
+    quality_price_html: p(
+      `Price depends on material, weight, detailing, and finish (hand-polished vs machine). Panchdhatu and silver command premium; brass offers excellent daily puja value.`,
+      `${BRAND} lists dimensions and weight for informed comparison.`,
+    ),
     buyer_beware_html: p(
       'Avoid idols with sharp unfinished edges, incorrect iconography, or hollow thin casting that dents easily.',
       `${BRAND} inspects every murti for proportional accuracy and stable base before dispatch.`,
@@ -928,12 +926,14 @@ function buildJewelryContent(slug: string, label: string): RichGemSections {
         'Wear on the advised weekday morning after sunrise for traditional activation',
         `${BRAND} sends a wearing guide tailored to your purchased piece`,
       ]),
-    types_html: h3('Styles in This Collection') + ul(meta.styles),
+    types_html:
+      h3('Styles in This Collection') +
+      ul(meta.styles) +
+      p(
+        `Use our online configurator to design ${label} with your chosen stones, metal (gold, silver, Panchdhatu), and engraving. Ready-stock items ship faster for urgent remedies.`,
+      ),
     quality_price_html: p(
       `Pricing reflects metal purity, stone carat, craftsmanship, and certification level. ${BRAND} shows live pricing in our configurator — no hidden treatments or glass-filled stones.`,
-    ),
-    jewellery_html: p(
-      `Use our online configurator to design ${label} with your chosen stones, metal (gold, silver, Panchdhatu), and engraving. Ready-stock items ship faster for urgent remedies.`,
     ),
     cleaning_care_html: p(
       'Clean gemstones with lukewarm water and mild soap; dry thoroughly. Store separately to prevent scratches. Remove before gym, swimming, and harsh chemical exposure.',
@@ -1006,9 +1006,6 @@ function buildMalaContent(slug: string, label: string): RichGemSections {
     types_html: h3('Mala Types') + ul(meta.styles),
     quality_price_html: p(
       'Mala price depends on mukhi count, bead size, origin, knotting quality, and spacers (silver/gold). Larger Nepal beads in rare mukhis create collector-grade malas.',
-    ),
-    jewellery_html: p(
-      'Malas double as necklaces for daily wear. Exclusive designs with precious metal spacers are available in our jewellery collection.',
     ),
     cleaning_care_html: p(
       `Wipe beads after japa; oil monthly. Restring if thread weakens — ${BRAND} offers restringing guidance. Keep mala off the floor and away from footwear.`,

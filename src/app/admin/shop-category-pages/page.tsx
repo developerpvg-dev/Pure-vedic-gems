@@ -15,7 +15,8 @@ import {
   Upload,
   Wand2,
 } from 'lucide-react';
-import { SHOP_CATEGORY_SECTIONS, type ShopCategoryPageContent } from '@/lib/types/shop-category-page';
+import { getCategoryHubSectionDefs } from '@/lib/categories/shop-category-hub-sections';
+import type { ShopCategoryPageContent } from '@/lib/types/shop-category-page';
 
 const RichTextEditor = dynamic(
   () => import('@/components/admin/RichTextEditor').then((m) => m.RichTextEditor),
@@ -547,13 +548,15 @@ export default function ShopCategoryPagesAdmin() {
                 />
               </label>
 
-              {SHOP_CATEGORY_SECTIONS.filter((s) => s.field !== 'faqs').map((section) => (
+              {getCategoryHubSectionDefs(form.product_category ?? 'gemstone').map((section) => (
                 <div key={section.key}>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">{section.label}</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    {section.title(form.name || 'Category')}
+                  </label>
                   <RichTextEditor
                     value={String(form[section.field] ?? '')}
                     onChange={(html) => updateField(section.field, html)}
-                    placeholder={`Write ${section.label} content...`}
+                    placeholder={`Write ${section.title(form.name || 'Category')} content...`}
                   />
                 </div>
               ))}

@@ -96,7 +96,7 @@ function CategoryHubNav({
               aria-controls={`panel-${section.id}`}
               className={`category-hub-nav__link ${activeTab === section.id ? 'category-hub-nav__link--active' : ''}`}
             >
-              {TAB_LABELS[section.id] ?? section.title}
+              {section.title || TAB_LABELS[section.id]}
             </button>
           ))}
           {hasFaqs ? (

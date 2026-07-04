@@ -1,4 +1,8 @@
 import type { ProductFilters } from '@/lib/types/product';
+import {
+  isCanonicalQualityTier,
+  qualityTierFilterLabels,
+} from '@/lib/utils/quality-tier';
 
 type SortableQuery = {
   eq(column: string, value: unknown): SortableQuery;
@@ -47,7 +51,14 @@ export function applyShopProductFilters<T extends SortableQuery>(
   if (filters.planet) query = query.eq('planet', filters.planet) as T;
   if (filters.certification) query = query.eq('certification', filters.certification) as T;
   if (filters.certificate_lab) query = query.eq('certificate_lab', filters.certificate_lab) as T;
-  if (filters.quality_label) query = query.eq('quality_label', filters.quality_label) as T;
+  if (filters.quality_label) {
+    if (isCanonicalQualityTier(filters.quality_label)) {
+      const labels = qualityTierFilterLabels(filters.quality_label);
+      query = query.or(labels.map((label) => `quality_label.eq.${label}`).join(',')) as T;
+    } else {
+      query = query.eq('quality_label', filters.quality_label) as T;
+    }
+  }
   if (filters.treatment) query = query.eq('treatment', filters.treatment) as T;
   if (filters.price_mode) query = query.eq('price_mode', filters.price_mode) as T;
   if (filters.configurator_enabled !== undefined) {

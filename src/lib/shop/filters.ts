@@ -7,6 +7,7 @@ import {
   QUALITY_TIERS,
 } from '@/lib/constants/product-taxonomy';
 import type { ProductFilters } from '@/lib/types/product';
+import { resolveQualityTier, type QualityTier } from '@/lib/utils/quality-tier';
 
 export type ShopFilterOption = {
   value: string;
@@ -57,6 +58,7 @@ type FacetRow = {
   certificate_lab: string | null;
   treatment: string | null;
   quality_label: string | null;
+  name: string | null;
   price_mode: string | null;
   configurator_enabled: boolean | null;
 };
@@ -106,10 +108,6 @@ const RATTI_RANGE_PRESETS = [
   { label: '7 - 10 ratti', value: '7-10', min: 7, max: 10 },
   { label: '10 ratti+', value: '10-', min: 10, max: null },
 ];
-
-const QUALITY_TIER_LOOKUP = new Map(
-  QUALITY_TIERS.map((tier) => [tier.toLowerCase(), tier]),
-);
 
 function buildSearchTerm(query: string) {
   return `%${query.replace(/[%,]/g, ' ').trim()}%`;
@@ -166,13 +164,11 @@ function configuratorOptions(rows: FacetRow[]) {
 }
 
 function qualityTierOptions(rows: FacetRow[]) {
-  const counts = new Map<string, number>();
+  const counts = new Map<QualityTier, number>();
   for (const row of rows) {
-    const raw = row.quality_label?.trim();
-    if (!raw) continue;
-    const canonical = QUALITY_TIER_LOOKUP.get(raw.toLowerCase());
-    if (!canonical) continue;
-    counts.set(canonical, (counts.get(canonical) ?? 0) + 1);
+    const tier = resolveQualityTier(row.quality_label, row.name);
+    if (!tier) continue;
+    counts.set(tier, (counts.get(tier) ?? 0) + 1);
   }
   return QUALITY_TIERS
     .filter((tier) => counts.has(tier))
@@ -184,7 +180,7 @@ function otherQualityLabelOptions(rows: FacetRow[]) {
   for (const row of rows) {
     const raw = row.quality_label?.trim();
     if (!raw) continue;
-    if (QUALITY_TIER_LOOKUP.has(raw.toLowerCase())) continue;
+    if (resolveQualityTier(raw, row.name)) continue;
     counts.set(raw, (counts.get(raw) ?? 0) + 1);
   }
   return sortedOptions(counts);
@@ -199,7 +195,7 @@ export async function getShopFilterOptions(
 
   let query = supabase
     .from('products')
-    .select('category, sub_category, product_type, availability_status, price, carat_weight, ratti_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, price_mode, configurator_enabled')
+    .select('category, sub_category, product_type, availability_status, price, carat_weight, ratti_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, name, price_mode, configurator_enabled')
     .eq('is_active', true)
     .limit(2000);
 

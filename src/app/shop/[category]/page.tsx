@@ -4,6 +4,10 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { resolveShopCategoryPath, staticShopCategoryParams, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
 import {
+  buildCategoryHubSections,
+  getHowToStructuredDataMeta,
+} from '@/lib/categories/shop-category-hub-sections';
+import {
   categoryPageMetadata,
   fetchShopCategoryPage,
   shopCategoryHref,
@@ -146,19 +150,7 @@ async function CategoryProducts({
   const displayLabel = hubPage ? shopCategoryLabel(hubPage) : label;
   const displayIntro = hubPage?.intro_text ?? desc;
 
-  const contentSections = hubPage
-    ? [
-        { id: 'about' as const, title: `About ${displayLabel}`, html: hubPage.about_html },
-        { id: 'how-to-wear' as const, title: `How To Wear ${displayLabel}`, html: hubPage.how_to_wear_html },
-        { id: 'who-should-wear' as const, title: `Who Should Wear ${displayLabel}`, html: hubPage.who_should_wear_html },
-        { id: 'benefits' as const, title: `${displayLabel} Benefits`, html: hubPage.benefits_html },
-        { id: 'types' as const, title: `${displayLabel} Types`, html: hubPage.types_html },
-        { id: 'quality-price' as const, title: `${displayLabel} Quality & Price`, html: hubPage.quality_price_html },
-        { id: 'jewellery' as const, title: `${displayLabel} Jewellery`, html: hubPage.jewellery_html },
-        { id: 'cleaning-care' as const, title: `${displayLabel} Cleaning & Care`, html: hubPage.cleaning_care_html },
-        { id: 'buyer-beware' as const, title: 'Buyer Beware', html: hubPage.buyer_beware_html },
-      ]
-    : [];
+  const contentSections = hubPage ? buildCategoryHubSections(hubPage, displayLabel) : [];
 
   const faqs = hubPage?.faqs ?? [];
   const howToSteps = hubPage?.how_to_wear_html
@@ -244,11 +236,10 @@ async function CategoryProducts({
                   )!,
                 ]
               : []),
-            ...(howToSteps.length >= 2
+            ...(howToSteps.length >= 2 && hubPage
               ? [
                   howToJsonLd({
-                    name: `How to wear ${displayLabel}`,
-                    description: `Vedic wearing guide for ${displayLabel}`,
+                    ...getHowToStructuredDataMeta(hubPage, displayLabel),
                     steps: howToSteps,
                     path: `${basePath}#how-to-wear`,
                   }),

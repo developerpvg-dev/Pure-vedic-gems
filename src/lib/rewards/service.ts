@@ -31,8 +31,8 @@ export interface RewardSettingsUpdate {
 
 const FALLBACK_SETTINGS: RewardSettings = {
   id: 'default',
-  is_active: true,
-  earn_points_per_order: 500,
+  is_active: false,
+  earn_points_per_order: 0,
   point_value_inr: 1,
   min_redeem_points: 1,
   max_redeem_points_per_order: 5000,
