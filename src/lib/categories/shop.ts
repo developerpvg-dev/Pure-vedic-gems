@@ -397,18 +397,18 @@ export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: 
 
     const expectedGemType = GROUP_TO_GEM_TYPE[parentSlug];
     if (expectedGemType) {
-      const gemCategory = (
+      const gemCategory = knownGemCategory(childSlug, expectedGemType) ?? (
         await findGemCategory(childSlug, expectedGemType)
-      ) ?? knownGemCategory(childSlug, expectedGemType) ?? null;
+      ) ?? null;
       if (gemCategory) return gemCategory;
 
       if (!GROUP_TO_CATALOG_FAMILIES[parentSlug]) return null;
     }
 
     const expectedFamilies = GROUP_TO_CATALOG_FAMILIES[parentSlug];
-    const nested = (
+    const nested = knownCatalogCategory(childSlug, expectedFamilies) ?? (
       await findProductCategory(childSlug, expectedFamilies)
-    ) ?? knownCatalogCategory(childSlug, expectedFamilies) ?? null;
+    ) ?? null;
     if (nested) return nested;
     return null;
   }
@@ -438,14 +438,13 @@ export async function resolveShopCategoryPath(parentOrSlug: string, childSlug?: 
   }
 
   return (
-    knownGemCategory(parentOrSlug)
-  ) ?? (
-    await findGemCategory(parentOrSlug)
-  ) ?? (
-    await findProductCategory(parentOrSlug)
-  ) ?? knownCatalogCategory(parentOrSlug) ?? (
-    await findShopCategoryPageFallback(parentOrSlug)
-  ) ?? null;
+    knownGemCategory(parentOrSlug) ??
+    knownCatalogCategory(parentOrSlug) ??
+    (await findGemCategory(parentOrSlug)) ??
+    (await findProductCategory(parentOrSlug)) ??
+    (await findShopCategoryPageFallback(parentOrSlug)) ??
+    null
+  );
 }
 
 export function staticShopCategoryParams() {

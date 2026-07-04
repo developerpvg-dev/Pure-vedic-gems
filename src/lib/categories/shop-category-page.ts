@@ -49,14 +49,18 @@ export async function fetchShopCategoryPage(slug: string): Promise<ShopCategoryP
   let dbRow: ShopCategoryPageContent | null = null;
 
   if (supabase) {
-    const { data } = await supabase
-      .from('shop_category_pages')
-      .select('*')
-      .eq('slug', slug)
-      .eq('is_active', true)
-      .maybeSingle();
+    try {
+      const { data } = await supabase
+        .from('shop_category_pages')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .maybeSingle();
 
-    if (data) dbRow = normalizeRow(data as ShopCategoryPageRow);
+      if (data) dbRow = normalizeRow(data as ShopCategoryPageRow);
+    } catch (error) {
+      console.warn(`[shop_category_pages/${slug}] unavailable, using defaults:`, error instanceof Error ? error.message : error);
+    }
   }
 
   return mergeWithDefaults(slug, dbRow);

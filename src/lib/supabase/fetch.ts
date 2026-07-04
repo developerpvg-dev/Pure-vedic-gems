@@ -1,8 +1,11 @@
+const IS_PRODUCTION_BUILD = process.env.NEXT_PHASE === 'phase-production-build';
+
 const DEFAULT_TIMEOUT_MS =
   Number(process.env.SUPABASE_FETCH_TIMEOUT_MS) ||
-  (process.env.NODE_ENV === 'development' ? 8_000 : 20_000);
+  (IS_PRODUCTION_BUILD ? 5_000 : process.env.NODE_ENV === 'development' ? 8_000 : 20_000);
 
 const RETRY_DELAY_MS = 400;
+const MAX_ATTEMPTS = IS_PRODUCTION_BUILD ? 1 : 2;
 
 function isAbortError(error: unknown) {
   return error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'));
@@ -13,7 +16,7 @@ function isAbortError(error: unknown) {
  */
 export function createSupabaseFetch(timeoutMs = DEFAULT_TIMEOUT_MS): typeof fetch {
   return async (input, init) => {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { resolveShopCategoryPath, staticShopCategoryParams, type ResolvedShopCategory } from '@/lib/categories/shop';
+import { resolveShopCategoryPath, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
 import {
   buildCategoryHubSections,
@@ -14,7 +14,7 @@ import {
   shopCategoryLabel,
 } from '@/lib/categories/shop-category-page';
 import { productFiltersSchema } from '@/lib/validators/product';
-import { getShopFilterOptions } from '@/lib/shop/filters';
+import { emptyShopFilterOptions, getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
@@ -42,10 +42,6 @@ export const revalidate = 60;
 
 async function resolveCategory(slug: string): Promise<ResolvedShopCategory | null> {
   return resolveShopCategoryPath(slug);
-}
-
-export async function generateStaticParams() {
-  return staticShopCategoryParams().map((category) => ({ category }));
 }
 
 export async function generateMetadata({
@@ -103,48 +99,57 @@ async function CategoryProducts({
   let total = 0;
 
   if (supabase) {
-    let query = supabase
-      .from('products')
-      .select(CARD_SELECT, { count: 'exact' })
-      .eq('is_active', true);
+    try {
+      let query = supabase
+        .from('products')
+        .select(CARD_SELECT, { count: 'exact' })
+        .eq('is_active', true);
 
-    if (meta?.category && !meta?.catalogSubcategories?.length) query = query.eq('category', meta.category);
-    if (meta?.sub_category) query = query.eq('sub_category', meta.sub_category);
-    if (meta?.catalogSubcategories?.length) {
-      query = query.in('sub_category', meta.catalogSubcategories);
+      if (meta?.category && !meta?.catalogSubcategories?.length) query = query.eq('category', meta.category);
+      if (meta?.sub_category) query = query.eq('sub_category', meta.sub_category);
+      if (meta?.catalogSubcategories?.length) {
+        query = query.in('sub_category', meta.catalogSubcategories);
+      }
+      if (!meta?.category && filters.category) query = query.eq('category', filters.category);
+      if (!meta?.sub_category && filters.sub_category) query = query.eq('sub_category', filters.sub_category);
+      if (meta?.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
+      if (meta?.seoLanding?.primaryGemSlugs.length) query = query.in('sub_category', meta.seoLanding.primaryGemSlugs);
+      if (filters.featured) query = query.eq('featured', true);
+      if (filters.product_type) query = query.eq('product_type', filters.product_type);
+      query = applyShopAvailabilityFilter(query, filters);
+      query = applyQuoteOnlyListingFilter(
+        query,
+        meta?.category ?? filters.category,
+        meta?.sub_category ?? filters.sub_category,
+      );
+      query = applyShopProductFilters(query, filters);
+
+      query = applyShopListingSort(query, filters, { directorsPick: meta?.directorsPick });
+
+      const perPage = filters.per_page;
+      const page = filters.page;
+      query = query.range((page - 1) * perPage, page * perPage - 1);
+
+      const { data, count } = await query;
+      products = (data ?? []) as ProductCard[];
+      total = count ?? 0;
+    } catch (error) {
+      console.warn(`[shop/${categorySlug}] products unavailable:`, error instanceof Error ? error.message : error);
     }
-    if (!meta?.category && filters.category) query = query.eq('category', filters.category);
-    if (!meta?.sub_category && filters.sub_category) query = query.eq('sub_category', filters.sub_category);
-    if (meta?.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
-    if (meta?.seoLanding?.primaryGemSlugs.length) query = query.in('sub_category', meta.seoLanding.primaryGemSlugs);
-    if (filters.featured) query = query.eq('featured', true);
-    if (filters.product_type) query = query.eq('product_type', filters.product_type);
-    query = applyShopAvailabilityFilter(query, filters);
-    query = applyQuoteOnlyListingFilter(
-      query,
-      meta?.category ?? filters.category,
-      meta?.sub_category ?? filters.sub_category,
-    );
-    query = applyShopProductFilters(query, filters);
-
-    query = applyShopListingSort(query, filters, { directorsPick: meta?.directorsPick });
-
-    const perPage = filters.per_page;
-    const page = filters.page;
-    query = query.range((page - 1) * perPage, page * perPage - 1);
-
-    const { data, count } = await query;
-    products = (data ?? []) as ProductCard[];
-    total = count ?? 0;
   }
 
-  const facets = await getShopFilterOptions({
-    category: meta?.catalogSubcategories?.length ? undefined : meta?.category,
-    subCategory: meta?.catalogSubcategories?.length ? undefined : meta?.sub_category,
-    subCategories: meta?.catalogSubcategories,
-    directorsPick: meta?.directorsPick,
-    primaryGemSlugs: meta?.seoLanding?.primaryGemSlugs,
-  }, filters);
+  let facets = emptyShopFilterOptions;
+  try {
+    facets = await getShopFilterOptions({
+      category: meta?.catalogSubcategories?.length ? undefined : meta?.category,
+      subCategory: meta?.catalogSubcategories?.length ? undefined : meta?.sub_category,
+      subCategories: meta?.catalogSubcategories,
+      directorsPick: meta?.directorsPick,
+      primaryGemSlugs: meta?.seoLanding?.primaryGemSlugs,
+    }, filters);
+  } catch (error) {
+    console.warn(`[shop/${categorySlug}] filter facets unavailable:`, error instanceof Error ? error.message : error);
+  }
   const totalPages = Math.ceil(total / filters.per_page);
   const basePath = meta?.canonicalPath ?? shopCategoryHref(categorySlug);
   const displayLabel = hubPage ? shopCategoryLabel(hubPage) : label;

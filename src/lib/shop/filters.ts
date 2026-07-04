@@ -65,7 +65,7 @@ type FacetRow = {
   configurator_enabled: boolean | null;
 };
 
-const EMPTY_FILTER_OPTIONS: ShopFilterOptions = {
+export const emptyShopFilterOptions: ShopFilterOptions = {
   categories: [],
   subcategories: [],
   productTypes: [],
@@ -218,7 +218,7 @@ export async function getShopFilterOptions(
   scope: ShopFilterScope,
   filters: Pick<ProductFilters, 'q' | 'directors_pick'> = {}
 ): Promise<ShopFilterOptions> {
-  if (!createOptionalPublicClient()) return EMPTY_FILTER_OPTIONS;
+  if (!createOptionalPublicClient()) return emptyShopFilterOptions;
 
   const cacheKey = `shop-filters:${buildFilterCacheKey(scope, filters)}`;
   const rows = await getShortLivedCache(cacheKey, FILTER_CACHE_TTL_MS, () => loadFacetRows(scope, filters));
