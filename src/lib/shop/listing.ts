@@ -1,4 +1,5 @@
 import type { ProductFilters } from '@/lib/types/product';
+import { applyProductTextSearch } from '@/lib/shop/product-search';
 import {
   isCanonicalQualityTier,
   qualityTierFilterLabels,
@@ -10,12 +11,9 @@ type SortableQuery = {
   gte(column: string, value: number): SortableQuery;
   lte(column: string, value: number): SortableQuery;
   or(filters: string): SortableQuery;
+  textSearch?(column: string, query: string, options?: { type?: string; config?: string }): SortableQuery;
   order(column: string, options: { ascending: boolean }): SortableQuery;
 };
-
-function buildShopSearchTerm(query: string) {
-  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
-}
 
 /** Apply shared product listing filters (price, weight, origin, grade, etc.). */
 export function applyShopProductFilters<T extends SortableQuery>(
@@ -65,10 +63,7 @@ export function applyShopProductFilters<T extends SortableQuery>(
     query = query.eq('configurator_enabled', filters.configurator_enabled) as T;
   }
   if (filters.q) {
-    const searchTerm = buildShopSearchTerm(filters.q);
-    query = query.or(
-      `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`,
-    ) as T;
+    query = applyProductTextSearch(query, filters.q) as T;
   }
   return query;
 }

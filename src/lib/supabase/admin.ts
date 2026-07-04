@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/database';
+import { supabaseFetch } from '@/lib/supabase/fetch';
 
 /**
  * Service role client — bypasses Row Level Security.
@@ -15,6 +16,7 @@ export function createAdminClient() {
   }
 
   return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
+    global: { fetch: supabaseFetch },
     auth: {
       autoRefreshToken: false,
       persistSession: false,

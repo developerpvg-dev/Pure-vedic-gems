@@ -5,15 +5,13 @@ import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowl
 import { productHref } from '@/lib/categories/storefront';
 import { getAllBlogPosts, getAllKnowledgeArticles } from '@/lib/sanity/queries';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { applyProductTextSearch, applyProductIlikeSearch, isMissingSearchVectorError } from '@/lib/shop/product-search';
+import { tryRpc } from '@/lib/supabase/rpc';
 import { sanitizeSearchTerm } from '@/lib/utils/search';
 import { searchQuerySchema } from '@/lib/validators/product';
 import type { SearchResponse, SearchResult, SearchResultGroup } from '@/lib/types/product';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import type { SanityKnowledgeArticle } from '@/lib/types/content';
-
-function buildSearchTerm(query: string) {
-  return `%${sanitizeSearchTerm(query)}%`;
-}
 
 function matchesQuery(values: Array<string | null | undefined>, query: string) {
   const normalized = query.toLowerCase();
@@ -114,34 +112,62 @@ export async function GET(request: NextRequest) {
     const { q } = parsed.data;
     const supabase = createOptionalPublicClient();
 
-    // Use PostgreSQL full-text search with ts_query
-    // Search across: name, SKU/tag number, Vedic name, origin, planet, short description
-    // Using ilike as fallback for environments without tsvector columns configured
-    const searchTerm = buildSearchTerm(q);
     let productResults: SearchResult[] = [];
 
     if (supabase) {
-      const { data: results, error } = await supabase
-        .from('products')
-        .select('id, slug, name, category, price, thumbnail_url, origin, planet, tag_number')
-        .eq('is_active', true)
-        .or(
-          `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
-        )
-        .order('featured', { ascending: false })
-        .order('price', { ascending: true })
-        .limit(10);
+      const rpcResults = await tryRpc<
+        Array<{
+          id: string;
+          slug: string;
+          name: string;
+          category: string;
+          price: number;
+          thumbnail_url: string | null;
+          origin: string | null;
+          planet: string | null;
+          tag_number: string | null;
+        }>
+      >(supabase, 'search_products', { p_query: sanitizeSearchTerm(q), p_limit: 10 });
 
-      if (error) {
-        console.error('Search query error:', error);
-      } else {
-        productResults = (results ?? []).map((result) => ({
+      if (rpcResults) {
+        productResults = rpcResults.map((result) => ({
           ...result,
           type: 'product' as const,
           href: productHref(result),
           categoryLabel: 'Product',
           description: null,
         }));
+      } else {
+        const baseSelect = supabase
+          .from('products')
+          .select('id, slug, name, category, price, thumbnail_url, origin, planet, tag_number')
+          .eq('is_active', true);
+
+        let productQuery = applyProductTextSearch(baseSelect, sanitizeSearchTerm(q));
+        let { data: results, error } = await productQuery
+          .order('featured', { ascending: false })
+          .order('price', { ascending: true })
+          .limit(10);
+
+        if (isMissingSearchVectorError(error)) {
+          productQuery = applyProductIlikeSearch(baseSelect, sanitizeSearchTerm(q));
+          ({ data: results, error } = await productQuery
+            .order('featured', { ascending: false })
+            .order('price', { ascending: true })
+            .limit(10));
+        }
+
+        if (error) {
+          console.error('Search query error:', error);
+        } else {
+          productResults = (results ?? []).map((result) => ({
+            ...result,
+            type: 'product' as const,
+            href: productHref(result),
+            categoryLabel: 'Product',
+            description: null,
+          }));
+        }
       }
     }
 

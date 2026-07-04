@@ -6,8 +6,20 @@ import { getAdminRoutePermission, hasAdminPermission, normalizeAdminRole } from 
 const PROTECTED_CUSTOMER_ROUTES = ['/account'];
 const PROTECTED_ADMIN_ROUTES = ['/admin'];
 
+function isProtectedRoute(pathname: string) {
+  return (
+    PROTECTED_CUSTOMER_ROUTES.some((prefix) => pathname.startsWith(prefix)) ||
+    PROTECTED_ADMIN_ROUTES.some((prefix) => pathname.startsWith(prefix))
+  );
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (!isProtectedRoute(pathname)) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -106,5 +118,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/account/:path*', '/admin/:path*'],
 };

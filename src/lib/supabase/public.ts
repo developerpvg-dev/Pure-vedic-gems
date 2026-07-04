@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/database';
+import { supabaseFetch } from '@/lib/supabase/fetch';
 
 function getPublicCredentials() {
   return {
@@ -21,6 +22,7 @@ export function createPublicClient() {
   }
 
   return createSupabaseClient<Database>(supabaseUrl, anonKey, {
+    global: { fetch: supabaseFetch },
     auth: {
       autoRefreshToken: false,
       persistSession: false,

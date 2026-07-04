@@ -117,8 +117,9 @@ function buildStorefrontGroups(gemRows: GemCategoryRow[], catalogRows: CatalogCa
   });
 }
 
-const DB_TIMEOUT_MS = process.env.NODE_ENV === 'development' ? 15_000 : 8_000;
+const DB_TIMEOUT_MS = process.env.NODE_ENV === 'development' ? 5_000 : 8_000;
 const STOREFRONT_CACHE_MS = process.env.NODE_ENV === 'development' ? 120_000 : 300_000;
+const STOREFRONT_FAILURE_CACHE_MS = 60_000;
 
 type StorefrontPayload = {
   categories: GemCategoryRow[];
@@ -126,6 +127,8 @@ type StorefrontPayload = {
 };
 
 let storefrontCache: { expiresAt: number; payload: StorefrontPayload } | null = null;
+let storefrontFailureUntil = 0;
+let storefrontInflight: Promise<StorefrontPayload> | null = null;
 
 function readStorefrontCache(): StorefrontPayload | null {
   if (!storefrontCache || Date.now() > storefrontCache.expiresAt) return null;
@@ -134,6 +137,22 @@ function readStorefrontCache(): StorefrontPayload | null {
 
 function writeStorefrontCache(payload: StorefrontPayload) {
   storefrontCache = { expiresAt: Date.now() + STOREFRONT_CACHE_MS, payload };
+  storefrontFailureUntil = 0;
+}
+
+function isStorefrontFailureCached() {
+  return storefrontFailureUntil > Date.now();
+}
+
+function markStorefrontFailure() {
+  storefrontFailureUntil = Date.now() + STOREFRONT_FAILURE_CACHE_MS;
+}
+
+function storefrontFallbackResponse() {
+  return NextResponse.json(
+    { categories: [], groups: STORE_CATEGORY_GROUPS_FALLBACK },
+    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+  );
 }
 
 type DbResult<TRow> = { data: TRow[] | null; error: { message: string } | null };
@@ -171,6 +190,37 @@ async function queryCatalogCategories(
     .order('sort_order', { ascending: true }) as unknown as Promise<DbResult<CatalogCategoryRow>>;
 }
 
+async function fetchStorefrontPayload(
+  supabase: ReturnType<typeof createPublicClient>
+): Promise<StorefrontPayload> {
+  const [gemResult, catalogResult] = await Promise.race([
+    Promise.all([queryGemCategories(supabase), queryCatalogCategories(supabase)]),
+    raceTimeout(DB_TIMEOUT_MS),
+  ]);
+
+  const gemRows = gemResult.error || !gemResult.data ? [] : gemResult.data;
+  const catalogRows = catalogResult.error || !catalogResult.data ? [] : catalogResult.data;
+
+  if (gemResult.error) console.error('[categories] gem_categories error:', gemResult.error);
+  if (catalogResult.error) console.error('[categories] product_categories error:', catalogResult.error);
+
+  return {
+    categories: gemRows,
+    groups: buildStorefrontGroups(gemRows, catalogRows),
+  };
+}
+
+async function loadStorefrontPayload(
+  supabase: ReturnType<typeof createPublicClient>
+): Promise<StorefrontPayload> {
+  if (!storefrontInflight) {
+    storefrontInflight = fetchStorefrontPayload(supabase).finally(() => {
+      storefrontInflight = null;
+    });
+  }
+  return storefrontInflight;
+}
+
 /**
  * GET /api/categories
  * Public endpoint — returns active gem categories.
@@ -193,33 +243,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (isStorefrontFailureCached()) {
+      return storefrontFallbackResponse();
+    }
+
     try {
-      const [gemResult, catalogResult] = await Promise.race([
-        Promise.all([
-          queryGemCategories(supabase),
-          queryCatalogCategories(supabase),
-        ]),
-        raceTimeout(DB_TIMEOUT_MS),
-      ]);
-
-      const gemRows = gemResult.error || !gemResult.data ? [] : gemResult.data;
-      const catalogRows = catalogResult.error || !catalogResult.data ? [] : catalogResult.data;
-
-      if (gemResult.error) console.error('[categories] gem_categories error:', gemResult.error);
-      if (catalogResult.error) console.error('[categories] product_categories error:', catalogResult.error);
-
-      const groups = buildStorefrontGroups(gemRows, catalogRows);
-      const payload = { categories: gemRows, groups };
+      const payload = await loadStorefrontPayload(supabase);
       writeStorefrontCache(payload);
       return NextResponse.json(payload, {
         headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
       });
     } catch (err) {
+      markStorefrontFailure();
       console.error('[categories] Storefront fetch failed, using fallback:', (err as Error).message);
-      return NextResponse.json(
-        { categories: [], groups: STORE_CATEGORY_GROUPS_FALLBACK },
-        { headers: { 'Cache-Control': 'no-store' } }
-      );
+      return storefrontFallbackResponse();
     }
   }
 

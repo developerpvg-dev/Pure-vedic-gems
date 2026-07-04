@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { getShortLivedCache } from '@/lib/cache/short-lived';
+import { callRpc } from '@/lib/supabase/rpc';
+import { loadDashboardStatsFallback, type DashboardRpcResult } from '@/lib/admin/dashboard-fallback';
+
+const CACHE_TTL_MS = 60_000;
 
 /**
  * GET /api/admin/dashboard
@@ -17,213 +22,110 @@ export async function GET() {
   const todayISO = todayStart.toISOString();
 
   const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - 7);
+  weekStart.setDate(weekStart.getDate() - 6);
+  weekStart.setHours(0, 0, 0, 0);
   const weekISO = weekStart.toISOString();
 
-  // Parallel queries
-  const [
-    { data: allOrders },
-    { data: todayOrders },
-    { data: recentOrders },
-    { data: enquiryCount },
-    { data: productCount },
-    { data: weeklyOrders },
-    { data: outOfStockProducts, count: outOfStockCount },
-    { data: consultations },
-    { data: enquiries },
-    { data: catalogProducts },
-    { data: teamMembers },
-  ] = await Promise.all([
-    // All orders
-    supabase
-      .from('orders')
-      .select('id, total, status, payment_status, created_at'),
-    // Today's orders
-    supabase
-      .from('orders')
-      .select('id, total, status, payment_status')
-      .gte('created_at', todayISO),
-    // Recent 10 orders
-    supabase
-      .from('orders')
-      .select('id, order_number, customer_id, guest_name, guest_email, total, status, payment_status, created_at, items')
-      .order('created_at', { ascending: false })
-      .limit(10),
-    // Enquiry count (new)
-    supabase
-      .from('enquiries')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'new'),
-    // Product count (active)
-    supabase
-      .from('products')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true),
-    // Last 7 days orders (for chart)
-    supabase
-      .from('orders')
-      .select('id, total, created_at, payment_status')
-      .gte('created_at', weekISO)
-      .order('created_at', { ascending: true }),
-    // Out-of-stock products for inventory attention
-    supabase
-      .from('products')
-      .select('id, sku, name, category, sub_category, stock_quantity, availability_status', { count: 'exact' })
-      .eq('is_active', true)
-      .lte('stock_quantity', 0)
-      .order('name', { ascending: true })
-      .limit(8),
-    // Consultation funnel and paid-plan revenue
-    supabase
-      .from('consultations')
-      .select('id, status, payment_status, amount_inr, created_at'),
-    // Lead/enquiry workflow health
-    supabase
-      .from('enquiries')
-      .select('id, status, created_at'),
-    // Catalog distribution for inventory/content roles
-    supabase
-      .from('products')
-      .select('id, category, product_type, availability_status, stock_quantity')
-      .eq('is_active', true),
-    // Team role mix for owners/admins
-    supabase
-      .from('team_members')
-      .select('role, is_active'),
-  ]);
+  const cacheKey = `admin-dashboard:${todayISO.slice(0, 10)}`;
 
-  const orders = allOrders ?? [];
-  const today = todayOrders ?? [];
-  const weekly = weeklyOrders ?? [];
+  const payload = await getShortLivedCache(cacheKey, CACHE_TTL_MS, async () => {
+    let rpc: DashboardRpcResult;
+    try {
+      rpc = await callRpc<DashboardRpcResult>(supabase, 'get_admin_dashboard_stats', {
+        p_today_start: todayISO,
+        p_week_start: weekISO,
+      });
+    } catch {
+      rpc = await loadDashboardStatsFallback(supabase, todayISO, weekISO);
+    }
 
-  // Compute stats
-  const totalRevenue = orders
-    .filter((o) => o.payment_status === 'captured')
-    .reduce((sum, o) => sum + (o.total ?? 0), 0);
+    const [
+      { data: recentOrders },
+      { data: outOfStockProducts },
+    ] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, order_number, customer_id, guest_name, guest_email, total, status, payment_status, created_at, items')
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('products')
+        .select('id, sku, name, category, sub_category, stock_quantity, availability_status')
+        .eq('is_active', true)
+        .lte('stock_quantity', 0)
+        .order('name', { ascending: true })
+        .limit(8),
+    ]);
 
-  const todayRevenue = today
-    .filter((o) => o.payment_status === 'captured')
-    .reduce((sum, o) => sum + (o.total ?? 0), 0);
-
-  const pendingOrders = orders.filter(
-    (o) => o.status !== 'delivered' && o.status !== 'cancelled' && o.status !== 'refunded'
-  ).length;
-
-  // Pipeline counts
-  const pipeline: Record<string, number> = {};
-  for (const o of orders) {
-    pipeline[o.status] = (pipeline[o.status] ?? 0) + 1;
-  }
-
-  const paymentStatus: Record<string, { count: number; total: number }> = {};
-  for (const order of orders) {
-    const key = order.payment_status ?? 'unknown';
-    paymentStatus[key] = paymentStatus[key] ?? { count: 0, total: 0 };
-    paymentStatus[key].count += 1;
-    paymentStatus[key].total += order.total ?? 0;
-  }
-
-  const consultationStatus: Record<string, number> = {};
-  const consultationPayments: Record<string, { count: number; total: number }> = {};
-  for (const consultation of consultations ?? []) {
-    const status = consultation.status ?? 'unknown';
-    const paymentStatusKey = consultation.payment_status ?? 'unknown';
-    consultationStatus[status] = (consultationStatus[status] ?? 0) + 1;
-    consultationPayments[paymentStatusKey] = consultationPayments[paymentStatusKey] ?? { count: 0, total: 0 };
-    consultationPayments[paymentStatusKey].count += 1;
-    consultationPayments[paymentStatusKey].total += Number(consultation.amount_inr ?? 0);
-  }
-
-  const enquiryStatus: Record<string, number> = {};
-  for (const enquiry of enquiries ?? []) {
-    const status = enquiry.status ?? 'unknown';
-    enquiryStatus[status] = (enquiryStatus[status] ?? 0) + 1;
-  }
-
-  const productAvailability: Record<string, number> = {};
-  const productCategories: Record<string, number> = {};
-  for (const product of catalogProducts ?? []) {
-    const availability = product.availability_status ?? 'unknown';
-    const category = product.category ?? product.product_type ?? 'uncategorized';
-    productAvailability[availability] = (productAvailability[availability] ?? 0) + 1;
-    productCategories[category] = (productCategories[category] ?? 0) + 1;
-  }
-
-  const teamRoles: Record<string, number> = {};
-  for (const member of teamMembers ?? []) {
-    if (!member.is_active) continue;
-    teamRoles[member.role] = (teamRoles[member.role] ?? 0) + 1;
-  }
-
-  // Weekly chart data (last 7 days)
-  const chartData: { date: string; revenue: number; orders: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    const dayOrders = weekly.filter(
-      (o) => o.created_at.startsWith(dateStr)
+    const recentCustomerIds = Array.from(
+      new Set((recentOrders ?? []).map((order) => order.customer_id).filter((id): id is string => Boolean(id))),
     );
-    chartData.push({
-      date: dateStr,
-      revenue: dayOrders
-        .filter((o) => o.payment_status === 'captured')
-        .reduce((s, o) => s + (o.total ?? 0), 0),
-      orders: dayOrders.length,
-    });
-  }
+    const { data: recentProfiles } = recentCustomerIds.length
+      ? await supabase
+          .from('customer_profiles')
+          .select('id, full_name, email')
+          .in('id', recentCustomerIds)
+      : { data: [] };
+    const recentProfileById = new Map((recentProfiles ?? []).map((profile) => [profile.id, profile]));
 
-  const recentCustomerIds = Array.from(new Set((recentOrders ?? []).map((order) => order.customer_id).filter((id): id is string => Boolean(id))));
-  const { data: recentProfiles } = recentCustomerIds.length
-    ? await supabase
-        .from('customer_profiles')
-        .select('id, full_name, email')
-        .in('id', recentCustomerIds)
-    : { data: [] };
-  const recentProfileById = new Map((recentProfiles ?? []).map((profile) => [profile.id, profile]));
-
-  return NextResponse.json({
-    currentAdmin: {
-      role: auth.member.role,
-      normalizedRole: auth.member.normalizedRole,
-      name: auth.member.name,
-    },
-    stats: {
-      totalOrders: orders.length,
-      todayOrders: today.length,
-      todayRevenue,
-      totalRevenue,
-      pendingOrders,
-      newEnquiries: enquiryCount ?? 0,
-      activeProducts: productCount ?? 0,
-      outOfStockProducts: outOfStockCount ?? 0,
-      totalConsultations: consultations?.length ?? 0,
-      consultationRevenue: (consultations ?? [])
-        .filter((consultation) => consultation.payment_status === 'captured')
-        .reduce((sum, consultation) => sum + Number(consultation.amount_inr ?? 0), 0),
-    },
-    pipeline,
-    paymentStatus,
-    consultationStatus,
-    consultationPayments,
-    enquiryStatus,
-    productAvailability,
-    productCategories,
-    teamRoles,
-    chartData,
-    outOfStockProducts: outOfStockProducts ?? [],
-    recentOrders: (recentOrders ?? []).map((o) => {
-      const profile = o.customer_id ? recentProfileById.get(o.customer_id) : undefined;
-      return {
-      id: o.id,
-      order_number: o.order_number,
-      customer: o.guest_name || profile?.full_name || o.guest_email || profile?.email || 'Guest',
-      total: o.total,
-      status: o.status,
-      payment_status: o.payment_status,
-      items_count: Array.isArray(o.items) ? o.items.length : 0,
-      created_at: o.created_at,
-      };
-    }),
+    return {
+      rpc,
+      recentOrders: recentOrders ?? [],
+      outOfStockProducts: outOfStockProducts ?? [],
+      recentProfileById,
+    };
   });
+
+  const { rpc, recentOrders, outOfStockProducts, recentProfileById } = payload;
+  const stats = rpc.stats;
+
+  return NextResponse.json(
+    {
+      currentAdmin: {
+        role: auth.member.role,
+        normalizedRole: auth.member.normalizedRole,
+        name: auth.member.name,
+      },
+      stats: {
+        totalOrders: stats.total_orders,
+        todayOrders: stats.today_orders,
+        todayRevenue: Number(stats.today_revenue),
+        totalRevenue: Number(stats.total_revenue),
+        pendingOrders: stats.pending_orders,
+        newEnquiries: stats.new_enquiries,
+        activeProducts: stats.active_products,
+        outOfStockProducts: stats.out_of_stock_products,
+        totalConsultations: stats.total_consultations,
+        consultationRevenue: Number(stats.consultation_revenue),
+      },
+      pipeline: rpc.pipeline,
+      paymentStatus: rpc.payment_status,
+      consultationStatus: rpc.consultation_status,
+      consultationPayments: rpc.consultation_payments,
+      enquiryStatus: rpc.enquiry_status,
+      productAvailability: rpc.product_availability,
+      productCategories: rpc.product_categories,
+      teamRoles: rpc.team_roles,
+      chartData: rpc.chart_data,
+      outOfStockProducts,
+      recentOrders: recentOrders.map((o) => {
+        const profile = o.customer_id ? recentProfileById.get(o.customer_id) : undefined;
+        return {
+          id: o.id,
+          order_number: o.order_number,
+          customer: o.guest_name || profile?.full_name || o.guest_email || profile?.email || 'Guest',
+          total: o.total,
+          status: o.status,
+          payment_status: o.payment_status,
+          items_count: Array.isArray(o.items) ? o.items.length : 0,
+          created_at: o.created_at,
+        };
+      }),
+    },
+    {
+      headers: {
+        'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+      },
+    },
+  );
 }

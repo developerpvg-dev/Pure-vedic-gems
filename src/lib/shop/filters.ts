@@ -1,4 +1,6 @@
+import { getShortLivedCache } from '@/lib/cache/short-lived';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
+import { applyProductTextSearch } from '@/lib/shop/product-search';
 import {
   AVAILABILITY_STATUS_OPTIONS,
   CANONICAL_CATEGORY_OPTIONS,
@@ -109,10 +111,6 @@ const RATTI_RANGE_PRESETS = [
   { label: '10 ratti+', value: '10-', min: 10, max: null },
 ];
 
-function buildSearchTerm(query: string) {
-  return `%${query.replace(/[%,]/g, ' ').trim()}%`;
-}
-
 function titleize(value: string) {
   return value
     .replace(/[_-]/g, ' ')
@@ -186,33 +184,44 @@ function otherQualityLabelOptions(rows: FacetRow[]) {
   return sortedOptions(counts);
 }
 
-export async function getShopFilterOptions(
+const FILTER_CACHE_TTL_MS = 120_000;
+
+function buildFilterCacheKey(scope: ShopFilterScope, filters: Pick<ProductFilters, 'q' | 'directors_pick'>) {
+  return JSON.stringify({ scope, filters });
+}
+
+async function loadFacetRows(
   scope: ShopFilterScope,
-  filters: Pick<ProductFilters, 'q' | 'directors_pick'> = {}
-): Promise<ShopFilterOptions> {
+  filters: Pick<ProductFilters, 'q' | 'directors_pick'>,
+): Promise<FacetRow[]> {
   const supabase = createOptionalPublicClient();
-  if (!supabase) return EMPTY_FILTER_OPTIONS;
+  if (!supabase) return [];
 
   let query = supabase
     .from('products')
     .select('category, sub_category, product_type, availability_status, price, carat_weight, ratti_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, name, price_mode, configurator_enabled')
     .eq('is_active', true)
-    .limit(2000);
+    .limit(1500);
 
   if (scope.category && !scope.subCategories?.length) query = query.eq('category', scope.category);
   if (scope.subCategory) query = query.eq('sub_category', scope.subCategory);
   if (scope.subCategories?.length) query = query.in('sub_category', scope.subCategories);
   if (scope.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
   if (scope.primaryGemSlugs?.length) query = query.in('sub_category', scope.primaryGemSlugs);
-  if (filters.q) {
-    const searchTerm = buildSearchTerm(filters.q);
-    query = query.or(
-      `name.ilike.${searchTerm},sku.ilike.${searchTerm},tag_number.ilike.${searchTerm},vedic_name.ilike.${searchTerm},origin.ilike.${searchTerm},planet.ilike.${searchTerm},short_desc.ilike.${searchTerm}`
-    );
-  }
+  if (filters.q) query = applyProductTextSearch(query, filters.q);
 
   const { data } = await query;
-  const rows = (data ?? []) as FacetRow[];
+  return (data ?? []) as FacetRow[];
+}
+
+export async function getShopFilterOptions(
+  scope: ShopFilterScope,
+  filters: Pick<ProductFilters, 'q' | 'directors_pick'> = {}
+): Promise<ShopFilterOptions> {
+  if (!createOptionalPublicClient()) return EMPTY_FILTER_OPTIONS;
+
+  const cacheKey = `shop-filters:${buildFilterCacheKey(scope, filters)}`;
+  const rows = await getShortLivedCache(cacheKey, FILTER_CACHE_TTL_MS, () => loadFacetRows(scope, filters));
 
   return {
     categories: scope.category ? [] : collectOptions(rows, 'category', CATEGORY_LABELS),
