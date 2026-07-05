@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { applyProductTextSearch } from '@/lib/shop/product-search';
@@ -184,7 +185,7 @@ function otherQualityLabelOptions(rows: FacetRow[]) {
   return sortedOptions(counts);
 }
 
-const FILTER_CACHE_TTL_MS = 120_000;
+const FILTER_CACHE_TTL_MS = 300_000;
 
 function buildFilterCacheKey(scope: ShopFilterScope, filters: Pick<ProductFilters, 'q' | 'directors_pick'>) {
   return JSON.stringify({ scope, filters });
@@ -214,6 +215,12 @@ async function loadFacetRows(
   return (data ?? []) as FacetRow[];
 }
 
+// Shared across all serverless instances via the Next.js Data Cache, so a
+// facet query for a given scope runs once per 10 minutes platform-wide
+// instead of once per instance. Free-text (q) queries bypass this to avoid
+// unbounded cache keys and use the in-memory cache instead.
+const loadFacetRowsShared = unstable_cache(loadFacetRows, ['shop-filter-facets'], { revalidate: 600 });
+
 export async function getShopFilterOptions(
   scope: ShopFilterScope,
   filters: Pick<ProductFilters, 'q' | 'directors_pick'> = {}
@@ -221,7 +228,9 @@ export async function getShopFilterOptions(
   if (!createOptionalPublicClient()) return emptyShopFilterOptions;
 
   const cacheKey = `shop-filters:${buildFilterCacheKey(scope, filters)}`;
-  const rows = await getShortLivedCache(cacheKey, FILTER_CACHE_TTL_MS, () => loadFacetRows(scope, filters));
+  const rows = filters.q
+    ? await getShortLivedCache(cacheKey, FILTER_CACHE_TTL_MS, () => loadFacetRows(scope, filters))
+    : await loadFacetRowsShared(scope, filters);
 
   return {
     categories: scope.category ? [] : collectOptions(rows, 'category', CATEGORY_LABELS),

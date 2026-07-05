@@ -6,6 +6,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { LOW_STOCK_THRESHOLD, notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import { PRICE_MODES, PRODUCT_TYPES } from '@/lib/constants/product-taxonomy';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 type RelatedProductPayload = Pick<
   ProductCreateInput,
@@ -290,6 +291,8 @@ export async function POST(request: NextRequest) {
     category: product.category,
     stock_quantity: product.stock_quantity,
   }, 'product_create');
+
+  revalidateProductSurfaces(product);
 
   return NextResponse.json({ product }, { status: 201 });
 }

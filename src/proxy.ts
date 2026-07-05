@@ -2,9 +2,15 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminRoutePermission, hasAdminPermission, normalizeAdminRole } from '@/lib/admin/rbac';
+import { getShortLivedCache } from '@/lib/cache/short-lived';
 
 const PROTECTED_CUSTOMER_ROUTES = ['/account'];
 const PROTECTED_ADMIN_ROUTES = ['/admin'];
+
+// Profile/team lookups are cached briefly so page navigations within the
+// admin panel or account area don't repeat the same DB query on every hop.
+// Status/role changes take effect within this window.
+const AUTH_LOOKUP_TTL_MS = 60_000;
 
 function isProtectedRoute(pathname: string) {
   return (
@@ -51,16 +57,19 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isCustomerRoute && user) {
-    const adminClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    );
-    const { data: profile } = await adminClient
-      .from('customer_profiles')
-      .select('account_status')
-      .eq('id', user.id)
-      .maybeSingle();
+    const profile = await getShortLivedCache(`proxy-profile:${user.id}`, AUTH_LOOKUP_TTL_MS, async () => {
+      const adminClient = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+      const { data } = await adminClient
+        .from('customer_profiles')
+        .select('account_status')
+        .eq('id', user.id)
+        .maybeSingle();
+      return data;
+    });
 
     if (profile?.account_status && profile.account_status !== 'active') {
       await supabase.auth.signOut();
@@ -83,16 +92,19 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const adminClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    );
-    const { data: teamMember } = await adminClient
-      .from('team_members')
-      .select('role, is_active, permissions')
-      .eq('id', user.id)
-      .single();
+    const teamMember = await getShortLivedCache(`proxy-team:${user.id}`, AUTH_LOOKUP_TTL_MS, async () => {
+      const adminClient = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+      const { data } = await adminClient
+        .from('team_members')
+        .select('role, is_active, permissions')
+        .eq('id', user.id)
+        .single();
+      return data;
+    });
 
     if (!teamMember?.is_active) {
       return NextResponse.redirect(new URL('/account', request.url));

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { SHOP_CATEGORY_PAGES_CACHE_TAG } from '@/lib/categories/shop-category-page';
 import { getAllDefaultCategorySlugs, getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import type { ShopCategoryPageInsert, ShopCategoryPageRow } from '@/lib/types/database';
 
@@ -60,6 +61,7 @@ function revalidateCategory(slug: string) {
   revalidatePath('/shop');
   revalidatePath(`/shop/${slug}`);
   revalidatePath('/api/shop-categories');
+  revalidateTag(SHOP_CATEGORY_PAGES_CACHE_TAG, 'max');
 }
 
 export async function GET() {

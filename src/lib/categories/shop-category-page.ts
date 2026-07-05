@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import { KNOWN_CATALOG_SUBCATEGORIES, KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
@@ -44,7 +45,7 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
   };
 }
 
-export async function fetchShopCategoryPage(slug: string): Promise<ShopCategoryPageContent | null> {
+async function fetchShopCategoryPageUncached(slug: string): Promise<ShopCategoryPageContent | null> {
   const supabase = createOptionalPublicClient();
   let dbRow: ShopCategoryPageContent | null = null;
 
@@ -65,6 +66,19 @@ export async function fetchShopCategoryPage(slug: string): Promise<ShopCategoryP
 
   return mergeWithDefaults(slug, dbRow);
 }
+
+/**
+ * Hub page content is shared platform-wide via the Next.js Data Cache, so a
+ * category page under heavy traffic reads the DB once per 5 minutes instead
+ * of on every request. Admin edits invalidate via the tag below.
+ */
+export const SHOP_CATEGORY_PAGES_CACHE_TAG = 'shop-category-pages';
+
+export const fetchShopCategoryPage = unstable_cache(
+  fetchShopCategoryPageUncached,
+  ['shop-category-page'],
+  { revalidate: 300, tags: [SHOP_CATEGORY_PAGES_CACHE_TAG] },
+);
 
 export async function fetchAllShopCategoryPages(): Promise<ShopCategoryPageContent[]> {
   const supabase = createOptionalPublicClient();

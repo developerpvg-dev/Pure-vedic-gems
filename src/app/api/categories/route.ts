@@ -151,7 +151,7 @@ function markStorefrontFailure() {
 function storefrontFallbackResponse() {
   return NextResponse.json(
     { categories: [], groups: STORE_CATEGORY_GROUPS_FALLBACK },
-    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+    { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
   );
 }
 
@@ -239,7 +239,7 @@ export async function GET(request: NextRequest) {
     const cached = readStorefrontCache();
     if (cached) {
       return NextResponse.json(cached, {
-        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+        headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
       });
     }
 
@@ -251,7 +251,7 @@ export async function GET(request: NextRequest) {
       const payload = await loadStorefrontPayload(supabase);
       writeStorefrontCache(payload);
       return NextResponse.json(payload, {
-        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+        headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
       });
     } catch (err) {
       markStorefrontFailure();

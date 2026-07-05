@@ -11,7 +11,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import type { ProductCard } from '@/lib/types/product';
 
-export const revalidate = 60; // ISR: 60s
+export const revalidate = 300; // ISR: 5 min — product data rarely changes minute-to-minute
 
 export const metadata: Metadata = {
   title: 'Buy Certified Vedic Gemstones — PureVedicGems',
@@ -46,9 +46,11 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
 
   if (supabase) {
     try {
+      // 'estimated' avoids a full count scan on every filter combination;
+      // PostgREST returns exact counts for small result sets anyway.
       let query = supabase
         .from('products')
-        .select(CARD_SELECT, { count: 'exact' })
+        .select(CARD_SELECT, { count: 'estimated' })
         .eq('is_active', true);
 
       if (filters.category) query = query.eq('category', filters.category);

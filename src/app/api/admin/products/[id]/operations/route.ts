@@ -5,6 +5,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 const operationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('archive'), note: z.string().trim().max(500).optional() }),
@@ -88,6 +89,8 @@ export async function POST(
   if (parsed.data.action === 'stock_update' || parsed.data.action === 'restore') {
     await notifyLowStockProduct(data as { id: string; sku: string | null; name: string; category: string | null; stock_quantity: number | null }, `product_${parsed.data.action}`);
   }
+
+  revalidateProductSurfaces(data as { category?: string | null });
 
   return NextResponse.json({ success: true, product: data });
 }

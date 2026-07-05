@@ -5,6 +5,7 @@ import type { ProductUpdateInput } from '@/lib/validators/product';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 type RelatedProductPayload = Pick<
   ProductUpdateInput,
@@ -211,6 +212,8 @@ export async function PUT(
     stock_quantity: product.stock_quantity,
   }, before?.stock_quantity !== product.stock_quantity ? 'product_edit_stock' : 'product_edit');
 
+  revalidateProductSurfaces(product);
+
   return NextResponse.json({ product });
 }
 
@@ -240,6 +243,8 @@ export async function DELETE(
     resourceType: 'product',
     resourceId: id,
   });
+
+  revalidateProductSurfaces();
 
   return NextResponse.json({ success: true });
 }

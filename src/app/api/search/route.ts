@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
@@ -90,6 +91,20 @@ function toGroups(groups: SearchResultGroup[]) {
   return groups.filter((group) => group.results.length > 0);
 }
 
+// Sanity content changes rarely; fetch it once per 10 minutes platform-wide
+// instead of on every search request.
+const getCachedSearchContent = unstable_cache(
+  async () => {
+    const [knowledgeArticles, blogPosts] = await Promise.all([
+      getAllKnowledgeArticles(60) as Promise<SanityKnowledgeArticle[]>,
+      getAllBlogPosts(60, 0) as Promise<SanityBlogPost[]>,
+    ]);
+    return { knowledgeArticles: knowledgeArticles ?? [], blogPosts: blogPosts ?? [] };
+  },
+  ['search-sanity-content'],
+  { revalidate: 600 },
+);
+
 export async function GET(request: NextRequest) {
   try {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
@@ -171,10 +186,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const [knowledgeArticles, blogPosts] = await Promise.all([
-      getAllKnowledgeArticles(60) as Promise<SanityKnowledgeArticle[]>,
-      getAllBlogPosts(60, 0) as Promise<SanityBlogPost[]>,
-    ]);
+    const { knowledgeArticles, blogPosts } = await getCachedSearchContent();
 
     const dynamicKnowledgeResults: SearchResult[] = (knowledgeArticles ?? [])
       .filter((article) => matchesQuery([article.title, article.excerpt, article.category], q))
@@ -229,7 +241,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       },
     });
   } catch {

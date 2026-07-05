@@ -3,7 +3,13 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hasAdminPermission, normalizeAdminRole, type AdminPermission } from '@/lib/admin/rbac';
+import { getShortLivedCache } from '@/lib/cache/short-lived';
 import type { Json } from '@/lib/types/database';
+
+// Team membership rarely changes; caching it briefly means N admin API calls
+// in a burst cost one team_members query instead of N. Role/permission
+// revocations take effect within this window.
+const MEMBER_CACHE_TTL_MS = 60_000;
 
 export interface AdminAuthContext {
   user: { id: string; email?: string | null };
@@ -25,12 +31,15 @@ export async function requireAdminAccess(permission?: AdminPermission) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const admin = createAdminClient();
-  const { data: member } = await admin
-    .from('team_members')
-    .select('role, name, is_active, permissions')
-    .eq('id', user.id)
-    .single();
+  const member = await getShortLivedCache(`team-member:${user.id}`, MEMBER_CACHE_TTL_MS, async () => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from('team_members')
+      .select('role, name, is_active, permissions')
+      .eq('id', user.id)
+      .single();
+    return data;
+  });
 
   const typedMember = member as { role: string; name: string | null; is_active: boolean; permissions: Json } | null;
   const normalizedRole = normalizeAdminRole(typedMember?.role);

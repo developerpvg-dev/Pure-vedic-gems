@@ -13,6 +13,10 @@ import {
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
 
+// Regenerate at most hourly — search engine crawlers hitting the sitemap
+// should not trigger fresh product/category/video queries every time.
+export const revalidate = 3600;
+
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
 const now = new Date();

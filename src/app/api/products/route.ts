@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient } from '@/lib/supabase/public';
+import { rateLimit } from '@/lib/utils/rate-limit';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
@@ -16,6 +17,13 @@ const CARD_SELECT = `
 
 export async function GET(request: NextRequest) {
   try {
+    // Generous for real shoppers, but stops bots from cycling unique filter
+    // combinations that bypass the CDN cache and hammer the database.
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (!rateLimit(`products:${ip}`, 180, 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 });
+    }
+
     const { searchParams } = request.nextUrl;
     const rawParams = Object.fromEntries(searchParams.entries());
 
@@ -31,10 +39,11 @@ export async function GET(request: NextRequest) {
     const filters = parsed.data;
     const supabase = createPublicClient();
 
-    // Build query with dynamic filters
+    // Build query with dynamic filters. 'estimated' count avoids a full scan
+    // per unique filter combination; exact for small result sets anyway.
     let query = supabase
       .from('products')
-      .select(CARD_SELECT, { count: 'exact' })
+      .select(CARD_SELECT, { count: 'estimated' })
       .eq('is_active', true);
 
     const configuratorEnabled = searchParams.get('configurator_enabled') === 'true';
@@ -96,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
       },
     });
   } catch {

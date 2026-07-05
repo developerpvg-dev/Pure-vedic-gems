@@ -38,7 +38,7 @@ import { RudrakshaCategoryGrid } from '@/components/shop/RudrakshaCategoryGrid';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { MessageCircleQuestion } from 'lucide-react';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 async function resolveCategory(slug: string): Promise<ResolvedShopCategory | null> {
   return resolveShopCategoryPath(slug);
@@ -102,7 +102,7 @@ async function CategoryProducts({
     try {
       let query = supabase
         .from('products')
-        .select(CARD_SELECT, { count: 'exact' })
+        .select(CARD_SELECT, { count: 'estimated' })
         .eq('is_active', true);
 
       if (meta?.category && !meta?.catalogSubcategories?.length) query = query.eq('category', meta.category);
