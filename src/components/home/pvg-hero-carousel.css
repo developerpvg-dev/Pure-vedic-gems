@@ -1,0 +1,144 @@
+/* Homepage hero carousel — isolated from legacy .hero-slide rules in home.css */
+
+.pvg-hero-carousel {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.pvg-hero-carousel__slide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pvg-hero-carousel__slide--current {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.pvg-hero-carousel__slide--outgoing {
+  z-index: 1;
+  animation: pvgHeroOutgoing 1.55s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+.pvg-hero-carousel__slide--incoming {
+  z-index: 3;
+  pointer-events: auto;
+  animation: pvgHeroIncoming 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+.pvg-hero-carousel__media {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  will-change: transform, opacity, filter;
+}
+
+.pvg-hero-carousel__slide--current:not(.pvg-hero-carousel__slide--incoming):not(.pvg-hero-carousel__slide--outgoing)
+  .pvg-hero-carousel__media {
+  animation: pvgHeroKenBurns 10s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.pvg-hero-carousel__slide--outgoing .pvg-hero-carousel__media {
+  animation: pvgHeroMediaOut 1.55s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+.pvg-hero-carousel__slide--incoming .pvg-hero-carousel__media {
+  animation: pvgHeroMediaIn 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+.pvg-hero-carousel__img {
+  object-fit: contain !important;
+  object-position: center center !important;
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.pvg-hero-carousel__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 88% 78% at 50% 50%, transparent 18%, rgba(28, 2, 2, 0.68) 100%),
+    linear-gradient(180deg, rgba(122, 21, 21, 0.32) 0%, transparent 40%, transparent 60%, rgba(28, 2, 2, 0.34) 100%);
+  animation: pvgHeroVeilPulse 1.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes pvgHeroIncoming {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pvgHeroOutgoing {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes pvgHeroMediaIn {
+  0% {
+    opacity: 0.2;
+    filter: brightness(1.2) blur(8px) saturate(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1) blur(0) saturate(1);
+  }
+}
+
+@keyframes pvgHeroMediaOut {
+  0% {
+    opacity: 1;
+    filter: brightness(1) blur(0) saturate(1);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(0.65) blur(6px) saturate(0.8);
+  }
+}
+
+@keyframes pvgHeroKenBurns {
+  from { transform: scale(1.02); }
+  to { transform: scale(1); }
+}
+
+@keyframes pvgHeroVeilPulse {
+  0% { opacity: 0; }
+  28% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvg-hero-carousel,
+  .pvg-hero-carousel * {
+    animation-duration: unset !important;
+    animation-iteration-count: unset !important;
+    transition-duration: unset !important;
+  }
+
+  .pvg-hero-carousel__slide--incoming,
+  .pvg-hero-carousel__slide--outgoing,
+  .pvg-hero-carousel__slide--incoming .pvg-hero-carousel__media,
+  .pvg-hero-carousel__slide--outgoing .pvg-hero-carousel__media,
+  .pvg-hero-carousel__slide--current .pvg-hero-carousel__media {
+    animation: none !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  .pvg-hero-carousel__veil {
+    display: none !important;
+  }
+
+  .pvg-hero-carousel__slide--outgoing {
+    animation: pvgHeroOutgoing 0.35s ease forwards !important;
+  }
+
+  .pvg-hero-carousel__slide--incoming {
+    animation: pvgHeroIncoming 0.35s ease forwards !important;
+  }
+}

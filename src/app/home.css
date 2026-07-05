@@ -6505,9 +6505,10 @@ main:has(> .pvg-react-home-root) {
 }
 
 .pvg-hero-clean {
-  height: clamp(300px, 41vw, 620px) !important;
-  min-height: 220px !important;
-  max-height: 650px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 1024 / 346;
   background: #1c0202 !important;
   contain: layout paint;
 }
@@ -6525,7 +6526,9 @@ main:has(> .pvg-react-home-root) {
 
 @media (max-width: 640px) {
   .pvg-hero-clean {
-    height: clamp(210px, 60vw, 360px) !important;
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: 1024 / 346 !important;
   }
 }
 
@@ -6570,7 +6573,7 @@ main:has(> .pvg-react-home-root) {
   max-height: none !important;
   margin-top: var(--pvg-site-header-offset) !important;
   padding-top: 0 !important;
-  aspect-ratio: 1672 / 941;
+  aspect-ratio: 1024 / 346;
   background: #1c0202 !important;
   overflow: hidden;
   border-top: none;
@@ -7082,16 +7085,16 @@ main:has(> .pvg-react-home-root) {
 @media (min-width: 1025px) {
   .pvg-react-home-root .pvg-hero-clean {
     width: 100% !important;
-    height: clamp(500px, 42vw, 660px) !important;
-    min-height: 500px !important;
-    max-height: 660px !important;
-    aspect-ratio: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 1024 / 346 !important;
     background: #1c0202 !important;
   }
 
   .pvg-react-home-root .pvg-hero-clean .hero-slide-img,
   .pvg-react-home-root .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
-    object-fit: cover !important;
+    object-fit: contain !important;
     object-position: center center !important;
   }
 
@@ -7756,16 +7759,16 @@ a.pvg-footer-link:hover {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
-    height: clamp(500px, 42vw, 660px) !important;
-    min-height: 500px !important;
-    max-height: 660px !important;
-    aspect-ratio: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 1024 / 346 !important;
     background: #1c0202 !important;
   }
 
   .pvg-react-home-root .pvg-hero-clean .hero-slide-img,
   .pvg-react-home-root .pvg-hero-clean .hero-slide.is-active .hero-slide-img {
-    object-fit: cover !important;
+    object-fit: contain !important;
     object-position: center center !important;
   }
 

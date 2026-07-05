@@ -212,11 +212,11 @@ export function CategoryHubHeader({
               key={section.id}
               id={`panel-${section.id}`}
               role="region"
-              aria-label={section.title}
+              aria-label={section.title || TAB_LABELS[section.id]}
               hidden={activeTab !== section.id}
               className="category-hub-panel"
             >
-              <h2 className="category-hub-panel__title">{section.title}</h2>
+              <h2 className="category-hub-panel__title">{section.title || TAB_LABELS[section.id]}</h2>
               <div
                 className="category-hub-panel__body prose prose-sm max-w-none md:prose-base"
                 dangerouslySetInnerHTML={{ __html: section.html ?? '' }}
@@ -226,7 +226,7 @@ export function CategoryHubHeader({
 
           {hasFaqs ? (
             <div id="panel-faqs" role="region" aria-label="FAQs" hidden={activeTab !== 'faqs'} className="category-hub-panel">
-              <h2 className="category-hub-panel__title">{label} — Frequently Asked Questions</h2>
+              <h2 className="category-hub-panel__title">{TAB_LABELS.faqs}</h2>
               <div className="category-hub-faq-list">
                 {faqs.map((faq) => (
                   <details key={faq.question} className="category-hub-faq-item">

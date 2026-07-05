@@ -22,6 +22,11 @@
 /fix_*.mjs
 /fix_*.js
 
+# Headroom / local AI tooling (not part of the app)
+.cursorrules
+/scripts/start-headroom-cursor.ps1
+/scripts/headroom-status.ps1
+
 # next.js
 /.next/
 /out/

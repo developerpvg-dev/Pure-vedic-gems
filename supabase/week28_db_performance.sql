@@ -126,8 +126,8 @@ AS $$
           count(*)::int AS day_cnt,
           coalesce(sum(total) FILTER (WHERE payment_status = 'captured'), 0) AS day_rev
         FROM orders
-        WHERE created_at >= d::timestamptz
-          AND created_at < (d + 1)::timestamptz
+        WHERE created_at >= d
+          AND created_at < d + interval '1 day'
       ) day_stats ON true
     )
   );

@@ -102,7 +102,7 @@ AS $$
     'chart_data', (
       SELECT coalesce(jsonb_agg(
         jsonb_build_object(
-          'date', d::text,
+          'date', (d::date)::text,
           'revenue', coalesce(day_rev, 0),
           'orders', coalesce(day_cnt, 0)
         )
@@ -114,8 +114,8 @@ AS $$
           count(*)::int AS day_cnt,
           coalesce(sum(total) FILTER (WHERE payment_status = 'captured'), 0) AS day_rev
         FROM orders
-        WHERE created_at >= d::timestamptz
-          AND created_at < (d + 1)::timestamptz
+        WHERE created_at >= d
+          AND created_at < d + interval '1 day'
       ) day_stats ON true
     )
   );
