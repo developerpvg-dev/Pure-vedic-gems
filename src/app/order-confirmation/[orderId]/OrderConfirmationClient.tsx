@@ -239,7 +239,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
                     {item.carat_weight ? ` · ${item.carat_weight} ct` : ''}
                     {item.origin ? ` · ${item.origin}` : ''}
                   </p>
-                  {(item.configuration_summary || item.configuration_snapshot) && (
+                  {Boolean(item.configuration_summary || item.configuration_snapshot) && (
                     <div className="mt-1">
                       <ConfigurationDetailsDisplay
                         snapshot={item.configuration_snapshot}

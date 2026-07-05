@@ -219,6 +219,7 @@ export type ProductCard = Pick<
   quality_label?: string | null;
   certificate_lab?: string | null;
   certificate_number?: string | null;
+  mukhi_count?: number | null;
 };
 
 // Filter parameters for product listing API

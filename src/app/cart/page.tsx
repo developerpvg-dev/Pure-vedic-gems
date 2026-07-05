@@ -59,7 +59,7 @@ function CartItemRow({
             {item.origin ? ` · ${item.origin}` : ''}
           </p>
         )}
-        {(item.configuration_summary || item.configuration_snapshot) && (
+        {Boolean(item.configuration_summary || item.configuration_snapshot) && (
           <div className="mt-1 space-y-1">
             <ConfigurationDetailsDisplay
               snapshot={item.configuration_snapshot}

@@ -10,7 +10,9 @@ import {
   resolveConfiguratorOptionRules,
   validateRingSizeValue,
 } from '@/lib/utils/configurator-rules';
+import type { Json } from '@/lib/types/database';
 import type { ConfigurationDeliveryEta, SettingType, ConfigPricingBreakdown } from '@/lib/types/configurator';
+import type { ProductType, PriceMode } from '@/lib/types/product';
 import { calculateJewelryDesignPricing } from '@/lib/utils/jewelry-pricing';
 import { getDesignConfiguratorNote, getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
 import {
@@ -80,7 +82,11 @@ type ProductForConfiguration = {
   name: string;
   category: string;
   sub_category: string | null;
+  product_type: ProductType | null;
+  mukhi_count: number | null;
   price: number;
+  price_per_carat: number | null;
+  price_mode: PriceMode | null;
   carat_weight: number | null;
   origin: string | null;
   images: unknown;
@@ -334,7 +340,7 @@ export async function POST(request: NextRequest) {
   const [productResult, rulesResult] = await Promise.all([
     admin
       .from('products')
-      .select('id, sku, tag_number, slug, name, category, sub_category, price, carat_weight, origin, images, thumbnail_url, in_stock, is_active, availability_status, configurator_enabled, certificate_display_enabled')
+      .select('id, sku, tag_number, slug, name, category, sub_category, product_type, mukhi_count, price, price_per_carat, price_mode, carat_weight, origin, images, thumbnail_url, in_stock, is_active, availability_status, configurator_enabled, certificate_display_enabled')
       .eq('id', input.product_id)
       .maybeSingle(),
     admin
@@ -425,7 +431,7 @@ export async function POST(request: NextRequest) {
   if (rudrakshaProduct && comboIds.length > 0) {
     const comboResult = await admin
       .from('products')
-      .select('id, sku, tag_number, slug, name, category, sub_category, price, carat_weight, origin, images, thumbnail_url, in_stock, is_active, availability_status, configurator_enabled, certificate_display_enabled')
+      .select('id, sku, tag_number, slug, name, category, sub_category, product_type, mukhi_count, price, price_per_carat, price_mode, carat_weight, origin, images, thumbnail_url, in_stock, is_active, availability_status, configurator_enabled, certificate_display_enabled')
       .in('id', comboIds);
 
     if (comboResult.error) {
@@ -513,12 +519,16 @@ export async function POST(request: NextRequest) {
     if (!designMatchesRudrakshaSelection(design.rudraksha_category, {
       category: product.category,
       sub_category: product.sub_category,
+      product_type: product.product_type ?? undefined,
+      mukhi_count: product.mukhi_count ?? undefined,
       name: product.name,
       slug: product.slug,
       id: product.id,
     }, comboProducts.map((combo) => ({
       category: combo.category,
       sub_category: combo.sub_category,
+      product_type: combo.product_type ?? undefined,
+      mukhi_count: combo.mukhi_count ?? undefined,
       name: combo.name,
       slug: combo.slug,
       id: combo.id,

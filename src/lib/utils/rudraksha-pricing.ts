@@ -1,7 +1,6 @@
-import { resolveProductDisplayPrice } from '@/lib/shop/product-pricing';
-import type { ProductCard } from '@/lib/types/product';
+import { resolveProductDisplayPrice, type ProductPricingInput } from '@/lib/shop/product-pricing';
 
-type PricedProduct = Pick<ProductCard, 'id' | 'price' | 'price_per_carat' | 'carat_weight' | 'price_mode'>;
+type PricedProduct = ProductPricingInput & { id: string };
 
 /** Sum primary + combo bead prices for a Rudraksha pendant configuration. */
 export function resolveRudrakshaSelectionPrice(

@@ -109,7 +109,7 @@ function OrderItemRow({ item, showConfig = false }: { item: OrderLineItem; showC
           {item.origin ?? ''}
           {item.sku ? (item.carat_weight || item.origin ? ` · SKU ${item.sku}` : `SKU ${item.sku}`) : ''}
         </p>
-        {showConfig && (item.configuration_summary || item.configuration_snapshot) ? (
+        {showConfig && Boolean(item.configuration_summary || item.configuration_snapshot) ? (
           <div className="mt-1">
             <ConfigurationDetailsDisplay
               snapshot={item.configuration_snapshot}

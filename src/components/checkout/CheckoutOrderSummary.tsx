@@ -65,7 +65,7 @@ export function CheckoutOrderSummary({
                     {item.origin ?? ''}
                   </p>
                 )}
-                {(item.configuration_summary || item.configuration_snapshot) && (
+                {Boolean(item.configuration_summary || item.configuration_snapshot) && (
                   <div className="pvg-checkout-item-chips-wrap">
                     <ConfigurationDetailsDisplay
                       snapshot={item.configuration_snapshot}
