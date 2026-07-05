@@ -4,7 +4,7 @@
  * Step 2 — Browse & Select Stone (Compact)
  */
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, type TouchEvent } from 'react';
 import Image from 'next/image';
 import { Search, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,8 @@ import { buildProductMeta, formatProductListPrice } from '@/lib/utils/format';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { isProductPriceOnRequest, isProductPurchasable } from '@/lib/shop/product-pricing';
 import { productHref } from '@/lib/categories/storefront';
-import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
+import { isRudrakshaStorefrontSlug, rudrakshaSubcategoryLabel } from '@/lib/constants/rudraksha-subcategories';
+import { buildRudrakshaCategoryTiles, type RudrakshaCategoryTile } from '@/lib/utils/rudraksha-category-tiles';
 import { toast } from 'sonner';
 import type { ProductCard } from '@/lib/types/product';
 import type { ProductListResponse } from '@/lib/types/product';
@@ -48,6 +49,117 @@ const SORT_OPTIONS = [
 
 const BASE_CATEGORIES = ['navaratna', 'upratna', 'gemstone', 'rudraksha', 'jewelry', 'mala', 'idol'];
 const PER_PAGE = 20;
+const RUDRAKSHA_CATEGORY_CHIPS = buildRudrakshaCategoryTiles();
+
+function resolveInitialRudrakshaBrowseSlug(category: GemCategory): GemCategory {
+  if (isRudrakshaStorefrontSlug(category)) return category;
+  return '1-mukhi';
+}
+
+function shortRudrakshaCategoryLabel(slug: string) {
+  const match = slug.match(/^(\d+)-mukhi$/);
+  if (match) return `${match[1]} Mukhi`;
+  return rudrakshaSubcategoryLabel(slug).replace(/\s+Rudraksha(s)?$/i, '');
+}
+
+function RudrakshaMukhiNavigator({
+  chips,
+  activeSlug,
+  onChange,
+}: {
+  chips: RudrakshaCategoryTile[];
+  activeSlug: GemCategory;
+  onChange: (slug: GemCategory) => void;
+}) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const activeIndex = Math.max(
+    0,
+    chips.findIndex((chip) => chip.id === activeSlug)
+  );
+
+  const goToIndex = useCallback(
+    (index: number) => {
+      const next = chips[Math.max(0, Math.min(chips.length - 1, index))];
+      if (next) onChange(next.id);
+    },
+    [chips, onChange]
+  );
+
+  useEffect(() => {
+    const chipEl = stripRef.current?.querySelector(`[data-mukhi="${activeSlug}"]`);
+    chipEl?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [activeSlug]);
+
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
+    touchStartX.current = event.touches[0].clientX;
+    touchStartY.current = event.touches[0].clientY;
+  }
+
+  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = Math.abs(event.changedTouches[0].clientY - touchStartY.current);
+    if (Math.abs(deltaX) < 48 || deltaY > Math.abs(deltaX) * 0.75) return;
+    if (deltaX < 0) goToIndex(activeIndex + 1);
+    else goToIndex(activeIndex - 1);
+  }
+
+  return (
+    <div
+      className="pvg-rudraksha-mukhi-strip-wrap"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <button
+        type="button"
+        className="pvg-rudraksha-mukhi-strip-arrow"
+        onClick={() => goToIndex(activeIndex - 1)}
+        disabled={activeIndex <= 0}
+        aria-label="Previous Mukhi category"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </button>
+
+      <div
+        ref={stripRef}
+        className="pvg-rudraksha-mukhi-strip"
+        role="tablist"
+        aria-label="Rudraksha mukhi categories"
+      >
+        {chips.map((chip, index) => {
+          const isActive = chip.id === activeSlug;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              role="tab"
+              data-mukhi={chip.id}
+              aria-selected={isActive}
+              onClick={() => goToIndex(index)}
+              className={cn(
+                'pvg-rudraksha-mukhi-chip',
+                isActive && 'pvg-rudraksha-mukhi-chip--active'
+              )}
+            >
+              {shortRudrakshaCategoryLabel(chip.id)}
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        className="pvg-rudraksha-mukhi-strip-arrow"
+        onClick={() => goToIndex(activeIndex + 1)}
+        disabled={activeIndex >= chips.length - 1}
+        aria-label="Next Mukhi category"
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
 
 async function resolveCatalogFilters(category: GemCategory): Promise<{
   category?: string;
@@ -110,6 +222,16 @@ export default function GemBrowser({
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [rudrakshaBrowseSlug, setRudrakshaBrowseSlug] = useState<GemCategory>(() =>
+    resolveInitialRudrakshaBrowseSlug(category)
+  );
+
+  const catalogCategory = rudrakshaMode ? rudrakshaBrowseSlug : category;
+
+  useEffect(() => {
+    if (!rudrakshaMode) return;
+    setRudrakshaBrowseSlug(resolveInitialRudrakshaBrowseSlug(category));
+  }, [category, rudrakshaMode]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
@@ -118,13 +240,13 @@ export default function GemBrowser({
 
   useEffect(() => {
     setPage(1);
-  }, [category, priceRange, sort, debouncedSearch]);
+  }, [catalogCategory, priceRange, sort, debouncedSearch]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const catalogFilters = await resolveCatalogFilters(category);
+      const catalogFilters = await resolveCatalogFilters(catalogCategory);
       const params = new URLSearchParams();
 
       if (catalogFilters.category) {
@@ -162,18 +284,26 @@ export default function GemBrowser({
       if (!res.ok) throw new Error('Failed to fetch');
       const data = (await res.json()) as ProductListResponse;
 
-      setProducts((data.products ?? []).filter((product) => isProductPurchasable(product)));
+      setProducts(
+        (data.products ?? []).filter((product) =>
+          rudrakshaMode ? product.category === 'rudraksha' : isProductPurchasable(product)
+        )
+      );
       setTotalCount(data.total ?? 0);
       setTotalPages(Math.max(1, data.total_pages ?? 1));
     } catch {
       setProducts([]);
       setTotalCount(0);
       setTotalPages(1);
-      setError('Failed to load gemstones. Please try again.');
+      setError(
+        rudrakshaMode
+          ? 'Failed to load Rudraksha beads. Please try again.'
+          : 'Failed to load gemstones. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
-  }, [category, priceRange, sort, debouncedSearch, page]);
+  }, [catalogCategory, priceRange, sort, debouncedSearch, page, rudrakshaMode]);
 
   useEffect(() => {
     fetchProducts();
@@ -222,8 +352,8 @@ export default function GemBrowser({
   }
 
   return (
-    <div>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+    <div className={cn(rudrakshaMode && 'pvg-rudraksha-browse')}>
+      <div className="pvg-rudraksha-browse-toolbar flex flex-wrap items-center gap-1.5">
         <div className="relative min-w-36 flex-1">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -234,7 +364,7 @@ export default function GemBrowser({
             className="h-7 pl-7 text-xs"
           />
         </div>
-        <div className="flex gap-0.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        <div className="pvg-rudraksha-browse-filters flex w-full gap-0.5 overflow-x-auto sm:w-auto" style={{ scrollbarWidth: 'none' }}>
           {PRICE_RANGES.map((range, idx) => (
             <button
               key={idx}
@@ -264,23 +394,84 @@ export default function GemBrowser({
         </select>
       </div>
 
-      {!loading && !error && rudrakshaMode && (
-        <div className="mt-2 rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
-          <p className="text-[11px] text-muted-foreground">
-            Select one or more Rudraksha beads. Choose 3 or more to unlock multi-bead pendant designs.
-          </p>
-          {selectedBeadCount > 0 && (
-            <p className="mt-1 text-xs font-semibold text-primary">
-              {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'} selected
-              {selectedBeadCount >= 3 ? ' · Multi-bead designs available' : ''}
+      {rudrakshaMode && (
+        <RudrakshaMukhiNavigator
+          chips={RUDRAKSHA_CATEGORY_CHIPS}
+          activeSlug={rudrakshaBrowseSlug}
+          onChange={setRudrakshaBrowseSlug}
+        />
+      )}
+
+      {!loading && !error && rudrakshaMode && selectedBeadCount > 1 && (
+        <div
+          className={cn(
+            'pvg-rudraksha-min-beads mt-2',
+            selectedBeadCount >= 3 && 'pvg-rudraksha-min-beads--done'
+          )}
+          role="status"
+        >
+          {selectedBeadCount >= 3 ? (
+            <p className="pvg-rudraksha-min-beads-text">
+              Multi-bead designs unlocked
             </p>
+          ) : (
+            <>
+              <div className="pvg-rudraksha-min-beads-dots" aria-hidden="true">
+                {[1, 2, 3].map((step) => (
+                  <span
+                    key={step}
+                    className={cn(
+                      'pvg-rudraksha-min-beads-dot',
+                      step <= selectedBeadCount && 'pvg-rudraksha-min-beads-dot--filled'
+                    )}
+                  />
+                ))}
+              </div>
+              <p className="pvg-rudraksha-min-beads-text">
+                Select at least 3 beads for multi-bead designs ({selectedBeadCount}/3)
+              </p>
+            </>
           )}
         </div>
       )}
 
+      {!loading && !error && rudrakshaMode && selected && (
+        <ul className="pvg-rudraksha-selection mt-2 space-y-1">
+          <li className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-white/70 px-2 py-1 text-[11px]">
+            <span className="min-w-0 text-primary">
+              <span className="font-semibold text-accent">Primary · </span>
+              {rudrakshaSubcategoryLabel(selected.sub_category ?? '')} — {selected.name}
+            </span>
+          </li>
+          {comboProducts
+            .filter((item) => item.id !== selected.id)
+            .map((item) => (
+              <li
+                key={item.id}
+                className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-white/70 px-2 py-1 text-[11px]"
+              >
+                <span className="min-w-0 text-primary">
+                  <span className="font-semibold text-muted-foreground">Combo · </span>
+                  {rudrakshaSubcategoryLabel(item.sub_category ?? '')} — {item.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onToggleCombo?.(item)}
+                  className="shrink-0 text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
+
       {!loading && !error && totalCount > 0 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Showing {rangeStart}–{rangeEnd} of {totalCount} stone{totalCount === 1 ? '' : 's'}
+          Showing {rangeStart}–{rangeEnd} of {totalCount}{' '}
+          {rudrakshaMode ? 'bead' : 'stone'}
+          {totalCount === 1 ? '' : 's'}
+          {rudrakshaMode ? ` in ${shortRudrakshaCategoryLabel(rudrakshaBrowseSlug)}` : ''}
         </p>
       )}
 
@@ -305,7 +496,9 @@ export default function GemBrowser({
           </div>
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center py-8 text-center">
-            <p className="text-sm font-medium text-primary">No stones found</p>
+            <p className="text-sm font-medium text-primary">
+              {rudrakshaMode ? 'No beads found' : 'No stones found'}
+            </p>
             <p className="mt-0.5 text-xs text-muted-foreground">Adjust filters or search.</p>
           </div>
         ) : (
@@ -361,6 +554,11 @@ export default function GemBrowser({
                       )}
                     </div>
                     <div className="p-1.5">
+                      {rudrakshaMode && product.sub_category && (
+                        <p className="mb-0.5 truncate text-[8px] font-semibold uppercase tracking-wide text-accent/80">
+                          {shortRudrakshaCategoryLabel(product.sub_category)}
+                        </p>
+                      )}
                       <p className="truncate text-[11px] font-medium leading-tight text-primary">
                         {formatProductDisplayName(product.name)}
                       </p>
@@ -445,8 +643,13 @@ export default function GemBrowser({
               </nav>
             )}
             {rudrakshaMode && selected && onContinueRudraksha && (
-              <div className="mt-4 flex justify-end">
-                <Button type="button" size="sm" className="h-9 px-4 text-xs" onClick={onContinueRudraksha}>
+              <div className="pvg-rudraksha-continue mt-4 flex justify-stretch sm:justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-10 w-full px-4 text-xs sm:h-9 sm:w-auto"
+                  onClick={onContinueRudraksha}
+                >
                   Continue with {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'}
                 </Button>
               </div>

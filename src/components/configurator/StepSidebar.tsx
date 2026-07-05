@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
 import type { ConfiguratorState } from '@/lib/types/configurator';
 import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
-import { isConfiguratorStepSkipped } from '@/lib/utils/configurator-steps';
+import { isConfiguratorStepSkipped, getConfiguratorStepMeta } from '@/lib/utils/configurator-steps';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
 
 interface StepSidebarProps {
@@ -32,8 +32,19 @@ function getStepValue(step: number, state: ConfiguratorState): string | null {
       return state.gem_category
         ? state.gem_category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
         : null;
-    case 2:
-      return state.selected_product?.name ?? null;
+    case 2: {
+      if (!state.selected_product) return null;
+      if (isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)) {
+        const comboCount = state.rudraksha_combo_products.filter(
+          (item) => item.id !== state.selected_product?.id
+        ).length;
+        const beadCount = 1 + comboCount;
+        return beadCount > 1
+          ? `${beadCount} beads · ${state.selected_product.name}`
+          : state.selected_product.name;
+      }
+      return state.selected_product.name;
+    }
     case 3:
       return state.setting_type
         ? isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)
@@ -111,6 +122,7 @@ export default function StepSidebar({
           const value = getStepValue(step.id, state);
           const canClick = canGoToStep(step.id) && !isCurrent;
           const displayStepNum = getDisplayStepNum(step.id, startStep, state, optionRules);
+          const stepMeta = getConfiguratorStepMeta(step.id, state);
 
           return (
             <div key={step.id} className="flex gap-3">
@@ -151,7 +163,7 @@ export default function StepSidebar({
                     canClick && 'cursor-pointer hover:opacity-80'
                   )}
                 >
-                  {step.title}
+                  {stepMeta.title}
                 </button>
                 {value && (
                   <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{value}</p>
@@ -175,6 +187,7 @@ export default function StepSidebar({
           const isCompleted = step.id < state.current_step;
           const value = getStepValue(step.id, state);
           const canClick = canGoToStep(step.id) && !isCurrent;
+          const stepMeta = getConfiguratorStepMeta(step.id, state);
 
           return (
             <Fragment key={step.id}>
@@ -182,7 +195,7 @@ export default function StepSidebar({
                 onClick={() => canClick && onStepClick(step.id)}
                 disabled={!canClick && !isCurrent}
                 aria-current={isCurrent ? 'step' : undefined}
-                aria-label={`Step ${displayStepNum}: ${step.title}${value ? ` — ${value}` : ''}`}
+                aria-label={`Step ${displayStepNum}: ${stepMeta.title}${value ? ` — ${value}` : ''}`}
                 className={cn(
                   'group flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 transition-all duration-200 text-left',
                   isCurrent && 'border-accent/50 bg-accent/8 shadow-[0_3px_14px_rgba(201,168,76,0.18)]',
@@ -210,7 +223,7 @@ export default function StepSidebar({
                       isCurrent ? 'text-primary' : 'text-muted-foreground'
                     )}
                   >
-                    {step.short}
+                    {stepMeta.short}
                   </p>
                   {value && !isCurrent && (
                     <p className="text-[9px] text-muted-foreground/65 truncate max-w-19 leading-tight">
@@ -244,6 +257,7 @@ export default function StepSidebar({
             const isCurrent = state.current_step === step.id;
             const isCompleted = step.id < state.current_step;
             const canClick = canGoToStep(step.id) && !isCurrent;
+            const stepMeta = getConfiguratorStepMeta(step.id, state);
 
             return (
               <button
@@ -258,14 +272,14 @@ export default function StepSidebar({
                   canClick && 'cursor-pointer'
                 )}
                 aria-current={isCurrent ? 'step' : undefined}
-                aria-label={`Step ${displayStepNum}: ${step.title}`}
+                aria-label={`Step ${displayStepNum}: ${stepMeta.title}`}
               >
                 {isCompleted && !isCurrent ? (
                   <Check className="h-3 w-3" />
                 ) : (
                   <span className="font-semibold">{displayStepNum}</span>
                 )}
-                <span>{step.short}</span>
+                <span>{stepMeta.short}</span>
               </button>
             );
           })}

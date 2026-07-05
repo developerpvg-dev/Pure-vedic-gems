@@ -23,6 +23,7 @@ import { resolveMetalRatePerGram } from '@/lib/hooks/useManualMetalPrices';
 import {
   isRudrakshaConfiguratorContext,
 } from '@/lib/utils/rudraksha-design-rules';
+import { resolveRudrakshaSelectionPrice } from '@/lib/utils/rudraksha-pricing';
 
 const DEFAULT_STORAGE_KEY = 'pvg_configurator:full';
 
@@ -179,9 +180,11 @@ function recalcPricing(
   ratesBySlug?: Record<string, number> | null,
   settingProfiles?: JewelrySettingMetalProfiles | null
 ): ConfigPricingBreakdown {
-  const gemPrice = state.selected_product
-    ? resolveProductDisplayPrice(state.selected_product) ?? 0
-    : 0;
+  const gemPrice = isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)
+    ? resolveRudrakshaSelectionPrice(state.selected_product, state.rudraksha_combo_products)
+    : state.selected_product
+      ? resolveProductDisplayPrice(state.selected_product) ?? 0
+      : 0;
 
   let makingCharge = 0;
   let diamondCharge = 0;
@@ -517,6 +520,7 @@ export function useConfigurator(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       state.selected_product?.price,
+      state.rudraksha_combo_products,
       state.selected_design?.id,
       state.selected_design?.labor_rates,
       state.metal,

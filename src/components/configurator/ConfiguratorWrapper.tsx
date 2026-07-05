@@ -23,6 +23,7 @@ import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
 import {
   getConfiguratorNextStep,
   getConfiguratorPrevStep,
+  getConfiguratorStepMeta,
   isConfiguratorStepSkipped,
 } from '@/lib/utils/configurator-steps';
 import {
@@ -145,10 +146,7 @@ export default function ConfiguratorWrapper({
   const effectiveLaborRates = useMemo(() => {
     const scopeFallback =
       state.selected_product &&
-      isRudrakshaConfiguratorContext(state.selected_product.category, {
-        category: state.selected_product.category,
-        sub_category: state.selected_product.sub_category,
-      })
+      isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)
         ? 'rudraksha'
         : 'gemstone';
 
@@ -290,10 +288,15 @@ export default function ConfiguratorWrapper({
   }, [handleDesignMismatch, state.selected_design, state.setting_type]);
 
   useEffect(() => {
+    const rudrakshaPendantFlow = isRudrakshaConfiguratorContext(
+      state.gem_category,
+      state.selected_product
+    );
+    if (rudrakshaPendantFlow) return;
     if (state.setting_type && !isSettingTypeAllowed(optionRules, state.setting_type)) {
       startTransition(() => handleBuyLoose());
     }
-  }, [handleBuyLoose, optionRules, state.setting_type]);
+  }, [handleBuyLoose, optionRules, state.gem_category, state.selected_product, state.setting_type]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -451,9 +454,7 @@ export default function ConfiguratorWrapper({
     state,
     optionRules
   );
-  const currentStepMeta = CONFIGURATOR_STEPS.find(
-    (step) => step.id === state.current_step
-  );
+  const currentStepMeta = getConfiguratorStepMeta(state.current_step, state);
   const selectedProductImage = getSelectedProductImage(state);
   const progressPct = Math.round((currentDisplayNum / totalSteps) * 100);
   const visibleSteps = CONFIGURATOR_STEPS.filter(
@@ -472,13 +473,13 @@ export default function ConfiguratorWrapper({
     isSettingTypeAllowed(optionRules, 'loose');
 
   return (
-    <div className="pvg-configurator font-sans">
+    <div className={cn('pvg-configurator font-sans', rudrakshaFlow && 'pvg-configurator--rudraksha')}>
       <div
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[3px]"
         onClick={() => window.history.back()}
       />
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-24 z-50 sm:inset-4 sm:top-24 lg:inset-x-6 lg:bottom-6 lg:top-28">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-20 z-50 sm:top-24 sm:inset-4 lg:inset-x-6 lg:bottom-6 lg:top-28">
         <div className="mx-auto flex h-full max-w-265 items-stretch">
           <div
             className={cn(
@@ -633,8 +634,12 @@ export default function ConfiguratorWrapper({
                 </span>
                 <h2 className="truncate text-base font-semibold text-primary">
                   {startStep >= 3 && state.selected_product
-                    ? `Configure ${state.selected_product.name}`
-                    : 'Design Your Jewelry'}
+                    ? rudrakshaFlow
+                      ? `Configure ${state.selected_product.name} Pendant`
+                      : `Configure ${state.selected_product.name}`
+                    : rudrakshaFlow
+                      ? 'Design Your Rudraksha Pendant'
+                      : 'Design Your Jewelry'}
                 </h2>
               </div>
 
@@ -694,7 +699,14 @@ export default function ConfiguratorWrapper({
                   onTouchEnd={handleTouchEnd}
                   className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 lg:px-5 lg:py-5"
                 >
-                  <div className="mx-auto w-full max-w-2xl">{renderStep()}</div>
+                  <div
+                    className={cn(
+                      'mx-auto w-full',
+                      rudrakshaFlow ? 'max-w-4xl' : 'max-w-2xl'
+                    )}
+                  >
+                    {renderStep()}
+                  </div>
                 </div>
               </section>
 

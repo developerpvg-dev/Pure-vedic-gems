@@ -27,12 +27,13 @@ export function OrderJourneyTimeline({
   const journey = getCustomerJourney(order);
   if (!journey) return null;
 
-  const { milestones, hasTracking } = journey;
+  const { milestones, hasTracking, fulfillmentContext } = journey;
+  const minWidth = Math.max(360, milestones.length * 88);
 
   return (
     <div className={compact ? 'px-0 py-3' : 'px-6 py-4'}>
       <div className="overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
-        <div className="flex min-w-[720px] items-center">
+        <div className="flex items-center" style={{ minWidth: `${minWidth}px` }}>
           {milestones.map((milestone, index) => (
             <div key={milestone.key} className="flex flex-1 items-center">
               <div className="flex min-w-0 flex-col items-center px-0.5">
@@ -91,6 +92,11 @@ export function OrderJourneyTimeline({
       </div>
 
       <div className="mt-4 space-y-3">
+        {fulfillmentContext.mixed ? (
+          <p className="text-[11px] text-[var(--pvg-muted)]">
+            Tracking reflects the primary fulfillment path for this order.
+          </p>
+        ) : null}
         {milestones
           .filter((milestone) => milestone.videoUrl)
           .map((milestone) => (

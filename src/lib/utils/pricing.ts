@@ -178,6 +178,30 @@ export async function recalculateOrderTotal(
 
   // Verify all products exist and are in stock
   const pricedItems: PricingBreakdown['items'] = [];
+  const configIds = Array.from(
+    new Set(
+      items
+        .filter((i) => i.configuration_id)
+        .map((i) => i.configuration_id!)
+    )
+  );
+
+  const configGemPriceMap = new Map<string, number>();
+  if (configIds.length > 0) {
+    const { data: gemConfigs, error: gemConfigError } = await supabase
+      .from('product_configurations')
+      .select('id, gem_price')
+      .in('id', configIds);
+
+    if (gemConfigError || !gemConfigs || gemConfigs.length !== configIds.length) {
+      throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
+    }
+
+    for (const cfg of gemConfigs as Array<{ id: string; gem_price: number | null }>) {
+      configGemPriceMap.set(cfg.id, Number(cfg.gem_price ?? 0));
+    }
+  }
+
   for (const item of items) {
     const product = productMap.get(item.product_id);
     if (!product) {
@@ -204,6 +228,14 @@ export async function recalculateOrderTotal(
 
     const productTax = resolveProductTax(product);
 
+    const configuredGemPrice = item.configuration_id
+      ? configGemPriceMap.get(item.configuration_id)
+      : undefined;
+    const unitPrice =
+      configuredGemPrice !== undefined && configuredGemPrice > 0
+        ? configuredGemPrice
+        : product.price;
+
     pricedItems.push({
       product_id: item.product_id,
       sku: product.sku,
@@ -219,9 +251,9 @@ export async function recalculateOrderTotal(
       tax_status: product.tax_status,
       tax_class: productTax.tax_class,
       tax_rate_percent: productTax.rate_percent,
-      unit_price: product.price,
+      unit_price: unitPrice,
       quantity: item.quantity,
-      line_total: product.price * item.quantity,
+      line_total: unitPrice * item.quantity,
     });
   }
 
@@ -233,15 +265,9 @@ export async function recalculateOrderTotal(
   let certificationCharges = 0;
   let energizationCharges = 0;
 
-  const configIds = Array.from(
-    new Set(
-      items
-        .filter((i) => i.configuration_id)
-        .map((i) => i.configuration_id!)
-    )
-  );
+  const configIdsForCharges = configIds;
 
-  if (configIds.length > 0) {
+  if (configIdsForCharges.length > 0) {
     const configItemMap = new Map(
       items
         .filter((item) => item.configuration_id)
@@ -250,11 +276,11 @@ export async function recalculateOrderTotal(
     const { data: configs, error: configError } = await supabase
       .from('product_configurations')
       .select('id, product_id, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee')
-      .in('id', configIds);
+      .in('id', configIdsForCharges);
 
     // Fail closed: every requested configuration must resolve to an active row.
     // A missing/invalid configuration_id must never silently skip its charges.
-    if (configError || !configs || configs.length !== configIds.length) {
+    if (configError || !configs || configs.length !== configIdsForCharges.length) {
       throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
     }
 

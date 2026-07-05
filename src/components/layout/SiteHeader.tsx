@@ -321,20 +321,32 @@ function TopbarMarqueeItems() {
         Worldwide Safe &amp; Insured Delivery
       </span>
       <span className="pvg-topbar-dot">◆</span>
-      <span className="pvg-topbar-item pvg-topbar-item-phone">
+      <a
+        href="tel:+919310172512"
+        className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-phone-link"
+        aria-label="Call India +91-9310172512"
+      >
         <FlagIN />
         +91-9310172512
-      </span>
+      </a>
       <span className="pvg-topbar-dot">◆</span>
-      <span className="pvg-topbar-item pvg-topbar-item-phone">
+      <a
+        href="tel:+447831491778"
+        className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-phone-link"
+        aria-label="Call UK +44-7831491778"
+      >
         <FlagGB />
         +44-7831491778
-      </span>
+      </a>
       <span className="pvg-topbar-dot">◆</span>
-      <span className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last">
+      <a
+        href="tel:+971526686526"
+        className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last pvg-topbar-phone-link"
+        aria-label="Call Dubai +971-526686526"
+      >
         <FlagAE />
         +971-526686526
-      </span>
+      </a>
     </>
   );
 }
@@ -565,8 +577,20 @@ export function SiteHeader() {
           background: linear-gradient(90deg, #3D1212 0%, #6B2020 40%, #7A2828 60%, #3D1212 100%);
           border-bottom: 1px solid rgba(212,168,67,0.45);
         }
-        .pvg-topbar-phone-link { text-decoration: none; transition: color 0.2s; }
-        .pvg-topbar-phone-link:hover { color: #F0C96A !important; }
+        .pvg-topbar-phone-link {
+          text-decoration: none;
+          transition: color 0.2s;
+          cursor: pointer;
+          -webkit-tap-highlight-color: rgba(240, 201, 106, 0.35);
+          touch-action: manipulation;
+        }
+        .pvg-topbar-phone-link:hover,
+        .pvg-topbar-phone-link:active {
+          color: #F0C96A !important;
+        }
+        .pvg-topbar-marquee-inner:has(.pvg-topbar-phone-link:active) {
+          animation-play-state: paused;
+        }
 
         .pvg-topbar-item {
           display: inline-flex;

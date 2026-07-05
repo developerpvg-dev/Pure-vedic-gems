@@ -1,34 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Loader2, Save, ChevronRight, MessageCircle, PackageCheck } from 'lucide-react';
+import {
+  FULFILLMENT_PROFILE_LABELS,
+  getAdminStatusLabels,
+  getAdminStatusPipeline,
+  resolveOrderFulfillmentContext,
+  type LineItemForFulfillment,
+} from '@/lib/orders/fulfillment-profile';
 
-const VALID_STATUSES = [
-  'pending_payment', 'placed', 'confirmed', 'processing',
-  'design_assigned', 'design_in_progress', 'design_completed',
-  'jewelry_making', 'certification', 'energization',
-  'quality_check', 'shipped', 'delivered', 'cancelled', 'refunded',
-  'payment_review',
-] as const;
-
-const STATUS_LABELS: Record<string, string> = {
-  pending_payment: 'Pending Payment',
-  placed: 'Placed',
-  confirmed: 'Confirmed',
-  processing: 'Processing',
-  design_assigned: 'Product Crafting Started',
-  design_in_progress: 'Product In Progress',
-  design_completed: 'Product Completed',
-  jewelry_making: 'Jewelry Making',
-  certification: 'Certification',
-  energization: 'Energization',
-  quality_check: 'Quality Check',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-  refunded: 'Refunded',
-  payment_review: 'Payment Review',
-};
+const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
 
 interface OrderActionsProps {
   orderId: string;
@@ -46,6 +28,10 @@ interface OrderActionsProps {
   customerPhone: string | null;
   customerName: string | null;
   orderNumber: string;
+  orderItems?: LineItemForFulfillment[];
+  includeEnergization?: boolean;
+  certificationCharges?: number;
+  energizationCharges?: number;
 }
 
 export function OrderActions({
@@ -64,6 +50,10 @@ export function OrderActions({
   customerPhone,
   customerName,
   orderNumber,
+  orderItems = [],
+  includeEnergization = false,
+  certificationCharges = 0,
+  energizationCharges = 0,
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -80,10 +70,45 @@ export function OrderActions({
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  // Find next status in pipeline
-  const currentIndex = VALID_STATUSES.indexOf(status as typeof VALID_STATUSES[number]);
-  const deliveredIndex = VALID_STATUSES.indexOf('delivered');
-  const nextStatus = currentIndex >= 0 && currentIndex < deliveredIndex ? VALID_STATUSES[currentIndex + 1] : null;
+  const fulfillmentContext = useMemo(
+    () =>
+      resolveOrderFulfillmentContext({
+        items: orderItems,
+        includeEnergization,
+        certificationCharges,
+        energizationCharges,
+      }),
+    [orderItems, includeEnergization, certificationCharges, energizationCharges]
+  );
+
+  const statusPipeline = useMemo(
+    () => getAdminStatusPipeline(fulfillmentContext),
+    [fulfillmentContext]
+  );
+
+  const statusLabels = useMemo(
+    () => getAdminStatusLabels(fulfillmentContext),
+    [fulfillmentContext]
+  );
+
+  const selectableStatuses = useMemo(
+    () => [...statusPipeline, ...TERMINAL_STATUSES],
+    [statusPipeline]
+  );
+
+  const currentIndex = statusPipeline.indexOf(status as (typeof statusPipeline)[number]);
+  const deliveredIndex = statusPipeline.indexOf('delivered');
+  const nextStatus =
+    currentIndex >= 0 && currentIndex < deliveredIndex
+      ? statusPipeline[currentIndex + 1]
+      : null;
+
+  const craftingCompleteLabel =
+    fulfillmentContext.profile === 'rudraksha_configured'
+      ? 'Pendant completed'
+      : fulfillmentContext.profile === 'configured_jewelry'
+        ? 'Jewelry completed'
+        : 'Product completed';
 
   const handleSave = useCallback(async (updates: Record<string, unknown>) => {
     setSaving(true);
@@ -139,7 +164,7 @@ export function OrderActions({
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Hello ${customerName || 'Customer'},\n\nUpdate regarding your PureVedicGems order #${orderNumber}:\nStatus: ${STATUS_LABELS[status] || status}\n${tracking ? `Tracking: ${tracking}` : ''}\n\nThank you for shopping with us!`
+    `Hello ${customerName || 'Customer'},\n\nUpdate regarding your PureVedicGems order #${orderNumber}:\nStatus: ${statusLabels[status] || status}\n${tracking ? `Tracking: ${tracking}` : ''}\n\nThank you for shopping with us!`
   );
   const whatsappUrl = customerPhone
     ? `https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${whatsappMessage}`
@@ -153,6 +178,15 @@ export function OrderActions({
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600">Update Order</h2>
         </div>
         <div className="space-y-4 p-4">
+          <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
+            Fulfillment: <span className="font-semibold">{FULFILLMENT_PROFILE_LABELS[fulfillmentContext.profile]}</span>
+            {fulfillmentContext.mixed ? (
+              <span className="mt-0.5 block text-amber-800/90">
+                Mixed items — pipeline follows the most complex product type.
+              </span>
+            ) : null}
+          </div>
+
           {/* Quick advance */}
           {nextStatus && status !== 'delivered' && status !== 'cancelled' && status !== 'refunded' && (
             <button
@@ -160,15 +194,16 @@ export function OrderActions({
               disabled={saving}
               className="flex w-full items-center justify-between rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
             >
-              <span>Advance to: {STATUS_LABELS[nextStatus]}</span>
+              <span>Advance to: {statusLabels[nextStatus] ?? nextStatus}</span>
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
 
+          {fulfillmentContext.needsCrafting ? (
           <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-800">
               <PackageCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              Product completed
+              {craftingCompleteLabel}
             </p>
             {productCompleted ? (
               <p className="text-sm text-indigo-900">
@@ -187,13 +222,14 @@ export function OrderActions({
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
-                Mark product completed
+                Mark {craftingCompleteLabel.toLowerCase()}
               </button>
             )}
             <p className="mt-2 text-[11px] text-indigo-700/80">
-              Updates step 4 on the customer order tracking timeline.
+              Updates the crafting step on the customer tracking timeline.
             </p>
           </div>
+          ) : null}
 
           {/* Manual status select */}
           <div>
@@ -203,16 +239,18 @@ export function OrderActions({
               onChange={(e) => setStatus(e.target.value)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
             >
-              {VALID_STATUSES.map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              {selectableStatuses.map((s) => (
+                <option key={s} value={s}>{statusLabels[s] ?? s.replace(/_/g, ' ')}</option>
               ))}
             </select>
           </div>
 
           {/* Fulfillment videos */}
+          {(fulfillmentContext.showProductVideo || fulfillmentContext.showPujaVideo) && (
           <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-3">
             <p className="mb-3 text-xs font-bold uppercase tracking-wider text-violet-800">Customer videos</p>
             <div className="space-y-3">
+              {fulfillmentContext.showProductVideo ? (
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">Product video URL</label>
                 <input
@@ -223,6 +261,8 @@ export function OrderActions({
                 />
                 <p className="mt-1 text-[11px] text-gray-400">Customer sees a &quot;Watch Product Video&quot; button once saved.</p>
               </div>
+              ) : null}
+              {fulfillmentContext.showPujaVideo ? (
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">Puja / energization video URL</label>
                 <input
@@ -233,8 +273,10 @@ export function OrderActions({
                 />
                 <p className="mt-1 text-[11px] text-gray-400">Shown after product video, before shipment tracking.</p>
               </div>
+              ) : null}
             </div>
           </div>
+          )}
 
           {/* Tracking */}
           <div>

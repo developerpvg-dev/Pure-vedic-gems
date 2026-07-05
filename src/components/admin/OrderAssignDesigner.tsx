@@ -10,6 +10,7 @@ interface OrderAssignDesignerProps {
   currentDesignerId: string | null;
   currentDesignerName?: string | null;
   orderStatus: string;
+  needsDesigner?: boolean;
 }
 
 export function OrderAssignDesigner({
@@ -17,6 +18,7 @@ export function OrderAssignDesigner({
   currentDesignerId,
   currentDesignerName,
   orderStatus,
+  needsDesigner = true,
 }: OrderAssignDesignerProps) {
   const [designers, setDesigners] = useState<Designer[]>([]);
   const [selectedId, setSelectedId] = useState(currentDesignerId ?? '');
@@ -57,6 +59,22 @@ export function OrderAssignDesigner({
     }
     setMessage('Order routed to designer. They will receive an email with order details.');
   }, [orderId, selectedId]);
+
+  if (!needsDesigner) {
+    return (
+      <section className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+        <div className="border-b border-gray-200 px-5 py-3">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-600">
+            <Palette className="h-4 w-4" />
+            Design routing
+          </h2>
+        </div>
+        <p className="p-4 text-xs text-gray-500">
+          Designer routing is not required for this order type. Use status updates for preparation, certification, and shipping.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="overflow-hidden rounded-xl border border-indigo-200 bg-white">

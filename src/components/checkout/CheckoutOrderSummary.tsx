@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils/format';
+import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import type { CartItem } from '@/lib/types/cart';
 import { estimateClientTax } from '@/lib/utils/tax';
@@ -64,13 +65,14 @@ export function CheckoutOrderSummary({
                     {item.origin ?? ''}
                   </p>
                 )}
-                {item.configuration_summary && (
-                  <div className="pvg-checkout-item-chips">
-                    {item.configuration_summary.split(' · ').map((part, i) => (
-                      <span key={i} className="pvg-checkout-chip">
-                        {part}
-                      </span>
-                    ))}
+                {(item.configuration_summary || item.configuration_snapshot) && (
+                  <div className="pvg-checkout-item-chips-wrap">
+                    <ConfigurationDetailsDisplay
+                      snapshot={item.configuration_snapshot}
+                      summary={item.configuration_summary}
+                      deliveryEtaLabel={item.delivery_eta_label}
+                      variant="compact"
+                    />
                   </div>
                 )}
               </div>

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  countRudrakshaBeadsInSelection,
   designMatchesRudrakshaProduct,
+  designMatchesRudrakshaSelection,
   getRudrakshaDesignCategoriesForProduct,
+  getRudrakshaDesignCategoriesForSelection,
   isRudrakshaConfiguratorContext,
 } from '@/lib/utils/rudraksha-design-rules';
 import type { ProductCard } from '@/lib/types/product';
@@ -55,5 +58,27 @@ describe('rudraksha-design-rules', () => {
     expect(
       designMatchesRudrakshaProduct('multiple_beads', product({ sub_category: 'siddha-mala' }))
     ).toBe(true);
+  });
+
+  it('falls back to mukhi_count when sub_category is missing', () => {
+    expect(
+      getRudrakshaDesignCategoriesForProduct(product({ sub_category: '', mukhi_count: 1 }))
+    ).toEqual(['one_mukhi']);
+    expect(
+      getRudrakshaDesignCategoriesForProduct(product({ sub_category: '', mukhi_count: 7 }))
+    ).toEqual(['standard_mukhi']);
+  });
+
+  it('unlocks multiple_beads mountings when 3+ beads are selected', () => {
+    const primary = product({ id: 'a', sub_category: '5-mukhi' });
+    const combo = [
+      product({ id: 'b', sub_category: '7-mukhi' }),
+      product({ id: 'c', sub_category: '9-mukhi' }),
+    ];
+
+    expect(countRudrakshaBeadsInSelection(primary, combo)).toBe(3);
+    expect(getRudrakshaDesignCategoriesForSelection(primary, combo)).toEqual(['multiple_beads']);
+    expect(designMatchesRudrakshaSelection('multiple_beads', primary, combo)).toBe(true);
+    expect(designMatchesRudrakshaSelection('standard_mukhi', primary, combo)).toBe(false);
   });
 });

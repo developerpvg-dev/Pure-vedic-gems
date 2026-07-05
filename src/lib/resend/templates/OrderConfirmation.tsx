@@ -27,12 +27,15 @@ import {
   primaryButtonStyle,
   secondaryButtonStyle,
 } from '@/lib/resend/templates/shared/styles';
+import { formatConfigurationDetailText } from '@/lib/utils/rudraksha-order-display';
 
 interface OrderItem {
   name: string;
   quantity: number;
   unit_price: number;
   line_total: number;
+  configuration_summary?: string;
+  configuration_snapshot?: unknown;
 }
 
 export interface OrderConfirmationEmailProps {
@@ -106,18 +109,29 @@ export function OrderConfirmationEmail({
             <Heading as="h2" style={h2Style}>
               Order Summary
             </Heading>
-            {items.map((item, i) => (
+            {items.map((item, i) => {
+              const configDetail = formatConfigurationDetailText(
+                item.configuration_snapshot,
+                item.configuration_summary
+              );
+              return (
               <Row key={i} style={itemRowStyle}>
                 <Column style={{ width: '60%' }}>
                   <Text style={itemNameStyle}>
                     {item.name} × {item.quantity}
                   </Text>
+                  {configDetail ? (
+                    <Text style={{ ...textStyle, fontSize: '12px', color: '#6b5b4e', marginTop: '4px' }}>
+                      {configDetail}
+                    </Text>
+                  ) : null}
                 </Column>
                 <Column style={{ width: '40%', textAlign: 'right' as const }}>
                   <Text style={itemPriceStyle}>{formatINR(item.line_total)}</Text>
                 </Column>
               </Row>
-            ))}
+            );
+            })}
 
             <Hr style={dividerStyle} />
 

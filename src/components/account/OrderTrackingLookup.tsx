@@ -7,6 +7,7 @@ import { ExternalLink, Loader2, PackageSearch, ShieldCheck } from 'lucide-react'
 import { ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/constants/order-status';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { OrderJourneyTimeline } from '@/components/account/OrderJourneyTimeline';
+import { parseOrderItems } from '@/lib/customer/orders';
 
 interface TrackingEvent {
   status: string;
@@ -32,6 +33,11 @@ interface TrackingResult {
     puja_video_url?: string | null;
     estimated_delivery: string | null;
     created_at: string;
+    items?: unknown;
+    include_energization?: boolean;
+    certification_charges?: number;
+    energization_charges?: number;
+    record_ceremony?: boolean;
   };
   events: TrackingEvent[];
 }
@@ -257,6 +263,11 @@ export function OrderTrackingLookup() {
               tracking_url={result.order.tracking_url}
               carrier={result.order.carrier}
               estimated_delivery={result.order.estimated_delivery}
+              items={parseOrderItems(result.order.items as never)}
+              include_energization={result.order.include_energization}
+              energization_charges={result.order.energization_charges}
+              certification_charges={result.order.certification_charges}
+              record_ceremony={result.order.record_ceremony}
             />
 
             <div className="pvg-track-meta-grid">

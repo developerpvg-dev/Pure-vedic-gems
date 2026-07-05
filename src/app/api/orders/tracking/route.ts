@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   const db = asUntypedSupabase(admin);
   const { data: orderRaw, error } = await db
     .from('orders')
-    .select('id, order_number, customer_id, guest_email, guest_phone, guest_access_token, status, payment_status, assigned_designer_id, design_completed_at, tracking_number, tracking_url, carrier, product_video_url, puja_video_url, estimated_delivery, created_at')
+    .select('id, order_number, customer_id, guest_email, guest_phone, guest_access_token, status, payment_status, assigned_designer_id, design_completed_at, tracking_number, tracking_url, carrier, product_video_url, puja_video_url, estimated_delivery, created_at, items, include_energization, certification_charges, energization_charges, record_ceremony')
     .eq('order_number', orderNumber)
     .single();
 
@@ -69,6 +69,11 @@ export async function POST(request: NextRequest) {
     puja_video_url?: string | null;
     estimated_delivery: string | null;
     created_at: string;
+    items?: unknown;
+    include_energization?: boolean | null;
+    certification_charges?: number | null;
+    energization_charges?: number | null;
+    record_ceremony?: boolean | null;
   };
 
   const order = orderRaw as TrackingOrderRow | null;
@@ -113,6 +118,11 @@ export async function POST(request: NextRequest) {
       puja_video_url: order.puja_video_url ?? null,
       estimated_delivery: order.estimated_delivery,
       created_at: order.created_at,
+      items: order.items ?? [],
+      include_energization: order.include_energization ?? false,
+      certification_charges: order.certification_charges ?? 0,
+      energization_charges: order.energization_charges ?? 0,
+      record_ceremony: order.record_ceremony ?? false,
     },
     events: events ?? [],
   });

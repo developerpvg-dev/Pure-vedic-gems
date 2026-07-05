@@ -1,16 +1,13 @@
 import { isPaidPaymentStatus } from '@/lib/constants/order-status';
 import { isDesignPhaseStatus } from '@/lib/orders/design-workflow';
-
-export const CUSTOMER_JOURNEY_STEPS = [
-  { key: 'payment', label: 'Payment', shortLabel: 'Pay' },
-  { key: 'confirmed', label: 'Confirmed', shortLabel: 'OK' },
-  { key: 'processing', label: 'Processing', shortLabel: 'Prep' },
-  { key: 'jewelry_design', label: 'Product Completed', shortLabel: 'Product' },
-  { key: 'product_video', label: 'Product Video', shortLabel: 'Video' },
-  { key: 'puja_video', label: 'Puja Video', shortLabel: 'Puja' },
-  { key: 'shipped', label: 'Shipped', shortLabel: 'Ship' },
-  { key: 'delivered', label: 'Delivered', shortLabel: 'Done' },
-] as const;
+import {
+  getJourneyStepsForContext,
+  resolveOrderFulfillmentContext,
+  statusAtLeast,
+  type JourneyStepKey,
+  type LineItemForFulfillment,
+  type OrderFulfillmentContext,
+} from '@/lib/orders/fulfillment-profile';
 
 export type CustomerJourneyInput = {
   status: string;
@@ -23,10 +20,15 @@ export type CustomerJourneyInput = {
   tracking_url?: string | null;
   carrier?: string | null;
   estimated_delivery?: string | null;
+  items?: LineItemForFulfillment[];
+  include_energization?: boolean;
+  energization_charges?: number;
+  certification_charges?: number;
+  record_ceremony?: boolean;
 };
 
 export type JourneyMilestone = {
-  key: (typeof CUSTOMER_JOURNEY_STEPS)[number]['key'];
+  key: JourneyStepKey;
   label: string;
   shortLabel: string;
   done: boolean;
@@ -35,16 +37,81 @@ export type JourneyMilestone = {
   detail?: string | null;
 };
 
-function designPhaseComplete(order: CustomerJourneyInput) {
+function craftingComplete(order: CustomerJourneyInput) {
   return (
     !!order.design_completed_at ||
     order.status === 'design_completed' ||
     !!order.product_video_url ||
     !!order.puja_video_url ||
     !!order.tracking_number ||
-    order.status === 'shipped' ||
-    order.status === 'delivered'
+    statusAtLeast(order.status, 'shipped')
   );
+}
+
+function isStepDone(
+  key: JourneyStepKey,
+  order: CustomerJourneyInput,
+  context: OrderFulfillmentContext
+): boolean {
+  const paid =
+    isPaidPaymentStatus(order.payment_status) ||
+    !['pending_payment', 'payment_review'].includes(order.status);
+  const confirmed =
+    paid && !['pending_payment', 'payment_review'].includes(order.status);
+
+  switch (key) {
+    case 'payment':
+      return paid;
+    case 'confirmed':
+      return confirmed;
+    case 'processing':
+      if (context.needsCrafting) {
+        return (
+          !!order.assigned_designer_id ||
+          isDesignPhaseStatus(order.status) ||
+          craftingComplete(order)
+        );
+      }
+      return statusAtLeast(order.status, 'processing');
+    case 'crafting':
+      return craftingComplete(order);
+    case 'preparation':
+      return statusAtLeast(order.status, 'quality_check') || !!order.tracking_number;
+    case 'certification':
+      return statusAtLeast(order.status, 'energization') || statusAtLeast(order.status, 'quality_check') || !!order.tracking_number;
+    case 'energization':
+      return (
+        !!order.puja_video_url ||
+        statusAtLeast(order.status, 'quality_check') ||
+        !!order.tracking_number
+      );
+    case 'product_video':
+      return (
+        !!order.puja_video_url ||
+        !!order.tracking_number ||
+        statusAtLeast(order.status, 'shipped')
+      );
+    case 'puja_video':
+      return !!order.tracking_number || statusAtLeast(order.status, 'shipped');
+    case 'shipped':
+      return order.status === 'delivered';
+    case 'delivered':
+      return order.status === 'delivered';
+    default:
+      return false;
+  }
+}
+
+function stepDetail(
+  key: JourneyStepKey,
+  order: CustomerJourneyInput
+): string | null {
+  if (key === 'crafting') {
+    if (order.status === 'design_assigned') return 'Being crafted';
+    if (order.status === 'design_in_progress') return 'In progress';
+  }
+  if (key === 'preparation' && order.status === 'processing') return 'In progress';
+  return null;
 }
 
 export function getCustomerJourney(order: CustomerJourneyInput) {
@@ -52,47 +119,19 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
     return null;
   }
 
-  const paid =
-    isPaidPaymentStatus(order.payment_status) ||
-    !['pending_payment', 'payment_review'].includes(order.status);
-  const confirmed =
-    paid && !['pending_payment', 'payment_review'].includes(order.status);
-  const processingDone =
-    !!order.assigned_designer_id ||
-    isDesignPhaseStatus(order.status) ||
-    designPhaseComplete(order);
-  const jewelryDesignDone = designPhaseComplete(order);
-  const productVideoDone =
-    !!order.puja_video_url ||
-    !!order.tracking_number ||
-    order.status === 'shipped' ||
-    order.status === 'delivered';
-  const pujaVideoDone =
-    !!order.tracking_number ||
-    order.status === 'shipped' ||
-    order.status === 'delivered';
-  const shippedDone = order.status === 'delivered';
-  const deliveredDone = order.status === 'delivered';
+  const context = resolveOrderFulfillmentContext({
+    items: order.items ?? [],
+    includeEnergization: order.include_energization,
+    energizationCharges: order.energization_charges,
+    certificationCharges: order.certification_charges,
+  });
 
-  const doneFlags = [
-    paid,
-    confirmed,
-    processingDone,
-    jewelryDesignDone,
-    productVideoDone,
-    pujaVideoDone,
-    shippedDone,
-    deliveredDone,
-  ];
-
+  const stepTemplates = getJourneyStepsForContext(context);
+  const doneFlags = stepTemplates.map((step) => isStepDone(step.key, order, context));
   const firstOpen = doneFlags.findIndex((done) => !done);
-  const activeIndex = firstOpen === -1 ? CUSTOMER_JOURNEY_STEPS.length - 1 : firstOpen;
+  const activeIndex = firstOpen === -1 ? stepTemplates.length - 1 : firstOpen;
 
-  let designDetail: string | null = null;
-  if (order.status === 'design_assigned') designDetail = 'Being crafted';
-  if (order.status === 'design_in_progress') designDetail = 'In progress';
-
-  const milestones: JourneyMilestone[] = CUSTOMER_JOURNEY_STEPS.map((step, index) => ({
+  const milestones: JourneyMilestone[] = stepTemplates.map((step, index) => ({
     key: step.key,
     label: step.label,
     shortLabel: step.shortLabel,
@@ -104,12 +143,25 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
         : step.key === 'puja_video'
           ? order.puja_video_url
           : null,
-    detail: step.key === 'jewelry_design' ? designDetail : null,
+    detail: stepDetail(step.key, order),
   }));
 
   return {
     milestones,
     activeIndex,
     hasTracking: !!(order.tracking_number || order.tracking_url),
+    fulfillmentContext: context,
   };
 }
+
+/** @deprecated Use profile-specific steps via getCustomerJourney */
+export const CUSTOMER_JOURNEY_STEPS = [
+  { key: 'payment', label: 'Payment', shortLabel: 'Pay' },
+  { key: 'confirmed', label: 'Confirmed', shortLabel: 'OK' },
+  { key: 'processing', label: 'Processing', shortLabel: 'Prep' },
+  { key: 'crafting', label: 'Product Completed', shortLabel: 'Product' },
+  { key: 'product_video', label: 'Product Video', shortLabel: 'Video' },
+  { key: 'puja_video', label: 'Puja Video', shortLabel: 'Puja' },
+  { key: 'shipped', label: 'Shipped', shortLabel: 'Ship' },
+  { key: 'delivered', label: 'Delivered', shortLabel: 'Done' },
+] as const;

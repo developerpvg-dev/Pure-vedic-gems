@@ -15,6 +15,8 @@ export interface OrderLineItem {
   category?: string | null;
   configuration_id?: string | null;
   configuration_summary?: string | null;
+  configuration_snapshot?: unknown;
+  delivery_eta_label?: string | null;
 }
 
 export function parseOrderItems(value: Json): OrderLineItem[] {

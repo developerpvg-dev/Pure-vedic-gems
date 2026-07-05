@@ -17,6 +17,7 @@ import {
   type PaymentStatus,
 } from '@/lib/constants/order-status';
 import { formatPrice } from '@/lib/utils/format';
+import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 
 type ShippingAddress = {
   line1?: string;
@@ -108,8 +109,15 @@ function OrderItemRow({ item, showConfig = false }: { item: OrderLineItem; showC
           {item.origin ?? ''}
           {item.sku ? (item.carat_weight || item.origin ? ` · SKU ${item.sku}` : `SKU ${item.sku}`) : ''}
         </p>
-        {showConfig && item.configuration_summary ? (
-          <p className="mt-1 text-xs text-[#6b5b4e]">{item.configuration_summary}</p>
+        {showConfig && (item.configuration_summary || item.configuration_snapshot) ? (
+          <div className="mt-1">
+            <ConfigurationDetailsDisplay
+              snapshot={item.configuration_snapshot}
+              summary={item.configuration_summary}
+              deliveryEtaLabel={item.delivery_eta_label}
+              variant="compact"
+            />
+          </div>
         ) : null}
       </div>
       <p className="shrink-0 text-sm font-semibold text-[var(--pvg-primary)]">
@@ -186,6 +194,10 @@ export function AccountOrderCard({ order }: { order: AccountOrderCardData }) {
           tracking_url={order.tracking_url}
           carrier={order.carrier}
           estimated_delivery={order.estimated_delivery}
+          items={order.items}
+          include_energization={order.include_energization}
+          energization_charges={order.energization_charges}
+          certification_charges={order.certification_charges}
         />
       ) : null}
 

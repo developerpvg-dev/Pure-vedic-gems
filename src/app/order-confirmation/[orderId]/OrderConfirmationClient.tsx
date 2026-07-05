@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
+import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { isPaidPaymentStatus } from '@/lib/constants/order-status';
 
 const CONFETTI_COLORS = ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'];
@@ -36,6 +37,9 @@ interface OrderData {
     image_url?: string;
     carat_weight?: number;
     origin?: string;
+    configuration_summary?: string;
+    configuration_snapshot?: unknown;
+    delivery_eta_label?: string;
   }>;
   subtotal: number;
   shipping_cost: number;
@@ -235,6 +239,16 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
                     {item.carat_weight ? ` · ${item.carat_weight} ct` : ''}
                     {item.origin ? ` · ${item.origin}` : ''}
                   </p>
+                  {(item.configuration_summary || item.configuration_snapshot) && (
+                    <div className="mt-1">
+                      <ConfigurationDetailsDisplay
+                        snapshot={item.configuration_snapshot}
+                        summary={item.configuration_summary}
+                        deliveryEtaLabel={item.delivery_eta_label}
+                        variant="compact"
+                      />
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-[var(--pvg-primary)]">
                   {formatPrice(item.line_total)}

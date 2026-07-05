@@ -43,7 +43,7 @@ export function buildConfiguratorPriceTotals(
 
   lines.push({
     key: 'gem',
-    label: 'Gemstone',
+    label: productCategory === 'rudraksha' ? 'Rudraksha beads' : 'Gemstone',
     amount: pricing.gem_price,
     display: pricing.gem_price > 0 ? undefined : '—',
   });

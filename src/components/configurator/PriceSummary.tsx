@@ -35,13 +35,22 @@ function enrichPriceTotals(
   const product = state.selected_product;
   if (!product) return totals;
 
+  const comboNames = state.rudraksha_combo_products
+    .filter((item) => item.id !== product.id)
+    .map((item) => item.name);
+
+  const beadDetail =
+    comboNames.length > 0
+      ? [product.name, ...comboNames].join(' + ')
+      : product.name;
+
   return {
     ...totals,
     lines: totals.lines.map((line) => {
       if (line.key !== 'gem') return line;
       return {
         ...line,
-        detail: product.name,
+        detail: beadDetail,
       };
     }),
   };

@@ -12,12 +12,27 @@ export interface ConfigurationSnapshotEnergizationForm {
   record_ceremony?: boolean;
 }
 
+export interface RudrakshaBeadSnapshot {
+  role: 'primary' | 'combo';
+  id: string;
+  name: string;
+  sku: string | null;
+  tag_number: string | null;
+  slug?: string;
+  sub_category: string | null;
+  mukhi_label: string;
+  price: number;
+  origin?: string | null;
+  carat_weight?: number | null;
+}
+
 export interface ConfigurationSnapshot {
   version?: number;
   product?: {
     id?: string;
     sku?: string | null;
     tag_number?: string | null;
+    slug?: string;
     name?: string;
     category?: string;
     sub_category?: string | null;
@@ -27,8 +42,21 @@ export interface ConfigurationSnapshot {
   };
   selections?: {
     setting_type?: string | null;
-    design?: { id?: string; name?: string } | null;
+    is_rudraksha?: boolean;
+    design?: {
+      id?: string;
+      name?: string;
+      rudraksha_category?: string | null;
+    } | null;
     custom_design_url?: string | null;
+    custom_design_brief?: {
+      description?: string;
+      contact_phone?: string;
+      preferred_metal?: string;
+      additional_notes?: string;
+    } | null;
+    rudraksha_beads?: RudrakshaBeadSnapshot[];
+    rudraksha_combo_product_ids?: string[];
     metal?: string | null;
     ring_size?: string | null;
     chain_length?: string | null;
@@ -46,6 +74,8 @@ export interface ConfigurationSnapshot {
     metal_price?: number;
     metal_weight_grams?: number;
     gold_rate_per_gram?: number;
+    labor_rate_percent?: number;
+    jewelry_pricing_mode?: string | null;
     certification_fee?: number;
     energization_fee?: number;
     custom_design_fee?: number;
@@ -110,6 +140,10 @@ export function mergeConfigurationDetails(args: {
         parsed.selections?.energization ??
         (db?.energization_options ? { name: db.energization_options.name } : null),
       energization_form: parsed.selections?.energization_form ?? null,
+      is_rudraksha: parsed.selections?.is_rudraksha,
+      rudraksha_beads: parsed.selections?.rudraksha_beads,
+      rudraksha_combo_product_ids: parsed.selections?.rudraksha_combo_product_ids,
+      custom_design_brief: parsed.selections?.custom_design_brief ?? null,
     },
     pricing: {
       gem_price: parsed.pricing?.gem_price ?? db?.gem_price ?? undefined,

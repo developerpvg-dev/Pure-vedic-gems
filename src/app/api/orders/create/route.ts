@@ -10,6 +10,7 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Json } from '@/lib/types/database';
 import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
 import { cancelRewardRedemption, reserveRewardRedemption } from '@/lib/rewards/service';
+import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 
 function createGuestOrderToken() {
   const token = crypto.randomBytes(32).toString('hex');
@@ -23,29 +24,57 @@ async function reserveUniquePhysicalProducts({
   customerId,
   holdUntil,
   items,
+  configuredSnapshots = [],
 }: {
   orderId: string;
   orderNumber: string;
   customerId: string | null;
   holdUntil: string;
   items: Awaited<ReturnType<typeof recalculateOrderTotal>>['items'];
+  configuredSnapshots?: unknown[];
 }) {
   const supabase = createAdminClient();
   const now = new Date().toISOString();
 
+  const reserveTargets = new Map<string, { name: string; quantity: number }>();
   for (const item of items) {
     if (!item.sold_individually) continue;
+    reserveTargets.set(item.product_id, {
+      name: item.name,
+      quantity: item.quantity,
+    });
+  }
 
+  for (const snapshot of configuredSnapshots) {
+    const beadIds = getRudrakshaProductIdsFromSnapshot(snapshot);
+    if (beadIds.length === 0) continue;
+
+    const { data: beadProducts } = await supabase
+      .from('products')
+      .select('id, name, sold_individually')
+      .in('id', beadIds);
+
+    for (const bead of (beadProducts ?? []) as Array<{
+      id: string;
+      name: string;
+      sold_individually: boolean;
+    }>) {
+      if (!bead.sold_individually || reserveTargets.has(bead.id)) continue;
+      reserveTargets.set(bead.id, { name: bead.name, quantity: 1 });
+    }
+  }
+
+  for (const [productId, target] of reserveTargets) {
     const { data, error } = await supabase
       .from('products')
       .update({
         availability_status: 'reserved',
         reserved_until: holdUntil,
         reserved_by_customer_id: customerId,
-        reserved_quantity: item.quantity,
+        reserved_quantity: target.quantity,
         reservation_note: `Payment hold for ${orderNumber}`,
       })
-      .eq('id', item.product_id)
+      .eq('id', productId)
       .or(`reserved_until.is.null,reserved_until.lt.${now}`)
       .select('id');
 
@@ -58,7 +87,7 @@ async function reserveUniquePhysicalProducts({
           payment_failure_reason: 'Product reservation failed before payment.',
         })
         .eq('id', orderId);
-      throw new Error(`Product "${item.name}" was just reserved by another customer.`);
+      throw new Error(`Product "${target.name}" was just reserved by another customer.`);
     }
   }
 }
@@ -274,6 +303,9 @@ export async function POST(req: NextRequest) {
       customerId,
       holdUntil: reservationHoldUntil,
       items: pricing.items,
+      configuredSnapshots: items
+        .map((item) => item.configuration_snapshot)
+        .filter(Boolean),
     });
   } catch (error) {
     await cancelRewardRedemption(order.id);

@@ -12,19 +12,11 @@ export const LAB_LOGOS = [
 ] as const;
 
 export const METAL_TRUST_HIGHLIGHT = {
-  eyebrow: 'Government Certified',
   title: 'BIS Hallmarked',
-  subtitle: 'Govt. Certified Purity',
-  detail: 'Every gold & silver piece carries a unique HUID — verify purity anytime on the BIS Care app.',
+  detail: 'Govt. certified 916 gold & 925 silver, each with a unique HUID verifiable on the BIS Care app.',
 } as const;
 
-export const METAL_TRUST_POINTS = [
-  'Unique HUID — Verify Anytime',
-  '916 Gold & 925 Silver Purity',
-  'Bureau of Indian Standards',
-] as const;
-
-/** @deprecated Use METAL_TRUST_HIGHLIGHT + METAL_TRUST_POINTS in configurator metal step */
+/** @deprecated Legacy marquee copy — use METAL_TRUST_HIGHLIGHT in configurator metal step */
 export const METAL_TRUST_MESSAGES = [
   'BIS Hallmarked — Govt. Certified Purity',
   'Unique HUID — Verify Anytime',

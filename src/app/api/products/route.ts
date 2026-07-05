@@ -5,7 +5,7 @@ import { productFiltersSchema } from '@/lib/validators/product';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
 import type { ProductListResponse } from '@/lib/types/product';
-import { isConfiguratorGemCatalogScope } from '@/lib/shop/configurator';
+import { isConfiguratorGemCatalogScope, isRudrakshaConfiguratorBrowseScope } from '@/lib/shop/configurator';
 
 // Card-level columns to select (avoid fetching full descriptions for listing)
 const CARD_SELECT = `
@@ -38,6 +38,19 @@ export async function GET(request: NextRequest) {
 
     const filters = parsed.data;
     const supabase = createPublicClient();
+    const configuratorEnabled = searchParams.get('configurator_enabled') === 'true';
+    const catalogScope = isConfiguratorGemCatalogScope(filters.category, filters.sub_category);
+    const rudrakshaConfiguratorBrowse = isRudrakshaConfiguratorBrowseScope(
+      filters.category,
+      configuratorEnabled
+    );
+    // `configurator_enabled=true` is a browse-mode flag for the configurator UI.
+    // For gem/rudraksha catalog scopes it must NOT filter products.configurator_enabled.
+    const listingFilters = {
+      ...filters,
+      configurator_enabled:
+        catalogScope || rudrakshaConfiguratorBrowse ? undefined : filters.configurator_enabled,
+    };
 
     // Build query with dynamic filters. 'estimated' count avoids a full scan
     // per unique filter combination; exact for small result sets anyway.
@@ -46,40 +59,46 @@ export async function GET(request: NextRequest) {
       .select(CARD_SELECT, { count: 'estimated' })
       .eq('is_active', true);
 
-    const configuratorEnabled = searchParams.get('configurator_enabled') === 'true';
     query = applyShopAvailabilityFilter(query, {
-      ...filters,
-      configurator_enabled: configuratorEnabled || filters.configurator_enabled,
+      ...listingFilters,
+      configurator_enabled:
+        configuratorEnabled && !rudrakshaConfiguratorBrowse
+          ? true
+          : listingFilters.configurator_enabled,
     });
 
     // Apply filters
-    if (filters.category) {
-      query = query.eq('category', filters.category);
+    if (listingFilters.category) {
+      query = query.eq('category', listingFilters.category);
     }
-    if (filters.product_type) {
-      query = query.eq('product_type', filters.product_type);
+    if (listingFilters.product_type) {
+      query = query.eq('product_type', listingFilters.product_type);
     }
-    if (filters.sub_category) {
-      query = query.eq('sub_category', filters.sub_category);
+    if (listingFilters.sub_category) {
+      query = query.eq('sub_category', listingFilters.sub_category);
     }
-    query = applyQuoteOnlyListingFilter(query, filters.category, filters.sub_category);
-    query = applyShopProductFilters(query, filters);
-    if (filters.featured !== undefined) {
-      query = query.eq('featured', filters.featured);
+    query = applyQuoteOnlyListingFilter(
+      query,
+      listingFilters.category,
+      listingFilters.sub_category
+    );
+    query = applyShopProductFilters(query, listingFilters);
+    if (listingFilters.featured !== undefined) {
+      query = query.eq('featured', listingFilters.featured);
     }
-    if (filters.directors_pick !== undefined) {
-      query = query.eq('is_directors_pick', filters.directors_pick);
+    if (listingFilters.directors_pick !== undefined) {
+      query = query.eq('is_directors_pick', listingFilters.directors_pick);
     }
 
-    if (configuratorEnabled && !isConfiguratorGemCatalogScope(filters.category, filters.sub_category)) {
+    if (configuratorEnabled && !catalogScope) {
       query = query.eq('configurator_enabled', true);
     }
 
-    query = applyShopListingSort(query, filters);
+    query = applyShopListingSort(query, listingFilters);
 
     // Pagination
-    const page = filters.page;
-    const perPage = filters.per_page;
+    const page = listingFilters.page;
+    const perPage = listingFilters.per_page;
     const from = (page - 1) * perPage;
     const to = from + perPage - 1;
     query = query.range(from, to);

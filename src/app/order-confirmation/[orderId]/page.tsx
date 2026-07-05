@@ -97,6 +97,9 @@ export default async function OrderConfirmationPage({ params }: Props) {
           image_url?: string;
           carat_weight?: number;
           origin?: string;
+          configuration_summary?: string;
+          configuration_snapshot?: unknown;
+          delivery_eta_label?: string;
         }>,
         subtotal: order.subtotal,
         shipping_cost: order.shipping_cost,

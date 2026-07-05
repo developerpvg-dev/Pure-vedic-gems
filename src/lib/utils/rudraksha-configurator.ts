@@ -4,4 +4,4 @@
  * Set to `true` when ready to ship. Also uncomment the Rudraksha section in:
  * - src/components/configurator/steps/GemCategorySelector.tsx
  */
-export const RUDRAKSHA_CONFIGURATOR_ENABLED = false;
+export const RUDRAKSHA_CONFIGURATOR_ENABLED = true;

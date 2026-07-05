@@ -53,138 +53,35 @@
   height: 6px;
 }
 
-/* Metal step — BIS hallmark trust strip (compact single row) */
-.pvg-metal-trust-banner {
+/* Metal step — BIS hallmark trust note */
+.pvg-metal-trust {
   display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.4375rem 0.5625rem;
-  border-radius: 0.625rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
-  border-left: 3px solid var(--accent);
-  background:
-    linear-gradient(105deg, color-mix(in srgb, var(--accent) 11%, #fdf8f0) 0%, #fff 42%, #faf7f2 100%);
-  box-shadow:
-    0 2px 12px color-mix(in srgb, var(--accent) 16%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: color-mix(in srgb, var(--accent) 5%, white);
+  color: var(--muted-foreground);
 }
 
-.pvg-metal-trust-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
+.pvg-metal-trust-icon {
+  width: 1rem;
+  height: 1rem;
   flex-shrink: 0;
-  padding: 0.3125rem 0.5625rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #5b2e2e 0%, #8b4545 100%);
-  border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
-  box-shadow: 0 2px 10px rgba(91, 46, 46, 0.22);
-  color: #fff;
-}
-
-.pvg-metal-trust-badge-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 0.9375rem;
-  height: 0.9375rem;
-  flex-shrink: 0;
-  color: #f0d080;
-}
-
-.pvg-metal-trust-badge-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.pvg-metal-trust-badge-copy {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 0.25rem;
-  min-width: 0;
-  font-size: 0.5625rem;
-  font-weight: 500;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.pvg-metal-trust-badge-copy strong {
-  font-size: 0.5625rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.pvg-metal-trust-badge-sep {
-  opacity: 0.72;
-}
-
-.pvg-metal-trust-chips {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 0.3125rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  min-width: 0;
-  flex: 1;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.pvg-metal-trust-chips::-webkit-scrollbar {
-  display: none;
-}
-
-.pvg-metal-trust-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.1875rem;
-  flex-shrink: 0;
-  padding: 0.125rem 0.375rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
-  background: rgba(255, 255, 255, 0.82);
-  font-size: 0.5625rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: color-mix(in srgb, var(--primary) 90%, var(--accent));
-  white-space: nowrap;
-}
-
-.pvg-metal-trust-chip-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 0.625rem;
-  height: 0.625rem;
-  flex-shrink: 0;
+  margin-top: 0.125rem;
   color: var(--accent);
 }
 
-.pvg-metal-trust-chip-icon svg {
-  width: 100%;
-  height: 100%;
+.pvg-metal-trust-copy {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
-@media (max-width: 640px) {
-  .pvg-metal-trust-banner {
-    padding: 0.375rem 0.5rem;
-    gap: 0.5rem;
-  }
-
-  .pvg-metal-trust-badge-sep,
-  .pvg-metal-trust-badge-sub {
-    display: none;
-  }
-
-  .pvg-metal-trust-badge-copy strong {
-    font-size: 0.53125rem;
-  }
+.pvg-metal-trust-copy strong {
+  font-weight: 600;
+  color: var(--primary);
 }
 
 .pvg-cert-step {
@@ -571,5 +468,191 @@
 
   .pvg-energ-form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Rudraksha configurator — compact Mukhi strip + responsive browse */
+.pvg-configurator--rudraksha section > div {
+  max-width: 100%;
+}
+
+.pvg-rudraksha-mukhi-strip-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.pvg-rudraksha-mukhi-strip {
+  display: flex;
+  flex: 1;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.1rem 0.1rem 0.25rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pvg-rudraksha-mukhi-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.pvg-rudraksha-mukhi-strip-arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 999px;
+  background: white;
+  color: var(--muted-foreground);
+  transition: border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.pvg-rudraksha-mukhi-strip-arrow:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+}
+
+.pvg-rudraksha-mukhi-strip-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pvg-rudraksha-mukhi-chip {
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  background: white;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.pvg-rudraksha-mukhi-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--primary);
+}
+
+.pvg-rudraksha-mukhi-chip--active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.pvg-rudraksha-min-beads {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, white);
+}
+
+.pvg-rudraksha-min-beads--done {
+  border-color: color-mix(in srgb, #16a34a 30%, transparent);
+  background: color-mix(in srgb, #16a34a 6%, white);
+}
+
+.pvg-rudraksha-min-beads-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.pvg-rudraksha-min-beads-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  background: transparent;
+}
+
+.pvg-rudraksha-min-beads-dot--filled {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.pvg-rudraksha-min-beads-text {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--primary);
+}
+
+.pvg-rudraksha-min-beads--done .pvg-rudraksha-min-beads-text {
+  color: #15803d;
+}
+
+.pvg-rudraksha-browse-toolbar {
+  row-gap: 0.5rem;
+}
+
+.pvg-rudraksha-browse-filters {
+  -webkit-overflow-scrolling: touch;
+}
+
+.pvg-rudraksha-selection {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pvg-rudraksha-categories [role='radiogroup'] {
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .pvg-configurator--rudraksha .min-h-0.flex-1.overflow-y-auto {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .pvg-rudraksha-mukhi-strip-arrow {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .pvg-rudraksha-browse-toolbar .relative.min-w-36 {
+    min-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .pvg-rudraksha-browse-toolbar select {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .pvg-rudraksha-selection li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .pvg-rudraksha-categories [role='radiogroup'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .pvg-metal-step .pvg-metal-trust {
+    padding: 0.55rem 0.65rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .pvg-rudraksha-categories [role='radiogroup'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

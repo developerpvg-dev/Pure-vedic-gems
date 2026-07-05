@@ -1,17 +1,19 @@
 'use client';
 
 /**
- * Step 1 — Select Gemstone Category (Compact)
- * Shows gem cards with only the primary name, smaller size, more per row.
+ * Step 1 — Select category: Gemstones or Rudraksha (tabbed).
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { NAVARATNA_CATEGORIES } from '@/lib/types/configurator';
 import type { GemCategory, GemCategoryOption } from '@/lib/types/configurator';
+import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
+import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
+import { buildRudrakshaCategoryTiles } from '@/lib/utils/rudraksha-category-tiles';
 
 interface GemCategorySelectorProps {
   selected: GemCategory | null;
@@ -23,6 +25,8 @@ interface ExtendedCategoryOption extends GemCategoryOption {
   hover_image_url?: string;
   type?: string;
 }
+
+type CatalogTab = 'gemstones' | 'rudraksha';
 
 function apiToOption(item: Record<string, unknown>): ExtendedCategoryOption {
   return {
@@ -52,6 +56,11 @@ export default function GemCategorySelector({
 }: GemCategorySelectorProps) {
   const [categories, setCategories] = useState<ExtendedCategoryOption[]>(FALLBACK);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<CatalogTab>(() =>
+    selected === 'rudraksha' || (selected ? isRudrakshaStorefrontSlug(selected) : false)
+      ? 'rudraksha'
+      : 'gemstones'
+  );
 
   useEffect(() => {
     fetch('/api/categories')
@@ -73,6 +82,15 @@ export default function GemCategorySelector({
     () => categories.filter((c) => c.type === 'upratna'),
     [categories]
   );
+  const rudraksha = useMemo(
+    () =>
+      buildRudrakshaCategoryTiles(
+        categories
+          .filter((c) => c.type === 'rudraksha')
+          .map((c) => ({ id: c.id, name: c.name, image_url: c.image_url }))
+      ),
+    [categories]
+  );
 
   const filterBySearch = (list: ExtendedCategoryOption[]) => {
     if (!searchQuery.trim()) return list;
@@ -87,13 +105,7 @@ export default function GemCategorySelector({
 
   const filteredNavaratna = filterBySearch(navaratna);
   const filteredUpratna = filterBySearch(upratna);
-  /* RUDRAKSHA_CONFIGURATOR — re-enable with RUDRAKSHA_CONFIGURATOR_ENABLED
-  const rudraksha = useMemo(
-    () => categories.filter((c) => c.type === 'rudraksha'),
-    [categories]
-  );
   const filteredRudraksha = filterBySearch(rudraksha);
-  */
 
   const renderGemTile = (gem: ExtendedCategoryOption, compactImage = false) => {
     const isSelected = selected === gem.id;
@@ -144,7 +156,10 @@ export default function GemCategorySelector({
                 backgroundImage: `radial-gradient(circle, ${gem.color ?? '#C9A84C'}40, ${gem.color ?? '#C9A84C'}10)`,
               }}
             >
-              <span className="h-8 w-8 rounded-full" style={{ backgroundColor: gem.color ?? '#C9A84C' }} />
+              <span
+                className="h-8 w-8 rounded-full"
+                style={{ backgroundColor: gem.color ?? '#C9A84C' }}
+              />
             </span>
           )}
 
@@ -169,10 +184,38 @@ export default function GemCategorySelector({
     );
   };
 
+  const gemstonesEmpty = filteredNavaratna.length === 0 && filteredUpratna.length === 0;
+  const rudrakshaEmpty = filteredRudraksha.length === 0 && searchQuery.trim().length > 0;
+
   return (
     <div>
+      {RUDRAKSHA_CONFIGURATOR_ENABLED ? (
+        <div
+          className="mb-3 inline-flex rounded-lg border border-border/70 bg-muted/30 p-0.5"
+          role="tablist"
+          aria-label="Configurator catalog"
+        >
+          {(['gemstones', 'rudraksha'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                activeTab === tab
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-primary'
+              )}
+            >
+              {tab === 'gemstones' ? 'Gemstones' : 'Rudraksha'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Inline search */}
         <div className="relative w-full sm:w-48">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -185,58 +228,68 @@ export default function GemCategorySelector({
         </div>
       </div>
 
-      {/* Navaratna */}
-      {filteredNavaratna.length > 0 && (
-        <div className="mt-3">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-[1.2px] text-accent">
-            Navaratna — Sacred Nine Gems
-          </h3>
-          <div role="radiogroup" aria-label="Navaratna gemstones" className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {filteredNavaratna.map((gem) => renderGemTile(gem, true))}
-          </div>
-        </div>
+      {(!RUDRAKSHA_CONFIGURATOR_ENABLED || activeTab === 'gemstones') && (
+        <>
+          {filteredNavaratna.length > 0 && (
+            <div className="mt-3">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-[1.2px] text-accent">
+                Navaratna — Sacred Nine Gems
+              </h3>
+              <div
+                role="radiogroup"
+                aria-label="Navaratna gemstones"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+              >
+                {filteredNavaratna.map((gem) => renderGemTile(gem, true))}
+              </div>
+            </div>
+          )}
+
+          {filteredUpratna.length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-[1.2px] text-accent">
+                Upratna — Semi-Precious Gems
+              </h3>
+              <div
+                role="radiogroup"
+                aria-label="Upratna gemstones"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+              >
+                {filteredUpratna.map((gem) => renderGemTile(gem, false))}
+              </div>
+            </div>
+          )}
+
+          {gemstonesEmpty && (
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              No gemstones match your search.
+            </p>
+          )}
+        </>
       )}
 
-      {/* Upratna */}
-      {filteredUpratna.length > 0 && (
-        <div className="mt-4">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-[1.2px] text-accent">
-            Upratna — Semi-Precious Gems
-          </h3>
-          <div role="radiogroup" aria-label="Upratna gemstones" className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {filteredUpratna.map((gem) => renderGemTile(gem, false))}
-          </div>
-        </div>
-      )}
-
-      {/* RUDRAKSHA_CONFIGURATOR — uncomment when RUDRAKSHA_CONFIGURATOR_ENABLED is true
-      {(filteredRudraksha.length > 0 || !searchQuery.trim()) && (
-        <div className="mt-4">
+      {RUDRAKSHA_CONFIGURATOR_ENABLED && activeTab === 'rudraksha' && (
+        <div className="pvg-rudraksha-categories mt-3">
           <h3 className="mb-2 text-xs font-bold uppercase tracking-[1.2px] text-accent">
             Rudraksha — Sacred Beads
           </h3>
-          <div role="radiogroup" aria-label="Rudraksha categories" className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {renderGemTile(
-              {
-                id: 'rudraksha',
-                name: 'All Rudraksha',
-                sanskrit: '',
-                planet: '',
-                color: '#5C4A2A',
-                type: 'rudraksha',
-              },
-              false
-            )}
+          <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">
+            Configure a BIS hallmarked pendant. Pick one bead for single-bead mountings, or select 3+
+            beads for multi-bead designs.
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Rudraksha categories"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+          >
             {filteredRudraksha.map((gem) => renderGemTile(gem, false))}
           </div>
+          {rudrakshaEmpty && (
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              No Rudraksha categories match your search.
+            </p>
+          )}
         </div>
-      )}
-      */}
-
-      {filteredNavaratna.length === 0 && filteredUpratna.length === 0 && (
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          No gemstones match your search.
-        </p>
       )}
     </div>
   );

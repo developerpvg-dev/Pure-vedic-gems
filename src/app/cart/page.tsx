@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { productHref } from '@/lib/categories/storefront';
 import { formatPrice } from '@/lib/utils/format';
+import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 
 // ─── Cart item row ────────────────────────────────────────────────────────────
 
@@ -58,18 +59,14 @@ function CartItemRow({
             {item.origin ? ` · ${item.origin}` : ''}
           </p>
         )}
-        {item.configuration_summary && (
+        {(item.configuration_summary || item.configuration_snapshot) && (
           <div className="mt-1 space-y-1">
-            <div className="flex flex-wrap gap-1.5">
-              {item.configuration_summary.split(' · ').map((part, i) => (
-                <span
-                  key={i}
-                  className="inline-block rounded bg-brand-gold-light px-2 py-0.5 text-[10px] font-medium text-[var(--pvg-accent)]"
-                >
-                  {part}
-                </span>
-              ))}
-            </div>
+            <ConfigurationDetailsDisplay
+              snapshot={item.configuration_snapshot}
+              summary={item.configuration_summary}
+              deliveryEtaLabel={item.delivery_eta_label}
+              variant="compact"
+            />
             <Link
               href={item.configuration_edit_url ?? `/configure/${item.product_id}`}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--pvg-accent)] transition hover:underline"
@@ -77,11 +74,6 @@ function CartItemRow({
               <Settings2 className="h-3 w-3" />
               Edit Configuration
             </Link>
-            {item.delivery_eta_label && (
-              <p className="text-[11px] font-medium text-[var(--pvg-muted)]">
-                Delivery ETA: {item.delivery_eta_label}
-              </p>
-            )}
           </div>
         )}
         {RUDRAKSHA_CONFIGURATOR_ENABLED && !item.configuration_id && item.category === 'rudraksha' && (

@@ -1,4 +1,6 @@
 import type { SettingType } from '@/lib/types/configurator';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
+import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
 
 export type RingSizeSystemId = 'indian' | 'european' | 'uk_au' | 'us';
 
@@ -171,6 +173,60 @@ export function normalizeConfiguratorRules(input: unknown): ConfiguratorOptionRu
     legacy_setting_options: asUnknownArray(record.legacy_setting_options),
     legacy_ring_size_options: asUnknownArray(record.legacy_ring_size_options),
   };
+}
+
+type ConfiguratorProductRef = {
+  id: string;
+  category: string;
+  sub_category?: string | null;
+  configurator_enabled?: boolean | null;
+  certificate_display_enabled?: boolean | null;
+};
+
+/** Merge DB option rules with product-level configurator defaults. */
+export function resolveConfiguratorOptionRules(
+  product: ConfiguratorProductRef,
+  rawRules: unknown
+): ConfiguratorOptionRules {
+  const rules = normalizeConfiguratorRules(rawRules);
+  const configuratorActive = isGemConfiguratorEnabled(
+    product.category,
+    product.configurator_enabled
+  );
+  const rudrakshaPendantFlow = isRudrakshaConfiguratorContext(product.category, {
+    category: product.category,
+    sub_category: product.sub_category ?? null,
+  });
+
+  if (rudrakshaPendantFlow) {
+    return {
+      ...rules,
+      product_id: product.id,
+      jewelry_design_enabled: true,
+      metal_enabled: true,
+      ring_size_enabled: false,
+      allowed_setting_types: ['pendant'],
+      certificate_enabled:
+        product.certificate_display_enabled ?? rules.certificate_enabled,
+      energization_enabled: false,
+      allowed_energization_option_ids: [],
+    };
+  }
+
+  if (!rules.product_id) {
+    return {
+      ...rules,
+      product_id: product.id,
+      certificate_enabled:
+        product.certificate_display_enabled || rules.certificate_enabled,
+      jewelry_design_enabled: configuratorActive,
+      metal_enabled: configuratorActive,
+      ring_size_enabled: configuratorActive,
+      allowed_setting_types: configuratorActive ? rules.allowed_setting_types : ['loose'],
+    };
+  }
+
+  return rules;
 }
 
 export function isAllowedByList(value: string | null | undefined, allowedValues: readonly string[]) {

@@ -8,6 +8,7 @@ import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminC
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 import { formatPrice } from '@/lib/utils/format';
+import { parseRudrakshaBeadsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 
 type ConfigurationRow = {
   id: string;
@@ -211,6 +212,19 @@ export default function AdminConfigurationsPage() {
                           <p className="mt-2 max-w-xs text-xs leading-relaxed text-gray-500">
                             {snapshotSummary(row.configuration_snapshot)}
                           </p>
+                        )}
+                        {parseRudrakshaBeadsFromSnapshot(row.configuration_snapshot).length > 0 && (
+                          <ul className="mt-2 max-w-sm space-y-1 text-xs text-gray-600">
+                            {parseRudrakshaBeadsFromSnapshot(row.configuration_snapshot).map((bead) => (
+                              <li key={bead.id}>
+                                <span className="font-semibold text-gray-800">
+                                  {bead.role === 'primary' ? 'Primary' : 'Combo'}:
+                                </span>{' '}
+                                {bead.mukhi_label} — {bead.name}
+                                {bead.tag_number ? ` · Tag ${bead.tag_number}` : ''}
+                              </li>
+                            ))}
+                          </ul>
                         )}
                         {snapshotCustomDesignBrief(row.configuration_snapshot) && (
                           <div className="mt-2 max-w-sm rounded-lg border border-amber-100 bg-amber-50/70 p-2 text-xs text-amber-950">

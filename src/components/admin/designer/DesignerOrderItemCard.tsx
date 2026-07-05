@@ -6,6 +6,10 @@ import {
   mergeConfigurationDetails,
   type ConfigurationSnapshot,
 } from '@/lib/utils/configuration-snapshot';
+import {
+  isRudrakshaConfigurationSnapshot,
+  parseRudrakshaBeadsFromSnapshot,
+} from '@/lib/utils/rudraksha-order-display';
 
 const METAL_LABELS: Record<string, string> = {
   gold_22k: '22K Gold',
@@ -83,6 +87,12 @@ export function DesignerOrderItemCard({
   const designImage = config?.jewelry_designs?.image_url ?? null;
   const designName = selections?.design?.name ?? config?.jewelry_designs?.name ?? null;
   const settingType = selections?.setting_type ?? config?.jewelry_designs?.setting_type ?? null;
+  const rudrakshaConfig = isRudrakshaConfigurationSnapshot(
+    item.configuration_snapshot ?? config?.configuration_snapshot
+  );
+  const rudrakshaBeads = parseRudrakshaBeadsFromSnapshot(
+    item.configuration_snapshot ?? config?.configuration_snapshot
+  );
 
   return (
     <article className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -118,7 +128,9 @@ export function DesignerOrderItemCard({
         <div className="border-b border-indigo-100 bg-gradient-to-br from-indigo-50/80 to-violet-50/50 p-4 sm:p-5">
           <div className="mb-4 flex items-center gap-2">
             <Settings className="h-4 w-4 text-indigo-700" />
-            <p className="text-xs font-bold uppercase tracking-wider text-indigo-800">Jewelry to design</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-indigo-800">
+              {rudrakshaConfig ? 'Rudraksha pendant to design' : 'Jewelry to design'}
+            </p>
             {settingType ? (
               <span className="ml-auto rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-800">
                 {SETTING_LABELS[settingType] ?? cap(settingType)}
@@ -128,6 +140,27 @@ export function DesignerOrderItemCard({
 
           {details.summary ? (
             <p className="mb-4 text-sm text-indigo-950/80">{details.summary}</p>
+          ) : null}
+
+          {rudrakshaBeads.length > 0 ? (
+            <div className="mb-4 rounded-lg border border-indigo-100 bg-white/80 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Rudraksha beads ({rudrakshaBeads.length})
+              </p>
+              <ul className="space-y-2 text-sm text-gray-800">
+                {rudrakshaBeads.map((bead) => (
+                  <li key={bead.id}>
+                    <span className="font-semibold text-indigo-700">
+                      {bead.role === 'primary' ? 'Primary' : 'Combo'} ·{' '}
+                    </span>
+                    {bead.mukhi_label} — {bead.name}
+                    {bead.tag_number ? (
+                      <span className="text-xs text-gray-500"> · Tag {bead.tag_number}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
 
           <div className="flex flex-col gap-4 sm:flex-row">

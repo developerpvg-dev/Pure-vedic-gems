@@ -263,7 +263,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [isDirectorsPick, setIsDirectorsPick] = useState(Boolean(get(initialProduct, 'is_directors_pick') ?? directorsPickPreset));
   const [displayOrder, setDisplayOrder] = useState(String(get<number>(initialProduct, 'display_order') ?? 0));
   const [isActive, setIsActive] = useState(get<boolean>(initialProduct, 'is_active') ?? true);
-  const configuratorPreset = directorsPickPreset || config.kind === 'navratna';
+  const configuratorPreset = directorsPickPreset || config.kind === 'navratna' || config.kind === 'rudraksha';
   const [configuratorEnabled, setConfiguratorEnabled] = useState(Boolean(get(initialProduct, 'configurator_enabled') ?? configuratorPreset));
   const initialOptionRules = get<ProductOptionRulesState>(initialProduct, 'option_rules');
   const supportsCertAddons = config.kind === 'navratna' || config.kind === 'upratna' || config.kind === 'rudraksha';

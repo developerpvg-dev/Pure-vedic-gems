@@ -7,12 +7,10 @@ import {
   isEnergizationAllowed,
   isMetalAllowed,
   isSettingTypeAllowed,
-  normalizeConfiguratorRules,
+  resolveConfiguratorOptionRules,
   validateRingSizeValue,
 } from '@/lib/utils/configurator-rules';
 import type { ConfigurationDeliveryEta, SettingType, ConfigPricingBreakdown } from '@/lib/types/configurator';
-import type { Json } from '@/lib/types/database';
-import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { calculateJewelryDesignPricing } from '@/lib/utils/jewelry-pricing';
 import { getDesignConfiguratorNote, getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
 import {
@@ -20,9 +18,14 @@ import {
   resolveLaborRatesForJewelry,
 } from '@/lib/utils/jewelry-setting-metal-profiles';
 import {
-  designMatchesRudrakshaProduct,
+  designMatchesRudrakshaSelection,
   isRudrakshaConfiguratorContext,
 } from '@/lib/utils/rudraksha-design-rules';
+import { resolveRudrakshaSelectionPrice } from '@/lib/utils/rudraksha-pricing';
+import {
+  buildRudrakshaBeadSnapshots,
+  buildRudrakshaConfigurationSummary,
+} from '@/lib/utils/rudraksha-order-display';
 
 const ConfigurationSchema = z.object({
   product_id: z.string().uuid(),
@@ -222,7 +225,23 @@ function buildSummary(args: {
   certification: CertificationForPricing | null;
   energization: EnergizationForPricing | null;
   hasCustomDesign: boolean;
+  rudrakshaProduct?: boolean;
+  comboProducts?: ProductForConfiguration[];
+  design?: JewelryDesignForPricing | null;
+  chainLength?: string | null;
 }) {
+  if (args.rudrakshaProduct) {
+    return buildRudrakshaConfigurationSummary({
+      beads: buildRudrakshaBeadSnapshots(args.product, args.comboProducts ?? []),
+      settingType: args.settingType,
+      designName: args.design?.name ?? null,
+      metal: args.metal,
+      chainLength: args.chainLength ?? null,
+      certificationName: args.certification?.name ?? null,
+      hasCustomDesign: args.hasCustomDesign,
+    });
+  }
+
   const parts = [args.product.name];
   parts.push(args.settingType === 'loose' ? 'Loose Stone' : titleCaseSlug(args.settingType));
   if (args.hasCustomDesign) parts.push('Custom Design');
@@ -242,7 +261,13 @@ function buildSnapshot(args: {
   breakdown: ConfigPricingBreakdown;
   deliveryEta: ConfigurationDeliveryEta;
   summary: string;
+  rudrakshaProduct?: boolean;
+  comboProducts?: ProductForConfiguration[];
 }) {
+  const rudrakshaBeads = args.rudrakshaProduct
+    ? buildRudrakshaBeadSnapshots(args.product, args.comboProducts ?? [])
+    : undefined;
+
   return {
     version: 1,
     product: {
@@ -259,9 +284,17 @@ function buildSnapshot(args: {
     },
     selections: {
       setting_type: args.settingType,
-      design: args.design ? { id: args.design.id, name: args.design.name } : null,
+      is_rudraksha: args.rudrakshaProduct ?? false,
+      design: args.design
+        ? {
+            id: args.design.id,
+            name: args.design.name,
+            rudraksha_category: args.design.rudraksha_category,
+          }
+        : null,
       custom_design_url: args.input.custom_design_url ?? null,
       custom_design_brief: args.input.custom_design_brief ?? null,
+      rudraksha_beads: rudrakshaBeads,
       rudraksha_combo_product_ids: args.input.rudraksha_combo_product_ids ?? [],
       metal: args.settingType === 'loose' ? null : args.input.metal,
       ring_size: args.settingType === 'ring' ? args.input.ring_size ?? null : null,
@@ -319,20 +352,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Product is not available for configuration' }, { status: 400 });
   }
 
-  const configuratorActive = isGemConfiguratorEnabled(product.category, product.configurator_enabled);
-
-  let rules = normalizeConfiguratorRules(rulesResult.data);
-  if (!rules.product_id) {
-    rules = {
-      ...rules,
-      product_id: product.id,
-      certificate_enabled: product.certificate_display_enabled || rules.certificate_enabled,
-      jewelry_design_enabled: configuratorActive,
-      metal_enabled: configuratorActive,
-      ring_size_enabled: configuratorActive,
-      allowed_setting_types: configuratorActive ? rules.allowed_setting_types : ['loose'],
-    };
-  }
+  const rules = resolveConfiguratorOptionRules(product, rulesResult.data);
 
   const settingType = input.setting_type;
   if (!settingType) {
@@ -394,6 +414,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Complete all Vedic birth details for energization.' }, { status: 400 });
   }
 
+  const rudrakshaProduct = isRudrakshaConfiguratorContext(product.category, {
+    category: product.category,
+    sub_category: product.sub_category,
+  });
+
+  const comboIds = (input.rudraksha_combo_product_ids ?? []).filter((id) => id !== product.id);
+  let comboProducts: ProductForConfiguration[] = [];
+
+  if (rudrakshaProduct && comboIds.length > 0) {
+    const comboResult = await admin
+      .from('products')
+      .select('id, sku, tag_number, slug, name, category, sub_category, price, carat_weight, origin, images, thumbnail_url, in_stock, is_active, availability_status, configurator_enabled, certificate_display_enabled')
+      .in('id', comboIds);
+
+    if (comboResult.error) {
+      return NextResponse.json({ error: 'Unable to validate combo beads.' }, { status: 500 });
+    }
+
+    comboProducts = (comboResult.data ?? []) as ProductForConfiguration[];
+
+    if (comboProducts.length !== comboIds.length) {
+      return NextResponse.json({ error: 'One or more combo beads were not found.' }, { status: 400 });
+    }
+
+    for (const combo of comboProducts) {
+      if (combo.category !== 'rudraksha') {
+        return NextResponse.json({ error: 'Combo beads must be Rudraksha products.' }, { status: 400 });
+      }
+      if (!combo.is_active || !combo.in_stock || ['sold', 'archived', 'out_of_stock'].includes(combo.availability_status)) {
+        return NextResponse.json({ error: 'One or more combo beads are not available.' }, { status: 400 });
+      }
+    }
+  }
+
   const [designResult, certificationResult, energizationResult, metalPricing, commerceResult] =
     await Promise.all([
     input.design_id && settingType !== 'loose'
@@ -452,23 +506,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rudrakshaProduct = isRudrakshaConfiguratorContext(product.category, {
-    category: product.category,
-    sub_category: product.sub_category,
-  });
-
   if (design && rudrakshaProduct) {
     if (design.product_scope !== 'rudraksha') {
       return NextResponse.json({ error: 'Selected design is not a Rudraksha mounting.' }, { status: 400 });
     }
-    if (!designMatchesRudrakshaProduct(design.rudraksha_category, {
+    if (!designMatchesRudrakshaSelection(design.rudraksha_category, {
       category: product.category,
       sub_category: product.sub_category,
       name: product.name,
       slug: product.slug,
-    })) {
+      id: product.id,
+    }, comboProducts.map((combo) => ({
+      category: combo.category,
+      sub_category: combo.sub_category,
+      name: combo.name,
+      slug: combo.slug,
+      id: combo.id,
+    })))) {
       return NextResponse.json(
-        { error: 'Selected mounting does not apply to this Rudraksha type.' },
+        { error: 'Selected mounting does not apply to this Rudraksha selection.' },
         { status: 400 }
       );
     }
@@ -527,7 +583,9 @@ export async function POST(request: NextRequest) {
     stoneAddonLabel = getStoneAddonLabelFromDesign(design);
   }
 
-  const gemPrice = Number(product.price);
+  const gemPrice = rudrakshaProduct
+    ? resolveRudrakshaSelectionPrice(product, comboProducts)
+    : Number(product.price);
   const certificationFee = certification?.extra_charge ?? 0;
   const energizationFee = energization?.price ?? 0;
   const customDesignFee = hasCustomDesign ? CUSTOM_DESIGN_REVIEW_FEE : 0;
@@ -547,6 +605,10 @@ export async function POST(request: NextRequest) {
     certification,
     energization,
     hasCustomDesign,
+    rudrakshaProduct,
+    comboProducts,
+    design,
+    chainLength: input.chain_length ?? null,
   });
   const breakdown = {
     gem_price: gemPrice,
@@ -574,6 +636,8 @@ export async function POST(request: NextRequest) {
     breakdown,
     deliveryEta,
     summary,
+    rudrakshaProduct,
+    comboProducts,
   }) as unknown as Json;
 
   let customerId: string | null = null;

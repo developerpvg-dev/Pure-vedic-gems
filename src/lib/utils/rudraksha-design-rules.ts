@@ -1,4 +1,5 @@
 import type { ProductCard } from '@/lib/types/product';
+import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
 import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
 
 export const RUDRAKSHA_DESIGN_CATEGORIES = {
@@ -46,6 +47,7 @@ export function isRudrakshaConfiguratorContext(
 ): boolean {
   if (!RUDRAKSHA_CONFIGURATOR_ENABLED) return false;
   if (gemCategory === 'rudraksha') return true;
+  if (gemCategory && isRudrakshaStorefrontSlug(gemCategory)) return true;
   if (product?.category === 'rudraksha') return true;
   if (product?.product_type === 'rudraksha') return true;
   return false;
@@ -53,11 +55,17 @@ export function isRudrakshaConfiguratorContext(
 
 /** Which rudraksha mounting categories apply to this product. */
 export function getRudrakshaDesignCategoriesForProduct(
-  product: Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> | null
+  product: Pick<
+    ProductCard,
+    'category' | 'sub_category' | 'product_type' | 'name' | 'slug' | 'mukhi_count'
+  > | null
 ): RudrakshaDesignCategory[] {
   if (!product) return [];
 
-  const sub = (product.sub_category ?? '').toLowerCase().trim();
+  let sub = (product.sub_category ?? '').toLowerCase().trim();
+  if (!sub && product.mukhi_count) {
+    sub = `${product.mukhi_count}-mukhi`;
+  }
   if (!sub) return ['standard_mukhi'];
 
   if (sub === '1-mukhi') return ['one_mukhi'];
@@ -83,7 +91,10 @@ export function getRudrakshaDesignCategoriesForProduct(
 
 export function designMatchesRudrakshaProduct(
   designCategory: string | null | undefined,
-  product: Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> | null
+  product: Pick<
+    ProductCard,
+    'category' | 'sub_category' | 'product_type' | 'name' | 'slug' | 'mukhi_count'
+  > | null
 ): boolean {
   if (!designCategory) return false;
   const allowed = getRudrakshaDesignCategoriesForProduct(product);
@@ -105,10 +116,16 @@ export function countRudrakshaBeadsInSelection(
 
 /** Design categories allowed for a primary bead plus optional combo beads. */
 export function getRudrakshaDesignCategoriesForSelection(
-  primary: (Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+  primary: (Pick<
+    ProductCard,
+    'category' | 'sub_category' | 'product_type' | 'name' | 'slug' | 'mukhi_count'
+  > & {
     id?: string;
   }) | null,
-  combo: (Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+  combo: (Pick<
+    ProductCard,
+    'category' | 'sub_category' | 'product_type' | 'name' | 'slug' | 'mukhi_count'
+  > & {
     id?: string;
   })[] = []
 ): RudrakshaDesignCategory[] {
@@ -121,10 +138,16 @@ export function getRudrakshaDesignCategoriesForSelection(
 
 export function designMatchesRudrakshaSelection(
   designCategory: string | null | undefined,
-  primary: Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+  primary: Pick<
+    ProductCard,
+    'category' | 'sub_category' | 'product_type' | 'name' | 'slug' | 'mukhi_count'
+  > & {
     id?: string;
   } | null,
-  combo: (Pick<ProductCard, 'category' | 'sub_category' | 'product_type' | 'name' | 'slug'> & {
+  combo: (Pick<
+    ProductCard,
+    'category' | 'sub_category' | 'product_type' | 'name' | 'slug' | 'mukhi_count'
+  > & {
     id?: string;
   })[] = []
 ): boolean {

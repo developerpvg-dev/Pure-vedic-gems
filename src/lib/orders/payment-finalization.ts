@@ -18,6 +18,8 @@ interface OrderItemSnapshot {
   image_url?: string;
   carat_weight?: number | null;
   origin?: string | null;
+  configuration_summary?: string;
+  configuration_snapshot?: unknown;
 }
 
 export interface PaymentEventInput {
@@ -323,6 +325,8 @@ async function sendVerifiedOrderNotifications(order: Order) {
         quantity: item.quantity,
         unit_price: item.unit_price,
         line_total: item.line_total,
+        configuration_summary: item.configuration_summary,
+        configuration_snapshot: item.configuration_snapshot,
       })),
       subtotal: order.subtotal,
       shippingCost: order.shipping_cost,
