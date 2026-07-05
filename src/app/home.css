@@ -6528,7 +6528,7 @@ main:has(> .pvg-react-home-root) {
   .pvg-hero-clean {
     height: auto !important;
     max-height: none !important;
-    aspect-ratio: 1024 / 346 !important;
+    aspect-ratio: 4 / 3 !important;
   }
 }
 
@@ -6785,6 +6785,18 @@ main:has(> .pvg-react-home-root) {
   .pvg-react-home-root .about-copy-wrap .about-cta-row {
     order: 7;
     justify-content: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .pvg-react-home-root .pvg-hero-clean,
+  .pvg-react-home-root .pvg-hero-clean.pvg-hero-carousel {
+    aspect-ratio: 4 / 3 !important;
+  }
+
+  .pvg-react-home-root .pvg-hero-carousel__img {
+    object-fit: contain !important;
+    object-position: center center !important;
   }
 }
 

@@ -1773,6 +1773,13 @@
   aspect-ratio: 1024 / 346;
 }
 
+@media (max-width: 767px) {
+  .pvg-react-home-root .pvg-hero-clean,
+  .pvg-react-home-root .pvg-hero-clean.pvg-hero-carousel {
+    aspect-ratio: 4 / 3 !important;
+  }
+}
+
 .pvg-react-home-root .pvg-hero-clean .hero-progress-bar.running {
   transition: width var(--hero-slide-ms, 5200ms) linear !important;
 }

@@ -4,6 +4,20 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  --pvg-hero-aspect-desktop: 1024 / 346;
+  --pvg-hero-aspect-mobile: 4 / 3;
+  aspect-ratio: var(--pvg-hero-aspect-desktop);
+}
+
+@media (max-width: 767px) {
+  .pvg-hero-carousel {
+    aspect-ratio: var(--pvg-hero-aspect-mobile);
+  }
+
+  .pvg-hero-carousel__img {
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
 }
 
 .pvg-hero-carousel__slide {

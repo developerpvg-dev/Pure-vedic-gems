@@ -106,7 +106,7 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
                 className="pvg-hero-carousel__img pvg-hero-img-desktop"
                 priority={index === 0}
                 loading="eager"
-                sizes="(max-width: 767px) 1px, 100vw"
+                sizes="(max-width: 767px) 100vw, 100vw"
               />
               <Image
                 src={item.mobileImage}
@@ -116,7 +116,7 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
                 className="pvg-hero-carousel__img pvg-hero-img-mobile"
                 priority={index === 0}
                 loading="eager"
-                sizes="(min-width: 768px) 1px, 100vw"
+                sizes="(max-width: 767px) 100vw, 1px"
               />
             </div>
           </div>

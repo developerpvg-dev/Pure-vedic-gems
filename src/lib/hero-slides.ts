@@ -1,5 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 
+/**
+ * Hero slide image specs (see admin hero_slides or public/home/hero fallbacks):
+ *
+ * Desktop (desktop_image_url): 1024×346 px — wide strip, ratio ~2.96:1
+ *   Export @2x: 2048×692 px for retina.
+ *
+ * Mobile (mobile_image_url): 828×621 px — phone banner, ratio 4:3 (full image visible)
+ *   Export @2x: 1656×1242 px. Compose within the full frame; no edge cropping needed.
+ */
 export type HeroSlide = {
   id: string;
   slug: string;
