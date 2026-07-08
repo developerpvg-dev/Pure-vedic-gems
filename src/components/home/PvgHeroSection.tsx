@@ -6,8 +6,31 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import type { HeroSlide } from '@/lib/hero-slides';
 
-const SLIDE_INTERVAL_MS = 5200;
+const SLIDE_INTERVAL_MS = 4000;
 const TRANSITION_MS = 1600;
+
+function HeroNavButton({
+  direction,
+  label,
+  onClick,
+}: {
+  direction: 'prev' | 'next';
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`pvg-hero-carousel__nav pvg-hero-carousel__nav--${direction}`}
+      aria-label={label}
+      onClick={onClick}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d={direction === 'prev' ? 'M15 18l-6-6 6-6' : 'M9 6l6 6-6 6'} />
+      </svg>
+    </button>
+  );
+}
 
 type PvgHeroSectionProps = {
   slides: HeroSlide[];
@@ -37,9 +60,17 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
     return () => window.clearTimeout(timer);
   }, [leavingIndex, currentIndex]);
 
+  const goToPrev = useCallback(() => {
+    goToSlide((currentIndex - 1 + activeSlides.length) % activeSlides.length);
+  }, [activeSlides.length, currentIndex, goToSlide]);
+
+  const goToNext = useCallback(() => {
+    goToSlide((currentIndex + 1) % activeSlides.length);
+  }, [activeSlides.length, currentIndex, goToSlide]);
+
   useEffect(() => {
     if (activeSlides.length <= 1) return undefined;
-    const timer = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
       setCurrentIndex((prev) => {
         const next = (prev + 1) % activeSlides.length;
         setLeavingIndex(prev);
@@ -47,8 +78,8 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
         return next;
       });
     }, SLIDE_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, [activeSlides.length]);
+    return () => window.clearTimeout(timer);
+  }, [activeSlides.length, currentIndex]);
 
   useEffect(() => {
     if (currentIndex >= activeSlides.length) {
@@ -72,12 +103,8 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
       tabIndex={0}
       style={{ '--hero-slide-ms': `${SLIDE_INTERVAL_MS}ms` } as CSSProperties}
       onKeyDown={(event) => {
-        if (event.key === 'ArrowLeft') {
-          goToSlide((currentIndex - 1 + activeSlides.length) % activeSlides.length);
-        }
-        if (event.key === 'ArrowRight') {
-          goToSlide((currentIndex + 1) % activeSlides.length);
-        }
+        if (event.key === 'ArrowLeft') goToPrev();
+        if (event.key === 'ArrowRight') goToNext();
       }}
     >
       {activeSlides.map((item, index) => {
@@ -125,6 +152,13 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
 
       {isTransitioning ? (
         <div key={veilKey} className="pvg-hero-carousel__veil" aria-hidden />
+      ) : null}
+
+      {activeSlides.length > 1 ? (
+        <>
+          <HeroNavButton direction="prev" label="Previous hero slide" onClick={goToPrev} />
+          <HeroNavButton direction="next" label="Next hero slide" onClick={goToNext} />
+        </>
       ) : null}
 
       {activeSlides.length > 1 ? (

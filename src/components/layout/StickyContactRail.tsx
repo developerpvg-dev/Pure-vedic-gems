@@ -1,14 +1,18 @@
 'use client';
 
+/** Clears the fixed scroll-to-top control (48px tall, 24px from bottom) plus rail gap. */
+const STICKY_CONTACT_BOTTOM_OFFSET = 'calc(env(safe-area-inset-bottom, 0px) + 82px)';
+const STICKY_CONTACT_BOTTOM_OFFSET_MOBILE = 'calc(env(safe-area-inset-bottom, 0px) + 76px)';
+
 export function StickyContactRail() {
   const railStyle = {
     position: 'fixed',
-    top: '50%',
-    bottom: 'auto',
+    top: 'auto',
+    bottom: STICKY_CONTACT_BOTTOM_OFFSET,
     left: 'auto',
     right: '0px',
     width: 'fit-content',
-    transform: 'translateY(-50%)',
+    transform: 'none',
     zIndex: 920,
     display: 'flex',
     flexDirection: 'column',
@@ -61,12 +65,12 @@ export function StickyContactRail() {
     <>
       <style>{`
         .pvg-sticky-contact-rail {
-          top: 50% !important;
-          bottom: auto !important;
+          top: auto !important;
+          bottom: ${STICKY_CONTACT_BOTTOM_OFFSET} !important;
           left: auto !important;
           right: 0 !important;
           width: fit-content !important;
-          transform: translateY(-50%) !important;
+          transform: none !important;
           gap: 10px !important;
           padding: 0 !important;
           border: 0 !important;
@@ -88,10 +92,11 @@ export function StickyContactRail() {
 
         @media (max-width: 1024px) {
           .pvg-sticky-contact-rail {
-            top: 50% !important;
-            bottom: auto !important;
+            top: auto !important;
+            bottom: ${STICKY_CONTACT_BOTTOM_OFFSET} !important;
             left: auto !important;
             right: 0 !important;
+            transform: none !important;
             gap: 9px !important;
           }
 
@@ -108,11 +113,11 @@ export function StickyContactRail() {
 
         @media (max-width: 767px) {
           .pvg-sticky-contact-rail {
-            top: 50% !important;
-            bottom: auto !important;
+            top: auto !important;
+            bottom: ${STICKY_CONTACT_BOTTOM_OFFSET_MOBILE} !important;
             left: auto !important;
             right: env(safe-area-inset-right, 0px) !important;
-            transform: translateY(-50%) !important;
+            transform: none !important;
             gap: 6px !important;
           }
 

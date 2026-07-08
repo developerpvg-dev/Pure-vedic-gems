@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 export const metadata: Metadata = {
   title: 'Treatments and Enhancements in Gemstones | PureVedicGems',
@@ -206,20 +206,15 @@ export default function GemstoneTreatmentsPage() {
 
   return (
     <div className="pvg-knowledge-page">
-      {/* ── Hero + Intro ── */}
-      <section className="border-b border-[#e8e0d4] bg-white py-8 md:py-10">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-          <ScrollReveal>
-            <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
-              Treatments &amp; Enhancements
-            </h1>
-            <OrnamentalDivider className="mx-auto mt-2 max-w-sm" />
-            <p className="mt-4 text-left text-sm leading-7 text-[#5a4a3a]">
-              Many gemstones in the market have been treated to improve their appearance. Some treatments are stable and widely accepted when disclosed. Others can reduce durability, hide serious defects, or make a stone appear more valuable than it truly is. For Jyotish gemstones, disclosure is especially important because buyers rely on natural origin, purity, and a specific remedial purpose — not only on beauty. Pure Vedic Gems checks every stone through certified gemologists before adding it to stock, so customers receive genuine, authentic, and properly disclosed gemstones.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="Treatments & Enhancements"
+        subtitle="Many gemstones in the market have been treated to improve their appearance. For Jyotish gemstones, disclosure is especially important because buyers rely on natural origin, purity, and a specific remedial purpose — not only on beauty."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Treatments & Enhancements' },
+        ]}
+      />
 
       {/* ── Content ── */}
       <section className="py-8 md:py-10">
@@ -230,7 +225,7 @@ export default function GemstoneTreatmentsPage() {
               <ScrollReveal key={treatment.slug}>
                 <article
                   id={treatment.slug}
-                  className="scroll-mt-32 overflow-hidden rounded-sm border border-[#e8dcc8] bg-[#fffdf8] shadow-[0_2px_20px_rgba(61,43,31,0.08)]"
+                  className="pvg-knowledge-scroll-target overflow-hidden rounded-sm border border-[#e8dcc8] bg-[#fffdf8] shadow-[0_2px_20px_rgba(61,43,31,0.08)]"
                 >
                   <div className="p-5 sm:p-6">
                     <div className="mx-auto max-w-5xl">

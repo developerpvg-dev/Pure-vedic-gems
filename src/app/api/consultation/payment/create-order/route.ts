@@ -43,17 +43,37 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const { data: planRow, error: planError } = await admin
-    .from('consultation_plans')
-    .select('*')
-    .eq('id', parsed.data.plan_id)
-    .eq('is_active', true)
-    .single();
 
-  const plan = planRow as ConsultationPlan | null;
+  // Handle special "Gem Recommendation Rs 101" (no DB plan required)
+  let plan: ConsultationPlan | null = null;
+  if (parsed.data.plan_id === 'rs101') {
+    plan = {
+      id: 'rs101',
+      title: 'Gem Recommendation',
+      slug: 'gem-recommendation',
+      description: 'Personalized gemstone recommendation from our Vedic experts',
+      amount_inr: 101,
+      amount_usd: null,
+      currency: 'INR',
+      duration_minutes: null,
+      is_active: true,
+      sort_order: 0,
+      created_at: '',
+      updated_at: '',
+      metadata: null,
+    };
+  } else {
+    const { data: planRow, error: planError } = await admin
+      .from('consultation_plans')
+      .select('*')
+      .eq('id', parsed.data.plan_id)
+      .eq('is_active', true)
+      .single();
 
-  if (planError || !plan) {
-    return NextResponse.json({ error: 'Consultation plan is not available' }, { status: 404 });
+    if (planError || !planRow) {
+      return NextResponse.json({ error: 'Consultation plan is not available' }, { status: 404 });
+    }
+    plan = planRow as ConsultationPlan;
   }
 
   const amountInr = Number(plan.amount_inr);
@@ -66,7 +86,7 @@ export async function POST(request: NextRequest) {
     .from('consultations')
     .insert({
       customer_id: user?.id ?? null,
-      plan_id: plan.id,
+      plan_id: plan.id === 'rs101' ? null : plan.id,
       plan_title_snapshot: plan.title,
       plan_description_snapshot: plan.description,
       full_name: parsed.data.full_name,

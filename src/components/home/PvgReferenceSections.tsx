@@ -908,7 +908,7 @@ export function PvgReferenceSections({
             <svg className="expert-star" viewBox="0 0 14 14"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1L1 5.4l4.2-.8z"/></svg>
           </div>
           <div className="expert-count-v1">1,200+ Consultations</div>
-          <a href="#" className="expert-book-btn">Book Consultation</a>
+          <a href="/consultation#detailed-consultation" className="expert-book-btn">Book Consultation</a>
         </div>
 
         <div className="expert-card-v1">
@@ -929,7 +929,7 @@ export function PvgReferenceSections({
             <svg className="expert-star" viewBox="0 0 14 14"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1L1 5.4l4.2-.8z"/></svg>
           </div>
           <div className="expert-count-v1">850+ Consultations</div>
-          <a href="#" className="expert-book-btn">Book Consultation</a>
+          <a href="/consultation#detailed-consultation" className="expert-book-btn">Book Consultation</a>
         </div>
 
         <div className="expert-card-v1">
@@ -950,7 +950,7 @@ export function PvgReferenceSections({
             <svg className="expert-star" viewBox="0 0 14 14"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1L1 5.4l4.2-.8z"/></svg>
           </div>
           <div className="expert-count-v1">600+ Consultations</div>
-          <a href="#" className="expert-book-btn">Book Consultation</a>
+          <a href="/consultation#detailed-consultation" className="expert-book-btn">Book Consultation</a>
         </div>
 
       </div>
@@ -961,8 +961,8 @@ export function PvgReferenceSections({
     variant="rudraksha"
     title="Need a Vedic Yagya guided by trusted experts?"
     copy="Book a personalized Vedic Yagya service aligned to your birth chart, life goals, and current planetary periods with guidance from our in-house experts."
-    primary={{ label: 'Explore Vedic Yagyas Service', href: '/vedic-yagyas-service' }}
-    secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas' }}
+    primary={{ label: 'Book a Yagya Consultation — ₹101', href: '#gem-recommendation' }}
+    secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas-service' }}
     image="/home/ctas/cta4.webp?v=1"
     imageAlt="Vedic yagyas guidance from Pure Vedic Gems experts"
     imageSide="left"
@@ -1037,15 +1037,15 @@ export function PvgReferenceSections({
   </section>
 
   
-  <section className="reco-section" id="gem-recommendation" aria-labelledby="reco-heading">
+  <section className="reco-section scroll-mt-28" id="gem-recommendation" aria-labelledby="reco-heading">
     <div className="reco-split">
 
       <div className="reco-copy-panel">
         <div className="reco-copy-surface">
           <h2 className="reco-img-heading" id="reco-heading">Get Your Gemstone<br />Recommendation</h2>
-          <p className="reco-img-sub">Share your birth details and our Vedic experts will recommend the perfect gemstone aligned with your planetary chart.</p>
+          <p className="reco-img-sub">Share your birth details, pay just Rs 101, and our Vedic experts will recommend the perfect gemstone aligned with your planetary chart.</p>
           <div className="reco-img-trust">
-            <span className="reco-img-trust-pill">50K+ Clients Served</span>
+            <span className="reco-img-trust-pill">Rs 101 Only</span>
             <span className="reco-img-trust-pill">Expert Review</span>
           </div>
         </div>

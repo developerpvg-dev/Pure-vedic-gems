@@ -4,26 +4,14 @@ import Image from 'next/image';
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, Clock, Diamond, Globe, Headphones, Mail, Phone, Send, Shield } from 'lucide-react';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
+import {
+  DELHI_MAP_EMBED,
+  DELHI_MAP_URL,
+  OFFICE_LOCATIONS,
+} from '@/lib/constants/company-addresses';
 import './contact-page.css';
 
 type SubmitStatus = 'idle' | 'sending' | 'sent' | 'error';
-
-type AddressBlock = {
-  label: string;
-  lines: readonly string[];
-};
-
-type OfficeLocation = {
-  id: string;
-  title: string;
-  region: string;
-  flag: string;
-  photo: string;
-  mapUrl: string;
-  addresses: readonly AddressBlock[];
-  landmark?: string;
-  hours: string;
-};
 
 const COUNTRY_CODES = [
   { id: 'IN', dial: '+91', flag: '🇮🇳', name: 'India' },
@@ -92,13 +80,6 @@ const initialForm = {
   message: '',
 };
 
-const DELHI_MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=FF-32%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi%20110017';
-const UK_RETAIL_MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK';
-const SULTANPUR_MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=Balaji%20Building%20CRC%20Design%20Centre%20Road%20Sultanpur%20Delhi%20110030';
-
 const INDIA_PHONES = [
   '+91 9871582404',
   '+91 9310172512',
@@ -126,81 +107,12 @@ const WORKING_TIMINGS = [
   ['Sunday', '11:00 am – 8:00 pm'],
 ] as const;
 
-const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
-  {
-    id: 'delhi',
-    title: 'Delhi',
-    region: 'India',
-    flag: '/flags/india.svg',
-    photo: '/home/hero/pvgheropc2.webp',
-    mapUrl: DELHI_MAP_URL,
-    addresses: [
-      {
-        label: 'Registered Address',
-        lines: ['E-1566, JJ Tigri', 'New Delhi-110062, India'],
-      },
-      {
-        label: 'Retail Outlet',
-        lines: [
-          'FF-32, MGF Metropolitan Mall',
-          'Opposite Saket (Lawyers) Court',
-          'Distt. Centre Saket, New Delhi-110017, India',
-        ],
-      },
-    ],
-    landmark: 'Nearest Metro: Malviya Nagar (Yellow Line)',
-    hours: '11:00 am – 8:00 pm · Weekly off: Wednesday',
-  },
-  {
-    id: 'uk',
-    title: 'United Kingdom',
-    region: 'Pure Vedic Gems Pvt. Ltd.',
-    flag: '/flags/uk.svg',
-    photo: '/home/hero/pvgheropc1.webp',
-    mapUrl: UK_RETAIL_MAP_URL,
-    addresses: [
-      {
-        label: 'Retail Outlet',
-        lines: ['Juniper Court, Hanworth Road', 'Hounslow, TW3 3TL, United Kingdom'],
-      },
-      {
-        label: 'Registered Address',
-        lines: ['Winstanley Ln, Shenley Lodge', 'Milton Keynes, MK5 7BT, UK'],
-      },
-    ],
-    hours: 'By appointment only',
-  },
-  {
-    id: 'sultanpur',
-    title: 'Sultanpur',
-    region: 'Delhi, India',
-    flag: '/flags/india.svg',
-    photo: '/home/ourservicesimg/retail-store.webp',
-    mapUrl: SULTANPUR_MAP_URL,
-    addresses: [
-      {
-        label: 'Retail Outlet',
-        lines: [
-          'Khasra No. 382, Balaji Building',
-          'CRC Design Centre Road, Shiv Shakti Temple',
-          'Sultanpur, Delhi, Bharat — 110030',
-        ],
-      },
-    ],
-    landmark: 'Nearby Sultanpur Metro Station',
-    hours: '11:00 am – 8:00 pm · Weekly off: Wednesday',
-  },
-] as const;
-
 const TRUST_BADGES = [
   { icon: Shield, title: 'Certified Natural Gems', copy: '100% authentic & lab certified' },
   { icon: Diamond, title: 'Trusted Since 1937', copy: 'Four generations of expertise' },
   { icon: Headphones, title: 'Expert Guidance', copy: 'Personalized gem consultation' },
   { icon: Globe, title: 'Global Presence', copy: 'Serving clients worldwide' },
 ] as const;
-
-const DELHI_MAP_EMBED =
-  'https://maps.google.com/maps?hl=en&q=FF-32%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi%20110017&z=15&output=embed';
 
 function cleanPhone(value: string) {
   return value.replace(/[^+\d]/g, '');

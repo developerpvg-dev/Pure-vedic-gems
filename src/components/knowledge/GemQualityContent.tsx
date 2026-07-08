@@ -3,9 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { GEM_QUALITIES, GEM_QUALITY_FAQS, type GemQuality } from '@/lib/constants/gem-qualities';
-
-const ROBOTO = "'Roboto', 'Roboto Fallback', system-ui, -apple-system, sans-serif";
 
 export function GemQualityContent({ slug }: { slug: string }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -25,55 +24,35 @@ export function GemQualityContent({ slug }: { slug: string }) {
   };
 
   return (
-    <main
-      className="pvg-knowledge-page pb-20"
-      style={{ fontFamily: ROBOTO }}
-    >
+    <main className="pvg-knowledge-page pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-br from-[#FDFAF5] via-[#F7EFE0]/60 to-[#FDFAF5]" />
-        <div
-          className="pointer-events-none absolute -top-32 -right-32 -z-10 h-112 w-md rounded-full blur-3xl"
-          style={{ background: `${gem.accent}22` }}
-        />
-        <div className="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-112 w-md rounded-full bg-[#7A1515]/10 blur-3xl" />
+      <KnowledgePageHero
+        title={`${gem.name} — ${gem.hindiName}`}
+        subtitle={gem.intro}
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Gem Qualities', href: '/knowledge/gem-qualities' },
+          { label: gem.name },
+        ]}
+      />
 
-        <div className="mx-auto max-w-6xl px-4 md:px-8">
-          <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-            <Link href="/" className="hover:text-[#7A1515]">Home</Link>
-            <span>/</span>
-            <Link href="/knowledge" className="hover:text-[#7A1515]">Knowledge</Link>
-            <span>/</span>
-            <Link href="/knowledge/gem-qualities" className="hover:text-[#7A1515]">Gem Qualities</Link>
-            <span>/</span>
-            <span className="text-[#4D0A0A]">{gem.name}</span>
-          </nav>
+      <section className="mx-auto max-w-6xl px-4 md:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <p
+              className="mb-3 text-center text-xs font-extrabold uppercase tracking-[0.28em] lg:text-left"
+              style={{ color: gem.accent }}
+            >
+              {gem.planet} · Authenticity Guide
+            </p>
 
-          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-            <div>
-              <p
-                className="mb-3 text-xs font-extrabold uppercase tracking-[0.28em]"
-                style={{ color: gem.accent }}
-              >
-                {gem.planet} · Authenticity Guide
-              </p>
-              <h1
-                className="text-[#4D0A0A]"
-                style={{ fontSize: 'clamp(34px, 5vw, 60px)', lineHeight: 1.05, fontWeight: 800 }}
-              >
-                {gem.name} <span className="text-[#7A1515]">— {gem.hindiName}</span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-[#3B2F26] md:text-lg">
-                {gem.intro}
-              </p>
-
-              {/* Quick spec strip */}
-              <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            {/* Quick spec strip */}
+            <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   { label: 'Planet', value: gem.planet },
                   { label: 'Cosmic Ray', value: gem.cosmicRay },
@@ -102,7 +81,7 @@ export function GemQualityContent({ slug }: { slug: string }) {
                   href="/consultation"
                   className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
                 >
-                  Free Recommendation
+                  Book Consultation
                 </Link>
               </div>
             </div>
@@ -133,7 +112,6 @@ export function GemQualityContent({ slug }: { slug: string }) {
               </div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* Identification + Benefits */}
@@ -338,7 +316,7 @@ export function GemQualityContent({ slug }: { slug: string }) {
                 { title: 'Since 1937', desc: 'Four generations of trusted expertise in Jyotish gems.' },
                 { title: 'Lab Certified', desc: 'Every gem supplied with a GIA / IGI / GRS certificate.' },
                 { title: 'Vedic Energised', desc: 'Complete in-house Shudhikaran and Pran-Pratishtha rituals.' },
-                { title: 'Free Recommendation', desc: 'Birth-chart-based guidance from senior Vedic astrologers.' },
+                { title: 'Expert Recommendation', desc: 'Birth-chart-based guidance from senior Vedic astrologers.' },
               ].map((f) => (
                 <li key={f.title} className="flex gap-4">
                   <span className="mt-1 inline-flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#a67c2e] text-base font-bold text-white">
@@ -467,7 +445,7 @@ export function GemQualityContent({ slug }: { slug: string }) {
             Find the perfect {gem.name} for your karmic blueprint
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
-            Speak with our Vedic astrologers and astro-gemologists for a free chart-based
+            Speak with our Vedic astrologers and astro-gemologists for a personalised chart-based
             {' '}{gem.name} recommendation — backed by lab certification and Vedic energisation.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -475,7 +453,7 @@ export function GemQualityContent({ slug }: { slug: string }) {
               Shop {gem.name}
             </Link>
             <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
-              Free Consultation
+              Book Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"

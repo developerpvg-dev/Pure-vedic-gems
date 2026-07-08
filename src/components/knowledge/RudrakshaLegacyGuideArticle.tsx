@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { RudrakshaHomeCta } from '@/components/knowledge/RudrakshaHomeCta';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { MukhiRichGuide } from '@/lib/constants/rudraksha-rich-content';
 import { RUDRAKSHA_COLLECTION_LINKS } from '@/lib/constants/rudraksha-legacy-shared';
@@ -85,42 +86,27 @@ export function RudrakshaLegacyGuideArticle({
         />
       ))}
 
-      {/* Hero */}
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[12px] text-[#9e8a70]">
-            <Link href="/" className="transition hover:text-[#8b1a1a]">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge" className="transition hover:text-[#8b1a1a]">
-              Knowledge
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge/rudraksha" className="transition hover:text-[#8b1a1a]">
-              Rudraksha
-            </Link>
-            <span>/</span>
-            <span className="text-[#8b1a1a]">{guide.shortTitle}</span>
-          </nav>
-
-          <h1 className="text-center font-heading text-2xl font-bold uppercase leading-tight text-primary sm:text-3xl md:text-4xl">
-            {h1}
-          </h1>
-
-          <div className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-sm border border-[#e8dcc8] bg-[#fdf8ef]">
-            <Image
-              src={guide.heroImage}
-              alt={guide.shortTitle}
-              width={2400}
-              height={600}
-              className="h-auto w-full"
-              sizes="(max-width: 1280px) 100vw, 1280px"
-              priority
-            />
-          </div>
+      <KnowledgePageHero
+        title={h1}
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Rudraksha', href: '/knowledge/rudraksha' },
+          { label: guide.shortTitle },
+        ]}
+      >
+        <div className="mx-auto mt-4 max-w-5xl overflow-hidden rounded-sm border border-[#e8dcc8] bg-[#fdf8ef]">
+          <Image
+            src={guide.heroImage}
+            alt={guide.shortTitle}
+            width={2400}
+            height={600}
+            className="h-auto w-full"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+            priority
+          />
         </div>
-      </section>
+      </KnowledgePageHero>
 
       {/* Main content */}
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 md:space-y-10 md:py-12">

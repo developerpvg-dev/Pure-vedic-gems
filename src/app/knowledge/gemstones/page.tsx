@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import {
   getHomeManagedCategories,
   type HomeManagedCategory,
@@ -323,20 +323,15 @@ export default async function NavratnasKnowledgePage() {
 
   return (
     <div className="pvg-knowledge-page">
-      {/* ── Hero + Intro ── */}
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-          <ScrollReveal>
-            <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
-              Navratnas
-            </h1>
-            <OrnamentalDivider className="mx-auto mt-2 max-w-sm" />
-            <p className="mt-6 text-left text-sm leading-7 text-[#5a4a3a]">
-              Planetary imbalances impact us on all the levels of our lives. Afflicted planets can lead to poor health, bad relationships, failed careers and various other obstacles in life. A trained Vedic Astrologer can often pinpoint these imbalances with an uncanny accuracy or at least unfold for us their main factors and trends of development so that we can be forewarned and prepared in advance to deal with them. Such imbalances are the product of disharmonies between the cosmic rays that come to us from the planets. When a planet in the birth chart is afflicted its ray is improperly received or distorted. Just as a plant suffers from lack of proper sunlight, so the human body and mind suffer from lack of appropriate cosmic rays through the planets. Each planet has its influences that can be helpful or harmful to our various concerns in life. According to Ancient Indian Sacred Sanskrit Vedic texts (like the &ldquo;Garuda Purana&rdquo;, the &ldquo;Graha-Gochara Jyautisha&rdquo;, the &ldquo;Ratnapariksa&rdquo;, the &ldquo;Brhat Samhita&rdquo;, the &ldquo;Agni Purana&rdquo; and &ldquo;Mani-Mala&rdquo;) one of the main methods to effectively counter planetary imbalances is the use of Vedic gems. Certain gems &mdash; the nine main Vedic gems or Navratnas &mdash; have been prescribed for each planet along with their manner and timing of wearing. The gems are connected to the cosmic ray transmitted by the planet and aid us in its proper reception through our Aura and astral field to restore the integrity and vitality of our energy flow.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="Navratnas"
+        subtitle="Planetary imbalances impact us on all the levels of our lives. According to Ancient Indian Sacred Sanskrit Vedic texts, one of the main methods to effectively counter planetary imbalances is the use of Vedic gems — the nine main Vedic gems or Navratnas."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Navratnas' },
+        ]}
+      />
 
       {/* ── Content ── */}
       <section className="py-10 md:py-12">
@@ -348,7 +343,7 @@ export default async function NavratnasKnowledgePage() {
               <ScrollReveal key={guide.slug}>
                 <article
                   id={guide.slug}
-                  className="scroll-mt-32 overflow-hidden rounded-sm border border-[#e8dcc8] bg-[#fffdf8] shadow-[0_2px_20px_rgba(61,43,31,0.08)]"
+                  className="pvg-knowledge-scroll-target overflow-hidden rounded-sm border border-[#e8dcc8] bg-[#fffdf8] shadow-[0_2px_20px_rgba(61,43,31,0.08)]"
                 >
                   <div className="p-6 sm:p-8">
                     {/* Planet + Name + Image */}

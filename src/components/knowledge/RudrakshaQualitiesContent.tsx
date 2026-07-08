@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { RudrakshaHomeCta } from '@/components/knowledge/RudrakshaHomeCta';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import {
   RUDRAKSHA_FAQS,
@@ -127,64 +128,38 @@ export function RudrakshaQualitiesContent() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
-    <main className="pvg-knowledge-page pb-20">
+    <div className="pvg-knowledge-page pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }}
       />
 
-      {/* Hero */}
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-          <nav className="mb-6 flex flex-wrap items-center justify-center gap-1.5 text-[12px] text-[#9e8a70]">
-            <Link href="/" className="transition hover:text-[#8b1a1a]">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge" className="transition hover:text-[#8b1a1a]">
-              Knowledge
-            </Link>
-            <span>/</span>
-            <span className="text-[#8b1a1a]">Rudraksha Qualities</span>
-          </nav>
-
-          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#c9a84c]">
-            Authenticity Guide · Since 1937
-          </p>
-          <h1 className="mx-auto mt-3 max-w-5xl font-heading text-3xl font-bold leading-tight text-primary sm:text-4xl md:text-5xl">
-            OLDEST &amp; MOST TRUSTED GENUINE &amp; PURE RUDRAKSHAS SELLER IN INDIA!
-          </h1>
-          <OrnamentalDivider className="mx-auto mt-3 max-w-sm" />
-          <p className="mx-auto mt-6 max-w-4xl text-left text-sm leading-7 text-[#5a4a3a] sm:text-base sm:leading-8">
-            To benefit your lives with the Ancient Indian Vedic Science of Rudraksha Therapy, for
-            protection against the negative energy of unfavourable planets and strengthen the weak
-            body chakras, to make the cosmic forces of nature to work in your favor you need to wear
-            Pure and Natural, Purified &amp; Energized (By Special Rudra Mantras), Genuine
-            Rudrakshas recommended in your{' '}
-            <Link href="/consultation" className="font-semibold text-[#8b1a1a] underline">
-              Vedic horoscope
-            </Link>{' '}
-            with proper wearing rituals and mantras mentioned in the Ancient Vedas and Puranas
-            (Sacred Texts)
-          </p>
-          <blockquote className="mx-auto mt-8 max-w-4xl rounded-sm border border-[#e8dcc8] bg-[#fdf8ef] px-5 py-5 text-left text-sm italic leading-7 text-[#5a4a3a] sm:px-6 sm:text-base">
-            &ldquo;Kindly buy only 100% Natural (non-tampered and not fake or artificially extra
-            lines created) and Good quality (perfect shape and clear and prominent outer texture) and
-            certified (with X-ray) by Genuine Lab Rudrakshas only. Also, the Magnetic Energy and
-            Temperature tests are very important to know the power level of these Rudrakshas. After
-            these, the{' '}
-            <a
-              href={ENERGIZING_VIDEO}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-[#8b1a1a] underline not-italic"
-            >
-              Energizing by Ancient Rituals/Mantras
-            </a>{' '}
-            is also very important&rdquo;
-          </blockquote>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="Oldest & Most Trusted Genuine & Pure Rudrakshas Seller in India"
+        subtitle="To benefit your lives with the Ancient Indian Vedic Science of Rudraksha Therapy, for protection against the negative energy of unfavourable planets and strengthen the weak body chakras, you need to wear Pure and Natural, Purified & Energized, Genuine Rudrakshas recommended in your Vedic horoscope with proper wearing rituals and mantras mentioned in the Ancient Vedas and Puranas."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Rudraksha Qualities' },
+        ]}
+      >
+        <blockquote className="mx-auto mt-4 max-w-4xl rounded-sm border border-[#e8dcc8] bg-[#fdf8ef] px-5 py-5 text-left text-sm italic leading-7 text-[#5a4a3a] sm:px-6 sm:text-base">
+          &ldquo;Kindly buy only 100% Natural (non-tampered and not fake or artificially extra
+          lines created) and Good quality (perfect shape and clear and prominent outer texture) and
+          certified (with X-ray) by Genuine Lab Rudrakshas only. Also, the Magnetic Energy and
+          Temperature tests are very important to know the power level of these Rudrakshas. After
+          these, the{' '}
+          <a
+            href={ENERGIZING_VIDEO}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[#8b1a1a] underline not-italic"
+          >
+            Energizing by Ancient Rituals/Mantras
+          </a>{' '}
+          is also very important&rdquo;
+        </blockquote>
+      </KnowledgePageHero>
 
       {/* Main content — full width container */}
       <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6 md:space-y-12 md:py-12">
@@ -281,21 +256,21 @@ export function RudrakshaQualitiesContent() {
           <h2 className="text-center font-heading text-2xl font-bold text-[#8b1a1a] sm:text-3xl">
             Types of Rudraksha :
           </h2>
-          <div className="mt-6 overflow-hidden rounded-sm border border-[#e0d0b0]">
-            <div className="overflow-x-auto [&::-webkit-scrollbar]:h-0.75 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c9a84c]/60 [&::-webkit-scrollbar-track]:bg-[#fdf8ef]">
-              <table className="w-full min-w-[640px] border-collapse text-sm">
+          <div className="mt-6 w-full overflow-hidden rounded-sm border border-[#e0d0b0]">
+            <div className="pvg-knowledge-table-wrap [&::-webkit-scrollbar]:h-0.75 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c9a84c]/60 [&::-webkit-scrollbar-track]:bg-[#fdf8ef]">
+              <table className="w-full min-w-[640px] table-fixed border-collapse text-sm md:min-w-full">
                 <thead>
                   <tr className="pvg-knowledge-table-head border-b border-[#e0d0b0]">
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
+                    <th className="w-[14%] px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
                       * Rudraksha
                     </th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
+                    <th className="w-[24%] px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
                       Ruling God
                     </th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
+                    <th className="w-[14%] px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
                       Planet
                     </th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
+                    <th className="w-[48%] px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide">
                       Mantras
                     </th>
                   </tr>
@@ -306,7 +281,7 @@ export function RudrakshaQualitiesContent() {
                       'border-t border-[#e0d0b0]' + (idx % 2 === 1 ? ' bg-[#fdf8ef]/60' : '');
                     return (
                       <tr key={row.mukhi} className={rowClass + ' hover:bg-[#f7f2ea]'}>
-                        <td className="px-4 py-3 font-semibold text-[#8b1a1a]">
+                        <td className="px-4 py-3 align-top font-semibold text-[#8b1a1a]">
                           {row.slug ? (
                             <Link
                               href={`/knowledge/rudraksha/${row.slug}`}
@@ -318,9 +293,9 @@ export function RudrakshaQualitiesContent() {
                             row.mukhi
                           )}
                         </td>
-                        <td className="px-4 py-3">{row.deity}</td>
-                        <td className="px-4 py-3">{row.planet}</td>
-                        <td className="px-4 py-3">{row.mantra}</td>
+                        <td className="px-4 py-3 align-top leading-6">{row.deity}</td>
+                        <td className="px-4 py-3 align-top leading-6">{row.planet}</td>
+                        <td className="px-4 py-3 align-top leading-6 break-words">{row.mantra}</td>
                       </tr>
                     );
                   })}
@@ -500,6 +475,6 @@ export function RudrakshaQualitiesContent() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

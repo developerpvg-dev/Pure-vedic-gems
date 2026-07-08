@@ -69,7 +69,7 @@ export default async function AccountYagyasPage() {
         title="My Yagyas"
         subtitle="Track your yagya bookings, Razorpay payment reference, muhurat, and service status."
         action={(
-          <Link href="/vedic-yagyas" className="pvg-account-btn">
+          <Link href="/vedic-yagyas-service" className="pvg-account-btn">
             <Flame className="h-4 w-4" aria-hidden="true" /> Book a Yagya
           </Link>
         )}
@@ -86,7 +86,7 @@ export default async function AccountYagyasPage() {
           <Flame className="pvg-account-empty-icon h-12 w-12" aria-hidden="true" />
           <p className="pvg-account-empty-title">No yagya bookings yet</p>
           <p className="pvg-account-empty-copy">Choose a yagya and complete payment to see it here.</p>
-          <Link href="/vedic-yagyas" className="pvg-account-card-link mt-5 inline-flex">
+          <Link href="/vedic-yagyas-service" className="pvg-account-card-link mt-5 inline-flex">
             Browse yagyas <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>

@@ -475,6 +475,8 @@ export interface Database {
           status_reason: string | null;
           status_changed_at: string | null;
           status_changed_by: string | null;
+          requires_password_reset: boolean;
+          password_reset_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -495,6 +497,8 @@ export interface Database {
           status_reason?: string | null;
           status_changed_at?: string | null;
           status_changed_by?: string | null;
+          requires_password_reset?: boolean;
+          password_reset_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -515,6 +519,8 @@ export interface Database {
           status_reason?: string | null;
           status_changed_at?: string | null;
           status_changed_by?: string | null;
+          requires_password_reset?: boolean;
+          password_reset_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

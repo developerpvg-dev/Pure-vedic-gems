@@ -17,6 +17,7 @@ function pageHasBuiltInHeaderOffset(pathname: string): boolean {
     '/events-and-seminars',
     '/lab-certificate',
     '/consultation',
+    '/vedic-yagyas-service',
   ]);
 
   if (exact.has(pathname)) return true;

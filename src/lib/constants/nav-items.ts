@@ -7,11 +7,11 @@ export const SITE_CONFIG = {
   phone: '+91-9871582404',
   email: 'info@purevedicgems.com',
   address: {
-    street: '',
+    street: 'FF-32, MGF Metropolitan Mall, Distt. Centre Saket',
     city: 'New Delhi',
     state: 'Delhi',
     country: 'India',
-    pincode: '',
+    pincode: '110017',
   },
 } as const;
 
@@ -25,7 +25,7 @@ export type TopbarItem = {
 
 export const TOPBAR_ITEMS: readonly TopbarItem[] = [
   { label: 'Saket, New Delhi', kind: 'location', flag: '🇮🇳', tag: 'IN' },
-  { label: 'Noida, Sector-49', kind: 'location', flag: '🇮🇳', tag: 'IN' },
+  { label: 'Sultanpur, Delhi', kind: 'location', flag: '🇮🇳', tag: 'IN' },
   { label: 'Hounslow, London UK', kind: 'location', flag: '🇬🇧', tag: 'GB' },
   { label: '+91-9871582404', kind: 'phone' },
   { label: 'info@purevedicgems.com', kind: 'email' },

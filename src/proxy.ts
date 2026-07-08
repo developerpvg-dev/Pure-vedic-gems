@@ -26,7 +26,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  let response = NextResponse.next({ request });
+  // Stamp the pathname so server components/layouts (which can't read the URL
+  // path directly) can branch on it — used by the account layout to keep public
+  // auth-recovery pages reachable without a session.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-account-path', pathname);
+
+  let response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,7 +46,9 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         },
       },
@@ -50,7 +60,13 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isCustomerRoute = PROTECTED_CUSTOMER_ROUTES.some((prefix) => pathname.startsWith(prefix));
-  if (isCustomerRoute && !user) {
+  // Public auth-recovery pages under /account that must remain reachable
+  // without a session (otherwise users who can't log in could never reset).
+  const PUBLIC_CUSTOMER_PATHS = new Set([
+    '/account/forgot-password',
+  ]);
+
+  if (isCustomerRoute && !user && !PUBLIC_CUSTOMER_PATHS.has(pathname)) {
     const loginUrl = new URL('/', request.url);
     loginUrl.searchParams.set('auth', 'login');
     return NextResponse.redirect(loginUrl);
@@ -65,7 +81,7 @@ export async function proxy(request: NextRequest) {
       );
       const { data } = await adminClient
         .from('customer_profiles')
-        .select('account_status')
+        .select('account_status, requires_password_reset')
         .eq('id', user.id)
         .maybeSingle();
       return data;
@@ -77,6 +93,15 @@ export async function proxy(request: NextRequest) {
       loginUrl.searchParams.set('auth', 'login');
       loginUrl.searchParams.set('account', profile.account_status);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // Legacy WordPress migration: force a one-time password reset before the
+    // customer can reach any account page. The set-password page itself is the
+    // only /account route they're allowed to see while flagged.
+    if (profile?.requires_password_reset && pathname !== '/account/set-password') {
+      const resetUrl = new URL('/account/set-password', request.url);
+      resetUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(resetUrl);
     }
   }
 

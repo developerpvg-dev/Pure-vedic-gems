@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { StaticKnowledgeGuide } from '@/lib/constants/static-knowledge-guides';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 const sections = [
   { id: 'what-is-it', label: 'What is it' },
@@ -57,41 +58,33 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
   return (
     <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
       <article className="mx-auto max-w-295">
-        <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-          <Link href="/" className="hover:text-[#7A1515]">Home</Link>
-          <span>/</span>
-          <Link href="/knowledge" className="hover:text-[#7A1515]">Knowledge</Link>
-          <span>/</span>
-          <Link href={guide.parentHref} className="hover:text-[#7A1515]">{guide.parentLabel}</Link>
-          <span>/</span>
-          <span className="text-[#4D0A0A]">{guide.shortTitle}</span>
-        </nav>
-
-        <header className="grid gap-8 border-b border-[#DDD0B4] pb-10 lg:grid-cols-[1fr_420px] lg:items-end">
-          <div>
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.25em] text-[#B8861E]">{guide.eyebrow}</p>
-            <h1 className="max-w-4xl text-[#4D0A0A]" style={{ fontSize: 'clamp(34px, 5vw, 64px)', lineHeight: 1.02 }}>
-              {guide.title}
-            </h1>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-[#6B5B4E] md:text-lg">{guide.description}</p>
-            <div className="mt-5 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6B5B4E]">
-              <span>{guide.readingTime} min read</span>
-              <span>Updated {guide.updatedAt}</span>
-              <span>Static guide</span>
-            </div>
+        <KnowledgePageHero
+          title={guide.title}
+          subtitle={guide.description}
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Knowledge', href: '/knowledge' },
+            { label: guide.parentLabel, href: guide.parentHref },
+            { label: guide.shortTitle },
+          ]}
+        >
+          <div className="mt-3 flex flex-wrap justify-center gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6B5B4E]">
+            <span>{guide.readingTime} min read</span>
+            <span>Updated {guide.updatedAt}</span>
+            <span>Static guide</span>
           </div>
+        </KnowledgePageHero>
 
-          <div className="relative aspect-4/3 overflow-hidden border border-[#DDD0B4] bg-white">
-            <Image
-              src={guide.heroImage}
-              alt={guide.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 420px"
-              priority
-            />
-          </div>
-        </header>
+        <div className="relative mx-auto mb-6 aspect-4/3 max-w-2xl overflow-hidden border border-[#DDD0B4] bg-white lg:float-right lg:ml-8 lg:max-w-[420px]">
+          <Image
+            src={guide.heroImage}
+            alt={guide.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 420px"
+            priority
+          />
+        </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {guide.stats.map((stat) => (
@@ -104,7 +97,7 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[240px_1fr]">
           <aside className="hidden lg:block">
-            <div className="sticky top-32 border border-[#DDD0B4] bg-white p-4">
+            <div className="pvg-sticky-below-header sticky border border-[#DDD0B4] bg-white p-4">
               <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#B8861E]">In this guide</p>
               <nav className="space-y-2">
                 {sections.map((section) => (
@@ -117,17 +110,17 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
           </aside>
 
           <div className="space-y-10">
-            <section id="what-is-it" className="scroll-mt-32">
+            <section id="what-is-it" className="pvg-knowledge-scroll-target">
               <h2 className="text-3xl font-black text-[#4D0A0A]">What is it</h2>
               <p className="mt-4 text-base leading-8 text-[#6B5B4E]">{guide.intro}</p>
             </section>
 
-            <section id="vedic-significance" className="scroll-mt-32 border-l-4 border-[#B8861E] bg-white p-6">
+            <section id="vedic-significance" className="pvg-knowledge-scroll-target border-l-4 border-[#B8861E] bg-white p-6">
               <h2 className="text-3xl font-black text-[#4D0A0A]">Vedic significance</h2>
               <p className="mt-4 text-base leading-8 text-[#6B5B4E]">{guide.vedicSignificance}</p>
             </section>
 
-            <section id="benefits" className="scroll-mt-32">
+            <section id="benefits" className="pvg-knowledge-scroll-target">
               <h2 className="text-3xl font-black text-[#4D0A0A]">Benefits</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 {guide.benefits.map((benefit) => (
@@ -138,7 +131,7 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
               </div>
             </section>
 
-            <section id="who-should-wear" className="scroll-mt-32">
+            <section id="who-should-wear" className="pvg-knowledge-scroll-target">
               <h2 className="text-3xl font-black text-[#4D0A0A]">Who should wear</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {guide.whoShouldWear.map((section) => (
@@ -150,7 +143,7 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
               </div>
             </section>
 
-            <section id="how-to-wear" className="scroll-mt-32">
+            <section id="how-to-wear" className="pvg-knowledge-scroll-target">
               <h2 className="text-3xl font-black text-[#4D0A0A]">How to wear</h2>
               <div className="mt-5 space-y-4">
                 {guide.howToWear.map((step, index) => (
@@ -165,7 +158,7 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
               </div>
             </section>
 
-            <section id="quality-pricing" className="scroll-mt-32">
+            <section id="quality-pricing" className="pvg-knowledge-scroll-target">
               <h2 className="text-3xl font-black text-[#4D0A0A]">Quality and pricing</h2>
               <div className="mt-5 grid gap-3">
                 {guide.qualityPricing.map((item) => (
@@ -182,7 +175,7 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
               <p className="pvg-knowledge-on-dark-muted mt-4 text-base leading-8">{guide.expertCorner}</p>
             </section>
 
-            <section id="faqs" className="scroll-mt-32">
+            <section id="faqs" className="pvg-knowledge-scroll-target">
               <h2 className="text-3xl font-black text-[#4D0A0A]">Frequently asked questions</h2>
               <div className="mt-5 space-y-3">
                 {guide.faqs.map((faq) => (

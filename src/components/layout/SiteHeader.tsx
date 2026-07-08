@@ -883,7 +883,7 @@ export function SiteHeader() {
                 </Suspense>
               </div>
               <Link
-                href="/consultation"
+                href="/#gem-recommendation"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

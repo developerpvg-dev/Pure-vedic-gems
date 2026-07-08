@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { urlFor } from '@/lib/sanity/client';
 import { FALLBACK_KNOWLEDGE_ARTICLES } from '@/lib/constants/knowledge';
 import {
@@ -70,23 +71,15 @@ export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: K
   return (
     <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
       <div className="mx-auto max-w-300">
-        <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-brand-muted">
-          <Link href="/" className="hover:text-brand-accent">Home</Link>
-          <span>/</span>
-          <Link href="/knowledge" className="hover:text-brand-accent">Knowledge</Link>
-          <span>/</span>
-          <span className="text-brand-primary">{config.eyebrow}</span>
-        </nav>
-
-        <header className="mb-10 border-b border-brand-border pb-8">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-brand-accent">{config.eyebrow}</p>
-          <h1 className="font-heading text-brand-primary" style={{ fontSize: 'clamp(32px, 5vw, 58px)' }}>
-            {config.title}
-          </h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-brand-muted md:text-base">
-            {config.description}
-          </p>
-        </header>
+        <KnowledgePageHero
+          title={config.title}
+          subtitle={config.description}
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Knowledge', href: '/knowledge' },
+            { label: config.eyebrow },
+          ]}
+        />
 
         {staticGuides.length ? (
           <section className="mb-12">

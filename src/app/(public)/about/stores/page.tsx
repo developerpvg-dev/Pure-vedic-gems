@@ -2,13 +2,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Clock, Mail, MapPin, Navigation, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
+import { OFFICE_LOCATIONS } from '@/lib/constants/company-addresses';
 import './stores-page.css';
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Stores | PureVedicGems',
-  description: 'PureVedicGems store and consultation locations for certified Vedic gemstones and expert guidance.',
+  description:
+    'Pure Vedic Gems Pvt. Ltd. store locations — Saket showroom (Delhi), Sultanpur Vedic Research Centre, and UK office in Hounslow.',
 };
 
 type AddressBlock = {
@@ -30,13 +32,6 @@ type DisplayStore = {
   isPrimary?: boolean;
 };
 
-const DELHI_MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=FF-32%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi%20110017';
-const UK_RETAIL_MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK';
-const SULTANPUR_MAP_URL =
-  'https://www.google.com/maps/search/?api=1&query=Balaji%20Building%20CRC%20Design%20Centre%20Road%20Sultanpur%20Delhi%20110030';
-
 const INDIA_PHONES = [
   '+91 9871582404',
   '+91 9310172512',
@@ -48,81 +43,28 @@ const INDIA_PHONES = [
 
 const UK_PHONE = '+44 7831 491778';
 
-const STORE_LOCATIONS: DisplayStore[] = [
-  {
-    id: 'delhi',
-    title: 'Delhi',
-    subtitle: 'India',
-    image: '/home/hero/pvgheropc2.webp',
-    isPrimary: true,
-    addresses: [
-      {
-        label: 'Registered Address',
-        lines: ['E-1566, JJ Tigri', 'New Delhi-110062, India'],
-      },
-      {
-        label: 'Retail Outlet',
-        lines: [
-          'FF-32, MGF Metropolitan Mall',
-          'Opposite Saket (Lawyers) Court',
-          'Distt. Centre Saket, New Delhi-110017, India',
+const STORE_LOCATIONS: DisplayStore[] = OFFICE_LOCATIONS.map((location) => ({
+  id: location.id,
+  title: location.title,
+  subtitle: location.region,
+  image: location.photo,
+  addresses: location.addresses.map((block) => ({
+    label: block.label,
+    lines: [...block.lines],
+  })),
+  landmark: location.landmark,
+  phones: location.id === 'uk' ? [UK_PHONE] : INDIA_PHONES,
+  email: location.id === 'uk' ? 'info@purevedicgems.com' : 'info@purevedicgems.in',
+  mapUrl: location.mapUrl,
+  isPrimary: location.id === 'delhi',
+  hours:
+    location.id === 'uk'
+      ? [{ day: 'Visits', time: 'By appointment only' }]
+      : [
+          { day: 'Mon – Tue, Thu – Sun', time: '11:00 am – 8:00 pm' },
+          { day: 'Wednesday', time: 'Closed' },
         ],
-      },
-    ],
-    landmark: 'Nearest Metro: Malviya Nagar (Yellow Line)',
-    phones: INDIA_PHONES,
-    email: 'info@purevedicgems.in',
-    mapUrl: DELHI_MAP_URL,
-    hours: [
-      { day: 'Mon – Tue, Thu – Sun', time: '11:00 am – 8:00 pm' },
-      { day: 'Wednesday', time: 'Closed' },
-    ],
-  },
-  {
-    id: 'uk',
-    title: 'United Kingdom',
-    subtitle: 'Pure Vedic Gems Pvt. Ltd.',
-    image: '/home/hero/pvgheropc1.webp',
-    addresses: [
-      {
-        label: 'Retail Outlet',
-        lines: ['Juniper Court, Hanworth Road', 'Hounslow, TW3 3TL, United Kingdom'],
-      },
-      {
-        label: 'Registered Address',
-        lines: ['Winstanley Ln, Shenley Lodge', 'Milton Keynes, MK5 7BT, UK'],
-      },
-    ],
-    phones: [UK_PHONE],
-    email: 'info@purevedicgems.com',
-    mapUrl: UK_RETAIL_MAP_URL,
-    hours: [{ day: 'Visits', time: 'By appointment only' }],
-  },
-  {
-    id: 'sultanpur',
-    title: 'Sultanpur',
-    subtitle: 'Delhi, India',
-    image: '/home/ourservicesimg/retail-store.webp',
-    addresses: [
-      {
-        label: 'Retail Outlet',
-        lines: [
-          'Khasra No. 382, Balaji Building',
-          'CRC Design Centre Road, Shiv Shakti Temple',
-          'Sultanpur, Delhi, Bharat — 110030',
-        ],
-      },
-    ],
-    landmark: 'Nearby Sultanpur Metro Station',
-    phones: INDIA_PHONES,
-    email: 'info@purevedicgems.in',
-    mapUrl: SULTANPUR_MAP_URL,
-    hours: [
-      { day: 'Mon – Tue, Thu – Sun', time: '11:00 am – 8:00 pm' },
-      { day: 'Wednesday', time: 'Closed' },
-    ],
-  },
-];
+}));
 
 export default function StoresPage() {
   const stores = STORE_LOCATIONS;

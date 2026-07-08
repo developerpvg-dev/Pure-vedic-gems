@@ -3,11 +3,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { GEM_QUALITY_FAQS, type GemQuality } from '@/lib/constants/gem-qualities';
 
 export type GemQualityIndexItem = GemQuality & { cardImage: string };
-
-const ROBOTO = "'Roboto', 'Roboto Fallback', system-ui, -apple-system, sans-serif";
 
 const PILLARS = [
   { title: 'Lab Certified', desc: 'GIA · IGI · GRS · Gübelin · GII certification on every stone.' },
@@ -30,63 +29,36 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
   };
 
   return (
-    <main
-      className="pvg-knowledge-page pb-20"
-      style={{ fontFamily: ROBOTO }}
-    >
+    <main className="pvg-knowledge-page pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-br from-[#FDFAF5] via-[#F7EFE0]/60 to-[#FDFAF5]" />
-        <div className="pointer-events-none absolute -top-32 -right-32 -z-10 h-112 w-md rounded-full bg-[#B8861E]/12 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-112 w-md rounded-full bg-[#7A1515]/10 blur-3xl" />
-
-        <div className="mx-auto max-w-6xl px-4 md:px-8">
-          <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-            <Link href="/" className="hover:text-[#7A1515]">Home</Link>
-            <span>/</span>
-            <Link href="/knowledge" className="hover:text-[#7A1515]">Knowledge</Link>
-            <span>/</span>
-            <span className="text-[#4D0A0A]">Gem Qualities</span>
-          </nav>
-
-          <div className="text-center">
-            <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#B8861E]">
-              Pure Vedic Gems · Authenticity Library
-            </p>
-            <h1
-              className="mx-auto mt-3 max-w-4xl text-[#4D0A0A]"
-              style={{ fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1.05, fontWeight: 800 }}
-            >
-              Gem Qualities & Identification Guides
-            </h1>
-            <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-[#3B2F26] md:text-lg">
-              The authoritative Vedic reference on identifying natural, untreated Jyotish
-              gemstones — Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite,
-              Cat&apos;s Eye, White Sapphire, Pearl and Opal. Trusted since 1937.
-            </p>
-
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <Link
-                href="/shop"
-                className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
-              >
-                Shop Authentic Gemstones
-              </Link>
-              <Link
-                href="/consultation"
-                className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
-              >
-                Free Recommendation
-              </Link>
-            </div>
-          </div>
+      <KnowledgePageHero
+        title="Gem Qualities & Identification Guides"
+        subtitle="The authoritative Vedic reference on identifying natural, untreated Jyotish gemstones — Ruby, Emerald, Blue & Yellow Sapphire, Red Coral, Hessonite, Cat's Eye, White Sapphire, Pearl and Opal. Trusted since 1937."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Gem Qualities' },
+        ]}
+      >
+        <div className="mt-4 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/shop"
+            className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
+          >
+            Shop Authentic Gemstones
+          </Link>
+          <Link
+            href="/consultation"
+            className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+          >
+            Book Consultation
+          </Link>
         </div>
-      </section>
+      </KnowledgePageHero>
 
       {/* Pillars */}
       <section className="mx-auto mt-16 max-w-6xl px-4 md:px-8">
@@ -264,7 +236,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
             Find the right Vedic gemstone for your kundali
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
-            Speak with our senior astrologers and astro-gemologists for a free chart-based
+            Speak with our senior astrologers and astro-gemologists for a personalised chart-based
             gemstone recommendation — backed by lab certification and Vedic energisation.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -272,7 +244,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
               Shop Gemstones
             </Link>
             <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
-              Free Consultation
+              Book Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"

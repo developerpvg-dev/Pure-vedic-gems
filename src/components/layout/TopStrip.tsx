@@ -1,7 +1,7 @@
 const STRIP_ITEMS = [
   '\u{1F4DE} +91-9871582404',
   '\u2709 info@purevedicgems.com',
-  '\u{1F4CD} Delhi \u00B7 Noida \u00B7 London',
+  '\u{1F4CD} Saket \u00B7 Sultanpur \u00B7 Hounslow UK',
   '\u{1F69A} Insured Worldwide Shipping',
   '\u{1F4DE} +91-9310172512',
   '\u2709 info@purevedicgems.com',

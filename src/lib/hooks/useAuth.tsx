@@ -22,7 +22,7 @@ interface AuthContextValue {
   profile: CustomerProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string; requiresPasswordReset?: boolean }>;
   signUp: (data: {
     email: string;
     password: string;
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const signIn = useCallback(
-    async (email: string, password: string): Promise<{ error?: string }> => {
+    async (email: string, password: string): Promise<{ error?: string; requiresPasswordReset?: boolean }> => {
       if (!supabase) return { error: missingSupabaseConfigMessage };
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -124,14 +124,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(data.user);
+      let requiresPasswordReset = false;
       if (data.user) {
         await fetchProfile(data.user.id);
+        // fetchProfile updates state asynchronously; read the flag directly so
+        // we can route legacy users to the forced reset page immediately.
+        const { data: profileRow } = await supabase
+          .from('customer_profiles')
+          .select('requires_password_reset')
+          .eq('id', data.user.id)
+          .maybeSingle();
+        requiresPasswordReset = Boolean(profileRow?.requires_password_reset);
       } else {
         setProfile(null);
       }
       setIsLoading(false);
 
-      return {};
+      return { requiresPasswordReset };
     },
     [fetchProfile, supabase]
   );

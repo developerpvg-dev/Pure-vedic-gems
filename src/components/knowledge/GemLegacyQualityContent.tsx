@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { NavaratnaHomeCta } from '@/components/knowledge/NavaratnaHomeCta';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import {
   getGemLegacyGuide,
@@ -32,7 +33,7 @@ function SectionCard({
 
 function TierTable({ rows }: { rows: { label: string; value: string }[] }) {
   return (
-    <div className="mt-5 overflow-x-auto rounded-sm border border-[#e8dcc8]">
+    <div className="pvg-knowledge-table-wrap mt-5 overflow-x-auto rounded-sm border border-[#e8dcc8]">
       <table className="w-full min-w-[320px] text-left text-sm">
         <tbody>
           {rows.map((row) => (
@@ -67,39 +68,25 @@ export function GemLegacyQualityContent({ slug }: { slug: string }) {
   };
 
   return (
-    <main className="pvg-knowledge-page pb-20">
+    <div className="pvg-knowledge-page pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[12px] text-[#9e8a70]">
-            <Link href="/" className="transition hover:text-[#8b1a1a]">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge" className="transition hover:text-[#8b1a1a]">
-              Knowledge
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge/gem-qualities" className="transition hover:text-[#8b1a1a]">
-              Gem Qualities
-            </Link>
-            <span>/</span>
-            <span className="text-[#8b1a1a]">{gemMeta?.name ?? slug}</span>
-          </nav>
-
-          <h1 className="text-center font-heading text-2xl font-bold leading-tight text-primary sm:text-3xl md:text-4xl">
-            {guide.legacyH1}
-          </h1>
-          <OrnamentalDivider className="mx-auto mt-3 max-w-sm" />
-          <blockquote className="mx-auto mt-6 max-w-5xl rounded-sm border border-[#e8dcc8] bg-[#fdf8ef] px-5 py-5 text-left text-sm italic leading-7 text-[#5a4a3a] sm:px-6 sm:text-base">
-            &ldquo;{guide.certificationQuote}&rdquo;
-          </blockquote>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title={guide.legacyH1}
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Gem Qualities', href: '/knowledge/gem-qualities' },
+          { label: gemMeta?.name ?? slug },
+        ]}
+      >
+        <blockquote className="mx-auto mt-4 max-w-5xl rounded-sm border border-[#e8dcc8] bg-[#fdf8ef] px-5 py-5 text-left text-sm italic leading-7 text-[#5a4a3a] sm:px-6 sm:text-base">
+          &ldquo;{guide.certificationQuote}&rdquo;
+        </blockquote>
+      </KnowledgePageHero>
 
       <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6 md:space-y-12 md:py-12">
         {guide.sectionIntro && (
@@ -336,7 +323,7 @@ export function GemLegacyQualityContent({ slug }: { slug: string }) {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
 

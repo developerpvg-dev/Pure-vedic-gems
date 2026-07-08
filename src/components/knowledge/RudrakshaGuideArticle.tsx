@@ -2,8 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { MukhiRichGuide } from '@/lib/constants/rudraksha-rich-content';
 import { RUDRAKSHA_RICH_GUIDES } from '@/lib/constants/rudraksha-rich-content';
-
-const ROBOTO = "'Roboto', 'Roboto Fallback', system-ui, -apple-system, sans-serif";
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 export function getRudrakshaRichSchemas(
   guide: MukhiRichGuide,
@@ -45,14 +44,10 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border border-[#DDD0B4] bg-white p-4 shadow-[0_1px_0_rgba(77,10,10,0.04)]">
       <p
         className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#B8861E]"
-        style={{ fontFamily: ROBOTO }}
       >
         {label}
       </p>
-      <p
-        className="mt-2 text-sm leading-6 font-semibold text-[#1C1C1C] md:text-base"
-        style={{ fontFamily: ROBOTO }}
-      >
+      <p className="mt-2 text-sm leading-6 font-semibold text-[#1C1C1C] md:text-base">
         {value}
       </p>
     </div>
@@ -79,10 +74,7 @@ export function RudrakshaGuideArticle({
     .slice(0, 6);
 
   return (
-    <main
-      className="pvg-knowledge-page pb-20"
-      style={{ fontFamily: ROBOTO }}
-    >
+    <main className="pvg-knowledge-page pb-20">
       {schemas.map((schema, i) => (
         <script
           key={i}
@@ -91,89 +83,68 @@ export function RudrakshaGuideArticle({
         />
       ))}
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-br from-[#FDFAF5] via-[#F7EFE0]/60 to-[#FDFAF5]" />
-        <div className="pointer-events-none absolute -top-24 -right-24 -z-10 h-96 w-96 rounded-full bg-[#B8861E]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 -z-10 h-96 w-96 rounded-full bg-[#7A1515]/10 blur-3xl" />
+      <KnowledgePageHero
+        title={guide.title}
+        subtitle={guide.intro}
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Rudraksha', href: '/knowledge/rudraksha' },
+          { label: guide.shortTitle },
+        ]}
+      />
 
-        <div className="mx-auto max-w-6xl px-4 md:px-8">
-          <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-            <Link href="/" className="hover:text-[#7A1515]">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge" className="hover:text-[#7A1515]">
-              Knowledge
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge/rudraksha" className="hover:text-[#7A1515]">
-              Rudraksha
-            </Link>
-            <span>/</span>
-            <span className="text-[#4D0A0A]">{guide.shortTitle}</span>
-          </nav>
+      <section className="mx-auto max-w-6xl px-4 md:px-8">
+        <p className="mb-6 text-center text-xs font-extrabold uppercase tracking-[0.28em] text-[#B8861E]">
+          {guide.mukhi} Mukhi · Authentic Rudraksha Guide
+        </p>
 
-          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-            <div>
-              <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.28em] text-[#B8861E]">
-                {guide.mukhi} Mukhi · Authentic Rudraksha Guide
-              </p>
-              <h1
-                className="text-[#4D0A0A]"
-                style={{ fontSize: 'clamp(34px, 5vw, 60px)', lineHeight: 1.05, fontWeight: 800 }}
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              <Link
+                href={guide.shopHref}
+                className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
               >
-                {guide.title}
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-[#3B2F26] md:text-lg">
-                {guide.intro}
+                Shop {guide.shortTitle}
+              </Link>
+              <Link
+                href="/consultation"
+                className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+              >
+                Get Astro Consult
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="relative aspect-4/3 overflow-hidden rounded-xl border border-[#DDD0B4] bg-white shadow-xl shadow-[#4D0A0A]/10">
+              <Image
+                src={guide.heroImage}
+                alt={guide.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 600px"
+                priority
+              />
+            </div>
+            <div className="absolute -bottom-5 -right-3 hidden rounded-lg border border-[#B8861E]/40 bg-white px-5 py-3 text-center shadow-lg md:block">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B8861E]">
+                Since 1937
               </p>
-
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  href={guide.shopHref}
-                  className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
-                >
-                  Shop {guide.shortTitle}
-                </Link>
-                <Link
-                  href="/consultation"
-                  className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
-                >
-                  Get Astro Consult
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="relative aspect-4/3 overflow-hidden rounded-xl border border-[#DDD0B4] bg-white shadow-xl shadow-[#4D0A0A]/10">
-                <Image
-                  src={guide.heroImage}
-                  alt={guide.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 600px"
-                  priority
-                />
-              </div>
-              <div className="absolute -bottom-5 -right-3 hidden rounded-lg border border-[#B8861E]/40 bg-white px-5 py-3 text-center shadow-lg md:block">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B8861E]">
-                  Since 1937
-                </p>
-                <p className="mt-1 text-xs font-semibold text-[#4D0A0A]">
-                  Lab Certified · Energised
-                </p>
-              </div>
+              <p className="mt-1 text-xs font-semibold text-[#4D0A0A]">
+                Lab Certified · Energised
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* Key stats */}
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Presiding Deity" value={guide.deity} />
-            <Stat label="Ruling Planet" value={guide.planet} />
-            <Stat label="Beej Mantra" value={guide.beejMantra} />
-            <Stat label="Chakra" value={guide.chakra ?? 'All / Universal'} />
-          </div>
+        {/* Key stats */}
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Presiding Deity" value={guide.deity} />
+          <Stat label="Ruling Planet" value={guide.planet} />
+          <Stat label="Beej Mantra" value={guide.beejMantra} />
+          <Stat label="Chakra" value={guide.chakra ?? 'All / Universal'} />
         </div>
       </section>
 
@@ -197,10 +168,7 @@ export function RudrakshaGuideArticle({
               className="group relative overflow-hidden rounded-xl border border-[#DDD0B4] bg-white p-6 md:p-7"
             >
               <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-[#B8861E]/8 transition group-hover:bg-[#B8861E]/14" />
-              <h3
-                className="text-lg font-bold text-[#4D0A0A] md:text-xl"
-                style={{ fontFamily: ROBOTO }}
-              >
+              <h3 className="text-lg font-bold text-[#4D0A0A] md:text-xl">
                 {group.title}
               </h3>
               <div className="mt-3 h-0.75 w-12 rounded-full bg-[#B8861E]" />
@@ -315,7 +283,7 @@ export function RudrakshaGuideArticle({
             Bring the divine power of {guide.shortTitle} into your life
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
-            Get a free chart-based recommendation from our Vedic astrologers and discover
+            Get a personalised chart-based recommendation from our Vedic astrologers and discover
             the bead that resonates with your karmic blueprint.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -323,7 +291,7 @@ export function RudrakshaGuideArticle({
               Shop {guide.shortTitle}
             </Link>
             <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">
-              Free Consultation
+              Book Consultation
             </Link>
             <a
               href="https://wa.me/919810335577"

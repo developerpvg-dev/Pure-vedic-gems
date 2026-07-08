@@ -147,7 +147,7 @@ export type ConsultationPlanInput = z.infer<typeof consultationPlanSchema>;
 export type ConsultationPlanUpdateInput = z.infer<typeof consultationPlanUpdateSchema>;
 
 export const consultationBookingCreateOrderSchema = z.object({
-  plan_id: z.string().uuid(),
+  plan_id: z.union([z.string().uuid(), z.literal('rs101')]),
   full_name: z.string().min(1, 'Name is required').max(200).trim(),
   email: z.string().email('Invalid email').max(255).trim(),
   phone: z.string().regex(/^[0-9+\-\s()]{7,20}$/, 'Invalid phone').trim(),

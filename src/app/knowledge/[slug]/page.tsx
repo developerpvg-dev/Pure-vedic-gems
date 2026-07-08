@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { urlFor } from '@/lib/sanity/client';
 import { PortableText } from '@/components/blog/PortableText';
 import { FALLBACK_KNOWLEDGE_ARTICLES, getFallbackKnowledgeArticle } from '@/lib/constants/knowledge';
@@ -124,25 +125,20 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
   return (
     <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
       <article className="mx-auto max-w-[1120px]">
-        <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-          <Link href="/" className="hover:text-[#B8861E]">Home</Link>
-          <span>/</span>
-          <Link href="/knowledge" className="hover:text-[#B8861E]">Knowledge</Link>
-          <span>/</span>
-          <span className="text-[#5c3d3d]">{article.category}</span>
-        </nav>
-
-        <header className="border-b border-[#e8e0d4] pb-8">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[3px] text-[#a67c2e]">{article.category}</p>
-          <h1 className="font-heading" style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
-            {article.title}
-          </h1>
-          {article.excerpt && <p className="mt-4 max-w-3xl text-base leading-8 text-[#5a4a3a]">{article.excerpt}</p>}
-          <div className="mt-5 flex flex-wrap gap-3 text-xs text-[#6B5B4E]">
+        <KnowledgePageHero
+          title={article.title}
+          subtitle={article.excerpt ?? undefined}
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Knowledge', href: '/knowledge' },
+            { label: article.category },
+          ]}
+        >
+          <div className="mt-3 flex flex-wrap justify-center gap-3 text-xs text-[#6B5B4E]">
             {article.estimatedReadingTime ? <span>{article.estimatedReadingTime} min read</span> : null}
             {article.author?.name ? <span>Reviewed by {article.author.name}</span> : null}
           </div>
-        </header>
+        </KnowledgePageHero>
 
         {heroImage && (
           <div className="relative my-8 aspect-[16/9] overflow-hidden rounded-xl bg-brand-surface">
@@ -153,7 +149,7 @@ export default async function KnowledgeArticlePage({ params }: KnowledgeArticleP
         <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
           <aside className="hidden lg:block">
             {headings.length > 0 && (
-              <div className="sticky top-32 rounded-xl border border-[#DDD0B4] bg-brand-surface p-4">
+              <div className="pvg-sticky-below-header sticky rounded-xl border border-[#DDD0B4] bg-brand-surface p-4">
                 <p className="mb-3 text-[10px] font-bold uppercase tracking-[2px] text-[#B8861E]">In this guide</p>
                 <nav className="space-y-2">
                   {headings.map((heading) => (

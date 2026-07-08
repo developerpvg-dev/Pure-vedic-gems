@@ -14,11 +14,12 @@ import {
 import { GemstoneWorldMap } from '@/components/ui/gemstone-world-map';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
+import { ABOUT_LOCATION_CARDS } from '@/lib/constants/company-addresses';
 
 export const metadata: Metadata = {
   title: 'About Pure Vedic Gems | Heritage Since 1937 — Four Generations',
   description:
-    'Pure Vedic Gems: India\'s oldest trusted name since 1937 in Astro-Jyotish gemstones, authentic Rudrakshas, Vedic astrologers, custom jewellery, research centre, and energization — serving 40+ countries worldwide.',
+    'Pure Vedic Gems: India\'s oldest trusted name since 1937 in Astro-Jyotish gemstones, authentic Rudrakshas, Vedic astrologers, custom jewellery, Sultanpur research centre, and energization — serving 40+ countries worldwide.',
 };
 
 const GENERATIONS = [
@@ -43,7 +44,7 @@ const GENERATIONS = [
     year: '1990s–Present',
     name: 'Mr. Vikas Mehra',
     image: '/aboutus/3rd%20Generation%20(1).webp',
-    location: 'Delhi & Noida, India',
+    location: 'Delhi, India',
     copy: 'Certified Gemologist and Jewellery Designer (GIA, IIG, EGL), Mr. Vikas Mehra merged modern gem science with ancient Vedic astrology, introducing lab certification, Rudraksha testing, Vedic energization, and digital commerce.',
   },
   {
@@ -67,32 +68,7 @@ const LABS = [
   { name: 'HRD Antwerp', logo: '/labslogo/HRD%20ANTWERP.webp' },
 ] as const;
 
-const LOCATIONS = [
-  {
-    title: 'Delhi Retail Outlet',
-    city: 'Saket, New Delhi',
-    image: '/home/hero/pvgheropc2.webp',
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi',
-    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Gems%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi&z=15&output=embed',
-    copy: 'FF-32, MGF Metropolitan Mall, Opposite Saket Court, District Centre Saket. Retail, wholesale, and export hub for Pure Vedic Gems Pvt. Ltd.',
-  },
-  {
-    title: 'Vedic Sciences Research Centre',
-    city: 'Sector 49, Noida',
-    image: '/home/whoweare/puja-energization.jpeg',
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20Sector%2049%20Noida',
-    embedUrl: 'https://maps.google.com/maps?hl=en&q=Pure%20Vedic%20Science%20and%20Research%20Centre%20Sector%2049%20Noida&z=15&output=embed',
-    copy: 'Gems, Rudraksha, yagya, healing therapy, Vedic astrology, research, and energizing centre for deeper remedy work and consultation.',
-  },
-  {
-    title: 'UK Appointment Support',
-    city: 'Hounslow, London',
-    image: '/home/hero/pvgheropc1.webp',
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Pure%20Vedic%20Gems%20Hounslow%20London',
-    embedUrl: 'https://maps.google.com/maps?hl=en&q=95%20Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK&z=14&output=embed',
-    copy: 'Appointment-based support for overseas clients, coordinated through Pure Vedic Gems UK channels and official listed addresses.',
-  },
-] as const;
+const LOCATIONS = ABOUT_LOCATION_CARDS;
 
 export default function AboutPage() {
   return (

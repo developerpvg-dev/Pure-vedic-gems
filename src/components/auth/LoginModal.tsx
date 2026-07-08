@@ -67,6 +67,7 @@ export function LoginModal({
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showLegacyResetHint, setShowLegacyResetHint] = useState(false);
 
   const { seconds: otpSeconds, start: startOTPTimer, canResend } = useOTPTimer(60);
 
@@ -88,6 +89,7 @@ export function LoginModal({
       setPhone('');
       setOtp('');
       setMagicEmail('');
+      setShowLegacyResetHint(false);
     }, 300);
 
     return () => clearTimeout(timeoutId);
@@ -103,7 +105,10 @@ export function LoginModal({
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  const clear = () => setError('');
+  const clear = () => {
+    setError('');
+    setShowLegacyResetHint(false);
+  };
 
   // ── Email login ─────────────────────────────────────────────────────────────
 
@@ -119,6 +124,13 @@ export function LoginModal({
     setIsLoading(false);
     if (result.error) {
       setError(result.error);
+      setShowLegacyResetHint(true);
+      return;
+    }
+    if (result.requiresPasswordReset) {
+      // Legacy WordPress migration: send them to the forced reset page.
+      // Full navigation so the auth cookie is honoured by the server proxy.
+      window.location.href = '/account/set-password';
       return;
     }
     onSuccess?.();
@@ -564,6 +576,21 @@ export function LoginModal({
                     </div>
 
                     {error && <p className="text-sm text-red-500">{error}</p>}
+
+                    {showLegacyResetHint && (
+                      <a
+                        href="/account/forgot-password"
+                        className="block rounded-lg border px-4 py-3 text-sm transition-all hover:-translate-y-0.5"
+                        style={{
+                          borderColor: 'var(--pvg-accent)',
+                          background: 'var(--pvg-gold-light)',
+                          color: 'var(--pvg-primary)',
+                        }}
+                      >
+                        <strong>Account moved from our old site?</strong> Set a new
+                        password to activate it →
+                      </a>
+                    )}
 
                     <button
                       type="submit"

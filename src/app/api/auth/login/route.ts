@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LoginSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { logCustomerActivity } from '@/lib/customers/activity';
 import {
@@ -45,6 +46,28 @@ export async function POST(req: NextRequest) {
       password: parsed.data.password,
     });
     if (error) {
+      // Migrated-from-WordPress users don't know their temp password. If the
+      // email belongs to a flagged legacy account, prompt them to set a new
+      // password instead of showing a generic "invalid credentials" message.
+      const admin = createAdminClient();
+      const { data: legacyProfile } = await admin
+        .from('customer_profiles')
+        .select('requires_password_reset')
+        .eq('email', parsed.data.email.toLowerCase())
+        .maybeSingle();
+
+      if (legacyProfile?.requires_password_reset) {
+        return NextResponse.json(
+          {
+            error:
+              'Your account was moved from our old site. Please set a new password to continue.',
+            code: 'legacy_reset_required',
+            reset_url: '/account/forgot-password',
+          },
+          { status: 401 }
+        );
+      }
+
       // Use a generic message to avoid user enumeration
       return NextResponse.json(
         { error: 'Invalid email or password.' },

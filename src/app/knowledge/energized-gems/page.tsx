@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 export const metadata: Metadata = {
   title: 'Purified and Energised Gemstones | PureVedicGems',
@@ -19,22 +19,15 @@ export default function EnergizedGemsPage() {
 
   return (
     <div className="pvg-knowledge-page">
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-          <ScrollReveal>
-            <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
-              Purified and Energised Gemstones
-            </h1>
-            <OrnamentalDivider className="mx-auto mt-2 max-w-sm" />
-            <p className="mt-3 text-[11px] font-black uppercase tracking-[0.24em] text-[#b8861e]">
-              Prana Pratishta Pooja
-            </p>
-            <p className="mt-5 text-left text-sm leading-7 text-[#5a4a3a] sm:text-base">
-              {ENERGIZED_COPY}
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="Purified and Energised Gemstones"
+        subtitle={ENERGIZED_COPY}
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Energized Gems' },
+        ]}
+      />
 
       <section className="py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 export const metadata: Metadata = {
   title: 'Gemstone Care and Handling | PureVedicGems',
@@ -83,16 +83,15 @@ export default function GemsCarePage() {
 
   return (
     <div className="pvg-knowledge-page">
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-          <ScrollReveal>
-            <h1 className="font-heading text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-6xl">
-              Cleaning, Care and Maintenance of Gemstones
-            </h1>
-            <OrnamentalDivider className="mx-auto mt-2 max-w-sm" />
-          </ScrollReveal>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="Cleaning, Care and Maintenance of Gemstones"
+        subtitle="The atomic composition of different gemstones causes them to vary in hardness, toughness, and reaction to heat, light, and acids. With a few general rules, you can care for your gemstones expertly without being a professional gemmologist."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Gem Care' },
+        ]}
+      />
 
       <section className="py-8 md:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

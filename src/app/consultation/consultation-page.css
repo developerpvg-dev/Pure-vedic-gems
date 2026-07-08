@@ -117,3 +117,64 @@
     top: 7rem;
   }
 }
+
+/* Vedic yagyas service hub — balanced hero spacing + read-more intro */
+.pvg-yagya-service-page {
+  padding-top: calc(var(--pvg-site-header-offset) + 0.75rem);
+}
+
+@media (min-width: 1024px) {
+  .pvg-yagya-service-page {
+    padding-top: calc(var(--pvg-site-header-offset) + 1rem);
+  }
+}
+
+.pvg-yagya-service-page .yagya-service-hero {
+  padding-top: 0.25rem;
+  padding-bottom: 1rem;
+}
+
+.pvg-yagya-service-page .section-title {
+  margin-bottom: 10px;
+}
+
+.pvg-yagya-service-page .navratna-subtitle {
+  margin-bottom: 10px;
+}
+
+.yagya-service-intro-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.yagya-service-intro-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.5rem;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a1515;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.yagya-service-intro-toggle:hover {
+  color: #5f1010;
+}
+
+.yagya-service-intro-toggle:focus-visible {
+  outline: 2px solid #7a1515;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (min-width: 640px) {
+  .yagya-service-intro-toggle {
+    font-size: 14px;
+  }
+}

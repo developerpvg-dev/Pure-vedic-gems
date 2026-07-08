@@ -5,8 +5,7 @@ import {
   RUDRAKSHA_RICH_GUIDES,
   RUDRAKSHA_FAQS,
 } from '@/lib/constants/rudraksha-rich-content';
-
-const ROBOTO = "'Roboto', 'Roboto Fallback', system-ui, -apple-system, sans-serif";
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 const PILLARS = [
   {
@@ -33,66 +32,35 @@ const PILLARS = [
 
 export function RudrakshaIndexContent() {
   return (
-    <main
-      className="pvg-knowledge-page pb-20"
-      style={{ fontFamily: ROBOTO }}
-    >
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-br from-[#FDFAF5] via-[#F7EFE0]/60 to-[#FDFAF5]" />
-        <div className="pointer-events-none absolute -top-32 -right-32 -z-10 h-112 w-md rounded-full bg-[#B8861E]/12 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-112 w-md rounded-full bg-[#7A1515]/10 blur-3xl" />
+    <main className="pvg-knowledge-page pb-20">
+      <KnowledgePageHero
+        title="The Complete Rudraksha Library"
+        subtitle="From the rare One Mukhi to the legendary Kubera Rudraksha — explore the sacred power, deities, ruling planets and authentic wearing rituals of all 21 Mukhi Rudrakshas."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Rudraksha Library' },
+        ]}
+      >
+        <div className="mt-4 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/knowledge/rudraksha-qualities"
+            className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
+          >
+            Rudraksha Qualities Guide
+          </Link>
+          <Link
+            href="/consultation"
+            className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
+          >
+            Book Consultation
+          </Link>
+        </div>
+      </KnowledgePageHero>
 
-        <div className="mx-auto max-w-6xl px-4 md:px-8">
-          <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-            <Link href="/" className="hover:text-[#7A1515]">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/knowledge" className="hover:text-[#7A1515]">
-              Knowledge
-            </Link>
-            <span>/</span>
-            <span className="text-[#4D0A0A]">Rudraksha Library</span>
-          </nav>
-
-          <div className="text-center">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.32em] text-[#B8861E]">
-              Knowledge · Rudraksha
-            </p>
-            <h1
-              className="mx-auto mt-3 max-w-3xl text-[#4D0A0A]"
-              style={{
-                fontSize: 'clamp(36px, 5.5vw, 64px)',
-                lineHeight: 1.04,
-                fontWeight: 800,
-              }}
-            >
-              The Complete Rudraksha Library
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[#3B2F26] md:text-lg">
-              From the rare One Mukhi to the legendary Kubera Rudraksha — explore
-              the sacred power, deities, ruling planets and authentic wearing
-              rituals of all 21 Mukhi Rudrakshas.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <Link
-                href="/knowledge/rudraksha-qualities"
-                className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
-              >
-                Rudraksha Qualities Guide
-              </Link>
-              <Link
-                href="/shop/rudraksha"
-                className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
-              >
-                Shop Rudraksha
-              </Link>
-            </div>
-          </div>
-
-          {/* Pillars */}
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Pillars */}
+      <section className="mx-auto mt-16 max-w-6xl px-4 md:px-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PILLARS.map((p) => (
               <div
                 key={p.title}
@@ -108,7 +76,6 @@ export function RudrakshaIndexContent() {
               </div>
             ))}
           </div>
-        </div>
       </section>
 
       {/* Promo card: Rudraksha qualities */}
@@ -274,7 +241,7 @@ export function RudrakshaIndexContent() {
             Find the Rudraksha that resonates with your karmic blueprint
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 md:text-base">
-            Speak with our Vedic astrologers for a free chart-based Rudraksha
+            Speak with our Vedic astrologers for a personalised chart-based Rudraksha
             recommendation. Every bead is lab-certified and Vedic-energised
             in-house.
           </p>

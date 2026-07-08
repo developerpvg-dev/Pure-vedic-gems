@@ -212,6 +212,18 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
     }));
   }, [profile, user]);
 
+  // Deep-link from homepage expert cards (and similar CTAs) straight to plans.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.location.hash !== '#detailed-consultation') return;
+    const target = document.getElementById('detailed-consultation');
+    if (!target) return;
+    const timer = window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   function updateField(field: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -376,15 +388,15 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   return (
     <div className="pvg-consultation-page px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <section className="mx-auto max-w-4xl pb-8 pt-4 text-center sm:pt-6 lg:pt-8" aria-labelledby="consultation-heading">
-          <h1 className="section-title" id="consultation-heading">
+        <div id="detailed-consultation" className="mx-auto max-w-4xl scroll-mt-28 pb-8 pt-8 text-center sm:pt-10 lg:pt-12" aria-labelledby="detailed-consultation-heading">
+          <h1 className="section-title" id="detailed-consultation-heading">
             Book a Vedic Consultation
           </h1>
-          <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
+          <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.75rem auto 0', maxWidth: '36rem' }}>
             Choose your consultation service, add birth and contact details, then confirm with secure Razorpay payment.
           </p>
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
-        </section>
+        </div>
 
         {plans.length === 0 ? (
           <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-[#ede6d5] bg-white px-5 py-12 text-center shadow-[0_10px_32px_rgba(44,4,4,0.06)] sm:px-6">
@@ -674,6 +686,7 @@ function FieldInput({
   type = 'text',
   placeholder,
   min,
+  max,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
@@ -683,6 +696,7 @@ function FieldInput({
   type?: string;
   placeholder?: string;
   min?: string;
+  max?: string;
 }) {
   return (
     <div>
@@ -692,6 +706,7 @@ function FieldInput({
         <input
           type={type}
           min={min}
+          max={max}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}

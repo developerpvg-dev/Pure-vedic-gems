@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Contact Us',
   description:
-    'Get in touch with PureVedicGems — visit our showrooms in Delhi and London, call us, or send a message. Expert Vedic gemstone guidance available.',
+    'Contact Pure Vedic Gems Pvt. Ltd. — Saket showroom, Sultanpur Vedic Research Centre, and UK office. Call, email, or visit for certified gemstone guidance.',
 };
 
 export default function ContactLayout({ children }: { children: React.ReactNode }) {

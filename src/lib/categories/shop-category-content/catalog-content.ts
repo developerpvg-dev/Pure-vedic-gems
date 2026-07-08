@@ -664,7 +664,7 @@ function baseRudrakshaFaqs(label: string, mukhi?: number): CategoryFaq[] {
       question: `Can anyone wear ${mukhiRef} Rudraksha?`,
       answer: mukhi === 5
         ? `Yes — 5 Mukhi is the most universally recommended Rudraksha in tradition, suitable for men, women, and children after basic energization.`
-        : `${mukhiRef} carries specific deity and planetary associations. Consult our experts or your astrologer before wearing, especially for higher mukhis (14+). ${BRAND} offers free guidance at checkout.`,
+        : `${mukhiRef} carries specific deity and planetary associations. Consult our experts or your astrologer before wearing, especially for higher mukhis (14+). ${BRAND} offers expert guidance at checkout.`,
     },
     {
       question: `What thread or metal should I use for ${label}?`,
@@ -965,7 +965,7 @@ function buildJewelryContent(slug: string, label: string): RichGemSections {
       },
       {
         question: `How do I know which ${label} suits my chart?`,
-        answer: `Book a free Jyotish consultation with ${BRAND}. We review your birth chart, dasha, and goals before recommending stones, metal, and finger.`,
+        answer: `Book a Jyotish consultation with ${BRAND}. We review your birth chart, dasha, and goals before recommending stones, metal, and finger.`,
       },
     ],
   };

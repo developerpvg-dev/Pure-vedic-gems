@@ -1,42 +1,67 @@
 /* Knowledge library — light, professional editorial palette */
 
 .pvg-knowledge-page {
-  --kv-bg: #faf9f7;
+  --kv-bg: #faf8f4;
   --kv-surface: #ffffff;
   --kv-accent-surface: #f7f2ea;
   --kv-border: #e8e0d4;
-  --kv-heading: #5c3d3d;
+  --kv-heading: #2c0404;
   --kv-text: #4a4238;
   --kv-muted: #6f6559;
   --kv-gold: #a67c2e;
   --kv-maroon: #7a3a3a;
   --kv-maroon-hover: #8f4545;
-  /* Fixed SiteHeader clearance — keep in sync with .pvg-header-spacer in home.css */
-  --kv-header-offset: 98px;
+  --kv-header-offset: var(--pvg-site-header-offset);
   box-sizing: border-box;
   min-height: 100vh;
-  padding-top: calc(var(--kv-header-offset) + 6px);
-  overflow-x: clip;
-  color: var(--kv-text);
+  padding-top: 0;
+  padding-bottom: 5rem;
+  overflow-x: hidden;
+  color: #15110d;
   background-color: var(--kv-bg);
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
 }
 
-@media (min-width: 768px) {
-  .pvg-knowledge-page {
-    --kv-header-offset: 110px;
-  }
+/* Pages without a shared hero still clear the fixed header */
+.pvg-knowledge-page:not(:has(.pvg-knowledge-hero)) {
+  padding-top: calc(var(--pvg-site-header-offset) + 1rem);
 }
 
 @media (min-width: 1024px) {
-  .pvg-knowledge-page {
-    --kv-header-offset: 112px;
+  .pvg-knowledge-page:not(:has(.pvg-knowledge-hero)) {
+    padding-top: calc(var(--pvg-site-header-offset) + 1.25rem);
   }
+}
+
+/* Hero owns header clearance — keeps h1 below the fixed SiteHeader on all breakpoints */
+.pvg-knowledge-hero {
+  padding-top: calc(var(--pvg-site-header-offset) + 1rem);
+  padding-bottom: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .pvg-knowledge-hero {
+    padding-top: calc(var(--pvg-site-header-offset) + 1.25rem);
+  }
+}
+
+/* Shared hero typography — matches consultation / contact pages */
+.pvg-knowledge-page .section-title {
+  color: #2c0404;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  line-height: 1.2;
+  scroll-margin-top: calc(var(--pvg-site-header-offset) + 0.75rem);
+}
+
+.pvg-knowledge-page .navratna-subtitle {
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  color: #5a5043;
 }
 
 /* Anchor / in-page jump targets sit below the fixed header */
 .pvg-knowledge-page :target,
-.pvg-knowledge-page [id] {
-  scroll-margin-top: calc(var(--kv-header-offset) + 12px);
+.pvg-knowledge-page .pvg-knowledge-scroll-target {
+  scroll-margin-top: calc(var(--pvg-site-header-offset) + 0.75rem);
 }
 
 /* Responsive media & tables */
@@ -46,11 +71,21 @@
   max-width: 100%;
 }
 
-.pvg-knowledge-page table {
+/* Responsive tables — scroll on wrapper; keep table display intact */
+.pvg-knowledge-table-wrap {
   display: block;
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.pvg-knowledge-table-wrap > table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pvg-knowledge-page table {
+  max-width: 100%;
 }
 
 .pvg-knowledge-page :is(h1, h2, h3, h4, h5, h6) {

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 const LIBRARIES = [
   {
@@ -64,35 +64,25 @@ const GROUP_ORDER = ['Gemstones', 'Astrology', 'Rudraksha'] as const;
 export function KnowledgeHubPage({ siteUrl }: { siteUrl: string }) {
   return (
     <div className="pvg-knowledge-page">
-      <section className="border-b border-[#e8e0d4] bg-white py-10 md:py-12">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <nav className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B5B4E]">
-            <Link href="/" className="hover:text-[#7A1515]">Home</Link>
-            <span>/</span>
-            <span className="text-[#4D0A0A]">Knowledge</span>
-          </nav>
-
-          <ScrollReveal>
-            <div className="text-center">
-              <h1 className="font-heading text-4xl font-bold text-primary md:text-5xl">
-                The Vedic Gem Library
-              </h1>
-              <OrnamentalDivider className="mx-auto mt-3 max-w-sm" />
-              <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#5a4a3a] md:text-[15px]">
-                Curated reference guides on gemstones, Rudraksha, astrology, and safe buying — from Pure Vedic Gems since 1937.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <Link href="/consultation" className="pvg-knowledge-btn-primary px-5 py-2.5 text-[11px]">
-                  Book Consultation
-                </Link>
-                <Link href="/tools/recommendation" className="pvg-knowledge-btn-outline px-5 py-2.5 text-[11px]">
-                  Get Recommendation
-                </Link>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="The Vedic Gem Library"
+        subtitle="Curated reference guides on gemstones, Rudraksha, astrology, and safe buying — from Pure Vedic Gems since 1937."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge' },
+        ]}
+      >
+        <ScrollReveal>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/consultation" className="pvg-knowledge-btn-primary px-5 py-2.5 text-[11px]">
+              Book Consultation
+            </Link>
+            <Link href="/tools/recommendation" className="pvg-knowledge-btn-outline px-5 py-2.5 text-[11px]">
+              Get Recommendation
+            </Link>
+          </div>
+        </ScrollReveal>
+      </KnowledgePageHero>
 
       <section className="py-10 md:py-14">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">

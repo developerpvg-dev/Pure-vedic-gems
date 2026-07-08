@@ -5,6 +5,7 @@ import {
   productStructuredOfferPrice,
 } from '@/lib/shop/product-pricing';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { ORGANIZATION_ADDRESSES } from '@/lib/constants/company-addresses';
 
 export type JsonLd = Record<string, unknown>;
 
@@ -106,9 +107,11 @@ export function organizationJsonLd(): JsonLd {
     '@type': 'Organization',
     name: BRAND_NAME,
     alternateName: 'Pure Vedic Gems',
+    legalName: 'PURE VEDIC GEMS PVT. LTD.',
     url: siteUrl,
     logo: absoluteUrl('/PVG NEW LOGO DESIGN.PNG'),
     foundingDate: '1937',
+    address: ORGANIZATION_ADDRESSES,
     sameAs: [
       'https://www.instagram.com/purevedicgems',
       'https://www.facebook.com/purevedicgems',

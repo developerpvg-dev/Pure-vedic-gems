@@ -699,7 +699,7 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
         variant="navaratna"
         title="Not sure which gemstone is good for you?"
         copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
-        primary={{ label: 'Get Gem Recommendation', href: '/consultation' }}
+        primary={{ label: 'Get Navaratna Recommendation — ₹101', href: '#gem-recommendation' }}
         secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
         image="/home/ctas/cta1.webp?v=4"
         imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
@@ -770,7 +770,7 @@ export function RudrakshaHomeSection({
         variant="rudraksha"
         title="Not sure which Rudraksha is right for you?"
         copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
-        primary={{ label: 'Get Rudraksha Guidance', href: '/consultation' }}
+        primary={{ label: 'Get Rudraksha Recommendation — ₹101', href: '#gem-recommendation' }}
         secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
         image="/home/ctas/cta2.webp?v=2"
         imageAlt="Rudraksha expert offering personalised guidance"
@@ -1027,7 +1027,7 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
         variant="uparatna"
         title="Need a practical gemstone alternative?"
         copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
-        primary={{ label: 'Get Uparatna Guidance', href: '/consultation' }}
+        primary={{ label: 'Get Uparatna Recommendation — ₹101', href: '#gem-recommendation' }}
         secondary={{ label: 'See Uparatna Collection', href: '/shop/upratna' }}
         image="/home/ctas/cta3.webp?v=2"
         imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"

@@ -21,8 +21,8 @@ const TEXT_HREFS: Record<string, string> = {
   'Start Configuring': '/configure',
   'Explore All Articles': '/knowledge',
   'Our Full Story': '/about',
-  'Book Consultation': '/consultation',
-  Consultation: '/consultation',
+  'Book Consultation': '#gem-recommendation',
+  Consultation: '#gem-recommendation',
   'Knowledge Hub': '/knowledge',
   'Our Experts': '/about/experts',
   'Our Legacy': '#our-legacy',
@@ -724,6 +724,20 @@ function setupLegacyHashLinks(router: ReturnType<typeof useRouter>) {
   return () => root.removeEventListener('click', linkHandler);
 }
 
+function setupGemRecommendationHashScroll() {
+  if (typeof window === 'undefined') return undefined;
+  if (window.location.hash !== '#gem-recommendation') return undefined;
+
+  const timer = window.setTimeout(() => {
+    document.getElementById('gem-recommendation')?.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, 120);
+
+  return () => window.clearTimeout(timer);
+}
+
 export function PvgHomeInteractions() {
   const router = useRouter();
 
@@ -770,6 +784,7 @@ export function PvgHomeInteractions() {
     cleanups.push(setupTestimonials());
     cleanups.push(setupScrollTopButton());
     cleanups.push(setupLegacyHashLinks(router));
+    cleanups.push(setupGemRecommendationHashScroll());
 
     return () => cleanups.forEach((cleanup) => cleanup?.());
   }, [router]);

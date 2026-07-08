@@ -421,7 +421,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
           {/* Consultation CTA */}
           <div style={{ padding: '20px' }}>
             <Link
-              href="/consultation"
+              href="/#gem-recommendation"
               onClick={onClose}
               style={{
                 display: 'block', padding: '14px',

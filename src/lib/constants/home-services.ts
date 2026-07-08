@@ -11,7 +11,7 @@ export const HOME_SERVICES: HomeService[] = [
     title:
       'Online Live/Telephonic Chat Horoscope Consultation by Genuine Astrologers',
     imageAlt: 'Online live and telephonic horoscope consultation',
-    href: '/consultation',
+    href: '#gem-recommendation',
   },
   {
     slug: 'astro-jewellery',

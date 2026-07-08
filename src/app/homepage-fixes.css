@@ -1781,5 +1781,46 @@
 }
 
 .pvg-react-home-root .pvg-hero-clean .hero-progress-bar.running {
-  transition: width var(--hero-slide-ms, 5200ms) linear !important;
+  transition: width var(--hero-slide-ms, 4000ms) linear !important;
+}
+
+/* Restore carousel/slider arrow buttons stripped by `.pvg-react-home-root button { background: none; border: none; }` */
+.pvg-react-home-root .pvg-slider-btn {
+  border: 1px solid rgba(122, 21, 21, 0.18) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: var(--maroon) !important;
+  box-shadow: 0 10px 26px rgba(61, 43, 31, 0.13) !important;
+}
+
+.pvg-react-home-root .pvg-slider-btn:hover {
+  background: var(--maroon) !important;
+  color: var(--white) !important;
+  border-color: rgba(122, 21, 21, 0.38) !important;
+  box-shadow: 0 12px 28px rgba(61, 43, 31, 0.18) !important;
+}
+
+.pvg-react-home-root .pvg-slider-btn-prev:hover {
+  transform: translateY(-50%) translateX(3px) !important;
+}
+
+.pvg-react-home-root .pvg-slider-btn-next:hover {
+  transform: translateY(-50%) translateX(-3px) !important;
+}
+
+/* Hero slide/page dots — restore styles stripped by `.pvg-react-home-root button { background: none; }` */
+.pvg-react-home-root .hero-dot {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border: none !important;
+}
+
+.pvg-react-home-root .hero-dot:hover {
+  background: rgba(255, 255, 255, 0.62) !important;
+}
+
+.pvg-react-home-root .hero-dot.is-active {
+  background: #B8861E !important;
+}
+
+.pvg-react-home-root .hero-dot.is-active:hover {
+  background: #D4A843 !important;
 }

@@ -29,6 +29,7 @@
     "seed:rudraksha-reviews": "tsx scripts/seed/generate-rudraksha-category-reviews.ts",
     "seed:upratna-reviews": "tsx scripts/seed/generate-upratna-category-reviews.ts",
     "seed:catalog-reviews": "tsx scripts/seed/generate-catalog-category-reviews.ts",
+    "seed:legacy-users": "tsx scripts/seed/seed-legacy-users.ts --write",
     "security:audit": "npm audit --audit-level=high",
     "ci": "npm run lint && npm run typecheck && npm run test && npm run build",
     "format": "prettier --write .",

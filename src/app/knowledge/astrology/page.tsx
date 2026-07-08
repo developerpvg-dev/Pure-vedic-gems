@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { ZoomableAstrologyImage } from '@/components/knowledge/ZoomableAstrologyImage';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
 export const metadata: Metadata = {
   title: 'About Vedic Astrology | Jyotisha & Navagraha | PureVedicGems',
@@ -26,26 +27,15 @@ const PLANET_GEMS = [
 export default function AboutVedicAstrologyPage() {
   return (
     <div className="pvg-knowledge-page">
-      <section className="border-b border-[#e8e0d4] bg-white py-12 md:py-14 lg:py-16">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <ScrollReveal>
-            <h1 className="font-heading text-3xl font-bold text-primary md:text-4xl lg:text-5xl">
-              About Vedic Astrology
-            </h1>
-            <p className="mx-auto mt-4 max-w-5xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              Human Destiny is mysterious. Everyone suffers from certain miseries, sometimes in life. A
-              very rich man enjoying all the luxuries of life may be unhappy due to marital-discord, lack
-              of progeny or any other personal matter. On the other hand a middle class man blessed with
-              all the domestic happiness may feel strangulated in material affairs. There are a very few
-              who are fully satisfied or blessed in every aspect. And why is it so that for some, to
-              achieve certain things in life they have to involve, as compared to others, very less
-              efforts where as for some, to achieve certain things they have to really work very hard.
-              There is definitely some kind of invisible cosmic force that helps and obstructs us in
-              various ways in our day to day lives.
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
+      <KnowledgePageHero
+        title="About Vedic Astrology"
+        subtitle="Human destiny is mysterious. There is definitely some kind of invisible cosmic force that helps and obstructs us in various ways in our day to day lives — and Vedic Astrology (Jyotisha) is the ancient science that maps these planetary influences."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Knowledge', href: '/knowledge' },
+          { label: 'Vedic Astrology' },
+        ]}
+      />
 
       <section className="pt-4 pb-16 md:pt-6 md:pb-20">
         <div className="mx-auto max-w-screen-2xl px-6 md:px-8 lg:px-12 xl:px-16">
