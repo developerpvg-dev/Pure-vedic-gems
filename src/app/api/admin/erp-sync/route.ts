@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     const draft = buildDraftProductFromErpTag(erpRow);
     const { data: product, error: insertError } = await db
-      .from('products')
+      .from<{ id: string; name: string; tag_number: string; slug: string }>('products')
       .insert(draft)
       .select('id, name, tag_number, slug')
       .single();
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       userId: auth.user.id,
       action: 'erp_create_draft_product',
       resourceType: 'product',
-      resourceId: product.id as string,
+      resourceId: product.id,
       details: { tgno: parsed.data.tgno },
       ipAddress: getRequestIp(request),
     });

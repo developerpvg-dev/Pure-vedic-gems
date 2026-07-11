@@ -18,6 +18,7 @@ export type UntypedQuery<T = unknown> = PromiseLike<SupabaseResult<T>> & {
   ilike: (...args: unknown[]) => UntypedQuery<T>;
   in: (...args: unknown[]) => UntypedQuery<T>;
   is: (...args: unknown[]) => UntypedQuery<T>;
+  not: (...args: unknown[]) => UntypedQuery<T>;
   gte: (...args: unknown[]) => UntypedQuery<T>;
   order: (...args: unknown[]) => UntypedQuery<T>;
   limit: (...args: unknown[]) => UntypedQuery<T>;

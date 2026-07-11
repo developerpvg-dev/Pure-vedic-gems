@@ -154,14 +154,18 @@ export function buildErpSyncReport(
 }
 
 async function readSyncMeta(db: ReturnType<typeof asUntypedSupabase>) {
-  const { data: state } = await db.from('erp_sync_state').select('*').eq('id', 'mmi').maybeSingle();
+  const { data: state } = await db
+    .from<{ last_sync_at: string | null; api_calls_used: number | null }>('erp_sync_state')
+    .select('*')
+    .eq('id', 'mmi')
+    .maybeSingle();
   const { count: pendingOutbound } = await db
     .from('erp_outbound_queue')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'pending');
 
   return {
-    syncedAt: (state?.last_sync_at as string | null) ?? null,
+    syncedAt: state?.last_sync_at ?? null,
     apiCallsUsed: Number(state?.api_calls_used ?? 0),
     pendingOutbound: pendingOutbound ?? 0,
   };
@@ -172,16 +176,16 @@ export async function getErpSyncReportFromCache(): Promise<ErpSyncReport> {
   const meta = await readSyncMeta(db);
 
   const [{ data: erpTags }, { data: websiteProducts }] = await Promise.all([
-    db.from('erp_tag_stock').select('tgno, tsno, ino, idesc, erp_stock, remarks, tpre, cost_damt, cost_samt, cost_mamt'),
-    db.from('products')
+    db.from<CachedErpTag[]>('erp_tag_stock').select('tgno, tsno, ino, idesc, erp_stock, remarks, tpre, cost_damt, cost_samt, cost_mamt'),
+    db.from<WebsiteTaggedProduct[]>('products')
       .select('id, tag_number, name, in_stock, stock_quantity, availability_status, is_active, sold_individually')
       .not('tag_number', 'is', null)
       .neq('tag_number', ''),
   ]);
 
   return buildErpSyncReport(
-    (erpTags ?? []) as CachedErpTag[],
-    (websiteProducts ?? []) as WebsiteTaggedProduct[],
+    erpTags ?? [],
+    websiteProducts ?? [],
     meta
   );
 }
@@ -219,7 +223,11 @@ export async function syncErpTagStockFromApi() {
   }
 
   const db = asUntypedSupabase(createAdminClient());
-  const { data: state } = await db.from('erp_sync_state').select('api_calls_used').eq('id', 'mmi').maybeSingle();
+  const { data: state } = await db
+    .from<{ api_calls_used: number | null }>('erp_sync_state')
+    .select('api_calls_used')
+    .eq('id', 'mmi')
+    .maybeSingle();
   const used = Number(state?.api_calls_used ?? 0);
   if (used + 1 > API_CALL_BUDGET) {
     throw new Error(`ERP API budget exceeded (${used}/${API_CALL_BUDGET}). Contact MMI to raise the limit.`);
@@ -267,7 +275,7 @@ export async function applyErpStockToWebsite(productIds?: string[]) {
 
   for (const row of selected) {
     const { data: product } = await db
-      .from('products')
+      .from<{ sold_individually: boolean | null }>('products')
       .select('id, sold_individually')
       .eq('id', row.productId)
       .maybeSingle();
