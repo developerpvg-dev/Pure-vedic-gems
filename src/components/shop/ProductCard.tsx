@@ -13,8 +13,9 @@ import {
   isProductStockUnavailable,
   resolveProductCartPrice,
 } from '@/lib/shop/product-pricing';
-import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { formatProductDisplayName, stripProductGradeFromName } from '@/lib/utils/product-display-name';
 import { formatCarats, formatPrice } from '@/lib/utils/format';
+import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { productHref } from '@/lib/categories/storefront';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
@@ -42,7 +43,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem, isInCart } = useCart();
-  const displayName = formatProductDisplayName(product.name);
+  const gradeLabel = resolveProductGradeLabel(product.quality_label, product.name);
+  const displayName = stripProductGradeFromName(formatProductDisplayName(product.name));
   const inCart = isInCart(product.id);
   const href = productHref(product);
   const imageSrc = getImageSrc(product);
@@ -215,6 +217,10 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Out of stock label */}
         {isUnavailable && (
           <p className="mt-0.5 text-[10px] font-medium text-red-500 sm:text-[11px]">{unavailableLabel}</p>
+        )}
+
+        {gradeLabel && (
+          <p className="mt-0.5 text-[10px] font-medium text-[#9A7B2F] sm:text-[11px]">({gradeLabel})</p>
         )}
 
         {/* Price row */}

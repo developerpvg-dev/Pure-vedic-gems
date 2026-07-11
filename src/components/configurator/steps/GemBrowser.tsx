@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { buildProductMeta, formatProductListPrice } from '@/lib/utils/format';
-import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { formatProductDisplayName, stripProductGradeFromName } from '@/lib/utils/product-display-name';
+import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { isProductPriceOnRequest, isProductPurchasable } from '@/lib/shop/product-pricing';
 import { productHref } from '@/lib/categories/storefront';
 import { isRudrakshaStorefrontSlug, rudrakshaSubcategoryLabel } from '@/lib/constants/rudraksha-subcategories';
@@ -511,6 +512,8 @@ export default function GemBrowser({
                 const isPrimary = selected?.id === product.id;
                 const priceDisplay = formatProductListPrice(product);
                 const onRequest = isProductPriceOnRequest(product);
+                const gradeLabel = resolveProductGradeLabel(product.quality_label, product.name);
+                const displayName = stripProductGradeFromName(formatProductDisplayName(product.name));
                 return (
                   <button
                     key={product.id}
@@ -560,8 +563,11 @@ export default function GemBrowser({
                         </p>
                       )}
                       <p className="truncate text-[11px] font-medium leading-tight text-primary">
-                        {formatProductDisplayName(product.name)}
+                        {displayName}
                       </p>
+                      {gradeLabel ? (
+                        <p className="mt-0.5 truncate text-[9px] font-medium text-[#9A7B2F]">({gradeLabel})</p>
+                      ) : null}
                       <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
                         {buildProductMeta({
                           carat_weight: product.carat_weight,

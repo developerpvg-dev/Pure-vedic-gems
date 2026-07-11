@@ -8,6 +8,7 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import type { Json, Order, PaymentEvent } from '@/lib/types/database';
 import { awardOrderRewardPoints, cancelRewardRedemption, confirmRewardRedemption } from '@/lib/rewards/service';
+import { queueErpOutboundSale } from '@/lib/erp/sync';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -20,6 +21,7 @@ interface OrderItemSnapshot {
   origin?: string | null;
   configuration_summary?: string;
   configuration_snapshot?: unknown;
+  tag_number?: string | null;
 }
 
 export interface PaymentEventInput {
@@ -202,11 +204,13 @@ async function updateInventoryForCapturedOrder(order: Order) {
 
     const { data: product } = await supabase
       .from('products')
-      .select('id, sku, name, category, stock_quantity, sold_individually')
+      .select('id, sku, name, category, stock_quantity, sold_individually, tag_number')
       .eq('id', item.product_id)
       .single();
 
     if (!product) continue;
+
+    const tagNumber = item.tag_number ?? product.tag_number;
 
     if (product.sold_individually) {
       await supabase
@@ -222,6 +226,14 @@ async function updateInventoryForCapturedOrder(order: Order) {
         })
         .eq('id', item.product_id)
         .then(null, () => undefined);
+      if (tagNumber) {
+        await queueErpOutboundSale({
+          tagNumber,
+          orderId: order.id,
+          productId: product.id,
+          payload: { order_number: order.order_number, source: 'website_payment' },
+        }).catch(() => undefined);
+      }
       await notifyLowStockProduct({
         id: product.id,
         sku: product.sku,
@@ -247,6 +259,14 @@ async function updateInventoryForCapturedOrder(order: Order) {
       })
       .eq('id', item.product_id)
       .then(null, () => undefined);
+    if (nextQuantity === 0 && tagNumber) {
+      await queueErpOutboundSale({
+        tagNumber,
+        orderId: order.id,
+        productId: product.id,
+        payload: { order_number: order.order_number, source: 'website_payment', quantity: item.quantity },
+      }).catch(() => undefined);
+    }
     await notifyLowStockProduct({
       id: product.id,
       sku: product.sku,

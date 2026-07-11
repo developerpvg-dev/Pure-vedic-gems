@@ -108,7 +108,10 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
     if (variant === 'admin' && !user) return;
 
     const initial = window.setTimeout(loadNotifications, 0);
-    const interval = window.setInterval(loadNotifications, 30000);
+    const interval = window.setInterval(() => {
+      if (document.hidden) return;
+      void loadNotifications();
+    }, 60000);
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(interval);

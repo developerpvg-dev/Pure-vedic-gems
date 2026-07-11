@@ -482,7 +482,7 @@ const GUIDES = {
     phone: '+91 9871582404',
     faqTitle: 'Opal Gemstone-Frequently Asked Questions',
     tiers: [
-      tierFromJson('opal', 'opal-qualities', 'Lowest Quality Opal Gemstone', "We don't keep this standard/quality of Emerald gemstone because they are totally ineffective for astrological healing purposes", [
+      tierFromJson('opal', 'opal-qualities', 'Lowest Quality Opal Gemstone', "We don't keep this standard/quality of Opal gemstone because they are totally ineffective for astrological healing purposes", [
         { label: 'Origin', value: 'Australian/ Ethiopian' },
         { label: 'Treatments', value: 'Glued or Sticker Applied to Create Artificial Fire /Non-Treated' },
         { label: 'Astrologically', value: 'Not Effective / Not Recommended' },

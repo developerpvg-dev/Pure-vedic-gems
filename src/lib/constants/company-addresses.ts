@@ -108,7 +108,7 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     mapEmbedUrl: SULTANPUR_MAP_EMBED,
     addresses: [SULTANPUR_RESEARCH_ADDRESS],
     landmark: SULTANPUR_RESEARCH_LANDMARK,
-    hours: '11:00 am – 8:00 pm · Weekly off: Wednesday',
+    hours: '10:00 am – 7:00 pm · Weekly off: Wednesday',
   },
 ] as const;
 

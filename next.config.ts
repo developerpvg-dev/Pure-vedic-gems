@@ -44,6 +44,11 @@ const shadcnTailwindCssPath = path.resolve(projectNodeModules, 'shadcn', 'dist',
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
 
+  experimental: {
+    // Stops Turbopack from ballooning a multi-GB filesystem cache during local dev.
+    turbopackFileSystemCacheForDev: false,
+  },
+
   turbopack: {
     root: __dirname,
     resolveAlias: {
@@ -55,7 +60,7 @@ const nextConfig: NextConfig = {
     },
   },
 
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     // Force tailwindcss to resolve from this project's node_modules
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -66,6 +71,12 @@ const nextConfig: NextConfig = {
     };
     // Prioritise project-local node_modules before climbing the directory tree
     config.resolve.modules = [projectNodeModules, 'node_modules'];
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**'],
+      };
+    }
     return config;
   },
 
@@ -644,14 +655,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
-  webpack: {
-    treeshake: {
-      removeDebugLogging: true,
-    },
-  },
-  widenClientFileUpload: true,
-});
+export default isProduction && process.env.SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: !process.env.CI,
+      webpack: {
+        treeshake: {
+          removeDebugLogging: true,
+        },
+      },
+      widenClientFileUpload: true,
+    })
+  : nextConfig;

@@ -5,6 +5,7 @@ import { StickyContactRail } from './StickyContactRail';
 import { SiteHeader } from './SiteHeader';
 import { Footer } from './Footer';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
+import { AgentChatWidget } from '@/components/agent/AgentChatWidget';
 
 /** Routes that already reserve space below the fixed header in their own layout */
 function pageHasBuiltInHeaderOffset(pathname: string): boolean {
@@ -75,6 +76,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       {showHeaderSpacer ? <div className="pvg-header-spacer" aria-hidden="true" /> : null}
       <main className={shellClassName}>{children}</main>
       <StickyContactRail />
+      <AgentChatWidget />
       <Footer />
       {!isHome ? <ThemeSwitcher /> : null}
     </>

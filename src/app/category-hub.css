@@ -261,10 +261,6 @@
     max-width: none;
   }
 
-  .category-hub-hero__benefit:nth-child(n + 4) {
-    display: flex;
-  }
-
   .category-hub-hero__benefit-icon {
     width: 1.125rem;
     height: 1.125rem;

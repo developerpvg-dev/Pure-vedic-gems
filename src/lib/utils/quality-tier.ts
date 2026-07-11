@@ -71,3 +71,62 @@ export function qualityTierFilterLabels(tier: QualityTier): string[] {
 export function isCanonicalQualityTier(value: string): value is QualityTier {
   return CANONICAL_LOOKUP.has(value.toLowerCase());
 }
+
+/** Storefront grade labels — includes Super Premium (legacy import tier). */
+const GRADE_LABELS = [
+  'Economy',
+  'Good',
+  'Premium',
+  'Super Premium',
+  'Luxury',
+  'Super Luxury',
+  'Collector',
+] as const;
+
+const GRADE_LABEL_LOOKUP = new Map(GRADE_LABELS.map((label) => [label.toLowerCase(), label]));
+
+const GRADE_ALIASES: Record<string, (typeof GRADE_LABELS)[number]> = {
+  economy: 'Economy',
+  good: 'Good',
+  premium: 'Premium',
+  best: 'Premium',
+  'super premium': 'Super Premium',
+  luxury: 'Luxury',
+  laxury: 'Luxury',
+  luxary: 'Luxury',
+  'super luxury': 'Super Luxury',
+  'super laxury': 'Super Luxury',
+  'super luxary': 'Super Luxury',
+  collector: 'Collector',
+};
+
+const GRADE_IN_NAME =
+  /\((Economy|Good|Premium|Best|Super Premium|Luxury|Laxury|Luxary|Super Luxury|Super Laxury|Super Luxary|Collector)\)/i;
+
+function normalizeGradeLabel(raw?: string | null): (typeof GRADE_LABELS)[number] | null {
+  if (!raw?.trim()) return null;
+  const key = raw.trim().toLowerCase().replace(/\s+/g, ' ');
+  return GRADE_ALIASES[key] ?? GRADE_LABEL_LOOKUP.get(key) ?? null;
+}
+
+/** Resolve the commercial grade shown on product cards (Economy, Premium, Super Premium, etc.). */
+export function resolveProductGradeLabel(
+  qualityLabel?: string | null,
+  name?: string | null,
+): (typeof GRADE_LABELS)[number] | null {
+  const fromLabel = normalizeGradeLabel(qualityLabel);
+  if (fromLabel) return fromLabel;
+
+  if (!name) return null;
+
+  const trailing = name.match(/\(([^)]+)\)\s*$/);
+  if (trailing) {
+    const resolved = normalizeGradeLabel(trailing[1]);
+    if (resolved) return resolved;
+  }
+
+  const inline = name.match(GRADE_IN_NAME);
+  if (inline) return normalizeGradeLabel(inline[1]);
+
+  return null;
+}

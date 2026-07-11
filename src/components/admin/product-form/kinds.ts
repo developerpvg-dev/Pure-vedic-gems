@@ -303,7 +303,7 @@ export function accentClasses(accent: KindConfig['accent']) {
 export const PLANETS = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'] as const;
 export const SHAPES = ['Round', 'Oval', 'Cushion', 'Emerald Cut', 'Pear', 'Heart', 'Marquise', 'Princess', 'Octagonal', 'Triangular', 'Cabochon', 'Mixed'] as const;
 export const CERTIFICATIONS = ['IGI', 'IGI-GTL Delhi', 'GTL Jaipur', 'GIA', 'GJEPC', 'IIGJ', 'GRS', 'Gübelin', 'SSEF', 'AGL', 'HRD Antwerp', 'GII', 'GFCO', 'None'] as const;
-export const QUALITIES = ['Economy', 'Good', 'Premium', 'Luxury', 'Super Luxury', 'Collector'] as const;
+export const QUALITIES = ['Economy', 'Good', 'Premium', 'Super Premium', 'Luxury', 'Super Luxury', 'Collector'] as const;
 export const GEM_TREATMENTS = ['Natural', 'Unheated', 'Heated', 'Minor Oil', 'No Oil', 'No Treatment', 'None'] as const;
 export const METALS = ['Gold 22K', 'Gold 18K', 'Gold 14K', 'Silver 925', 'Platinum', 'Panchdhatu', 'Ashtadhatu', 'Copper (Tamba)', 'Brass'] as const;
 export const ORIGINS = [

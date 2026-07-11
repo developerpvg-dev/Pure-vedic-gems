@@ -71,7 +71,7 @@ export function compactHeroBenefit(text: string, maxLen = 34): string {
 }
 
 export function compactHeroBenefits(benefits: HeroBenefit[]): HeroBenefit[] {
-  return benefits.slice(0, 4).map((benefit) => ({ text: compactHeroBenefit(benefit.text) }));
+  return benefits.map((benefit) => ({ text: compactHeroBenefit(benefit.text) }));
 }
 
 export function baseGemKeywords(slug: string, name: string, hindi?: string | null, planet?: string | null) {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2 } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 
@@ -24,6 +24,7 @@ const NAV_GROUPS = [
       { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame },
       { href: '/admin/yagya-bookings', label: 'Yagya Bookings', icon: Flame },
       { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud },
+      { href: '/admin/erp-sync', label: 'Store ERP Sync', icon: Store },
     ],
   },
   {
@@ -43,6 +44,7 @@ const NAV_GROUPS = [
     label: 'Operations',
     links: [
       { href: '/admin/leads', label: 'Leads', icon: MessageSquare },
+      { href: '/admin/agent-sessions', label: 'Ratna AI Sessions', icon: Bot },
       { href: '/admin/consultation-plans', label: 'Consultation Plans', icon: CalendarClock },
       { href: '/admin/reviews', label: 'Product Reviews', icon: Star },
       { href: '/admin/category-reviews', label: 'Category Reviews', icon: Star },

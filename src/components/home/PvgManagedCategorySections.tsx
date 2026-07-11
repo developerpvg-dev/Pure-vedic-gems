@@ -20,7 +20,8 @@ import {
 } from '@/lib/constants/rudraksha-subcategories';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { ResilientImage } from '@/components/ui/ResilientImage';
+import { CategoryGemImage } from '@/components/home/CategoryGemImage';
+import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 
 export type HomeManagedCategory = {
   id: string;
@@ -454,7 +455,7 @@ function layeredImage(
     <>
       {mainUrl ? (
         localFallback ? (
-          <ResilientImage
+          <CategoryGemImage
             src={mainUrl}
             fallbackSrc={localFallback}
             alt={alt}
@@ -577,10 +578,11 @@ function formatPriceValue(price: number) {
 }
 
 function directorMeta(product: HomeDirectorPick) {
+  const grade = resolveProductGradeLabel(product.quality_label, product.name);
   return [
     product.carat_weight ? `${product.carat_weight} ct` : null,
     product.shape,
-    product.quality_label,
+    grade ? `(${grade})` : null,
     product.treatment,
   ].filter(Boolean).join(' · ');
 }
@@ -901,7 +903,7 @@ function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
     <article className="director-pick-card">
       <Link href={productHref(product)} className="director-pick-media" style={!imageUrl ? { background: 'linear-gradient(145deg, #faf7ef, #efe3cf)' } : undefined}>
         {imageUrl ? (
-          <ResilientImage
+          <CategoryGemImage
             fill
             src={imageUrl}
             fallbackSrc={fallbackImage}

@@ -71,14 +71,15 @@ export default function ShopCategoryPagesAdmin() {
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) setLoading(true);
     try {
       const res = await fetch('/api/admin/shop-category-pages');
       const data = await res.json();
       setPages(data.pages ?? []);
+      return (data.pages ?? []) as AdminPage[];
     } finally {
-      setLoading(false);
+      if (!opts?.quiet) setLoading(false);
     }
   }, []);
 
@@ -196,10 +197,15 @@ export default function ShopCategoryPagesAdmin() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Save failed');
-      setMessage('Saved successfully. Category page will update within a minute.');
-      setIsCreatingNew(false);
-      await load();
-      setSelectedSlug(form.slug);
+      const saved = data.page as AdminPage | undefined;
+      if (saved) {
+        selectPage({ ...saved, hasDbRow: true });
+      } else {
+        setIsCreatingNew(false);
+        setSelectedSlug(form.slug);
+      }
+      setMessage('Saved successfully. Category page updated.');
+      await load({ quiet: true });
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Save failed');
     } finally {
@@ -221,7 +227,7 @@ export default function ShopCategoryPagesAdmin() {
       setMessage('Category page deleted.');
       setSelectedSlug('');
       setForm(EMPTY_FORM);
-      await load();
+      await load({ quiet: true });
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Delete failed');
     } finally {
@@ -237,7 +243,7 @@ export default function ShopCategoryPagesAdmin() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Seed failed');
       setMessage(`Seeded ${data.seeded} category pages to database.`);
-      await load();
+      await load({ quiet: true });
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Seed failed');
     } finally {
@@ -538,14 +544,20 @@ export default function ShopCategoryPagesAdmin() {
                 <textarea
                   value={(form.hero_benefits ?? []).map((b) => b.text).join('\n')}
                   onChange={(e) =>
+                    // Keep blank lines while typing so Enter can add another benefit;
+                    // empty lines are dropped on save in parseBenefits.
                     updateField(
                       'hero_benefits',
-                      e.target.value.split('\n').filter(Boolean).map((text) => ({ text })),
+                      e.target.value.split('\n').map((text) => ({ text })),
                     )
                   }
                   rows={4}
+                  placeholder={'Career & Leadership\nHealth & Vitality\nEmotional Balance\nProsperity & Growth'}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2"
                 />
+                <span className="mt-1 block text-xs text-gray-500">
+                  One short phrase per line. Empty lines are ignored when you save.
+                </span>
               </label>
 
               {getCategoryHubSectionDefs(form.product_category ?? 'gemstone').map((section) => (

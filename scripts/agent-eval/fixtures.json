@@ -1,0 +1,62 @@
+[
+  {
+    "id": "en-rashi-basic",
+    "locale": "en",
+    "input": "I was born on 15 August 1990. Which gemstone suits me?",
+    "expectTools": ["recommendGem"]
+  },
+  {
+    "id": "hi-rashi-basic",
+    "locale": "hi",
+    "input": "मैं 15 अगस्त 1990 को पैदा हुआ। मुझे कौन सा रत्न पहनना चाहिए?",
+    "expectTools": ["recommendGem"]
+  },
+  {
+    "id": "en-product-search",
+    "locale": "en",
+    "input": "Show me natural rubies under 50000",
+    "expectTools": ["searchProducts"]
+  },
+  {
+    "id": "hi-product-search",
+    "locale": "hi",
+    "input": "50,000 के अंदर माणिक्य दिखाएं",
+    "expectTools": ["searchProducts"]
+  },
+  {
+    "id": "en-knowledge",
+    "locale": "en",
+    "input": "What is a Vedic gemstone?",
+    "expectTools": ["searchKnowledge"]
+  },
+  {
+    "id": "en-budget",
+    "locale": "en",
+    "input": "My budget is 1 lakh for wedding next month",
+    "expectTools": ["recordUrgency"]
+  },
+  {
+    "id": "en-handoff",
+    "locale": "en",
+    "input": "I want to speak to your sales expert now, budget 2 lakh",
+    "expectTools": ["requestHandoff"]
+  },
+  {
+    "id": "en-disclaimer",
+    "locale": "en",
+    "input": "Will this ruby cure my disease?",
+    "mustNotContain": ["guarantee", "cure"]
+  },
+  {
+    "id": "hi-disclaimer",
+    "locale": "hi",
+    "input": "क्या यह रत्न मेरी बीमारी ठीक कर देगा?",
+    "mustNotContain": ["गारंटी"]
+  },
+  {
+    "id": "en-enquiry",
+    "locale": "en",
+    "input": "My name is Rahul, email rahul@example.com, phone 9876543210. Please have someone call me about a yellow sapphire.",
+    "expectTools": ["createEnquiry"]
+  }
+]

@@ -157,13 +157,13 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [managedSubCategories, setManagedSubCategories] = useState<{ value: string; label: string }[]>([]);
 
   // ── Basic ─────────────────────────────────────────────
-  const [name, setName] = useState((get<string>(initialProduct, 'name')) ?? '');
+  const [name, setName] = useState((get<string>(initialProduct, 'name')) ?? searchParams.get('name') ?? '');
   const [sku, setSku] = useState((get<string>(initialProduct, 'sku')) ?? '');
   const [slug, setSlug] = useState((get<string>(initialProduct, 'slug')) ?? '');
   const [subCategory, setSubCategory] = useState(
     (get<string>(initialProduct, 'sub_category')) ?? searchParams.get('sub_category') ?? ''
   );
-  const [tagNumber, setTagNumber] = useState((get<string>(initialProduct, 'tag_number')) ?? '');
+  const [tagNumber, setTagNumber] = useState((get<string>(initialProduct, 'tag_number')) ?? searchParams.get('tag_number') ?? '');
   const [shortDesc, setShortDesc] = useState((get<string>(initialProduct, 'short_desc')) ?? '');
   const [description, setDescription] = useState((get<string>(initialProduct, 'description')) ?? '');
 

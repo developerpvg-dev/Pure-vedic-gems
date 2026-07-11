@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { formatProductDisplayName, stripProductGradeFromName } from '@/lib/utils/product-display-name';
 
 describe('formatProductDisplayName', () => {
   it('removes legacy per-carat pricing from product titles', () => {
@@ -18,5 +18,12 @@ describe('formatProductDisplayName', () => {
   it('returns empty string for blank input', () => {
     expect(formatProductDisplayName('')).toBe('');
     expect(formatProductDisplayName(null)).toBe('');
+  });
+});
+
+describe('stripProductGradeFromName', () => {
+  it('removes trailing grade tier from display names', () => {
+    expect(stripProductGradeFromName('Yellow Sapphire 4.85ct. (Economy)')).toBe('Yellow Sapphire 4.85ct.');
+    expect(stripProductGradeFromName('White Sapphire 5.16ct. (Super Premium)')).toBe('White Sapphire 5.16ct.');
   });
 });

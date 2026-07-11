@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   qualityTierFilterLabels,
+  resolveProductGradeLabel,
   resolveQualityTier,
 } from '@/lib/utils/quality-tier';
 
@@ -35,5 +36,21 @@ describe('qualityTierFilterLabels', () => {
     const labels = qualityTierFilterLabels('Luxury');
     expect(labels).toContain('Luxury');
     expect(labels).toContain('Laxury');
+  });
+});
+
+describe('resolveProductGradeLabel', () => {
+  it('returns Super Premium for storefront display', () => {
+    expect(resolveProductGradeLabel('Super Premium')).toBe('Super Premium');
+    expect(resolveProductGradeLabel(null, 'White Sapphire 5.16ct. (Super Premium)')).toBe('Super Premium');
+  });
+
+  it('prefers quality_label over name', () => {
+    expect(resolveProductGradeLabel('Luxury', 'Ruby 3ct. (Economy)')).toBe('Luxury');
+  });
+
+  it('normalizes legacy aliases', () => {
+    expect(resolveProductGradeLabel('Best')).toBe('Premium');
+    expect(resolveProductGradeLabel('Laxury')).toBe('Luxury');
   });
 });

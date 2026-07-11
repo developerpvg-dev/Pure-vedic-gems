@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
-import { compactHeroBenefits, compactHeroIntro } from '@/lib/categories/shop-category-content/helpers';
+import { compactHeroIntro } from '@/lib/categories/shop-category-content/helpers';
 import type { ShopCategorySectionKey } from '@/lib/types/shop-category-page';
 
 export type CategoryHubSection = {
@@ -147,7 +147,7 @@ export function CategoryHubHeader({
   const availableSections = sections.filter((section) => section.html);
   const hasFaqs = faqs.length > 0;
   const heroIntro = compactHeroIntro(intro);
-  const heroBenefits = compactHeroBenefits(benefits);
+  const heroBenefits = benefits.filter((b) => b.text?.trim());
   const [activeTab, setActiveTab] = useState<ShopCategorySectionKey | null>(null);
 
   const selectTab = (id: ShopCategorySectionKey) => {

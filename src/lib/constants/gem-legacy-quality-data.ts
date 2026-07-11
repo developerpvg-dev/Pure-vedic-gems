@@ -1885,7 +1885,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
     "tiers": [
       {
         "title": "Lowest Quality Opal Gemstone",
-        "note": "We don't keep this standard/quality of Emerald gemstone because they are totally ineffective for astrological healing purposes",
+        "note": "We don't keep this standard/quality of Opal gemstone because they are totally ineffective for astrological healing purposes",
         "rows": [
           {
             "label": "Origin",
