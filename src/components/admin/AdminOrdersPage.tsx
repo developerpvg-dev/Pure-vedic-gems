@@ -397,7 +397,30 @@ export default function AdminOrdersPage() {
                         <p className="truncate font-medium text-gray-900">{customer.name}</p>
                         <p className="truncate text-xs text-gray-400">{customer.email || customer.phone || 'No contact saved'}</p>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">{Array.isArray(order.items) ? order.items.length : 0}</td>
+                      <td className="max-w-[200px] px-4 py-3 text-gray-600">
+                        {Array.isArray(order.items) ? (
+                          <div>
+                            <p>{order.items.length} item{order.items.length === 1 ? '' : 's'}</p>
+                            {(() => {
+                              const tags = order.items
+                                .map((item) =>
+                                  item && typeof item === 'object' && 'tag_number' in item
+                                    ? String((item as { tag_number?: string | null }).tag_number || '').trim()
+                                    : '',
+                                )
+                                .filter(Boolean);
+                              if (!tags.length) return null;
+                              return (
+                                <p className="mt-0.5 truncate text-xs font-medium text-amber-800" title={tags.join(', ')}>
+                                  Tag: {tags.join(', ')}
+                                </p>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          0
+                        )}
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <p className="font-semibold tabular-nums text-gray-900">{fmtInr(order.total ?? 0)}</p>
                         {(order.reward_discount ?? 0) > 0 && (

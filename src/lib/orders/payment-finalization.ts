@@ -231,8 +231,16 @@ async function updateInventoryForCapturedOrder(order: Order) {
           tagNumber,
           orderId: order.id,
           productId: product.id,
-          payload: { order_number: order.order_number, source: 'website_payment' },
+          payload: {
+            order_number: order.order_number,
+            source: 'website_payment',
+            mobile: order.guest_phone,
+            customer_name: order.guest_name,
+            email: order.guest_email,
+            quantity: item.quantity,
+          },
         }).catch(() => undefined);
+        // ponytail: no MMI API — staff confirms on /admin/erp-sync ack list
       }
       await notifyLowStockProduct({
         id: product.id,
@@ -264,7 +272,14 @@ async function updateInventoryForCapturedOrder(order: Order) {
         tagNumber,
         orderId: order.id,
         productId: product.id,
-        payload: { order_number: order.order_number, source: 'website_payment', quantity: item.quantity },
+        payload: {
+          order_number: order.order_number,
+          source: 'website_payment',
+          quantity: item.quantity,
+          mobile: order.guest_phone,
+          customer_name: order.guest_name,
+          email: order.guest_email,
+        },
       }).catch(() => undefined);
     }
     await notifyLowStockProduct({

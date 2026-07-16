@@ -370,6 +370,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                             <p className="font-semibold text-[var(--pvg-text)]">{item.name}</p>
                             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--pvg-muted)]">
                               {item.sku          && <span>SKU: <span className="font-medium">{item.sku}</span></span>}
+                              {item.tag_number   && <span>Tag: <span className="font-medium text-amber-800">{item.tag_number}</span></span>}
                               {item.category     && <span>Category: <span className="font-medium">{item.category}</span></span>}
                               {item.carat_weight && <span>Weight: <span className="font-medium">{item.carat_weight} ct</span></span>}
                               {item.origin       && <span>Origin: <span className="font-medium">{item.origin}</span></span>}

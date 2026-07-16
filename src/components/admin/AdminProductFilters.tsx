@@ -277,7 +277,7 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
       if (key === 'sort_order' && value === 'desc') continue;
 
       let display = value;
-      if (key === 'status') display = value === 'active' ? 'Active' : 'Inactive';
+      if (key === 'status') display = value === 'active' ? 'Active' : 'Draft';
       else if (key === 'availability') display = label(value);
       else if (key === 'stock') display = value === 'low' ? 'Low stock' : 'Out of stock';
       else if (['featured', 'directors_pick', 'configurator_enabled'].includes(key)) {
@@ -385,7 +385,7 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
               >
                 <option value="">All</option>
                 <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="inactive">Draft</option>
               </select>
             </FilterField>
           </div>

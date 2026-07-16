@@ -303,8 +303,8 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1.5">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {p.is_active ? 'Active' : 'Inactive'}
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${p.is_active ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800'}`}>
+                        {p.is_active ? 'Active' : 'Draft'}
                       </span>
                       <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700">
                         {label(p.availability_status || p.stock_status)}

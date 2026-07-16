@@ -144,6 +144,17 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/admin/designer', request.url));
       }
     }
+    if (normalizedRole === 'stock_manager') {
+      const allowed =
+        pathname.startsWith('/admin/stock') ||
+        pathname.startsWith('/admin/erp-sync') ||
+        pathname.startsWith('/admin/products') ||
+        pathname.startsWith('/admin/orders') ||
+        pathname.startsWith('/admin/join');
+      if (!allowed) {
+        return NextResponse.redirect(new URL('/admin/stock', request.url));
+      }
+    }
 
     const requiredPermission = getAdminRoutePermission(pathname);
     if (!hasAdminPermission(teamMember.role, requiredPermission, teamMember.permissions)) {

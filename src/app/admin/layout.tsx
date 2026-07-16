@@ -1,72 +1,104 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
+import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 const NAV_GROUPS = [
   {
     label: 'Overview',
-    links: [{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard }],
+    links: [{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard, match: 'exact' as const }],
   },
   {
     label: 'Commerce',
     links: [
-      { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-      { href: '/admin/customers', label: 'Customers', icon: Users },
-      { href: '/admin/rewards', label: 'Rewards', icon: Gift },
-      { href: '/admin/products', label: 'Products', icon: Package },
-      { href: '/admin/catalog-order', label: 'Catalog Order', icon: SlidersHorizontal },
-      { href: '/admin/directors-pick', label: "Director's Pick", icon: Star },
-      { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame },
-      { href: '/admin/yagya-bookings', label: 'Yagya Bookings', icon: Flame },
-      { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud },
-      { href: '/admin/erp-sync', label: 'Store ERP Sync', icon: Store },
+      { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, match: 'prefix' as const },
+      { href: '/admin/customers', label: 'Customers', icon: Users, match: 'prefix' as const },
+      { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
+      { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
+      { href: '/admin/products?status=inactive', label: 'Drafts', icon: FileEdit, match: 'drafts' as const },
+      { href: '/admin/catalog-order', label: 'Catalog Order', icon: SlidersHorizontal, match: 'prefix' as const },
+      { href: '/admin/directors-pick', label: "Director's Pick", icon: Star, match: 'prefix' as const },
+      { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame, match: 'prefix' as const },
+      { href: '/admin/yagya-bookings', label: 'Yagya Bookings', icon: Flame, match: 'prefix' as const },
+      { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud, match: 'prefix' as const },
+      { href: '/admin/stock', label: 'Stock Dashboard', icon: LayoutDashboard, match: 'exact' as const },
+      { href: '/admin/stock/completeness', label: 'Content Gaps', icon: ClipboardList, match: 'prefix' as const },
+      { href: '/admin/erp-sync', label: 'Store ERP Sync', icon: Store, match: 'prefix' as const },
     ],
   },
   {
     label: 'Homepage Catalog',
     links: [
-      { href: '/admin/hero', label: 'Hero Slideshow', icon: Images },
-      { href: '/admin/categories', label: 'Section Categories', icon: Gem },
-      { href: '/admin/shop-category-pages', label: 'Category Hub Pages', icon: Sparkles },
-      { href: '/admin/configurations', label: 'Configurations', icon: SlidersHorizontal },
-      { href: '/admin/metals', label: 'Metals & Pricing', icon: CircleDollarSign },
-      { href: '/admin/designs', label: 'Jewelry Designs', icon: Palette },
-      { href: '/admin/certifications', label: 'Certifications', icon: Award },
-      { href: '/admin/energizations', label: 'Energization / Pooja', icon: Sparkles },
+      { href: '/admin/hero', label: 'Hero Slideshow', icon: Images, match: 'prefix' as const },
+      { href: '/admin/categories', label: 'Section Categories', icon: Gem, match: 'prefix' as const },
+      { href: '/admin/shop-category-pages', label: 'Category Hub Pages', icon: Sparkles, match: 'prefix' as const },
+      { href: '/admin/configurations', label: 'Configurations', icon: SlidersHorizontal, match: 'prefix' as const },
+      { href: '/admin/metals', label: 'Metals & Pricing', icon: CircleDollarSign, match: 'prefix' as const },
+      { href: '/admin/designs', label: 'Jewelry Designs', icon: Palette, match: 'prefix' as const },
+      { href: '/admin/certifications', label: 'Certifications', icon: Award, match: 'prefix' as const },
+      { href: '/admin/energizations', label: 'Energization / Pooja', icon: Sparkles, match: 'prefix' as const },
     ],
   },
   {
     label: 'Operations',
     links: [
-      { href: '/admin/leads', label: 'Leads', icon: MessageSquare },
-      { href: '/admin/agent-sessions', label: 'Ratna AI Sessions', icon: Bot },
-      { href: '/admin/consultation-plans', label: 'Consultation Plans', icon: CalendarClock },
-      { href: '/admin/reviews', label: 'Product Reviews', icon: Star },
-      { href: '/admin/category-reviews', label: 'Category Reviews', icon: Star },
-      { href: '/admin/notifications', label: 'Notifications', icon: Bell },
-      { href: '/admin/finance', label: 'Finance', icon: IndianRupee },
-      { href: '/admin/compliance', label: 'Compliance', icon: Scale },
-      { href: '/admin/settings', label: 'Settings', icon: Settings },
+      { href: '/admin/leads', label: 'Leads', icon: MessageSquare, match: 'prefix' as const },
+      { href: '/admin/agent-sessions', label: 'Ratna AI Sessions', icon: Bot, match: 'prefix' as const },
+      { href: '/admin/consultation-plans', label: 'Consultation Plans', icon: CalendarClock, match: 'prefix' as const },
+      { href: '/admin/reviews', label: 'Product Reviews', icon: Star, match: 'prefix' as const },
+      { href: '/admin/category-reviews', label: 'Category Reviews', icon: Star, match: 'prefix' as const },
+      { href: '/admin/notifications', label: 'Notifications', icon: Bell, match: 'prefix' as const },
+      { href: '/admin/finance', label: 'Finance', icon: IndianRupee, match: 'prefix' as const },
+      { href: '/admin/compliance', label: 'Compliance', icon: Scale, match: 'prefix' as const },
+      { href: '/admin/settings', label: 'Settings', icon: Settings, match: 'prefix' as const },
     ],
   },
   {
     label: 'Content Pages',
     links: [
-      { href: '/admin/events', label: 'Events & Videos', icon: Video },
-      { href: '/admin/videos', label: 'Video Library', icon: Video },
-      { href: '/admin/lab-certificates', label: 'Lab Certificates', icon: FileBadge2 },
-      { href: '/admin/testimonials', label: 'Testimonials', icon: Star },
-      { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare },
+      { href: '/admin/events', label: 'Events & Videos', icon: Video, match: 'prefix' as const },
+      { href: '/admin/videos', label: 'Video Library', icon: Video, match: 'prefix' as const },
+      { href: '/admin/lab-certificates', label: 'Lab Certificates', icon: FileBadge2, match: 'prefix' as const },
+      { href: '/admin/testimonials', label: 'Testimonials', icon: Star, match: 'prefix' as const },
+      { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare, match: 'prefix' as const },
     ],
   },
 ];
 
-function AdminNavContent({ pathname, setSidebarOpen }: { pathname: string; setSidebarOpen: (v: boolean) => void }) {
+function navLinkActive(
+  pathname: string | null,
+  searchParams: URLSearchParams,
+  href: string,
+  match: 'exact' | 'prefix' | 'products' | 'drafts',
+) {
+  if (match === 'exact') return pathname === href;
+  if (match === 'drafts') return pathname === '/admin/products' && searchParams.get('status') === 'inactive';
+  if (match === 'products') {
+    if (!pathname?.startsWith('/admin/products')) return false;
+    if (pathname.startsWith('/admin/products/import')) return false;
+    return !(pathname === '/admin/products' && searchParams.get('status') === 'inactive');
+  }
+  return pathname === href || Boolean(pathname?.startsWith(href));
+}
+
+function AdminNavContent({
+  pathname,
+  searchParams,
+  setSidebarOpen,
+}: {
+  pathname: string;
+  searchParams: URLSearchParams;
+  setSidebarOpen: (v: boolean) => void;
+}) {
+  const { signOut } = useAuth();
+  const router = useRouter();
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
@@ -94,12 +126,19 @@ function AdminNavContent({ pathname, setSidebarOpen }: { pathname: string; setSi
               </div>
               <div className="flex flex-col gap-1">
                 {group.links.map((link) => {
-                  const isActive = pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href));
+                  const isActive = navLinkActive(pathname, searchParams, link.href, link.match);
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      onClick={() => setSidebarOpen(false)}
+                      onClick={(e) => {
+                        setSidebarOpen(false);
+                        // products page only reads ?status on mount
+                        if (link.match === 'drafts' || link.match === 'products') {
+                          e.preventDefault();
+                          window.location.assign(link.href);
+                        }
+                      }}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                         isActive
                           ? 'bg-amber-50 text-amber-700 shadow-[inset_3px_0_0_rgba(217,119,6,0.65)]'
@@ -117,13 +156,18 @@ function AdminNavContent({ pathname, setSidebarOpen }: { pathname: string; setSi
         </div>
       </nav>
       <div className="shrink-0 border-t border-gray-200 bg-white p-3">
-        <Link
-          href="/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+        <button
+          type="button"
+          onClick={async () => {
+            await signOut();
+            router.push('/');
+            router.refresh();
+          }}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
         >
           <LogOut className="h-4 w-4" />
-          Back to Site
-        </Link>
+          Sign Out
+        </button>
       </div>
     </div>
   );
@@ -153,6 +197,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <DesignerAdminLayout>{children}</DesignerAdminLayout>;
   }
 
+  if (sessionRole === 'stock_manager') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+        <StockManagerAdminLayout>{children}</StockManagerAdminLayout>
+      </Suspense>
+    );
+  }
+
   if (sessionRole === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -160,6 +212,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     );
   }
+
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <AdminShell pathname={pathname ?? ''} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
+        {children}
+      </AdminShell>
+    </Suspense>
+  );
+}
+
+function AdminShell({
+  children,
+  pathname,
+  sidebarOpen,
+  setSidebarOpen,
+}: {
+  children: React.ReactNode;
+  pathname: string;
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean) => void;
+}) {
+  const searchParams = useSearchParams();
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -175,7 +249,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <AdminNavContent pathname={pathname ?? ''} setSidebarOpen={setSidebarOpen} />
+        <AdminNavContent
+          pathname={pathname}
+          searchParams={searchParams}
+          setSidebarOpen={setSidebarOpen}
+        />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col lg:ml-64">

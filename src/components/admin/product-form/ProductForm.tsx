@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileEdit, Loader2, Save, Trash2 } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
 import { MediaUploader } from '@/components/admin/MediaUploader';
@@ -164,7 +164,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     (get<string>(initialProduct, 'sub_category')) ?? searchParams.get('sub_category') ?? ''
   );
   const [tagNumber, setTagNumber] = useState((get<string>(initialProduct, 'tag_number')) ?? searchParams.get('tag_number') ?? '');
-  const [shortDesc, setShortDesc] = useState((get<string>(initialProduct, 'short_desc')) ?? '');
+  const [shortDesc, setShortDesc] = useState(
+    (get<string>(initialProduct, 'short_desc')) ?? searchParams.get('short_desc') ?? ''
+  );
   const [description, setDescription] = useState((get<string>(initialProduct, 'description')) ?? '');
 
   // ── Gemstone ──────────────────────────────────────────
@@ -182,7 +184,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [dimensionWidth, setDimensionWidth] = useState(String((get<{ width?: number }>(initialProduct, 'dimensions_mm'))?.width ?? ''));
   const [dimensionDepth, setDimensionDepth] = useState(String((get<{ depth?: number }>(initialProduct, 'dimensions_mm'))?.depth ?? ''));
   const [certification, setCertification] = useState((get<string>(initialProduct, 'certification')) ?? '');
-  const [certificateNumber, setCertificateNumber] = useState((get<string>(initialProduct, 'certificate_number')) ?? '');
+  const [certificateNumber, setCertificateNumber] = useState(
+    (get<string>(initialProduct, 'certificate_number')) ?? searchParams.get('certificate_number') ?? ''
+  );
   const [certificateLab, setCertificateLab] = useState((get<string>(initialProduct, 'certificate_lab')) ?? '');
   const [certificateDisplayEnabled, setCertificateDisplayEnabled] = useState(
     Boolean(get(initialProduct, 'certificate_display_enabled'))
@@ -213,7 +217,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [jewelleryType, setJewelleryType] = useState((get<string>(initialProduct, 'jewellery_type')) ?? '');
   const [baseMetal, setBaseMetal] = useState((get<string>(initialProduct, 'base_metal')) ?? '');
   const [metalPurity, setMetalPurity] = useState((get<string>(initialProduct, 'metal_purity')) ?? '');
-  const [metalWeightGrams, setMetalWeightGrams] = useState(String((get<number>(initialProduct, 'metal_weight_grams')) ?? ''));
+  const [metalWeightGrams, setMetalWeightGrams] = useState(
+    String((get<number>(initialProduct, 'metal_weight_grams')) ?? searchParams.get('metal_weight_grams') ?? '')
+  );
   const [sizeLabel, setSizeLabel] = useState((get<string>(initialProduct, 'size_label')) ?? '');
   const [ringSize, setRingSize] = useState((get<string>(initialProduct, 'ring_size')) ?? '');
   const [ringSizeSystem, setRingSizeSystem] = useState('');
@@ -222,7 +228,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [readyStock, setReadyStock] = useState(Boolean(get(initialProduct, 'ready_stock')));
 
   // ── Pricing ───────────────────────────────────────────
-  const [price, setPrice] = useState(String((get<number>(initialProduct, 'price')) ?? ''));
+  const [price, setPrice] = useState(
+    String((get<number>(initialProduct, 'price')) ?? searchParams.get('price') ?? '')
+  );
   const [pricePerCarat, setPricePerCarat] = useState(String((get<number>(initialProduct, 'price_per_carat')) ?? ''));
   const [comparePrice, setComparePrice] = useState(String((get<number>(initialProduct, 'compare_price')) ?? ''));
 
@@ -638,17 +646,27 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     return body;
   }
 
-  async function handleSubmit() {
+  async function persistProduct(asDraft: boolean) {
     setError('');
-    const validationError = validateRequiredFields();
-    if (validationError) {
-      setError(validationError.message);
-      setStep(stepFor(validationError.section));
-      return;
+    if (asDraft) {
+      // ponytail: drafts only need identity fields; full validateRequiredFields on publish
+      if (!name.trim() || !sku.trim() || !slug.trim()) {
+        setError('Name, SKU and slug are required to save a draft.');
+        setStep(stepFor('basic'));
+        return;
+      }
+    } else {
+      const validationError = validateRequiredFields();
+      if (validationError) {
+        setError(validationError.message);
+        setStep(stepFor(validationError.section));
+        return;
+      }
     }
     setSaving(true);
     try {
-      const body = buildBody();
+      const body = { ...buildBody(), is_active: asDraft ? false : isActive };
+      if (asDraft) setIsActive(false);
       const url = mode === 'create' ? '/api/admin/products' : `/api/admin/products/${productId}`;
       const method = mode === 'create' ? 'POST' : 'PUT';
       const res = await fetch(url, {
@@ -662,11 +680,19 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         setSaving(false);
         return;
       }
-      router.push('/admin/products');
+      router.push(asDraft ? '/admin/products?status=inactive' : '/admin/products');
     } catch {
       setError('Network error. Please try again.');
       setSaving(false);
     }
+  }
+
+  async function handleSubmit() {
+    await persistProduct(false);
+  }
+
+  async function handleSaveDraft() {
+    await persistProduct(true);
   }
 
   async function handleDeactivate() {
@@ -1372,6 +1398,15 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
               Deactivate
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileEdit className="h-4 w-4" />}
+            Save as draft
+          </button>
           <button
             type="button"
             onClick={handleSubmit}

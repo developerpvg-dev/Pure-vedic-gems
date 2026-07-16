@@ -66,6 +66,7 @@ const ROLE_LABELS: Record<string, string> = {
   sales: 'Sales',
   content: 'Content',
   inventory: 'Inventory',
+  stock_manager: 'Stock Manager',
   finance: 'Finance',
   fulfillment: 'Fulfillment',
   support: 'Support',
@@ -75,7 +76,17 @@ const ROLE_LABELS: Record<string, string> = {
   accounts: 'Finance',
 };
 
-const DEFAULT_INVITE_ROLES = ['admin', 'sales', 'content', 'inventory', 'finance', 'fulfillment', 'support', 'designer'];
+const DEFAULT_INVITE_ROLES = [
+  'admin',
+  'sales',
+  'content',
+  'inventory',
+  'stock_manager',
+  'finance',
+  'fulfillment',
+  'support',
+  'designer',
+];
 
 const EMPTY_SHIPPING_FORM = {
   id: '',

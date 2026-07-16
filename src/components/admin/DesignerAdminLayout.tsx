@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LogOut, Menu, X, Palette, User, Loader2 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 const DESIGNER_NAV = [
   { href: '/admin/designer', label: 'Design Assignments', icon: Palette },
@@ -28,6 +29,9 @@ function DesignerNav({
   session: SessionInfo;
   setSidebarOpen: (v: boolean) => void;
 }) {
+  const { signOut } = useAuth();
+  const router = useRouter();
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-gray-200 px-5 py-4">
@@ -85,13 +89,18 @@ function DesignerNav({
       </nav>
 
       <div className="shrink-0 border-t border-gray-200 p-3">
-        <Link
-          href="/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+        <button
+          type="button"
+          onClick={async () => {
+            await signOut();
+            router.push('/');
+            router.refresh();
+          }}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
         >
           <LogOut className="h-4 w-4" />
-          Back to Site
-        </Link>
+          Sign Out
+        </button>
       </div>
     </div>
   );
