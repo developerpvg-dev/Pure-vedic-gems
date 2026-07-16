@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         userId: auth.user.id,
         action: 'erp_mark_sold_by_tag',
         resourceType: 'product',
-        resourceId: result.product?.id ?? null,
+        resourceId: result.product?.id,
         details: { tgno: parsed.data.tgno },
         ipAddress: getRequestIp(request),
       });

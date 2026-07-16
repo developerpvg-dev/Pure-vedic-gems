@@ -551,11 +551,18 @@ export async function ackErpOutboundTask(
 ) {
   const db = asUntypedSupabase(createAdminClient());
   const now = new Date().toISOString();
-  const { data: row } = await db
+  const { data } = await db
     .from('erp_outbound_queue')
     .select('id, payload, status, tag_number, order_id')
     .eq('id', id)
     .maybeSingle();
+
+  const row = data as {
+    payload: unknown;
+    status: string;
+    tag_number: string | null;
+    order_id: string | null;
+  } | null;
 
   if (!row) throw new Error('Outbound task not found');
   if (row.status !== 'pending') throw new Error('Task is not pending');
@@ -633,10 +640,10 @@ export async function findWebsiteProductByTag(
       .limit(20),
   ]);
 
-  const rows = [...(byTag ?? []), ...(bySku ?? [])] as (WebsiteTaggedProduct & {
-    id: string;
-    name: string;
-  })[];
+  const rows = [
+    ...((byTag ?? []) as (WebsiteTaggedProduct & { id: string; name: string })[]),
+    ...((bySku ?? []) as (WebsiteTaggedProduct & { id: string; name: string })[]),
+  ];
 
   const matches = rows.filter((p) => effectiveProductTag(p) === key);
   if (!matches.length) return null;

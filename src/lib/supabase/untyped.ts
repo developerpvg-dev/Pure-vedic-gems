@@ -22,6 +22,7 @@ export type UntypedQuery<T = unknown> = PromiseLike<SupabaseResult<T>> & {
   gte: (...args: unknown[]) => UntypedQuery<T>;
   order: (...args: unknown[]) => UntypedQuery<T>;
   limit: (...args: unknown[]) => UntypedQuery<T>;
+  range: (...args: unknown[]) => UntypedQuery<T>;
   single: () => Promise<SupabaseResult<T>>;
   maybeSingle: () => Promise<SupabaseResult<T>>;
 };
