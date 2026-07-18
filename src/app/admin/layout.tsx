@@ -94,19 +94,32 @@ function AdminNavContent({
   pathname,
   searchParams,
   setSidebarOpen,
+  role,
 }: {
   pathname: string;
   searchParams: URLSearchParams;
   setSidebarOpen: (v: boolean) => void;
+  role: string | null;
 }) {
   const { signOut } = useAuth();
   const router = useRouter();
+  const isWebsiteMaintenance = role === 'content';
+  const brand = isWebsiteMaintenance ? 'Website Maintenance' : 'PVG Admin';
+  const navGroups = isWebsiteMaintenance
+    ? NAV_GROUPS.map((group) => ({
+        ...group,
+        links: group.links.filter((link) => link.href !== '/admin/settings'),
+      })).filter((group) => group.links.length > 0)
+    : NAV_GROUPS;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
         <Link href="/admin" className="leading-tight" onClick={() => setSidebarOpen(false)}>
-          <span className="block text-base font-bold text-gray-950">PVG Admin</span>
+          <span className="block text-base font-bold text-gray-950">{brand}</span>
+          {isWebsiteMaintenance ? (
+            <span className="block text-xs text-gray-500">Content & site updates</span>
+          ) : null}
         </Link>
         <div className="flex items-center gap-2">
           <NotificationBell variant="admin" />
@@ -122,7 +135,7 @@ function AdminNavContent({
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
         <div className="space-y-5 pb-5">
-          {NAV_GROUPS.map((group) => (
+          {navGroups.map((group) => (
             <div key={group.label}>
               <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                 {group.label}
@@ -227,7 +240,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
-      <AdminShell pathname={pathname ?? ''} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
+      <AdminShell
+        pathname={pathname ?? ''}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        role={sessionRole}
+      >
         {children}
       </AdminShell>
     </Suspense>
@@ -239,13 +257,16 @@ function AdminShell({
   pathname,
   sidebarOpen,
   setSidebarOpen,
+  role,
 }: {
   children: React.ReactNode;
   pathname: string;
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
+  role: string | null;
 }) {
   const searchParams = useSearchParams();
+  const brand = role === 'content' ? 'Website Maintenance' : 'PVG Admin';
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -265,6 +286,7 @@ function AdminShell({
           pathname={pathname}
           searchParams={searchParams}
           setSidebarOpen={setSidebarOpen}
+          role={role}
         />
       </aside>
 
@@ -277,7 +299,7 @@ function AdminShell({
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-bold text-gray-900">PVG Admin</span>
+          <span className="text-sm font-bold text-gray-900">{brand}</span>
           <div className="ml-auto">
             <NotificationBell variant="admin" />
           </div>

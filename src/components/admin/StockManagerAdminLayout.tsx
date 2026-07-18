@@ -3,17 +3,23 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ClipboardList, FileEdit, LayoutDashboard, LogOut, Menu, Package, ShoppingBag, Store, X } from 'lucide-react';
+import { ClipboardList, FileEdit, Gift, LayoutDashboard, LogOut, Menu, MessageSquare, Package, Palette, ShoppingBag, Store, Bot, CalendarClock, X } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/lib/hooks/useAuth';
 
 const STOCK_NAV = [
   { href: '/admin/stock', label: 'Stock dashboard', icon: LayoutDashboard, match: 'exact' as const },
   { href: '/admin/stock/completeness', label: 'Content gaps', icon: ClipboardList, match: 'prefix' as const },
-  { href: '/admin/erp-sync', label: 'Store sync', icon: Store, match: 'prefix' as const },
+  { href: '/admin/erp-sync', label: 'Store ERP sync', icon: Store, match: 'prefix' as const },
   { href: '/admin/orders', label: 'Online orders', icon: ShoppingBag, match: 'prefix' as const },
+  { href: '/admin/design-jobs', label: 'Design jobs', icon: Palette, match: 'prefix' as const },
   { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
   { href: '/admin/products?status=inactive', label: 'Drafts', icon: FileEdit, match: 'drafts' as const },
+  { href: '/admin/designs', label: 'Jewelry designs', icon: Palette, match: 'prefix' as const },
+  { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
+  { href: '/admin/leads', label: 'Leads', icon: MessageSquare, match: 'prefix' as const },
+  { href: '/admin/agent-sessions', label: 'Ratna AI sessions', icon: Bot, match: 'prefix' as const },
+  { href: '/admin/consultation-plans', label: 'Consultation plans', icon: CalendarClock, match: 'prefix' as const },
 ];
 
 export function StockManagerAdminLayout({ children }: { children: React.ReactNode }) {

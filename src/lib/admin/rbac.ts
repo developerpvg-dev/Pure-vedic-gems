@@ -89,11 +89,61 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'settings.team',
   ],
   sales: ['dashboard.read', 'products.read', 'orders.read', 'orders.write', 'leads.read', 'leads.write'],
-  content: ['dashboard.read', 'products.read', 'products.write', 'imports.write', 'content.manage'],
-  inventory: ['dashboard.read', 'products.read', 'products.write', 'imports.write'],
-  stock_manager: ['dashboard.read', 'products.read', 'products.write', 'orders.read'],
-  finance: ['dashboard.read', 'orders.read', 'finance.read', 'compliance.manage'],
-  fulfillment: ['dashboard.read', 'products.read', 'orders.read', 'orders.write', 'orders.tracking', 'compliance.manage'],
+  content: [
+    'dashboard.read',
+    'products.read',
+    'products.write',
+    'imports.write',
+    'orders.read',
+    'orders.write',
+    'orders.tracking',
+    'leads.read',
+    'leads.write',
+    'content.manage',
+    'finance.read',
+    'compliance.manage',
+    'settings.commerce',
+  ],
+  inventory: [
+    'dashboard.read',
+    'products.read',
+    'products.write',
+    'imports.write',
+    'orders.read',
+    'leads.read',
+    'leads.write',
+    'content.manage',
+  ],
+  stock_manager: [
+    'dashboard.read',
+    'products.read',
+    'products.write',
+    'orders.read',
+    'leads.read',
+    'leads.write',
+    'content.manage',
+    'settings.commerce',
+  ],
+  finance: [
+    'dashboard.read',
+    'orders.read',
+    'finance.read',
+    'compliance.manage',
+    'leads.read',
+    'leads.write',
+    'settings.commerce',
+    'products.read',
+    'products.write',
+  ],
+  fulfillment: [
+    'dashboard.read',
+    'products.read',
+    'orders.read',
+    'orders.write',
+    'orders.tracking',
+    'compliance.manage',
+    'settings.commerce',
+  ],
   support: ['dashboard.read', 'products.read', 'orders.read', 'orders.tracking', 'leads.read', 'leads.write', 'compliance.manage'],
   designer: ['dashboard.read', 'orders.read', 'orders.design'],
 };
@@ -137,7 +187,8 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/finance')) return 'finance.read';
   if (pathname.startsWith('/admin/compliance')) return 'compliance.manage';
   if (pathname.startsWith('/admin/rewards')) return 'settings.commerce';
-  if (pathname.startsWith('/admin/settings')) return 'settings.commerce';
+  if (pathname.startsWith('/admin/shipping')) return 'settings.commerce';
+  if (pathname.startsWith('/admin/settings')) return 'settings.team';
   if (pathname.startsWith('/admin/products/import')) return 'imports.write';
   if (pathname.startsWith('/admin/products/new')) return 'products.write';
   if (/^\/admin\/products\/[^/]+$/.test(pathname)) return 'products.write';

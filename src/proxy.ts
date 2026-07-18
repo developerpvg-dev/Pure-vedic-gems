@@ -151,6 +151,12 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith('/admin/erp-sync') ||
         pathname.startsWith('/admin/products') ||
         pathname.startsWith('/admin/orders') ||
+        pathname.startsWith('/admin/design-jobs') ||
+        pathname.startsWith('/admin/rewards') ||
+        pathname.startsWith('/admin/designs') ||
+        pathname.startsWith('/admin/leads') ||
+        pathname.startsWith('/admin/agent-sessions') ||
+        pathname.startsWith('/admin/consultation-plans') ||
         pathname.startsWith('/admin/join');
       if (!allowed) {
         return NextResponse.redirect(new URL('/admin/stock', request.url));

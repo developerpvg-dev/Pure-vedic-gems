@@ -30,6 +30,10 @@ import {
   Video,
   X,
   CircleDollarSign,
+  Gift,
+  Users,
+  Truck,
+  Store,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -58,7 +62,9 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/products': Package,
   '/admin/products?status=inactive': FileEdit,
   '/admin/products/import': UploadCloud,
+  '/admin/stock': LayoutDashboard,
   '/admin/stock/completeness': ClipboardList,
+  '/admin/erp-sync': Store,
   '/admin/configurations': SlidersHorizontal,
   '/admin/metals': CircleDollarSign,
   '/admin/designs': Palette,
@@ -66,6 +72,10 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/energizations': Sparkles,
   '/admin/yagyas': Flame,
   '/admin/design-jobs': Palette,
+  '/admin/leads': MessageSquare,
+  '/admin/customers': Users,
+  '/admin/rewards': Gift,
+  '/admin/shipping': Truck,
 };
 
 function navActive(pathname: string | null, searchParams: URLSearchParams, link: RoleNavLink) {
