@@ -605,7 +605,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 {selections?.certification ? (
                                   <Spec
                                     label="Certification"
-                                    value={selections.certification.name}
+                                    value={selections.certification.name ?? ''}
                                     sub={cfg?.certification_labs?.full_name}
                                   />
                                 ) : null}
@@ -615,7 +615,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 {selections?.energization ? (
                                   <Spec
                                     label="Energization"
-                                    value={selections.energization.name}
+                                    value={selections.energization.name ?? ''}
                                     sub={cfg?.energization_options?.duration}
                                   />
                                 ) : null}
