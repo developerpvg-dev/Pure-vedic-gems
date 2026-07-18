@@ -3,7 +3,8 @@ import type { CartItem } from '@/lib/types/cart';
 export const CART_STORAGE_KEY = 'pvg_cart';
 export const GUEST_SESSION_KEY = 'pvg_guest_session_id';
 export const GUEST_CART_DIRTY_KEY = 'pvg_guest_cart_dirty';
-export const DEFAULT_MAX_CART_QUANTITY = 99;
+// ponytail: each catalog piece is unique — never more than 1 in cart
+export const DEFAULT_MAX_CART_QUANTITY = 1;
 
 export function deriveCartLineKey(item: {
   product_id: string;
@@ -25,9 +26,8 @@ export function getMaxAvailableQuantity(
   }
 
   const stockQuantity = Number(item.stock_quantity);
-  const hasKnownStock = Number.isFinite(stockQuantity) && stockQuantity >= 0;
-  const availableStock = hasKnownStock ? stockQuantity : DEFAULT_MAX_CART_QUANTITY;
-  return item.sold_individually ? Math.min(1, availableStock) : availableStock;
+  if (Number.isFinite(stockQuantity) && stockQuantity <= 0) return 0;
+  return 1;
 }
 
 /** Clamp a desired quantity to valid cart bounds. Returns 0 when the item cannot be purchased. */
@@ -49,7 +49,14 @@ export function readStoredCartItems(): CartItem[] {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
     if (!raw) return [];
     const saved: CartItem[] = JSON.parse(raw);
-    return Array.isArray(saved) ? saved : [];
+    if (!Array.isArray(saved)) return [];
+    // Clamp legacy carts that allowed qty > 1 before unique-piece rule
+    return saved
+      .map((row) => {
+        const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
+        return quantity > 0 ? { ...row, quantity } : null;
+      })
+      .filter((row): row is CartItem => row != null);
   } catch {
     return [];
   }

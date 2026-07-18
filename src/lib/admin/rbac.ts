@@ -39,11 +39,11 @@ export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
   owner: 'Owner',
   admin: 'Admin',
   sales: 'Sales',
-  content: 'Content',
-  inventory: 'Inventory',
-  stock_manager: 'Stock Manager',
-  finance: 'Finance',
-  fulfillment: 'Fulfillment',
+  content: 'Website Maintenance',
+  inventory: 'Products Uploading',
+  stock_manager: 'Order / Stock Incharge',
+  finance: 'Accountant',
+  fulfillment: 'Parcel Dispatch',
   support: 'Support',
   designer: 'Jewelry Designer',
 };
@@ -143,23 +143,34 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (/^\/admin\/products\/[^/]+$/.test(pathname)) return 'products.write';
   if (pathname.startsWith('/admin/products')) return 'products.read';
   if (pathname.startsWith('/admin/erp-sync')) return 'products.read';
+  if (pathname.startsWith('/admin/stock/completeness')) return 'products.read';
   if (pathname.startsWith('/admin/stock')) return 'dashboard.read';
   if (pathname.startsWith('/admin/designer')) return 'orders.design';
+  if (pathname.startsWith('/admin/design-jobs')) return 'orders.read';
   if (pathname.startsWith('/admin/orders')) return 'orders.read';
   if (pathname.startsWith('/admin/customers')) return 'leads.read';
-  if (pathname.startsWith('/admin/consultation-plans')) return 'leads.read';
   if (pathname.startsWith('/admin/leads')) return 'leads.read';
-  if (pathname.startsWith('/admin/reviews')) return 'content.manage';
-  if (pathname.startsWith('/admin/testimonials')) return 'content.manage';
-  if (pathname.startsWith('/admin/feedback')) return 'content.manage';
-  if (pathname.startsWith('/admin/category-reviews')) return 'content.manage';
-  if (pathname.startsWith('/admin/events')) return 'content.manage';
-  if (pathname.startsWith('/admin/videos')) return 'content.manage';
-  if (pathname.startsWith('/admin/lab-certificates')) return 'content.manage';
+  if (
+    pathname.startsWith('/admin/consultation-plans') ||
+    pathname.startsWith('/admin/notifications') ||
+    pathname.startsWith('/admin/reviews') ||
+    pathname.startsWith('/admin/testimonials') ||
+    pathname.startsWith('/admin/feedback') ||
+    pathname.startsWith('/admin/category-reviews') ||
+    pathname.startsWith('/admin/events') ||
+    pathname.startsWith('/admin/videos') ||
+    pathname.startsWith('/admin/lab-certificates') ||
+    pathname.startsWith('/admin/hero') ||
+    pathname.startsWith('/admin/shop-category-pages') ||
+    pathname.startsWith('/admin/directors-pick') ||
+    pathname.startsWith('/admin/catalog-order') ||
+    pathname.startsWith('/admin/agent-sessions')
+  ) {
+    return 'content.manage';
+  }
   if (pathname.startsWith('/admin/configurations')) return 'products.read';
   if (pathname.startsWith('/admin/yagyas')) return 'products.read';
   if (pathname.startsWith('/admin/yagya-bookings')) return 'orders.read';
-  if (pathname.startsWith('/admin/notifications')) return 'leads.read';
   if (
     pathname.startsWith('/admin/categories') ||
     pathname.startsWith('/admin/certifications') ||

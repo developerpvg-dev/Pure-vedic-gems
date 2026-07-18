@@ -388,7 +388,6 @@ export default function ConfiguratorWrapper({
             settingType={state.setting_type!}
             metal={state.metal}
             ringSize={state.ring_size}
-            chainLength={state.chain_length}
             goldRate={goldRate}
             laborRates={effectiveLaborRates}
             pricingModes={pricingModes}
@@ -397,9 +396,6 @@ export default function ConfiguratorWrapper({
             optionRules={optionRules}
             onMetalChange={(metal) => dispatch({ type: 'SET_METAL', payload: metal })}
             onRingSizeChange={(size) => dispatch({ type: 'SET_RING_SIZE', payload: size })}
-            onChainLengthChange={(length) =>
-              dispatch({ type: 'SET_CHAIN_LENGTH', payload: length })
-            }
           />
         );
       case 6:

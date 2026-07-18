@@ -15,7 +15,7 @@ const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500';
 
 export function FormInput({
-  id, value, onChange, placeholder, type = 'text', required = false, maxLength,
+  id, value, onChange, placeholder, type = 'text', required = false, maxLength, suggestions,
 }: {
   id?: string;
   value: string;
@@ -24,18 +24,31 @@ export function FormInput({
   type?: string;
   required?: boolean;
   maxLength?: number;
+  /** Optional datalist — pick a suggestion or type a custom value. */
+  suggestions?: readonly string[];
 }) {
+  const listId = useId();
   return (
-    <input
-      id={id}
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      required={required}
-      maxLength={maxLength}
-      className={inputBase}
-    />
+    <>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        maxLength={maxLength}
+        list={suggestions?.length ? listId : undefined}
+        className={inputBase}
+      />
+      {suggestions && suggestions.length > 0 && (
+        <datalist id={listId}>
+          {suggestions.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      )}
+    </>
   );
 }
 

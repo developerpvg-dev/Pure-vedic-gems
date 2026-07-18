@@ -394,9 +394,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    if (settingType === 'pendant' && !input.chain_length) {
-      return NextResponse.json({ error: 'Choose a chain length before saving.' }, { status: 400 });
-    }
   }
 
   if (input.certification_id && !isCertificationAllowed(rules, input.certification_id)) {

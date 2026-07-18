@@ -8,6 +8,12 @@ import {
   enrichManyOrderItemLists,
   parseOrderItems,
 } from '@/lib/customer/orders';
+import {
+  evaluateReturnEligibility,
+  getDeliveredAt,
+  parseComplianceFlags,
+  resolveReturnWindowDays,
+} from '@/lib/orders/returns';
 import type { Order } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +40,30 @@ export default async function OrdersPage() {
   const parsedItemLists = orders.map((order) => parseOrderItems(order.items));
   const enrichedLists = await enrichManyOrderItemLists(parsedItemLists, supabase);
 
+  const productIds = new Set<string>();
+  for (const items of enrichedLists) {
+    for (const item of items) {
+      if (item.product_id) productIds.add(item.product_id);
+    }
+  }
+
+  const productReturnMeta = new Map<
+    string,
+    { return_eligibility?: string | null; return_window_days?: number | null }
+  >();
+  if (productIds.size) {
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, return_eligibility, return_window_days')
+      .in('id', [...productIds]);
+    for (const row of products ?? []) {
+      productReturnMeta.set(row.id as string, {
+        return_eligibility: (row as { return_eligibility?: string | null }).return_eligibility,
+        return_window_days: (row as { return_window_days?: number | null }).return_window_days,
+      });
+    }
+  }
+
   const orderCards: AccountOrderCardData[] = orders.map((order, index) => {
       const items = enrichedLists[index] ?? [];
       const extras = order as Order & {
@@ -43,8 +73,29 @@ export default async function OrdersPage() {
         design_completed_at?: string | null;
         carrier?: string | null;
         payment_status?: string | null;
+        return_status?: string;
+        compliance_flags?: unknown;
       };
       const shippingAddress = order.shipping_address as AccountOrderCardData['shipping_address'];
+      const flags = parseComplianceFlags(extras.compliance_flags);
+      const itemProducts = items
+        .map((item) => (item.product_id ? productReturnMeta.get(item.product_id) : null))
+        .filter(Boolean) as Array<{
+        return_eligibility?: string | null;
+        return_window_days?: number | null;
+      }>;
+      const { windowDays, allNonReturnable } = resolveReturnWindowDays(itemProducts);
+      const eligibility = evaluateReturnEligibility({
+        orderStatus: order.status,
+        returnStatus: extras.return_status || 'none',
+        deliveredAt: getDeliveredAt({
+          status: order.status,
+          updated_at: order.updated_at,
+          compliance_flags: extras.compliance_flags,
+        }),
+        windowDays,
+        allNonReturnable,
+      });
 
       return {
         id: order.id,
@@ -79,6 +130,10 @@ export default async function OrdersPage() {
         assigned_designer_id: extras.assigned_designer_id ?? null,
         design_completed_at: extras.design_completed_at ?? null,
         items,
+        return_status: extras.return_status || 'none',
+        return_eligible: eligibility.eligible,
+        return_message: eligibility.reason,
+        return_reason: flags.return_reason ?? null,
       };
   });
 

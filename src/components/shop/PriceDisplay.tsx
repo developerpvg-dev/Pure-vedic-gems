@@ -3,13 +3,14 @@ import {
   isProductPriceOnRequest,
   resolveProductDisplayPrice,
 } from '@/lib/shop/product-pricing';
-import { formatEMI, formatPrice } from '@/lib/utils/format';
+import { formatPrice } from '@/lib/utils/format';
 
 interface PriceDisplayProps {
   price: number;
   comparePrice?: number | null;
   pricePerCarat?: number | null;
   caratWeight?: number | null;
+  /** @deprecated EMI removed — unique pieces don't show EMI */
   showEMI?: boolean;
   priceMode?: string | null;
 }
@@ -19,7 +20,6 @@ export function PriceDisplay({
   comparePrice,
   pricePerCarat,
   caratWeight,
-  showEMI = true,
   priceMode,
 }: PriceDisplayProps) {
   const product = {
@@ -77,16 +77,6 @@ export function PriceDisplay({
         <p className="product-price-meta text-[12px] text-brand-muted lg:text-[13px]">
           {priceDisplay.detail}
           {caratWeight ? ` · ${caratWeight.toFixed(2)} ct` : ''}
-        </p>
-      )}
-
-      {showEMI && resolvedPrice >= 10000 && (
-        <p className="product-price-emi text-[11px] text-brand-muted lg:text-[12px]">
-          EMI from{' '}
-          <span className="font-semibold text-brand-primary">
-            {formatEMI(resolvedPrice, 12)}/mo
-          </span>{' '}
-          (12 months)
         </p>
       )}
     </div>

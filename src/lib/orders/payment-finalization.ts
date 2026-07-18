@@ -5,10 +5,12 @@ import { sendAdminOrderAlertEmail } from '@/lib/resend/send-admin-order-alert';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
 import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
-import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import type { Json, Order, PaymentEvent } from '@/lib/types/database';
 import { awardOrderRewardPoints, cancelRewardRedemption, confirmRewardRedemption } from '@/lib/rewards/service';
-import { queueErpOutboundSale } from '@/lib/erp/sync';
+import {
+  keepProductsReservedAfterPayment,
+  releaseProductsForOrder,
+} from '@/lib/inventory/order-availability';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -178,118 +180,14 @@ export async function markOrderPaymentFailed(order: Order, reason: string, razor
     })
     .eq('id', order.id);
 
-  for (const item of orderItems(order)) {
-    if (!item.product_id) continue;
-    await supabase
-      .from('products')
-      .update({
-        availability_status: 'in_stock',
-        reserved_until: null,
-        reserved_by_customer_id: null,
-        reserved_quantity: 0,
-        reservation_note: null,
-      })
-      .eq('id', item.product_id)
-      .eq('reservation_note', `Payment hold for ${order.order_number}`)
-      .then(null, () => undefined);
-  }
-
+  // Restore pieces held for this unpaid order
+  await releaseProductsForOrder(order);
   await cancelRewardRedemption(order.id);
 }
 
 async function updateInventoryForCapturedOrder(order: Order) {
-  const supabase = createAdminClient();
-  for (const item of orderItems(order)) {
-    if (!item.product_id) continue;
-
-    const { data: product } = await supabase
-      .from('products')
-      .select('id, sku, name, category, stock_quantity, sold_individually, tag_number')
-      .eq('id', item.product_id)
-      .single();
-
-    if (!product) continue;
-
-    const tagNumber = item.tag_number ?? product.tag_number;
-
-    if (product.sold_individually) {
-      await supabase
-        .from('products')
-        .update({
-          in_stock: false,
-          stock_quantity: 0,
-          availability_status: 'sold',
-          reserved_until: null,
-          reserved_by_customer_id: null,
-          reserved_quantity: 0,
-          reservation_note: null,
-        })
-        .eq('id', item.product_id)
-        .then(null, () => undefined);
-      if (tagNumber) {
-        await queueErpOutboundSale({
-          tagNumber,
-          orderId: order.id,
-          productId: product.id,
-          payload: {
-            order_number: order.order_number,
-            source: 'website_payment',
-            mobile: order.guest_phone,
-            customer_name: order.guest_name,
-            email: order.guest_email,
-            quantity: item.quantity,
-          },
-        }).catch(() => undefined);
-        // ponytail: no MMI API — staff confirms on /admin/erp-sync ack list
-      }
-      await notifyLowStockProduct({
-        id: product.id,
-        sku: product.sku,
-        name: product.name,
-        category: product.category,
-        stock_quantity: 0,
-      }, 'order_captured');
-      continue;
-    }
-
-    const nextQuantity = Math.max(0, Number(product.stock_quantity ?? 0) - item.quantity);
-    await supabase
-      .from('products')
-      .update({
-        stock_quantity: nextQuantity,
-        in_stock: nextQuantity > 0,
-        stock_status: nextQuantity > 0 ? 'in_stock' : 'out_of_stock',
-        availability_status: nextQuantity > 0 ? 'in_stock' : 'out_of_stock',
-        reserved_until: null,
-        reserved_by_customer_id: null,
-        reserved_quantity: 0,
-        reservation_note: null,
-      })
-      .eq('id', item.product_id)
-      .then(null, () => undefined);
-    if (nextQuantity === 0 && tagNumber) {
-      await queueErpOutboundSale({
-        tagNumber,
-        orderId: order.id,
-        productId: product.id,
-        payload: {
-          order_number: order.order_number,
-          source: 'website_payment',
-          quantity: item.quantity,
-          mobile: order.guest_phone,
-          customer_name: order.guest_name,
-          email: order.guest_email,
-        },
-      }).catch(() => undefined);
-    }
-    await notifyLowStockProduct({
-      id: product.id,
-      sku: product.sku,
-      name: product.name,
-      category: product.category,
-      stock_quantity: nextQuantity,
-    }, 'order_captured');
-  }
+  // ponytail: stay Reserved on site until admin marks sold after billing — do not flip to Sold here
+  await keepProductsReservedAfterPayment(order);
 }
 
 async function markCouponRedeemed(order: Order) {

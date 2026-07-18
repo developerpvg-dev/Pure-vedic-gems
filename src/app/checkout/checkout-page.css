@@ -519,14 +519,47 @@
   white-space: nowrap;
 }
 
-.pvg-checkout-lines {
+.pvg-checkout-breakup {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px dashed rgba(61, 43, 31, 0.14);
+}
+
+.pvg-checkout-breakup-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(61, 43, 31, 0.12);
+  background: rgba(255, 255, 255, 0.65);
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #5c3d00;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pvg-checkout-breakup-toggle:hover {
+  background: rgba(201, 168, 76, 0.12);
+  border-color: rgba(138, 100, 0, 0.28);
+}
+
+.pvg-checkout-lines {
+  margin-top: 0.65rem;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
   font-size: 0.8rem;
+}
+
+.pvg-checkout-lines--breakup {
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.55rem;
+  background: rgba(253, 248, 240, 0.9);
+  border: 1px solid rgba(61, 43, 31, 0.08);
 }
 
 .pvg-checkout-line {
@@ -539,11 +572,21 @@
 .pvg-checkout-line span:last-child {
   color: #3d2b1f;
   font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .pvg-checkout-line--discount span:last-child {
   color: #15803d;
   font-weight: 600;
+}
+
+.pvg-checkout-line--emphasis {
+  margin-top: 0.25rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed rgba(61, 43, 31, 0.14);
+  font-weight: 700;
+  color: #3d2b1f;
 }
 
 .pvg-checkout-total {

@@ -9,6 +9,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { Coupon, ShippingMethod } from '@/lib/types/database';
+import { planAppliesToCountry, planAppliesToSubtotal } from '@/lib/shipping/plans';
 import { buildTaxBreakdown, calculateGstComponent, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
 import { quoteRewardRedemption } from '@/lib/rewards/service';
 
@@ -120,14 +121,11 @@ async function getShippingMethod(
     throw new Error('Invalid or unavailable shipping method.');
   }
 
-  if (countryCode && method.country_code && method.country_code !== countryCode) {
+  if (countryCode && !planAppliesToCountry(method.country_code, countryCode)) {
     throw new Error('Selected shipping method is not available for this country.');
   }
 
-  if (method.min_order_amount && subtotal < method.min_order_amount) {
-    throw new Error(`${method.label} is not available for this order total.`);
-  }
-  if (method.max_order_amount && subtotal > method.max_order_amount) {
+  if (!planAppliesToSubtotal(method, subtotal)) {
     throw new Error(`${method.label} is not available for this order total.`);
   }
 
@@ -219,11 +217,12 @@ export async function recalculateOrderTotal(
     if (product.availability_status === 'reserved' && isReservationActive(product.reserved_until)) {
       throw new Error(`Product "${product.name}" is currently reserved`);
     }
-    if (product.sold_individually && item.quantity > 1) {
+    // ponytail: each piece is unique — never more than 1
+    if (item.quantity > 1) {
       throw new Error(`Only 1 unit of "${product.name}" is available`);
     }
     if (product.stock_quantity < item.quantity) {
-      throw new Error(`Only ${product.stock_quantity} unit(s) of "${product.name}" are available`);
+      throw new Error(`"${product.name}" is no longer available`);
     }
 
     const productTax = resolveProductTax(product);

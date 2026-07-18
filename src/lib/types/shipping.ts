@@ -10,6 +10,8 @@ export type ShippingPlan = {
   label: string;
   description: string | null;
   cost: number;
+  min_order_amount: number | null;
+  max_order_amount: number | null;
   estimated_days_min: number | null;
   estimated_days_max: number | null;
   country_code: string;

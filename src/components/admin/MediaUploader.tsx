@@ -1,81 +1,155 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { Upload, X, Film, Loader2 } from 'lucide-react';
 
-interface MediaFile {
+export interface MediaFile {
   url: string;
   name: string;
   type: 'image' | 'video';
   preview?: string;
 }
 
+export type MediaUploaderMode = 'all' | 'images' | 'videos';
+
 interface MediaUploaderProps {
   value: MediaFile[];
   onChange: (files: MediaFile[]) => void;
+  /** Restrict uploads / URL paste. Default: all. */
+  mode?: MediaUploaderMode;
+  /** Cap list length. Extra uploads replace when max is 1. */
+  maxFiles?: number;
 }
 
-export function MediaUploader({ value, onChange }: MediaUploaderProps) {
+function isVideoUrl(url: string) {
+  return (
+    /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ||
+    /(youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com)/i.test(url)
+  );
+}
+
+const ACCEPT: Record<MediaUploaderMode, string> = {
+  all: 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime',
+  images: 'image/jpeg,image/png,image/webp,image/gif',
+  videos: 'video/mp4,video/webm,video/quicktime',
+};
+
+const DROP_HINT: Record<MediaUploaderMode, { title: string; sub: string; url: string }> = {
+  all: {
+    title: 'Drop images or videos here, or click to browse',
+    sub: 'JPG, PNG, WebP, MP4, WebM — max 50MB each, up to 20 files',
+    url: 'Or paste an image / video / YouTube / Vimeo URL and press Enter...',
+  },
+  images: {
+    title: 'Drop images here, or click to browse',
+    sub: 'JPG, PNG, WebP, GIF — max 50MB each',
+    url: 'Or paste an image URL and press Enter...',
+  },
+  videos: {
+    title: 'Drop a video here, or click to browse',
+    sub: 'MP4, WebM — or paste a YouTube / Vimeo link below',
+    url: 'Or paste a YouTube / Vimeo / video URL and press Enter...',
+  },
+};
+
+export function MediaUploader({ value, onChange, mode = 'all', maxFiles }: MediaUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
+  const [urlDraft, setUrlDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const hints = DROP_HINT[mode];
 
-  const uploadFiles = useCallback(async (fileList: FileList | File[]) => {
-    const files = Array.from(fileList);
-    if (!files.length) return;
+  const mergeFiles = useCallback(
+    (incoming: MediaFile[]) => {
+      if (!incoming.length) return;
+      let next = [...value, ...incoming];
+      if (typeof maxFiles === 'number' && next.length > maxFiles) {
+        next = maxFiles === 1 ? incoming.slice(-1) : next.slice(0, maxFiles);
+      }
+      onChange(next);
+    },
+    [value, onChange, maxFiles],
+  );
 
-    setError('');
-    setUploading(true);
+  const uploadFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      let files = Array.from(fileList);
+      if (!files.length) return;
 
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append('files', file);
-    }
-
-    try {
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || 'Upload failed');
-        setUploading(false);
+      if (mode === 'images') files = files.filter((f) => f.type.startsWith('image/'));
+      if (mode === 'videos') files = files.filter((f) => f.type.startsWith('video/'));
+      if (!files.length) {
+        setError(mode === 'videos' ? 'Only video files are allowed here' : 'Only image files are allowed here');
         return;
       }
 
-      const newFiles: MediaFile[] = data.urls.map((url: string, i: number) => {
-        const file = files[i];
-        const isVideo = file?.type?.startsWith('video/');
-        return {
-          url,
-          name: file?.name ?? `file-${i}`,
-          type: isVideo ? 'video' as const : 'image' as const,
-          preview: isVideo ? undefined : url,
-        };
-      });
-
-      onChange([...value, ...newFiles]);
-
-      if (data.errors?.length) {
-        setError(data.errors.join('; '));
+      if (typeof maxFiles === 'number' && maxFiles > 0 && mode !== 'all') {
+        const room = maxFiles === 1 ? maxFiles : Math.max(0, maxFiles - value.length);
+        if (room <= 0 && maxFiles !== 1) {
+          setError(`Maximum ${maxFiles} file(s)`);
+          return;
+        }
+        files = files.slice(0, maxFiles === 1 ? 1 : room);
       }
-    } catch {
-      setError('Network error during upload');
-    } finally {
-      setUploading(false);
-    }
-  }, [value, onChange]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    if (e.dataTransfer.files.length) {
-      uploadFiles(e.dataTransfer.files);
-    }
-  }, [uploadFiles]);
+      setError('');
+      setUploading(true);
+
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append('files', file);
+      }
+
+      try {
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || 'Upload failed');
+          setUploading(false);
+          return;
+        }
+
+        const newFiles: MediaFile[] = data.urls.map((url: string, i: number) => {
+          const file = files[i];
+          const isVideo = file?.type?.startsWith('video/') || (mode === 'videos');
+          return {
+            url,
+            name: file?.name ?? `file-${i}`,
+            type: isVideo ? ('video' as const) : ('image' as const),
+            preview: isVideo ? undefined : url,
+          };
+        });
+
+        mergeFiles(newFiles);
+
+        if (data.errors?.length) {
+          setError(data.errors.join('; '));
+        }
+      } catch {
+        setError('Network error during upload');
+      } finally {
+        setUploading(false);
+      }
+    },
+    [mode, maxFiles, value.length, mergeFiles],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      if (e.dataTransfer.files.length) {
+        uploadFiles(e.dataTransfer.files);
+      }
+    },
+    [uploadFiles],
+  );
 
   const removeFile = (index: number) => {
     onChange(value.filter((_, i) => i !== index));
@@ -88,11 +162,45 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
     onChange(updated);
   };
 
+  const addUrl = (raw: string) => {
+    const url = raw.trim();
+    if (!url) return false;
+    const video = isVideoUrl(url);
+    if (mode === 'images' && video) {
+      setError('Only image URLs are allowed here');
+      return false;
+    }
+    if (mode === 'videos' && !video) {
+      setError('Paste a YouTube, Vimeo, or direct video URL');
+      return false;
+    }
+    setError('');
+    // flushSync: paste then click Save must see videoFiles before buildBody runs
+    flushSync(() => {
+      mergeFiles([
+        {
+          url,
+          name: url.split('/').pop() || 'external',
+          type: video || mode === 'videos' ? 'video' : 'image',
+          preview: video || mode === 'videos' ? undefined : url,
+        },
+      ]);
+    });
+    return true;
+  };
+
+  const commitUrlDraft = () => {
+    if (!urlDraft.trim()) return;
+    if (addUrl(urlDraft)) setUrlDraft('');
+  };
+
   return (
     <div className="space-y-3">
-      {/* Drop zone */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
@@ -110,12 +218,8 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
         ) : (
           <>
             <Upload className="h-8 w-8 text-gray-400" />
-            <span className="text-sm font-medium text-gray-600">
-              Drop images or videos here, or click to browse
-            </span>
-            <span className="text-xs text-gray-400">
-              JPG, PNG, WebP, MP4, WebM — max 50MB each, up to 20 files
-            </span>
+            <span className="text-sm font-medium text-gray-600">{hints.title}</span>
+            <span className="text-xs text-gray-400">{hints.sub}</span>
           </>
         )}
       </div>
@@ -123,8 +227,8 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
       <input
         ref={inputRef}
         type="file"
-        multiple
-        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+        multiple={maxFiles !== 1}
+        accept={ACCEPT[mode]}
         className="hidden"
         onChange={(e) => {
           if (e.target.files?.length) uploadFiles(e.target.files);
@@ -132,38 +236,45 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
         }}
       />
 
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {/* URL input for external links */}
       <div className="flex gap-2">
         <input
-          type="text"
-          placeholder="Or paste an image / video / YouTube / Vimeo URL and press Enter..."
-          className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+          type="url"
+          value={urlDraft}
+          onChange={(e) => setUrlDraft(e.target.value)}
+          onBlur={commitUrlDraft}
+          onPaste={(e) => {
+            const pasted = e.clipboardData.getData('text')?.trim();
+            if (!pasted) return;
+            // Commit immediately on paste so Save right after works without Enter
+            e.preventDefault();
+            if (addUrl(pasted)) setUrlDraft('');
+            else setUrlDraft(pasted);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              const input = e.currentTarget;
-              const url = input.value.trim();
-              if (url) {
-                const isVideo =
-                  /\.(mp4|webm|mov|m4v)$/i.test(url) ||
-                  /(youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com)/i.test(url);
-                onChange([...value, {
-                  url,
-                  name: url.split('/').pop() || 'external',
-                  type: isVideo ? 'video' : 'image',
-                  preview: isVideo ? undefined : url,
-                }]);
-                input.value = '';
-              }
+              e.preventDefault();
+              commitUrlDraft();
             }
           }}
+          placeholder={hints.url}
+          className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
         />
+        <button
+          type="button"
+          onClick={commitUrlDraft}
+          className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Add
+        </button>
       </div>
+      {mode === 'videos' && value.length === 0 && (
+        <p className="text-xs text-amber-700">
+          Paste the YouTube link, then click Add (or press Enter) before saving — a VIDEO tile should appear above.
+        </p>
+      )}
 
-      {/* Preview grid */}
       {value.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {value.map((file, i) => (
@@ -189,14 +300,13 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
                 </div>
               )}
 
-              {/* Overlay controls */}
               <div className="absolute inset-0 flex items-start justify-between bg-black/0 p-1.5 opacity-0 transition-opacity group-hover:bg-black/20 group-hover:opacity-100">
-                {i === 0 && (
+                {mode !== 'videos' && i === 0 && (
                   <span className="rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                     THUMBNAIL
                   </span>
                 )}
-                {i > 0 && (
+                {mode !== 'videos' && i > 0 && (
                   <button
                     type="button"
                     onClick={() => moveFile(i, 0)}
@@ -220,9 +330,17 @@ export function MediaUploader({ value, onChange }: MediaUploaderProps) {
         </div>
       )}
 
-      {value.length > 0 && (
+      {value.length > 0 && mode === 'all' && (
         <p className="text-xs text-gray-400">
-          {value.filter(f => f.type === 'image').length} images, {value.filter(f => f.type === 'video').length} videos — first image is thumbnail. Hover to reorder or remove.
+          {value.filter((f) => f.type === 'image').length} images,{' '}
+          {value.filter((f) => f.type === 'video').length} videos — first image is thumbnail. Hover to
+          reorder or remove.
+        </p>
+      )}
+      {value.length > 0 && mode === 'images' && (
+        <p className="text-xs text-gray-400">
+          {value.length} image{value.length === 1 ? '' : 's'} — first image is the thumbnail. Hover to
+          reorder or remove.
         </p>
       )}
     </div>

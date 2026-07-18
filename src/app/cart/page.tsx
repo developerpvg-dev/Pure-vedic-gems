@@ -4,9 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2 } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2, UserPlus, LogIn } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
-import { canIncreaseQuantity, getMaxAvailableQuantity } from '@/lib/cart/client';
 import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
@@ -19,15 +18,11 @@ import { ConfigurationDetailsDisplay } from '@/components/configuration/Configur
 function CartItemRow({
   item,
   onRemove,
-  onUpdate,
 }: {
   item: ReturnType<typeof useCart>['cart']['items'][number];
   onRemove: (key: string) => void;
-  onUpdate: (key: string, qty: number) => void;
 }) {
   const itemHref = productHref({ category: item.category, slug: item.slug ?? item.product_id });
-  const maxQuantity = getMaxAvailableQuantity(item);
-  const canIncrease = canIncreaseQuantity(item);
 
   return (
     <div className="flex items-start gap-4 border-b border-[var(--pvg-border)] py-6 last:border-0">
@@ -86,39 +81,12 @@ function CartItemRow({
           </Link>
         )}
 
-        {/* Qty + price row */}
+        {/* Price + remove — each piece is unique (qty always 1) */}
         <div className="mt-2 flex items-center justify-between">
-          <div>
-            <div className="flex items-center rounded-lg border border-[var(--pvg-border)]">
-              <button
-                onClick={() => onUpdate(item.key, item.quantity - 1)}
-                className="flex h-8 w-8 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
-                aria-label="Decrease"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
-              <span className="w-8 text-center text-[13px] font-semibold text-[var(--pvg-primary)]">
-                {item.quantity}
-              </span>
-              <button
-                onClick={() => onUpdate(item.key, item.quantity + 1)}
-                disabled={!canIncrease}
-                className="flex h-8 w-8 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="Increase"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
-            </div>
-            {maxQuantity > 0 && item.quantity >= maxQuantity && (
-              <p className="mt-1 text-[11px] font-medium text-amber-700">
-                {item.sold_individually ? 'Limited to 1 per order' : `Maximum available: ${maxQuantity}`}
-              </p>
-            )}
-          </div>
-
+          <p className="text-[12px] text-[var(--pvg-muted)]">Unique piece</p>
           <div className="flex items-center gap-4">
             <p className="text-[16px] font-bold text-[var(--pvg-primary)]">
-              {formatPrice(item.price * item.quantity)}
+              {formatPrice(item.price)}
             </p>
             <button
               onClick={() => onRemove(item.key)}
@@ -141,8 +109,6 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('register');
-  const shipping = subtotal === 0 ? 0 : subtotal >= 50000 ? 0 : 500;
-  const total = subtotal + shipping;
 
   return (
     <div className="sticky pvg-sticky-below-header rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-6">
@@ -157,51 +123,68 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
         </div>
         <div className="flex justify-between">
           <span className="text-[var(--pvg-muted)]">Shipping</span>
-          <span className={shipping === 0 ? 'font-semibold text-green-600' : 'font-semibold text-[var(--pvg-text)]'}>
-            {shipping === 0 ? 'Free' : formatPrice(shipping)}
+          <span className="text-[13px] font-medium text-[var(--pvg-muted)]">
+            Calculated at checkout
           </span>
         </div>
-        {shipping > 0 && (
-          <p className="text-[11px] text-[var(--pvg-muted)]">
-            Free shipping on orders above ₹50,000
-          </p>
-        )}
         <div className="my-3 border-t border-[var(--pvg-border)]" />
         <div className="flex justify-between">
-          <span className="font-bold text-[var(--pvg-primary)]">Estimated Total</span>
+          <span className="font-bold text-[var(--pvg-primary)]">Items Total</span>
           <span className="text-xl font-bold text-[var(--pvg-primary)]">
-            {formatPrice(total)}
+            {formatPrice(subtotal)}
           </span>
         </div>
       </div>
 
       {!user && (
-        <div className="mt-6 rounded-xl border border-[var(--pvg-border)] bg-brand-bg-alt p-4">
-          <p className="text-sm font-semibold text-[var(--pvg-primary)]">
-            Checkout as a guest or create an account
-          </p>
-          <p className="mt-1 text-xs text-[var(--pvg-muted)]">
-            Guest checkout is available. An account helps you track order status, delivery updates, invoices, and future gemstone purchases.
-          </p>
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <button
-              onClick={() => {
-                setAuthView('register');
-                setAuthModalOpen(true);
-              }}
-              className="rounded-lg bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            >
-              Create Account
-            </button>
-            <button
-              onClick={() => {
-                setAuthView('login');
-                setAuthModalOpen(true);
-              }}
-              className="rounded-lg border border-[var(--pvg-border)] px-4 py-2.5 text-sm font-semibold text-[var(--pvg-primary)] transition hover:bg-brand-gold-light"
-            >
-              I Already Have an Account
-            </button>
+        <div className="mt-6 overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-gold-light">
+          <div className="border-b border-[var(--pvg-accent)]/20 px-4 py-3.5">
+            <p className="font-heading text-[15px] font-semibold tracking-tight text-[var(--pvg-primary)]">
+              Save your purchase journey
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-[var(--pvg-muted)]">
+              Create an account to track orders, invoices, and delivery updates — or continue as a guest below.
+            </p>
+          </div>
+          <div className="space-y-3 px-4 py-4">
+            <ul className="space-y-1.5 text-[11px] text-[var(--pvg-muted)]">
+              <li className="flex items-start gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--pvg-accent)]" />
+                Order status &amp; insured delivery updates
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--pvg-accent)]" />
+                Invoices and gemstone purchase history
+              </li>
+            </ul>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthView('register');
+                  setAuthModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ background: 'var(--pvg-primary)' }}
+              >
+                <UserPlus className="h-4 w-4" />
+                Create Account
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthView('login');
+                  setAuthModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--pvg-accent)]/40 bg-brand-surface px-4 py-2.5 text-sm font-semibold text-[var(--pvg-primary)] transition hover:border-[var(--pvg-accent)] hover:bg-white"
+              >
+                <LogIn className="h-4 w-4" />
+                I Already Have an Account
+              </button>
+            </div>
+            <p className="text-center text-[11px] text-[var(--pvg-muted)]">
+              Prefer guest? Use Proceed to Checkout — no account required.
+            </p>
           </div>
         </div>
       )}
@@ -276,7 +259,7 @@ function EmptyCart() {
 // ─── Cart Page ────────────────────────────────────────────────────────────────
 
 export default function CartPage() {
-  const { cart, removeItem, updateQty } = useCart();
+  const { cart, removeItem } = useCart();
   const { items, subtotal, item_count } = cart;
   const rudrakshaWithoutConfig = RUDRAKSHA_CONFIGURATOR_ENABLED
     ? items.filter((item) => item.category === 'rudraksha' && !item.configuration_id)
@@ -333,7 +316,6 @@ export default function CartPage() {
                     key={item.key}
                     item={item}
                     onRemove={removeItem}
-                    onUpdate={updateQty}
                   />
                 ))}
               </div>

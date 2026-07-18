@@ -12,6 +12,7 @@ import {
 import type { Json, Order } from '@/lib/types/database';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
 import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
+import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -278,8 +279,10 @@ async function handleRefundProcessed(payload: UnknownRecord) {
   if (refundOrder) {
     await supabase
       .from('orders')
-      .update({ payment_status: 'refunded', status: 'refunded' })
+      .update({ payment_status: 'refunded', status: 'refunded', refund_status: 'completed' })
       .eq('id', refundOrder.id);
+
+    await releaseProductsForOrder(refundOrder);
 
     const refundAmount = typeof entity?.amount === 'number' ? entity.amount : null;
     const messageId = await sendAdminOperationalAlertEmail({

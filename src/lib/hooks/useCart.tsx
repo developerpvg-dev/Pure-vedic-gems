@@ -27,7 +27,12 @@ import {
 function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
   switch (action.type) {
     case 'HYDRATE':
-      return action.payload;
+      return action.payload
+        .map((row) => {
+          const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
+          return quantity > 0 ? { ...row, quantity } : null;
+        })
+        .filter((row): row is CartItem => row != null);
 
     case 'ADD_ITEM': {
       const existing = state.find((i) => i.key === action.payload.key);

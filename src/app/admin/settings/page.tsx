@@ -28,6 +28,8 @@ interface ShippingMethod {
   zones: string[];
   is_active: boolean;
   sort_order: number;
+  min_order_amount?: number | null;
+  max_order_amount?: number | null;
   estimated_days_min?: number | null;
   estimated_days_max?: number | null;
   description?: string | null;
@@ -64,16 +66,16 @@ const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
   admin: 'Admin',
   sales: 'Sales',
-  content: 'Content',
-  inventory: 'Inventory',
-  stock_manager: 'Stock Manager',
-  finance: 'Finance',
-  fulfillment: 'Fulfillment',
+  content: 'Website Maintenance',
+  inventory: 'Products Uploading',
+  stock_manager: 'Order / Stock Incharge',
+  finance: 'Accountant',
+  fulfillment: 'Parcel Dispatch',
   support: 'Support',
   designer: 'Jewelry Designer',
   director: 'Owner',
   manager: 'Admin',
-  accounts: 'Finance',
+  accounts: 'Accountant',
 };
 
 const DEFAULT_INVITE_ROLES = [
@@ -94,6 +96,8 @@ const EMPTY_SHIPPING_FORM = {
   description: '',
   cost: '',
   country_code: 'IN',
+  min_order_amount: '',
+  max_order_amount: '',
   estimated_days_min: '',
   estimated_days_max: '',
   sort_order: '0',
@@ -306,6 +310,8 @@ export default function SettingsPage() {
       description: method.description ?? '',
       cost: String(method.cost),
       country_code: method.country_code || method.zones?.[0] || 'IN',
+      min_order_amount: method.min_order_amount != null ? String(method.min_order_amount) : '',
+      max_order_amount: method.max_order_amount != null ? String(method.max_order_amount) : '',
       estimated_days_min: method.estimated_days_min != null ? String(method.estimated_days_min) : '',
       estimated_days_max: method.estimated_days_max != null ? String(method.estimated_days_max) : '',
       sort_order: String(method.sort_order ?? 0),
@@ -406,8 +412,11 @@ export default function SettingsPage() {
       {tab === 'commerce' ? (
         <div className="grid gap-6 xl:grid-cols-2">
           <section className="rounded-lg border border-gray-200 bg-white p-5 xl:col-span-2">
-            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Truck className="h-4 w-4" /> Shipping Countries</h2>
-            <p className="mt-1 text-sm text-gray-500">Countries shown in checkout. Each country can have multiple paid shipping plans.</p>
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Truck className="h-4 w-4" /> Shipping Zones</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Plan zones only — use <span className="font-semibold">IN</span> for India and <span className="font-semibold">XX</span> for all international orders.
+              Checkout address countries/states/cities come from the full country list.
+            </p>
             <form
               onSubmit={(event) => { event.preventDefault(); void saveCommerce('shipping_country', countryForm); }}
               className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
@@ -438,7 +447,9 @@ export default function SettingsPage() {
                   <Truck className="h-4 w-4" /> Shipping Plans
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {editingShippingId ? 'Update pricing, delivery days, or label for this plan.' : 'Add a new paid shipping plan for a country.'}
+                  {editingShippingId
+                    ? 'Update cost, order-value band, or label for this plan.'
+                    : 'Add a paid plan for India (IN) or International (XX), with optional min/max order value.'}
                 </p>
               </div>
               {editingShippingId ? (
@@ -480,7 +491,7 @@ export default function SettingsPage() {
                 className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
               >
                 {shippingCountries.map((country) => (
-                  <option key={country.code} value={country.code}>{country.name}</option>
+                  <option key={country.code} value={country.code}>{country.name} ({country.code})</option>
                 ))}
               </select>
               <input
@@ -491,6 +502,24 @@ export default function SettingsPage() {
                 value={shippingForm.cost}
                 onChange={(e) => setShippingForm((p) => ({ ...p, cost: e.target.value }))}
                 placeholder="Cost (INR)"
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={shippingForm.min_order_amount}
+                onChange={(e) => setShippingForm((p) => ({ ...p, min_order_amount: e.target.value }))}
+                placeholder="Min order value (INR)"
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={shippingForm.max_order_amount}
+                onChange={(e) => setShippingForm((p) => ({ ...p, max_order_amount: e.target.value }))}
+                placeholder="Max order value (INR)"
                 className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
               />
               <input
@@ -574,6 +603,9 @@ export default function SettingsPage() {
                                   <span className="font-mono">{method.id}</span>
                                   {' · '}
                                   ₹{method.cost.toLocaleString('en-IN')}
+                                  {method.min_order_amount != null || method.max_order_amount != null
+                                    ? ` · order ₹${method.min_order_amount != null ? method.min_order_amount.toLocaleString('en-IN') : '0'}–${method.max_order_amount != null ? method.max_order_amount.toLocaleString('en-IN') : '∞'}`
+                                    : ''}
                                   {method.estimated_days_min != null && method.estimated_days_max != null
                                     ? ` · ${method.estimated_days_min}–${method.estimated_days_max} days`
                                     : ''}

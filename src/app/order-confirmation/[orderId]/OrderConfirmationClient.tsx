@@ -265,9 +265,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--pvg-muted)]">Shipping</span>
-              <span className={order.shipping_cost === 0 ? 'text-green-600' : ''}>
-                {order.shipping_cost === 0 ? 'FREE' : formatPrice(order.shipping_cost)}
-              </span>
+              <span>{formatPrice(order.shipping_cost)}</span>
             </div>
             {order.gst_amount > 0 && (
               <div className="flex justify-between">

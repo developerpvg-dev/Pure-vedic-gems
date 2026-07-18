@@ -1,5 +1,6 @@
 import type { ProductFilters } from '@/lib/types/product';
 import { applyProductTextSearch } from '@/lib/shop/product-search';
+import { originFilterClauses } from '@/lib/utils/origin';
 import {
   isCanonicalQualityTier,
   qualityTierFilterLabels,
@@ -44,7 +45,12 @@ export function applyShopProductFilters<T extends SortableQuery>(
   if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat) as T;
   if (filters.min_ratti !== undefined) query = query.gte('ratti_weight', filters.min_ratti) as T;
   if (filters.max_ratti !== undefined) query = query.lte('ratti_weight', filters.max_ratti) as T;
-  if (filters.origin) query = query.eq('origin', filters.origin) as T;
+  if (filters.origin) {
+    const clauses = originFilterClauses(filters.origin);
+    query = (clauses.length === 1
+      ? query.eq('origin', filters.origin)
+      : query.or(clauses.join(','))) as T;
+  }
   if (filters.shape) query = query.eq('shape', filters.shape) as T;
   if (filters.planet) query = query.eq('planet', filters.planet) as T;
   if (filters.certification) query = query.eq('certification', filters.certification) as T;

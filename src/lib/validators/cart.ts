@@ -12,7 +12,7 @@ export const CartItemInputSchema = z.object({
   category: z.string().max(100).optional().default(''),
   image_url: z.string().max(2000).optional().default(''),
   price: z.number().min(0).optional().default(0),
-  quantity: z.number().int().min(1).max(99),
+  quantity: z.number().int().min(1).max(1),
   stock_quantity: z.number().int().min(0).nullable().optional(),
   stock_status: z.string().max(40).nullable().optional(),
   availability_status: z.string().max(40).nullable().optional(),
@@ -44,7 +44,7 @@ export const CartEventSchema = z.object({
 });
 
 export const CartUpdateSchema = z.object({
-  quantity: z.number().int().min(0).max(99),
+  quantity: z.number().int().min(0).max(1),
 });
 
 export type CartItemInput = z.infer<typeof CartItemInputSchema>;

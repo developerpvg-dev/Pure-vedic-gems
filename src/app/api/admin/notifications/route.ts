@@ -4,7 +4,7 @@ import { requireAdminAccess } from '@/lib/admin/api';
 import { NOTIFICATION_TEMPLATE_LIBRARY } from '@/lib/constants/notification-templates';
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminAccess('leads.read');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth) return auth.error;
 
   const { searchParams } = request.nextUrl;

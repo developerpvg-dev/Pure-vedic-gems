@@ -116,11 +116,12 @@ CREATE TABLE IF NOT EXISTS shipping_methods (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ponytail: no free-shipping thresholds — every plan is a paid rate
 INSERT INTO shipping_methods (id, label, description, cost, free_above, estimated_days_min, estimated_days_max, sort_order)
 VALUES
-  ('standard', 'Standard Delivery (5-7 days)', 'Insured domestic delivery across India.', 0, 50000, 5, 7, 10),
-  ('express', 'Express Delivery (2-3 days)', 'Priority insured dispatch for eligible pincodes.', 250, NULL, 2, 3, 20),
-  ('same_day', 'Same Day (Delhi NCR only)', 'Same-day hand delivery after manual availability confirmation.', 500, NULL, 0, 1, 30)
+  ('standard', 'Standard Delivery (5-7 days)', 'Insured domestic delivery across India.', 250, NULL, 5, 7, 10),
+  ('express', 'Express Delivery (2-3 days)', 'Priority insured dispatch for eligible pincodes.', 500, NULL, 2, 3, 20),
+  ('same_day', 'Same Day (Delhi NCR only)', 'Same-day hand delivery after manual availability confirmation.', 750, NULL, 0, 1, 30)
 ON CONFLICT (id) DO UPDATE SET
   label = EXCLUDED.label,
   description = EXCLUDED.description,

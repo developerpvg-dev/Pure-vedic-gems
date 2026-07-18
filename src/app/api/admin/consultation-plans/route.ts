@@ -5,7 +5,7 @@ import { consultationPlanSchema } from '@/lib/validators/consultation';
 import type { ConsultationPlanInsert, Json } from '@/lib/types/database';
 
 export async function GET() {
-  const auth = await requireAdminAccess('leads.read');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth && auth.error) return auth.error;
 
   const admin = createAdminClient();
@@ -24,7 +24,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminAccess('leads.write');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth && auth.error) return auth.error;
 
   let body: unknown;

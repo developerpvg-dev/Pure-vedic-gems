@@ -40,6 +40,7 @@ interface Order {
   status: string;
   payment_status: string;
   payment_method: string | null;
+  return_status?: string | null;
   created_at: string;
   items: unknown;
   customer_display?: {
@@ -122,6 +123,7 @@ function readInitialFilters(): AdminOrderFilterState {
     payment_method: params.get('payment_method') ?? '',
     include_energization: params.get('include_energization') ?? '',
     refund_status: params.get('refund_status') ?? '',
+    return_status: params.get('return_status') ?? '',
     invoice_status: params.get('invoice_status') ?? '',
     customer_type: params.get('customer_type') ?? '',
     sort_by: params.get('sort_by') ?? 'created_at',
@@ -430,9 +432,16 @@ export default function AdminOrdersPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}`}>
-                          {label(order.status)}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                            {label(order.status)}
+                          </span>
+                          {order.return_status && order.return_status !== 'none' ? (
+                            <span className="inline-block whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                              Return: {label(order.return_status)}
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <span className={`text-xs font-semibold ${PAYMENT_STATUS_COLORS[order.payment_status] || 'text-gray-600'}`}>

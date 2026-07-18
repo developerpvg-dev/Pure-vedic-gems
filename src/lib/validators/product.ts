@@ -298,9 +298,10 @@ const productBaseSchema = z.object({
     in_stock: z.coerce.boolean().default(true),
     stock_status: z.enum(STOCK_STATUSES).default('in_stock'),
     availability_status: z.enum(AVAILABILITY_STATUSES).default('in_stock'),
-    stock_quantity: z.coerce.number().int().min(0).default(1),
-    low_stock_threshold: z.coerce.number().int().min(0).default(2),
-    sold_individually: z.coerce.boolean().default(false),
+    // ponytail: each piece is unique — stock is only 0 or 1
+    stock_quantity: z.coerce.number().int().min(0).max(1).default(1),
+    low_stock_threshold: z.coerce.number().int().min(0).default(1),
+    sold_individually: z.coerce.boolean().default(true),
     backorders_allowed: z.coerce.boolean().default(false),
     manual_reserve_enabled: z.coerce.boolean().default(false),
     reserved_quantity: z.coerce.number().int().min(0).default(0),

@@ -39,6 +39,7 @@ export type AdminOrderFilterState = {
   payment_method: string;
   include_energization: string;
   refund_status: string;
+  return_status: string;
   invoice_status: string;
   customer_type: string;
   sort_by: string;
@@ -57,6 +58,7 @@ export const EMPTY_ADMIN_ORDER_FILTERS: AdminOrderFilterState = {
   payment_method: '',
   include_energization: '',
   refund_status: '',
+  return_status: '',
   invoice_status: '',
   customer_type: '',
   sort_by: 'created_at',
@@ -131,6 +133,7 @@ export function applyAdminOrderFilters(
     payment_method?: string | null;
     include_energization?: string | null;
     refund_status?: string | null;
+    return_status?: string | null;
     invoice_status?: string | null;
     customer_type?: string | null;
     matchedProfileIds?: string[];
@@ -142,6 +145,7 @@ export function applyAdminOrderFilters(
   if (filters.payment_status) nextQuery = nextQuery.eq('payment_status', filters.payment_status);
   if (filters.payment_method) nextQuery = nextQuery.eq('payment_method', filters.payment_method);
   if (filters.refund_status) nextQuery = nextQuery.eq('refund_status', filters.refund_status);
+  if (filters.return_status) nextQuery = nextQuery.eq('return_status', filters.return_status);
   if (filters.invoice_status) nextQuery = nextQuery.eq('invoice_status', filters.invoice_status);
 
   const energization = parseOptionalBoolean(filters.include_energization ?? undefined);
@@ -190,6 +194,7 @@ export function adminOrderFiltersToParams(filters: AdminOrderFilterState, page: 
     ['payment_method', filters.payment_method],
     ['include_energization', filters.include_energization],
     ['refund_status', filters.refund_status],
+    ['return_status', filters.return_status],
     ['invoice_status', filters.invoice_status],
     ['customer_type', filters.customer_type],
     ['sort_by', filters.sort_by],

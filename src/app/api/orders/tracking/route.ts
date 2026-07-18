@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { enrichOrderItemsWithImages, parseOrderItems } from '@/lib/customer/orders';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -16,10 +17,47 @@ const TRACKING_DENIED = {
   error: 'Tracking access could not be verified. Check your order number and the email or phone used at checkout.',
 };
 
+const ORDER_SELECT = [
+  'id',
+  'order_number',
+  'customer_id',
+  'guest_email',
+  'guest_phone',
+  'guest_access_token',
+  'status',
+  'payment_status',
+  'created_at',
+  'total',
+  'subtotal',
+  'jewelry_charges',
+  'metal_charges',
+  'certification_charges',
+  'energization_charges',
+  'shipping_cost',
+  'discount',
+  'coupon_code',
+  'coupon_discount',
+  'reward_discount',
+  'reward_points_redeemed',
+  'gst_amount',
+  'shipping_method',
+  'shipping_address',
+  'special_instructions',
+  'include_energization',
+  'energization_type',
+  'record_ceremony',
+  'assigned_designer_id',
+  'design_completed_at',
+  'tracking_number',
+  'tracking_url',
+  'carrier',
+  'product_video_url',
+  'puja_video_url',
+  'estimated_delivery',
+  'items',
+].join(', ');
+
 export async function POST(request: NextRequest) {
-  // ── Rate limiting: 10 tracking lookups per minute per IP ──────────────
-  // Prevents brute-forcing the email/phone verification field against a known
-  // order number.
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   if (!rateLimit(`track:${ip}`, 10, 60 * 1000)) {
@@ -29,7 +67,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json().catch(() => null) as { order_number?: string; email?: string; phone?: string; contact?: string; token?: string } | null;
+  const body = await request.json().catch(() => null) as {
+    order_number?: string;
+    email?: string;
+    phone?: string;
+    contact?: string;
+    token?: string;
+  } | null;
   const orderNumber = body?.order_number?.trim();
   if (!orderNumber) return NextResponse.json({ error: 'order_number is required' }, { status: 400 });
   const contact = body?.contact?.trim();
@@ -47,7 +91,7 @@ export async function POST(request: NextRequest) {
   const db = asUntypedSupabase(admin);
   const { data: orderRaw, error } = await db
     .from('orders')
-    .select('id, order_number, customer_id, guest_email, guest_phone, guest_access_token, status, payment_status, assigned_designer_id, design_completed_at, tracking_number, tracking_url, carrier, product_video_url, puja_video_url, estimated_delivery, created_at, items, include_energization, certification_charges, energization_charges, record_ceremony')
+    .select(ORDER_SELECT)
     .eq('order_number', orderNumber)
     .single();
 
@@ -59,27 +103,44 @@ export async function POST(request: NextRequest) {
     guest_phone: string | null;
     guest_access_token: string | null;
     status: string;
-    payment_status?: string | null;
-    assigned_designer_id?: string | null;
-    design_completed_at?: string | null;
+    payment_status: string | null;
+    created_at: string;
+    total: number;
+    subtotal: number;
+    jewelry_charges: number | null;
+    metal_charges: number | null;
+    certification_charges: number | null;
+    energization_charges: number | null;
+    shipping_cost: number | null;
+    discount: number | null;
+    coupon_code: string | null;
+    coupon_discount: number | null;
+    reward_discount: number | null;
+    reward_points_redeemed: number | null;
+    gst_amount: number | null;
+    shipping_method: string | null;
+    shipping_address: Record<string, string> | null;
+    special_instructions: string | null;
+    include_energization: boolean | null;
+    energization_type: string | null;
+    record_ceremony: boolean | null;
+    assigned_designer_id: string | null;
+    design_completed_at: string | null;
     tracking_number: string | null;
     tracking_url: string | null;
-    carrier?: string | null;
-    product_video_url?: string | null;
-    puja_video_url?: string | null;
+    carrier: string | null;
+    product_video_url: string | null;
+    puja_video_url: string | null;
     estimated_delivery: string | null;
-    created_at: string;
-    items?: unknown;
-    include_energization?: boolean | null;
-    certification_charges?: number | null;
-    energization_charges?: number | null;
-    record_ceremony?: boolean | null;
+    items: unknown;
   };
 
   const order = orderRaw as TrackingOrderRow | null;
 
-  // Return the same payload + status for "not found" as for "access denied".
-  if (error || !order) return NextResponse.json(TRACKING_DENIED, { status: 403 });
+  if (error || !order) {
+    if (error) console.error('[orders/tracking] order lookup failed:', error.message ?? error);
+    return NextResponse.json(TRACKING_DENIED, { status: 403 });
+  }
 
   const normalizedContact = contact?.toLowerCase();
   const normalizedPhoneContact = contact?.replace(/\D/g, '');
@@ -91,7 +152,7 @@ export async function POST(request: NextRequest) {
     (normalizedPhoneContact && order.guest_phone?.replace(/\D/g, '') === normalizedPhoneContact);
   const rawToken = body?.token?.includes('.') ? body.token.split('.').pop() : body?.token;
   const tokenMatches = rawToken && order.guest_access_token && hashToken(rawToken) === order.guest_access_token;
-  const accountMatches = userId && order.customer_id === userId;
+  const accountMatches = Boolean(userId && order.customer_id === userId);
 
   if (!emailMatches && !phoneMatches && !tokenMatches && !accountMatches) {
     return NextResponse.json(TRACKING_DENIED, { status: 403 });
@@ -104,25 +165,44 @@ export async function POST(request: NextRequest) {
     .eq('is_customer_visible', true)
     .order('event_time', { ascending: false });
 
+  const items = await enrichOrderItemsWithImages(parseOrderItems(order.items as never), admin);
+
   return NextResponse.json({
     order: {
+      id: order.id,
       order_number: order.order_number,
       status: order.status,
-      payment_status: order.payment_status ?? null,
-      assigned_designer_id: order.assigned_designer_id ?? null,
-      design_completed_at: order.design_completed_at ?? null,
+      payment_status: order.payment_status,
+      created_at: order.created_at,
+      total: Number(order.total ?? 0),
+      subtotal: Number(order.subtotal ?? 0),
+      jewelry_charges: Number(order.jewelry_charges ?? 0),
+      metal_charges: Number(order.metal_charges ?? 0),
+      certification_charges: Number(order.certification_charges ?? 0),
+      energization_charges: Number(order.energization_charges ?? 0),
+      shipping_cost: Number(order.shipping_cost ?? 0),
+      discount: Number(order.discount ?? 0),
+      coupon_code: order.coupon_code,
+      coupon_discount: Number(order.coupon_discount ?? 0),
+      reward_discount: Number(order.reward_discount ?? 0),
+      reward_points_redeemed: Number(order.reward_points_redeemed ?? 0),
+      gst_amount: Number(order.gst_amount ?? 0),
+      shipping_method: order.shipping_method,
+      shipping_address: order.shipping_address,
+      special_instructions: order.special_instructions,
+      include_energization: Boolean(order.include_energization),
+      energization_type: order.energization_type,
+      record_ceremony: Boolean(order.record_ceremony),
+      assigned_designer_id: order.assigned_designer_id,
+      design_completed_at: order.design_completed_at,
       tracking_number: order.tracking_number,
       tracking_url: order.tracking_url,
-      carrier: order.carrier ?? null,
-      product_video_url: order.product_video_url ?? null,
-      puja_video_url: order.puja_video_url ?? null,
+      carrier: order.carrier,
+      product_video_url: order.product_video_url,
+      puja_video_url: order.puja_video_url,
       estimated_delivery: order.estimated_delivery,
-      created_at: order.created_at,
-      items: order.items ?? [],
-      include_energization: order.include_energization ?? false,
-      certification_charges: order.certification_charges ?? 0,
-      energization_charges: order.energization_charges ?? 0,
-      record_ceremony: order.record_ceremony ?? false,
+      items,
+      can_cancel: accountMatches,
     },
     events: events ?? [],
   });

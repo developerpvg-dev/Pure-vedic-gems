@@ -29,7 +29,7 @@ export function StockManagerAdminLayout({ children }: { children: React.ReactNod
       const res = await fetch('/api/admin/session');
       if (!res.ok) return;
       const data = await res.json().catch(() => ({}));
-      setName(data.name ?? 'Stock Manager');
+      setName(data.name ?? 'Order / Stock Incharge');
     })();
   }, []);
 
@@ -56,8 +56,8 @@ export function StockManagerAdminLayout({ children }: { children: React.ReactNod
         <div className="flex h-full flex-col">
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
             <Link href="/admin/stock" className="leading-tight" onClick={() => setSidebarOpen(false)}>
-              <span className="block text-base font-bold text-gray-950">Stock Manager</span>
-              <span className="block text-xs text-gray-500">Offline ↔ website</span>
+              <span className="block text-base font-bold text-gray-950">Order / Stock Incharge</span>
+              <span className="block text-xs text-gray-500">Offline ↔ website stock</span>
             </Link>
             <div className="flex items-center gap-2">
               <NotificationBell variant="admin" />

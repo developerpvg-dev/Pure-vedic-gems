@@ -7,6 +7,8 @@ import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palet
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
+import { RoleScopedAdminLayout } from '@/components/admin/RoleScopedAdminLayout';
+import { getScopedRoleDashboard } from '@/lib/admin/role-dashboards';
 import { useAuth } from '@/lib/hooks/useAuth';
 
 const NAV_GROUPS = [
@@ -18,6 +20,7 @@ const NAV_GROUPS = [
     label: 'Commerce',
     links: [
       { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, match: 'prefix' as const },
+      { href: '/admin/design-jobs', label: 'Design Jobs', icon: Palette, match: 'prefix' as const },
       { href: '/admin/customers', label: 'Customers', icon: Users, match: 'prefix' as const },
       { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
       { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
@@ -205,6 +208,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  const scopedDash = getScopedRoleDashboard(sessionRole);
+  if (scopedDash) {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+        <RoleScopedAdminLayout config={scopedDash}>{children}</RoleScopedAdminLayout>
+      </Suspense>
+    );
+  }
+
   if (sessionRole === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -245,7 +257,7 @@ function AdminShell({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-gray-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-gray-200 bg-white transition-transform duration-200 print:hidden lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -257,7 +269,7 @@ function AdminShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col lg:ml-64">
-        <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
+        <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 print:hidden lg:hidden">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -271,7 +283,7 @@ function AdminShell({
           </div>
         </div>
 
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 p-4 print:p-0 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

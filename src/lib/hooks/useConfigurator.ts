@@ -558,11 +558,18 @@ export function useConfigurator(
           (!!state.custom_design_url && !!state.custom_design_brief)
         );
       }
-      if (step === 6) {
-        if (state.setting_type === 'loose') return !!state.setting_type;
-        return !!state.metal;
+      if (step === 6 || step === 7) {
+        if (state.setting_type === 'loose') {
+          return step === 6
+            ? true
+            : !!state.selected_lab || state.certification_skipped;
+        }
+        if (!state.metal) return false;
+        // ponytail: ring size is required before leaving metal step (sidebar jump used to skip it)
+        if (state.setting_type === 'ring' && !state.ring_size) return false;
+        if (step === 7) return !!state.selected_lab || state.certification_skipped;
+        return true;
       }
-      if (step === 7) return !!state.selected_lab || state.certification_skipped;
       return false;
     },
     [
@@ -573,6 +580,7 @@ export function useConfigurator(
       state.custom_design_url,
       state.custom_design_brief,
       state.metal,
+      state.ring_size,
       state.selected_lab,
       state.certification_skipped,
     ]
@@ -594,11 +602,7 @@ export function useConfigurator(
         );
       case 5:
         return !!state.metal && (
-          state.setting_type === 'pendant'
-            ? !!state.chain_length
-            : state.setting_type === 'ring'
-              ? !!state.ring_size
-              : true // bracelet — no extra size needed
+          state.setting_type === 'ring' ? !!state.ring_size : true
         );
       case 6:
         return !!state.selected_lab || state.certification_skipped;
@@ -616,7 +620,6 @@ export function useConfigurator(
     state.custom_design_url,
     state.custom_design_brief,
     state.metal,
-    state.chain_length,
     state.ring_size,
     state.selected_lab,
     state.certification_skipped,
@@ -640,11 +643,7 @@ export function useConfigurator(
       hasValidDesign &&
       !!state.metal &&
       hasLab &&
-      (state.setting_type === 'ring'
-        ? !!state.ring_size
-        : state.setting_type === 'pendant'
-          ? !!state.chain_length
-          : true)
+      (state.setting_type === 'ring' ? !!state.ring_size : true)
     );
   }, [
     state.selected_product,
@@ -655,7 +654,6 @@ export function useConfigurator(
     state.custom_design_url,
     state.metal,
     state.ring_size,
-    state.chain_length,
   ]);
 
   const reset = useCallback(() => {

@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminRoutePermission, hasAdminPermission, normalizeAdminRole } from '@/lib/admin/rbac';
+import { getScopedRoleDashboard, isScopedRolePathAllowed } from '@/lib/admin/role-dashboards';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 
 const PROTECTED_CUSTOMER_ROUTES = ['/account'];
@@ -154,6 +155,11 @@ export async function proxy(request: NextRequest) {
       if (!allowed) {
         return NextResponse.redirect(new URL('/admin/stock', request.url));
       }
+    }
+
+    const scopedDash = getScopedRoleDashboard(normalizedRole);
+    if (scopedDash && !isScopedRolePathAllowed(normalizedRole, pathname)) {
+      return NextResponse.redirect(new URL(scopedDash.home, request.url));
     }
 
     const requiredPermission = getAdminRoutePermission(pathname);

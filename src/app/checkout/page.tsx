@@ -238,7 +238,9 @@ export default function CheckoutPage() {
               savedData={shippingData}
               savedMethod={shippingMethod}
               savedPlan={selectedShippingPlan}
+              cartSubtotal={cartSubtotal}
               onComplete={handleShippingComplete}
+              onPlanChange={setSelectedShippingPlan}
               onEdit={() => setCurrentStep('shipping')}
               disabled={!isContactComplete}
             />

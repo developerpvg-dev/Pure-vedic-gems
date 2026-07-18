@@ -5,7 +5,7 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import type { NotificationLog } from '@/lib/types/database';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdminAccess('leads.write');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth) return auth.error;
 
   const { id } = await params;

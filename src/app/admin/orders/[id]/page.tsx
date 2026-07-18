@@ -17,11 +17,8 @@ import { ConfigurationDetailsDisplay } from '@/components/configuration/Configur
 import { resolveOrderFulfillmentContext } from '@/lib/orders/fulfillment-profile';
 import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
-  User, FileText, Hash, Calendar, Tag, ExternalLink,
-  Settings,
+  User, FileText, ExternalLink, Settings,
 } from 'lucide-react';
-
-// ── helpers ────────────────────────────────────────────────────────────────
 
 function fmt(amount: number | null | undefined) {
   const n = amount ?? 0;
@@ -34,53 +31,51 @@ function cap(s: string | null | undefined) {
 }
 
 const METAL_LABELS: Record<string, string> = {
-  gold_22k:   '22K Gold',
-  gold_18k:   '18K Gold',
-  gold_14k:   '14K Gold',
+  gold_22k: '22K Gold',
+  gold_18k: '18K Gold',
+  gold_14k: '14K Gold',
   silver_925: '925 Sterling Silver',
   panchdhatu: 'Panchdhatu (Without Gold)',
   panchdhatu_with_gold: 'Panchdhatu (With Gold)',
-  platinum:   'Platinum',
+  platinum: 'Platinum',
 };
 
 const SETTING_LABELS: Record<string, string> = {
-  ring:     'Ring',
-  pendant:  'Pendant',
+  ring: 'Ring',
+  pendant: 'Pendant',
   bracelet: 'Bracelet',
-  loose:    'Loose (No Setting)',
+  loose: 'Loose (No Setting)',
 };
 
 const ORDER_STATUS_STYLE: Record<string, string> = {
-  pending_payment: 'bg-gray-100 text-gray-700',
-  placed:          'bg-blue-100 text-blue-800',
-  confirmed:       'bg-indigo-100 text-indigo-800',
-  processing:      'bg-yellow-100 text-yellow-800',
-  design_assigned: 'bg-indigo-100 text-indigo-800',
-  design_in_progress: 'bg-indigo-100 text-indigo-800',
-  design_completed: 'bg-indigo-100 text-indigo-800',
-  jewelry_making:  'bg-yellow-100 text-yellow-800',
-  certification:   'bg-cyan-100 text-cyan-800',
-  energization:    'bg-violet-100 text-violet-800',
-  quality_check:   'bg-orange-100 text-orange-800',
-  shipped:         'bg-purple-100 text-purple-800',
-  delivered:       'bg-green-100 text-green-800',
-  cancelled:       'bg-red-100 text-red-800',
-  refunded:        'bg-pink-100 text-pink-800',
-  payment_review:  'bg-red-100 text-red-800',
+  pending_payment: 'bg-stone-100 text-stone-700',
+  placed: 'bg-sky-50 text-sky-800',
+  confirmed: 'bg-indigo-50 text-indigo-800',
+  processing: 'bg-amber-50 text-amber-900',
+  design_assigned: 'bg-violet-50 text-violet-800',
+  design_in_progress: 'bg-violet-50 text-violet-800',
+  design_completed: 'bg-violet-50 text-violet-800',
+  jewelry_making: 'bg-amber-50 text-amber-900',
+  certification: 'bg-cyan-50 text-cyan-800',
+  energization: 'bg-violet-50 text-violet-800',
+  quality_check: 'bg-orange-50 text-orange-800',
+  shipped: 'bg-purple-50 text-purple-800',
+  delivered: 'bg-emerald-50 text-emerald-800',
+  cancelled: 'bg-red-50 text-red-800',
+  refunded: 'bg-rose-50 text-rose-800',
+  payment_review: 'bg-red-50 text-red-800',
 };
 
 const PAYMENT_STATUS_STYLE: Record<string, string> = {
-  pending:    'bg-orange-100 text-orange-800',
-  completed:  'bg-green-100 text-green-800',
-  captured:   'bg-green-100 text-green-800',
-  authorized: 'bg-blue-100 text-blue-800',
-  failed:     'bg-red-100 text-red-800',
-  refunded:   'bg-pink-100 text-pink-800',
-  amount_mismatch: 'bg-red-100 text-red-800',
-  cancelled:  'bg-red-100 text-red-800',
+  pending: 'bg-amber-50 text-amber-900',
+  completed: 'bg-emerald-50 text-emerald-800',
+  captured: 'bg-emerald-50 text-emerald-800',
+  authorized: 'bg-sky-50 text-sky-800',
+  failed: 'bg-red-50 text-red-800',
+  refunded: 'bg-rose-50 text-rose-800',
+  amount_mismatch: 'bg-red-50 text-red-800',
+  cancelled: 'bg-red-50 text-red-800',
 };
-
-// ── types ──────────────────────────────────────────────────────────────────
 
 interface CustomerProfile {
   full_name: string | null;
@@ -121,7 +116,46 @@ interface FullConfig {
   } | null;
 }
 
-// ── page ──────────────────────────────────────────────────────────────────
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400">{label}</dt>
+      <dd className="mt-1 text-sm font-medium text-stone-800">{children}</dd>
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  icon: Icon,
+  children,
+  className = '',
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.04)] ${className}`}>
+      <div className="flex items-center gap-2 border-b border-stone-100 px-5 py-3">
+        <Icon className="h-3.5 w-3.5 text-stone-400" />
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Spec({ label, value, sub }: { label: string; value: string; sub?: string | null }) {
+  return (
+    <div className="rounded-lg border border-stone-100 bg-stone-50/80 px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold text-stone-800">{value}</p>
+      {sub ? <p className="mt-0.5 text-[11px] text-stone-500">{sub}</p> : null}
+    </div>
+  );
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -143,7 +177,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   const o = raw as unknown as OrderRecord;
 
-  // Registered users have null guest_* — fetch profile
   let profile: CustomerProfile | null = null;
   if (o.customer_id && (!o.guest_name || !o.guest_email)) {
     const { data } = await supabase
@@ -154,16 +187,33 @@ export default async function OrderDetailPage({ params }: PageProps) {
     profile = data as CustomerProfile | null;
   }
 
-  const displayName  = o.guest_name  || profile?.full_name  || null;
-  const displayEmail = o.guest_email || profile?.email      || null;
-  const displayPhone = o.guest_phone || profile?.phone      || null;
+  const displayName = o.guest_name || profile?.full_name || null;
+  const displayEmail = o.guest_email || profile?.email || null;
+  const displayPhone = o.guest_phone || profile?.phone || null;
 
   const orderExtras = o as OrderRecord & {
     assigned_designer_id?: string | null;
     design_routed_at?: string | null;
+    designer_name?: string | null;
+    design_price?: number | null;
+    design_due_at?: string | null;
+    design_slip_notes?: string | null;
+    carrier?: string | null;
+    delivery_status?: string | null;
+    shipped_at?: string | null;
+    product_video_url?: string | null;
+    puja_video_url?: string | null;
+    design_completed_at?: string | null;
+    products_marked_sold_at?: string | null;
+    return_status?: string | null;
+    payment_failure_reason?: string | null;
+    compliance_flags?: unknown;
+    internal_notes?: string | null;
+    admin_notes?: string | null;
   };
-  let assignedDesignerName: string | null = null;
-  if (orderExtras.assigned_designer_id) {
+
+  let assignedDesignerName: string | null = orderExtras.designer_name ?? null;
+  if (!assignedDesignerName && orderExtras.assigned_designer_id) {
     const { data: designer } = await supabase
       .from('team_members')
       .select('name')
@@ -172,7 +222,14 @@ export default async function OrderDetailPage({ params }: PageProps) {
     assignedDesignerName = designer?.name ?? null;
   }
 
-  const addr  = o.shipping_address ?? {};
+  const addr = (o.shipping_address ?? {}) as {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    country?: string;
+  };
   const items: OrderItemRecord[] = Array.isArray(o.items) ? o.items : [];
   const fulfillmentContext = resolveOrderFulfillmentContext({
     items: items.map((item) => ({
@@ -186,11 +243,12 @@ export default async function OrderDetailPage({ params }: PageProps) {
     energizationCharges: o.energization_charges ?? 0,
   });
   const rewardDiscount = Number(o.reward_discount ?? 0);
-  const couponDiscount = Number(o.coupon_discount ?? Math.max(0, Number(o.discount ?? 0) - rewardDiscount));
+  const couponDiscount = Number(
+    o.coupon_discount ?? Math.max(0, Number(o.discount ?? 0) - rewardDiscount),
+  );
 
-  // Fetch full configurations for all items that have a configuration_id
   const configIds = items
-    .map(i => i.configuration_id)
+    .map((i) => i.configuration_id)
     .filter((cid): cid is string => !!cid);
 
   const configMap = new Map<string, FullConfig>();
@@ -227,116 +285,164 @@ export default async function OrderDetailPage({ params }: PageProps) {
   }
 
   const pricingLines: Array<{ label: string; value: number; sign: number }> = [
-    { label: 'Subtotal',              value: o.subtotal,              sign: 1  },
-    { label: 'Jewelry Charges',       value: o.jewelry_charges,       sign: 1  },
-    { label: 'Metal Charges',         value: o.metal_charges,         sign: 1  },
-    { label: 'Certification Charges', value: o.certification_charges, sign: 1  },
-    { label: 'Energization Charges',  value: o.energization_charges,  sign: 1  },
-    { label: 'Shipping',              value: o.shipping_cost,         sign: 1  },
-    { label: 'GST (3%)',              value: o.gst_amount,            sign: 1  },
+    { label: 'Subtotal', value: o.subtotal, sign: 1 },
+    { label: 'Jewelry charges', value: o.jewelry_charges, sign: 1 },
+    { label: 'Metal charges', value: o.metal_charges, sign: 1 },
+    { label: 'Certification', value: o.certification_charges, sign: 1 },
+    { label: 'Energization', value: o.energization_charges, sign: 1 },
+    { label: 'Shipping', value: o.shipping_cost, sign: 1 },
+    { label: 'GST (3%)', value: o.gst_amount, sign: 1 },
     {
-      label: o.coupon_code ? `Coupon (${o.coupon_code})` : 'Coupon Discount',
+      label: o.coupon_code ? `Coupon (${o.coupon_code})` : 'Coupon discount',
       value: couponDiscount,
       sign: -1,
     },
     {
-      label: `Reward Points (${Number(o.reward_points_redeemed ?? 0).toLocaleString('en-IN')} pts)`,
+      label: `Rewards (${Number(o.reward_points_redeemed ?? 0).toLocaleString('en-IN')} pts)`,
       value: rewardDiscount,
       sign: -1,
     },
-  ].filter(l => (l.value ?? 0) !== 0);
+  ].filter((l) => (l.value ?? 0) !== 0);
+
+  const slipItems = items.map((item) => {
+    const cfg = item.configuration_id ? configMap.get(item.configuration_id) : null;
+    const snap = (item.configuration_snapshot ?? cfg?.configuration_snapshot) as
+      | { setting_type?: string; metal?: string; ring_size?: string; chain_length?: string }
+      | null;
+    const metalKey = cfg?.metal || snap?.metal || null;
+    const settingKey = cfg?.setting_type || snap?.setting_type || null;
+    return {
+      name: item.name,
+      setting: settingKey
+        ? SETTING_LABELS[settingKey] || settingKey.replace(/_/g, ' ')
+        : null,
+      metal: metalKey ? METAL_LABELS[metalKey] || metalKey.replace(/_/g, ' ') : null,
+      ring_size: cfg?.ring_size || snap?.ring_size || null,
+      chain_length: cfg?.chain_length || snap?.chain_length || null,
+      design_name: cfg?.jewelry_designs?.name || null,
+      summary: item.configuration_summary || null,
+      carat: item.carat_weight != null ? `${item.carat_weight} ct` : null,
+      sku: item.sku || item.tag_number || null,
+    };
+  });
+
+  const returnStatus = orderExtras.return_status;
+  const placedOn = new Date(o.created_at).toLocaleString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-5 sm:px-6 print:px-0">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/orders"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--pvg-border)] bg-white text-[var(--pvg-muted)] transition hover:bg-brand-surface hover:text-[var(--pvg-primary)]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-[var(--pvg-primary)] sm:text-3xl">
-              Order #{o.order_number}
-            </h1>
-            <p className="mt-0.5 flex items-center gap-1.5 text-sm text-[var(--pvg-muted)]">
-              <Calendar className="h-3.5 w-3.5" />
-              {new Date(o.created_at).toLocaleString('en-IN', {
-                year: 'numeric', month: 'long', day: 'numeric',
-                hour: '2-digit', minute: '2-digit',
-              })}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${ORDER_STATUS_STYLE[o.status] ?? 'bg-gray-100 text-gray-700'}`}>
-            {cap(o.status) ?? o.status}
-          </span>
-          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-gray-100 text-gray-700'}`}>
-            Payment: {cap(o.payment_status) ?? o.payment_status}
-          </span>
-          {o.invoice_url && (
-            <a
-              href={o.invoice_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--pvg-border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--pvg-primary)] transition hover:bg-brand-gold-light"
+      <header className="rounded-2xl border border-stone-200/90 bg-white p-4 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <Link
+              href="/admin/orders"
+              className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-stone-200 text-stone-500 transition hover:border-stone-300 hover:bg-stone-50 hover:text-stone-800"
+              aria-label="Back to orders"
             >
-              <FileText className="h-3.5 w-3.5" />
-              Invoice
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'Grand Total',     value: fmt(o.total),             icon: CreditCard },
-          { label: 'Items Ordered',   value: `${items.length} item${items.length !== 1 ? 's' : ''}`, icon: Package },
-          { label: 'Payment Method',  value: cap(o.payment_method) ?? 'N/A', icon: Hash },
-          { label: 'Shipping Method', value: cap(o.shipping_method) ?? 'Standard', icon: Truck },
-        ].map(s => (
-          <div key={s.label} className="rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-4">
-            <div className="flex items-center gap-2 text-[var(--pvg-muted)]">
-              <s.icon className="h-4 w-4" />
-              <p className="text-xs font-medium uppercase tracking-wide">{s.label}</p>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+                Order detail
+              </p>
+              <h1 className="mt-0.5 truncate font-heading text-2xl font-bold tracking-tight text-stone-900 sm:text-[1.75rem]">
+                #{o.order_number}
+              </h1>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-stone-500">
+                <span>{placedOn}</span>
+                {displayName ? (
+                  <>
+                    <span className="text-stone-300">·</span>
+                    <span className="font-medium text-stone-700">{displayName}</span>
+                  </>
+                ) : null}
+                {displayPhone ? (
+                  <>
+                    <span className="text-stone-300">·</span>
+                    <span>{displayPhone}</span>
+                  </>
+                ) : null}
+              </p>
             </div>
-            <p className="mt-2 text-xl font-bold text-[var(--pvg-primary)]">{s.value}</p>
           </div>
-        ))}
-      </div>
 
-      {/* Main 2-column Layout */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_STYLE[o.status] ?? 'bg-stone-100 text-stone-700'}`}
+            >
+              {cap(o.status) ?? o.status}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'}`}
+            >
+              {cap(o.payment_status) ?? o.payment_status}
+            </span>
+            {returnStatus && returnStatus !== 'none' ? (
+              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                Return: {cap(returnStatus)}
+              </span>
+            ) : null}
+            {o.invoice_url ? (
+              <a
+                href={o.invoice_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
+              >
+                <FileText className="h-3 w-3" />
+                Invoice
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ) : null}
+          </div>
+        </div>
 
-        {/* ── LEFT COLUMN ── */}
-        <div className="space-y-6">
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-4">
+          <Field label="Total">{fmt(o.total)}</Field>
+          <Field label="Items">
+            {items.length} piece{items.length === 1 ? '' : 's'}
+          </Field>
+          <Field label="Payment">{cap(o.payment_method) ?? '—'}</Field>
+          <Field label="Shipping">{cap(o.shipping_method) ?? 'Standard'}</Field>
+        </div>
+      </header>
 
-          {/* Order Items */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
-              <Package className="h-4 w-4 text-[var(--pvg-primary)]" />
-              <h2 className="font-semibold text-[var(--pvg-primary)]">Order Items ({items.length})</h2>
-            </div>
+      {o.status === 'cancelled' ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+          <p className="font-semibold">This order is cancelled</p>
+          <p className="mt-1 text-red-800/90">
+            {orderExtras.payment_failure_reason
+              ? `Reason: ${orderExtras.payment_failure_reason}. `
+              : ''}
+            Use Manual Refund in the sidebar if payment was captured.
+          </p>
+        </div>
+      ) : null}
 
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Main */}
+        <div className="space-y-5">
+          <Panel title={`Items (${items.length})`} icon={Package}>
             {items.length === 0 ? (
-              <p className="p-6 text-center text-sm text-[var(--pvg-muted)]">No items found</p>
+              <p className="px-5 py-10 text-center text-sm text-stone-400">No items on this order</p>
             ) : (
-              <div className="divide-y divide-[var(--pvg-border)]">
-                {items.map((item: OrderItemRecord, idx: number) => {
+              <ul className="divide-y divide-stone-100">
+                {items.map((item, idx) => {
                   const cfg = item.configuration_id ? configMap.get(item.configuration_id) : null;
-                  const details: ConfigurationSnapshot | null = cfg || item.configuration_snapshot
-                    ? mergeConfigurationDetails({
-                        snapshot: item.configuration_snapshot ?? cfg?.configuration_snapshot,
-                        dbConfig: cfg,
-                      })
-                    : null;
+                  const details: ConfigurationSnapshot | null =
+                    cfg || item.configuration_snapshot
+                      ? mergeConfigurationDetails({
+                          snapshot: item.configuration_snapshot ?? cfg?.configuration_snapshot,
+                          dbConfig: cfg,
+                        })
+                      : null;
                   const selections = details?.selections;
                   const pricing = details?.pricing;
                   const designImage =
@@ -344,18 +450,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
                   const designName =
                     selections?.design?.name ?? cfg?.jewelry_designs?.name ?? null;
                   const rudrakshaConfig = isRudrakshaConfigurationSnapshot(
-                    item.configuration_snapshot ?? cfg?.configuration_snapshot
+                    item.configuration_snapshot ?? cfg?.configuration_snapshot,
                   );
                   const rudrakshaBeads = parseRudrakshaBeadsFromSnapshot(
-                    item.configuration_snapshot ?? cfg?.configuration_snapshot
+                    item.configuration_snapshot ?? cfg?.configuration_snapshot,
                   );
 
                   return (
-                    <div key={idx} className="p-4 sm:p-5">
-                      {/* Top row: image + name + price */}
+                    <li key={idx} className="p-5">
                       <div className="flex gap-4">
-                        {item.image_url && (
-                          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-[var(--pvg-border)] bg-brand-bg-alt">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
+                          {item.image_url ? (
                             <Image
                               src={item.image_url}
                               alt={item.name}
@@ -363,340 +468,474 @@ export default async function OrderDetailPage({ params }: PageProps) {
                               className="object-cover"
                               sizes="64px"
                             />
-                          </div>
-                        )}
-                        <div className="flex flex-1 flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="font-semibold text-[var(--pvg-text)]">{item.name}</p>
-                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--pvg-muted)]">
-                              {item.sku          && <span>SKU: <span className="font-medium">{item.sku}</span></span>}
-                              {item.tag_number   && <span>Tag: <span className="font-medium text-amber-800">{item.tag_number}</span></span>}
-                              {item.category     && <span>Category: <span className="font-medium">{item.category}</span></span>}
-                              {item.carat_weight && <span>Weight: <span className="font-medium">{item.carat_weight} ct</span></span>}
-                              {item.origin       && <span>Origin: <span className="font-medium">{item.origin}</span></span>}
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-stone-300">
+                              <Package className="h-5 w-5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-stone-900">{item.name}</p>
+                              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-stone-500">
+                                {item.sku ? <span>SKU {item.sku}</span> : null}
+                                {item.tag_number ? (
+                                  <span className="font-medium text-amber-800">Tag {item.tag_number}</span>
+                                ) : null}
+                                {item.category ? <span>{item.category}</span> : null}
+                                {item.carat_weight ? <span>{item.carat_weight} ct</span> : null}
+                                {item.origin ? <span>{item.origin}</span> : null}
+                              </div>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="font-semibold tabular-nums text-stone-900">
+                                {fmt(item.line_total)}
+                              </p>
+                              <p className="text-xs text-stone-400">
+                                {fmt(item.unit_price)} × {item.quantity}
+                              </p>
                             </div>
                           </div>
-                          <div className="flex-shrink-0 text-right">
-                            <p className="font-bold text-[var(--pvg-text)]">{fmt(item.line_total)}</p>
-                            <p className="text-xs text-[var(--pvg-muted)]">
-                              {fmt(item.unit_price)} x {item.quantity}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Full Configurator Details */}
-                      {details ? (
-                        <div className="mt-4 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden">
-                          {/* Config header */}
-                          <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-4 py-2.5">
-                            <Settings className="h-3.5 w-3.5 text-amber-700" />
-                            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">
-                              {rudrakshaConfig ? 'Rudraksha Pendant Configuration' : 'Jewelry Configuration'}
-                            </p>
-                            {selections?.setting_type && (
-                              <span className="ml-auto rounded-full bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                                {SETTING_LABELS[selections.setting_type] ?? cap(selections.setting_type)}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="p-4 space-y-4">
-                            {details.summary && (
-                              <p className="text-xs text-amber-900/80">{details.summary}</p>
-                            )}
-
-                            {rudrakshaBeads.length > 0 && (
-                              <div>
-                                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                                  Rudraksha Beads ({rudrakshaBeads.length})
+                          {details ? (
+                            <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
+                              <div className="mb-3 flex items-center gap-2">
+                                <Settings className="h-3.5 w-3.5 text-stone-400" />
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+                                  {rudrakshaConfig
+                                    ? 'Rudraksha configuration'
+                                    : 'Jewelry configuration'}
                                 </p>
-                                <ul className="divide-y divide-amber-100 rounded-lg border border-amber-100 bg-white/80">
+                                {selections?.setting_type ? (
+                                  <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-stone-600 ring-1 ring-stone-200">
+                                    {SETTING_LABELS[selections.setting_type] ??
+                                      cap(selections.setting_type)}
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {details.summary ? (
+                                <p className="mb-3 text-xs leading-relaxed text-stone-600">
+                                  {details.summary}
+                                </p>
+                              ) : null}
+
+                              {rudrakshaBeads.length > 0 ? (
+                                <ul className="mb-3 divide-y divide-stone-100 overflow-hidden rounded-lg border border-stone-200 bg-white">
                                   {rudrakshaBeads.map((bead) => (
                                     <li
                                       key={bead.id}
                                       className="flex flex-wrap items-start justify-between gap-2 px-3 py-2 text-xs"
                                     >
                                       <div>
-                                        <p className="font-semibold text-[var(--pvg-text)]">
-                                          <span className="text-amber-700">
+                                        <p className="font-semibold text-stone-800">
+                                          <span className="text-stone-400">
                                             {bead.role === 'primary' ? 'Primary' : 'Combo'} ·{' '}
                                           </span>
                                           {bead.mukhi_label} — {bead.name}
                                         </p>
-                                        <p className="mt-0.5 text-[10px] text-[var(--pvg-muted)]">
-                                          {bead.sku ? `SKU: ${bead.sku}` : null}
-                                          {bead.sku && bead.tag_number ? ' · ' : null}
-                                          {bead.tag_number ? `Tag: ${bead.tag_number}` : null}
+                                        <p className="mt-0.5 text-[10px] text-stone-400">
+                                          {[
+                                            bead.sku ? `SKU ${bead.sku}` : null,
+                                            bead.tag_number ? `Tag ${bead.tag_number}` : null,
+                                          ]
+                                            .filter(Boolean)
+                                            .join(' · ')}
                                         </p>
                                       </div>
                                       {bead.price > 0 ? (
-                                        <span className="font-semibold">{fmt(bead.price)}</span>
+                                        <span className="font-semibold tabular-nums">
+                                          {fmt(bead.price)}
+                                        </span>
                                       ) : null}
                                     </li>
                                   ))}
                                 </ul>
-                              </div>
-                            )}
+                              ) : null}
 
-                            {/* Design info */}
-                            {(designName || selections?.custom_design_url) && (
-                              <div className="flex items-start gap-3">
-                                {designImage && (
-                                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-amber-200 bg-white">
-                                    <Image
-                                      src={designImage}
-                                      alt={designName ?? 'Design'}
-                                      fill
-                                      className="object-cover"
-                                      sizes="56px"
-                                    />
-                                  </div>
-                                )}
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Design</p>
-                                  {designName ? (
-                                    <p className="mt-0.5 font-semibold text-[var(--pvg-text)]">{designName}</p>
+                              {(designName || selections?.custom_design_url) && (
+                                <div className="mb-3 flex items-start gap-3">
+                                  {designImage ? (
+                                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white">
+                                      <Image
+                                        src={designImage}
+                                        alt={designName ?? 'Design'}
+                                        fill
+                                        className="object-cover"
+                                        sizes="48px"
+                                      />
+                                    </div>
                                   ) : null}
-                                  {cfg?.jewelry_designs?.setting_type && (
-                                    <p className="text-xs text-[var(--pvg-muted)]">
-                                      {SETTING_LABELS[cfg.jewelry_designs.setting_type] ?? cap(cfg.jewelry_designs.setting_type)}
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                                      Design
                                     </p>
-                                  )}
-                                  {cfg?.jewelry_designs?.description && (
-                                    <p className="mt-0.5 text-xs text-[var(--pvg-muted)] line-clamp-2">{cfg.jewelry_designs.description}</p>
-                                  )}
-                                  {selections?.custom_design_url && (
-                                    <a
-                                      href={selections.custom_design_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-800 hover:underline"
-                                    >
-                                      Custom design file
-                                      <ExternalLink className="h-3 w-3" />
-                                    </a>
-                                  )}
-                                  {pricing?.design_note && (
-                                    <p className="mt-1 text-xs text-[var(--pvg-muted)]">{pricing.design_note}</p>
-                                  )}
+                                    {designName ? (
+                                      <p className="font-semibold text-stone-800">{designName}</p>
+                                    ) : null}
+                                    {selections?.custom_design_url ? (
+                                      <a
+                                        href={selections.custom_design_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-stone-600 underline-offset-2 hover:underline"
+                                      >
+                                        Custom design file
+                                        <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    ) : null}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
 
-                            {/* Key specs grid */}
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                              {selections?.metal && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Metal</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {METAL_LABELS[selections.metal] ?? cap(selections.metal)}
-                                  </p>
-                                </div>
-                              )}
-                              {selections?.ring_size && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Ring Size</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{selections.ring_size}</p>
-                                </div>
-                              )}
-                              {selections?.chain_length && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Chain Length</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{selections.chain_length}</p>
-                                </div>
-                              )}
-                              {selections?.certification && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Certification</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {selections.certification.name}
-                                  </p>
-                                  {cfg?.certification_labs?.full_name && (
-                                    <p className="text-[10px] text-[var(--pvg-muted)]">{cfg.certification_labs.full_name}</p>
-                                  )}
-                                </div>
-                              )}
-                              {selections?.certification_skipped && !selections?.certification && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Certification</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">Skipped</p>
-                                </div>
-                              )}
-                              {selections?.energization && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100 sm:col-span-2">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Energization / Pooja</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {selections.energization.name}
-                                  </p>
-                                  {cfg?.energization_options?.duration && (
-                                    <p className="text-[10px] text-[var(--pvg-muted)]">Duration: {cfg.energization_options.duration}</p>
-                                  )}
-                                  {cfg?.energization_options?.description && (
-                                    <p className="text-[10px] text-[var(--pvg-muted)] line-clamp-2">{cfg.energization_options.description}</p>
-                                  )}
-                                </div>
-                              )}
-                              {details.delivery_eta?.label && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100 sm:col-span-2">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Delivery ETA</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">
-                                    {details.delivery_eta.label}
-                                  </p>
-                                </div>
-                              )}
-                              {item.delivery_eta_label && !details.delivery_eta?.label && (
-                                <div className="rounded-lg bg-white/70 px-3 py-2.5 border border-amber-100 sm:col-span-2">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">Delivery ETA</p>
-                                  <p className="mt-0.5 text-sm font-semibold text-[var(--pvg-text)]">{item.delivery_eta_label}</p>
-                                </div>
-                              )}
-                            </div>
-
-                            {selections?.energization_form && (
-                              <div className="rounded-lg border border-amber-100 bg-white/80 px-3 py-3">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                                  Vedic Birth Details
-                                </p>
-                                <div className="mt-2 grid gap-2 text-xs sm:grid-cols-3">
-                                  <div>
-                                    <p className="text-[var(--pvg-muted)]">Date of birth</p>
-                                    <p className="font-medium text-[var(--pvg-text)]">{selections.energization_form.dob}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-[var(--pvg-muted)]">Gotra</p>
-                                    <p className="font-medium text-[var(--pvg-text)]">{selections.energization_form.gotra}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-[var(--pvg-muted)]">Rashi</p>
-                                    <p className="font-medium text-[var(--pvg-text)]">{selections.energization_form.rashi}</p>
-                                  </div>
-                                </div>
-                                {selections.energization_form.record_ceremony && (
-                                  <p className="mt-2 text-[10px] font-medium text-amber-700">Ceremony video requested</p>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Pricing breakdown for this configuration */}
-                            <div className="rounded-lg bg-white/80 border border-amber-100 overflow-hidden">
-                              <p className="border-b border-amber-100 bg-amber-50/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                                Configuration Price Breakdown
-                              </p>
-                              <div className="divide-y divide-amber-50 text-xs">
-                                {[
-                                  { label: rudrakshaConfig ? 'Bead Price' : 'Gem Price', value: pricing?.gem_price },
-                                  { label: 'Making Charge', value: pricing?.making_charge },
-                                  {
-                                    label: pricing?.stone_addon_label
-                                      ? `${pricing.stone_addon_label} add-on`
-                                      : 'Diamond add-on',
-                                    value: pricing?.diamond_charge,
-                                  },
-                                  { label: 'Metal Price', value: pricing?.metal_price },
-                                  { label: 'Certification Fee', value: pricing?.certification_fee },
-                                  { label: 'Energization Fee', value: pricing?.energization_fee },
-                                  { label: 'Custom Design Fee', value: pricing?.custom_design_fee },
-                                ].filter(l => (l.value ?? 0) > 0).map(l => (
-                                  <div key={l.label} className="flex justify-between px-3 py-1.5 text-[var(--pvg-text)]">
-                                    <span className="text-[var(--pvg-muted)]">{l.label}</span>
-                                    <span className="font-medium">{fmt(l.value)}</span>
-                                  </div>
-                                ))}
-                                {pricing?.metal_weight_grams && pricing?.gold_rate_per_gram ? (
-                                  <div className="flex justify-between px-3 py-1.5 text-[10px] text-[var(--pvg-muted)] italic">
-                                    <span>Metal: {pricing.metal_weight_grams}g at {fmt(pricing.gold_rate_per_gram)}/g</span>
-                                    <span>{fmt(pricing.metal_price)}</span>
-                                  </div>
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                {selections?.metal ? (
+                                  <Spec
+                                    label="Metal"
+                                    value={METAL_LABELS[selections.metal] ?? cap(selections.metal) ?? ''}
+                                  />
                                 ) : null}
-                                <div className="flex justify-between bg-amber-50 px-3 py-2 font-bold text-amber-800">
-                                  <span>Configuration Total</span>
-                                  <span>{fmt(pricing?.total ?? cfg?.total_price)}</span>
+                                {selections?.ring_size ? (
+                                  <Spec label="Ring size" value={selections.ring_size} />
+                                ) : null}
+                                {selections?.chain_length ? (
+                                  <Spec label="Chain" value={selections.chain_length} />
+                                ) : null}
+                                {selections?.certification ? (
+                                  <Spec
+                                    label="Certification"
+                                    value={selections.certification.name}
+                                    sub={cfg?.certification_labs?.full_name}
+                                  />
+                                ) : null}
+                                {selections?.certification_skipped && !selections?.certification ? (
+                                  <Spec label="Certification" value="Skipped" />
+                                ) : null}
+                                {selections?.energization ? (
+                                  <Spec
+                                    label="Energization"
+                                    value={selections.energization.name}
+                                    sub={cfg?.energization_options?.duration}
+                                  />
+                                ) : null}
+                                {details.delivery_eta?.label || item.delivery_eta_label ? (
+                                  <Spec
+                                    label="Delivery ETA"
+                                    value={
+                                      details.delivery_eta?.label || item.delivery_eta_label || ''
+                                    }
+                                  />
+                                ) : null}
+                              </div>
+
+                              {selections?.energization_form ? (
+                                <div className="mt-3 grid gap-2 rounded-lg border border-stone-200 bg-white px-3 py-3 text-xs sm:grid-cols-3">
+                                  <div>
+                                    <p className="text-stone-400">DOB</p>
+                                    <p className="font-medium text-stone-800">
+                                      {selections.energization_form.dob}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-stone-400">Gotra</p>
+                                    <p className="font-medium text-stone-800">
+                                      {selections.energization_form.gotra}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-stone-400">Rashi</p>
+                                    <p className="font-medium text-stone-800">
+                                      {selections.energization_form.rashi}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              <div className="mt-3 overflow-hidden rounded-lg border border-stone-200 bg-white text-xs">
+                                <p className="border-b border-stone-100 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                                  Config price
+                                </p>
+                                <div className="divide-y divide-stone-50">
+                                  {[
+                                    {
+                                      label: rudrakshaConfig ? 'Bead price' : 'Gem price',
+                                      value: pricing?.gem_price,
+                                    },
+                                    { label: 'Making', value: pricing?.making_charge },
+                                    {
+                                      label: pricing?.stone_addon_label
+                                        ? `${pricing.stone_addon_label} add-on`
+                                        : 'Diamond add-on',
+                                      value: pricing?.diamond_charge,
+                                    },
+                                    { label: 'Metal', value: pricing?.metal_price },
+                                    { label: 'Certification', value: pricing?.certification_fee },
+                                    { label: 'Energization', value: pricing?.energization_fee },
+                                    { label: 'Custom design', value: pricing?.custom_design_fee },
+                                  ]
+                                    .filter((l) => (l.value ?? 0) > 0)
+                                    .map((l) => (
+                                      <div
+                                        key={l.label}
+                                        className="flex justify-between px-3 py-1.5 text-stone-700"
+                                      >
+                                        <span className="text-stone-500">{l.label}</span>
+                                        <span className="font-medium tabular-nums">
+                                          {fmt(l.value)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  <div className="flex justify-between bg-stone-50 px-3 py-2 font-semibold text-stone-900">
+                                    <span>Config total</span>
+                                    <span className="tabular-nums">
+                                      {fmt(pricing?.total ?? cfg?.total_price)}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-
-                            {item.configuration_summary && !designName && !selections?.metal && (
-                              <p className="text-xs text-[var(--pvg-muted)] italic">{item.configuration_summary}</p>
-                            )}
-                          </div>
+                          ) : item.configuration_summary || item.configuration_snapshot ? (
+                            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50/60 px-3 py-2.5 text-xs">
+                              <ConfigurationDetailsDisplay
+                                snapshot={item.configuration_snapshot}
+                                summary={item.configuration_summary}
+                                deliveryEtaLabel={item.delivery_eta_label}
+                                variant="full"
+                              />
+                            </div>
+                          ) : null}
                         </div>
-                      ) : item.configuration_summary || item.configuration_snapshot ? (
-                        <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2.5 text-xs border border-amber-200">
-                          <p className="mb-1 flex items-center gap-1 font-semibold text-amber-700">
-                            <Tag className="h-3 w-3" />
-                            Configuration Summary
-                          </p>
-                          <ConfigurationDetailsDisplay
-                            snapshot={item.configuration_snapshot}
-                            summary={item.configuration_summary}
-                            deliveryEtaLabel={item.delivery_eta_label}
-                            variant="full"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
+                      </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
-          </section>
+          </Panel>
 
-          {/* Pricing Breakdown */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
-              <CreditCard className="h-4 w-4 text-[var(--pvg-primary)]" />
-              <h2 className="font-semibold text-[var(--pvg-primary)]">Order Price Breakdown</h2>
-            </div>
-            <div className="p-5">
-              <div className="space-y-2.5 text-sm">
-                {pricingLines.map(line => (
-                  <div key={line.label} className="flex items-center justify-between text-[var(--pvg-text)]">
-                    <span className={line.sign < 0 ? 'font-medium text-green-700' : ''}>{line.label}</span>
-                    <span className={`font-medium ${line.sign < 0 ? 'text-green-700' : ''}`}>
-                      {line.sign < 0 ? '- ' : '+ '}{fmt(line.value)}
-                    </span>
-                  </div>
-                ))}
-                <div className="border-t-2 border-[var(--pvg-primary)] pt-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-bold text-[var(--pvg-primary)]">Grand Total</span>
-                    <span className="text-xl font-bold text-[var(--pvg-primary)]">{fmt(o.total)}</span>
-                  </div>
+          <Panel title="Price breakdown" icon={CreditCard}>
+            <div className="space-y-2 px-5 py-4 text-sm">
+              {pricingLines.map((line) => (
+                <div key={line.label} className="flex items-center justify-between text-stone-700">
+                  <span className={line.sign < 0 ? 'text-emerald-700' : 'text-stone-500'}>
+                    {line.label}
+                  </span>
+                  <span
+                    className={`font-medium tabular-nums ${line.sign < 0 ? 'text-emerald-700' : ''}`}
+                  >
+                    {line.sign < 0 ? '−' : ''}
+                    {fmt(line.value)}
+                  </span>
                 </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+                <span className="text-sm font-semibold text-stone-900">Grand total</span>
+                <span className="text-lg font-bold tabular-nums text-stone-900">{fmt(o.total)}</span>
               </div>
             </div>
-          </section>
+          </Panel>
 
+          {/* Customer / ship / delivery / payment — one calm grid */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Panel title="Customer" icon={User}>
+              <dl className="space-y-3 px-5 py-4">
+                <Field label="Name">{displayName ?? 'Not provided'}</Field>
+                <Field label="Email">
+                  <span className="flex items-start gap-1.5 break-all">
+                    <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" />
+                    {displayEmail ?? 'Not provided'}
+                  </span>
+                </Field>
+                <Field label="Phone">
+                  <span className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+                    {displayPhone ?? 'Not provided'}
+                  </span>
+                </Field>
+                {o.customer_id ? (
+                  <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-800">
+                    Registered account
+                  </span>
+                ) : (
+                  <span className="inline-block rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-600">
+                    Guest checkout
+                  </span>
+                )}
+              </dl>
+            </Panel>
 
+            <Panel title="Shipping" icon={MapPin}>
+              <div className="space-y-3 px-5 py-4 text-sm leading-relaxed text-stone-700">
+                {displayName ? <p className="font-semibold text-stone-900">{displayName}</p> : null}
+                {addr.line1 ? <p>{addr.line1}</p> : null}
+                {addr.line2 ? <p>{addr.line2}</p> : null}
+                {addr.city || addr.state || addr.pincode ? (
+                  <p>{[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}</p>
+                ) : null}
+                {addr.country ? <p>{addr.country}</p> : null}
+                {!addr.line1 && !addr.city ? (
+                  <p className="italic text-stone-400">No address recorded</p>
+                ) : null}
+                {o.special_instructions ? (
+                  <div className="rounded-lg bg-stone-50 px-3 py-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                      Special instructions
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-stone-700">
+                      {o.special_instructions}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </Panel>
+
+            <Panel title="Delivery" icon={Truck}>
+              <dl className="space-y-3 px-5 py-4">
+                <Field label="Method">{cap(o.shipping_method) ?? 'Standard'}</Field>
+                {orderExtras.carrier ? (
+                  <Field label="Carrier">{orderExtras.carrier}</Field>
+                ) : null}
+                {o.tracking_number ? (
+                  <Field label="Tracking">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[11px]">
+                        {o.tracking_number}
+                      </code>
+                      {o.tracking_url ? (
+                        <a
+                          href={o.tracking_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-stone-600 underline-offset-2 hover:underline"
+                        >
+                          Track <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : null}
+                    </span>
+                  </Field>
+                ) : null}
+                {orderExtras.delivery_status ? (
+                  <Field label="Status">{cap(orderExtras.delivery_status)}</Field>
+                ) : null}
+                {o.estimated_delivery ? (
+                  <Field label="Est. delivery">
+                    {new Date(o.estimated_delivery).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Field>
+                ) : null}
+                {!o.tracking_number && !o.estimated_delivery && !orderExtras.carrier ? (
+                  <p className="text-xs italic text-stone-400">No tracking yet</p>
+                ) : null}
+              </dl>
+            </Panel>
+
+            <Panel title="Payment" icon={CreditCard}>
+              <dl className="space-y-3 px-5 py-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Method">{cap(o.payment_method) ?? '—'}</Field>
+                  <Field label="Status">
+                    <span
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'}`}
+                    >
+                      {cap(o.payment_status) ?? o.payment_status}
+                    </span>
+                  </Field>
+                </div>
+                {o.razorpay_order_id ? (
+                  <Field label="Razorpay order">
+                    <code className="block break-all font-mono text-[11px] text-stone-600">
+                      {o.razorpay_order_id}
+                    </code>
+                  </Field>
+                ) : null}
+                {o.razorpay_payment_id ? (
+                  <Field label="Payment ID">
+                    <code className="block break-all font-mono text-[11px] text-stone-600">
+                      {o.razorpay_payment_id}
+                    </code>
+                  </Field>
+                ) : null}
+                {o.invoice_number ? (
+                  <Field label="Invoice #">{o.invoice_number}</Field>
+                ) : null}
+                {o.invoice_url ? (
+                  <a
+                    href={o.invoice_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    View invoice
+                    <ExternalLink className="ml-auto h-3 w-3" />
+                  </a>
+                ) : null}
+              </dl>
+            </Panel>
+          </div>
+
+          {o.include_energization ? (
+            <Panel title="Ceremony" icon={Zap}>
+              <dl className="grid gap-3 px-5 py-4 sm:grid-cols-2">
+                <Field label="Type">{cap(o.energization_type) ?? 'Not specified'}</Field>
+                {o.ceremony_gotra ? <Field label="Gotra">{o.ceremony_gotra}</Field> : null}
+                {o.ceremony_dob ? (
+                  <Field label="Date of birth">
+                    {new Date(o.ceremony_dob).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </Field>
+                ) : null}
+                {o.ceremony_rashi ? <Field label="Rashi">{o.ceremony_rashi}</Field> : null}
+                {o.record_ceremony ? (
+                  <p className="sm:col-span-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                    Ceremony video recording requested
+                  </p>
+                ) : null}
+              </dl>
+            </Panel>
+          ) : null}
         </div>
 
-        {/* ── RIGHT SIDEBAR ── */}
-        <div className="space-y-5">
-
-          {/* Route to jewelry designer */}
+        {/* Actions column */}
+        <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
           <OrderAssignDesigner
             orderId={o.id}
+            orderNumber={o.order_number}
             currentDesignerId={orderExtras.assigned_designer_id ?? null}
             currentDesignerName={assignedDesignerName}
             orderStatus={o.status}
             needsDesigner={fulfillmentContext.needsDesigner}
+            currentDesignPrice={orderExtras.design_price ?? null}
+            currentDesignDueAt={orderExtras.design_due_at ?? null}
+            currentDesignSlipNotes={orderExtras.design_slip_notes ?? null}
+            customerName={displayName}
+            customerPhone={displayPhone}
+            slipItems={slipItems}
+            orderTotal={o.total}
           />
 
-          {/* Order Actions — Status update, notes, WhatsApp */}
           <OrderActions
             orderId={o.id}
             currentStatus={o.status}
-            currentNotes={(o as unknown as Record<string, unknown>).admin_notes as string | null}
+            currentNotes={orderExtras.internal_notes ?? orderExtras.admin_notes ?? null}
             currentTracking={o.tracking_number}
             currentTrackingUrl={o.tracking_url}
             currentEstDelivery={o.estimated_delivery}
-            currentCarrier={(o as unknown as Record<string, string | null>).carrier ?? null}
-            currentShippedAt={(o as unknown as Record<string, string | null>).shipped_at ?? null}
-            currentDeliveryStatus={(o as unknown as Record<string, string | null>).delivery_status ?? null}
-            currentProductVideoUrl={(o as unknown as Record<string, string | null>).product_video_url ?? null}
-            currentPujaVideoUrl={(o as unknown as Record<string, string | null>).puja_video_url ?? null}
-            currentDesignCompletedAt={(o as unknown as Record<string, string | null>).design_completed_at ?? null}
+            currentCarrier={orderExtras.carrier ?? null}
+            currentShippedAt={orderExtras.shipped_at ?? null}
+            currentDeliveryStatus={orderExtras.delivery_status ?? null}
+            currentProductVideoUrl={orderExtras.product_video_url ?? null}
+            currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
+            currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
+            productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
+            orderTotal={o.total}
             customerPhone={displayPhone}
             customerName={displayName}
             orderNumber={o.order_number}
@@ -709,237 +948,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
             includeEnergization={o.include_energization ?? false}
             certificationCharges={o.certification_charges ?? 0}
             energizationCharges={o.energization_charges ?? 0}
+            currentReturnStatus={orderExtras.return_status ?? 'none'}
+            cancelReason={orderExtras.payment_failure_reason ?? null}
+            complianceFlags={orderExtras.compliance_flags ?? null}
           />
-
-          {/* Customer Details */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
-              <User className="h-4 w-4 text-[var(--pvg-primary)]" />
-              <h2 className="font-semibold text-[var(--pvg-primary)]">Customer Details</h2>
-            </div>
-            <div className="space-y-3 p-4 text-sm">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Name</p>
-                <p className="mt-0.5 font-semibold text-[var(--pvg-text)]">{displayName ?? 'Not provided'}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Mail className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[var(--pvg-muted)]" />
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Email</p>
-                  <p className="mt-0.5 break-all font-medium text-[var(--pvg-text)]">{displayEmail ?? 'Not provided'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Phone className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[var(--pvg-muted)]" />
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Phone</p>
-                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{displayPhone ?? 'Not provided'}</p>
-                </div>
-              </div>
-              {o.customer_id && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Account</p>
-                  <p className="mt-0.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                    Registered User
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Shipping Address */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
-              <MapPin className="h-4 w-4 text-[var(--pvg-primary)]" />
-              <h2 className="font-semibold text-[var(--pvg-primary)]">Shipping Address</h2>
-            </div>
-            <div className="p-4 text-sm leading-relaxed text-[var(--pvg-text)]">
-              {displayName && <p className="font-semibold">{displayName}</p>}
-              {addr.line1   && <p>{addr.line1}</p>}
-              {addr.line2   && <p>{addr.line2}</p>}
-              {(addr.city || addr.state || addr.pincode) && (
-                <p>{[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}</p>
-              )}
-              {addr.country && <p>{addr.country}</p>}
-              {!addr.line1 && !addr.city && (
-                <p className="italic text-[var(--pvg-muted)]">No address recorded</p>
-              )}
-              {o.special_instructions && (
-                <div className="mt-3 rounded-lg bg-brand-bg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pvg-muted)]">Special Instructions</p>
-                  <p className="mt-1 text-xs leading-relaxed">{o.special_instructions}</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Delivery / Tracking */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
-              <Truck className="h-4 w-4 text-[var(--pvg-primary)]" />
-              <h2 className="font-semibold text-[var(--pvg-primary)]">Delivery</h2>
-            </div>
-            <div className="space-y-3 p-4 text-sm">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Method</p>
-                <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{cap(o.shipping_method) ?? 'Standard'}</p>
-              </div>
-              {o.tracking_number && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Tracking Number</p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                    <code className="rounded bg-brand-bg px-2 py-1 font-mono text-xs">{o.tracking_number}</code>
-                    {o.tracking_url && (
-                      <a
-                        href={o.tracking_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[var(--pvg-primary)] underline"
-                      >
-                        Track <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-              {(o as unknown as Record<string, string | null>).carrier && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Carrier</p>
-                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{(o as unknown as Record<string, string | null>).carrier}</p>
-                </div>
-              )}
-              {(o as unknown as Record<string, string | null>).delivery_status && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Delivery Status</p>
-                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{cap((o as unknown as Record<string, string | null>).delivery_status)}</p>
-                </div>
-              )}
-              {o.estimated_delivery && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Est. Delivery</p>
-                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">
-                    {new Date(o.estimated_delivery).toLocaleDateString('en-IN', {
-                      year: 'numeric', month: 'long', day: 'numeric',
-                    })}
-                  </p>
-                </div>
-              )}
-              {!o.tracking_number && !o.estimated_delivery && (
-                <p className="text-xs italic text-[var(--pvg-muted)]">No tracking info yet</p>
-              )}
-            </div>
-          </section>
-
-          {/* Energization (order-level) */}
-          {o.include_energization && (
-            <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-              <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-amber-50 px-5 py-3.5">
-                <Zap className="h-4 w-4 text-amber-600" />
-                <h2 className="font-semibold text-amber-700">Ceremony Details</h2>
-              </div>
-              <div className="space-y-3 p-4 text-sm">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Energization Type</p>
-                  <p className="mt-0.5 font-semibold text-[var(--pvg-text)]">
-                    {cap(o.energization_type) ?? 'Not specified'}
-                  </p>
-                </div>
-                {o.ceremony_gotra && (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Gotra</p>
-                    <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{o.ceremony_gotra}</p>
-                  </div>
-                )}
-                {o.ceremony_dob && (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Date of Birth</p>
-                    <p className="mt-0.5 font-medium text-[var(--pvg-text)]">
-                      {new Date(o.ceremony_dob).toLocaleDateString('en-IN', {
-                        year: 'numeric', month: 'long', day: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                )}
-                {o.ceremony_rashi && (
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Rashi</p>
-                    <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{o.ceremony_rashi}</p>
-                  </div>
-                )}
-                {o.record_ceremony && (
-                  <div className="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
-                    Video recording of ceremony requested
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Payment Details */}
-          <section className="overflow-hidden rounded-xl border border-[var(--pvg-border)] bg-brand-surface">
-            <div className="flex items-center gap-2 border-b border-[var(--pvg-border)] bg-brand-bg-alt px-5 py-3.5">
-              <CreditCard className="h-4 w-4 text-[var(--pvg-primary)]" />
-              <h2 className="font-semibold text-[var(--pvg-primary)]">Payment Details</h2>
-            </div>
-            <div className="space-y-3 p-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Method</p>
-                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{cap(o.payment_method) ?? 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Status</p>
-                  <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-gray-100 text-gray-700'}`}>
-                    {cap(o.payment_status) ?? o.payment_status}
-                  </span>
-                </div>
-              </div>
-              {o.razorpay_order_id && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Razorpay Order ID</p>
-                  <code className="mt-0.5 block break-all rounded bg-brand-bg px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
-                    {o.razorpay_order_id}
-                  </code>
-                </div>
-              )}
-              {o.razorpay_payment_id && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Payment ID</p>
-                  <code className="mt-0.5 block break-all rounded bg-brand-bg px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
-                    {o.razorpay_payment_id}
-                  </code>
-                </div>
-              )}
-              {o.razorpay_signature && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Signature</p>
-                  <code className="mt-0.5 block break-all rounded bg-brand-bg px-2 py-1 font-mono text-[11px] text-[var(--pvg-text)]">
-                    {o.razorpay_signature.slice(0, 32)}...
-                  </code>
-                </div>
-              )}
-              {o.invoice_number && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--pvg-muted)]">Invoice Number</p>
-                  <p className="mt-0.5 font-medium text-[var(--pvg-text)]">{o.invoice_number}</p>
-                </div>
-              )}
-              {o.invoice_url && (
-                <a
-                  href={o.invoice_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-[var(--pvg-border)] px-3 py-2 text-xs font-semibold text-[var(--pvg-primary)] transition hover:bg-brand-gold-light"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  View Invoice
-                  <ExternalLink className="ml-auto h-3 w-3" />
-                </a>
-              )}
-            </div>
-          </section>
-
-        </div>
+        </aside>
       </div>
     </div>
   );

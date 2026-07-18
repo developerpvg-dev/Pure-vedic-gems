@@ -5,6 +5,9 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
+import { cancelRewardRedemption } from '@/lib/rewards/service';
+import { mergeComplianceFlags, parseComplianceFlags } from '@/lib/orders/returns';
 
 const VALID_STATUSES = [
   'pending_payment', 'placed', 'confirmed', 'processing',
@@ -89,7 +92,7 @@ export async function PUT(
   // Fetch current order for logging
   const { data: currentRaw } = await db
     .from('orders')
-    .select('id, order_number, guest_email, guest_name, customer_id, status, tracking_number, tracking_url, internal_notes, assigned_to, product_video_url, puja_video_url')
+    .select('id, order_number, guest_email, guest_name, guest_phone, customer_id, status, tracking_number, tracking_url, internal_notes, assigned_to, product_video_url, puja_video_url, items, delivery_status, compliance_flags')
     .eq('id', id)
     .single();
 
@@ -98,12 +101,16 @@ export async function PUT(
     order_number: string;
     guest_email: string | null;
     guest_name: string | null;
+    guest_phone?: string | null;
     customer_id: string | null;
     status: string;
     tracking_number: string | null;
     tracking_url: string | null;
     product_video_url?: string | null;
     puja_video_url?: string | null;
+    items?: unknown;
+    delivery_status?: string | null;
+    compliance_flags?: unknown;
   };
 
   const current = currentRaw as CurrentOrderRow | null;
@@ -128,6 +135,14 @@ export async function PUT(
     updates.status = status;
     if (status === 'design_completed') {
       updates.design_completed_at = new Date().toISOString();
+    }
+    if (status === 'delivered' && current.status !== 'delivered') {
+      const flags = parseComplianceFlags(current.compliance_flags);
+      if (!flags.delivered_at) {
+        updates.compliance_flags = mergeComplianceFlags(flags, {
+          delivered_at: new Date().toISOString(),
+        });
+      }
     }
   }
   if (tracking_number !== undefined) updates.tracking_number = tracking_number;
@@ -171,6 +186,21 @@ export async function PUT(
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
   }
   const updatedOrder = updated as { status: string };
+
+  // Cancel / refund / return → put unique pieces back in stock
+  const becameCancelledOrRefunded =
+    status &&
+    status !== current.status &&
+    (status === 'cancelled' || status === 'refunded');
+  const becameReturned =
+    delivery_status === 'returned' && current.delivery_status !== 'returned';
+
+  if (becameCancelledOrRefunded || becameReturned) {
+    await releaseProductsForOrder(current);
+    if (becameCancelledOrRefunded) {
+      await cancelRewardRedemption(id);
+    }
+  }
 
   // Log the activity
   const ip = getRequestIp(request);

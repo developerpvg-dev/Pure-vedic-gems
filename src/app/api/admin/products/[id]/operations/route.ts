@@ -13,7 +13,8 @@ const operationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('reserve'), note: z.string().trim().max(500).optional(), reserved_until: z.string().trim().optional(), quantity: z.coerce.number().int().positive().default(1) }),
   z.object({ action: z.literal('release') }),
   z.object({ action: z.literal('directors_pick'), enabled: z.coerce.boolean(), display_order: z.coerce.number().int().default(0), curator_note: z.string().trim().max(500).optional() }),
-  z.object({ action: z.literal('stock_update'), stock_quantity: z.coerce.number().int().min(0), note: z.string().trim().max(500).optional() }),
+  // ponytail: each piece is unique — stock is only 0 or 1
+  z.object({ action: z.literal('stock_update'), stock_quantity: z.coerce.number().int().min(0).max(1), note: z.string().trim().max(500).optional() }),
 ]);
 
 export async function POST(
@@ -68,6 +69,7 @@ export async function POST(
   } else if (parsed.data.action === 'stock_update') {
     const stockQuantity = parsed.data.stock_quantity;
     updates.stock_quantity = stockQuantity;
+    updates.sold_individually = true;
     updates.in_stock = stockQuantity > 0;
     updates.stock_status = stockQuantity > 0 ? 'in_stock' : 'out_of_stock';
     updates.availability_status = stockQuantity > 0 ? 'in_stock' : 'out_of_stock';

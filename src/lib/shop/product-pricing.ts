@@ -63,13 +63,13 @@ export function getProductUnavailableLabel(availabilityStatus?: string | null): 
 export function isProductStockUnavailable(product: ProductPricingInput): boolean {
   if (isProductPriceOnRequest(product)) return false;
 
+  // ponytail: each piece is unique — stock is 0 or 1 (null treated as available)
   const stockQuantity =
-    product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
-  const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
+    product.stock_quantity == null ? 1 : Math.max(0, Number(product.stock_quantity));
 
   return (
     !product.in_stock ||
-    maxQuantity <= 0 ||
+    stockQuantity <= 0 ||
     ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '')
   );
 }

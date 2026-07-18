@@ -11,17 +11,24 @@ interface ProductGalleryProps {
   videoUrl?: string | null;
 }
 
+function youtubeId(url: string): string | null {
+  const m = url.match(
+    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i,
+  );
+  return m?.[1] ?? null;
+}
+
 function toEmbed(url: string): string | null {
-  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`;
-  const vm = url.match(/vimeo\.com\/(\d+)/);
+  const yt = youtubeId(url);
+  if (yt) return `https://www.youtube.com/embed/${yt}?rel=0`;
+  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
   if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
   return null;
 }
 
 function ytThumb(url: string): string | null {
-  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
-  return yt ? `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg` : null;
+  const yt = youtubeId(url);
+  return yt ? `https://img.youtube.com/vi/${yt}/hqdefault.jpg` : null;
 }
 
 export function ProductGallery({ images, productName, videoUrl }: ProductGalleryProps) {

@@ -178,15 +178,15 @@ export default function AdminProductsPage() {
   };
 
   const handleStockUpdate = async (product: AdminProduct) => {
-    const value = prompt(`Stock quantity for "${product.name}"`, String(product.stock_quantity ?? 0));
-    if (value === null) return;
-    const nextStock = Number(value);
-    if (!Number.isInteger(nextStock) || nextStock < 0) {
-      alert('Enter a whole stock quantity of 0 or more.');
-      return;
-    }
-    const note = prompt('Stock update note', 'Manual inventory correction') ?? undefined;
-    await runOperation(product.id, { action: 'stock_update', stock_quantity: nextStock, note }, 'Failed to update stock');
+    // ponytail: each piece is unique — toggle available (1) ↔ unavailable (0)
+    const nextStock = (product.stock_quantity ?? 0) > 0 ? 0 : 1;
+    const label = nextStock === 1 ? 'Available' : 'Unavailable';
+    if (!confirm(`Mark "${product.name}" as ${label}?`)) return;
+    await runOperation(
+      product.id,
+      { action: 'stock_update', stock_quantity: nextStock, note: `Marked ${label.toLowerCase()}` },
+      'Failed to update stock',
+    );
   };
 
   return (
@@ -268,7 +268,7 @@ export default function AdminProductsPage() {
               <tr><td colSpan={8} className="p-8 text-center text-gray-400">No products found. Add your first product!</td></tr>
             ) : products.map((p) => {
               const img = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
-              const isLowStock = p.stock_quantity < 5;
+              const isAvailable = (p.stock_quantity ?? 0) > 0;
               return (
                 <tr key={p.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50">
                   <td className="p-3">
@@ -292,14 +292,12 @@ export default function AdminProductsPage() {
                   <td className="p-3 font-medium text-gray-900">₹{p.price.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-gray-600">{p.carat_weight ?? '—'}</td>
                   <td className="p-3">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${p.stock_quantity <= 0 ? 'bg-red-100 text-red-700' : isLowStock ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                      {p.stock_quantity} unit{p.stock_quantity === 1 ? '' : 's'}
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {isAvailable ? 'Available' : 'Unavailable'}
                     </span>
-                    {isLowStock && (
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
-                        {p.stock_quantity <= 0 ? 'Out of stock' : 'Low stock'}
-                      </p>
-                    )}
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                      Unique piece
+                    </p>
                   </td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1.5">
@@ -332,7 +330,7 @@ export default function AdminProductsPage() {
                         disabled={busyProduct === p.id}
                         className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
                       >
-                        <PackageCheck className="h-3.5 w-3.5" /> Stock
+                        <PackageCheck className="h-3.5 w-3.5" /> Toggle stock
                       </button>
                       {p.availability_status === 'reserved' ? (
                         <button

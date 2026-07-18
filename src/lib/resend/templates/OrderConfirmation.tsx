@@ -140,18 +140,10 @@ export function OrderConfirmationEmail({
               <Column><Text style={totalLabelStyle}>Subtotal</Text></Column>
               <Column style={{ textAlign: 'right' as const }}><Text style={totalValueStyle}>{formatINR(subtotal)}</Text></Column>
             </Row>
-            {shippingCost > 0 && (
-              <Row style={totalRowStyle}>
-                <Column><Text style={totalLabelStyle}>Shipping</Text></Column>
-                <Column style={{ textAlign: 'right' as const }}><Text style={totalValueStyle}>{formatINR(shippingCost)}</Text></Column>
-              </Row>
-            )}
-            {shippingCost === 0 && (
-              <Row style={totalRowStyle}>
-                <Column><Text style={totalLabelStyle}>Shipping</Text></Column>
-                <Column style={{ textAlign: 'right' as const }}><Text style={{ ...totalValueStyle, color: '#16a34a' }}>FREE</Text></Column>
-              </Row>
-            )}
+            <Row style={totalRowStyle}>
+              <Column><Text style={totalLabelStyle}>Shipping</Text></Column>
+              <Column style={{ textAlign: 'right' as const }}><Text style={totalValueStyle}>{formatINR(shippingCost)}</Text></Column>
+            </Row>
             {gstAmount > 0 && (
               <Row style={totalRowStyle}>
                 <Column><Text style={totalLabelStyle}>GST (3%)</Text></Column>

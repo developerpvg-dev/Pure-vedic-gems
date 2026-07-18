@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
     payment_method: searchParams.get('payment_method'),
     include_energization: searchParams.get('include_energization'),
     refund_status: searchParams.get('refund_status'),
+    return_status: searchParams.get('return_status'),
     invoice_status: searchParams.get('invoice_status'),
     customer_type: searchParams.get('customer_type'),
     matchedProfileIds,

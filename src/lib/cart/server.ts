@@ -92,8 +92,9 @@ function assertProductCanBeAdded(product: CartProduct, customerId: string) {
 }
 
 function getAvailableQuantity(product: CartProduct) {
+  // ponytail: each catalog piece is unique — never more than 1
   const stockQuantity = Math.max(0, Number(product.stock_quantity ?? 0));
-  return product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
+  return stockQuantity > 0 ? 1 : 0;
 }
 
 function assertRequestedQuantityInStock(product: CartProduct, requestedQuantity: number) {

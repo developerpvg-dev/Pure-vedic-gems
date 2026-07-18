@@ -10,7 +10,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminAccess('leads.write');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth && auth.error) return auth.error;
 
   const { id } = await params;
@@ -59,7 +59,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminAccess('leads.write');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth && auth.error) return auth.error;
 
   const { id } = await params;

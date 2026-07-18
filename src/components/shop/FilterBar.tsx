@@ -68,7 +68,7 @@ const FILTER_LABELS: Record<FilterKey | 'q', string> = {
   price: 'Price',
   carat: 'Weight (ct)',
   ratti: 'Ratti',
-  origin: 'Country of Origin',
+  origin: 'Country',
   planet: 'Planet',
   shape: 'Shape',
   certification: 'Certificate',
@@ -85,7 +85,6 @@ const INLINE_FILTER_ORDER: FilterKey[] = [
   'carat',
   'ratti',
   'certification',
-  'origin',
   'quality_tier',
   'category',
   'sub_category',
@@ -96,7 +95,7 @@ const INLINE_FILTER_LABELS: Partial<Record<FilterKey, string>> = {
   carat: 'Weight (Carat)',
   ratti: 'Weight (Ratti)',
   certification: 'Certification',
-  origin: 'Origins',
+  origin: 'Country',
   quality_tier: 'Quality Grade',
   category: 'Category',
   sub_category: 'Family',
@@ -366,6 +365,7 @@ function shouldRenderFilter(definition: FilterDefinition, currentValue: string) 
     || definition.key === 'carat'
     || definition.key === 'ratti'
     || definition.key === 'configurator_enabled'
+    || definition.key === 'origin'
   ) {
     return definition.options.length > 0 || currentValue !== '';
   }
@@ -439,7 +439,7 @@ export function FilterBar({
     ...(showCategoryFilter ? [{ key: 'category' as const, label: 'Category', placeholder: 'All categories', options: facets.categories }] : []),
     ...(showSubcategoryFilter ? [{ key: 'sub_category' as const, label: 'Family', placeholder: 'All families', options: facets.subcategories }] : []),
     { key: 'quality_tier', label: 'Quality Grade', placeholder: 'Any quality grade', options: facets.qualityTiers },
-    { key: 'origin', label: 'Country of Origin', placeholder: 'Any origin', options: facets.origins },
+    { key: 'origin', label: 'Country', placeholder: 'Any country', options: facets.origins },
     { key: 'ratti', label: 'Ratti', placeholder: 'Any ratti', options: facets.rattiRanges },
     { key: 'price', label: 'Price', placeholder: 'Any price', options: facets.priceRanges },
     { key: 'carat', label: 'Weight (ct)', placeholder: 'Any weight', options: facets.caratRanges },

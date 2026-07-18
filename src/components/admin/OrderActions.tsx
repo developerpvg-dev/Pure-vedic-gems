@@ -1,7 +1,10 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
-import { Loader2, Save, ChevronRight, MessageCircle, PackageCheck } from 'lucide-react';
+import { useMemo, useState, useCallback, type ReactNode } from 'react';
+import {
+  Loader2, Save, ChevronRight, ChevronDown, MessageCircle,
+  PackageCheck, Gem, Ban, Banknote, RotateCcw,
+} from 'lucide-react';
 import {
   FULFILLMENT_PROFILE_LABELS,
   getAdminStatusLabels,
@@ -9,8 +12,61 @@ import {
   resolveOrderFulfillmentContext,
   type LineItemForFulfillment,
 } from '@/lib/orders/fulfillment-profile';
+import {
+  RETURN_STATUSES,
+  RETURN_STATUS_LABELS,
+  parseComplianceFlags,
+  type ReturnStatus,
+} from '@/lib/orders/returns';
 
 const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
+
+const field =
+  'w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400 focus:ring-2 focus:ring-stone-900/5';
+const labelCls = 'mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400';
+const btnPrimary =
+  'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50';
+const btnGhost =
+  'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-800 transition hover:bg-stone-50 disabled:opacity-50';
+
+function Accordion({
+  title,
+  open,
+  onToggle,
+  children,
+  badge,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+  badge?: string | null;
+}) {
+  return (
+    <div className="border-t border-stone-100">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-2 px-5 py-3.5 text-left transition hover:bg-stone-50/80"
+      >
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+            {title}
+          </span>
+          {badge ? (
+            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-600">
+              {badge}
+            </span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-stone-400 transition ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open ? <div className="space-y-3 px-5 pb-5">{children}</div> : null}
+    </div>
+  );
+}
 
 interface OrderActionsProps {
   orderId: string;
@@ -25,6 +81,8 @@ interface OrderActionsProps {
   currentProductVideoUrl?: string | null;
   currentPujaVideoUrl?: string | null;
   currentDesignCompletedAt?: string | null;
+  productsMarkedSoldAt?: string | null;
+  orderTotal?: number;
   customerPhone: string | null;
   customerName: string | null;
   orderNumber: string;
@@ -32,6 +90,9 @@ interface OrderActionsProps {
   includeEnergization?: boolean;
   certificationCharges?: number;
   energizationCharges?: number;
+  currentReturnStatus?: string | null;
+  cancelReason?: string | null;
+  complianceFlags?: unknown;
 }
 
 export function OrderActions({
@@ -47,6 +108,8 @@ export function OrderActions({
   currentProductVideoUrl,
   currentPujaVideoUrl,
   currentDesignCompletedAt,
+  productsMarkedSoldAt = null,
+  orderTotal = 0,
   customerPhone,
   customerName,
   orderNumber,
@@ -54,6 +117,9 @@ export function OrderActions({
   includeEnergization = false,
   certificationCharges = 0,
   energizationCharges = 0,
+  currentReturnStatus = 'none',
+  cancelReason = null,
+  complianceFlags = null,
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -66,9 +132,26 @@ export function OrderActions({
   const [productVideoUrl, setProductVideoUrl] = useState(currentProductVideoUrl ?? '');
   const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
   const [designCompletedAt, setDesignCompletedAt] = useState(currentDesignCompletedAt ?? '');
+  const [markedSoldAt, setMarkedSoldAt] = useState(productsMarkedSoldAt);
+  const [returnStatus, setReturnStatus] = useState(currentReturnStatus || 'none');
+  const [savedReturnStatus, setSavedReturnStatus] = useState(currentReturnStatus || 'none');
+  const [returnNote, setReturnNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [refundAmount, setRefundAmount] = useState(orderTotal > 0 ? String(orderTotal) : '');
+  const [refundTxn, setRefundTxn] = useState('');
+  const [refundNotes, setRefundNotes] = useState('');
+  const [refundMethod, setRefundMethod] = useState('manual');
+  const [refundProofs, setRefundProofs] = useState<FileList | null>(null);
+
+  const hasActiveReturn = (currentReturnStatus || 'none') !== 'none';
+  const [openFulfill, setOpenFulfill] = useState(true);
+  const [openInventory, setOpenInventory] = useState(true);
+  const [openReturns, setOpenReturns] = useState(hasActiveReturn);
+  const [openRefund, setOpenRefund] = useState(currentStatus === 'cancelled');
+
+  const returnMeta = parseComplianceFlags(complianceFlags);
 
   const fulfillmentContext = useMemo(
     () =>
@@ -78,22 +161,22 @@ export function OrderActions({
         certificationCharges,
         energizationCharges,
       }),
-    [orderItems, includeEnergization, certificationCharges, energizationCharges]
+    [orderItems, includeEnergization, certificationCharges, energizationCharges],
   );
 
   const statusPipeline = useMemo(
     () => getAdminStatusPipeline(fulfillmentContext),
-    [fulfillmentContext]
+    [fulfillmentContext],
   );
 
   const statusLabels = useMemo(
     () => getAdminStatusLabels(fulfillmentContext),
-    [fulfillmentContext]
+    [fulfillmentContext],
   );
 
   const selectableStatuses = useMemo(
     () => [...statusPipeline, ...TERMINAL_STATUSES],
-    [statusPipeline]
+    [statusPipeline],
   );
 
   const currentIndex = statusPipeline.indexOf(status as (typeof statusPipeline)[number]);
@@ -110,46 +193,146 @@ export function OrderActions({
         ? 'Jewelry completed'
         : 'Product completed';
 
-  const handleSave = useCallback(async (updates: Record<string, unknown>) => {
-    setSaving(true);
-    setError('');
-    setSuccess('');
-    try {
-      const res = await fetch(`/api/admin/orders/${orderId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to update');
-        return;
+  const handleSave = useCallback(
+    async (updates: Record<string, unknown>) => {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || 'Failed to update');
+          return;
+        }
+        if (updates.status) setStatus(updates.status as string);
+        if (updates.status === 'design_completed') {
+          setDesignCompletedAt(new Date().toISOString());
+        }
+        setSuccess('Saved');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch {
+        setError('Network error');
+      } finally {
+        setSaving(false);
       }
-      if (updates.status) setStatus(updates.status as string);
-      if (updates.status === 'design_completed') {
-        setDesignCompletedAt(new Date().toISOString());
+    },
+    [orderId],
+  );
+
+  const runOrderAction = useCallback(
+    async (body: FormData | Record<string, unknown>) => {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/actions`, {
+          method: 'POST',
+          ...(body instanceof FormData
+            ? { body }
+            : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || 'Action failed');
+          return;
+        }
+        if (data.status) setStatus(data.status);
+        if (data.return_status) {
+          setReturnStatus(data.return_status);
+          setSavedReturnStatus(data.return_status);
+        }
+        if (data.products_marked_sold_at) setMarkedSoldAt(data.products_marked_sold_at);
+        setSuccess(
+          data.status === 'cancelled'
+            ? 'Order cancelled — stock restored'
+            : data.status === 'refunded'
+              ? 'Refund recorded'
+              : data.return_status
+                ? `Return → ${RETURN_STATUS_LABELS[data.return_status as ReturnStatus] ?? data.return_status}`
+                : 'Marked sold',
+        );
+        setTimeout(() => setSuccess(''), 4000);
+      } catch {
+        setError('Network error');
+      } finally {
+        setSaving(false);
       }
-      setSuccess('Updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch {
-      setError('Network error');
-    } finally {
-      setSaving(false);
-    }
-  }, [orderId]);
+    },
+    [orderId],
+  );
 
   const advanceStatus = () => {
     if (nextStatus) handleSave({ status: nextStatus });
   };
 
-  const markProductCompleted = () => {
-    handleSave({ status: 'design_completed' });
+  const markProductCompleted = () => handleSave({ status: 'design_completed' });
+
+  const markSoldAfterBilling = () => {
+    if (!confirm('Mark all items as Sold on the website?')) return;
+    void runOrderAction({ action: 'mark_sold' });
+  };
+
+  const cancelOrder = () => {
+    if (!confirm('Cancel this order and restore items to stock?')) return;
+    const reason = prompt('Cancel reason (optional)', 'Cancelled by admin');
+    if (reason === null) return;
+    void runOrderAction({ action: 'cancel', reason: reason.trim() || 'Cancelled by admin' });
+  };
+
+  const recordManualRefund = () => {
+    if (!refundTxn.trim()) {
+      setError('Transaction / UTR number is required');
+      return;
+    }
+    const amount = Number(refundAmount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError('Enter a valid refund amount');
+      return;
+    }
+    if (!confirm('Record this manual refund? Items will return to stock.')) return;
+    const form = new FormData();
+    form.set('action', 'record_refund');
+    form.set('amount', String(amount));
+    form.set('transaction_reference', refundTxn.trim());
+    form.set('notes', refundNotes.trim());
+    form.set('method', refundMethod);
+    form.set('restore_stock', 'true');
+    if (refundProofs) {
+      Array.from(refundProofs).forEach((file) => form.append('proofs', file));
+    }
+    void runOrderAction(form);
+  };
+
+  const saveReturnStatus = () => {
+    if (returnStatus === 'none') {
+      setError('Pick a return status other than none');
+      return;
+    }
+    if (
+      !confirm(
+        `Update return to "${RETURN_STATUS_LABELS[returnStatus as ReturnStatus] ?? returnStatus}"?`,
+      )
+    ) {
+      return;
+    }
+    void runOrderAction({
+      action: 'update_return',
+      return_status: returnStatus,
+      note: returnNote.trim() || undefined,
+    });
   };
 
   const productCompleted =
     !!designCompletedAt ||
     status === 'design_completed' ||
-    ['jewelry_making', 'certification', 'energization', 'quality_check', 'shipped', 'delivered'].includes(status);
+    ['jewelry_making', 'certification', 'energization', 'quality_check', 'shipped', 'delivered'].includes(
+      status,
+    );
 
   const formatCompletedDate = (value: string) => {
     const date = new Date(value);
@@ -164,253 +347,373 @@ export function OrderActions({
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Hello ${customerName || 'Customer'},\n\nUpdate regarding your PureVedicGems order #${orderNumber}:\nStatus: ${statusLabels[status] || status}\n${tracking ? `Tracking: ${tracking}` : ''}\n\nThank you for shopping with us!`
+    `Hello ${customerName || 'Customer'},\n\nUpdate regarding your PureVedicGems order #${orderNumber}:\nStatus: ${statusLabels[status] || status}\n${tracking ? `Tracking: ${tracking}` : ''}\n\nThank you for shopping with us!`,
   );
   const whatsappUrl = customerPhone
     ? `https://wa.me/${customerPhone.replace(/\D/g, '')}?text=${whatsappMessage}`
     : null;
 
+  const isTerminal = status === 'cancelled' || status === 'refunded';
+  const showRefund = !isTerminal || status === 'cancelled';
+
+  const savePayload = {
+    status,
+    product_video_url: productVideoUrl || null,
+    puja_video_url: pujaVideoUrl || null,
+    carrier: carrier || null,
+    tracking_number: tracking || null,
+    tracking_url: trackingUrl || null,
+    delivery_status: deliveryStatus || null,
+    shipped_at: shippedAt ? `${shippedAt}T00:00:00.000Z` : null,
+    estimated_delivery: estimatedDelivery || null,
+    admin_notes: notes || null,
+  };
+
   return (
-    <div className="space-y-5">
-      {/* Status Update */}
-      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 bg-gray-50 px-5 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600">Update Order</h2>
+    <div className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+      <div className="border-b border-stone-100 px-5 py-3.5">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+          Manage order
+        </h2>
+        <p className="mt-1 text-xs text-stone-400">
+          {FULFILLMENT_PROFILE_LABELS[fulfillmentContext.profile]}
+        </p>
+      </div>
+
+      {status === 'cancelled' ? (
+        <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-900">
+          <p className="font-semibold">Cancelled</p>
+          {cancelReason ? <p className="mt-0.5 text-xs text-red-800/90">{cancelReason}</p> : null}
         </div>
-        <div className="space-y-4 p-4">
-          <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
-            Fulfillment: <span className="font-semibold">{FULFILLMENT_PROFILE_LABELS[fulfillmentContext.profile]}</span>
-            {fulfillmentContext.mixed ? (
-              <span className="mt-0.5 block text-amber-800/90">
-                Mixed items — pipeline follows the most complex product type.
-              </span>
-            ) : null}
-          </div>
+      ) : null}
 
-          {/* Quick advance */}
-          {nextStatus && status !== 'delivered' && status !== 'cancelled' && status !== 'refunded' && (
-            <button
-              onClick={advanceStatus}
-              disabled={saving}
-              className="flex w-full items-center justify-between rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
-            >
-              <span>Advance to: {statusLabels[nextStatus] ?? nextStatus}</span>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
-
-          {fulfillmentContext.needsCrafting ? (
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-800">
-              <PackageCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              {craftingCompleteLabel}
+      {(success || error) && (
+        <div className="border-b border-stone-100 px-5 py-2.5">
+          {success ? (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-800">
+              {success}
             </p>
-            {productCompleted ? (
-              <p className="text-sm text-indigo-900">
-                Marked complete
-                {designCompletedAt ? (
-                  <span className="mt-0.5 block text-xs font-normal text-indigo-700/90">
-                    {formatCompletedDate(designCompletedAt)}
-                  </span>
-                ) : null}
-              </p>
-            ) : (
-              <button
-                type="button"
-                onClick={markProductCompleted}
-                disabled={saving || status === 'cancelled' || status === 'refunded'}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
-                Mark {craftingCompleteLabel.toLowerCase()}
-              </button>
-            )}
-            <p className="mt-2 text-[11px] text-indigo-700/80">
-              Updates the crafting step on the customer tracking timeline.
-            </p>
-          </div>
           ) : null}
+          {error ? (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-700">{error}</p>
+          ) : null}
+        </div>
+      )}
 
-          {/* Manual status select */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+      {/* Fulfillment — primary */}
+      <Accordion title="Fulfillment" open={openFulfill} onToggle={() => setOpenFulfill((v) => !v)}>
+        {nextStatus && status !== 'delivered' && !isTerminal ? (
+          <button
+            type="button"
+            onClick={advanceStatus}
+            disabled={saving}
+            className="flex w-full items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-50"
+          >
+            <span>Advance → {statusLabels[nextStatus] ?? nextStatus}</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        ) : null}
+
+        {fulfillmentContext.needsCrafting ? (
+          productCompleted ? (
+            <p className="rounded-xl bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
+              {craftingCompleteLabel}
+              {designCompletedAt ? (
+                <span className="mt-0.5 block text-xs text-stone-400">
+                  {formatCompletedDate(designCompletedAt)}
+                </span>
+              ) : null}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={markProductCompleted}
+              disabled={saving || isTerminal}
+              className={btnGhost}
             >
-              {selectableStatuses.map((s) => (
-                <option key={s} value={s}>{statusLabels[s] ?? s.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
-          </div>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
+              Mark {craftingCompleteLabel.toLowerCase()}
+            </button>
+          )
+        ) : null}
 
-          {/* Fulfillment videos */}
-          {(fulfillmentContext.showProductVideo || fulfillmentContext.showPujaVideo) && (
-          <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-3">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-violet-800">Customer videos</p>
-            <div className="space-y-3">
-              {fulfillmentContext.showProductVideo ? (
+        <div>
+          <label className={labelCls}>Status</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className={field}>
+            {selectableStatuses.map((s) => (
+              <option key={s} value={s}>
+                {statusLabels[s] ?? s.replace(/_/g, ' ')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {(fulfillmentContext.showProductVideo || fulfillmentContext.showPujaVideo) && (
+          <div className="space-y-3 rounded-xl border border-stone-100 bg-stone-50/60 p-3">
+            {fulfillmentContext.showProductVideo ? (
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-500">Product video URL</label>
+                <label className={labelCls}>Product video URL</label>
                 <input
                   value={productVideoUrl}
                   onChange={(e) => setProductVideoUrl(e.target.value)}
-                  placeholder="YouTube, Google Drive, or Supabase video link"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                  placeholder="Video link"
+                  className={field}
                 />
-                <p className="mt-1 text-[11px] text-gray-400">Customer sees a &quot;Watch Product Video&quot; button once saved.</p>
               </div>
-              ) : null}
-              {fulfillmentContext.showPujaVideo ? (
+            ) : null}
+            {fulfillmentContext.showPujaVideo ? (
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-500">Puja / energization video URL</label>
+                <label className={labelCls}>Puja video URL</label>
                 <input
                   value={pujaVideoUrl}
                   onChange={(e) => setPujaVideoUrl(e.target.value)}
-                  placeholder="Link to puja ceremony video"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                  placeholder="Puja video link"
+                  className={field}
                 />
-                <p className="mt-1 text-[11px] text-gray-400">Shown after product video, before shipment tracking.</p>
               </div>
-              ) : null}
-            </div>
+            ) : null}
           </div>
-          )}
+        )}
 
-          {/* Tracking */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Carrier</label>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2">
+            <label className={labelCls}>Carrier</label>
             <input
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
-              placeholder="Blue Dart, FedEx, DHL..."
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              placeholder="Blue Dart, FedEx…"
+              className={field}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Tracking Number</label>
+          <div className="col-span-2">
+            <label className={labelCls}>Tracking number</label>
             <input
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
-              placeholder="Enter tracking number"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              className={field}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Tracking URL</label>
+          <div className="col-span-2">
+            <label className={labelCls}>Tracking URL</label>
             <input
               value={trackingUrl}
               onChange={(e) => setTrackingUrl(e.target.value)}
-              placeholder="https://tracking.example.com/..."
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              className={field}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Delivery Status</label>
-            <select
-              value={deliveryStatus}
-              onChange={(e) => setDeliveryStatus(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
-            >
-              {['pending', 'label_created', 'in_transit', 'out_for_delivery', 'delivered', 'returned', 'failed'].map((value) => (
-                <option key={value} value={value}>{value.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Shipped Date</label>
+            <label className={labelCls}>Shipped</label>
             <input
               type="date"
               value={shippedAt}
               onChange={(e) => setShippedAt(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              className={field}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Estimated Delivery</label>
+            <label className={labelCls}>Est. delivery</label>
             <input
               type="date"
               value={estimatedDelivery}
               onChange={(e) => setEstimatedDelivery(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              className={field}
             />
           </div>
-
-          {/* Notes */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Internal Notes</label>
+          <div className="col-span-2">
+            <label className={labelCls}>Delivery status</label>
+            <select
+              value={deliveryStatus}
+              onChange={(e) => setDeliveryStatus(e.target.value)}
+              className={field}
+            >
+              {['pending', 'label_created', 'in_transit', 'out_for_delivery', 'delivered', 'returned', 'failed'].map(
+                (value) => (
+                  <option key={value} value={value}>
+                    {value.replace(/_/g, ' ')}
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>Internal notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Add internal notes about this order..."
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              rows={2}
+              className={field}
             />
           </div>
-
-          {/* Save Button */}
-          <button
-            onClick={() => handleSave({
-              status,
-              product_video_url: productVideoUrl || null,
-              puja_video_url: pujaVideoUrl || null,
-              carrier: carrier || null,
-              tracking_number: tracking || null,
-              tracking_url: trackingUrl || null,
-              delivery_status: deliveryStatus || null,
-              shipped_at: shippedAt ? `${shippedAt}T00:00:00.000Z` : null,
-              estimated_delivery: estimatedDelivery || null,
-              admin_notes: notes || null,
-            })}
-            disabled={saving}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
-
-          <button
-            onClick={() => handleSave({
-              status,
-              product_video_url: productVideoUrl || null,
-              puja_video_url: pujaVideoUrl || null,
-              carrier: carrier || null,
-              tracking_number: tracking || null,
-              tracking_url: trackingUrl || null,
-              delivery_status: deliveryStatus || null,
-              shipped_at: shippedAt ? `${shippedAt}T00:00:00.000Z` : null,
-              estimated_delivery: estimatedDelivery || null,
-              notify_customer: true,
-            })}
-            disabled={saving || (!tracking && !trackingUrl)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Send Tracking Update
-          </button>
-
-          {success && (
-            <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 text-center">{success}</p>
-          )}
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 text-center">{error}</p>
-          )}
         </div>
-      </section>
 
-      {/* WhatsApp Notify */}
-      {whatsappUrl && (
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+        <button
+          type="button"
+          onClick={() => handleSave(savePayload)}
+          disabled={saving}
+          className={btnPrimary}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSave({ ...savePayload, notify_customer: true })}
+          disabled={saving || (!tracking && !trackingUrl)}
+          className={btnGhost}
         >
           <MessageCircle className="h-4 w-4" />
-          Notify Customer via WhatsApp
-        </a>
-      )}
+          Save &amp; notify customer
+        </button>
+      </Accordion>
+
+      <Accordion title="Inventory" open={openInventory} onToggle={() => setOpenInventory((v) => !v)}>
+        {markedSoldAt ? (
+          <p className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
+            Marked sold {formatCompletedDate(markedSoldAt)}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={markSoldAfterBilling}
+            disabled={saving || isTerminal || status === 'pending_payment'}
+            className={btnPrimary}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gem className="h-4 w-4" />}
+            Mark items sold
+          </button>
+        )}
+        {!isTerminal ? (
+          <button type="button" onClick={cancelOrder} disabled={saving} className={btnGhost}>
+            <Ban className="h-4 w-4 text-red-600" />
+            <span className="text-red-700">Cancel &amp; restore stock</span>
+          </button>
+        ) : null}
+      </Accordion>
+
+      <Accordion
+        title="Returns"
+        open={openReturns}
+        onToggle={() => setOpenReturns((v) => !v)}
+        badge={hasActiveReturn ? RETURN_STATUS_LABELS[savedReturnStatus as ReturnStatus] : null}
+      >
+        {returnMeta.return_reason ? (
+          <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+            <span className="font-semibold">Customer:</span> {returnMeta.return_reason}
+          </p>
+        ) : null}
+        <div>
+          <label className={labelCls}>Return status</label>
+          <select
+            value={returnStatus}
+            onChange={(e) => setReturnStatus(e.target.value)}
+            className={field}
+          >
+            {RETURN_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {RETURN_STATUS_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Note to customer</label>
+          <textarea
+            value={returnNote}
+            onChange={(e) => setReturnNote(e.target.value)}
+            rows={2}
+            className={field}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={saveReturnStatus}
+          disabled={saving || returnStatus === 'none' || returnStatus === savedReturnStatus}
+          className={btnGhost}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+          Update return
+        </button>
+      </Accordion>
+
+      {showRefund ? (
+        <Accordion title="Refund" open={openRefund} onToggle={() => setOpenRefund((v) => !v)}>
+          <div>
+            <label className={labelCls}>Amount (₹)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              className={field}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>UTR / transaction *</label>
+            <input
+              value={refundTxn}
+              onChange={(e) => setRefundTxn(e.target.value)}
+              className={field}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Method</label>
+            <select
+              value={refundMethod}
+              onChange={(e) => setRefundMethod(e.target.value)}
+              className={field}
+            >
+              <option value="manual">Manual / other</option>
+              <option value="upi">UPI</option>
+              <option value="bank_transfer">Bank transfer</option>
+              <option value="razorpay">Razorpay</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Proof files</label>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              onChange={(e) => setRefundProofs(e.target.files)}
+              className="w-full text-xs text-stone-500"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Notes</label>
+            <textarea
+              value={refundNotes}
+              onChange={(e) => setRefundNotes(e.target.value)}
+              rows={2}
+              className={field}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={recordManualRefund}
+            disabled={saving || status === 'refunded'}
+            className={btnGhost}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Banknote className="h-4 w-4" />}
+            Record refund
+          </button>
+        </Accordion>
+      ) : null}
+
+      {whatsappUrl ? (
+        <div className="border-t border-stone-100 p-4">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp customer
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -8,10 +8,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
-import {
-  METAL_OPTIONS,
-  CHAIN_LENGTHS,
-} from '@/lib/types/configurator';
+import { METAL_OPTIONS } from '@/lib/types/configurator';
 import type { MetalId, MetalOption, SettingType, GoldRateData } from '@/lib/types/configurator';
 import type { JewelryDesign } from '@/lib/types/database';
 import {
@@ -35,7 +32,6 @@ interface MetalSizeSelectorProps {
   settingType: SettingType;
   metal: MetalId | null;
   ringSize: string | null;
-  chainLength: string | null;
   goldRate: GoldRateData | null;
   laborRates?: Record<string, number> | null;
   pricingModes?: Record<string, MetalPricingMode> | null;
@@ -44,7 +40,6 @@ interface MetalSizeSelectorProps {
   optionRules: ConfiguratorOptionRules | null;
   onMetalChange: (metal: MetalId) => void;
   onRingSizeChange: (size: string | null) => void;
-  onChainLengthChange: (length: string) => void;
 }
 
 type MetalEstimate = ReturnType<typeof getEstimatedMetalPrice>;
@@ -131,7 +126,7 @@ function buildMetalPriceLines(
     });
     if (estimate.makingCharge > 0) {
       lines.push({
-        label: estimate.laborRatePercent > 0 ? `Labor (${estimate.laborRatePercent}%)` : 'Labor',
+        label: 'Labor',
         amount: estimate.makingCharge,
       });
     }
@@ -305,7 +300,6 @@ export default function MetalSizeSelector({
   settingType,
   metal,
   ringSize,
-  chainLength,
   goldRate,
   laborRates = null,
   pricingModes = null,
@@ -314,7 +308,6 @@ export default function MetalSizeSelector({
   optionRules,
   onMetalChange,
   onRingSizeChange,
-  onChainLengthChange,
 }: MetalSizeSelectorProps) {
   const [metals, setMetals] = useState<MetalOption[]>(FALLBACK_METALS);
   const [ringSizeSystem, setRingSizeSystem] = useState<RingSizeSystemId>(() =>
@@ -372,8 +365,6 @@ export default function MetalSizeSelector({
   const ringSliderIndex = parsedRingSize.size
     ? Math.max(0, activeRingSizeSystem.sizes.findIndex((s) => s.value === parsedRingSize.size))
     : 0;
-
-  const chainSliderIndex = Math.max(0, CHAIN_LENGTHS.findIndex((l) => l.value === chainLength));
 
   return (
     <div className="pvg-metal-step space-y-6">
@@ -490,43 +481,12 @@ export default function MetalSizeSelector({
               </span>
             ) : null}
           </p>
-        </fieldset>
-      ) : null}
 
-      {settingType === 'pendant' ? (
-        <fieldset className="rounded-xl border border-border/60 bg-[#faf8f5]/80 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <SectionLabel>Chain length</SectionLabel>
-            <SizeReadout value={chainLength} unit="in" active={Boolean(chainLength)} />
-          </div>
-
-          <div className="px-0.5">
-            <input
-              type="range"
-              min={0}
-              max={CHAIN_LENGTHS.length - 1}
-              value={chainSliderIndex}
-              onChange={(e) => {
-                const idx = Number(e.target.value);
-                onChainLengthChange(CHAIN_LENGTHS[idx].value);
-              }}
-              className="pvg-range"
-              style={{
-                background: (() => {
-                  const pct = (chainSliderIndex / Math.max(1, CHAIN_LENGTHS.length - 1)) * 100;
-                  return `linear-gradient(to right, #C9A84C 0%, #C9A84C ${pct}%, rgba(61,43,31,0.1) ${pct}%, rgba(61,43,31,0.1) 100%)`;
-                })(),
-              }}
-              aria-label="Chain length"
-            />
-            <div className="mt-2 flex justify-between">
-              {CHAIN_LENGTHS.map((l) => (
-                <span key={l.value} className="text-[10px] text-muted-foreground/70">
-                  {l.value}&quot;
-                </span>
-              ))}
-            </div>
-          </div>
+          {!parsedRingSize.size ? (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900" role="alert">
+              Select a ring size to continue.
+            </p>
+          ) : null}
         </fieldset>
       ) : null}
 

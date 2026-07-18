@@ -81,7 +81,7 @@ export function ProductCard({ product }: ProductCardProps) {
       stock_status: product.stock_status,
       availability_status: product.availability_status,
       in_stock: product.in_stock,
-      sold_individually: product.sold_individually,
+      sold_individually: true,
       carat_weight: product.carat_weight ?? null,
       origin: product.origin ?? null,
     });

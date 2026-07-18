@@ -9,12 +9,7 @@ import { Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatPrice } from '@/lib/utils/format';
-import {
-  getDesignConfiguratorNote,
-  getDesignDiamondChargeFromDesign,
-  getStoneAddonLabelFromDesign,
-} from '@/lib/utils/jewelry-design-fields';
+import { getDesignConfiguratorNote } from '@/lib/utils/jewelry-design-fields';
 import { createClient } from '@/lib/supabase/client';
 import type { JewelryDesign } from '@/lib/types/database';
 import type { ProductCard } from '@/lib/types/product';
@@ -126,26 +121,6 @@ export default function DesignSelector({
     }
     fetchDesigns();
   }, [settingType, gemCategory, selectedProduct, rudrakshaComboProducts, rudrakshaFlow]);
-
-  function getDisplayCharge(design: JewelryDesign): string {
-    const diamondAmount = getDesignDiamondChargeFromDesign(design.diamond_charges);
-    if (diamondAmount && diamondAmount > 0) {
-      const label = getStoneAddonLabelFromDesign(design) ?? 'Diamond';
-      return `+${formatPrice(diamondAmount)} ${label}`;
-    }
-
-    const note = getDesignConfiguratorNote(design);
-    if (note) return 'See note';
-
-    const charges = design.making_charges as Record<string, number> | null;
-    if (!charges) return 'Included';
-    const values = Object.values(charges).filter((v) => typeof v === 'number' && v > 0);
-    if (values.length === 0) return 'Included';
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    if (min === max) return `+${formatPrice(min)}`;
-    return `+${formatPrice(min)}–${formatPrice(max)}`;
-  }
 
   const selectedDesignNote = selected ? getDesignConfiguratorNote(selected) : null;
 
@@ -285,7 +260,6 @@ export default function DesignSelector({
           </div>
           <div className="p-1.5">
             <p className="truncate text-[11px] font-medium text-primary">{design.name}</p>
-            <p className="text-[9px] font-medium text-accent">{getDisplayCharge(design)}</p>
           </div>
         </button>
 
@@ -460,7 +434,6 @@ export default function DesignSelector({
         }}
         imageUrl={previewDesign?.image_url ?? null}
         title={previewDesign?.name ?? 'Design preview'}
-        subtitle={previewDesign ? getDisplayCharge(previewDesign) : undefined}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   QUALITY_TIERS,
 } from '@/lib/constants/product-taxonomy';
 import type { ProductFilters } from '@/lib/types/product';
+import { resolveOrigin } from '@/lib/utils/origin';
 import { resolveQualityTier, type QualityTier } from '@/lib/utils/quality-tier';
 
 export type ShopFilterOption = {
@@ -138,6 +139,16 @@ function collectOptions(rows: FacetRow[], key: keyof FacetRow, labels: Record<st
   return sortedOptions(counts, labels);
 }
 
+function collectOriginOptions(rows: FacetRow[]) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const value = resolveOrigin(row.origin, row.name);
+    if (!value) continue;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return sortedOptions(counts);
+}
+
 function rangeOptions(
   rows: FacetRow[],
   key: 'price' | 'carat_weight' | 'ratti_weight',
@@ -240,7 +251,7 @@ export async function getShopFilterOptions(
     priceRanges: rangeOptions(rows, 'price', PRICE_RANGE_PRESETS),
     caratRanges: rangeOptions(rows, 'carat_weight', CARAT_RANGE_PRESETS),
     rattiRanges: rangeOptions(rows, 'ratti_weight', RATTI_RANGE_PRESETS),
-    origins: collectOptions(rows, 'origin'),
+    origins: collectOriginOptions(rows),
     planets: collectOptions(rows, 'planet'),
     shapes: collectOptions(rows, 'shape'),
     certifications: collectOptions(rows, 'certification'),

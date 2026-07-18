@@ -29,6 +29,7 @@ const FILTER_LABELS: Record<keyof AdminOrderFilterState, string> = {
   payment_method: 'Payment method',
   include_energization: 'Energization',
   refund_status: 'Refund',
+  return_status: 'Return',
   invoice_status: 'Invoice',
   customer_type: 'Customer',
   sort_by: 'Sort',
@@ -227,6 +228,19 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
                 <option value="requested">Requested</option>
                 <option value="processing">Processing</option>
                 <option value="completed">Completed</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium text-gray-500">Return status</span>
+              <select value={filters.return_status} onChange={(e) => onChange({ return_status: e.target.value })} className={fieldClassName()}>
+                <option value="">Any</option>
+                <option value="requested">Requested</option>
+                <option value="authorized">Authorized</option>
+                <option value="received">Received</option>
+                <option value="inspection">Inspection</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="closed">Closed</option>
               </select>
             </label>
             <label className="block">

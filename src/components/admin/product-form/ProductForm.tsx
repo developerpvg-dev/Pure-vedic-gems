@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { ArrowLeft, FileEdit, Loader2, Save, Trash2 } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
-import { MediaUploader } from '@/components/admin/MediaUploader';
+import { MediaUploader, type MediaFile } from '@/components/admin/MediaUploader';
 import { productCategoryToStorefrontGroupSlug } from '@/lib/categories/storefront';
 import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
 import {
@@ -47,13 +47,6 @@ const RichTextEditor = dynamic(
   () => import('@/components/admin/RichTextEditor').then((m) => m.RichTextEditor),
   { ssr: false, loading: () => <div className="h-32 animate-pulse rounded-lg border border-gray-200 bg-gray-50" /> }
 );
-
-interface MediaFile {
-  url: string;
-  name: string;
-  type: 'image' | 'video';
-  preview?: string;
-}
 
 type ProductOptionRulesState = {
   certificate_enabled?: boolean;
@@ -121,10 +114,49 @@ function truncateText(value: string, max: number) {
   return text.slice(0, max - 1).trimEnd();
 }
 
+function siteOrigin() {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com').trim().replace(/\/$/, '');
+  if (/^https?:\/\//i.test(raw)) return raw;
+  // ponytail: misconfigured env without scheme used to throw in new URL() → fake "Network error"
+  return `https://${raw || 'purevedicgems.com'}`;
+}
+
 function productCanonicalUrl(category: string, productSlug: string) {
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com').replace(/\/$/, '');
   const groupSlug = productCategoryToStorefrontGroupSlug(category) ?? category;
-  return `${siteUrl}/shop/${groupSlug}/${productSlug}`;
+  return `${siteOrigin()}/shop/${groupSlug}/${productSlug}`;
+}
+
+function canonicalPathname(urlOrPath: string, fallbackAbsolute: string) {
+  const raw = urlOrPath.trim() || fallbackAbsolute;
+  try {
+    if (raw.startsWith('/')) return raw.split('?')[0] || '/';
+    return new URL(raw).pathname;
+  } catch {
+    try {
+      return new URL(raw, siteOrigin()).pathname;
+    } catch {
+      return new URL(fallbackAbsolute).pathname;
+    }
+  }
+}
+
+/** Ensure pasted links validate as absolute URLs (youtu.be/... without https used to fail create). */
+function absoluteMediaUrl(url: string) {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith('//')) return `https:${trimmed}`;
+  return `https://${trimmed}`;
+}
+
+function optionalAbsoluteUrl(url: string | undefined) {
+  const candidate = absoluteMediaUrl(url || '');
+  if (!candidate) return undefined;
+  try {
+    return new URL(candidate).href;
+  } catch {
+    return undefined;
+  }
 }
 
 function get<T = unknown>(p: Record<string, unknown> | null | undefined, key: string): T | undefined {
@@ -251,22 +283,33 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [wearingGuide, setWearingGuide] = useState((get<string>(initialProduct, 'wearing_guide')) ?? '');
   const [expertNote, setExpertNote] = useState((get<string>(initialProduct, 'expert_note')) ?? '');
 
-  // ── Media & Status ────────────────────────────────────
+  // ── Media & Status (separate fields → Content Gaps tracking) ──
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>(() => {
     const images = (get<string[]>(initialProduct, 'images')) ?? [];
-    const list: MediaFile[] = images.map((url, i) => ({
-      url,
-      name: `image-${i + 1}`,
-      type: 'image' as const,
-    }));
-    const video = get<string>(initialProduct, 'video_url');
-    if (video) list.push({ url: video, name: 'video', type: 'video' });
-    return list;
+    return images
+      .filter((url) => typeof url === 'string' && url.trim())
+      .map((url, i) => ({
+        url,
+        name: `image-${i + 1}`,
+        type: 'image' as const,
+        preview: url,
+      }));
   });
-  const [certificateUrl, setCertificateUrl] = useState((get<string>(initialProduct, 'certificate_url')) ?? '');
+  const [certificateFiles, setCertificateFiles] = useState<MediaFile[]>(() => {
+    const url =
+      (get<string>(initialProduct, 'certificate_url')) ||
+      (get<string>(initialProduct, 'certificate_file_url')) ||
+      '';
+    if (!url.trim()) return [];
+    return [{ url, name: 'certificate', type: 'image' as const, preview: url }];
+  });
+  const [videoFiles, setVideoFiles] = useState<MediaFile[]>(() => {
+    const video = get<string>(initialProduct, 'video_url');
+    if (!video?.trim()) return [];
+    return [{ url: video, name: 'video', type: 'video' as const }];
+  });
   const [availabilityStatus, setAvailabilityStatus] = useState((get<string>(initialProduct, 'availability_status')) ?? 'in_stock');
   const [inStock, setInStock] = useState(get<boolean>(initialProduct, 'in_stock') ?? true);
-  const [stockQty, setStockQty] = useState(String(get<number>(initialProduct, 'stock_quantity') ?? 1));
   const [featured, setFeatured] = useState(Boolean(get(initialProduct, 'featured')));
   const [isDirectorsPick, setIsDirectorsPick] = useState(Boolean(get(initialProduct, 'is_directors_pick') ?? directorsPickPreset));
   const [displayOrder, setDisplayOrder] = useState(String(get<number>(initialProduct, 'display_order') ?? 0));
@@ -470,9 +513,6 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     if (!price.trim()) {
       return { message: 'Sale / final price is required.', section: 'pricing' as SectionKey };
     }
-    if (parsePositiveInteger(stockQty) === undefined) {
-      return { message: 'Stock quantity is required and must be 0 or more.', section: 'media' as SectionKey };
-    }
     return null;
   }
 
@@ -482,8 +522,12 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   }
 
   function buildBody() {
-    const images = mediaFiles.filter((f) => f.type === 'image').map((f) => f.url);
-    const videos = mediaFiles.filter((f) => f.type === 'video').map((f) => f.url);
+    const images = mediaFiles
+      .filter((f) => f.type === 'image')
+      .map((f) => absoluteMediaUrl(f.url))
+      .filter(Boolean);
+    const certificateUrl = absoluteMediaUrl(certificateFiles[0]?.url || '');
+    const videoUrl = absoluteMediaUrl(videoFiles[0]?.url || '');
     const isGemKind = config.kind === 'navratna' || config.kind === 'upratna';
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
@@ -494,11 +538,16 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     );
     const defaultCanonicalUrl = productCanonicalUrl(config.category, trimmedSlug);
     const effectiveOrigin = config.kind === 'rudraksha' ? rudrakshaOrigin || undefined : origin || undefined;
-    const stockQuantity = parsePositiveInteger(stockQty) ?? 0;
-    const effectiveAvailabilityStatus = stockQuantity <= 0 && availabilityStatus === 'in_stock'
-      ? 'out_of_stock'
-      : availabilityStatus;
-    const effectiveInStock = inStock && stockQuantity > 0 && effectiveAvailabilityStatus === 'in_stock';
+    // ponytail: each piece is unique — stock is only 0 or 1
+    const unavailableStatuses = ['sold', 'reserved', 'out_of_stock', 'archived'];
+    const stockQuantity =
+      inStock && !unavailableStatuses.includes(availabilityStatus) ? 1 : 0;
+    const effectiveAvailabilityStatus =
+      stockQuantity <= 0 && availabilityStatus === 'in_stock'
+        ? 'out_of_stock'
+        : availabilityStatus;
+    const effectiveInStock =
+      inStock && stockQuantity > 0 && effectiveAvailabilityStatus === 'in_stock';
     const effectiveConfiguratorEnabled = configuratorEnabled || isDirectorsPick;
 
     const seo_data: Record<string, unknown> = {
@@ -509,7 +558,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       target_geos: targetGeos,
       schema_type: schemaType || 'Product',
       form_kind: config.kind,
-      canonical_path: new URL(canonicalUrl || defaultCanonicalUrl).pathname,
+      canonical_path: canonicalPathname(canonicalUrl, defaultCanonicalUrl),
     };
 
     const body: Record<string, unknown> = {
@@ -593,9 +642,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       wearing_guide: wearingGuide || undefined,
       expert_note: expertNote || undefined,
 
-      // Media + status
+      // Media + status — keep fields separate for /admin/stock/completeness
       images: images.length > 0 ? images : undefined,
-      video_url: videos[0] || undefined,
+      video_url: videoUrl || undefined,
       certificate_url: certificateUrl || undefined,
       certificate_file_url: certificateUrl || undefined,
       thumbnail_url: images[0] || undefined,
@@ -603,6 +652,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       stock_status: effectiveInStock ? 'in_stock' : 'out_of_stock',
       in_stock: effectiveInStock,
       stock_quantity: stockQuantity,
+      sold_individually: true,
       featured,
       is_directors_pick: isDirectorsPick,
       display_order: parseInt(displayOrder) || 0,
@@ -614,7 +664,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       meta_description: metaDescription || defaultMetaDescription,
       meta_keywords: metaKeywords.length ? metaKeywords : undefined,
       canonical_url: canonicalUrl || defaultCanonicalUrl,
-      og_image: ogImage || images[0] || undefined,
+      // blank/invalid OG must not be sent — zod rejects "" and bad strings as Invalid URL
+      og_image: optionalAbsoluteUrl(ogImage) || optionalAbsoluteUrl(images[0]),
       seo_data,
 
       category_assignments: subCategory
@@ -674,15 +725,32 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      let data: { error?: string; details?: Record<string, string[] | undefined> } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setError(`Server returned ${res.status} with an invalid response. Please try again.`);
+        setSaving(false);
+        return;
+      }
       if (!res.ok) {
-        setError(data.error || `Failed to ${mode === 'create' ? 'create' : 'update'} product`);
+        const fieldErrors = data.details
+          ? Object.entries(data.details)
+              .flatMap(([field, msgs]) => (msgs ?? []).map((m) => `${field}: ${m}`))
+              .slice(0, 4)
+              .join('; ')
+          : '';
+        setError(
+          fieldErrors
+            ? `${data.error || 'Validation failed'} — ${fieldErrors}`
+            : data.error || `Failed to ${mode === 'create' ? 'create' : 'update'} product`,
+        );
         setSaving(false);
         return;
       }
       router.push(asDraft ? '/admin/products?status=inactive' : '/admin/products');
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error. Please try again.');
       setSaving(false);
     }
   }
@@ -836,7 +904,13 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <Label htmlFor="origin">Origin</Label>
-              <FormSelect id="origin" value={origin} onChange={setOrigin} options={ORIGINS} placeholder="Select origin" />
+              <FormInput
+                id="origin"
+                value={origin}
+                onChange={setOrigin}
+                placeholder="Select or type origin"
+                suggestions={ORIGINS}
+              />
             </div>
             <div>
               <Label htmlFor="origin_region">Origin Region (specific)</Label>
@@ -920,7 +994,13 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
             </div>
             <div>
               <Label htmlFor="rudraksha_origin">Origin Country</Label>
-              <FormSelect id="rudraksha_origin" value={rudrakshaOrigin} onChange={setRudrakshaOrigin} options={RUDRAKSHA_ORIGINS} placeholder="Nepal / Indonesia / Java" />
+              <FormInput
+                id="rudraksha_origin"
+                value={rudrakshaOrigin}
+                onChange={setRudrakshaOrigin}
+                placeholder="Select or type origin"
+                suggestions={RUDRAKSHA_ORIGINS}
+              />
             </div>
           </div>
 
@@ -1175,28 +1255,45 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
           <h2 className="text-lg font-semibold text-gray-900">Media &amp; Status</h2>
 
           <div>
-            <Label>Product Images &amp; Videos</Label>
-            <MediaUploader value={mediaFiles} onChange={setMediaFiles} />
+            <Label>Product Images</Label>
+            <p className="mb-2 text-xs text-gray-500">
+              Main product photos only (tracked as Images in Content Gaps).
+            </p>
+            <MediaUploader value={mediaFiles} onChange={setMediaFiles} mode="images" />
           </div>
 
           <div>
-            <Label htmlFor="certificate_url">Certificate / Lab Report URL</Label>
-            <FormInput id="certificate_url" value={certificateUrl} onChange={setCertificateUrl} placeholder="https://..." />
+            <Label>Certificate / Lab Report</Label>
+            <p className="mb-2 text-xs text-gray-500">
+              Upload the certificate scan or paste its URL (tracked as Certificate). PDFs open from the
+              Certificate tab; image scans also appear in the product gallery.
+            </p>
+            <MediaUploader
+              value={certificateFiles}
+              onChange={setCertificateFiles}
+              mode="images"
+              maxFiles={1}
+            />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="stock_qty">Stock Quantity *</Label>
-              <FormInput id="stock_qty" value={stockQty} onChange={setStockQty} placeholder="1" type="number" />
-            </div>
-            <div>
-              <Label htmlFor="availability_status">Availability Status</Label>
-              <FormSelect id="availability_status" value={availabilityStatus} onChange={setAvailabilityStatus} options={AVAILABILITY_STATUS_OPTIONS} />
-            </div>
+          <div>
+            <Label>Product Video</Label>
+            <p className="mb-2 text-xs text-gray-500">
+              Paste a YouTube / Vimeo link and click Add (a VIDEO tile must appear), or upload an MP4. Shown as the last gallery slide.
+            </p>
+            <MediaUploader value={videoFiles} onChange={setVideoFiles} mode="videos" maxFiles={1} />
+          </div>
+
+          <div>
+            <Label htmlFor="availability_status">Availability Status</Label>
+            <FormSelect id="availability_status" value={availabilityStatus} onChange={setAvailabilityStatus} options={AVAILABILITY_STATUS_OPTIONS} />
+            <p className="mt-1 text-xs text-gray-500">
+              Each piece is unique — stock is always 1 when available, 0 when sold or unavailable.
+            </p>
           </div>
 
           <div className="space-y-3">
-            <FormCheckbox checked={inStock} onChange={setInStock} label="In stock" />
+            <FormCheckbox checked={inStock} onChange={setInStock} label="Available for purchase" />
             <FormCheckbox checked={isActive} onChange={setIsActive} label="Active (visible on site)" />
             <FormCheckbox checked={featured} onChange={setFeatured} label="Featured" />
             <FormCheckbox checked={isDirectorsPick} onChange={handleDirectorsPickChange} label="Director's Pick" />

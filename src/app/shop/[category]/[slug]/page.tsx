@@ -26,6 +26,7 @@ import {
   productOfferAvailability,
   productStructuredOfferPrice,
 } from '@/lib/shop/product-pricing';
+import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
 
 export const revalidate = 300;
 
@@ -387,6 +388,10 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   ]);
 
   const images = extractImages(product.images as Json);
+  const galleryImages = buildProductGalleryImages(
+    images,
+    product.certificate_url || product.certificate_file_url,
+  );
   const skuMeta = buildSKUMeta(product);
   const displayName = formatProductDisplayName(product.name);
   const related = (relatedResult.data ?? []) as unknown as ProductCardType[];
@@ -445,7 +450,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
             {/* ─── Left: Gallery ─── */}
             <div className="min-w-0 md:sticky md:top-24 md:self-start lg:top-22.5">
-              <ProductGallery images={images} productName={displayName} videoUrl={product.video_url} />
+              <ProductGallery images={galleryImages} productName={displayName} videoUrl={product.video_url} />
             </div>
 
             {/* ─── Right: Info panel ─── */}

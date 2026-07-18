@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
+import { ChevronDown } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
@@ -22,6 +24,8 @@ export function CheckoutOrderSummary({
   rewardPointsToRedeem = 0,
   rewards = null,
 }: CheckoutOrderSummaryProps) {
+  const [breakupOpen, setBreakupOpen] = useState(false);
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = selectedShippingPlan?.cost ?? 0;
   const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
@@ -81,30 +85,89 @@ export function CheckoutOrderSummary({
           ))}
         </div>
 
-        <div className="pvg-checkout-lines">
-          <div className="pvg-checkout-line">
-            <span>Subtotal</span>
-            <span>{formatPrice(subtotal)}</span>
-          </div>
-          <div className="pvg-checkout-line">
-            <span>Shipping</span>
-            <span>
-              {selectedShippingPlan ? formatPrice(shipping) : 'Select at checkout'}
-            </span>
-          </div>
-          {selectedShippingPlan ? (
-            <p className="text-xs text-[var(--pvg-muted)] -mt-1">{selectedShippingPlan.label}</p>
-          ) : null}
-          {rewardDiscount > 0 && (
-            <div className="pvg-checkout-line pvg-checkout-line--discount">
-              <span>Reward points</span>
-              <span>-{formatPrice(rewardDiscount)}</span>
+        <div className="pvg-checkout-breakup">
+          <button
+            type="button"
+            className="pvg-checkout-breakup-toggle"
+            aria-expanded={breakupOpen}
+            onClick={() => setBreakupOpen((open) => !open)}
+          >
+            <span>Full price breakup</span>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${breakupOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {breakupOpen ? (
+            <div className="pvg-checkout-lines pvg-checkout-lines--breakup">
+              {items.map((item) => (
+                <div key={`breakup-${item.key}`} className="pvg-checkout-line">
+                  <span>
+                    {item.name}
+                    {item.quantity > 1 ? ` × ${item.quantity}` : ''}
+                    <span className="block text-[0.7rem] text-[var(--pvg-muted)]">
+                      {formatPrice(item.price)} each
+                    </span>
+                  </span>
+                  <span>{formatPrice(item.price * item.quantity)}</span>
+                </div>
+              ))}
+              <div className="pvg-checkout-line">
+                <span>Subtotal</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
+              <div className="pvg-checkout-line">
+                <span>
+                  Shipping
+                  {selectedShippingPlan ? (
+                    <span className="block text-[0.7rem] text-[var(--pvg-muted)]">
+                      {selectedShippingPlan.label}
+                    </span>
+                  ) : null}
+                </span>
+                <span>
+                  {selectedShippingPlan ? formatPrice(shipping) : 'Select at checkout'}
+                </span>
+              </div>
+              {rewardDiscount > 0 && (
+                <div className="pvg-checkout-line pvg-checkout-line--discount">
+                  <span>Reward points</span>
+                  <span>-{formatPrice(rewardDiscount)}</span>
+                </div>
+              )}
+              <div className="pvg-checkout-line">
+                <span>Estimated GST/IGST</span>
+                <span>{formatPrice(gst)}</span>
+              </div>
+              <div className="pvg-checkout-line pvg-checkout-line--emphasis">
+                <span>Order total</span>
+                <span>{formatPrice(total)}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="pvg-checkout-lines">
+              <div className="pvg-checkout-line">
+                <span>Subtotal</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
+              <div className="pvg-checkout-line">
+                <span>Shipping</span>
+                <span>
+                  {selectedShippingPlan ? formatPrice(shipping) : 'Select at checkout'}
+                </span>
+              </div>
+              {rewardDiscount > 0 && (
+                <div className="pvg-checkout-line pvg-checkout-line--discount">
+                  <span>Reward points</span>
+                  <span>-{formatPrice(rewardDiscount)}</span>
+                </div>
+              )}
+              <div className="pvg-checkout-line">
+                <span>Estimated GST/IGST</span>
+                <span>{formatPrice(gst)}</span>
+              </div>
             </div>
           )}
-          <div className="pvg-checkout-line">
-            <span>Estimated GST/IGST</span>
-            <span>{formatPrice(gst)}</span>
-          </div>
         </div>
 
         <div className="pvg-checkout-total">

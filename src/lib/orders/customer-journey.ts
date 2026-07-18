@@ -31,11 +31,36 @@ export type JourneyMilestone = {
   key: JourneyStepKey;
   label: string;
   shortLabel: string;
+  description: string;
   done: boolean;
   current: boolean;
   videoUrl?: string | null;
   detail?: string | null;
 };
+
+const STEP_DESCRIPTIONS: Record<JourneyStepKey, string> = {
+  payment: 'Payment received and verified for this order.',
+  confirmed: 'Order confirmed and queued for fulfillment.',
+  processing: 'Our team is preparing your order for the next fulfillment step.',
+  crafting: 'Your piece is being crafted or assembled by our artisans.',
+  preparation: 'Items are being prepared, checked, and packed for dispatch.',
+  certification: 'Lab certification documents are being prepared for your gem.',
+  energization: 'Energization / puja ritual is being performed as requested.',
+  product_video: 'A product video of your finished piece will appear here when ready.',
+  puja_video: 'A ceremony / puja video will appear here when ready.',
+  shipped: 'Package handed to the courier with tracking details.',
+  delivered: 'Order delivered to the shipping address.',
+};
+
+function stepDescription(key: JourneyStepKey, label: string): string {
+  if (key === 'processing' || key === 'preparation') {
+    return `${label} is in progress. Quality checks follow before the order is packed for dispatch.`;
+  }
+  if (key === 'crafting') {
+    return `${label} is handled by our workshop team before finishing and dispatch.`;
+  }
+  return STEP_DESCRIPTIONS[key];
+}
 
 function craftingComplete(order: CustomerJourneyInput) {
   return (
@@ -135,6 +160,7 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
     key: step.key,
     label: step.label,
     shortLabel: step.shortLabel,
+    description: stepDescription(step.key, step.label),
     done: doneFlags[index],
     current: index === activeIndex,
     videoUrl:

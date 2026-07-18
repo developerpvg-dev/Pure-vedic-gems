@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Package, Plus, ShoppingCart, DollarSign, TrendingUp,
   AlertCircle, Clock, Loader2, ArrowRight, Eye, MessageSquare,
-  BarChart3, CreditCard, PieChart, Users, ShieldCheck, Video,
+  BarChart3, CreditCard, PieChart, Users, ShieldCheck, Video, Palette,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -386,6 +386,7 @@ export default function AdminDashboard() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
           {[
             { href: '/admin/orders', label: 'Orders', desc: 'Trends & pipeline', icon: ShoppingCart },
+            { href: '/admin/design-jobs', label: 'Design Jobs', desc: 'Designer WIP & due dates', icon: Palette },
             { href: '/admin/finance', label: 'Finance', desc: 'Revenue breakdown', icon: DollarSign },
             { href: '/admin/products?stock=out', label: 'Products', desc: 'Catalog & inventory', icon: Package },
             { href: '/admin/products?status=inactive', label: 'Drafts', desc: 'Unpublished products', icon: Package },

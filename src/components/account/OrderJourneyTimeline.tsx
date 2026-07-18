@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ExternalLink, PlayCircle, Truck } from 'lucide-react';
+import { Check, ExternalLink, PlayCircle, Truck } from 'lucide-react';
 import {
   getCustomerJourney,
   type CustomerJourneyInput,
@@ -18,6 +18,12 @@ function formatDeliveryDate(value: string | null | undefined) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function stageStateLabel(done: boolean, current: boolean) {
+  if (done && !current) return 'Completed';
+  if (current) return done ? 'In progress' : 'Current stage';
+  return 'Upcoming';
 }
 
 export function OrderJourneyTimeline({
@@ -70,11 +76,6 @@ export function OrderJourneyTimeline({
                   <span className="sm:hidden">{milestone.shortLabel}</span>
                   <span className="hidden sm:inline">{milestone.label}</span>
                 </span>
-                {milestone.detail && (milestone.current || milestone.done) ? (
-                  <span className="mt-0.5 max-w-[5rem] text-center text-[7px] normal-case text-[var(--pvg-muted)] sm:max-w-none sm:text-[8px]">
-                    {milestone.detail}
-                  </span>
-                ) : null}
               </div>
               {index < milestones.length - 1 ? (
                 <div
@@ -91,29 +92,89 @@ export function OrderJourneyTimeline({
         </div>
       </div>
 
+      <ol className="mt-5 space-y-0 rounded-xl border border-[#ede6d5] bg-[#faf8f4] px-3 py-2 sm:px-4">
+        {milestones.map((milestone, index) => {
+          const state = stageStateLabel(milestone.done, milestone.current);
+          const active = milestone.done || milestone.current;
+          const rowClass =
+            index < milestones.length - 1
+              ? 'flex gap-3 border-b border-[#ede6d5] py-3'
+              : 'flex gap-3 py-3';
+          return (
+            <li key={`detail-${milestone.key}`} className={rowClass}>
+              <div
+                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                style={{
+                  background: active ? 'var(--pvg-accent)' : 'white',
+                  color: active ? 'white' : 'var(--pvg-muted)',
+                  border: active ? 'none' : '1.5px solid var(--pvg-border)',
+                }}
+                aria-hidden="true"
+              >
+                {milestone.done && !milestone.current ? (
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                ) : (
+                  index + 1
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: active ? 'var(--pvg-primary)' : 'var(--pvg-muted)' }}
+                  >
+                    {milestone.label}
+                  </p>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    style={{
+                      background: milestone.current
+                        ? 'rgba(138, 100, 0, 0.12)'
+                        : milestone.done
+                          ? 'rgba(22, 101, 52, 0.1)'
+                          : 'rgba(0,0,0,0.04)',
+                      color: milestone.current
+                        ? '#8a6400'
+                        : milestone.done
+                          ? '#166534'
+                          : '#7a6250',
+                    }}
+                  >
+                    {state}
+                  </span>
+                  {milestone.detail ? (
+                    <span className="text-[11px] text-[var(--pvg-muted)]">
+                      · {milestone.detail}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-[#6b5b4e]">
+                  {milestone.description}
+                </p>
+                {milestone.videoUrl ? (
+                  <a
+                    href={milestone.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#8a6400] underline-offset-2 hover:underline"
+                  >
+                    <PlayCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                    Watch {milestone.label}
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
       <div className="mt-4 space-y-3">
         {fulfillmentContext.mixed ? (
           <p className="text-[11px] text-[var(--pvg-muted)]">
             Tracking reflects the primary fulfillment path for this order.
           </p>
         ) : null}
-        {milestones
-          .filter((milestone) => milestone.videoUrl)
-          .map((milestone) => (
-            <a
-              key={milestone.key}
-              href={milestone.videoUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between gap-3 rounded-lg border border-[#ede6d5] bg-[#faf8f4] px-4 py-3 transition hover:border-[#c9a84c] hover:bg-[#fff8e6]"
-            >
-              <span className="flex items-center gap-2 text-sm font-semibold text-[var(--pvg-primary)]">
-                <PlayCircle className="h-4 w-4 shrink-0 text-[#b8861e]" aria-hidden="true" />
-                Watch {milestone.label}
-              </span>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-[var(--pvg-muted)]" aria-hidden="true" />
-            </a>
-          ))}
 
         {hasTracking ? (
           <div className="rounded-lg border border-[#ede6d5] bg-white px-4 py-3">

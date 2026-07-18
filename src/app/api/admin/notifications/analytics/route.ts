@@ -6,7 +6,7 @@ import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { isBroadcastRow } from '@/lib/notifications/broadcasts';
 
 export async function GET() {
-  const auth = await requireAdminAccess('leads.read');
+  const auth = await requireAdminAccess('content.manage');
   if ('error' in auth) return auth.error;
 
   const admin = createAdminClient();

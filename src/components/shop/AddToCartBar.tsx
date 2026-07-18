@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, MessageCircle, Share2, Gem, Phone } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Share2, Gem, Phone, Calendar } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
@@ -30,34 +30,12 @@ function getImageSrc(product: Product): string {
 }
 
 export function AddToCartBar({ product }: AddToCartBarProps) {
-  const { addItem, isInCart, getItemQty, updateQty, getItemKey } = useCart();
+  const { addItem, isInCart } = useCart();
   const displayName = formatProductDisplayName(product.name);
   const inCart = isInCart(product.id);
-  const cartQty = getItemQty(product.id);
-  const cartItemKey = getItemKey(product.id);
-  const stockQuantity = product.stock_quantity == null ? 99 : Math.max(0, Number(product.stock_quantity));
-  const maxQuantity = product.sold_individually ? Math.min(1, stockQuantity) : stockQuantity;
   const isOnRequest = isProductPriceOnRequest(product);
   const isUnavailable = isProductStockUnavailable(product);
   const cartPrice = resolveProductCartPrice(product);
-  const canAdjustQuantity = maxQuantity > 1 && !product.sold_individually;
-  const showQuantityStepper = !isUnavailable && inCart && canAdjustQuantity;
-
-  const displayQty = cartQty;
-
-  const handleDecrease = () => {
-    if (!inCart || !cartItemKey) return;
-    if (cartQty > 1) updateQty(cartItemKey, cartQty - 1);
-  };
-
-  const handleIncrease = () => {
-    if (!inCart || !cartItemKey) return;
-    if (displayQty >= maxQuantity) {
-      toast.info(`Only ${maxQuantity} unit${maxQuantity > 1 ? 's' : ''} available`);
-      return;
-    }
-    updateQty(cartItemKey, cartQty + 1);
-  };
 
   const handleAdd = useCallback(() => {
     if (isUnavailable) {
@@ -67,7 +45,11 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       return;
     }
 
-    const quantityToAdd = 1;
+    if (inCart) {
+      toast.info('This piece is already in your cart');
+      return;
+    }
+
     addItem({
       product_id: product.id,
       slug: product.slug,
@@ -77,12 +59,12 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       category: product.category,
       image_url: getImageSrc(product),
       price: cartPrice,
-      quantity: quantityToAdd,
+      quantity: 1,
       stock_quantity: product.stock_quantity,
       stock_status: product.stock_status,
       availability_status: product.availability_status,
       in_stock: product.in_stock,
-      sold_individually: product.sold_individually,
+      sold_individually: true,
       carat_weight: product.carat_weight ?? null,
       origin: product.origin ?? null,
     });
@@ -96,7 +78,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       description: 'View your cart to proceed to checkout.',
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
-  }, [addItem, cartPrice, displayName, isUnavailable, product]);
+  }, [addItem, cartPrice, displayName, inCart, isUnavailable, product]);
 
   const waLink = `https://wa.me/919871582404?text=${encodeURIComponent(
     `Hi, I'm interested in: ${displayName} (SKU: ${product.sku}). Please share more details.`
@@ -118,26 +100,17 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
 
   return (
     <div className="product-cart-bar space-y-2 lg:space-y-4">
-      {/* Stock status */}
       {isOnRequest ? (
         <div className="flex items-center gap-1.5 text-xs font-medium text-[#7A1515] sm:gap-2 sm:text-sm">
           <span className="h-2 w-2 rounded-full bg-[#7A1515]" />
           Available on Request
         </div>
-      ) : !isUnavailable ? (
-        <div className="flex items-center gap-1.5 text-xs font-medium text-green-700 lg:gap-2 lg:text-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500 lg:h-2 lg:w-2" />
-          {product.availability_status === 'on_demand' ? 'Available on Demand' : 'In Stock'}
-          {product.stock_quantity < 5 && (
-            <span className="text-amber-600">— Only {product.stock_quantity} left!</span>
-          )}
-        </div>
-      ) : (
+      ) : isUnavailable ? (
         <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 sm:gap-2 sm:text-sm">
           <span className="h-2 w-2 rounded-full bg-red-500" />
           {product.availability_status === 'reserved' ? 'Reserved' : product.availability_status === 'sold' ? 'Sold' : 'Out of Stock'}
         </div>
-      )}
+      ) : null}
 
       {isOnRequest ? (
         <div className="flex flex-col gap-2">
@@ -162,31 +135,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         </div>
       ) : (
       <>
-      {/* Primary action row — compact single line on mobile */}
       <div className="flex items-stretch gap-1.5 lg:gap-2">
-        {showQuantityStepper ? (
-          <div className="flex shrink-0 items-center rounded-md border border-[var(--pvg-border)] bg-brand-surface lg:rounded-lg">
-            <button
-              onClick={handleDecrease}
-              className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] lg:h-10 lg:w-9"
-              aria-label="Decrease quantity"
-            >
-              −
-            </button>
-            <span className="w-6 text-center text-[13px] font-semibold text-[var(--pvg-primary)] lg:w-7 lg:text-[14px]">
-              {displayQty}
-            </span>
-            <button
-              onClick={handleIncrease}
-              disabled={displayQty >= maxQuantity}
-              className="flex h-9 w-7 items-center justify-center text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)] disabled:cursor-not-allowed disabled:opacity-40 lg:h-10 lg:w-9"
-              aria-label="Increase quantity"
-            >
-              +
-            </button>
-          </div>
-        ) : null}
-
         <button
           onClick={inCart ? undefined : handleAdd}
           disabled={isUnavailable}
@@ -194,8 +143,6 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           style={{
             background: inCart
               ? '#2e7d32'
-              : configuratorEnabled
-              ? '#7A1515'
               : '#7A1515',
             color: '#fff',
             cursor: inCart ? 'default' : 'pointer',
@@ -223,7 +170,6 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         </button>
       </div>
 
-      {/* Configure in Jewelry — only shown when configurator is enabled */}
       {configuratorEnabled && (
         <Link
           href={`/configure/${product.id}`}
@@ -241,8 +187,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       </>
       )}
 
-      {/* WhatsApp + Book Consultation */}
-      <div className="grid grid-cols-2 gap-1.5 lg:flex lg:gap-2">
+      <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-3 lg:gap-2">
         <a
           href={waLink}
           target="_blank"
@@ -254,11 +199,19 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           WhatsApp
         </a>
         <Link
-          href="/contact?type=consultation"
+          href="/#gem-recommendation"
           className="flex items-center justify-center gap-1 rounded-md border border-[var(--pvg-border)] px-2 py-1.5 text-[10px] font-semibold text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)] sm:gap-1.5 sm:px-3 sm:py-2 sm:text-[11px]"
         >
           <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           <span className="truncate">Book Consultation</span>
+        </Link>
+        {/* Desktop only — fills the empty slot beside WhatsApp / Book Consultation */}
+        <Link
+          href="/consultation#detailed-consultation"
+          className="hidden items-center justify-center gap-1.5 rounded-lg border border-[var(--pvg-primary)] px-3 py-2 text-[11px] font-semibold text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-primary)] hover:text-white lg:flex"
+        >
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Book Detailed Consultation</span>
         </Link>
       </div>
     </div>

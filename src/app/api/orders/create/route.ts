@@ -216,9 +216,10 @@ export async function POST(req: NextRequest) {
     .from('orders')
     .insert({
       customer_id: customerId,
-      guest_email: customerId ? null : contact.email,
-      guest_phone: customerId ? null : contact.phone,
-      guest_name: customerId ? null : contact.full_name,
+      // Always store checkout contact so /track-order email/phone lookup works for logged-in orders too.
+      guest_email: contact.email,
+      guest_phone: contact.phone,
+      guest_name: contact.full_name,
       items: orderItems as Json,
       subtotal: pricing.subtotal,
       jewelry_charges: pricing.jewelry_charges,

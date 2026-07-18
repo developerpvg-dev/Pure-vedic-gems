@@ -85,8 +85,7 @@ export function buildConfiguratorPriceTotals(
         if (pricing.labor_rate_percent > 0 && pricing.making_charge > 0) {
           lines.push({
             key: 'labor',
-            label: `Labor charge (${pricing.labor_rate_percent}%)`,
-            detail: `${pricing.labor_rate_percent}% of ${formatPrice(pricing.metal_price)} metal value`,
+            label: 'Labor charge',
             amount: pricing.making_charge,
           });
         } else if (pricing.making_charge > 0) {

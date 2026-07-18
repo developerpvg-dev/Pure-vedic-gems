@@ -69,7 +69,8 @@ describe('buildConfiguratorPriceTotals', () => {
     });
 
     const laborLine = totals.lines.find((l) => l.key === 'labor');
-    expect(laborLine?.label).toBe('Labor charge (25%)');
+    expect(laborLine?.label).toBe('Labor charge');
+    expect(laborLine?.amount).toBe(6000);
     expect(totals.gst_jewelry).toBe(900); // 3% of 30000
     expect(totals.grand_total).toBe(40925); // 40000 + 900 + 25 gem gst
   });
