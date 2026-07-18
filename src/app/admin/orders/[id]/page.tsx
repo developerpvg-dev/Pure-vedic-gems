@@ -634,21 +634,47 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                   <div>
                                     <p className="text-stone-400">DOB</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.dob}
+                                      {selections.energization_form.dob || '—'}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-stone-400">Birth time</p>
+                                    <p className="font-medium text-stone-800">
+                                      {selections.energization_form.birth_time || '—'}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-stone-400">Birth place</p>
+                                    <p className="font-medium text-stone-800">
+                                      {selections.energization_form.birth_place || '—'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Gotra</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.gotra}
+                                      {selections.energization_form.gotra || '—'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Rashi</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.rashi}
+                                      {selections.energization_form.rashi || '—'}
                                     </p>
                                   </div>
+                                  <div>
+                                    <p className="text-stone-400">Record ceremony</p>
+                                    <p className="font-medium text-stone-800">
+                                      {selections.energization_form.record_ceremony ? 'Yes' : 'No'}
+                                    </p>
+                                  </div>
+                                  {selections.energization?.name ? (
+                                    <div className="sm:col-span-3">
+                                      <p className="text-stone-400">Ceremony</p>
+                                      <p className="font-medium text-stone-800">
+                                        {selections.energization.name}
+                                      </p>
+                                    </div>
+                                  ) : null}
                                 </div>
                               ) : null}
 

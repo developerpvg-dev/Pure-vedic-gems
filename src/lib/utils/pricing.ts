@@ -130,7 +130,8 @@ async function getShippingMethod(
   }
 
   const cost = Number(method.cost);
-  if (!Number.isFinite(cost) || cost <= 0) {
+  // ponytail: cost 0 is valid (free shipping tiers); negative is corrupt data
+  if (!Number.isFinite(cost) || cost < 0) {
     throw new Error('Selected shipping method is not available.');
   }
 
@@ -309,10 +310,15 @@ export async function recalculateOrderTotal(
     }
   }
 
-  // ── 4. Shipping cost ──────────────────────────────────────────────────
+  // ── 4. Shipping cost (eligibility vs full merchandise, not gem-only) ──
+  // Configured carts store gem in `subtotal` and ring/metal/cert/puja as
+  // separate charges — min/max order bands must include those charges.
+  const merchandiseTotal =
+    subtotal + jewelryCharges + metalCharges + certificationCharges + energizationCharges;
+
   const shippingConfig = await getShippingMethod(
     shippingMethod,
-    subtotal,
+    merchandiseTotal,
     shippingAddress?.country_code ?? null
   );
   const shippingCost = shippingConfig.cost;
@@ -340,7 +346,7 @@ export async function recalculateOrderTotal(
     const isUsageValid =
       !coupon.usage_limit || coupon.used_count < coupon.usage_limit;
     const meetsMinimum =
-      !coupon.min_order_amount || subtotal >= coupon.min_order_amount;
+      !coupon.min_order_amount || merchandiseTotal >= coupon.min_order_amount;
 
     if (!isDateValid) throw new Error('Coupon code is not valid for today.');
     if (!isUsageValid) throw new Error('Coupon usage limit has been reached.');

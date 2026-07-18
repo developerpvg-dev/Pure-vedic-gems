@@ -6,7 +6,6 @@ import type { CartItem } from '@/lib/types/cart';
 import type {
   ContactInfo,
   ShippingAddress,
-  EnergizationFields,
   ShippingMethodId,
 } from '@/lib/validators/order';
 import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
@@ -62,7 +61,6 @@ interface PaymentSectionProps {
   contact: ContactInfo;
   shippingAddress: ShippingAddress;
   shippingMethod: ShippingMethodId;
-  energization?: EnergizationFields;
   specialInstructions?: string;
   rewardPointsToRedeem?: number;
   isProcessing: boolean;
@@ -76,7 +74,6 @@ export function PaymentSection({
   contact,
   shippingAddress,
   shippingMethod,
-  energization,
   specialInstructions,
   rewardPointsToRedeem = 0,
   isProcessing,
@@ -147,7 +144,6 @@ export function PaymentSection({
           contact,
           shipping_address: shippingAddress,
           shipping_method: shippingMethod,
-          energization,
           special_instructions: specialInstructions,
           reward_points_to_redeem: rewardPointsToRedeem,
           checkout_consent: {
@@ -282,7 +278,6 @@ export function PaymentSection({
     contact,
     shippingAddress,
     shippingMethod,
-    energization,
     specialInstructions,
     rewardPointsToRedeem,
     isProcessing,

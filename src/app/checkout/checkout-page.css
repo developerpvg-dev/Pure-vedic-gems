@@ -458,8 +458,38 @@
   padding: 0.65rem 0;
 }
 
+.pvg-checkout-item-block + .pvg-checkout-item-block {
+  border-top: 1px solid rgba(61, 43, 31, 0.06);
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+}
+
+.pvg-checkout-item-block .pvg-checkout-item {
+  padding-bottom: 0.25rem;
+}
+
 .pvg-checkout-item + .pvg-checkout-item {
   border-top: 1px solid rgba(61, 43, 31, 0.06);
+}
+
+.pvg-checkout-item-charges {
+  margin: 0.35rem 0 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.5rem;
+  background: rgba(244, 235, 224, 0.55);
+}
+
+.pvg-checkout-line--item-head {
+  font-weight: 700;
+  color: #3d2b1f;
+  margin-bottom: 0.2rem;
+}
+
+.pvg-checkout-line--charge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #5c4a3d;
+  padding-left: 0.35rem;
 }
 
 .pvg-checkout-item-thumb {

@@ -15,14 +15,13 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { useAuth } from '@/lib/hooks/useAuth';
-import type { ContactInfo, ShippingAddress, EnergizationFields, ShippingMethodId } from '@/lib/validators/order';
+import type { ContactInfo, ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import { ContactSection } from '@/components/checkout/ContactSection';
 import { ShippingSection } from '@/components/checkout/ShippingSection';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
 import { RewardPointsRedemption, type CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
-import { EnergizationFieldsForm } from '@/components/checkout/EnergizationFields';
 import Link from 'next/link';
 
 type CheckoutStep = 'contact' | 'shipping' | 'payment';
@@ -43,24 +42,12 @@ export default function CheckoutPage() {
   const [shippingData, setShippingData] = useState<ShippingAddress | null>(null);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId | null>(null);
   const [selectedShippingPlan, setSelectedShippingPlan] = useState<SelectedShippingPlan | null>(null);
-  const [energizationData, setEnergizationData] = useState<EnergizationFields>({
-    include_energization: false,
-    record_ceremony: false,
-  });
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [rewardInfo, setRewardInfo] = useState<CheckoutRewardState | null>(null);
   const [rewardLoading, setRewardLoading] = useState(false);
   const [rewardPointsToRedeem, setRewardPointsToRedeem] = useState(0);
-
-  const hasEnergizationItem = useMemo(() => {
-    return cart.items.some(
-      (item) =>
-        item.configuration_summary?.toLowerCase().includes('energiz') ||
-        item.category?.toLowerCase().includes('rudraksha')
-    );
-  }, [cart.items]);
 
   const isContactComplete = contactData !== null;
   const isShippingComplete = shippingData !== null;
@@ -245,13 +232,6 @@ export default function CheckoutPage() {
               disabled={!isContactComplete}
             />
 
-            {hasEnergizationItem && currentStep === 'payment' && (
-              <EnergizationFieldsForm
-                value={energizationData}
-                onChange={setEnergizationData}
-              />
-            )}
-
             {currentStep === 'payment' && (
               <div className="pvg-checkout-step pvg-checkout-step--active">
                 <h3 className="pvg-checkout-step-title mb-3">Special instructions</h3>
@@ -282,7 +262,6 @@ export default function CheckoutPage() {
                   contact={contactData}
                   shippingAddress={shippingData}
                   shippingMethod={shippingMethod}
-                  energization={hasEnergizationItem ? energizationData : undefined}
                   specialInstructions={specialInstructions}
                   rewardPointsToRedeem={rewardPointsToRedeem}
                   isProcessing={isProcessing}

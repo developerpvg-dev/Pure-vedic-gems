@@ -12,6 +12,7 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { productHref } from '@/lib/categories/storefront';
 import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
+import { CartItemPriceBreakdown } from '@/components/cart/CartItemPriceBreakdown';
 
 // ─── Cart item row ────────────────────────────────────────────────────────────
 
@@ -80,6 +81,8 @@ function CartItemRow({
             Configure Pendant
           </Link>
         )}
+
+        <CartItemPriceBreakdown item={item} />
 
         {/* Price + remove — each piece is unique (qty always 1) */}
         <div className="mt-2 flex items-center justify-between">

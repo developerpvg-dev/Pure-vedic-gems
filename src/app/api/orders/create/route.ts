@@ -11,11 +11,49 @@ import type { Json } from '@/lib/types/database';
 import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
 import { cancelRewardRedemption, reserveRewardRedemption } from '@/lib/rewards/service';
 import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
+import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 
 function createGuestOrderToken() {
   const token = crypto.randomBytes(32).toString('hex');
   const hash = crypto.createHash('sha256').update(token).digest('hex');
   return { token, hash };
+}
+
+/** Prefer configurator snapshot ceremony details over the old checkout energization form. */
+function deriveCeremonyFromCartItems(
+  items: Array<{ configuration_snapshot?: unknown }>,
+  fallback?: {
+    include_energization?: boolean;
+    energization_type?: string;
+    ceremony_dob?: string;
+    ceremony_gotra?: string;
+    ceremony_rashi?: string;
+    record_ceremony?: boolean;
+  } | null,
+) {
+  for (const item of items) {
+    const snap = parseConfigurationSnapshot(item.configuration_snapshot);
+    const form = snap?.selections?.energization_form;
+    const option = snap?.selections?.energization;
+    if (!option && !form) continue;
+    return {
+      include_energization: true,
+      energization_type: option?.name ?? fallback?.energization_type ?? null,
+      ceremony_dob: form?.dob ?? fallback?.ceremony_dob ?? null,
+      ceremony_gotra: form?.gotra ?? fallback?.ceremony_gotra ?? null,
+      ceremony_rashi: form?.rashi ?? fallback?.ceremony_rashi ?? null,
+      record_ceremony: Boolean(form?.record_ceremony ?? fallback?.record_ceremony),
+    };
+  }
+
+  return {
+    include_energization: Boolean(fallback?.include_energization),
+    energization_type: fallback?.energization_type ?? null,
+    ceremony_dob: fallback?.ceremony_dob ?? null,
+    ceremony_gotra: fallback?.ceremony_gotra ?? null,
+    ceremony_rashi: fallback?.ceremony_rashi ?? null,
+    record_ceremony: Boolean(fallback?.record_ceremony),
+  };
 }
 
 async function reserveUniquePhysicalProducts({
@@ -164,6 +202,7 @@ export async function POST(req: NextRequest) {
 
   // ── Server-side price recalculation (CRITICAL: prevents tampering) ───
   let pricing;
+  // Energization fee already lives on product_configurations; do not add a second checkout fee.
   try {
     pricing = await recalculateOrderTotal(
       items.map((i) => ({
@@ -173,7 +212,7 @@ export async function POST(req: NextRequest) {
       })),
       shipping_method,
       coupon_code,
-      energization?.energization_type,
+      undefined,
       shipping_address,
       { customerId, pointsToRedeem: reward_points_to_redeem }
     );
@@ -211,6 +250,8 @@ export async function POST(req: NextRequest) {
   const supabaseAdmin = createAdminClient();
   const guestAccess = customerId ? null : createGuestOrderToken();
   const reservationHoldUntil = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+
+  const ceremony = deriveCeremonyFromCartItems(items, energization);
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
@@ -253,12 +294,12 @@ export async function POST(req: NextRequest) {
         high_value_manual_review: pricing.total >= 200000,
       } as Json,
       special_instructions: special_instructions ?? null,
-      include_energization: energization?.include_energization ?? false,
-      energization_type: energization?.energization_type ?? null,
-      ceremony_gotra: energization?.ceremony_gotra ?? null,
-      ceremony_dob: energization?.ceremony_dob ?? null,
-      ceremony_rashi: energization?.ceremony_rashi ?? null,
-      record_ceremony: energization?.record_ceremony ?? false,
+      include_energization: ceremony.include_energization,
+      energization_type: ceremony.energization_type,
+      ceremony_gotra: ceremony.ceremony_gotra,
+      ceremony_dob: ceremony.ceremony_dob,
+      ceremony_rashi: ceremony.ceremony_rashi,
+      record_ceremony: ceremony.record_ceremony,
       payment_status: 'pending',
       status: 'pending_payment',
       guest_access_token: guestAccess?.hash ?? null,

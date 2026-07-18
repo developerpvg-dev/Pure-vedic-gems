@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
+import { CartItemPriceBreakdown } from '@/components/cart/CartItemPriceBreakdown';
+import { buildCartItemPriceBreakdown } from '@/lib/cart/price-breakdown';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import type { CartItem } from '@/lib/types/cart';
 import { estimateClientTax } from '@/lib/utils/tax';
@@ -16,6 +18,12 @@ interface CheckoutOrderSummaryProps {
   selectedShippingPlan: SelectedShippingPlan | null;
   rewardPointsToRedeem?: number;
   rewards?: CheckoutRewardState | null;
+}
+
+function amountLabel(amount: number | null, display?: string) {
+  if (display) return display;
+  if (amount == null) return '—';
+  return formatPrice(amount);
 }
 
 export function CheckoutOrderSummary({
@@ -33,6 +41,11 @@ export function CheckoutOrderSummary({
   const total = Math.max(0, subtotal - rewardDiscount + shipping + gst);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
+  const itemBreakups = useMemo(
+    () => items.map((item) => ({ item, breakdown: buildCartItemPriceBreakdown(item) })),
+    [items],
+  );
+
   return (
     <div className="pvg-checkout-summary">
       <div className="pvg-checkout-summary-head">
@@ -45,42 +58,48 @@ export function CheckoutOrderSummary({
       <div className="pvg-checkout-summary-body">
         <div>
           {items.map((item) => (
-            <div key={item.key} className="pvg-checkout-item">
-              <div className="pvg-checkout-item-thumb">
-                <Image
-                  src={item.image_url || '/placeholder-gem.png'}
-                  alt={item.name}
-                  fill
-                  sizes="52px"
-                  className="object-cover"
-                />
-                {item.quantity > 1 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#8a6400] text-[10px] font-bold text-white">
-                    {item.quantity}
-                  </span>
-                )}
+            <div key={item.key} className="pvg-checkout-item-block">
+              <div className="pvg-checkout-item">
+                <div className="pvg-checkout-item-thumb">
+                  <Image
+                    src={item.image_url || '/placeholder-gem.png'}
+                    alt={item.name}
+                    fill
+                    sizes="52px"
+                    className="object-cover"
+                  />
+                  {item.quantity > 1 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#8a6400] text-[10px] font-bold text-white">
+                      {item.quantity}
+                    </span>
+                  )}
+                </div>
+                <div className="pvg-checkout-item-info">
+                  <p className="pvg-checkout-item-name">{item.name}</p>
+                  {(item.carat_weight || item.origin) && (
+                    <p className="pvg-checkout-item-meta">
+                      {item.carat_weight ? `${item.carat_weight} ct` : ''}
+                      {item.carat_weight && item.origin ? ' · ' : ''}
+                      {item.origin ?? ''}
+                    </p>
+                  )}
+                  {Boolean(item.configuration_summary || item.configuration_snapshot) && (
+                    <div className="pvg-checkout-item-chips-wrap">
+                      <ConfigurationDetailsDisplay
+                        snapshot={item.configuration_snapshot}
+                        summary={item.configuration_summary}
+                        deliveryEtaLabel={item.delivery_eta_label}
+                        variant="compact"
+                      />
+                    </div>
+                  )}
+                </div>
+                <p className="pvg-checkout-item-price">{formatPrice(item.price * item.quantity)}</p>
               </div>
-              <div className="pvg-checkout-item-info">
-                <p className="pvg-checkout-item-name">{item.name}</p>
-                {(item.carat_weight || item.origin) && (
-                  <p className="pvg-checkout-item-meta">
-                    {item.carat_weight ? `${item.carat_weight} ct` : ''}
-                    {item.carat_weight && item.origin ? ' · ' : ''}
-                    {item.origin ?? ''}
-                  </p>
-                )}
-                {Boolean(item.configuration_summary || item.configuration_snapshot) && (
-                  <div className="pvg-checkout-item-chips-wrap">
-                    <ConfigurationDetailsDisplay
-                      snapshot={item.configuration_snapshot}
-                      summary={item.configuration_summary}
-                      deliveryEtaLabel={item.delivery_eta_label}
-                      variant="compact"
-                    />
-                  </div>
-                )}
-              </div>
-              <p className="pvg-checkout-item-price">{formatPrice(item.price * item.quantity)}</p>
+              <CartItemPriceBreakdown
+                item={item}
+                gstNote="GST is estimated here. Final HSN/GST is confirmed with your shipping address before payment."
+              />
             </div>
           ))}
         </div>
@@ -100,16 +119,28 @@ export function CheckoutOrderSummary({
 
           {breakupOpen ? (
             <div className="pvg-checkout-lines pvg-checkout-lines--breakup">
-              {items.map((item) => (
-                <div key={`breakup-${item.key}`} className="pvg-checkout-line">
-                  <span>
-                    {item.name}
-                    {item.quantity > 1 ? ` × ${item.quantity}` : ''}
-                    <span className="block text-[0.7rem] text-[var(--pvg-muted)]">
-                      {formatPrice(item.price)} each
+              {itemBreakups.map(({ item, breakdown }) => (
+                <div key={`breakup-${item.key}`} className="pvg-checkout-item-charges">
+                  <div className="pvg-checkout-line pvg-checkout-line--item-head">
+                    <span>
+                      {item.name}
+                      {item.quantity > 1 ? ` × ${item.quantity}` : ''}
                     </span>
-                  </span>
-                  <span>{formatPrice(item.price * item.quantity)}</span>
+                    <span>{formatPrice(item.price * item.quantity)}</span>
+                  </div>
+                  {breakdown.lines.map((line) => (
+                    <div key={`${item.key}-${line.key}`} className="pvg-checkout-line pvg-checkout-line--charge">
+                      <span>
+                        {line.label}
+                        {line.detail ? (
+                          <span className="block text-[0.68rem] font-normal text-[var(--pvg-muted)]">
+                            {line.detail}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span>{amountLabel(line.amount, line.display)}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
               <div className="pvg-checkout-line">
@@ -126,7 +157,7 @@ export function CheckoutOrderSummary({
                   ) : null}
                 </span>
                 <span>
-                  {selectedShippingPlan ? formatPrice(shipping) : 'Select at checkout'}
+                  {selectedShippingPlan ? formatPrice(shipping) : 'Select shipping above'}
                 </span>
               </div>
               {rewardDiscount > 0 && (
@@ -153,7 +184,7 @@ export function CheckoutOrderSummary({
               <div className="pvg-checkout-line">
                 <span>Shipping</span>
                 <span>
-                  {selectedShippingPlan ? formatPrice(shipping) : 'Select at checkout'}
+                  {selectedShippingPlan ? formatPrice(shipping) : 'Select shipping above'}
                 </span>
               </div>
               {rewardDiscount > 0 && (
