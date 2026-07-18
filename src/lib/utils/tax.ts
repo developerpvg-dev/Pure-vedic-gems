@@ -1,4 +1,5 @@
 import type { Json } from '@/lib/types/database';
+import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 
 export const TAX_POLICY_VERSION = '2026-05-16';
 export const SELLER_STATE = 'Delhi';
@@ -65,6 +66,13 @@ const TAX_CLASS_DEFAULTS: Record<string, { rate: number; hsn: string | null }> =
 
 function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/** Same rounding as server `calculateGstComponent.total_tax` — use for client estimates. */
+export function gstOnAmount(amount: number, ratePercent: number): number {
+  const taxableAmount = roundCurrency(Math.max(amount, 0));
+  if (taxableAmount <= 0 || ratePercent <= 0) return 0;
+  return roundCurrency(taxableAmount * (ratePercent / 100));
 }
 
 function normalizeState(value?: string | null) {
@@ -180,11 +188,47 @@ export function taxBreakdownToJson(breakdown: TaxBreakdown): Json {
   return JSON.parse(JSON.stringify(breakdown)) as Json;
 }
 
-export function estimateClientTax(items: Array<{ price: number; quantity: number; category?: string | null }>, shippingCost: number) {
-  const productTax = items.reduce((sum, item) => {
+/**
+ * Client-side GST estimate matching `recalculateOrderTotal`:
+ * gem @ product rate, metal 3%, making+diamond+custom 5%, cert/energization/shipping 18%.
+ */
+export function estimateClientTax(
+  items: Array<{
+    price: number;
+    quantity: number;
+    category?: string | null;
+    configuration_snapshot?: unknown;
+  }>,
+  shippingCost: number,
+) {
+  let gst = 0;
+  for (const item of items) {
+    const qty = Math.max(item.quantity, 0);
+    const snap = parseConfigurationSnapshot(item.configuration_snapshot);
+    const pricing = snap?.pricing;
+    if (pricing && (pricing.gem_price != null || pricing.total != null || pricing.making_charge != null)) {
+      const gem = Number(pricing.gem_price ?? 0) * qty;
+      const metal = Number(pricing.metal_price ?? 0) * qty;
+      const making =
+        (Number(pricing.making_charge ?? 0) +
+          Number(pricing.diamond_charge ?? 0) +
+          Number(pricing.custom_design_fee ?? 0)) *
+        qty;
+      const cert = Number(pricing.certification_fee ?? 0) * qty;
+      const energ = Number(pricing.energization_fee ?? 0) * qty;
+      const gemRate = resolveProductTax({
+        category: snap?.product?.category ?? item.category,
+      }).rate_percent;
+      gst += gstOnAmount(gem, gemRate);
+      gst += gstOnAmount(metal, TAX_CLASS_DEFAULTS.metal.rate);
+      gst += gstOnAmount(making, TAX_CLASS_DEFAULTS.making_charge.rate);
+      gst += gstOnAmount(cert, TAX_CLASS_DEFAULTS.certification.rate);
+      gst += gstOnAmount(energ, TAX_CLASS_DEFAULTS.energization.rate);
+      continue;
+    }
     const tax = resolveProductTax({ category: item.category });
-    return sum + Math.max(item.price * item.quantity, 0) * (tax.rate_percent / 100);
-  }, 0);
-  const shippingTax = shippingCost > 0 ? shippingCost * (TAX_CLASS_DEFAULTS.shipping.rate / 100) : 0;
-  return Math.round(productTax + shippingTax);
+    gst += gstOnAmount(Math.max(item.price * qty, 0), tax.rate_percent);
+  }
+  gst += gstOnAmount(shippingCost, TAX_CLASS_DEFAULTS.shipping.rate);
+  return Math.round(gst);
 }

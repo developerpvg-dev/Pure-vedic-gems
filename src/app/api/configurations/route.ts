@@ -171,8 +171,11 @@ async function getCurrentMetalRates(admin: ReturnType<typeof createAdminClient>)
     pricing_mode: string;
   }>) {
     rates[metal.slug] = Number(metal.price_per_gram);
+    // Accept fixed_sheet or legacy 'fixed' — never treat fixed metals as weight/%.
     pricingModes[metal.slug] =
-      metal.pricing_mode === 'fixed_sheet' ? 'fixed_sheet' : 'weight';
+      metal.pricing_mode === 'fixed_sheet' || metal.pricing_mode === 'fixed'
+        ? 'fixed_sheet'
+        : 'weight';
   }
 
   return { rates, pricingModes };

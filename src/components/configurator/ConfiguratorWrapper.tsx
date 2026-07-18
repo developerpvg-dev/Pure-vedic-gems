@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
 import { buildConfiguratorPriceTotals } from '@/lib/utils/configurator-pricing-display';
-import { JEWELRY_GST_RATE_PERCENT } from '@/lib/constants/jewelry-design-metals';
 import type {
   ConfiguratorAction,
   ConfiguratorState,
@@ -439,7 +438,6 @@ export default function ConfiguratorWrapper({
       buildConfiguratorPriceTotals(pricing, {
         settingType: state.setting_type,
         productCategory: state.selected_product?.category ?? null,
-        jewelryGstPercent: JEWELRY_GST_RATE_PERCENT,
       }).grand_total,
     [pricing, state.setting_type, state.selected_product?.category]
   );

@@ -16,6 +16,10 @@ import {
 import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { isPaidPaymentStatus } from '@/lib/constants/order-status';
+import {
+  buildOrderPriceLines,
+  orderItemMerchandiseTotal,
+} from '@/lib/orders/price-breakdown-lines';
 
 const CONFETTI_COLORS = ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'];
 const CONFETTI_PIECES = Array.from({ length: 40 }, (_, i) => ({
@@ -42,7 +46,16 @@ interface OrderData {
     delivery_eta_label?: string;
   }>;
   subtotal: number;
+  jewelry_charges: number;
+  metal_charges: number;
+  certification_charges: number;
+  energization_charges: number;
   shipping_cost: number;
+  discount: number;
+  coupon_discount: number;
+  coupon_code: string | null;
+  reward_discount: number;
+  reward_points_redeemed: number;
   gst_amount: number;
   total: number;
   shipping_address: {
@@ -69,6 +82,7 @@ interface Props {
 export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
   const [showConfetti, setShowConfetti] = useState(true);
   const [copied, setCopied] = useState(false);
+  const priceLines = buildOrderPriceLines(order);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 4000);
@@ -251,28 +265,23 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
                   )}
                 </div>
                 <p className="text-sm font-semibold text-[var(--pvg-primary)]">
-                  {formatPrice(item.line_total)}
+                  {formatPrice(orderItemMerchandiseTotal(item))}
                 </p>
               </div>
             ))}
           </div>
 
-          {/* Totals */}
+          {/* Totals — same charge lines as account / admin / email */}
           <div className="border-t border-[var(--pvg-border)] mt-4 pt-4 space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-[var(--pvg-muted)]">Subtotal</span>
-              <span>{formatPrice(order.subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--pvg-muted)]">Shipping</span>
-              <span>{formatPrice(order.shipping_cost)}</span>
-            </div>
-            {order.gst_amount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-[var(--pvg-muted)]">GST (3%)</span>
-                <span>{formatPrice(order.gst_amount)}</span>
+            {priceLines.map((line) => (
+              <div key={line.key} className="flex justify-between gap-3">
+                <span className="text-[var(--pvg-muted)]">{line.label}</span>
+                <span className={line.sign < 0 ? 'text-green-700' : undefined}>
+                  {line.sign < 0 ? '−' : ''}
+                  {formatPrice(line.amount)}
+                </span>
               </div>
-            )}
+            ))}
             <div className="border-t border-[var(--pvg-border)] pt-2 flex justify-between font-semibold">
               <span className="text-[var(--pvg-primary)]">Total</span>
               <span className="text-[var(--pvg-accent)] text-lg">{formatPrice(order.total)}</span>

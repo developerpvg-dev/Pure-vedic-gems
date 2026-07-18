@@ -55,7 +55,9 @@ export default async function OrderConfirmationPage({ params }: Props) {
   // Fetch order using admin client to bypass RLS
   const { data: order, error } = await adminDb
     .from('orders')
-    .select('id, order_number, items, subtotal, shipping_cost, gst_amount, total, shipping_address, payment_status, status, guest_name, guest_email, customer_id, guest_access_token, created_at')
+    .select(
+      'id, order_number, items, subtotal, jewelry_charges, metal_charges, certification_charges, energization_charges, shipping_cost, discount, coupon_discount, coupon_code, reward_discount, reward_points_redeemed, gst_amount, total, shipping_address, payment_status, status, guest_name, guest_email, customer_id, guest_access_token, created_at',
+    )
     .eq('id', orderId)
     .single();
 
@@ -102,7 +104,16 @@ export default async function OrderConfirmationPage({ params }: Props) {
           delivery_eta_label?: string;
         }>,
         subtotal: order.subtotal,
+        jewelry_charges: order.jewelry_charges ?? 0,
+        metal_charges: order.metal_charges ?? 0,
+        certification_charges: order.certification_charges ?? 0,
+        energization_charges: order.energization_charges ?? 0,
         shipping_cost: order.shipping_cost,
+        discount: order.discount ?? 0,
+        coupon_discount: order.coupon_discount ?? 0,
+        coupon_code: order.coupon_code ?? null,
+        reward_discount: order.reward_discount ?? 0,
+        reward_points_redeemed: order.reward_points_redeemed ?? 0,
         gst_amount: order.gst_amount,
         total: order.total,
         shipping_address: order.shipping_address as {

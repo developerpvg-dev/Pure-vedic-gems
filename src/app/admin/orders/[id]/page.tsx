@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils/rudraksha-order-display';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { resolveOrderFulfillmentContext } from '@/lib/orders/fulfillment-profile';
+import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
   User, FileText, ExternalLink, Settings,
@@ -284,25 +285,20 @@ export default async function OrderDetailPage({ params }: PageProps) {
     }
   }
 
-  const pricingLines: Array<{ label: string; value: number; sign: number }> = [
-    { label: 'Subtotal', value: o.subtotal, sign: 1 },
-    { label: 'Jewelry charges', value: o.jewelry_charges, sign: 1 },
-    { label: 'Metal charges', value: o.metal_charges, sign: 1 },
-    { label: 'Certification', value: o.certification_charges, sign: 1 },
-    { label: 'Energization', value: o.energization_charges, sign: 1 },
-    { label: 'Shipping', value: o.shipping_cost, sign: 1 },
-    { label: 'GST (3%)', value: o.gst_amount, sign: 1 },
-    {
-      label: o.coupon_code ? `Coupon (${o.coupon_code})` : 'Coupon discount',
-      value: couponDiscount,
-      sign: -1,
-    },
-    {
-      label: `Rewards (${Number(o.reward_points_redeemed ?? 0).toLocaleString('en-IN')} pts)`,
-      value: rewardDiscount,
-      sign: -1,
-    },
-  ].filter((l) => (l.value ?? 0) !== 0);
+  const pricingLines: Array<{ label: string; value: number; sign: number }> = buildOrderPriceLines({
+    subtotal: o.subtotal,
+    jewelry_charges: o.jewelry_charges,
+    metal_charges: o.metal_charges,
+    certification_charges: o.certification_charges,
+    energization_charges: o.energization_charges,
+    shipping_cost: o.shipping_cost,
+    discount: o.discount,
+    coupon_discount: couponDiscount,
+    coupon_code: o.coupon_code,
+    reward_discount: rewardDiscount,
+    reward_points_redeemed: o.reward_points_redeemed,
+    gst_amount: o.gst_amount,
+  }).map((line) => ({ label: line.label, value: line.amount, sign: line.sign }));
 
   const slipItems = items.map((item) => {
     const cfg = item.configuration_id ? configMap.get(item.configuration_id) : null;

@@ -37,7 +37,9 @@ export function resolveMetalPricingMode(
   pricingModes?: Record<string, MetalPricingMode> | null
 ): MetalPricingMode {
   const fromDb = pricingModes?.[slug];
-  if (fromDb) return fromDb;
+  if (fromDb === 'fixed_sheet' || fromDb === 'weight') return fromDb;
+  // Defensive: older rows / callers may pass 'fixed'
+  if ((fromDb as string | undefined) === 'fixed') return 'fixed_sheet';
   if ((FIXED_PRICE_JEWELRY_METALS as readonly string[]).includes(slug)) {
     return 'fixed_sheet';
   }
@@ -65,12 +67,13 @@ export function resolveLaborRatePercent(
   metal: string,
   laborRates?: Record<string, number> | null
 ): number {
-  if (laborRates) {
+  // Explicit 0 on the map means "no labor" for that metal. Missing key falls back
+  // to sheet defaults so empty profile/design maps don't silently zero labor.
+  if (laborRates && Object.prototype.hasOwnProperty.call(laborRates, metal)) {
     const fromMap = laborRates[metal];
     if (typeof fromMap === 'number' && Number.isFinite(fromMap) && fromMap >= 0) {
       return fromMap;
     }
-    return 0;
   }
   return JEWELRY_METAL_LABOR_RATES[metal] ?? 0;
 }
@@ -129,7 +132,9 @@ export function parseMetalCatalogFromApi(rows: unknown): MetalCatalogEntry[] {
       gst_rate_percent:
         row.gst_rate_percent == null ? null : Number(row.gst_rate_percent),
       pricing_mode:
-        row.pricing_mode === 'fixed_sheet' ? 'fixed_sheet' : ('weight' as MetalPricingMode),
+        row.pricing_mode === 'fixed_sheet' || row.pricing_mode === 'fixed'
+          ? 'fixed_sheet'
+          : ('weight' as MetalPricingMode),
       purity: row.purity != null ? String(row.purity) : null,
       name: row.name != null ? String(row.name) : undefined,
       sort_order: typeof row.sort_order === 'number' ? row.sort_order : undefined,

@@ -20,6 +20,7 @@ import {
 import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { RETURN_STATUS_LABELS, type ReturnStatus } from '@/lib/orders/returns';
+import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 
 type ShippingAddress = {
   line1?: string;
@@ -359,28 +360,23 @@ export function AccountOrderCard({
                   Price breakdown
                 </h3>
                 <div className="mt-2 space-y-1.5 rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-4">
-                  <PriceRow label="Subtotal" amount={order.subtotal} />
-                  <PriceRow label="Jewelry charges" amount={order.jewelry_charges} />
-                  <PriceRow label="Metal charges" amount={order.metal_charges} />
-                  <PriceRow label="Certification" amount={order.certification_charges} />
-                  <PriceRow label="Energization / Puja" amount={order.energization_charges} />
-                  <PriceRow label="Shipping" amount={order.shipping_cost} />
-                  <PriceRow label="Discount" amount={order.discount} />
-                  {order.coupon_code ? (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[var(--pvg-muted)]">Coupon ({order.coupon_code})</span>
-                      <span className="text-green-700">−{formatPrice(order.coupon_discount)}</span>
-                    </div>
-                  ) : null}
-                  {order.reward_discount > 0 ? (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[var(--pvg-muted)]">
-                        Rewards ({order.reward_points_redeemed} pts)
+                  {buildOrderPriceLines(order).map((line) => (
+                    <div key={line.key} className="flex justify-between text-sm">
+                      <span className="text-[var(--pvg-muted)]">{line.label}</span>
+                      <span
+                        className={
+                          line.sign < 0
+                            ? 'text-green-700'
+                            : line.key === 'gst'
+                              ? 'font-medium text-[var(--pvg-text)]'
+                              : 'text-[var(--pvg-text)]'
+                        }
+                      >
+                        {line.sign < 0 ? '−' : ''}
+                        {formatPrice(line.amount)}
                       </span>
-                      <span className="text-green-700">−{formatPrice(order.reward_discount)}</span>
                     </div>
-                  ) : null}
-                  <PriceRow label="GST (3%)" amount={order.gst_amount} />
+                  ))}
                   <div className="border-t border-[var(--pvg-border)] pt-2">
                     <PriceRow label="Total paid" amount={order.total} highlight />
                   </div>

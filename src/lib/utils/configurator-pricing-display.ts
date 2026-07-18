@@ -1,6 +1,5 @@
-import { JEWELRY_GST_RATE_PERCENT } from '@/lib/constants/jewelry-design-metals';
 import type { ConfigPricingBreakdown } from '@/lib/types/configurator';
-import { resolveProductTax } from '@/lib/utils/tax';
+import { gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
 import { formatPrice } from '@/lib/utils/format';
 
 export interface ConfiguratorPriceLine {
@@ -15,7 +14,10 @@ export interface ConfiguratorPriceTotals {
   lines: ConfiguratorPriceLine[];
   jewelry_subtotal: number;
   pre_gst_subtotal: number;
+  /** Metal @ 3% + making/diamond/custom @ 5% (matches server recalculateOrderTotal). */
   gst_jewelry: number;
+  gst_metal: number;
+  gst_making: number;
   gst_gemstone: number;
   gst_certification: number;
   gst_energization: number;
@@ -28,6 +30,7 @@ export function buildConfiguratorPriceTotals(
   options: {
     settingType: string | null;
     productCategory?: string | null;
+    /** @deprecated Ignored — server uses metal 3% / making 5%. Kept so old callers compile. */
     jewelryGstPercent?: number;
     designNote?: string | null;
   }
@@ -35,7 +38,6 @@ export function buildConfiguratorPriceTotals(
   const {
     settingType,
     productCategory,
-    jewelryGstPercent = JEWELRY_GST_RATE_PERCENT,
     designNote = pricing.design_note,
   } = options;
   const showJewelry = Boolean(settingType && settingType !== 'loose');
@@ -162,6 +164,8 @@ export function buildConfiguratorPriceTotals(
 
   const jewelrySubtotal =
     pricing.metal_price + pricing.making_charge + pricing.diamond_charge;
+  const makingTaxable =
+    pricing.making_charge + pricing.diamond_charge + pricing.custom_design_fee;
   const preGstSubtotal =
     pricing.gem_price +
     jewelrySubtotal +
@@ -169,28 +173,19 @@ export function buildConfiguratorPriceTotals(
     pricing.energization_fee +
     pricing.custom_design_fee;
 
-  const gstJewelry =
-    showJewelry && jewelrySubtotal > 0
-      ? Math.round((jewelrySubtotal * jewelryGstPercent) / 100)
-      : 0;
+  // Mirror server calculateGstComponent rounding (2dp), then round total for display.
+  const gstMetal = gstOnAmount(pricing.metal_price, 3);
+  const gstMaking = gstOnAmount(makingTaxable, 5);
+  const gstJewelry = gstMetal + gstMaking;
 
   const gemTax = resolveProductTax({ category: productCategory ?? 'gemstone' });
-  const gstGemstone =
-    pricing.gem_price > 0 && gemTax.rate_percent > 0
-      ? Math.round((pricing.gem_price * gemTax.rate_percent) / 100)
-      : 0;
+  const gstGemstone = gstOnAmount(pricing.gem_price, gemTax.rate_percent);
+  const gstCertification = gstOnAmount(pricing.certification_fee, 18);
+  const gstEnergization = gstOnAmount(pricing.energization_fee, 18);
 
-  const gstCertification =
-    pricing.certification_fee > 0
-      ? Math.round((pricing.certification_fee * 18) / 100)
-      : 0;
-
-  const gstEnergization =
-    pricing.energization_fee > 0
-      ? Math.round((pricing.energization_fee * 18) / 100)
-      : 0;
-
-  const gstTotal = gstJewelry + gstGemstone + gstCertification + gstEnergization;
+  const gstTotal = Math.round(
+    gstJewelry + gstGemstone + gstCertification + gstEnergization,
+  );
   const grandTotal = preGstSubtotal + gstTotal;
 
   return {
@@ -198,6 +193,8 @@ export function buildConfiguratorPriceTotals(
     jewelry_subtotal: jewelrySubtotal,
     pre_gst_subtotal: preGstSubtotal,
     gst_jewelry: gstJewelry,
+    gst_metal: gstMetal,
+    gst_making: gstMaking,
     gst_gemstone: gstGemstone,
     gst_certification: gstCertification,
     gst_energization: gstEnergization,

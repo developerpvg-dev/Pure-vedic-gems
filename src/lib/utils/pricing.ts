@@ -413,7 +413,8 @@ export async function recalculateOrderTotal(
   const rewardQuote = await quoteRewardRedemption({
     customerId: rewardOptions?.customerId ?? null,
     requestedPoints: rewardOptions?.pointsToRedeem ?? 0,
-    eligibleAmount: Math.max(0, subtotal - couponDiscount),
+    // Same base as shipping eligibility: full merchandise (gem + metal + making + cert + puja).
+    eligibleAmount: Math.max(0, merchandiseTotal - couponDiscount),
   });
   const rewardDiscount = rewardQuote?.discount_amount ?? 0;
   const rewardPointsRedeemed = rewardQuote?.points_to_redeem ?? 0;

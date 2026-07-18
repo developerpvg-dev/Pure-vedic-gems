@@ -28,6 +28,11 @@ import {
   secondaryButtonStyle,
 } from '@/lib/resend/templates/shared/styles';
 import { formatConfigurationDetailText } from '@/lib/utils/rudraksha-order-display';
+import {
+  buildOrderPriceLines,
+  orderItemMerchandiseTotal,
+  type OrderChargeFields,
+} from '@/lib/orders/price-breakdown-lines';
 
 interface OrderItem {
   name: string;
@@ -43,10 +48,7 @@ export interface OrderConfirmationEmailProps {
   orderNumber: string;
   orderId: string;
   items: OrderItem[];
-  subtotal: number;
-  shippingCost: number;
-  gstAmount: number;
-  total: number;
+  charges: OrderChargeFields;
   shippingAddress: {
     line1: string;
     line2?: string;
@@ -71,16 +73,15 @@ export function OrderConfirmationEmail({
   customerName,
   orderNumber,
   items,
-  subtotal,
-  shippingCost,
-  gstAmount,
-  total,
+  charges,
   shippingAddress,
   siteUrl,
 }: OrderConfirmationEmailProps) {
   const resolvedSiteUrl = siteUrl || getEmailSiteUrl();
   const trackUrl = `${resolvedSiteUrl}/account/orders`;
   const whatsappUrl = getWhatsAppUrl(`Hi, I just placed order ${orderNumber}`);
+  const priceLines = buildOrderPriceLines(charges);
+  const total = Number(charges.total ?? 0);
 
   return (
     <EmailLayout
@@ -127,7 +128,7 @@ export function OrderConfirmationEmail({
                   ) : null}
                 </Column>
                 <Column style={{ width: '40%', textAlign: 'right' as const }}>
-                  <Text style={itemPriceStyle}>{formatINR(item.line_total)}</Text>
+                  <Text style={itemPriceStyle}>{formatINR(orderItemMerchandiseTotal(item))}</Text>
                 </Column>
               </Row>
             );
@@ -135,21 +136,18 @@ export function OrderConfirmationEmail({
 
             <Hr style={dividerStyle} />
 
-            {/* Totals */}
-            <Row style={totalRowStyle}>
-              <Column><Text style={totalLabelStyle}>Subtotal</Text></Column>
-              <Column style={{ textAlign: 'right' as const }}><Text style={totalValueStyle}>{formatINR(subtotal)}</Text></Column>
-            </Row>
-            <Row style={totalRowStyle}>
-              <Column><Text style={totalLabelStyle}>Shipping</Text></Column>
-              <Column style={{ textAlign: 'right' as const }}><Text style={totalValueStyle}>{formatINR(shippingCost)}</Text></Column>
-            </Row>
-            {gstAmount > 0 && (
-              <Row style={totalRowStyle}>
-                <Column><Text style={totalLabelStyle}>GST (3%)</Text></Column>
-                <Column style={{ textAlign: 'right' as const }}><Text style={totalValueStyle}>{formatINR(gstAmount)}</Text></Column>
+            {/* Totals — same lines as checkout confirmation / account / admin */}
+            {priceLines.map((line) => (
+              <Row key={line.key} style={totalRowStyle}>
+                <Column><Text style={totalLabelStyle}>{line.label}</Text></Column>
+                <Column style={{ textAlign: 'right' as const }}>
+                  <Text style={totalValueStyle}>
+                    {line.sign < 0 ? '−' : ''}
+                    {formatINR(line.amount)}
+                  </Text>
+                </Column>
               </Row>
-            )}
+            ))}
 
             <Hr style={dividerStyle} />
 

@@ -12,11 +12,11 @@ import { formatPrice } from '@/lib/utils/format';
 import { useCart } from '@/lib/hooks/useCart';
 import { deriveCartLineKey } from '@/lib/cart/client';
 import { toast } from 'sonner';
-import { JEWELRY_GST_RATE_PERCENT } from '@/lib/constants/jewelry-design-metals';
 import {
   buildConfiguratorPriceTotals,
   type ConfiguratorPriceLine,
 } from '@/lib/utils/configurator-pricing-display';
+import { resolveProductTax } from '@/lib/utils/tax';
 import type { ConfiguratorState, GoldRateData } from '@/lib/types/configurator';
 import { isDesignCompatibleWithSetting } from '@/lib/hooks/useConfigurator';
 
@@ -74,7 +74,6 @@ export default function PriceSummary({
     const base = buildConfiguratorPriceTotals(p, {
       settingType: state.setting_type,
       productCategory: state.selected_product?.category ?? null,
-      jewelryGstPercent: JEWELRY_GST_RATE_PERCENT,
     });
     return enrichPriceTotals(state, base);
   }, [p, state]);
@@ -222,7 +221,11 @@ export default function PriceSummary({
       <div className="pvg-price-summary border-t border-border bg-card shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
         {expanded && (
           <div className="max-h-64 overflow-y-auto border-b border-border px-4 py-3">
-            <DetailedPriceLines totals={totals} showFooterTotal />
+            <DetailedPriceLines
+              totals={totals}
+              productCategory={state.selected_product?.category}
+              showFooterTotal
+            />
           </div>
         )}
 
@@ -261,7 +264,11 @@ export default function PriceSummary({
   if (variant === 'inline') {
     return (
       <div className="pvg-price-summary space-y-3">
-        <DetailedPriceLines totals={totals} showFooterTotal />
+        <DetailedPriceLines
+          totals={totals}
+          productCategory={state.selected_product?.category}
+          showFooterTotal
+        />
       </div>
     );
   }
@@ -303,7 +310,10 @@ export default function PriceSummary({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
         <p className="mb-2.5 text-[11px] font-medium text-muted-foreground">Cost breakdown</p>
-        <DetailedPriceLines totals={totals} />
+        <DetailedPriceLines
+          totals={totals}
+          productCategory={state.selected_product?.category}
+        />
       </div>
 
       <div className="shrink-0 border-t border-border/50 px-4 py-3.5">
@@ -320,11 +330,15 @@ export default function PriceSummary({
 
 function DetailedPriceLines({
   totals,
+  productCategory,
   showFooterTotal = false,
 }: {
   totals: ReturnType<typeof buildConfiguratorPriceTotals>;
+  productCategory?: string | null;
   showFooterTotal?: boolean;
 }) {
+  const gemRate = resolveProductTax({ category: productCategory ?? 'gemstone' }).rate_percent;
+
   return (
     <div className="space-y-2.5 text-xs text-foreground/90">
       <div className="space-y-2">
@@ -340,12 +354,21 @@ function DetailedPriceLines({
         </div>
       )}
 
-      {totals.gst_jewelry > 0 && (
+      {totals.gst_metal > 0 && (
         <PriceLine
           line={{
-            key: 'gst-jewelry',
-            label: `GST on jewellery (${JEWELRY_GST_RATE_PERCENT}%)`,
-            amount: totals.gst_jewelry,
+            key: 'gst-metal',
+            label: 'GST on metal (3%)',
+            amount: totals.gst_metal,
+          }}
+        />
+      )}
+      {totals.gst_making > 0 && (
+        <PriceLine
+          line={{
+            key: 'gst-making',
+            label: 'GST on making / stone add-on (5%)',
+            amount: totals.gst_making,
           }}
         />
       )}
@@ -353,7 +376,7 @@ function DetailedPriceLines({
         <PriceLine
           line={{
             key: 'gst-gem',
-            label: 'GST on gemstone (0.25%)',
+            label: `GST on gemstone (${gemRate}%)`,
             amount: totals.gst_gemstone,
           }}
         />

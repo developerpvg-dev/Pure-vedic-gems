@@ -129,18 +129,95 @@ describe('jewelry-pricing', () => {
     expect(result.laborRatePercent).toBe(15);
   });
 
-  it('lists only configured metals for a design', () => {
-    const metals = getAvailableMetalsForDesign(design1.making_charges, design1.estimated_metal_weight);
+  it('uses FIXED ₹ from design for silver/panchdhatu and % labor for gold/platinum', () => {
+    const design = {
+      making_charges: {
+        silver_925: 4500,
+        panchdhatu: 3200,
+        panchdhatu_with_gold: 12000,
+      },
+      estimated_metal_weight: {
+        gold_14k: 6,
+        gold_18k: 6,
+        gold_22k: 6,
+        platinum: 6,
+      },
+      labor_rates: {
+        gold_14k: 25,
+        gold_18k: 25,
+        gold_22k: 20,
+        platinum: 20,
+      },
+      diamond_charges: { gold_18k: 5000 },
+    };
 
-    expect(metals).toContain('silver_925');
+    // ── FIXED metals: ignore rate/g and labor %; use design making_charges only ──
+    for (const metal of ['silver_925', 'panchdhatu', 'panchdhatu_with_gold'] as const) {
+      const result = calculateJewelryDesignPricing({
+        metal,
+        makingCharges: design.making_charges,
+        estimatedMetalWeight: design.estimated_metal_weight,
+        diamondCharges: design.diamond_charges,
+        metalRatePerGram: 9999, // must be ignored
+        laborRates: design.labor_rates,
+      });
+      expect(result.pricingKind).toBe('fixed');
+      expect(result.metalPrice).toBe(0);
+      expect(result.laborRatePercent).toBe(0);
+      expect(result.makingCharge).toBe(design.making_charges[metal]);
+      expect(result.diamondCharge).toBe(5000); // design-wide add-on still applies
+    }
 
-    expect(metals).toContain('gold_22k');
+    // ── WEIGHT / % metals: metal = g × rate; labor = metal × design % ──
+    const cases = [
+      { metal: 'gold_14k', rate: 5000, laborPct: 25 },
+      { metal: 'gold_18k', rate: 5900, laborPct: 25 },
+      { metal: 'gold_22k', rate: 7200, laborPct: 20 },
+      { metal: 'platinum', rate: 4000, laborPct: 20 },
+    ] as const;
 
-    expect(isMetalAvailableForDesign('gold_22k', design1.making_charges, design1.estimated_metal_weight)).toBe(true);
-
-    expect(isMetalAvailableForDesign('copper', design1.making_charges, design1.estimated_metal_weight)).toBe(false);
-
+    for (const { metal, rate, laborPct } of cases) {
+      const result = calculateJewelryDesignPricing({
+        metal,
+        makingCharges: design.making_charges,
+        estimatedMetalWeight: design.estimated_metal_weight,
+        diamondCharges: design.diamond_charges,
+        metalRatePerGram: rate,
+        laborRates: design.labor_rates,
+      });
+      const metalPrice = Math.round(6 * rate);
+      expect(result.pricingKind).toBe('weight');
+      expect(result.metalWeightGrams).toBe(6);
+      expect(result.metalPrice).toBe(metalPrice);
+      expect(result.laborRatePercent).toBe(laborPct);
+      expect(result.makingCharge).toBe(Math.round((metalPrice * laborPct) / 100));
+      expect(result.diamondCharge).toBe(5000);
+    }
   });
 
+  it('falls back to sheet labor % when metal missing from map', () => {
+    const result = calculateJewelryDesignPricing({
+      metal: 'gold_22k',
+      makingCharges: design1.making_charges,
+      estimatedMetalWeight: design1.estimated_metal_weight,
+      metalRatePerGram: 7200,
+      laborRates: {}, // empty map must not zero labor
+    });
+    expect(result.metalPrice).toBe(36000);
+    expect(result.makingCharge).toBe(7200); // 20% default
+    expect(result.laborRatePercent).toBe(20);
+  });
+
+  it('respects explicit zero labor on design map', () => {
+    const result = calculateJewelryDesignPricing({
+      metal: 'gold_22k',
+      makingCharges: design1.making_charges,
+      estimatedMetalWeight: design1.estimated_metal_weight,
+      metalRatePerGram: 7200,
+      laborRates: { gold_22k: 0 },
+    });
+    expect(result.makingCharge).toBe(0);
+    expect(result.laborRatePercent).toBe(0);
+  });
 });
 

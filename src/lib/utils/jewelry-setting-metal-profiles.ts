@@ -5,6 +5,7 @@ import {
   type JewelryDesignSettingType,
   type JewelryProductScope,
 } from '@/lib/constants/jewelry-design-metals';
+import { JEWELRY_METAL_LABOR_RATES } from '@/lib/constants/jewelry-labor-rates';
 import { laborRatesFromDesignRecord } from '@/lib/utils/jewelry-design-fields';
 
 export const JEWELRY_SETTING_PROFILES_COMMERCE_KEY = 'jewelry_setting_metal_profiles';
@@ -134,7 +135,8 @@ export function resolveLaborRatesForJewelry(
     : normalizeJewelryProductScope(productScopeFallback);
   const profileLabor = getSettingMetalProfile(profiles, scope, settingType).labor_rates;
   const designLabor = design ? laborRatesFromDesignRecord(design) : {};
-  return { ...profileLabor, ...designLabor };
+  // Priority: design labor_rates → setting profile → sheet defaults.
+  return { ...JEWELRY_METAL_LABOR_RATES, ...profileLabor, ...designLabor };
 }
 
 export function resolveGstPercentForMetal(

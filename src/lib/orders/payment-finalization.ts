@@ -261,10 +261,21 @@ async function sendVerifiedOrderNotifications(order: Order) {
         configuration_summary: item.configuration_summary,
         configuration_snapshot: item.configuration_snapshot,
       })),
-      subtotal: order.subtotal,
-      shippingCost: order.shipping_cost,
-      gstAmount: order.gst_amount,
-      total: order.total,
+      charges: {
+        subtotal: order.subtotal,
+        jewelry_charges: order.jewelry_charges,
+        metal_charges: order.metal_charges,
+        certification_charges: order.certification_charges,
+        energization_charges: order.energization_charges,
+        shipping_cost: order.shipping_cost,
+        discount: order.discount,
+        coupon_discount: order.coupon_discount,
+        coupon_code: order.coupon_code,
+        reward_discount: order.reward_discount,
+        reward_points_redeemed: order.reward_points_redeemed,
+        gst_amount: order.gst_amount,
+        total: order.total,
+      },
       shippingAddress: order.shipping_address as {
         line1: string;
         line2?: string;

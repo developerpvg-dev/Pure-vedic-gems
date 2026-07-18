@@ -53,17 +53,31 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
     });
 
     const gstLines: ConfiguratorPriceLine[] = [];
+    const gemTax = resolveProductTax({
+      category: snap.product?.category ?? item.category,
+    });
     if (totals.gst_gemstone > 0) {
-      gstLines.push({ key: 'gst-gem', label: 'Est. GST on gemstone', amount: totals.gst_gemstone });
+      gstLines.push({
+        key: 'gst-gem',
+        label: `Est. GST on gemstone (${gemTax.rate_percent}%)`,
+        amount: totals.gst_gemstone,
+      });
     }
-    if (totals.gst_jewelry > 0) {
-      gstLines.push({ key: 'gst-jewelry', label: 'Est. GST on jewellery', amount: totals.gst_jewelry });
+    if (totals.gst_metal > 0) {
+      gstLines.push({ key: 'gst-metal', label: 'Est. GST on metal (3%)', amount: totals.gst_metal });
+    }
+    if (totals.gst_making > 0) {
+      gstLines.push({
+        key: 'gst-making',
+        label: 'Est. GST on making / stone add-on (5%)',
+        amount: totals.gst_making,
+      });
     }
     if (totals.gst_certification > 0) {
-      gstLines.push({ key: 'gst-cert', label: 'Est. GST on certification', amount: totals.gst_certification });
+      gstLines.push({ key: 'gst-cert', label: 'Est. GST on certification (18%)', amount: totals.gst_certification });
     }
     if (totals.gst_energization > 0) {
-      gstLines.push({ key: 'gst-energization', label: 'Est. GST on energization', amount: totals.gst_energization });
+      gstLines.push({ key: 'gst-energization', label: 'Est. GST on energization (18%)', amount: totals.gst_energization });
     }
 
     return {
