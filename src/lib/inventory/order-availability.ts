@@ -94,6 +94,14 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
 
     if (!product) continue;
 
+    const row = product as {
+      id: string;
+      sku?: string | null;
+      name: string;
+      category?: string | null;
+      tag_number?: string | null;
+    };
+
     await db
       .from('products')
       .update({
@@ -110,12 +118,12 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
       .then(null, () => undefined);
 
     const line = items.find((item) => item.product_id === productId);
-    const tagNumber = line?.tag_number ?? (product as { tag_number?: string | null }).tag_number;
+    const tagNumber = line?.tag_number ?? row.tag_number;
     if (tagNumber) {
       await queueErpOutboundSale({
         tagNumber,
         orderId: order.id,
-        productId: product.id as string,
+        productId: row.id,
         payload: {
           order_number: order.order_number,
           source: 'admin_mark_sold',
@@ -129,10 +137,10 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
 
     await notifyLowStockProduct(
       {
-        id: product.id as string,
-        sku: (product as { sku?: string | null }).sku ?? null,
-        name: (product as { name: string }).name,
-        category: (product as { category?: string | null }).category ?? null,
+        id: row.id,
+        sku: row.sku ?? null,
+        name: row.name,
+        category: row.category ?? null,
         stock_quantity: 0,
       },
       'order_marked_sold',

@@ -6,6 +6,7 @@ function item(overrides: Partial<CartItem> = {}): CartItem {
   return {
     key: 'p1',
     product_id: '00000000-0000-4000-8000-000000000001',
+    sku: 'TEST-SKU',
     name: 'Test Ruby',
     category: 'ruby',
     image_url: '',
@@ -16,6 +17,8 @@ function item(overrides: Partial<CartItem> = {}): CartItem {
     stock_status: 'in_stock',
     availability_status: 'in_stock',
     sold_individually: false,
+    carat_weight: null,
+    origin: null,
     ...overrides,
   };
 }
