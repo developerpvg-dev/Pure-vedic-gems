@@ -142,11 +142,16 @@ async function saveCurrencyRate(
     .limit(1)
     .maybeSingle();
 
-  if (existing.data?.id) {
+  const existingId =
+    existing.data && typeof existing.data === 'object' && 'id' in existing.data
+      ? String((existing.data as { id: unknown }).id ?? '')
+      : '';
+
+  if (existingId) {
     let result = await db
       .from('currency_rates')
       .update(modernPayload)
-      .eq('id', existing.data.id)
+      .eq('id', existingId)
       .select()
       .single();
 
@@ -159,7 +164,7 @@ async function saveCurrencyRate(
           source: data.source,
           fetched_at: now,
         })
-        .eq('id', existing.data.id)
+        .eq('id', existingId)
         .select()
         .single();
     }
@@ -277,7 +282,7 @@ export async function POST(request: NextRequest) {
         now
       );
       if (inrSave.error) {
-        failed.push({ currency: 'INR', error: inrSave.error.message });
+        failed.push({ currency: 'INR', error: inrSave.error.message ?? 'Save failed' });
       } else {
         updated.push({ currency: 'INR', rate: 1 });
       }
@@ -301,7 +306,7 @@ export async function POST(request: NextRequest) {
           },
           now
         );
-        if (error) failed.push({ currency: code, error: error.message });
+        if (error) failed.push({ currency: code, error: error.message ?? 'Save failed' });
         else updated.push({ currency: code, rate });
       }
 
