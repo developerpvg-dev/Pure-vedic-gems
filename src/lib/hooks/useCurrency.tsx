@@ -1,0 +1,160 @@
+'use client';
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
+import {
+  STOREFRONT_CURRENCIES,
+  isStorefrontCurrency,
+  type StorefrontCurrency,
+} from '@/lib/currency/catalog';
+import {
+  getCurrencyDisplayState,
+  setCurrencyDisplay,
+  subscribeCurrencyDisplay,
+} from '@/lib/currency/display-store';
+import { formatPrice } from '@/lib/utils/format';
+
+const STORAGE_KEY = 'pvg_currency';
+
+type CurrencyContextValue = {
+  currency: string;
+  currencies: StorefrontCurrency[];
+  rates: Record<string, number>;
+  ready: boolean;
+  setCurrency: (code: string) => void;
+  format: (amountInr: number) => string;
+  /** When false, selection is display-only disabled (admin). */
+  interactive: boolean;
+};
+
+const CurrencyContext = createContext<CurrencyContextValue | null>(null);
+
+function ratesFromPayload(rows: Array<{ currency: string; rate: number; is_active?: boolean }>) {
+  const rates: Record<string, number> = { INR: 1 };
+  for (const row of rows) {
+    if (row.is_active === false) continue;
+    const code = String(row.currency).toUpperCase();
+    const rate = Number(row.rate);
+    if (code && Number.isFinite(rate) && rate > 0) rates[code] = rate;
+  }
+  return rates;
+}
+
+export function CurrencyProvider({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  const snapshot = useSyncExternalStore(
+    subscribeCurrencyDisplay,
+    getCurrencyDisplayState,
+    () => ({ enabled: false, currency: 'INR', rates: { INR: 1 } })
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function boot() {
+      const saved = localStorage.getItem(STORAGE_KEY)?.toUpperCase() ?? null;
+      let suggested = 'INR';
+      let rates: Record<string, number> = { INR: 1 };
+
+      try {
+        const res = await fetch('/api/currency/rates');
+        if (res.ok) {
+          const data = (await res.json()) as {
+            rates?: Array<{ currency: string; rate: number; is_active?: boolean }>;
+            suggestedCurrency?: string;
+          };
+          rates = ratesFromPayload(data.rates ?? []);
+          if (data.suggestedCurrency && isStorefrontCurrency(data.suggestedCurrency)) {
+            suggested = data.suggestedCurrency.toUpperCase();
+          }
+        }
+      } catch {
+        // keep INR defaults
+      }
+
+      if (cancelled) return;
+
+      const next =
+        saved && isStorefrontCurrency(saved)
+          ? saved
+          : isStorefrontCurrency(suggested)
+            ? suggested
+            : 'INR';
+
+      setCurrencyDisplay({ enabled: true, currency: next, rates });
+      setReady(true);
+    }
+
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setCurrency = useCallback((code: string) => {
+    const next = code.toUpperCase();
+    if (!isStorefrontCurrency(next)) return;
+    localStorage.setItem(STORAGE_KEY, next);
+    setCurrencyDisplay({ currency: next });
+  }, []);
+
+  const format = useCallback(
+    (amountInr: number) => formatPrice(amountInr),
+    [snapshot.currency, snapshot.rates]
+  );
+
+  const value = useMemo<CurrencyContextValue>(
+    () => ({
+      currency: snapshot.currency,
+      currencies: STOREFRONT_CURRENCIES,
+      rates: snapshot.rates,
+      ready,
+      setCurrency,
+      format,
+      interactive: true,
+    }),
+    [snapshot.currency, snapshot.rates, ready, setCurrency, format]
+  );
+
+  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
+}
+
+export function useCurrency(): CurrencyContextValue {
+  const ctx = useContext(CurrencyContext);
+  // Always subscribe so hook order is stable; storefront provider value wins.
+  useSyncExternalStore(
+    subscribeCurrencyDisplay,
+    getCurrencyDisplayState,
+    () => ({ enabled: false, currency: 'INR', rates: { INR: 1 } })
+  );
+
+  if (ctx) return ctx;
+
+  // Outside provider (admin): always format as INR, ignore display store
+  return {
+    currency: 'INR',
+    currencies: STOREFRONT_CURRENCIES,
+    rates: { INR: 1 },
+    ready: true,
+    setCurrency: () => undefined,
+    format: (amountInr: number) => formatPrice(amountInr, 'INR'),
+    interactive: false,
+  };
+}
+
+/** Subscribe so a client component re-renders when display currency/rates change. */
+export function useCurrencySubscription() {
+  return useSyncExternalStore(
+    subscribeCurrencyDisplay,
+    getCurrencyDisplayState,
+    () => ({ enabled: false, currency: 'INR', rates: { INR: 1 } })
+  );
+}

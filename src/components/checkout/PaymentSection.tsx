@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { CreditCard, Loader2, ShieldCheck } from 'lucide-react';
 import type { CartItem } from '@/lib/types/cart';
 import type {
@@ -8,7 +8,12 @@ import type {
   ShippingAddress,
   ShippingMethodId,
 } from '@/lib/validators/order';
-import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
+import { TAX_POLICY_VERSION, estimateClientTax } from '@/lib/utils/tax';
+import { formatPrice } from '@/lib/utils/format';
+import { useCurrency, useCurrencySubscription } from '@/lib/hooks/useCurrency';
+import type { SelectedShippingPlan } from '@/lib/types/shipping';
+import type { CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
+import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemption';
 
 // ─── Razorpay Checkout Types ────────────────────────────────────────────────
 
@@ -63,6 +68,8 @@ interface PaymentSectionProps {
   shippingMethod: ShippingMethodId;
   specialInstructions?: string;
   rewardPointsToRedeem?: number;
+  selectedShippingPlan?: SelectedShippingPlan | null;
+  rewards?: CheckoutRewardState | null;
   isProcessing: boolean;
   setIsProcessing: (v: boolean) => void;
   onOrderCreated: (orderId: string) => void;
@@ -76,11 +83,26 @@ export function PaymentSection({
   shippingMethod,
   specialInstructions,
   rewardPointsToRedeem = 0,
+  selectedShippingPlan = null,
+  rewards = null,
   isProcessing,
   setIsProcessing,
   onOrderCreated,
   onPaymentSuccess,
 }: PaymentSectionProps) {
+  useCurrencySubscription();
+  const { currency } = useCurrency();
+
+  const estimate = useMemo(() => {
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shipping = selectedShippingPlan?.cost ?? 0;
+    const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
+    const gst = estimateClientTax(cartItems, shipping);
+    const totalInr = Math.max(0, subtotal - rewardDiscount + shipping + gst);
+    return { totalInr };
+  }, [cartItems, selectedShippingPlan, rewardPointsToRedeem, rewards]);
+
+  const showFxNote = currency !== 'INR';
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'idle' | 'creating_order' | 'creating_payment' | 'paying' | 'verifying'>('idle');
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -315,6 +337,22 @@ export function PaymentSection({
         <p className="pvg-checkout-hint mb-3">
           Complete payment in Razorpay&apos;s window — card and UPI details never touch our servers.
         </p>
+        {showFxNote ? (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            <p className="font-semibold">
+              Order total: {formatPrice(estimate.totalInr)}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+              Razorpay charges in Indian Rupees only: you will pay{' '}
+              <strong>{formatPrice(estimate.totalInr, 'INR')}</strong>. International cards still work;
+              your bank converts at their rate.
+            </p>
+          </div>
+        ) : (
+          <p className="mb-3 text-sm font-semibold text-[#3d2b1f]">
+            Order total: {formatPrice(estimate.totalInr, 'INR')}
+          </p>
+        )}
         <div className="pvg-checkout-pay-methods">
           <span className="pvg-checkout-pay-tag">UPI</span>
           <span className="pvg-checkout-pay-tag">Credit card</span>
@@ -391,13 +429,15 @@ export function PaymentSection({
         ) : (
           <>
             <ShieldCheck className="h-5 w-5" />
-            Pay Securely
+            Pay {formatPrice(estimate.totalInr)} Securely
           </>
         )}
       </button>
 
       <p className="pvg-checkout-footnote mt-3">
-        Payment and tax totals are verified on our server before Razorpay opens.
+        {showFxNote
+          ? `Payment window shows ${formatPrice(estimate.totalInr, 'INR')}. Tax totals are verified on our server before Razorpay opens.`
+          : 'Payment and tax totals are verified on our server before Razorpay opens.'}
       </p>
     </div>
   );

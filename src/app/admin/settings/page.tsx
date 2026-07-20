@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BadgeIndianRupee, Loader2, Mail, Pencil, Plus, Save, Search, Shield, TicketPercent, UserPlus, Users, X } from 'lucide-react';
+import { BadgeIndianRupee, Loader2, Mail, Pencil, Plus, RefreshCw, Save, Search, Shield, TicketPercent, UserPlus, Users, X } from 'lucide-react';
 import { AdminShippingPanel } from '@/components/admin/AdminShippingPanel';
 import {
   FX_CURRENCY_OPTIONS,
@@ -146,6 +146,7 @@ export default function SettingsPage() {
   const [couponFilter, setCouponFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [currencyForm, setCurrencyForm] = useState(EMPTY_CURRENCY_FORM);
   const [editingCurrencyKey, setEditingCurrencyKey] = useState<string | null>(null);
+  const [refreshingRates, setRefreshingRates] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ gst_enabled: true, tax_note: 'GST calculated at checkout', notify_admin_email: '' });
 
   async function loadAll() {
@@ -275,6 +276,37 @@ export default function SettingsPage() {
   function resetCurrencyForm() {
     setEditingCurrencyKey(null);
     setCurrencyForm(EMPTY_CURRENCY_FORM);
+  }
+
+  async function refreshCurrencyRates() {
+    setRefreshingRates(true);
+    setMessage('');
+    setError('');
+    try {
+      const res = await fetch('/api/admin/commerce', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resource: 'currency_refresh', payload: {} }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'Failed to refresh rates');
+        return;
+      }
+      const updated = Array.isArray(data.data?.updated) ? data.data.updated.length : 0;
+      const failed = Array.isArray(data.data?.failed) ? data.data.failed.length : 0;
+      const usd = data.data?.sample?.USD;
+      setMessage(
+        `Rates updated from ${data.data?.source ?? 'live API'} (${updated} currencies${failed ? `, ${failed} failed` : ''})${
+          usd ? ` · 1 USD = ₹${Number(usd).toLocaleString('en-IN', { maximumFractionDigits: 4 })}` : ''
+        }.`
+      );
+      await loadAll();
+    } catch {
+      setError('Failed to refresh rates');
+    } finally {
+      setRefreshingRates(false);
+    }
   }
 
   function startEditCurrency(rate: CurrencyRate) {
@@ -607,19 +639,30 @@ export default function SettingsPage() {
                   <BadgeIndianRupee className="h-4 w-4" /> Currency Rates
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Set how many INR each foreign currency equals. Used for multi-currency product pricing.
+                  Set how many INR each foreign currency equals. “Update rates from API” overwrites all currencies (including old manual/legacy rows) from live FX.
                 </p>
               </div>
-              {editingCurrencyKey ? (
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={resetCurrencyForm}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                  onClick={() => void refreshCurrencyRates()}
+                  disabled={refreshingRates || saving}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  New rate
+                  {refreshingRates ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  Update rates from API
                 </button>
-              ) : null}
+                {editingCurrencyKey ? (
+                  <button
+                    type="button"
+                    onClick={resetCurrencyForm}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New rate
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <form

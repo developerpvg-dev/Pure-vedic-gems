@@ -120,16 +120,51 @@ async function saveCurrencyRate(
   now: string
 ) {
   const currency = data.currency;
-  const rate = currency === 'INR' ? 1 : data.rate;
+  const rate = currency === 'INR' ? 1 : Number(Number(data.rate).toFixed(6));
 
   const modernPayload = {
-    ...data,
+    base_currency: data.base_currency || 'INR',
     currency,
     rate,
-    base_currency: data.base_currency || 'INR',
+    rate_to_inr: rate,
+    manual_override: data.manual_override,
+    source: data.source,
+    is_active: data.is_active,
     updated_at: now,
     fetched_at: now,
   };
+
+  // Prefer update-by-currency so legacy + modern rows both get live rates.
+  const existing = await db
+    .from('currency_rates')
+    .select('id')
+    .eq('currency', currency)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing.data?.id) {
+    let result = await db
+      .from('currency_rates')
+      .update(modernPayload)
+      .eq('id', existing.data.id)
+      .select()
+      .single();
+
+    if (result.error) {
+      result = await db
+        .from('currency_rates')
+        .update({
+          rate_to_inr: rate,
+          manual_override: data.manual_override,
+          source: data.source,
+          fetched_at: now,
+        })
+        .eq('id', existing.data.id)
+        .select()
+        .single();
+    }
+    return result;
+  }
 
   let result = await db
     .from('currency_rates')
@@ -211,6 +246,87 @@ export async function POST(request: NextRequest) {
     if (error) return NextResponse.json({ error: 'Failed to save currency rate' }, { status: 500 });
     result = data;
     action = 'currency_rate_change';
+  } else if (body.resource === 'currency_refresh') {
+    // Explicit admin refresh: overwrite every storefront FX + any other active DB currencies.
+    const { fetchLiveRatesToInr } = await import('@/lib/currency/fetch-live-rates');
+    const { FX_CURRENCY_CODES } = await import('@/lib/currency/catalog');
+    try {
+      const existing = normalizeCurrencyRates(await readTable(db, 'currency_rates', []));
+      const byCode = new Map(existing.map((row) => [row.currency, row]));
+      const codes = Array.from(
+        new Set([
+          ...FX_CURRENCY_CODES,
+          ...existing.map((row) => row.currency).filter((code) => code && code !== 'INR'),
+        ])
+      );
+
+      const live = await fetchLiveRatesToInr(codes);
+      const updated: Array<{ currency: string; rate: number }> = [];
+      const failed: Array<{ currency: string; error: string }> = [];
+
+      const inrSave = await saveCurrencyRate(
+        db,
+        {
+          base_currency: 'INR',
+          currency: 'INR',
+          rate: 1,
+          manual_override: false,
+          source: live.source,
+          is_active: true,
+        },
+        now
+      );
+      if (inrSave.error) {
+        failed.push({ currency: 'INR', error: inrSave.error.message });
+      } else {
+        updated.push({ currency: 'INR', rate: 1 });
+      }
+
+      for (const code of codes) {
+        const rate = live.rates[code];
+        if (!rate) {
+          failed.push({ currency: code, error: 'Missing from live API' });
+          continue;
+        }
+        const prev = byCode.get(code);
+        const { error } = await saveCurrencyRate(
+          db,
+          {
+            base_currency: 'INR',
+            currency: code,
+            rate,
+            manual_override: false,
+            source: live.source,
+            is_active: prev?.is_active ?? true,
+          },
+          now
+        );
+        if (error) failed.push({ currency: code, error: error.message });
+        else updated.push({ currency: code, rate });
+      }
+
+      if (updated.length <= 1 && failed.length > 0) {
+        return NextResponse.json(
+          { error: 'Failed to save live rates', details: failed },
+          { status: 500 }
+        );
+      }
+
+      result = {
+        updated: updated.map((row) => row.currency),
+        rates: Object.fromEntries(updated.map((row) => [row.currency, row.rate])),
+        failed,
+        date: live.date,
+        source: live.source,
+        sample: { USD: live.rates.USD ?? null },
+      };
+      action = 'currency_rates_refresh';
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Failed to refresh currency rates' },
+        { status: 502 }
+      );
+    }
   } else if (body.resource === 'settings') {
     const values = (body.payload ?? {}) as Json;
     const { data, error } = await db.from('commerce_settings').upsert({ id: 'commerce', values, updated_by: auth.user.id, updated_at: now }, { onConflict: 'id' }).select().single();

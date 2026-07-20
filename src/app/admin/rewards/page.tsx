@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Gift, Loader2, PlusCircle, RefreshCcw, Search, UserRound } from 'lucide-react';
+import AdminRewardRulesForm from '@/components/admin/AdminRewardRulesForm';
+import type { RewardRulesInput } from '@/lib/rewards/rules';
 
 interface RewardBalance {
   available_points: number;
@@ -37,6 +39,16 @@ interface TransactionRow {
   customer?: CustomerRow | null;
 }
 
+const DEFAULT_RULES: RewardRulesInput = {
+  is_active: true,
+  earn_points_per_order: 500,
+  point_value_inr: 1,
+  min_redeem_points: 1,
+  max_redeem_points_per_order: 5000,
+  max_redeem_percent: 20,
+  expiry_days: null,
+};
+
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   earned: 'Points earned',
   redeemed: 'Points redeemed',
@@ -67,6 +79,21 @@ function statusBadgeClass(status: string) {
   }
 }
 
+function toRulesInput(raw: Record<string, unknown> | null | undefined): RewardRulesInput {
+  if (!raw) return DEFAULT_RULES;
+  return {
+    is_active: Boolean(raw.is_active),
+    earn_points_per_order: Number(raw.earn_points_per_order ?? DEFAULT_RULES.earn_points_per_order),
+    point_value_inr: Number(raw.point_value_inr ?? DEFAULT_RULES.point_value_inr),
+    min_redeem_points: Number(raw.min_redeem_points ?? DEFAULT_RULES.min_redeem_points),
+    max_redeem_points_per_order: Number(
+      raw.max_redeem_points_per_order ?? DEFAULT_RULES.max_redeem_points_per_order
+    ),
+    max_redeem_percent: Number(raw.max_redeem_percent ?? DEFAULT_RULES.max_redeem_percent),
+    expiry_days: raw.expiry_days == null ? null : Number(raw.expiry_days),
+  };
+}
+
 export default function AdminRewardsPage() {
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [search, setSearch] = useState('');
@@ -75,6 +102,9 @@ export default function AdminRewardsPage() {
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<TransactionRow[]>([]);
   const [pointValueInr, setPointValueInr] = useState(1);
+  const [rules, setRules] = useState<RewardRulesInput>(DEFAULT_RULES);
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulesSaving, setRulesSaving] = useState(false);
   const [assignPoints, setAssignPoints] = useState('');
   const [assignDescription, setAssignDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,6 +112,24 @@ export default function AdminRewardsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const applySettingsPayload = useCallback((data: { settings?: Record<string, unknown>; pointValueInr?: number }) => {
+    if (data.settings) setRules(toRulesInput(data.settings));
+    if (data.pointValueInr != null) setPointValueInr(Number(data.pointValueInr));
+  }, []);
+
+  const loadRules = useCallback(async () => {
+    setRulesLoading(true);
+    try {
+      const res = await fetch('/api/admin/rewards?settings=1', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load reward rules');
+      applySettingsPayload(data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load reward rules');
+    }
+    setRulesLoading(false);
+  }, [applySettingsPayload]);
 
   const loadCustomer = useCallback(async (customerId: string) => {
     setLoading(true);
@@ -93,7 +141,7 @@ export default function AdminRewardsPage() {
       setSelectedCustomer(data.selectedCustomer || null);
       setBalance(data.balance || null);
       setTransactions(data.transactions || []);
-      setPointValueInr(Number(data.pointValueInr ?? 1));
+      if (data.pointValueInr != null) setPointValueInr(Number(data.pointValueInr));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load customer rewards');
     }
@@ -113,7 +161,6 @@ export default function AdminRewardsPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Search failed');
       setCustomers(data.customers || []);
-      setPointValueInr(Number(data.pointValueInr ?? 1));
     } catch (searchError) {
       setError(searchError instanceof Error ? searchError.message : 'Search failed');
     }
@@ -126,7 +173,7 @@ export default function AdminRewardsPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setRecentTransactions(data.recentTransactions || []);
-        setPointValueInr(Number(data.pointValueInr ?? 1));
+        if (data.pointValueInr != null) setPointValueInr(Number(data.pointValueInr));
       }
     } catch {
       // Non-blocking
@@ -134,8 +181,9 @@ export default function AdminRewardsPage() {
   }, []);
 
   useEffect(() => {
+    void loadRules();
     void loadRecentActivity();
-  }, [loadRecentActivity]);
+  }, [loadRules, loadRecentActivity]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -143,6 +191,35 @@ export default function AdminRewardsPage() {
     }, 300);
     return () => window.clearTimeout(timer);
   }, [search, searchCustomers]);
+
+  async function saveRules(event: React.FormEvent) {
+    event.preventDefault();
+    setRulesSaving(true);
+    setMessage('');
+    setError('');
+
+    const res = await fetch('/api/admin/rewards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_settings',
+        payload: rules,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setRulesSaving(false);
+
+    if (!res.ok) {
+      setError(data.error || 'Failed to save reward rules');
+      return;
+    }
+
+    if (data.settings) setRules(toRulesInput(data.settings));
+    setPointValueInr(Number(data.settings?.point_value_inr ?? rules.point_value_inr));
+    setMessage(
+      `Reward rules saved. Max redeem is now ${Number(data.settings?.max_redeem_percent ?? rules.max_redeem_percent)}% of order merchandise.`
+    );
+  }
 
   async function assignRewards(event: React.FormEvent) {
     event.preventDefault();
@@ -197,15 +274,16 @@ export default function AdminRewardsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Assign Reward Points</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Rewards</h1>
           <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Search for a customer and assign reward points manually. Points are not earned automatically —
-            only admins can credit or debit balances here.
+            Set redeem limits (including max % of order), then search a customer to credit or debit
+            points manually.
           </p>
         </div>
         <button
           type="button"
           onClick={() => {
+            void loadRules();
             void loadRecentActivity();
             if (selectedCustomer) void loadCustomer(selectedCustomer.id);
           }}
@@ -221,6 +299,19 @@ export default function AdminRewardsPage() {
         >
           {error || message}
         </p>
+      )}
+
+      {rulesLoading ? (
+        <div className="flex justify-center rounded-xl border border-gray-200 bg-white py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
+        </div>
+      ) : (
+        <AdminRewardRulesForm
+          settings={rules}
+          saving={rulesSaving}
+          onChange={setRules}
+          onSubmit={saveRules}
+        />
       )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">

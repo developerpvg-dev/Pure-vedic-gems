@@ -9,7 +9,9 @@ export type NormalizedCurrencyRate = {
   updated_at: string | null;
 };
 
-export const FX_CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'AUD', 'AED', 'SGD', 'CAD', 'JPY', 'CHF'] as const;
+import { FX_CURRENCY_CODES } from '@/lib/currency/catalog';
+
+export const FX_CURRENCY_OPTIONS = FX_CURRENCY_CODES;
 
 export function normalizeCurrencyRate(row: Record<string, unknown>): NormalizedCurrencyRate {
   const currency = String(row.currency ?? '').toUpperCase();

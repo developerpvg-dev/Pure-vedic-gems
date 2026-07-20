@@ -2,15 +2,32 @@
  * Price & weight formatting utilities for PureVedicGems
  */
 
+import {
+  convertFromInr,
+  getCurrencyDisplayState,
+  localeForCurrency,
+} from '@/lib/currency/display-store';
+
 /**
- * Format a price in INR with Indian comma grouping (₹2,41,000)
+ * Format a price. Amounts are INR unless `currency` is passed explicitly
+ * (then the amount is treated as already in that currency — no FX).
+ * With no second arg, converts using the storefront display currency.
  */
-export function formatPrice(amount: number, currency = 'INR'): string {
-  return new Intl.NumberFormat('en-IN', {
+export function formatPrice(amount: number, currency?: string): string {
+  const display = getCurrencyDisplayState();
+  // Explicit currency = format amount as-is. Otherwise convert when storefront FX is on.
+  let code = (currency ?? (display.enabled ? display.currency : 'INR')).toUpperCase();
+  if (currency == null && display.enabled && code !== 'INR') {
+    const rate = display.rates[code];
+    if (!rate || rate <= 0) code = 'INR'; // no rate → don't mislabel INR amounts as USD
+  }
+  const value = currency != null ? amount : convertFromInr(amount, code);
+  const maxFrac = code === 'JPY' ? 0 : code === 'INR' ? 0 : 2;
+  return new Intl.NumberFormat(localeForCurrency(code), {
     style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
+    currency: code,
+    maximumFractionDigits: maxFrac,
+  }).format(value);
 }
 
 export type {

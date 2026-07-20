@@ -6,6 +6,7 @@ import { SiteHeader } from './SiteHeader';
 import { Footer } from './Footer';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { AgentChatWidget } from '@/components/agent/AgentChatWidget';
+import { CurrencyProvider } from '@/lib/hooks/useCurrency';
 
 /** Routes that already reserve space below the fixed header in their own layout */
 function pageHasBuiltInHeaderOffset(pathname: string): boolean {
@@ -71,7 +72,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <CurrencyProvider>
       <SiteHeader />
       {showHeaderSpacer ? <div className="pvg-header-spacer" aria-hidden="true" /> : null}
       <main className={shellClassName}>{children}</main>
@@ -79,6 +80,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       <AgentChatWidget />
       <Footer />
       {!isHome ? <ThemeSwitcher /> : null}
-    </>
+    </CurrencyProvider>
   );
 }

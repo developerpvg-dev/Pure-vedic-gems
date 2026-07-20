@@ -1,12 +1,5 @@
--- Seed active energization options for the configurator.
--- Catalog: Skip (UI-only) + Prana With Video + Prana With picture (both ₹2100).
-
-ALTER TABLE energization_options
-  ADD COLUMN IF NOT EXISTS legacy_slug VARCHAR(80);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_energization_options_legacy_slug
-  ON energization_options(legacy_slug)
-  WHERE legacy_slug IS NOT NULL;
+-- Week 36: shrink pooja catalog to Skip + With Video + With picture (both ₹2100).
+-- Safe to re-run. Apply in Supabase SQL editor (or via seed-energization-options.ts --write).
 
 UPDATE energization_options AS target
 SET
@@ -36,7 +29,6 @@ WHERE NOT EXISTS (
   SELECT 1 FROM energization_options existing WHERE existing.legacy_slug = source.legacy_slug
 );
 
--- Deactivate every option that is not in the active catalog.
 UPDATE energization_options
 SET is_active = false
 WHERE legacy_slug IS NULL
@@ -45,7 +37,6 @@ WHERE legacy_slug IS NULL
      'prana-pratishta-with-picture'
    );
 
--- Point enabled products at the active catalog only.
 UPDATE product_option_rules
 SET
   allowed_energization_option_ids = (

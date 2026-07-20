@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Gift, ShoppingBag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
-import { formatPrice } from '@/lib/utils/format';
+import { Money } from '@/components/currency/Money';
 import type { RewardPointTransaction, RewardSettings } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -68,7 +68,7 @@ export default async function RewardsPage() {
 
       <section className="pvg-account-stat-grid">
         {[
-          { label: 'Available', value: available.toLocaleString('en-IN'), detail: formatPrice(available * pointValue) },
+          { label: 'Available', value: available.toLocaleString('en-IN'), detail: <Money amount={available * pointValue} /> },
           { label: 'Pending Holds', value: pendingRedeemed.toLocaleString('en-IN'), detail: 'Reserved at checkout' },
           { label: 'Lifetime Earned', value: lifetimeEarned.toLocaleString('en-IN'), detail: 'Confirmed points' },
           { label: 'Lifetime Redeemed', value: lifetimeRedeemed.toLocaleString('en-IN'), detail: 'Used on orders' },
@@ -115,7 +115,9 @@ export default async function RewardsPage() {
                   <p className={`text-lg font-bold ${transaction.points >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                     {transaction.points >= 0 ? '+' : ''}{transaction.points.toLocaleString('en-IN')}
                   </p>
-                  <p className="pvg-account-row-meta">{formatPrice(Number(transaction.amount_inr ?? 0))}</p>
+                  <p className="pvg-account-row-meta">
+                    <Money amount={Number(transaction.amount_inr ?? 0)} />
+                  </p>
                 </div>
               </div>
             ))}

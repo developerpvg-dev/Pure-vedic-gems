@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Flame, CreditCard, CheckCircle, Phone, MessageCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { formatPrice } from '@/lib/utils/format';
+import { Money } from '@/components/currency/Money';
 import { buildMetadata, serviceJsonLd } from '@/lib/utils/seo';
 
 export const revalidate = 300;
@@ -118,7 +118,9 @@ export default async function YagyaDetailPage({ params }: { params: Promise<{ sl
 
             {Number(yagya.price) > 0 && (
               <div className="mt-4">
-                <p className="text-2xl font-bold text-[#7A1515]">{formatPrice(Number(yagya.price))}</p>
+                <p className="text-2xl font-bold text-[#7A1515]">
+                  <Money amount={Number(yagya.price)} />
+                </p>
                 <p className="mt-1 text-xs text-slate-400">Suggested offering · Final amount confirmed with you</p>
               </div>
             )}

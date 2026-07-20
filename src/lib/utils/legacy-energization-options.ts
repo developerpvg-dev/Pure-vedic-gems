@@ -7,6 +7,7 @@ export const ENERGIZATION_LEGACY_SLUGS = {
   PRANA_PRATISHTA: 'prana-pratishta-pooja',
   PRANA_LIVE: 'prana-pratishta-live-streaming',
   PRANA_VIDEO: 'prana-pratishta-with-video',
+  PRANA_PICTURE: 'prana-pratishta-with-picture',
   VEDIC: 'vedic-pooja',
   VEDIC_VIDEO: 'vedic-pooja-with-video',
 } as const;
@@ -34,56 +35,27 @@ export interface LegacyEnergizationOptionDefinition {
   sort_order: number;
 }
 
+/** Active configurator catalog: Skip (UI-only) + these two paid plans. */
 export const LEGACY_ENERGIZATION_OPTIONS: LegacyEnergizationOptionDefinition[] = [
-  {
-    legacy_slug: ENERGIZATION_LEGACY_SLUGS.PRANA_PRATISHTA,
-    name: 'Prana Pratishta Pooja',
-    description: 'Traditional Vedic prana pratishta ceremony to activate the gemstone.',
-    price: 2100,
-    duration: '2 hours',
-    includes: ['Prana pratishta ritual', 'Vedic mantra chanting', 'Gemstone energization'],
-    includes_video: false,
-    sort_order: 1,
-  },
-  {
-    legacy_slug: ENERGIZATION_LEGACY_SLUGS.PRANA_LIVE,
-    name: 'Prana Pratishta Pooja (Live Streaming)',
-    description: 'Prana pratishta ceremony with live streaming so you can attend remotely.',
-    price: 3500,
-    duration: '2 hours',
-    includes: ['Prana pratishta ritual', 'Live streaming access', 'Vedic mantra chanting'],
-    includes_video: false,
-    sort_order: 2,
-  },
   {
     legacy_slug: ENERGIZATION_LEGACY_SLUGS.PRANA_VIDEO,
     name: 'Prana Pratishta Pooja (With Video)',
     description: 'Prana pratishta ceremony with recorded video documentation.',
-    price: 3100,
+    price: 2100,
     duration: '2 hours',
     includes: ['Prana pratishta ritual', 'Recorded video', 'Vedic mantra chanting'],
     includes_video: true,
-    sort_order: 3,
+    sort_order: 1,
   },
   {
-    legacy_slug: ENERGIZATION_LEGACY_SLUGS.VEDIC,
-    name: 'Vedic Pooja',
-    description: 'Classical Vedic pooja for gemstone purification and blessing.',
-    price: 1100,
-    duration: '1 hour',
-    includes: ['Vedic pooja ceremony', 'Mantra chanting', 'Energization blessing'],
+    legacy_slug: ENERGIZATION_LEGACY_SLUGS.PRANA_PICTURE,
+    name: 'Prana Pratishta Pooja (With picture)',
+    description: 'Prana pratishta ceremony with photographic documentation.',
+    price: 1500,
+    duration: '2 hours',
+    includes: ['Prana pratishta ritual', 'Photo documentation', 'Vedic mantra chanting'],
     includes_video: false,
-    sort_order: 4,
-  },
-  {
-    legacy_slug: ENERGIZATION_LEGACY_SLUGS.VEDIC_VIDEO,
-    name: 'Vedic Pooja (With Video)',
-    description: 'Vedic pooja with recorded video of the complete ceremony.',
-    price: 2100,
-    duration: '1 hour',
-    includes: ['Vedic pooja ceremony', 'Recorded video', 'Mantra chanting'],
-    includes_video: true,
-    sort_order: 5,
+    sort_order: 2,
   },
 ];
 
@@ -131,6 +103,15 @@ export function classifyLegacyEnergizationOption(raw: string): ParsedLegacyEnerg
     return {
       kind: 'option',
       legacySlug: ENERGIZATION_LEGACY_SLUGS.PRANA_VIDEO,
+      raw: text,
+      priceInr,
+    };
+  }
+
+  if (/prana\s*pratishta.*with\s*pictur/i.test(lower)) {
+    return {
+      kind: 'option',
+      legacySlug: ENERGIZATION_LEGACY_SLUGS.PRANA_PICTURE,
       raw: text,
       priceInr,
     };

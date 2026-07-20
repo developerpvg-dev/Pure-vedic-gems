@@ -15,6 +15,7 @@ import {
 } from '@/lib/shop/product-pricing';
 import { formatProductDisplayName, stripProductGradeFromName } from '@/lib/utils/product-display-name';
 import { formatCarats, formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { productHref } from '@/lib/categories/storefront';
 import { toast } from 'sonner';
@@ -42,6 +43,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  useCurrencySubscription();
   const { addItem, isInCart } = useCart();
   const gradeLabel = resolveProductGradeLabel(product.quality_label, product.name);
   const displayName = stripProductGradeFromName(formatProductDisplayName(product.name));

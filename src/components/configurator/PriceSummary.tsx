@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingCart, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { useCart } from '@/lib/hooks/useCart';
 import { deriveCartLineKey } from '@/lib/cart/client';
 import { toast } from 'sonner';
@@ -63,6 +64,7 @@ export default function PriceSummary({
   variant = 'desktop',
   onDesignMismatch,
 }: PriceSummaryProps) {
+  useCurrencySubscription();
   void goldRate;
   const { addItem } = useCart();
   const router = useRouter();

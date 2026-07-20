@@ -2,6 +2,7 @@
 
 import { Gift, Loader2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import {
   calculateMaxRedeemablePoints,
   calculateRewardDiscount,
@@ -47,6 +48,7 @@ export function RewardPointsRedemption({
   pointsToRedeem,
   onChange,
 }: RewardPointsRedemptionProps) {
+  useCurrencySubscription();
   const maxRedeem = calculateMaxRedeem(rewards, subtotal);
   const appliedPoints = Math.min(pointsToRedeem, maxRedeem);
   const discount = estimateRewardDiscount(appliedPoints, rewards, subtotal);
@@ -87,8 +89,10 @@ export function RewardPointsRedemption({
           <div>
             <h3 className="font-heading text-base font-semibold text-brand-primary">Reward Points</h3>
             <p className="mt-1 text-sm text-brand-muted">
-              {rewards.available_points.toLocaleString('en-IN')} points available (1 point = ₹
-              {Number(rewards.point_value_inr).toLocaleString('en-IN')}).
+              {rewards.available_points.toLocaleString('en-IN')} points available (1 point ={' '}
+              {formatPrice(Number(rewards.point_value_inr))}). Max redeemable is{' '}
+              {Number(rewards.max_redeem_percent).toLocaleString('en-IN')}% of this order
+              {maxRedeem > 0 ? ` (up to ${maxRedeem.toLocaleString('en-IN')} pts)` : ''}.
               {appliedPoints > 0
                 ? ` You will earn ${earnAfterOrder.toLocaleString('en-IN')} points after payment.`
                 : ` Earn up to ${rewards.earn_points_per_order.toLocaleString('en-IN')} points after payment.`}

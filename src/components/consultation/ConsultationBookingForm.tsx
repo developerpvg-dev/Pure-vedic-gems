@@ -27,6 +27,8 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
+import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import type { ConsultationPlan } from '@/lib/types/database';
 import '@/app/consultation/consultation-page.css';
@@ -111,13 +113,13 @@ const PLAN_THEMES: Record<PlanColor, typeof BRAND_PLAN_THEME> = {
 };
 
 function formatInr(amount: number | null) {
-  if (amount == null) return 'Rs 0';
-  return `Rs ${Number(amount).toLocaleString('en-IN')}`;
+  if (amount == null) return formatPrice(0);
+  return formatPrice(Number(amount));
 }
 
 function formatUsd(amount: number | null) {
   if (amount == null) return null;
-  return `$${Number(amount).toLocaleString('en-US')}`;
+  return formatPrice(Number(amount), 'USD');
 }
 
 function readMetadata(plan: ConsultationPlan): PlanMetadata {
@@ -181,6 +183,7 @@ function loadRazorpayScript() {
 }
 
 export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }) {
+  useCurrencySubscription();
   const { user, profile, isAuthenticated } = useAuth();
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? '');
   const [detailsPlanId, setDetailsPlanId] = useState<string | null>(null);

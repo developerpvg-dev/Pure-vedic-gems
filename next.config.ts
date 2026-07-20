@@ -21,7 +21,7 @@ const contentSecurityPolicy = [
     .join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://img.youtube.com https://i.ytimg.com",
+  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com",
   "media-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io",
   "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com",
   "worker-src 'self' blob:",

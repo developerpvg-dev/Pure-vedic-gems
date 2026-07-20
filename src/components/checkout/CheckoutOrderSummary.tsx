@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { CartItemPriceBreakdown } from '@/components/cart/CartItemPriceBreakdown';
 import { buildCartItemPriceBreakdown } from '@/lib/cart/price-breakdown';
@@ -32,6 +33,7 @@ export function CheckoutOrderSummary({
   rewardPointsToRedeem = 0,
   rewards = null,
 }: CheckoutOrderSummaryProps) {
+  useCurrencySubscription();
   const [breakupOpen, setBreakupOpen] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);

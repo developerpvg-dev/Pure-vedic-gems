@@ -69,6 +69,10 @@ export default function AdminRewardRulesForm({
     if (settings.point_value_inr <= 0) {
       return 'Point value must be greater than zero.';
     }
+    const percent = Number(settings.max_redeem_percent);
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+      return 'Maximum redeem percent must be between 0 and 100.';
+    }
     return null;
   }, [settings]);
 
@@ -149,8 +153,8 @@ export default function AdminRewardRulesForm({
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700">Point value & redemption limits</h3>
           <p className="mt-1 text-xs text-gray-500">
-            Redemption applies to the product subtotal only (after any coupon discount). Shipping,
-            GST, and jewellery add-on charges are not eligible.
+            Redemption is capped against merchandise total (gem + metal + making + certification +
+            puja, after any coupon). Shipping and GST are not included in the % base.
           </p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Field
@@ -209,8 +213,8 @@ export default function AdminRewardRulesForm({
               />
             </Field>
             <Field
-              label="Maximum % of eligible subtotal"
-              hint={`Discount from points cannot exceed this % of the product subtotal. On ₹50,000 subtotal, the ${settings.max_redeem_percent}% cap = ₹${preview.percentCap.toLocaleString('en-IN')}.`}
+              label="Maximum % of order merchandise"
+              hint={`Discount from points cannot exceed this % of merchandise (after coupon). On ₹50,000 merchandise, the ${settings.max_redeem_percent}% cap = ₹${preview.percentCap.toLocaleString('en-IN')}. Example: 100 pts on a ₹100 order at 20% → max 20 pts off.`}
             >
               <div className="relative">
                 <input

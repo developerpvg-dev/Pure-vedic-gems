@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { productHref } from '@/lib/categories/storefront';
 import { formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { CartItemPriceBreakdown } from '@/components/cart/CartItemPriceBreakdown';
 
@@ -262,6 +263,7 @@ function EmptyCart() {
 // ─── Cart Page ────────────────────────────────────────────────────────────────
 
 export default function CartPage() {
+  useCurrencySubscription();
   const { cart, removeItem } = useCart();
   const { items, subtotal, item_count } = cart;
   const rudrakshaWithoutConfig = RUDRAKSHA_CONFIGURATOR_ENABLED

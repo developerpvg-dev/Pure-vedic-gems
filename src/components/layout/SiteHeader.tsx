@@ -17,6 +17,7 @@ import { SearchDialog } from '@/components/layout/SearchDialog';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { MobileNav } from './MobileNav';
+import { CurrencySelector } from './CurrencySelector';
 
 type HeaderNavItem = (typeof HEADER_NAV_ITEMS)[number];
 
@@ -495,6 +496,27 @@ export function SiteHeader() {
           gap: 6px;
           flex-shrink: 0;
         }
+        .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn:hover {
+          background: #f5f0e8 !important;
+          color: #7a1515 !important;
+        }
+        .pvg-fx-root.pvg-fx-nav .pvg-fx-btn:hover {
+          border-color: #d4c8b4 !important;
+          background: #faf7f2 !important;
+        }
+        .pvg-fx-menu::-webkit-scrollbar {
+          width: 4px;
+        }
+        .pvg-fx-menu::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .pvg-fx-menu::-webkit-scrollbar-thumb {
+          background: #c4b8a4;
+          border-radius: 999px;
+        }
+        .pvg-fx-menu::-webkit-scrollbar-thumb:hover {
+          background: #a89880;
+        }
         .pvg-mob-action-divider {
           width: 1px;
           height: 28px;
@@ -709,6 +731,11 @@ export function SiteHeader() {
           .pvg-mob-icon-btn { width: 34px; height: 34px; }
           .pvg-mob-action-pill { height: 38px; padding: 0 5px; }
           .pvg-mob-action-pill .relative > button { width: 32px !important; height: 32px !important; }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn {
+            width: 30px !important;
+            height: 30px !important;
+            min-width: 30px !important;
+          }
         }
         @media (max-width: 767px) {
           .pvg-mob-action-divider,
@@ -723,10 +750,23 @@ export function SiteHeader() {
             margin-left: 2px !important;
           }
           .pvg-mob-action-cluster {
-            gap: 4px;
+            gap: 2px;
           }
           .pvg-mob-action-pill {
             padding: 0 3px;
+          }
+          .pvg-mob-nav {
+            padding: 0 10px !important;
+          }
+        }
+        @media (max-width: 1180px) {
+          .pvg-fx-root.pvg-fx-nav .pvg-fx-code {
+            display: none;
+          }
+          .pvg-fx-root.pvg-fx-nav .pvg-fx-btn {
+            width: 34px;
+            padding: 0 !important;
+            border-radius: 999px;
           }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -798,22 +838,12 @@ export function SiteHeader() {
                 +971-526686526
               </a>
             </div>
-            {/* Right: India | UK | Dubai */}
+            {/* Right: currency selector */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0,
               borderLeft: '1px solid rgba(255,255,255,0.14)', paddingLeft: '18px',
             }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
-                <FlagIN /> India
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '16px', fontWeight: 200, lineHeight: 1 }}>|</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
-                <FlagGB /> UK
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '16px', fontWeight: 200, lineHeight: 1 }}>|</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.90)' }}>
-                <FlagAE /> Dubai
-              </span>
+              <CurrencySelector variant="topbar" />
             </div>
           </div>
 
@@ -858,6 +888,7 @@ export function SiteHeader() {
 
             {/* Action buttons */}
             <div className="pvg-action-cluster">
+              <CurrencySelector variant="nav" />
               <button type="button" onClick={openSearch} aria-label="Search"
                 className="pvg-action-icon-btn"
                 style={{}}>
@@ -923,6 +954,7 @@ export function SiteHeader() {
             </Link>
             <div style={{ flex: 1 }} />
             <div className="pvg-mob-action-cluster">
+              <CurrencySelector variant="mobile" />
               <button type="button" onClick={openSearch} aria-label="Search"
                 className="pvg-mob-icon-btn"
                 style={{}}>

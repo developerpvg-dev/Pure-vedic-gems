@@ -21,6 +21,7 @@ import {
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
+import { DirectorPickPrice } from '@/components/home/DirectorPickPrice';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 
 export type HomeManagedCategory = {
@@ -573,10 +574,6 @@ function exploreFallbackBackground(category: HomeCatalogCategory) {
   return `radial-gradient(circle at 35% 30%, ${color}, #6A4400 55%, #2A1800 100%)`;
 }
 
-function formatPriceValue(price: number) {
-  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(price || 0);
-}
-
 function directorMeta(product: HomeDirectorPick) {
   const grade = resolveProductGradeLabel(product.quality_label, product.name);
   return [
@@ -925,14 +922,7 @@ function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
             <span>{reviews} reviews</span>
           </span>
         </div>
-        <div className="pick-price-line">
-          <span className="pick-price">
-            <span className="pick-price-label">Rs.</span>
-            <span className="pick-price-value">{formatPriceValue(product.price)}</span>
-          </span>
-          {comparePrice ? <span className="pick-compare-price">Rs. {formatPriceValue(comparePrice)}</span> : null}
-          {discount ? <span className="pick-discount">({discount}% off)</span> : null}
-        </div>
+        <DirectorPickPrice price={product.price} comparePrice={comparePrice} discount={discount} />
         <div className="director-pick-actions">
           <Link href={productHref(product)} className="director-pick-btn director-pick-btn-loose">Buy Loose</Link>
           <Link href={configureHref(product)} className="director-pick-btn director-pick-btn-configure">Configure</Link>

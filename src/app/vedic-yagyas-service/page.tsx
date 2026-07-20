@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Flame, BookOpen, CreditCard } from 'lucide-react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { buildMetadata, serviceJsonLd } from '@/lib/utils/seo';
-import { formatPrice } from '@/lib/utils/format';
+import { Money } from '@/components/currency/Money';
 import { YagyaServiceIntro } from '@/components/yagyas/YagyaServiceIntro';
 import '@/app/consultation/consultation-page.css';
 
@@ -143,7 +143,9 @@ export default async function VedicYagyasServicePage() {
                 <h2 className="mt-0.5 line-clamp-2 text-[12px] font-medium leading-4 text-slate-700">{yagya.name}</h2>
 
                 {yagya.price > 0 ? (
-                  <p className="mt-1 text-[13px] font-semibold text-[#7A1515]">{formatPrice(yagya.price)}</p>
+                  <p className="mt-1 text-[13px] font-semibold text-[#7A1515]">
+                    <Money amount={yagya.price} />
+                  </p>
                 ) : null}
 
                 <div className="mt-2 flex flex-col gap-1">

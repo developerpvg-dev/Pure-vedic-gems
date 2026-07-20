@@ -1,9 +1,12 @@
+'use client';
+
 import {
   formatProductListPrice,
   isProductPriceOnRequest,
   resolveProductDisplayPrice,
 } from '@/lib/shop/product-pricing';
 import { formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 
 interface PriceDisplayProps {
   price: number;
@@ -22,6 +25,7 @@ export function PriceDisplay({
   caratWeight,
   priceMode,
 }: PriceDisplayProps) {
+  useCurrencySubscription();
   const product = {
     price,
     compare_price: comparePrice,

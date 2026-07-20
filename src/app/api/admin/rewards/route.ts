@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { listAdminCustomers } from '@/lib/admin/customer-directory';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
-import { addManualRewardAdjustment, getRewardBalance, getRewardSettings } from '@/lib/rewards/service';
+import {
+  addManualRewardAdjustment,
+  getRewardBalance,
+  getRewardSettings,
+  updateRewardSettings,
+} from '@/lib/rewards/service';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import type { RewardPointTransaction } from '@/lib/types/database';
 
@@ -11,6 +16,16 @@ const adjustmentSchema = z.object({
   customer_id: z.string().uuid(),
   points: z.coerce.number().int().min(-1_000_000).max(1_000_000).refine((value) => value !== 0, 'Points cannot be zero'),
   description: z.string().trim().min(3).max(500),
+});
+
+const settingsSchema = z.object({
+  is_active: z.boolean(),
+  earn_points_per_order: z.coerce.number().int().min(0).max(1_000_000),
+  point_value_inr: z.coerce.number().positive().max(10_000),
+  min_redeem_points: z.coerce.number().int().min(0).max(1_000_000),
+  max_redeem_points_per_order: z.coerce.number().int().min(0).max(1_000_000),
+  max_redeem_percent: z.coerce.number().min(0).max(100),
+  expiry_days: z.coerce.number().int().min(1).max(3650).nullable().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -21,10 +36,15 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search')?.trim();
   const customerId = searchParams.get('customer_id')?.trim();
   const recentOnly = searchParams.get('recent') === '1';
+  const settingsOnly = searchParams.get('settings') === '1';
   const admin = createAdminClient();
 
   const settings = await getRewardSettings();
   const pointValueInr = Number(settings.point_value_inr ?? 1);
+
+  if (settingsOnly) {
+    return NextResponse.json({ settings, pointValueInr });
+  }
 
   if (recentOnly) {
     const { data: recentRows } = await admin
@@ -45,6 +65,7 @@ export async function GET(request: NextRequest) {
     const profileById = new Map((recentProfiles ?? []).map((profile) => [profile.id, profile]));
 
     return NextResponse.json({
+      settings,
       pointValueInr,
       recentTransactions: recentTransactions.map((transaction) => ({
         ...transaction,
@@ -96,6 +117,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
+    settings,
     pointValueInr,
     customers,
     selectedCustomer,
@@ -111,11 +133,56 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null) as { action?: string; payload?: unknown } | null;
   if (!body?.action) return NextResponse.json({ error: 'action is required' }, { status: 400 });
 
+  if (body.action === 'update_settings') {
+    const parsed = settingsSchema.safeParse(body.payload);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    if (parsed.data.min_redeem_points > parsed.data.max_redeem_points_per_order) {
+      return NextResponse.json(
+        { error: 'Minimum redeem points cannot exceed the per-order maximum.' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const settings = await updateRewardSettings(
+        {
+          is_active: parsed.data.is_active,
+          earn_points_per_order: parsed.data.earn_points_per_order,
+          point_value_inr: parsed.data.point_value_inr,
+          min_redeem_points: parsed.data.min_redeem_points,
+          max_redeem_points_per_order: parsed.data.max_redeem_points_per_order,
+          max_redeem_percent: parsed.data.max_redeem_percent,
+          expiry_days: parsed.data.expiry_days ?? null,
+        },
+        auth.user.id
+      );
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'reward_settings_update',
+        resourceType: 'reward_settings',
+        resourceId: settings.id,
+        details: parsed.data,
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({ success: true, settings });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Unable to update reward settings.' },
+        { status: 400 }
+      );
+    }
+  }
+
   if (body.action !== 'adjustment') {
-    return NextResponse.json(
-      { error: 'Automatic reward rules are disabled. Only manual customer assignments are supported.' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Unsupported action.' }, { status: 400 });
   }
 
   const parsed = adjustmentSchema.safeParse(body.payload);

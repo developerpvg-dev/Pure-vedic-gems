@@ -6,6 +6,7 @@ import { Globe, MapPin, Pencil, ChevronDown, Truck, Loader2 } from 'lucide-react
 import { ShippingAddressSchema, type ShippingAddress, type ShippingMethodId } from '@/lib/validators/order';
 import type { SelectedShippingPlan, ShippingPlan } from '@/lib/types/shipping';
 import { formatPrice } from '@/lib/utils/format';
+import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { SearchableSelect } from '@/components/checkout/SearchableSelect';
 
 const ALL_COUNTRIES = Country.getAllCountries();
@@ -58,6 +59,7 @@ export function ShippingSection({
   onEdit,
   disabled,
 }: ShippingSectionProps) {
+  useCurrencySubscription();
   const [plans, setPlans] = useState<ShippingPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
 
