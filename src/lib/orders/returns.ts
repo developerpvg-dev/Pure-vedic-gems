@@ -37,6 +37,15 @@ export type ReturnComplianceFlags = {
   return_reason?: string;
   return_requested_at?: string;
   return_admin_note?: string;
+  /** Customer answered post-delivery “received properly?” */
+  receipt_confirmed?: boolean;
+  receipt_ok?: boolean;
+  receipt_confirmed_at?: string;
+  /** Customer evidence photos for return/refund */
+  return_image_urls?: string[];
+  /** Admin verified customer photos before refund can proceed */
+  return_images_verified?: boolean;
+  return_images_verified_at?: string;
 };
 
 export function parseComplianceFlags(value: unknown): ReturnComplianceFlags {
@@ -49,6 +58,26 @@ export function mergeComplianceFlags(
   patch: ReturnComplianceFlags,
 ): ReturnComplianceFlags {
   return { ...parseComplianceFlags(current), ...patch };
+}
+
+export function normalizeReturnImageUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((url): url is string => typeof url === 'string')
+    .map((url) => url.trim())
+    .filter((url) => /^https?:\/\//i.test(url))
+    .slice(0, 6);
+}
+
+/** Refund approval / record requires verified customer photos when a return was requested. */
+export function requiresVerifiedReturnImages(flags: ReturnComplianceFlags, returnStatus: string): boolean {
+  const hasReturn = returnStatus !== 'none' && returnStatus !== 'rejected' && returnStatus !== 'closed';
+  const hasImages = (flags.return_image_urls?.length ?? 0) > 0;
+  return hasReturn || hasImages;
+}
+
+export function areReturnImagesVerified(flags: ReturnComplianceFlags): boolean {
+  return Boolean(flags.return_images_verified) && (flags.return_image_urls?.length ?? 0) > 0;
 }
 
 export function getDeliveredAt(input: {
@@ -181,5 +210,17 @@ export function __returnsSelfCheck() {
 
   console.assert(isValidReturnStatus('requested'), 'valid status');
   console.assert(!isValidReturnStatus('foo'), 'invalid status');
+
+  const withImages = {
+    return_image_urls: ['https://cdn.example/a.jpg'],
+  };
+  console.assert(requiresVerifiedReturnImages(withImages, 'requested'), 'gate when return open');
+  console.assert(!areReturnImagesVerified(withImages), 'unverified until admin marks');
+  console.assert(
+    areReturnImagesVerified({ ...withImages, return_images_verified: true }),
+    'verified when flagged',
+  );
+  console.assert(!requiresVerifiedReturnImages({}, 'none'), 'no gate without return');
+  console.assert(normalizeReturnImageUrls(['https://x.com/a.jpg', 'bad']).length === 1, 'normalize urls');
   console.log('returns self-check ok');
 }

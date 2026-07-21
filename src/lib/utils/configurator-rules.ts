@@ -213,6 +213,23 @@ export function resolveConfiguratorOptionRules(
     };
   }
 
+  // Navaratna / uparatna / flagged gems: category gate wins over stale DB rules that
+  // collapse the UI to Loose Stone only (jewelry_design_enabled false or loose-only list).
+  const looseOnly =
+    rules.allowed_setting_types.length === 1 && rules.allowed_setting_types[0] === 'loose';
+  if (configuratorActive && (!rules.jewelry_design_enabled || looseOnly)) {
+    return {
+      ...rules,
+      product_id: product.id,
+      jewelry_design_enabled: true,
+      metal_enabled: true,
+      ring_size_enabled: true,
+      allowed_setting_types: DEFAULT_SETTING_TYPES,
+      certificate_enabled:
+        product.certificate_display_enabled ?? rules.certificate_enabled,
+    };
+  }
+
   if (!rules.product_id) {
     return {
       ...rules,
@@ -226,7 +243,12 @@ export function resolveConfiguratorOptionRules(
     };
   }
 
-  return rules;
+  return {
+    ...rules,
+    product_id: product.id,
+    certificate_enabled:
+      product.certificate_display_enabled ?? rules.certificate_enabled,
+  };
 }
 
 export function isAllowedByList(value: string | null | undefined, allowedValues: readonly string[]) {

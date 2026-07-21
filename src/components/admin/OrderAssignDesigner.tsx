@@ -13,9 +13,9 @@ export type DesignSlipItem = {
   ring_size?: string | null;
   chain_length?: string | null;
   design_name?: string | null;
+  design_image_url?: string | null;
   summary?: string | null;
   carat?: string | null;
-  sku?: string | null;
 };
 
 interface OrderAssignDesignerProps {
@@ -28,10 +28,8 @@ interface OrderAssignDesignerProps {
   currentDesignPrice?: number | null;
   currentDesignDueAt?: string | null;
   currentDesignSlipNotes?: string | null;
-  customerName?: string | null;
-  customerPhone?: string | null;
+  currentDesignMetalEstimate?: string | null;
   slipItems?: DesignSlipItem[];
-  orderTotal?: number;
 }
 
 function fmtInr(n: number) {
@@ -48,10 +46,8 @@ export function OrderAssignDesigner({
   currentDesignPrice = null,
   currentDesignDueAt = null,
   currentDesignSlipNotes = null,
-  customerName = null,
-  customerPhone = null,
+  currentDesignMetalEstimate = null,
   slipItems = [],
-  orderTotal = 0,
 }: OrderAssignDesignerProps) {
   const [workshop, setWorkshop] = useState<WorkshopDesigner[]>([]);
   const [portal, setPortal] = useState<PortalDesigner[]>([]);
@@ -62,6 +58,7 @@ export function OrderAssignDesigner({
   );
   const [designDue, setDesignDue] = useState(currentDesignDueAt?.slice(0, 10) ?? '');
   const [slipNotes, setSlipNotes] = useState(currentDesignSlipNotes ?? '');
+  const [metalEstimate, setMetalEstimate] = useState(currentDesignMetalEstimate ?? '');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -99,8 +96,9 @@ export function OrderAssignDesigner({
       design_price: designPrice.trim() === '' ? null : Number(designPrice),
       design_due_at: designDue ? `${designDue}T18:00:00.000Z` : null,
       design_slip_notes: slipNotes.trim() || null,
+      design_metal_estimate: metalEstimate.trim() || null,
     }),
-    [designerName, portalId, designPrice, designDue, slipNotes],
+    [designerName, portalId, designPrice, designDue, slipNotes, metalEstimate],
   );
 
   const assign = useCallback(async () => {
@@ -203,6 +201,10 @@ export function OrderAssignDesigner({
             top: 0 !important;
             width: 100% !important;
             display: block !important;
+          }
+          .pvg-design-slip img {
+            max-height: 140px !important;
+            object-fit: contain !important;
           }
         }
       `}</style>
@@ -310,6 +312,16 @@ export function OrderAssignDesigner({
               </div>
 
               <div>
+                <label className={labelCls}>Metal estimate</label>
+                <input
+                  value={metalEstimate}
+                  onChange={(e) => setMetalEstimate(e.target.value)}
+                  placeholder="e.g. 4.5g of 14K gold"
+                  className={field}
+                />
+              </div>
+
+              <div>
                 <label className={labelCls}>Slip notes</label>
                 <textarea
                   value={slipNotes}
@@ -373,7 +385,6 @@ export function OrderAssignDesigner({
             </div>
             <div className="text-right text-sm">
               <p>Printed {new Date().toLocaleString('en-IN')}</p>
-              <p className="mt-1 font-semibold">Status: {orderStatus.replace(/_/g, ' ')}</p>
             </div>
           </div>
 
@@ -403,13 +414,8 @@ export function OrderAssignDesigner({
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-600">Order total</p>
-              <p className="text-lg font-semibold">{orderTotal ? fmtInr(orderTotal) : '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-600">Customer</p>
-              <p className="font-medium">{customerName || '—'}</p>
-              {customerPhone ? <p className="text-xs">{customerPhone}</p> : null}
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-600">Metal estimate</p>
+              <p className="text-lg font-semibold">{metalEstimate.trim() || '—'}</p>
             </div>
           </div>
 
@@ -420,17 +426,28 @@ export function OrderAssignDesigner({
             {slipItems.length ? (
               slipItems.map((item, i) => (
                 <div key={i} className="rounded border border-black/30 p-3 text-sm">
-                  <p className="font-semibold">{item.name}</p>
-                  <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                    {item.design_name ? <p>Design: {item.design_name}</p> : null}
-                    {item.setting ? <p>Setting: {item.setting}</p> : null}
-                    {item.metal ? <p>Metal: {item.metal}</p> : null}
-                    {item.ring_size ? <p>Ring size: {item.ring_size}</p> : null}
-                    {item.chain_length ? <p>Chain: {item.chain_length}</p> : null}
-                    {item.carat ? <p>Carat: {item.carat}</p> : null}
-                    {item.sku ? <p>SKU: {item.sku}</p> : null}
+                  <div className="flex gap-3">
+                    {item.design_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- print slip needs plain img
+                      <img
+                        src={item.design_image_url}
+                        alt={item.design_name || item.name}
+                        className="h-28 w-28 shrink-0 rounded border border-black/20 object-contain bg-white"
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold">{item.name}</p>
+                      <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                        {item.design_name ? <p>Design: {item.design_name}</p> : null}
+                        {item.setting ? <p>Setting: {item.setting}</p> : null}
+                        {item.metal ? <p>Metal: {item.metal}</p> : null}
+                        {item.ring_size ? <p>Ring size: {item.ring_size}</p> : null}
+                        {item.chain_length ? <p>Chain: {item.chain_length}</p> : null}
+                        {item.carat ? <p>Carat: {item.carat}</p> : null}
+                      </div>
+                      {item.summary ? <p className="mt-1 text-xs text-gray-700">{item.summary}</p> : null}
+                    </div>
                   </div>
-                  {item.summary ? <p className="mt-1 text-xs text-gray-700">{item.summary}</p> : null}
                 </div>
               ))
             ) : (

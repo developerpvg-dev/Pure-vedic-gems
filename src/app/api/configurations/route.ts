@@ -28,6 +28,7 @@ import {
   buildRudrakshaBeadSnapshots,
   buildRudrakshaConfigurationSummary,
 } from '@/lib/utils/rudraksha-order-display';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 const ConfigurationSchema = z.object({
   product_id: z.string().uuid(),
@@ -251,7 +252,7 @@ function buildSummary(args: {
     });
   }
 
-  const parts = [args.product.name];
+  const parts = [formatProductDisplayName(args.product.name)];
   parts.push(args.settingType === 'loose' ? 'Loose Stone' : titleCaseSlug(args.settingType));
   if (args.hasCustomDesign) parts.push('Custom Design');
   if (args.metal) parts.push(titleCaseSlug(args.metal));
@@ -284,7 +285,7 @@ function buildSnapshot(args: {
       sku: args.product.sku,
       tag_number: args.product.tag_number,
       slug: args.product.slug,
-      name: args.product.name,
+      name: formatProductDisplayName(args.product.name),
       category: args.product.category,
       sub_category: args.product.sub_category,
       image_url: getProductImage(args.product),

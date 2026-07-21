@@ -1,5 +1,6 @@
 import type { Json } from '@/lib/types/database';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export interface OrderLineItem {
   product_id?: string | null;
@@ -23,7 +24,16 @@ export function parseOrderItems(value: Json): OrderLineItem[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((item) => Boolean(item && typeof item === 'object' && !Array.isArray(item)))
-    .map((item) => item as unknown as OrderLineItem);
+    .map((item) => {
+      const row = item as unknown as OrderLineItem;
+      return {
+        ...row,
+        name: row.name ? formatProductDisplayName(row.name) : row.name,
+        configuration_summary: row.configuration_summary
+          ? formatProductDisplayName(row.configuration_summary)
+          : row.configuration_summary,
+      };
+    });
 }
 
 export function getItemLineTotal(item: OrderLineItem): number {

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
@@ -20,6 +20,8 @@ const NAV_GROUPS = [
     label: 'Commerce',
     links: [
       { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, match: 'prefix' as const },
+      { href: '/admin/orders/new', label: 'New Offline Order', icon: Store, match: 'exact' as const },
+      { href: '/admin/commissions', label: 'Commissions', icon: HandCoins, match: 'prefix' as const },
       { href: '/admin/design-jobs', label: 'Design Jobs', icon: Palette, match: 'prefix' as const },
       { href: '/admin/customers', label: 'Customers', icon: Users, match: 'prefix' as const },
       { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
@@ -87,7 +89,9 @@ function navLinkActive(
     if (pathname.startsWith('/admin/products/import')) return false;
     return !(pathname === '/admin/products' && searchParams.get('status') === 'inactive');
   }
-  return pathname === href || Boolean(pathname?.startsWith(href));
+  // Avoid /admin/orders prefix lighting up on /admin/orders/new
+  if (href === '/admin/orders' && pathname?.startsWith('/admin/orders/new')) return false;
+  return pathname === href || Boolean(pathname?.startsWith(`${href}/`));
 }
 
 function AdminNavContent({

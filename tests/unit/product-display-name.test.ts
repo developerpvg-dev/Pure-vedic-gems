@@ -3,6 +3,9 @@ import { formatProductDisplayName, stripProductGradeFromName } from '@/lib/utils
 
 describe('formatProductDisplayName', () => {
   it('removes legacy per-carat pricing from product titles', () => {
+    expect(formatProductDisplayName('African Ruby 6.22ct.@3200 per. ct. (Premium)')).toBe(
+      'African Ruby 6.22ct. (Premium)',
+    );
     expect(formatProductDisplayName('African Ruby 10.85ct. @2200 per. ct. (Premium)')).toBe(
       'African Ruby 10.85ct. (Premium)',
     );

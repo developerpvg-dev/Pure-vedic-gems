@@ -21,12 +21,26 @@ import { resolveProductTax } from '@/lib/utils/tax';
 import type { ConfiguratorState, GoldRateData } from '@/lib/types/configurator';
 import { isDesignCompatibleWithSetting } from '@/lib/hooks/useConfigurator';
 
+export type ConfiguredOrderResult = {
+  configuration_id: string;
+  verified_total: number;
+  configuration_summary: string | null;
+  configuration_snapshot: unknown;
+  delivery_eta: { label?: string } | null;
+  product: NonNullable<ConfiguratorState['selected_product']>;
+  design_id: string | null;
+  design_name: string | null;
+};
+
 interface PriceSummaryProps {
   state: ConfiguratorState;
   isComplete: boolean;
   goldRate: GoldRateData | null;
   variant?: 'desktop' | 'mobile' | 'inline' | 'button-only';
   onDesignMismatch?: () => void;
+  /** When set, skip cart redirect and return saved config to the caller (admin POS). */
+  onConfigured?: (result: ConfiguredOrderResult) => void;
+  submitLabel?: string;
 }
 
 function enrichPriceTotals(
@@ -63,6 +77,8 @@ export default function PriceSummary({
   goldRate,
   variant = 'desktop',
   onDesignMismatch,
+  onConfigured,
+  submitLabel,
 }: PriceSummaryProps) {
   useCurrencySubscription();
   void goldRate;
@@ -71,6 +87,7 @@ export default function PriceSummary({
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
   const p = state.pricing;
+  const ctaLabel = submitLabel ?? (onConfigured ? 'Add to order' : 'Add to Cart');
 
   const totals = useMemo(() => {
     const base = buildConfiguratorPriceTotals(p, {
@@ -156,6 +173,25 @@ export default function PriceSummary({
       if (state.selected_lab) parts.push(state.selected_lab.name);
       if (state.selected_energization) parts.push('Energized');
 
+      const summary = configuration_summary ?? parts.join(' · ');
+
+      if (onConfigured) {
+        onConfigured({
+          configuration_id,
+          verified_total,
+          configuration_summary: summary,
+          configuration_snapshot,
+          delivery_eta: delivery_eta ?? null,
+          product: state.selected_product,
+          design_id: state.selected_design?.id ?? null,
+          design_name: state.selected_design?.name ?? null,
+        });
+        toast.success('Added to order', {
+          description: state.selected_product.name,
+        });
+        return;
+      }
+
       addItem({
         product_id: state.selected_product.id,
         key: deriveCartLineKey({
@@ -174,7 +210,7 @@ export default function PriceSummary({
         carat_weight: state.selected_product.carat_weight,
         origin: state.selected_product.origin,
         configuration_id,
-        configuration_summary: configuration_summary ?? parts.join(' · '),
+        configuration_summary: summary,
         configuration_snapshot,
         configuration_edit_url:
           state.rudraksha_combo_products.length > 0
@@ -214,7 +250,7 @@ export default function PriceSummary({
       ) : (
         <ShoppingCart className="h-4 w-4" />
       )}
-      Add to Cart
+      {ctaLabel}
     </Button>
   );
 
@@ -256,7 +292,7 @@ export default function PriceSummary({
             className="shrink-0 gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90 text-xs"
           >
             {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShoppingCart className="h-3.5 w-3.5" />}
-            Add to Cart
+            {ctaLabel}
           </Button>
         </div>
       </div>
@@ -287,7 +323,7 @@ export default function PriceSummary({
         ) : (
           <ShoppingCart className="h-4 w-4" />
         )}
-        Add to Cart
+        {ctaLabel}
       </Button>
     );
   }

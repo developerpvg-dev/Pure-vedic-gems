@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Palette, RefreshCw } from 'lucide-react';
+import { Download, Loader2, Palette, RefreshCw } from 'lucide-react';
 
 import { isDesignJobOverdue } from '@/lib/orders/design-jobs';
 
@@ -16,14 +16,19 @@ type DesignJob = {
   design_routed_at: string | null;
   design_completed_at: string | null;
   item_count: number;
+  item_summary?: string;
+  days_taken?: number | null;
   total: number;
+  order_source?: string | null;
 };
 
 type SummaryRow = {
   designer: string;
   open: number;
+  in_progress?: number;
   completed: number;
   overdue: number;
+  design_price_total?: number;
 };
 
 function fmtDate(iso: string | null) {
@@ -35,7 +40,7 @@ function fmtDate(iso: string | null) {
   });
 }
 
-function fmtInr(n: number | null) {
+function fmtInr(n: number | null | undefined) {
   if (n == null) return '—';
   return '₹' + n.toLocaleString('en-IN');
 }
@@ -52,14 +57,24 @@ export default function DesignJobsPage() {
   const [needsMigration, setNeedsMigration] = useState(false);
   const [designerFilter, setDesignerFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [dateField, setDateField] = useState<'routed' | 'completed'>('routed');
+
+  const queryString = useCallback(() => {
+    const params = new URLSearchParams();
+    if (designerFilter.trim()) params.set('designer', designerFilter.trim());
+    if (statusFilter) params.set('status', statusFilter);
+    if (fromDate) params.set('from', fromDate);
+    if (toDate) params.set('to', toDate);
+    params.set('date_field', dateField);
+    return params.toString();
+  }, [designerFilter, statusFilter, fromDate, toDate, dateField]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
-    const params = new URLSearchParams();
-    if (designerFilter.trim()) params.set('designer', designerFilter.trim());
-    if (statusFilter) params.set('status', statusFilter);
-    const res = await fetch(`/api/admin/design-jobs?${params}`);
+    const res = await fetch(`/api/admin/design-jobs?${queryString()}`);
     const data = await res.json().catch(() => ({}));
     setLoading(false);
     if (!res.ok) {
@@ -69,7 +84,7 @@ export default function DesignJobsPage() {
     setJobs(data.jobs ?? []);
     setSummary(data.summary ?? []);
     setNeedsMigration(Boolean(data.needsMigration));
-  }, [designerFilter, statusFilter]);
+  }, [queryString]);
 
   useEffect(() => {
     void load();
@@ -84,17 +99,26 @@ export default function DesignJobsPage() {
             Design Jobs
           </h1>
           <p className="mt-1 text-sm text-[var(--pvg-muted)]">
-            Track which designer has which jewelry orders, due dates, and completions.
+            Track which designer has which jewelry orders, when work was returned, and designer-wise output by date.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`/api/admin/design-jobs?${queryString()}&format=csv`}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </a>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {summary.length > 0 ? (
@@ -109,11 +133,17 @@ export default function DesignJobsPage() {
               <p className="font-semibold text-gray-900">{row.designer}</p>
               <p className="mt-2 text-sm text-gray-600">
                 <span className="font-semibold text-indigo-700">{row.open}</span> open
+                {row.in_progress ? (
+                  <span className="ml-2 text-violet-700">{row.in_progress} in progress</span>
+                ) : null}
                 {row.overdue > 0 ? (
                   <span className="ml-2 font-semibold text-red-600">{row.overdue} overdue</span>
                 ) : null}
-                <span className="ml-2 text-gray-400">· {row.completed} done</span>
+                <span className="ml-2 text-gray-400">· {row.completed} returned</span>
               </p>
+              {row.design_price_total != null && row.design_price_total > 0 ? (
+                <p className="mt-1 text-xs text-gray-500">Making ₹ {row.design_price_total.toLocaleString('en-IN')}</p>
+              ) : null}
             </button>
           ))}
         </div>
@@ -124,7 +154,7 @@ export default function DesignJobsPage() {
           value={designerFilter}
           onChange={(e) => setDesignerFilter(e.target.value)}
           placeholder="Filter by designer name"
-          className="min-w-[200px] flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          className="min-w-[180px] flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-500"
         />
         <select
           value={statusFilter}
@@ -134,8 +164,30 @@ export default function DesignJobsPage() {
           <option value="">All design statuses</option>
           <option value="design_assigned">Design assigned</option>
           <option value="design_in_progress">In progress</option>
-          <option value="design_completed">Completed</option>
+          <option value="design_completed">Completed / returned</option>
         </select>
+        <select
+          value={dateField}
+          onChange={(e) => setDateField(e.target.value as 'routed' | 'completed')}
+          className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+        >
+          <option value="routed">Filter by assigned date</option>
+          <option value="completed">Filter by returned date</option>
+        </select>
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+          className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          aria-label="From date"
+        />
+        <input
+          type="date"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+          className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          aria-label="To date"
+        />
       </div>
 
       {needsMigration ? (
@@ -157,7 +209,7 @@ export default function DesignJobsPage() {
           </div>
         ) : jobs.length === 0 ? (
           <p className="px-6 py-12 text-center text-sm text-gray-500">
-            No design jobs yet. Assign a designer from an order that needs jewelry making.
+            No design jobs in this range. Assign a designer from an order that needs jewelry making.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -166,12 +218,13 @@ export default function DesignJobsPage() {
                 <tr>
                   <th className="px-4 py-3">Order</th>
                   <th className="px-4 py-3">Designer</th>
+                  <th className="px-4 py-3">Design / items</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Due</th>
-                  <th className="px-4 py-3">Routed</th>
-                  <th className="px-4 py-3">Completed</th>
+                  <th className="px-4 py-3">Assigned</th>
+                  <th className="px-4 py-3">Returned</th>
+                  <th className="px-4 py-3">Days</th>
                   <th className="px-4 py-3">Making ₹</th>
-                  <th className="px-4 py-3">Items</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -184,8 +237,18 @@ export default function DesignJobsPage() {
                       >
                         {job.order_number}
                       </Link>
+                      {job.order_source === 'offline' ? (
+                        <span className="ml-2 rounded bg-stone-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
+                          Offline
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{job.designer_display}</td>
+                    <td className="max-w-[220px] px-4 py-3 text-gray-600">
+                      <p className="truncate" title={job.item_summary || undefined}>
+                        {job.item_summary || `${job.item_count} item${job.item_count === 1 ? '' : 's'}`}
+                      </p>
+                    </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800">
                         {job.status.replace(/_/g, ' ')}
@@ -197,8 +260,10 @@ export default function DesignJobsPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(job.design_routed_at)}</td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(job.design_completed_at)}</td>
+                    <td className="px-4 py-3 tabular-nums text-gray-700">
+                      {job.days_taken != null ? job.days_taken : '—'}
+                    </td>
                     <td className="px-4 py-3 tabular-nums">{fmtInr(job.design_price)}</td>
-                    <td className="px-4 py-3">{job.item_count}</td>
                   </tr>
                 ))}
               </tbody>

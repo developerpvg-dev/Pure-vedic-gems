@@ -4,12 +4,14 @@ import { createClient } from '@/lib/supabase/server';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { cancelOrderAndReleaseInventory } from '@/lib/inventory/order-availability';
 import { notifyAdmins, notifyUser } from '@/lib/notifications/in-app';
-
-const CANCELLABLE = new Set(['pending_payment', 'placed', 'confirmed']);
+import {
+  CUSTOMER_CANCELLABLE_STATUSES,
+  isCustomerCancellable,
+} from '@/lib/constants/order-status';
 
 /**
  * POST /api/orders/[id]/cancel
- * Customer cancels their own order (pre-shipping). Restores stock automatically.
+ * Customer cancels their own order within 24h (early statuses only). Restores stock automatically.
  */
 export async function POST(
   _request: NextRequest,
@@ -30,7 +32,9 @@ export async function POST(
 
   const { data: order, error } = await db
     .from('orders')
-    .select('id, order_number, status, customer_id, guest_phone, guest_name, guest_email, items')
+    .select(
+      'id, order_number, status, created_at, customer_id, guest_phone, guest_name, guest_email, items',
+    )
     .eq('id', id)
     .single();
 
@@ -42,6 +46,7 @@ export async function POST(
     id: string;
     order_number: string;
     status: string;
+    created_at: string;
     customer_id: string | null;
     guest_phone: string | null;
     guest_name: string | null;
@@ -53,11 +58,15 @@ export async function POST(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  if (!CANCELLABLE.has(orderRow.status)) {
+  if (!isCustomerCancellable(orderRow.status, orderRow.created_at)) {
+    const statusOk = (CUSTOMER_CANCELLABLE_STATUSES as readonly string[]).includes(
+      orderRow.status,
+    );
     return NextResponse.json(
       {
-        error:
-          'This order can no longer be cancelled online. Please contact us and we will help with a return or refund.',
+        error: statusOk
+          ? 'Orders can only be cancelled within 24 hours of placing them. Please contact us for help.'
+          : 'This order can no longer be cancelled online. Please contact us and we will help with a return or refund.',
       },
       { status: 400 },
     );

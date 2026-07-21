@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 const STORAGE_KEY = 'pvg_recently_viewed_products';
 const MAX_ITEMS = 8;
@@ -31,8 +32,11 @@ function readStoredProducts(): RecentlyViewedProduct[] {
 }
 
 function sanitizeProduct(item: RecentlyViewedProduct): RecentlyViewedProduct {
-  if (!item.imageUrl || !LEGACY_WORDPRESS_UPLOAD_RE.test(item.imageUrl)) return item;
-  return { ...item, imageUrl: null };
+  const name = formatProductDisplayName(item.name);
+  if (!item.imageUrl || !LEGACY_WORDPRESS_UPLOAD_RE.test(item.imageUrl)) {
+    return name === item.name ? item : { ...item, name };
+  }
+  return { ...item, name, imageUrl: null };
 }
 
 export function RecentlyViewedProducts({ current }: { current: RecentlyViewedProduct }) {

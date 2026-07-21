@@ -30,7 +30,7 @@ const DEFAULT_DESCRIPTION =
 
 function productDescription(product: Product | ProductCard) {
   const detailedProduct = product as Product;
-  return detailedProduct.short_desc || detailedProduct.clean_description || `${product.name} from ${BRAND_NAME}.`;
+  return detailedProduct.short_desc || detailedProduct.clean_description || `${formatProductDisplayName(product.name)} from ${BRAND_NAME}.`;
 }
 
 export function getSiteUrl() {

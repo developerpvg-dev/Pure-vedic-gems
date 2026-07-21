@@ -27,7 +27,24 @@ export type PaymentStatus =
   | 'failed'
   | 'refunded'
   | 'amount_mismatch'
-  | 'cancelled';
+  | 'cancelled'
+  | 'partial';
+
+export type OrderSource = 'online' | 'offline';
+export type FulfillmentType = 'delivery' | 'pickup' | 'in_store';
+
+export interface OrderPaymentRecord {
+  id: string;
+  order_id: string;
+  amount: number;
+  method: 'cash' | 'upi' | 'card' | 'bank_transfer';
+  kind: 'advance' | 'balance' | 'full' | 'refund_adjustment';
+  reference: string | null;
+  notes: string | null;
+  recorded_by: string | null;
+  paid_at: string;
+  created_at: string;
+}
 
 export interface OrderRecord {
   id: string;
@@ -49,8 +66,14 @@ export interface OrderRecord {
   reward_points_redeemed?: number;
   reward_discount?: number;
   reward_points_earned?: number;
+  manual_discount?: number;
   gst_amount: number;
   total: number;
+  amount_paid?: number;
+  amount_due?: number;
+  order_source?: OrderSource;
+  fulfillment_type?: FulfillmentType;
+  created_by_admin_id?: string | null;
   shipping_address: {
     line1: string;
     line2?: string;
@@ -87,6 +110,10 @@ export interface OrderRecord {
   delivery_status?: string | null;
   invoice_number: string | null;
   invoice_url: string | null;
+  /** Admin-only: salesperson / astrologer attribution */
+  commission_source?: 'salesperson' | 'astrologer' | null;
+  commission_name?: string | null;
+  commission_amount?: number | null;
   created_at: string;
   updated_at: string;
 }

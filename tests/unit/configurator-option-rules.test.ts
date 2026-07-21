@@ -31,7 +31,7 @@ describe('resolveConfiguratorOptionRules', () => {
     expect(rules.allowed_energization_option_ids).toEqual([]);
   });
 
-  it('keeps loose-only rules for non-rudraksha products with stored rules', () => {
+  it('keeps loose-only rules for non-configurator products with stored rules', () => {
     const rules = resolveConfiguratorOptionRules(
       {
         id: 'prod-2',
@@ -44,5 +44,21 @@ describe('resolveConfiguratorOptionRules', () => {
 
     expect(rules.jewelry_design_enabled).toBe(false);
     expect(rules.allowed_setting_types).toEqual(['loose']);
+  });
+
+  it('restores full jewelry settings for navaratna even when DB rules are loose-only', () => {
+    const rules = resolveConfiguratorOptionRules(
+      {
+        id: 'prod-3',
+        category: 'navaratna',
+        sub_category: 'yellow-sapphire',
+        configurator_enabled: false,
+      },
+      looseOnlyRules
+    );
+
+    expect(rules.jewelry_design_enabled).toBe(true);
+    expect(rules.metal_enabled).toBe(true);
+    expect(rules.allowed_setting_types).toEqual(['ring', 'pendant', 'bracelet', 'loose']);
   });
 });

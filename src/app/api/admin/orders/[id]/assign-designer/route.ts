@@ -14,6 +14,7 @@ type AssignBody = {
   design_price?: number | null;
   design_due_at?: string | null;
   design_slip_notes?: string | null;
+  design_metal_estimate?: string | null;
   /** If true, only update slip fields without re-routing */
   slip_only?: boolean;
 };
@@ -21,7 +22,7 @@ type AssignBody = {
 /**
  * POST /api/admin/orders/[id]/assign-designer
  * Assign by portal designer_id and/or workshop designer_name.
- * Also saves design_price / design_due_at / design_slip_notes for the work slip.
+ * Also saves work-slip fields (price, due, notes, metal estimate).
  */
 export async function POST(
   request: NextRequest,
@@ -116,6 +117,9 @@ export async function POST(
   if (body?.design_slip_notes !== undefined) {
     updates.design_slip_notes = body.design_slip_notes?.trim() || null;
   }
+  if (body?.design_metal_estimate !== undefined) {
+    updates.design_metal_estimate = body.design_metal_estimate?.trim() || null;
+  }
 
   if (!slipOnly) {
     const routableStatuses = new Set([
@@ -159,11 +163,13 @@ export async function POST(
     console.error('[assign-designer] Update error:', error);
     const detail = error.message || 'Database update failed';
     const hint =
-      detail.includes('designer_name') || detail.includes('design_price') || detail.includes('design_due')
-        ? ' Run supabase/week35_workshop_designers.sql in Supabase.'
-        : detail.includes('orders_status') || detail.includes('check constraint')
-          ? ' Run supabase/week25_design_order_statuses.sql in Supabase.'
-          : '';
+      detail.includes('design_metal_estimate')
+        ? ' Run supabase/week38_design_metal_estimate.sql in Supabase.'
+        : detail.includes('designer_name') || detail.includes('design_price') || detail.includes('design_due')
+          ? ' Run supabase/week35_workshop_designers.sql in Supabase.'
+          : detail.includes('orders_status') || detail.includes('check constraint')
+            ? ' Run supabase/week25_design_order_statuses.sql in Supabase.'
+            : '';
     return NextResponse.json(
       { error: `Failed to assign designer: ${detail}${hint}` },
       { status: 500 },

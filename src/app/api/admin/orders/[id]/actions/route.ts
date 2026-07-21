@@ -12,8 +12,11 @@ import {
 } from '@/lib/inventory/order-availability';
 import { notifyUser } from '@/lib/notifications/in-app';
 import {
+  areReturnImagesVerified,
   isValidReturnStatus,
   mergeComplianceFlags,
+  parseComplianceFlags,
+  requiresVerifiedReturnImages,
   RETURN_STATUS_LABELS,
   type ReturnStatus,
 } from '@/lib/orders/returns';
@@ -30,6 +33,9 @@ const actionSchema = z.discriminatedUnion('action', [
     action: z.literal('update_return'),
     return_status: z.string().trim(),
     note: z.string().trim().max(1000).optional(),
+  }),
+  z.object({
+    action: z.literal('verify_return_images'),
   }),
   z.object({
     action: z.literal('record_refund'),
@@ -238,8 +244,23 @@ export async function POST(
         );
       }
 
+      const flags = parseComplianceFlags(orderRow.compliance_flags);
+      // Gate refund approval until customer photos are verified
+      if (
+        nextStatus === 'approved' &&
+        requiresVerifiedReturnImages(flags, orderRow.return_status || 'none') &&
+        !areReturnImagesVerified(flags)
+      ) {
+        return NextResponse.json(
+          {
+            error: 'Verify the customer’s return photos first before approving the return/refund',
+          },
+          { status: 400 },
+        );
+      }
+
       const note = parsed.data.note?.trim() || undefined;
-      const compliance_flags = mergeComplianceFlags(orderRow.compliance_flags, {
+      const compliance_flags = mergeComplianceFlags(flags, {
         ...(note ? { return_admin_note: note } : {}),
       });
 
@@ -292,8 +313,77 @@ export async function POST(
       return NextResponse.json({ success: true, return_status: nextStatus });
     }
 
+    if (parsed.data.action === 'verify_return_images') {
+      const flags = parseComplianceFlags(orderRow.compliance_flags);
+      if (!(flags.return_image_urls?.length ?? 0)) {
+        return NextResponse.json(
+          { error: 'No customer return photos to verify' },
+          { status: 400 },
+        );
+      }
+
+      const compliance_flags = mergeComplianceFlags(flags, {
+        return_images_verified: true,
+        return_images_verified_at: new Date().toISOString(),
+      });
+
+      const { error: verifyError } = await db
+        .from('orders')
+        .update({ compliance_flags })
+        .eq('id', id);
+
+      if (verifyError) {
+        console.error('[admin/orders/actions] verify images failed', verifyError);
+        return NextResponse.json({ error: 'Failed to verify return photos' }, { status: 500 });
+      }
+
+      if (orderRow.customer_id) {
+        await notifyUser({
+          recipientUserId: orderRow.customer_id,
+          type: 'order_return_update',
+          title: 'Return photos verified',
+          message: `We verified the photos for order ${orderRow.order_number}. Your return/refund can now proceed.`,
+          href: '/account/orders',
+          entityType: 'order',
+          entityId: id,
+          metadata: { order_number: orderRow.order_number, return_images_verified: true },
+        });
+      }
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'order_return_images_verified',
+        resourceType: 'order',
+        resourceId: id,
+        details: {
+          order_number: orderRow.order_number,
+          image_count: flags.return_image_urls?.length ?? 0,
+        },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({
+        success: true,
+        return_images_verified: true,
+        compliance_flags,
+      });
+    }
+
     // record_refund — manual offline refund with transaction proof
     const refund = parsed.data;
+    const refundFlags = parseComplianceFlags(orderRow.compliance_flags);
+    if (
+      requiresVerifiedReturnImages(refundFlags, orderRow.return_status || 'none') &&
+      !areReturnImagesVerified(refundFlags)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Verify the customer’s return photos before recording a refund for this order',
+        },
+        { status: 400 },
+      );
+    }
     const gatewayPayload = {
       method: refund.method,
       transaction_reference: refund.transaction_reference,

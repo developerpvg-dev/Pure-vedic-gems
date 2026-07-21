@@ -123,29 +123,46 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
           .filter(Boolean)
           .join(' ');
 
+        const images = (
+          <>
+            <Image
+              src={item.desktopImage}
+              alt={item.alt}
+              fill
+              className="pvg-hero-carousel__img pvg-hero-img-desktop"
+              priority={index === 0}
+              loading="eager"
+              sizes="(max-width: 767px) 100vw, 100vw"
+            />
+            <Image
+              src={item.mobileImage}
+              alt=""
+              aria-hidden="true"
+              fill
+              className="pvg-hero-carousel__img pvg-hero-img-mobile"
+              priority={index === 0}
+              loading="eager"
+              sizes="(max-width: 767px) 100vw, 1px"
+            />
+          </>
+        );
+
         return (
           <div key={item.id} className={slideClass} data-index={index}>
-            <div className="pvg-hero-carousel__media">
-              <Image
-                src={item.desktopImage}
-                alt={item.alt}
-                fill
-                className="pvg-hero-carousel__img pvg-hero-img-desktop"
-                priority={index === 0}
-                loading="eager"
-                sizes="(max-width: 767px) 100vw, 100vw"
-              />
-              <Image
-                src={item.mobileImage}
-                alt=""
-                aria-hidden="true"
-                fill
-                className="pvg-hero-carousel__img pvg-hero-img-mobile"
-                priority={index === 0}
-                loading="eager"
-                sizes="(max-width: 767px) 100vw, 1px"
-              />
-            </div>
+            {item.linkUrl ? (
+              <a
+                href={item.linkUrl}
+                className="pvg-hero-carousel__media"
+                aria-label={item.alt}
+                {...(item.linkUrl.startsWith('http')
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
+                {images}
+              </a>
+            ) : (
+              <div className="pvg-hero-carousel__media">{images}</div>
+            )}
           </div>
         );
       })}

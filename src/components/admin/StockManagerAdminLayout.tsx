@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ClipboardList, FileEdit, Gift, LayoutDashboard, LogOut, Menu, MessageSquare, Package, Palette, ShoppingBag, Store, Bot, CalendarClock, X } from 'lucide-react';
+import { ClipboardList, FileEdit, Gift, HandCoins, LayoutDashboard, LogOut, Menu, MessageSquare, Package, Palette, ShoppingBag, Store, Bot, CalendarClock, X } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -12,6 +12,7 @@ const STOCK_NAV = [
   { href: '/admin/stock/completeness', label: 'Content gaps', icon: ClipboardList, match: 'prefix' as const },
   { href: '/admin/erp-sync', label: 'Store ERP sync', icon: Store, match: 'prefix' as const },
   { href: '/admin/orders', label: 'Online orders', icon: ShoppingBag, match: 'prefix' as const },
+  { href: '/admin/commissions', label: 'Commissions', icon: HandCoins, match: 'prefix' as const },
   { href: '/admin/design-jobs', label: 'Design jobs', icon: Palette, match: 'prefix' as const },
   { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
   { href: '/admin/products?status=inactive', label: 'Drafts', icon: FileEdit, match: 'drafts' as const },

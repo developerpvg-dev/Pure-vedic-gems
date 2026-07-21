@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { productHref } from '@/lib/categories/storefront';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import { SavedGemRemoveButton } from '@/components/account/SavedGemRemoveButton';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +81,7 @@ export default async function SavedPage() {
               : [];
             const href = productHref(product);
             const imgSrc = product.thumbnail_url ?? images[0] ?? null;
+            const displayName = formatProductDisplayName(product.name);
             const discount = product.compare_price
               ? Math.round(
                   ((product.compare_price - product.price) /
@@ -95,7 +97,7 @@ export default async function SavedPage() {
               >
                 <SavedGemRemoveButton
                   productId={product.id}
-                  productName={product.name}
+                  productName={displayName}
                 />
                 {/* Image */}
                 <Link
@@ -109,7 +111,7 @@ export default async function SavedPage() {
                     {imgSrc ? (
                       <Image
                         src={imgSrc}
-                        alt={product.name}
+                        alt={displayName}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -153,7 +155,7 @@ export default async function SavedPage() {
                       className="line-clamp-2 text-sm font-semibold leading-snug hover:text-[var(--pvg-accent)]"
                       style={{ color: 'var(--pvg-primary)' }}
                     >
-                      {product.name}
+                      {displayName}
                     </h3>
                   </Link>
                   {(product.carat_weight || product.origin) && (

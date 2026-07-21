@@ -19,3 +19,8 @@ export function formatProductDisplayName(name: string | null | undefined): strin
 export function stripProductGradeFromName(name: string): string {
   return name.replace(GRADE_SUFFIX_IN_NAME, '').trim();
 }
+
+/** Clone a product-like object with a customer-facing title. */
+export function withProductDisplayName<T extends { name: string }>(product: T): T {
+  return { ...product, name: formatProductDisplayName(product.name) };
+}

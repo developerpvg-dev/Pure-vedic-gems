@@ -1042,7 +1042,7 @@ export function PvgReferenceSections({
 
       <div className="reco-copy-panel">
         <div className="reco-copy-surface">
-          <h2 className="reco-img-heading" id="reco-heading">Get Your Gemstone<br />Recommendation</h2>
+          <h2 className="reco-img-heading" id="reco-heading">Get Your remedies<br />Recommendation</h2>
           <p className="reco-img-sub">Share your birth details, pay just Rs 101, and our Vedic experts will recommend the perfect gemstone aligned with your planetary chart.</p>
           <div className="reco-img-trust">
             <span className="reco-img-trust-pill">Rs 101 Only</span>

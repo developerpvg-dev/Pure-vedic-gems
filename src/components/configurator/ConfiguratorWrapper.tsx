@@ -40,7 +40,7 @@ import {
   type JewelrySettingMetalProfiles,
 } from '@/lib/utils/jewelry-setting-metal-profiles';
 
-import PriceSummary from './PriceSummary';
+import PriceSummary, { type ConfiguredOrderResult } from './PriceSummary';
 import StepSidebar from './StepSidebar';
 import CertificationSelector from './steps/CertificationSelector';
 import DesignSelector from './steps/DesignSelector';
@@ -123,6 +123,8 @@ interface ConfiguratorWrapperProps {
   ratesBySlug?: Record<string, number> | null;
   settingProfiles?: JewelrySettingMetalProfiles | null;
   startStep?: number;
+  onConfigured?: (result: ConfiguredOrderResult) => void;
+  submitLabel?: string;
 }
 
 export default function ConfiguratorWrapper({
@@ -138,6 +140,8 @@ export default function ConfiguratorWrapper({
   ratesBySlug = null,
   settingProfiles = null,
   startStep = 1,
+  onConfigured,
+  submitLabel,
 }: ConfiguratorWrapperProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [priceMobileOpen, setPriceMobileOpen] = useState(false);
@@ -713,6 +717,8 @@ export default function ConfiguratorWrapper({
                     goldRate={goldRate}
                     variant="desktop"
                     onDesignMismatch={handleDesignMismatch}
+                    onConfigured={onConfigured}
+                    submitLabel={submitLabel}
                   />
                 </div>
               </aside>
@@ -821,6 +827,8 @@ export default function ConfiguratorWrapper({
                         goldRate={goldRate}
                         variant="button-only"
                         onDesignMismatch={handleDesignMismatch}
+                        onConfigured={onConfigured}
+                        submitLabel={submitLabel}
                       />
                     </div>
                   )}

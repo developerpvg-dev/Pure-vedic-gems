@@ -171,3 +171,99 @@ export type EnergizationFields = z.infer<typeof EnergizationFieldsSchema>;
 export type OrderCreate = z.infer<typeof OrderCreateSchema>;
 export type PaymentVerify = z.infer<typeof PaymentVerifySchema>;
 export type PaymentCreateOrder = z.infer<typeof PaymentCreateOrderSchema>;
+
+// ─── Offline / POS admin order ──────────────────────────────────────────────
+export const CounterPaymentMethodSchema = z.enum(['cash', 'upi', 'card', 'bank_transfer']);
+export const FulfillmentTypeSchema = z.enum(['delivery', 'pickup', 'in_store']);
+
+export const OfflineOrderItemSchema = z.object({
+  product_id: z.string().uuid('Invalid product ID'),
+  quantity: z.number().int().min(1).max(10).default(1),
+  name: z.string().min(1).optional(),
+  sku: z.string().optional(),
+  tag_number: z.string().nullable().optional(),
+  price: z.number().min(0).optional(),
+  image_url: z.string().optional(),
+  category: z.string().optional(),
+  configuration_id: z.string().uuid().optional(),
+  configuration_summary: z.string().optional(),
+  configuration_snapshot: z.unknown().optional(),
+  /** Catalog design pick without full configurator (stored on line snapshot) */
+  design_id: z.string().uuid().optional(),
+  design_name: z.string().max(200).optional(),
+});
+
+export const OfflineOrderCreateSchema = z
+  .object({
+    customer_id: z.string().uuid().nullable().optional(),
+    contact: z.object({
+      full_name: z.string().min(2).max(200).trim(),
+      email: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .optional()
+        .default('')
+        .refine((value) => !value || z.string().email().safeParse(value).success, 'Invalid email'),
+      phone: z.string().regex(PHONE_REGEX, 'Please enter a valid phone number'),
+      business_name: z.string().trim().max(220).optional().default(''),
+      billing_gstin: z
+        .string()
+        .trim()
+        .toUpperCase()
+        .optional()
+        .default('')
+        .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid GSTIN'),
+    }),
+    items: z.array(OfflineOrderItemSchema).min(1, 'Add at least one item'),
+    fulfillment_type: FulfillmentTypeSchema.default('in_store'),
+    shipping_address: ShippingAddressSchema.optional(),
+    shipping_method: ShippingMethodIdSchema.optional(),
+    special_instructions: z.string().max(1000).trim().optional(),
+    coupon_code: z.string().max(50).trim().optional(),
+    manual_discount: z.coerce.number().min(0).max(10_000_000).optional().default(0),
+    energization_type: z.string().max(200).optional(),
+    ceremony_dob: z.string().optional(),
+    ceremony_gotra: z.string().max(100).optional(),
+    ceremony_rashi: z.string().max(50).optional(),
+    record_ceremony: z.boolean().optional().default(false),
+    commission_source: z.enum(['salesperson', 'astrologer']).nullable().optional(),
+    commission_name: z.string().max(200).trim().nullable().optional(),
+    commission_amount: z.coerce.number().min(0).nullable().optional(),
+    payment: z.object({
+      amount: z.coerce.number().positive('Payment amount is required'),
+      method: CounterPaymentMethodSchema,
+      kind: z.enum(['advance', 'balance', 'full']).optional(),
+      reference: z.string().max(200).trim().optional(),
+      notes: z.string().max(500).trim().optional(),
+    }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.fulfillment_type === 'delivery') {
+      if (!data.shipping_address) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['shipping_address'],
+          message: 'Shipping address is required for delivery',
+        });
+      }
+      if (!data.shipping_method) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['shipping_method'],
+          message: 'Shipping method is required for delivery',
+        });
+      }
+    }
+  });
+
+export const RecordOrderPaymentSchema = z.object({
+  amount: z.coerce.number().positive(),
+  method: CounterPaymentMethodSchema,
+  kind: z.enum(['advance', 'balance', 'full']).optional(),
+  reference: z.string().max(200).trim().optional(),
+  notes: z.string().max(500).trim().optional(),
+});
+
+export type OfflineOrderCreate = z.infer<typeof OfflineOrderCreateSchema>;
+export type RecordOrderPayment = z.infer<typeof RecordOrderPaymentSchema>;

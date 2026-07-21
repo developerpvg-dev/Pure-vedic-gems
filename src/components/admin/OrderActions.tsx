@@ -15,7 +15,9 @@ import {
 import {
   RETURN_STATUSES,
   RETURN_STATUS_LABELS,
+  areReturnImagesVerified,
   parseComplianceFlags,
+  requiresVerifiedReturnImages,
   type ReturnStatus,
 } from '@/lib/orders/returns';
 
@@ -82,6 +84,7 @@ interface OrderActionsProps {
   currentPujaVideoUrl?: string | null;
   currentDesignCompletedAt?: string | null;
   productsMarkedSoldAt?: string | null;
+  orderSource?: string | null;
   orderTotal?: number;
   customerPhone: string | null;
   customerName: string | null;
@@ -93,6 +96,9 @@ interface OrderActionsProps {
   currentReturnStatus?: string | null;
   cancelReason?: string | null;
   complianceFlags?: unknown;
+  currentCommissionSource?: string | null;
+  currentCommissionName?: string | null;
+  currentCommissionAmount?: number | null;
 }
 
 export function OrderActions({
@@ -109,6 +115,7 @@ export function OrderActions({
   currentPujaVideoUrl,
   currentDesignCompletedAt,
   productsMarkedSoldAt = null,
+  orderSource = null,
   orderTotal = 0,
   customerPhone,
   customerName,
@@ -120,6 +127,9 @@ export function OrderActions({
   currentReturnStatus = 'none',
   cancelReason = null,
   complianceFlags = null,
+  currentCommissionSource = null,
+  currentCommissionName = null,
+  currentCommissionAmount = null,
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -136,6 +146,7 @@ export function OrderActions({
   const [returnStatus, setReturnStatus] = useState(currentReturnStatus || 'none');
   const [savedReturnStatus, setSavedReturnStatus] = useState(currentReturnStatus || 'none');
   const [returnNote, setReturnNote] = useState('');
+  const [flagsState, setFlagsState] = useState(complianceFlags);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -144,14 +155,24 @@ export function OrderActions({
   const [refundNotes, setRefundNotes] = useState('');
   const [refundMethod, setRefundMethod] = useState('manual');
   const [refundProofs, setRefundProofs] = useState<FileList | null>(null);
+  const [commissionSource, setCommissionSource] = useState(currentCommissionSource ?? '');
+  const [commissionName, setCommissionName] = useState(currentCommissionName ?? '');
+  const [commissionAmount, setCommissionAmount] = useState(
+    currentCommissionAmount != null ? String(currentCommissionAmount) : '',
+  );
 
   const hasActiveReturn = (currentReturnStatus || 'none') !== 'none';
   const [openFulfill, setOpenFulfill] = useState(true);
   const [openInventory, setOpenInventory] = useState(true);
   const [openReturns, setOpenReturns] = useState(hasActiveReturn);
   const [openRefund, setOpenRefund] = useState(currentStatus === 'cancelled');
+  const [openCommission, setOpenCommission] = useState(Boolean(currentCommissionSource || currentCommissionName));
 
-  const returnMeta = parseComplianceFlags(complianceFlags);
+  const returnMeta = parseComplianceFlags(flagsState);
+  const returnImages = returnMeta.return_image_urls ?? [];
+  const imagesVerified = areReturnImagesVerified(returnMeta);
+  const needsImageVerify = requiresVerifiedReturnImages(returnMeta, savedReturnStatus);
+  const refundBlockedByImages = needsImageVerify && !imagesVerified;
 
   const fulfillmentContext = useMemo(
     () =>
@@ -246,12 +267,22 @@ export function OrderActions({
           setReturnStatus(data.return_status);
           setSavedReturnStatus(data.return_status);
         }
+        if (data.compliance_flags) setFlagsState(data.compliance_flags);
+        if (data.return_images_verified) {
+          setFlagsState((current) => ({
+            ...parseComplianceFlags(current),
+            return_images_verified: true,
+            return_images_verified_at: new Date().toISOString(),
+          }));
+        }
         if (data.products_marked_sold_at) setMarkedSoldAt(data.products_marked_sold_at);
         setSuccess(
           data.status === 'cancelled'
             ? 'Order cancelled — stock restored'
             : data.status === 'refunded'
               ? 'Refund recorded'
+              : data.return_images_verified
+                ? 'Customer return photos verified'
               : data.return_status
                 ? `Return → ${RETURN_STATUS_LABELS[data.return_status as ReturnStatus] ?? data.return_status}`
                 : 'Marked sold',
@@ -285,6 +316,10 @@ export function OrderActions({
   };
 
   const recordManualRefund = () => {
+    if (refundBlockedByImages) {
+      setError('Verify the customer’s return photos before recording a refund');
+      return;
+    }
     if (!refundTxn.trim()) {
       setError('Transaction / UTR number is required');
       return;
@@ -313,6 +348,10 @@ export function OrderActions({
       setError('Pick a return status other than none');
       return;
     }
+    if (returnStatus === 'approved' && refundBlockedByImages) {
+      setError('Verify the customer’s return photos before approving the return/refund');
+      return;
+    }
     if (
       !confirm(
         `Update return to "${RETURN_STATUS_LABELS[returnStatus as ReturnStatus] ?? returnStatus}"?`,
@@ -325,6 +364,15 @@ export function OrderActions({
       return_status: returnStatus,
       note: returnNote.trim() || undefined,
     });
+  };
+
+  const verifyReturnImages = () => {
+    if (!returnImages.length) {
+      setError('No customer return photos to verify');
+      return;
+    }
+    if (!confirm('Confirm these customer photos look valid for return/refund?')) return;
+    void runOrderAction({ action: 'verify_return_images' });
   };
 
   const productCompleted =
@@ -367,6 +415,12 @@ export function OrderActions({
     shipped_at: shippedAt ? `${shippedAt}T00:00:00.000Z` : null,
     estimated_delivery: estimatedDelivery || null,
     admin_notes: notes || null,
+  };
+
+  const commissionPayload = {
+    commission_source: commissionSource || null,
+    commission_name: commissionName.trim() || null,
+    commission_amount: commissionAmount.trim() === '' ? null : Number(commissionAmount),
   };
 
   return (
@@ -566,21 +620,79 @@ export function OrderActions({
         </button>
       </Accordion>
 
+      <Accordion
+        title="Commission"
+        open={openCommission}
+        onToggle={() => setOpenCommission((v) => !v)}
+        badge={commissionSource ? (commissionSource === 'astrologer' ? 'Astrologer' : 'Sales') : null}
+      >
+        <p className="text-xs text-stone-400">Internal only — not shown to customers.</p>
+        <div>
+          <label className={labelCls}>Came through</label>
+          <select
+            value={commissionSource}
+            onChange={(e) => setCommissionSource(e.target.value)}
+            className={field}
+          >
+            <option value="">None</option>
+            <option value="salesperson">Salesperson</option>
+            <option value="astrologer">Astrologer</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Name</label>
+          <input
+            value={commissionName}
+            onChange={(e) => setCommissionName(e.target.value)}
+            placeholder="Person’s name"
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Commission (₹)</label>
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={commissionAmount}
+            onChange={(e) => setCommissionAmount(e.target.value)}
+            placeholder="0"
+            className={field}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => handleSave(commissionPayload)}
+          disabled={saving}
+          className={btnPrimary}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? 'Saving…' : 'Save commission'}
+        </button>
+      </Accordion>
+
       <Accordion title="Inventory" open={openInventory} onToggle={() => setOpenInventory((v) => !v)}>
         {markedSoldAt ? (
           <p className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
-            Marked sold {formatCompletedDate(markedSoldAt)}
+            Marked sold {formatCompletedDate(markedSoldAt)} — items show as Sold on the website.
           </p>
         ) : (
-          <button
-            type="button"
-            onClick={markSoldAfterBilling}
-            disabled={saving || isTerminal || status === 'pending_payment'}
-            className={btnPrimary}
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gem className="h-4 w-4" />}
-            Mark items sold
-          </button>
+          <>
+            <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
+              {orderSource === 'offline'
+                ? 'Offline sale: items are Reserved on the website until you mark them sold.'
+                : 'Items stay Reserved after payment until you mark them sold (after billing).'}
+            </p>
+            <button
+              type="button"
+              onClick={markSoldAfterBilling}
+              disabled={saving || isTerminal || status === 'pending_payment'}
+              className={btnPrimary}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gem className="h-4 w-4" />}
+              Mark items sold
+            </button>
+          </>
         )}
         {!isTerminal ? (
           <button type="button" onClick={cancelOrder} disabled={saving} className={btnGhost}>
@@ -599,6 +711,57 @@ export function OrderActions({
         {returnMeta.return_reason ? (
           <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
             <span className="font-semibold">Customer:</span> {returnMeta.return_reason}
+          </p>
+        ) : null}
+        {returnMeta.receipt_confirmed ? (
+          <p className="rounded-xl bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
+            Receipt:{' '}
+            <span className="font-semibold">
+              {returnMeta.receipt_ok ? 'Received properly' : 'Not received properly'}
+            </span>
+          </p>
+        ) : null}
+        {returnImages.length ? (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+              Customer return photos
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {returnImages.map((url) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative h-20 w-20 overflow-hidden rounded-lg border border-stone-200"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="Customer return evidence" className="h-full w-full object-cover" />
+                </a>
+              ))}
+            </div>
+            {imagesVerified ? (
+              <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                Photos verified
+                {returnMeta.return_images_verified_at
+                  ? ` · ${formatCompletedDate(returnMeta.return_images_verified_at)}`
+                  : ''}
+              </p>
+            ) : (
+              <button type="button" onClick={verifyReturnImages} disabled={saving} className={btnGhost}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
+                Verify customer photos
+              </button>
+            )}
+          </div>
+        ) : hasActiveReturn ? (
+          <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+            No customer photos on this return yet.
+          </p>
+        ) : null}
+        {refundBlockedByImages ? (
+          <p className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800">
+            Refund status stays locked until customer photos are verified.
           </p>
         ) : null}
         <div>
@@ -627,7 +790,12 @@ export function OrderActions({
         <button
           type="button"
           onClick={saveReturnStatus}
-          disabled={saving || returnStatus === 'none' || returnStatus === savedReturnStatus}
+          disabled={
+            saving ||
+            returnStatus === 'none' ||
+            returnStatus === savedReturnStatus ||
+            (returnStatus === 'approved' && refundBlockedByImages)
+          }
           className={btnGhost}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
@@ -692,7 +860,7 @@ export function OrderActions({
           <button
             type="button"
             onClick={recordManualRefund}
-            disabled={saving || status === 'refunded'}
+            disabled={saving || status === 'refunded' || refundBlockedByImages}
             className={btnGhost}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Banknote className="h-4 w-4" />}

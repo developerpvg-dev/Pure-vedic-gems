@@ -50,19 +50,28 @@ function holdNotesForOrder(orderNumber: string) {
   return [paymentHoldNote(orderNumber), paidHoldNote(orderNumber)];
 }
 
+export type ReservePaidHoldResult = {
+  reservedIds: string[];
+  failedIds: string[];
+};
+
 /**
- * Keep unique pieces reserved after payment is captured.
+ * Keep unique pieces reserved after payment is captured / offline POS create.
  * Storefront shows "Reserved" until admin marks sold after billing.
  */
-export async function keepProductsReservedAfterPayment(order: OrderInventorySource) {
+export async function keepProductsReservedAfterPayment(
+  order: OrderInventorySource,
+): Promise<ReservePaidHoldResult> {
   const supabase = createAdminClient();
   const db = asUntypedSupabase(supabase);
   const note = paidHoldNote(order.order_number);
   // Far-future expiry so soft-expiry helpers don't clear a paid hold
   const reservedUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const reservedIds: string[] = [];
+  const failedIds: string[] = [];
 
   for (const productId of collectOrderProductIds(order)) {
-    await db
+    const { data, error } = await db
       .from('products')
       .update({
         in_stock: false,
@@ -74,8 +83,17 @@ export async function keepProductsReservedAfterPayment(order: OrderInventorySour
         reservation_note: note,
       })
       .eq('id', productId)
-      .then(null, () => undefined);
+      // Don't steal a piece already sold or held for another order
+      .neq('availability_status', 'sold')
+      .neq('availability_status', 'archived')
+      .select('id')
+      .maybeSingle();
+
+    if (error || !data) failedIds.push(productId);
+    else reservedIds.push(productId);
   }
+
+  return { reservedIds, failedIds };
 }
 
 /** Admin marks billing complete → piece shows as Sold on the website + ERP sale queue. */

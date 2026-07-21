@@ -10,6 +10,7 @@ import {
   isRudrakshaConfigurationSnapshot,
   parseRudrakshaBeadsFromSnapshot,
 } from '@/lib/utils/rudraksha-order-display';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 const METAL_LABELS: Record<string, string> = {
   gold_22k: '22K Gold',
@@ -100,7 +101,7 @@ export function DesignerOrderItemCard({
         <div className="flex gap-4">
           {gemImage ? (
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
-              <Image src={gemImage} alt={item.name} fill className="object-cover" sizes="80px" unoptimized />
+              <Image src={gemImage} alt={formatProductDisplayName(item.name)} fill className="object-cover" sizes="80px" unoptimized />
             </div>
           ) : (
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-indigo-50 text-indigo-400">
@@ -108,7 +109,7 @@ export function DesignerOrderItemCard({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
+            <h3 className="text-lg font-bold text-gray-900">{formatProductDisplayName(item.name)}</h3>
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
               {item.sku ? <span>SKU: <strong className="text-gray-700">{item.sku}</strong></span> : null}
               {item.tag_number ? <span>Tag: <strong className="text-gray-700">{item.tag_number}</strong></span> : null}
@@ -118,7 +119,7 @@ export function DesignerOrderItemCard({
               <span>Qty: {item.quantity ?? 1}</span>
             </div>
             {item.configuration_summary ? (
-              <p className="mt-2 text-sm text-gray-600">{item.configuration_summary}</p>
+              <p className="mt-2 text-sm text-gray-600">{formatProductDisplayName(item.configuration_summary)}</p>
             ) : null}
           </div>
         </div>
@@ -250,15 +251,23 @@ export function DesignerOrderItemCard({
               <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
                 <div>
                   <p className="text-gray-500">Date of birth</p>
-                  <p className="font-medium text-gray-900">{selections.energization_form.dob}</p>
+                  <p className="font-medium text-gray-900">{selections.energization_form.dob || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Birth time</p>
+                  <p className="font-medium text-gray-900">{selections.energization_form.birth_time || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Birth place</p>
+                  <p className="font-medium text-gray-900">{selections.energization_form.birth_place || '—'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Gotra</p>
-                  <p className="font-medium text-gray-900">{selections.energization_form.gotra}</p>
+                  <p className="font-medium text-gray-900">{selections.energization_form.gotra || '—'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Rashi</p>
-                  <p className="font-medium text-gray-900">{selections.energization_form.rashi}</p>
+                  <p className="font-medium text-gray-900">{selections.energization_form.rashi || '—'}</p>
                 </div>
               </div>
               {selections.energization_form.record_ceremony ? (

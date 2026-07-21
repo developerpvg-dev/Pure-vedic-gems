@@ -11,6 +11,7 @@ import {
   type DesignerConfigRow,
 } from '@/components/admin/designer/DesignerOrderItemCard';
 import { DesignerOrderStatusForm } from '@/components/admin/designer/DesignerOrderStatusForm';
+import { energizationFormFromOrderItems } from '@/lib/utils/configuration-snapshot';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,7 @@ export default async function DesignerOrderDetailPage({ params }: PageProps) {
   const parsedItems = parseOrderItems(order.items as never);
   const [enrichedItems] = await enrichManyOrderItemLists([parsedItems], admin);
   const items = (enrichedItems ?? parsedItems) as OrderItemRecord[];
+  const ceremonyForm = energizationFormFromOrderItems(items);
 
   const configIds = items
     .map((item) => item.configuration_id)
@@ -153,9 +155,17 @@ export default async function DesignerOrderDetailPage({ params }: PageProps) {
         <section className="rounded-xl border border-violet-200 bg-violet-50 p-5 text-sm text-violet-950">
           <h2 className="font-bold text-violet-900">Energization requested</h2>
           {order.energization_type ? <p className="mt-1">Type: {order.energization_type}</p> : null}
-          {order.ceremony_gotra ? <p>Gotra: {order.ceremony_gotra}</p> : null}
-          {order.ceremony_dob ? <p>DOB: {order.ceremony_dob}</p> : null}
-          {order.ceremony_rashi ? <p>Rashi: {order.ceremony_rashi}</p> : null}
+          {(order.ceremony_gotra || ceremonyForm?.gotra) ? (
+            <p>Gotra: {order.ceremony_gotra || ceremonyForm?.gotra}</p>
+          ) : null}
+          {(order.ceremony_dob || ceremonyForm?.dob) ? (
+            <p>DOB: {order.ceremony_dob || ceremonyForm?.dob}</p>
+          ) : null}
+          {ceremonyForm?.birth_time ? <p>Birth time: {ceremonyForm.birth_time}</p> : null}
+          {ceremonyForm?.birth_place ? <p>Birth place: {ceremonyForm.birth_place}</p> : null}
+          {(order.ceremony_rashi || ceremonyForm?.rashi) ? (
+            <p>Rashi: {order.ceremony_rashi || ceremonyForm?.rashi}</p>
+          ) : null}
         </section>
       ) : null}
 

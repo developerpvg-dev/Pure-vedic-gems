@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS hero_slides (
   desktop_image_url TEXT NOT NULL,
   mobile_image_url  TEXT NOT NULL,
   alt_text          VARCHAR(260) NOT NULL,
+  link_url          TEXT,
   sort_order        INTEGER NOT NULL DEFAULT 0,
   is_active         BOOLEAN NOT NULL DEFAULT TRUE,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),

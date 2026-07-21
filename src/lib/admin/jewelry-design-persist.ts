@@ -10,6 +10,7 @@ const OPTIONAL_COLUMNS = [
   'diamond_charges',
   'stone_addon_label',
   'labor_rates',
+  'video_url',
 ] as const;
 
 type OptionalColumn = (typeof OPTIONAL_COLUMNS)[number];
@@ -107,6 +108,9 @@ export function migrationHintForStrippedColumns(stripped: string[]): string | nu
   }
   if (stripped.includes('labor_rates')) {
     return 'Run supabase/migration_jewelry_design_labor_rates_2026.sql in the Supabase SQL editor to store labor % per design.';
+  }
+  if (stripped.includes('video_url')) {
+    return 'Run supabase/week41_design_video_url.sql in the Supabase SQL editor to enable design videos.';
   }
   return 'Some design columns are missing in the database. Run the latest jewelry_designs migrations in Supabase.';
 }

@@ -27,6 +27,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       '/admin/finance',
       '/admin/compliance',
       '/admin/orders',
+      '/admin/commissions',
       '/admin/yagya-bookings',
       '/admin/design-jobs',
       '/admin/customers',
@@ -38,6 +39,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/finance', label: 'Finance', match: 'prefix' },
       { href: '/admin/compliance', label: 'Compliance & refunds', match: 'prefix' },
       { href: '/admin/orders', label: 'Orders', match: 'prefix' },
+      { href: '/admin/commissions', label: 'Commissions', match: 'prefix' },
       { href: '/admin/yagya-bookings', label: 'Yagya bookings', match: 'prefix' },
       { href: '/admin/design-jobs', label: 'Design jobs', match: 'prefix' },
       { href: '/admin/customers', label: 'Customers', match: 'prefix' },
@@ -97,9 +99,10 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
     title: 'Parcel Dispatch',
     subtitle: 'Shipping, tracking & follow-up',
     home: '/admin/orders',
-    allowPrefixes: ['/admin/orders', '/admin/design-jobs', '/admin/compliance', '/admin/shipping'],
+    allowPrefixes: ['/admin/orders', '/admin/commissions', '/admin/design-jobs', '/admin/compliance', '/admin/shipping'],
     nav: [
       { href: '/admin/orders', label: 'Orders & dispatch', match: 'prefix' },
+      { href: '/admin/commissions', label: 'Commissions', match: 'prefix' },
       { href: '/admin/design-jobs', label: 'Design jobs', match: 'prefix' },
       { href: '/admin/shipping', label: 'Shipping zones & plans', match: 'prefix' },
       { href: '/admin/compliance', label: 'Returns & RMA', match: 'prefix' },
@@ -128,6 +131,7 @@ export function assertRoleDashboardAllowlists() {
   if (!isScopedRolePathAllowed('finance', '/admin/metals')) throw new Error('finance metals');
   if (!isScopedRolePathAllowed('finance', '/admin/leads')) throw new Error('finance leads');
   if (!isScopedRolePathAllowed('finance', '/admin/design-jobs')) throw new Error('finance design-jobs');
+  if (!isScopedRolePathAllowed('finance', '/admin/commissions')) throw new Error('finance commissions');
   if (isScopedRolePathAllowed('finance', '/admin/products')) throw new Error('finance must not open products');
   if (getScopedRoleDashboard('content')) throw new Error('content uses full admin shell');
   if (!isScopedRolePathAllowed('inventory', '/admin/products/import')) throw new Error('inventory import');
@@ -137,6 +141,7 @@ export function assertRoleDashboardAllowlists() {
   if (!isScopedRolePathAllowed('inventory', '/admin/erp-sync')) throw new Error('inventory erp');
   if (isScopedRolePathAllowed('inventory', '/admin/finance')) throw new Error('inventory must not open finance');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/orders/abc')) throw new Error('fulfillment order detail');
+  if (!isScopedRolePathAllowed('fulfillment', '/admin/commissions')) throw new Error('fulfillment commissions');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/shipping')) throw new Error('fulfillment shipping');
   if (finance.home !== '/admin/finance') throw new Error('finance home path');
 }

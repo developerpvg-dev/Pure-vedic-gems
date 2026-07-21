@@ -1154,6 +1154,7 @@ export interface Database {
           name: string;
           setting_type: string;
           image_url: string | null;
+          video_url: string | null;
           description: string | null;
           making_charges: Json;
           estimated_metal_weight: Json | null;
@@ -1173,6 +1174,7 @@ export interface Database {
           name: string;
           setting_type: string;
           image_url?: string | null;
+          video_url?: string | null;
           description?: string | null;
           making_charges: Json;
           estimated_metal_weight?: Json | null;
@@ -1186,6 +1188,7 @@ export interface Database {
           name?: string;
           setting_type?: string;
           image_url?: string | null;
+          video_url?: string | null;
           description?: string | null;
           making_charges?: Json;
           estimated_metal_weight?: Json | null;

@@ -35,6 +35,9 @@ interface Order {
   guest_email: string | null;
   guest_phone: string | null;
   total: number;
+  amount_paid?: number | null;
+  amount_due?: number | null;
+  order_source?: string | null;
   reward_points_redeemed: number;
   reward_discount: number;
   status: string;
@@ -61,6 +64,10 @@ interface OrderAnalytics {
     cancelledCount: number;
     guestCount: number;
     registeredCount: number;
+    offlineCount?: number;
+    offlineRevenue?: number;
+    onlineCount?: number;
+    onlineRevenue?: number;
   };
   trend: Array<{
     date: string;
@@ -72,6 +79,7 @@ interface OrderAnalytics {
   statusBreakdown: Array<{ label: string; value: number; meta: number }>;
   paymentBreakdown: Array<{ label: string; value: number; meta: number }>;
   paymentMethodBreakdown: Array<{ label: string; value: number; meta: number }>;
+  sourceBreakdown?: Array<{ label: string; value: number; meta: number }>;
   sampleSize: number;
 }
 
@@ -97,6 +105,7 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   pending: 'text-orange-600',
   authorized: 'text-blue-600',
   captured: 'text-green-600',
+  partial: 'text-amber-700',
   failed: 'text-red-600',
   refunded: 'text-purple-600',
   amount_mismatch: 'text-red-600',
@@ -115,6 +124,7 @@ function readInitialFilters(): AdminOrderFilterState {
     search: params.get('search') ?? '',
     status: params.get('status') ?? '',
     payment_status: params.get('payment_status') ?? '',
+    order_source: params.get('order_source') ?? '',
     date_from: params.get('date_from') ?? '',
     date_to: params.get('date_to') ?? '',
     period: (params.get('period') as AdminOrderFilterState['period']) || '30d',
@@ -222,13 +232,22 @@ export default function AdminOrdersPage() {
             {analyticsLoading ? 'Loading analytics…' : `${summary?.totalOrders?.toLocaleString('en-IN') ?? total.toLocaleString('en-IN')} orders in view`}
           </p>
         </div>
-        <a
-          href="/api/admin/exports?type=orders"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
-        >
-          <Download className="h-4 w-4" />
-          Export CSV
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/orders/new"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            New offline order
+          </Link>
+          <a
+            href="/api/admin/exports?type=orders"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </a>
+        </div>
       </div>
 
       <AdminOrderFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
@@ -300,6 +319,39 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-stone-200 bg-stone-900 px-4 py-3 text-white">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">Offline / counter</p>
+                <p className="mt-1 text-xl font-bold tabular-nums">
+                  {analyticsLoading ? '…' : (summary?.offlineCount ?? 0).toLocaleString('en-IN')} orders
+                </p>
+                <p className="mt-0.5 text-xs text-stone-400">
+                  {analyticsLoading ? '' : `${fmtInr(summary?.offlineRevenue ?? 0)} captured revenue in view`}
+                </p>
+                <Link
+                  href="/admin/orders?order_source=offline"
+                  className="mt-2 inline-block text-xs font-semibold text-amber-300 hover:text-amber-200"
+                >
+                  View offline orders →
+                </Link>
+              </div>
+              <div className="rounded-lg border border-sky-100 bg-sky-50 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-700">Online</p>
+                <p className="mt-1 text-xl font-bold tabular-nums text-sky-950">
+                  {analyticsLoading ? '…' : (summary?.onlineCount ?? 0).toLocaleString('en-IN')} orders
+                </p>
+                <p className="mt-0.5 text-xs text-sky-700/80">
+                  {analyticsLoading ? '' : `${fmtInr(summary?.onlineRevenue ?? 0)} captured revenue in view`}
+                </p>
+                <Link
+                  href="/admin/orders?order_source=online"
+                  className="mt-2 inline-block text-xs font-semibold text-sky-800 hover:text-sky-950"
+                >
+                  View online orders →
+                </Link>
+              </div>
             </div>
 
             <div className="grid gap-5 xl:grid-cols-5">
@@ -394,7 +446,18 @@ export default function AdminOrdersPage() {
 
                   return (
                     <tr key={order.id} className="transition hover:bg-gray-50/80">
-                      <td className="whitespace-nowrap px-4 py-3 font-medium text-amber-700">{order.order_number}</td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <div className="font-medium text-amber-700">{order.order_number}</div>
+                        {order.order_source === 'offline' ? (
+                          <span className="mt-0.5 inline-block rounded bg-stone-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                            Offline
+                          </span>
+                        ) : (
+                          <span className="mt-0.5 inline-block rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800">
+                            Online
+                          </span>
+                        )}
+                      </td>
                       <td className="max-w-[180px] px-4 py-3">
                         <p className="truncate font-medium text-gray-900">{customer.name}</p>
                         <p className="truncate text-xs text-gray-400">{customer.email || customer.phone || 'No contact saved'}</p>

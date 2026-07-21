@@ -263,15 +263,31 @@ export default function DesignSelector({
           </div>
         </button>
 
-        {design.image_url ? (
-          <button
-            type="button"
-            onClick={() => setPreviewDesign(design)}
-            className="absolute right-1.5 top-1.5 z-10 rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm ring-1 ring-black/10 backdrop-blur-sm transition hover:bg-accent hover:text-accent-foreground"
-            aria-label={`View ${design.name} in full size`}
-          >
-            View
-          </button>
+        {design.image_url || design.video_url ? (
+          <div className="absolute right-1.5 top-1.5 z-10 flex gap-1">
+            {design.video_url ? (
+              <a
+                href={design.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-medium text-primary shadow-sm ring-1 ring-black/10 backdrop-blur-sm transition hover:bg-accent hover:text-accent-foreground"
+                aria-label={`Watch video for ${design.name}`}
+              >
+                Video
+              </a>
+            ) : null}
+            {design.image_url ? (
+              <button
+                type="button"
+                onClick={() => setPreviewDesign(design)}
+                className="rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm ring-1 ring-black/10 backdrop-blur-sm transition hover:bg-accent hover:text-accent-foreground"
+                aria-label={`View ${design.name} in full size`}
+              >
+                View
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     );

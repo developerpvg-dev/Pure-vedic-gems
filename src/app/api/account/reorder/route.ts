@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isReorderEligibleStatus, parseOrderItems } from '@/lib/customer/orders';
 import type { CartItemInput } from '@/lib/validators/cart';
 import type { Product } from '@/lib/types/database';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 const reorderSchema = z.object({ order_id: z.string().uuid() });
 
@@ -51,11 +52,11 @@ export async function POST(request: NextRequest) {
       continue;
     }
     if (!product.in_stock || ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status)) {
-      unavailable.push({ product_id: product.id, name: product.name, reason: 'Product is sold, reserved, or unavailable' });
+      unavailable.push({ product_id: product.id, name: formatProductDisplayName(product.name), reason: 'Product is sold, reserved, or unavailable' });
       continue;
     }
     if (item.configuration_id) {
-      unavailable.push({ product_id: product.id, name: product.name, reason: 'Configured jewellery should be reviewed before reordering' });
+      unavailable.push({ product_id: product.id, name: formatProductDisplayName(product.name), reason: 'Configured jewellery should be reviewed before reordering' });
       continue;
     }
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       product_id: product.id,
       sku: product.sku,
       tag_number: product.tag_number,
-      name: product.name,
+      name: formatProductDisplayName(product.name),
       category: product.category,
       image_url: product.thumbnail_url ?? item.image_url ?? '',
       price: product.price,

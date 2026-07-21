@@ -12,11 +12,27 @@ const publicAssetOrUrl = z.string().trim().max(1000).refine(
   'Enter an absolute URL or a local public path starting with /',
 );
 
+/** Empty string clears the link; otherwise same rules as image URLs. */
+const optionalLinkUrl = z
+  .string()
+  .trim()
+  .max(1000)
+  .refine(
+    (value) =>
+      value === '' ||
+      value.startsWith('/') ||
+      z.string().url().safeParse(value).success,
+    'Enter an absolute URL, a path starting with /, or leave blank',
+  )
+  .optional()
+  .nullable();
+
 const heroSlideSchema = z.object({
   slug: z.string().trim().max(80).optional(),
   desktop_image_url: publicAssetOrUrl,
   mobile_image_url: publicAssetOrUrl,
   alt_text: z.string().trim().min(2).max(260),
+  link_url: optionalLinkUrl,
   sort_order: z.number().int().optional(),
   is_active: z.boolean().optional(),
 });
@@ -75,6 +91,7 @@ export async function POST(request: NextRequest) {
       desktop_image_url: input.desktop_image_url,
       mobile_image_url: input.mobile_image_url,
       alt_text: input.alt_text,
+      link_url: input.link_url?.trim() || null,
       sort_order: sortOrder,
       is_active: input.is_active ?? true,
     })

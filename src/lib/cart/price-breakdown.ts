@@ -6,6 +6,7 @@ import {
   type ConfiguratorPriceLine,
 } from '@/lib/utils/configurator-pricing-display';
 import { resolveProductTax } from '@/lib/utils/tax';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 function snapshotToPricing(pricing: NonNullable<ReturnType<typeof parseConfigurationSnapshot>>['pricing']): ConfigPricingBreakdown {
   return {
@@ -99,7 +100,7 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
     {
       key: 'product',
       label: item.category === 'rudraksha' ? 'Rudraksha' : 'Product price',
-      detail: item.name,
+      detail: formatProductDisplayName(item.name),
       amount: unitPrice,
     },
   ];

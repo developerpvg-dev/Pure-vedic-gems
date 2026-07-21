@@ -41,6 +41,7 @@ export interface AdminJewelryDesign {
   name: string;
   setting_type: string;
   image_url: string | null;
+  video_url?: string | null;
   description: string | null;
   making_charges: Record<string, number>;
   estimated_metal_weight: Record<string, number> | null;
@@ -73,6 +74,7 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
   );
   const [description, setDescription] = useState(design?.description ?? '');
   const [imageUrl, setImageUrl] = useState(design?.image_url ?? '');
+  const [videoUrl, setVideoUrl] = useState(design?.video_url ?? '');
   const [sortOrder, setSortOrder] = useState(design?.sort_order ?? 0);
   const [isActive, setIsActive] = useState(design?.is_active ?? true);
   const [metalRows, setMetalRows] = useState<DesignMetalRow[]>(() =>
@@ -227,6 +229,7 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
         rudraksha_category: productScope === 'rudraksha' ? rudrakshaCategory : null,
         description: description.trim() || null,
         image_url: imageUrl.trim() || null,
+        video_url: videoUrl.trim() || null,
         sort_order: sortOrder,
         is_active: isActive,
         design_diamond_charge: designDiamondCharge,
@@ -425,6 +428,18 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
                   className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">YouTube video URL</label>
+              <p className="text-xs text-gray-400">Optional. Shows a Video button on the design card in the configurator.</p>
+              <input
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
             </div>
           </div>
 

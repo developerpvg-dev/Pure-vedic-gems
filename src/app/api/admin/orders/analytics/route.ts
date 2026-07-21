@@ -10,6 +10,11 @@ import {
   type OrderAnalyticsRow,
 } from '@/lib/admin/order-filters';
 
+const SELECT_WITH_SOURCE =
+  'id, total, status, payment_status, payment_method, created_at, customer_id, order_source';
+const SELECT_WITHOUT_SOURCE =
+  'id, total, status, payment_status, payment_method, created_at, customer_id';
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdminAccess('orders.read');
   if ('error' in auth) return auth.error;
@@ -31,13 +36,7 @@ export async function GET(request: NextRequest) {
     matchedProfileIds = (profileMatches ?? []).map((profile) => profile.id);
   }
 
-  let query = supabase
-    .from('orders')
-    .select('id, total, status, payment_status, payment_method, created_at, customer_id')
-    .order('created_at', { ascending: true })
-    .limit(5000);
-
-  query = applyAdminOrderFilters(query as never, {
+  const filterArgs = {
     status: searchParams.get('status'),
     payment_status: searchParams.get('payment_status'),
     search,
@@ -52,10 +51,35 @@ export async function GET(request: NextRequest) {
     return_status: searchParams.get('return_status'),
     invoice_status: searchParams.get('invoice_status'),
     customer_type: searchParams.get('customer_type'),
+    order_source: searchParams.get('order_source'),
     matchedProfileIds,
-  }) as typeof query;
+  };
 
-  const { data, error } = await query;
+  let query = supabase
+    .from('orders')
+    .select(SELECT_WITH_SOURCE)
+    .order('created_at', { ascending: true })
+    .limit(5000);
+
+  query = applyAdminOrderFilters(query as never, filterArgs) as typeof query;
+
+  let { data, error } = await query;
+
+  if (error && String(error.message ?? '').includes('order_source')) {
+    let fallback = supabase
+      .from('orders')
+      .select(SELECT_WITHOUT_SOURCE)
+      .order('created_at', { ascending: true })
+      .limit(5000);
+    fallback = applyAdminOrderFilters(fallback as never, {
+      ...filterArgs,
+      order_source: null,
+    }) as typeof fallback;
+    const retry = await fallback;
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
     console.error('[admin/orders/analytics] Fetch error:', error);
     return NextResponse.json({ error: 'Failed to load order analytics' }, { status: 500 });
@@ -64,13 +88,25 @@ export async function GET(request: NextRequest) {
   const rows = (data ?? []) as OrderAnalyticsRow[];
   const summary = buildOrderSummary(rows);
   const trend = buildOrderTrendData(rows, period);
+  const sourceBreakdown = buildBreakdown(rows, 'order_source');
+  const offlineRows = rows.filter((r) => (r.order_source || 'online') === 'offline');
+  const onlineRows = rows.filter((r) => (r.order_source || 'online') !== 'offline');
+  const paidish = (r: OrderAnalyticsRow) =>
+    r.payment_status === 'captured' || r.payment_status === 'partial';
 
   return NextResponse.json({
-    summary,
+    summary: {
+      ...summary,
+      offlineCount: offlineRows.length,
+      offlineRevenue: offlineRows.filter(paidish).reduce((sum, r) => sum + (r.total ?? 0), 0),
+      onlineCount: onlineRows.length,
+      onlineRevenue: onlineRows.filter(paidish).reduce((sum, r) => sum + (r.total ?? 0), 0),
+    },
     trend,
     statusBreakdown: buildBreakdown(rows, 'status'),
     paymentBreakdown: buildBreakdown(rows, 'payment_status'),
     paymentMethodBreakdown: buildBreakdown(rows, 'payment_method'),
+    sourceBreakdown,
     sampleSize: rows.length,
   });
 }

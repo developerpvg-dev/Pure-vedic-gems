@@ -1,3 +1,4 @@
+
 -- Week 36: shrink pooja catalog to Skip + With Video + With picture (both ₹2100).
 -- Safe to re-run. Apply in Supabase SQL editor (or via seed-energization-options.ts --write).
 

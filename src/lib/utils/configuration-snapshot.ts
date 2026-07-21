@@ -96,6 +96,18 @@ export function parseConfigurationSnapshot(
   return value as ConfigurationSnapshot;
 }
 
+/** First energization_form found on order line-item snapshots. */
+export function energizationFormFromOrderItems(
+  items: Array<{ configuration_snapshot?: unknown }>,
+): ConfigurationSnapshotEnergizationForm | null {
+  for (const item of items) {
+    const form = parseConfigurationSnapshot(item.configuration_snapshot)?.selections
+      ?.energization_form;
+    if (form) return form;
+  }
+  return null;
+}
+
 export function mergeConfigurationDetails(args: {
   snapshot?: unknown;
   dbConfig?: {

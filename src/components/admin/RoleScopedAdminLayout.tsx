@@ -34,6 +34,7 @@ import {
   Users,
   Truck,
   Store,
+  HandCoins,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -43,6 +44,7 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/finance': IndianRupee,
   '/admin/compliance': Scale,
   '/admin/orders': ShoppingCart,
+  '/admin/commissions': HandCoins,
   '/admin/yagya-bookings': Flame,
   '/admin/hero': Images,
   '/admin/categories': Gem,

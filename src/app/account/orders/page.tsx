@@ -134,6 +134,8 @@ export default async function OrdersPage() {
         return_eligible: eligibility.eligible,
         return_message: eligibility.reason,
         return_reason: flags.return_reason ?? null,
+        receipt_confirmed: Boolean(flags.receipt_confirmed),
+        receipt_ok: flags.receipt_confirmed ? Boolean(flags.receipt_ok) : null,
       };
   });
 

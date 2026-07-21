@@ -12,11 +12,26 @@ const publicAssetOrUrl = z.string().trim().max(1000).refine(
   'Enter an absolute URL or a local public path starting with /',
 );
 
+const optionalLinkUrl = z
+  .string()
+  .trim()
+  .max(1000)
+  .refine(
+    (value) =>
+      value === '' ||
+      value.startsWith('/') ||
+      z.string().url().safeParse(value).success,
+    'Enter an absolute URL, a path starting with /, or leave blank',
+  )
+  .optional()
+  .nullable();
+
 const heroSlideUpdateSchema = z.object({
   slug: z.string().trim().max(80).optional(),
   desktop_image_url: publicAssetOrUrl.optional(),
   mobile_image_url: publicAssetOrUrl.optional(),
   alt_text: z.string().trim().min(2).max(260).optional(),
+  link_url: optionalLinkUrl,
   sort_order: z.number().int().optional(),
   is_active: z.boolean().optional(),
 });
@@ -45,6 +60,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (parsed.data.slug) {
     updates.slug = slugify(parsed.data.slug).slice(0, 80);
+  }
+
+  if (parsed.data.link_url !== undefined) {
+    updates.link_url = parsed.data.link_url?.trim() || null;
   }
 
   const admin = createAdminClient();

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, type ComponentType, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   Package, Plus, ShoppingCart, DollarSign, TrendingUp,
   AlertCircle, Clock, Loader2, ArrowRight, Eye, MessageSquare,
   BarChart3, CreditCard, PieChart, Users, ShieldCheck, Video, Palette,
 } from 'lucide-react';
+import { MetricBars, RevenueChart, fmtInr, labelize } from '@/components/admin/AdminCharts';
 
 interface DashboardStats {
   totalOrders: number;
@@ -19,6 +20,9 @@ interface DashboardStats {
   outOfStockProducts: number;
   totalConsultations: number;
   consultationRevenue: number;
+  offlineTodayOrders?: number;
+  offlineTodayRevenue?: number;
+  reservedProducts?: number;
 }
 
 interface CurrentAdmin {
@@ -45,6 +49,7 @@ interface RecentOrder {
   total: number;
   status: string;
   payment_status: string;
+  order_source?: string | null;
   items_count: number;
   created_at: string;
 }
@@ -89,14 +94,6 @@ const STATUS_COLORS: Record<string, string> = {
   refunded: 'bg-gray-100 text-gray-800',
 };
 
-function fmt(n: number) {
-  return '₹' + n.toLocaleString('en-IN');
-}
-
-function labelize(value: string) {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 function topEntries(record: Record<string, number>, limit = 6) {
   return Object.entries(record)
     .map(([label, value]) => ({ label: labelize(label), value }))
@@ -106,80 +103,9 @@ function topEntries(record: Record<string, number>, limit = 6) {
 
 function countTotalEntries(record: Record<string, CountTotal>, limit = 6) {
   return Object.entries(record)
-    .map(([label, value]) => ({ label: labelize(label), value: value.count, meta: fmt(value.total) }))
+    .map(([label, value]) => ({ label: labelize(label), value: value.count, meta: fmtInr(value.total) }))
     .sort((a, b) => b.value - a.value)
     .slice(0, limit);
-}
-
-function RevenueChart({ data }: { data: ChartDay[] }) {
-  const maxRevenue = Math.max(...data.map((d) => d.revenue), 1);
-
-  return (
-    <div className="flex items-end gap-2 h-32">
-      {data.map((day) => {
-        const height = Math.max((day.revenue / maxRevenue) * 100, 4);
-        const dateObj = new Date(day.date);
-        const label = dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
-        return (
-          <div key={day.date} className="flex flex-1 flex-col items-center gap-1">
-            <span className="text-[10px] text-gray-400 font-medium">
-              {day.orders > 0 ? day.orders : ''}
-            </span>
-            <div
-              className="w-full rounded-t bg-amber-400 hover:bg-amber-500 transition-colors cursor-default"
-              style={{ height: `${height}%` }}
-              title={`${label}: ${fmt(day.revenue)} (${day.orders} orders)`}
-            />
-            <span className="text-[10px] text-gray-500">{label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function MetricBars({
-  title,
-  icon: Icon,
-  items,
-  emptyLabel = 'No data yet',
-}: {
-  title: string;
-  icon: ComponentType<{ className?: string }>;
-  items: { label: string; value: number; meta?: string }[];
-  emptyLabel?: string;
-}) {
-  const max = Math.max(...items.map((item) => item.value), 1);
-
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-gray-500">
-        <Icon className="h-4 w-4 text-amber-600" />
-        {title}
-      </h2>
-      {items.length === 0 ? (
-        <p className="rounded-lg bg-gray-50 px-3 py-4 text-sm text-gray-400">{emptyLabel}</p>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const width = Math.max((item.value / max) * 100, 5);
-            return (
-              <div key={item.label}>
-                <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold text-gray-700">{item.label}</span>
-                  <span className="shrink-0 font-bold text-gray-900">{item.value.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${width}%` }} />
-                </div>
-                {item.meta && <p className="mt-1 text-xs font-medium text-gray-400">{item.meta}</p>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function RoleChartGrid({ data }: { data: DashboardData }) {
@@ -325,7 +251,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Today&apos;s Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">{fmt(stats.todayRevenue)}</p>
+              <p className="text-2xl font-bold text-gray-900">{fmtInr(stats.todayRevenue)}</p>
             </div>
           </div>
           <p className="mt-2 text-xs text-gray-400">
@@ -366,13 +292,42 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">{fmt(stats.totalRevenue)}</p>
+              <p className="text-2xl font-bold text-gray-900">{fmtInr(stats.totalRevenue)}</p>
             </div>
           </div>
           <p className="mt-2 text-xs text-gray-400">
             {stats.activeProducts} active products, {stats.totalConsultations} consultations
           </p>
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/admin/orders?order_source=offline"
+          className="rounded-xl border border-stone-800 bg-stone-900 p-5 text-white transition hover:bg-stone-800"
+        >
+          <p className="text-xs font-medium uppercase tracking-wider text-stone-400">Offline today</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">{stats.offlineTodayOrders ?? 0}</p>
+          <p className="mt-1 text-xs text-stone-400">
+            {fmtInr(stats.offlineTodayRevenue ?? 0)} counter / walk-in revenue
+          </p>
+        </Link>
+        <Link
+          href="/admin/products?availability_status=reserved"
+          className="rounded-xl border border-amber-200 bg-amber-50 p-5 transition hover:bg-amber-100/80"
+        >
+          <p className="text-xs font-medium uppercase tracking-wider text-amber-800">Reserved pieces</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-amber-950">{stats.reservedProducts ?? 0}</p>
+          <p className="mt-1 text-xs text-amber-800/80">Held for orders — mark sold from order detail</p>
+        </Link>
+        <Link
+          href="/admin/orders/new"
+          className="rounded-xl border border-amber-200 bg-white p-5 transition hover:bg-amber-50"
+        >
+          <p className="text-xs font-medium uppercase tracking-wider text-gray-500">New offline order</p>
+          <p className="mt-1 text-lg font-bold text-gray-900">Open POS</p>
+          <p className="mt-1 text-xs text-gray-500">Creates order and reserves stock immediately</p>
+        </Link>
       </div>
 
       {/* Analytics quick links */}
@@ -386,6 +341,9 @@ export default function AdminDashboard() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
           {[
             { href: '/admin/orders', label: 'Orders', desc: 'Trends & pipeline', icon: ShoppingCart },
+            { href: '/admin/orders?order_source=offline', label: 'Offline orders', desc: 'Counter / walk-in sales', icon: ShoppingCart },
+            { href: '/admin/orders/new', label: 'New offline order', desc: 'POS / reserve stock', icon: Plus },
+            { href: '/admin/commissions', label: 'Commissions', desc: 'Sales & astrologer payouts', icon: DollarSign },
             { href: '/admin/design-jobs', label: 'Design Jobs', desc: 'Designer WIP & due dates', icon: Palette },
             { href: '/admin/finance', label: 'Finance', desc: 'Revenue breakdown', icon: DollarSign },
             { href: '/admin/products?stock=out', label: 'Products', desc: 'Catalog & inventory', icon: Package },
@@ -567,10 +525,19 @@ export default function AdminDashboard() {
               ) : (
                 recentOrders.map((order) => (
                   <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td className="px-4 py-2.5 font-medium text-amber-700">{order.order_number}</td>
+                    <td className="px-4 py-2.5 font-medium text-amber-700">
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        {order.order_number}
+                        {order.order_source === 'offline' ? (
+                          <span className="rounded bg-stone-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                            Offline
+                          </span>
+                        ) : null}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 text-gray-700 truncate max-w-35">{order.customer}</td>
                     <td className="px-4 py-2.5 text-gray-600">{order.items_count}</td>
-                    <td className="px-4 py-2.5 font-semibold text-gray-900">{fmt(order.total)}</td>
+                    <td className="px-4 py-2.5 font-semibold text-gray-900">{fmtInr(order.total)}</td>
                     <td className="px-4 py-2.5">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS[order.status] ?? 'bg-gray-100 text-gray-700'}`}>
                         {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}

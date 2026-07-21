@@ -21,6 +21,7 @@ interface HeroSlideItem {
   desktop_image_url: string;
   mobile_image_url: string;
   alt_text: string;
+  link_url: string | null;
   sort_order: number;
   is_active: boolean;
 }
@@ -30,6 +31,7 @@ const EMPTY_FORM = {
   desktop_image_url: '',
   mobile_image_url: '',
   alt_text: '',
+  link_url: '',
   sort_order: 0,
   is_active: true,
 };
@@ -162,6 +164,7 @@ export default function AdminHeroSlidesPage() {
       desktop_image_url: item.desktop_image_url,
       mobile_image_url: item.mobile_image_url,
       alt_text: item.alt_text,
+      link_url: item.link_url ?? '',
       sort_order: item.sort_order,
       is_active: item.is_active,
     });
@@ -292,6 +295,17 @@ export default function AdminHeroSlidesPage() {
                 value={form.alt_text}
                 onChange={(event) => setForm((current) => ({ ...current, alt_text: event.target.value }))}
                 placeholder="Describe the slide for accessibility"
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600">
+                Click link (optional)
+              </label>
+              <input
+                value={form.link_url}
+                onChange={(event) => setForm((current) => ({ ...current, link_url: event.target.value }))}
+                placeholder="/shop/rudraksha or https://…"
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500"
               />
             </div>

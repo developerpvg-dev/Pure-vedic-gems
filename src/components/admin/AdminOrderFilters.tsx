@@ -21,6 +21,7 @@ const FILTER_LABELS: Record<keyof AdminOrderFilterState, string> = {
   search: 'Search',
   status: 'Status',
   payment_status: 'Payment',
+  order_source: 'Channel',
   date_from: 'From',
   date_to: 'To',
   period: 'Period',
@@ -143,6 +144,12 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
           ))}
         </select>
 
+        <select value={filters.order_source} onChange={(e) => onChange({ order_source: e.target.value })} className={fieldClassName()}>
+          <option value="">All channels</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </select>
+
         <select
           value={filters.period}
           onChange={(e) => onChange({ period: e.target.value as AdminOrderFilterState['period'], date_from: '', date_to: '' })}
@@ -208,8 +215,11 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
               <select value={filters.payment_method} onChange={(e) => onChange({ payment_method: e.target.value })} className={fieldClassName()}>
                 <option value="">Any method</option>
                 <option value="razorpay">Razorpay</option>
-                <option value="cod">Cash on delivery</option>
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="card">Card</option>
                 <option value="bank_transfer">Bank transfer</option>
+                <option value="cod">Cash on delivery</option>
               </select>
             </label>
             <label className="block">

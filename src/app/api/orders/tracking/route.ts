@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { enrichOrderItemsWithImages, parseOrderItems } from '@/lib/customer/orders';
+import { isCustomerCancellable } from '@/lib/constants/order-status';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -202,7 +203,8 @@ export async function POST(request: NextRequest) {
       puja_video_url: order.puja_video_url,
       estimated_delivery: order.estimated_delivery,
       items,
-      can_cancel: accountMatches,
+      can_cancel:
+        accountMatches && isCustomerCancellable(order.status, order.created_at),
     },
     events: events ?? [],
   });

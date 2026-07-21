@@ -7,6 +7,7 @@ import {
   evaluateReturnEligibility,
   getDeliveredAt,
   mergeComplianceFlags,
+  normalizeReturnImageUrls,
   resolveReturnWindowDays,
 } from '@/lib/orders/returns';
 import { parseOrderItems } from '@/lib/customer/orders';
@@ -14,6 +15,7 @@ import { parseOrderItems } from '@/lib/customer/orders';
 /**
  * POST /api/orders/[id]/return
  * Customer requests a return within the product return window after delivery.
+ * Requires at least one product photo — admin must verify images before refund.
  */
 export async function POST(
   request: NextRequest,
@@ -33,6 +35,14 @@ export async function POST(
   const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 1000) : '';
   if (!reason) {
     return NextResponse.json({ error: 'Please share a reason for the return' }, { status: 400 });
+  }
+
+  const imageUrls = normalizeReturnImageUrls(body.image_urls);
+  if (!imageUrls.length) {
+    return NextResponse.json(
+      { error: 'Upload at least one clear photo of the product before requesting a return' },
+      { status: 400 },
+    );
   }
 
   const admin = createAdminClient();
@@ -93,6 +103,9 @@ export async function POST(
   const compliance_flags = mergeComplianceFlags(orderRow.compliance_flags, {
     return_reason: reason,
     return_requested_at: now,
+    return_image_urls: imageUrls,
+    return_images_verified: false,
+    return_images_verified_at: undefined,
   });
 
   const { error: updateError } = await db

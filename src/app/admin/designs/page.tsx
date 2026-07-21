@@ -131,6 +131,7 @@ export default function AdminDesignsPage() {
           rudraksha_category: design.rudraksha_category,
           description: design.description,
           image_url: design.image_url,
+          video_url: design.video_url ?? null,
           sort_order: design.sort_order,
           is_active: true,
           design_diamond_charge: getDesignDiamondChargeFromDesign(design.diamond_charges),

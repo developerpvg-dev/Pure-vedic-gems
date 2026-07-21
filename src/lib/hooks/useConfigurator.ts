@@ -24,6 +24,7 @@ import {
   isRudrakshaConfiguratorContext,
 } from '@/lib/utils/rudraksha-design-rules';
 import { resolveRudrakshaSelectionPrice } from '@/lib/utils/rudraksha-pricing';
+import { withProductDisplayName } from '@/lib/utils/product-display-name';
 
 const DEFAULT_STORAGE_KEY = 'pvg_configurator:full';
 
@@ -82,6 +83,13 @@ export function sanitizeConfiguratorSelections(
   state: ConfiguratorState
 ): ConfiguratorState {
   const next = cloneConfiguratorState(state);
+
+  if (next.selected_product) {
+    next.selected_product = withProductDisplayName(next.selected_product);
+  }
+  if (next.rudraksha_combo_products.length > 0) {
+    next.rudraksha_combo_products = next.rudraksha_combo_products.map(withProductDisplayName);
+  }
 
   if (
     next.selected_design &&
@@ -295,7 +303,7 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
         );
         return {
           ...state,
-          selected_product: action.payload,
+          selected_product: withProductDisplayName(action.payload),
           ...(rudraksha
             ? {
                 setting_type: 'pendant' as const,
@@ -354,14 +362,14 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
       case 'SET_RUDRAKSHA_COMBO':
         return {
           ...state,
-          rudraksha_combo_products: action.payload,
+          rudraksha_combo_products: action.payload.map(withProductDisplayName),
           selected_design: null,
           custom_design_url: null,
           custom_design_brief: null,
         };
 
       case 'TOGGLE_RUDRAKSHA_COMBO': {
-        const product = action.payload;
+        const product = withProductDisplayName(action.payload);
         const exists = state.rudraksha_combo_products.some((p) => p.id === product.id);
         const primaryId = state.selected_product?.id;
         const nextCombo = exists

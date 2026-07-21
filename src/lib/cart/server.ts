@@ -3,6 +3,7 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Cart, CartItem } from '@/lib/types/cart';
 import type { CartItemInput } from '@/lib/validators/cart';
 import type { Json, Product, ServerCart, ServerCartItem } from '@/lib/types/database';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 const PRODUCT_SELECT = `
   id, sku, slug, tag_number, name, category, price, carat_weight, origin, images,
@@ -191,7 +192,7 @@ export async function getCartResponse(cartId: string): Promise<Cart> {
         slug: product?.slug ?? metadataString(row.metadata, 'slug'),
         sku: product?.sku ?? row.sku ?? '',
         tag_number: product?.tag_number ?? row.tag_number ?? null,
-        name: product?.name ?? row.name_snapshot,
+        name: formatProductDisplayName(product?.name ?? row.name_snapshot),
         category: product?.category ?? row.category_snapshot ?? 'gemstone',
         image_url: getImageUrl(product, row.image_url_snapshot),
         price: Number(row.configuration_id ? row.price_snapshot : product?.price ?? row.price_snapshot ?? 0),
@@ -307,7 +308,7 @@ export async function upsertCustomerCartItem(
         quantity,
         sku: product.sku,
         tag_number: product.tag_number,
-        name_snapshot: product.name,
+        name_snapshot: formatProductDisplayName(product.name),
         category_snapshot: product.category,
         image_url_snapshot: getImageUrl(product, input.image_url),
         price_snapshot: verifiedUnitPrice,
@@ -325,7 +326,7 @@ export async function upsertCustomerCartItem(
       quantity,
       sku: product.sku,
       tag_number: product.tag_number,
-      name_snapshot: product.name,
+      name_snapshot: formatProductDisplayName(product.name),
       category_snapshot: product.category,
       image_url_snapshot: getImageUrl(product, input.image_url),
       price_snapshot: verifiedUnitPrice,
@@ -563,7 +564,7 @@ export async function logCartEvent({
     const { data: product } = productId
       ? await supabase.from('products').select('name').eq('id', productId).single()
       : { data: null };
-    const itemName = product?.name ?? 'an item';
+    const itemName = product?.name ? formatProductDisplayName(product.name) : 'an item';
 
     await createInAppNotifications([
       {

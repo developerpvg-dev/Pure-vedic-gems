@@ -1,6 +1,20 @@
 'use client';
 
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 export type TrendPoint = {
   date: string;
@@ -24,15 +38,117 @@ export function fmtInrCompact(value: number) {
   return fmtInr(value);
 }
 
-const CHART_HEIGHT = 96;
+const COLORS = {
+  amber: '#f59e0b',
+  amberSoft: '#fbbf24',
+  sky: '#38bdf8',
+  emerald: '#10b981',
+  emeraldSoft: '#34d399',
+  grid: '#f3f4f6',
+  axis: '#9ca3af',
+} as const;
+
+const METRIC_PALETTE = ['#f59e0b', '#0ea5e9', '#10b981', '#8b5cf6', '#f43f5e', '#14b8a6', '#f97316', '#6366f1'];
+
+type TooltipPayloadItem = {
+  name?: string;
+  value?: number | string;
+  color?: string;
+  dataKey?: string | number;
+  payload?: Record<string, unknown>;
+};
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+  formatValue,
+}: {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string | number;
+  formatValue?: (value: number, name: string) => string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg">
+      {label != null && label !== '' ? <p className="mb-1.5 text-xs font-semibold text-gray-700">{label}</p> : null}
+      <div className="space-y-1">
+        {payload.map((entry) => {
+          const name = String(entry.name ?? entry.dataKey ?? '');
+          const raw = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? 0);
+          return (
+            <div key={name} className="flex items-center gap-2 text-xs text-gray-600">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: entry.color }} />
+              <span className="text-gray-500">{name}</span>
+              <span className="ml-auto font-semibold tabular-nums text-gray-900">
+                {formatValue ? formatValue(raw, name) : raw.toLocaleString('en-IN')}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChartEmpty({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-[180px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
+      {children}
+    </div>
+  );
+}
+
+const axisTick = { fill: COLORS.axis, fontSize: 10 } as const;
+
+/** Single-series revenue bars — used on the main dashboard (last 7 days). */
+export function RevenueChart({ data }: { data: { date: string; revenue: number; orders: number }[] }) {
+  if (data.length === 0) {
+    return <ChartEmpty>No revenue in this period</ChartEmpty>;
+  }
+
+  const rows = data.map((day) => {
+    const dateObj = new Date(day.date);
+    return {
+      ...day,
+      label: dateObj.toLocaleDateString('en-IN', { weekday: 'short' }),
+    };
+  });
+
+  return (
+    <div className="h-44 w-full min-w-0">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rows} margin={{ top: 8, right: 4, left: 0, bottom: 0 }} barCategoryGap="28%">
+          <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
+          <XAxis dataKey="label" tick={axisTick} axisLine={false} tickLine={false} interval={0} />
+          <YAxis
+            tick={{ fill: COLORS.axis, fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            width={44}
+            tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
+          />
+          <Tooltip
+            cursor={{ fill: 'rgba(245, 158, 11, 0.08)' }}
+            content={
+              <ChartTooltip
+                formatValue={(value, name) => (name === 'Orders' ? String(value) : fmtInr(value))}
+              />
+            }
+          />
+          <Bar dataKey="revenue" name="Revenue" fill={COLORS.amber} radius={[6, 6, 0, 0]} maxBarSize={40} />
+          <Bar dataKey="orders" name="Orders" fill={COLORS.sky} radius={[6, 6, 0, 0]} maxBarSize={40} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
 export function SignupTrendChart({ data }: { data: TrendPoint[] }) {
   if (data.length === 0) {
-    return (
-      <div className="flex min-h-[140px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
-        No signup data for this period
-      </div>
-    );
+    return <ChartEmpty>No signup data for this period</ChartEmpty>;
   }
 
   const totalSignups = data.reduce((sum, point) => sum + point.orders, 0);
@@ -48,17 +164,9 @@ export function SignupTrendChart({ data }: { data: TrendPoint[] }) {
           <p className="mt-2 text-sm font-medium text-gray-700">No new signups in the last 30 days</p>
           <p className="mt-1 text-xs text-gray-500">The chart will populate when customers register.</p>
         </div>
-        <div className="mt-2 flex justify-between gap-1 border-t border-gray-100 pt-3 text-[10px] text-gray-400">
-          <span>{data[0]?.label}</span>
-          <span>{data[Math.floor(data.length / 2)]?.label}</span>
-          <span>{data[data.length - 1]?.label}</span>
-        </div>
       </div>
     );
   }
-
-  const maxSignups = Math.max(peakSignups, 1);
-  const useHorizontalScroll = data.length > 14;
 
   return (
     <div className="space-y-4 rounded-lg border border-gray-100 bg-gradient-to-b from-emerald-50/40 to-white p-4">
@@ -70,7 +178,9 @@ export function SignupTrendChart({ data }: { data: TrendPoint[] }) {
         <div className="rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-gray-100">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Peak day</p>
           <p className="mt-1 text-sm font-bold text-gray-900">{peakDay?.label ?? '—'}</p>
-          <p className="text-xs tabular-nums text-emerald-700">{peakSignups} signup{peakSignups === 1 ? '' : 's'}</p>
+          <p className="text-xs tabular-nums text-emerald-700">
+            {peakSignups} signup{peakSignups === 1 ? '' : 's'}
+          </p>
         </div>
         <div className="rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-gray-100">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Active days</p>
@@ -78,46 +188,44 @@ export function SignupTrendChart({ data }: { data: TrendPoint[] }) {
         </div>
       </div>
 
-      <div className={useHorizontalScroll ? '-mx-1 overflow-x-auto pb-1 [scrollbar-width:thin]' : ''}>
-        <div
-          className={`flex items-end gap-1.5 sm:gap-2 ${useHorizontalScroll ? 'px-1' : 'w-full'}`}
-          style={
-            useHorizontalScroll
-              ? { minWidth: '100%', width: `${Math.max(data.length * 44, 320)}px` }
-              : undefined
-          }
-        >
-          {data.map((point) => {
-            const barHeight = Math.max(Math.round((point.orders / maxSignups) * CHART_HEIGHT), point.orders > 0 ? 10 : 4);
-            return (
-              <div
-                key={point.date}
-                className={`flex min-w-0 flex-col items-center justify-end gap-1 ${useHorizontalScroll ? 'shrink-0' : 'flex-1'}`}
-                style={useHorizontalScroll ? { width: 40 } : undefined}
-              >
-                <span className="h-4 text-[10px] font-semibold tabular-nums text-emerald-700">
-                  {point.orders > 0 ? point.orders : ''}
-                </span>
-                <div
-                  className="flex w-full items-end justify-center rounded-t-md bg-emerald-100/80"
-                  style={{ height: CHART_HEIGHT }}
-                >
-                  <div
-                    className="w-[72%] rounded-t-md bg-emerald-500 transition-colors hover:bg-emerald-600"
-                    style={{ height: barHeight }}
-                    title={`${point.label}: ${point.orders} signup(s)`}
-                  />
-                </div>
-                <span
-                  className="max-w-full truncate text-center text-[9px] leading-tight text-gray-500 sm:text-[10px]"
-                  title={point.label}
-                >
-                  {point.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+      <div className="h-52 w-full min-w-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="signupFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COLORS.emerald} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={COLORS.emerald} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
+            <XAxis
+              dataKey="label"
+              tick={axisTick}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={28}
+            />
+            <YAxis
+              allowDecimals={false}
+              tick={{ fill: COLORS.axis, fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={28}
+            />
+            <Tooltip content={<ChartTooltip />} cursor={{ stroke: COLORS.emeraldSoft, strokeWidth: 1 }} />
+            <Area
+              type="monotone"
+              dataKey="orders"
+              name="Signups"
+              stroke={COLORS.emerald}
+              strokeWidth={2.5}
+              fill="url(#signupFill)"
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0, fill: COLORS.emerald }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       <p className="text-xs text-gray-500">
@@ -132,66 +240,94 @@ export function SignupTrendChart({ data }: { data: TrendPoint[] }) {
 
 export function RevenueTrendChart({ data }: { data: TrendPoint[] }) {
   if (data.length === 0) {
-    return (
-      <div className="flex min-h-40 items-center justify-center rounded-lg bg-gray-50 text-sm text-gray-400">
-        No orders in this period
-      </div>
-    );
+    return <ChartEmpty>No orders in this period</ChartEmpty>;
   }
 
-  const maxRevenue = Math.max(...data.map((point) => point.capturedRevenue ?? point.revenue), 1);
-  const maxOrders = Math.max(...data.map((point) => point.orders), 1);
-  const barWidth = Math.max(44, Math.min(72, Math.floor(640 / Math.max(data.length, 1))));
+  const rows = data.map((point) => ({
+    ...point,
+    revenueValue: point.capturedRevenue ?? point.revenue,
+  }));
 
   return (
     <div className="min-w-0 space-y-3">
-      <div className="min-w-0 max-w-full overflow-x-auto pb-1 [scrollbar-width:thin]">
-        <div
-          className="flex items-end gap-2 px-1"
-          style={{ minWidth: '100%', width: `${Math.max(data.length * (barWidth + 8), 280)}px`, height: CHART_HEIGHT + 40 }}
-        >
-          {data.map((point) => {
-            const revenueHeight = Math.max(((point.capturedRevenue ?? point.revenue) / maxRevenue) * CHART_HEIGHT, 4);
-            const orderHeight = Math.max((point.orders / maxOrders) * CHART_HEIGHT, 4);
-
-            return (
-              <div
-                key={point.date}
-                className="flex shrink-0 flex-col items-center justify-end gap-1.5"
-                style={{ width: barWidth }}
-              >
-                <span className="text-[10px] font-semibold tabular-nums text-gray-500">
-                  {point.orders > 0 ? point.orders : ''}
-                </span>
-                <div className="flex w-full items-end justify-center gap-1" style={{ height: CHART_HEIGHT }}>
-                  <div
-                    className="w-[46%] rounded-t-md bg-amber-400 transition-colors hover:bg-amber-500"
-                    style={{ height: revenueHeight }}
-                    title={`${point.label}: ${fmtInr(point.capturedRevenue ?? point.revenue)} revenue`}
-                  />
-                  <div
-                    className="w-[46%] rounded-t-md bg-sky-300 transition-colors hover:bg-sky-400"
-                    style={{ height: orderHeight }}
-                    title={`${point.label}: ${point.orders} orders`}
-                  />
-                </div>
-                <span className="max-w-full truncate text-center text-[10px] leading-tight text-gray-500" title={point.label}>
-                  {point.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
-          Captured revenue
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-sky-300" />
-          Order volume
-        </span>
+      <div className="h-56 w-full min-w-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COLORS.amber} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={COLORS.amber} stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="ordersFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COLORS.sky} stopOpacity={0.25} />
+                <stop offset="100%" stopColor={COLORS.sky} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke={COLORS.grid} strokeDasharray="3 3" />
+            <XAxis
+              dataKey="label"
+              tick={axisTick}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={24}
+            />
+            <YAxis
+              yAxisId="revenue"
+              tick={{ fill: COLORS.axis, fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={48}
+              tickFormatter={(v: number) => fmtInrCompact(v).replace('₹', '')}
+            />
+            <YAxis
+              yAxisId="orders"
+              orientation="right"
+              allowDecimals={false}
+              tick={{ fill: COLORS.axis, fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={28}
+            />
+            <Tooltip
+              content={
+                <ChartTooltip
+                  formatValue={(value, name) => (name === 'Order volume' ? String(value) : fmtInr(value))}
+                />
+              }
+              cursor={{ stroke: COLORS.amberSoft, strokeWidth: 1 }}
+            />
+            <Legend
+              verticalAlign="bottom"
+              height={28}
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontSize: 12, color: '#6b7280', paddingTop: 4 }}
+            />
+            <Area
+              yAxisId="revenue"
+              type="monotone"
+              dataKey="revenueValue"
+              name="Captured revenue"
+              stroke={COLORS.amber}
+              strokeWidth={2.5}
+              fill="url(#revenueFill)"
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0, fill: COLORS.amber }}
+            />
+            <Area
+              yAxisId="orders"
+              type="monotone"
+              dataKey="orders"
+              name="Order volume"
+              stroke={COLORS.sky}
+              strokeWidth={2}
+              fill="url(#ordersFill)"
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0, fill: COLORS.sky }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -212,7 +348,7 @@ export function MetricBars({
   valueSuffix?: string;
   embedded?: boolean;
 }) {
-  const max = Math.max(...items.map((item) => item.value), 1);
+  const chartHeight = Math.max(items.length * 36, 120);
 
   return (
     <div className={embedded ? '' : 'rounded-xl border border-gray-200 bg-white p-5 shadow-sm'}>
@@ -223,26 +359,55 @@ export function MetricBars({
       {items.length === 0 ? (
         <p className="rounded-lg bg-gray-50 px-3 py-6 text-center text-sm text-gray-400">{emptyLabel}</p>
       ) : (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const width = Math.max((item.value / max) * 100, 6);
-            const metaText = typeof item.meta === 'number' ? fmtInr(item.meta) : item.meta;
-            return (
-              <div key={item.label}>
-                <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate font-medium text-gray-700">{item.label}</span>
-                  <span className="shrink-0 font-bold tabular-nums text-gray-900">
-                    {item.value.toLocaleString('en-IN')}
-                    {valueSuffix}
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${width}%` }} />
-                </div>
-                {metaText ? <p className="mt-1 text-xs text-gray-400">{metaText} total</p> : null}
-              </div>
-            );
-          })}
+        <div className="w-full min-w-0" style={{ height: chartHeight }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={items}
+              layout="vertical"
+              margin={{ top: 0, right: 48, left: 0, bottom: 0 }}
+              barCategoryGap="28%"
+            >
+              <CartesianGrid horizontal={false} stroke={COLORS.grid} strokeDasharray="3 3" />
+              <XAxis type="number" hide />
+              <YAxis
+                type="category"
+                dataKey="label"
+                width={110}
+                tick={{ fill: '#4b5563', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(245, 158, 11, 0.06)' }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const row = payload[0]?.payload as { label: string; value: number; meta?: number | string };
+                  const metaText = typeof row.meta === 'number' ? fmtInr(row.meta) : row.meta;
+                  return (
+                    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg">
+                      <p className="text-xs font-semibold text-gray-700">{row.label}</p>
+                      <p className="mt-1 text-xs tabular-nums text-gray-600">
+                        {row.value.toLocaleString('en-IN')}
+                        {valueSuffix}
+                      </p>
+                      {metaText ? <p className="mt-0.5 text-[11px] text-gray-400">{metaText} total</p> : null}
+                    </div>
+                  );
+                }}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={18} background={{ fill: '#f3f4f6' }}>
+                {items.map((_, index) => (
+                  <Cell key={items[index].label} fill={METRIC_PALETTE[index % METRIC_PALETTE.length]} />
+                ))}
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  formatter={(v) => `${Number(v).toLocaleString('en-IN')}${valueSuffix}`}
+                  style={{ fill: '#111827', fontSize: 11, fontWeight: 600 }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>

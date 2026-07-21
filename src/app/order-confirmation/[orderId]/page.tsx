@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Metadata } from 'next';
 import { OrderConfirmationClient } from './OrderConfirmationClient';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,7 +92,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
       order={{
         id: order.id,
         order_number: order.order_number,
-        items: order.items as Array<{
+        items: ((order.items as Array<{
           name: string;
           quantity: number;
           unit_price: number;
@@ -102,7 +103,13 @@ export default async function OrderConfirmationPage({ params }: Props) {
           configuration_summary?: string;
           configuration_snapshot?: unknown;
           delivery_eta_label?: string;
-        }>,
+        }>) ?? []).map((item) => ({
+          ...item,
+          name: formatProductDisplayName(item.name),
+          configuration_summary: item.configuration_summary
+            ? formatProductDisplayName(item.configuration_summary)
+            : item.configuration_summary,
+        })),
         subtotal: order.subtotal,
         jewelry_charges: order.jewelry_charges ?? 0,
         metal_charges: order.metal_charges ?? 0,

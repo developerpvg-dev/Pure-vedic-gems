@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { productHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export const revalidate = 3600;
 
@@ -44,12 +45,13 @@ function renderItem(product: FeedProduct) {
   const image = getImage(product);
   const availability = product.in_stock && product.availability_status !== 'sold' ? 'in stock' : 'out of stock';
   const price = `${product.price ?? 0} ${product.currency || 'INR'}`;
+  const title = formatProductDisplayName(product.name);
 
   return `
     <item>
       <g:id>${escapeXml(product.sku || product.id)}</g:id>
-      <g:title>${escapeXml(product.name)}</g:title>
-      <g:description>${escapeXml(product.short_desc || `${product.name} from PureVedicGems.`)}</g:description>
+      <g:title>${escapeXml(title)}</g:title>
+      <g:description>${escapeXml(product.short_desc || `${title} from PureVedicGems.`)}</g:description>
       <g:link>${escapeXml(href)}</g:link>
       ${image ? `<g:image_link>${escapeXml(absoluteUrl(image))}</g:image_link>` : ''}
       <g:availability>${availability}</g:availability>

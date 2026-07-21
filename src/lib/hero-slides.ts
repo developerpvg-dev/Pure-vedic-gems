@@ -15,6 +15,8 @@ export type HeroSlide = {
   desktopImage: string;
   mobileImage: string;
   alt: string;
+  /** Optional click-through: `/shop/...` or absolute https URL. */
+  linkUrl: string | null;
   sortOrder: number;
 };
 
@@ -25,6 +27,7 @@ export const FALLBACK_HERO_SLIDES: HeroSlide[] = [
     desktopImage: '/home/hero/pvgheropc1.webp',
     mobileImage: '/home/hero/pvgherobg1.webp',
     alt: 'Find Your Lucky Gem - Pure Vedic Gems',
+    linkUrl: null,
     sortOrder: 10,
   },
   {
@@ -33,6 +36,7 @@ export const FALLBACK_HERO_SLIDES: HeroSlide[] = [
     desktopImage: '/home/hero/pvgheropc2.webp',
     mobileImage: '/home/hero/pvgherobg2.webp',
     alt: 'Create Your Perfect Gemstone Jewellery - Pure Vedic Gems',
+    linkUrl: null,
     sortOrder: 20,
   },
   {
@@ -41,6 +45,7 @@ export const FALLBACK_HERO_SLIDES: HeroSlide[] = [
     desktopImage: '/home/hero/pvgheropc3.webp',
     mobileImage: '/home/hero/pvgherobg3.webp',
     alt: 'Swift Results & Blessed Life - Pure Vedic Gems',
+    linkUrl: null,
     sortOrder: 30,
   },
 ];
@@ -51,6 +56,7 @@ type HeroSlideRow = {
   desktop_image_url: string;
   mobile_image_url: string;
   alt_text: string;
+  link_url: string | null;
   sort_order: number;
 };
 
@@ -61,6 +67,7 @@ function mapRow(row: HeroSlideRow): HeroSlide {
     desktopImage: row.desktop_image_url,
     mobileImage: row.mobile_image_url,
     alt: row.alt_text,
+    linkUrl: row.link_url?.trim() || null,
     sortOrder: row.sort_order,
   };
 }
@@ -70,7 +77,7 @@ export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('hero_slides')
-      .select('id, slug, desktop_image_url, mobile_image_url, alt_text, sort_order')
+      .select('id, slug, desktop_image_url, mobile_image_url, alt_text, link_url, sort_order')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });

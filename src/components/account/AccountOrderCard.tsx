@@ -14,6 +14,7 @@ import {
 import {
   ORDER_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
+  isCustomerCancellable,
   type OrderStatus,
   type PaymentStatus,
 } from '@/lib/constants/order-status';
@@ -68,6 +69,8 @@ export type AccountOrderCardData = {
   return_eligible?: boolean;
   return_message?: string;
   return_reason?: string | null;
+  receipt_confirmed?: boolean;
+  receipt_ok?: boolean | null;
 };
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
@@ -146,8 +149,6 @@ function PriceRow({ label, amount, highlight }: { label: string; amount: number;
   );
 }
 
-const CUSTOMER_CANCELLABLE = new Set(['pending_payment', 'placed', 'confirmed']);
-
 export function AccountOrderCard({
   order,
   defaultDetailsOpen = false,
@@ -166,15 +167,23 @@ export function AccountOrderCard({
   const [cancelError, setCancelError] = useState('');
   const [returnOpen, setReturnOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('');
+  const [returnImages, setReturnImages] = useState<string[]>([]);
+  const [uploadingReturnImage, setUploadingReturnImage] = useState(false);
   const [returning, setReturning] = useState(false);
   const [returnError, setReturnError] = useState('');
+  const [receiptConfirmed, setReceiptConfirmed] = useState(Boolean(order.receipt_confirmed));
+  const [receiptOk, setReceiptOk] = useState<boolean | null>(
+    order.receipt_ok == null ? null : Boolean(order.receipt_ok),
+  );
+  const [confirmingReceipt, setConfirmingReceipt] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
   const statusInfo = STATUS_BADGE[status] ?? {
     label: ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replace(/_/g, ' '),
     bg: '#faf8f4',
     text: '#6b5b4e',
   };
   const showJourney = status !== 'cancelled' && status !== 'refunded';
-  const canCancel = allowCancel && CUSTOMER_CANCELLABLE.has(status);
+  const canCancel = allowCancel && isCustomerCancellable(status, order.created_at);
   const canReturn = Boolean(order.return_eligible) && returnStatus === 'none';
   const canReview = isReviewEligibleStatus(status);
   const returnLabel =
@@ -211,9 +220,64 @@ export function AccountOrderCard({
     }
   }
 
+  async function handleConfirmReceipt(ok: boolean) {
+    setConfirmingReceipt(true);
+    setReceiptError('');
+    try {
+      const res = await fetch(`/api/orders/${order.id}/receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ok }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setReceiptError(data.error || 'Could not save confirmation');
+        return;
+      }
+      setReceiptConfirmed(true);
+      setReceiptOk(Boolean(data.receipt_ok ?? ok));
+      if (!ok) {
+        setDetailsOpen(true);
+        setReturnOpen(true);
+      }
+    } catch {
+      setReceiptError('Network error — please try again');
+    } finally {
+      setConfirmingReceipt(false);
+    }
+  }
+
+  async function handleUploadReturnImage(file: File) {
+    if (returnImages.length >= 6) {
+      setReturnError('You can attach up to 6 photos');
+      return;
+    }
+    setUploadingReturnImage(true);
+    setReturnError('');
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch('/api/reviews/upload', { method: 'POST', body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        setReturnError(data.error || 'Image upload failed');
+        return;
+      }
+      setReturnImages((current) => [...current, data.url as string]);
+    } catch {
+      setReturnError('Network error — please try again');
+    } finally {
+      setUploadingReturnImage(false);
+    }
+  }
+
   async function handleRequestReturn() {
     if (!returnReason.trim()) {
       setReturnError('Please share a reason for the return');
+      return;
+    }
+    if (!returnImages.length) {
+      setReturnError('Upload at least one clear photo of the product');
       return;
     }
     setReturning(true);
@@ -222,7 +286,7 @@ export function AccountOrderCard({
       const res = await fetch(`/api/orders/${order.id}/return`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: returnReason.trim() }),
+        body: JSON.stringify({ reason: returnReason.trim(), image_urls: returnImages }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -277,6 +341,44 @@ export function AccountOrderCard({
       {status === 'cancelled' ? (
         <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-900 md:px-6">
           This order was cancelled. If a payment was made, our team will process the refund.
+        </div>
+      ) : null}
+
+      {status === 'delivered' && !receiptConfirmed ? (
+        <div className="border-b border-[var(--pvg-border)] bg-emerald-50/80 px-5 py-4 md:px-6">
+          <p className="text-sm font-semibold text-[var(--pvg-primary)]">
+            Was the product received properly?
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--pvg-muted)]">
+            Confirm delivery so we know everything arrived as expected. If something is wrong, you can
+            request a return with photos.
+          </p>
+          {receiptError ? <p className="mt-2 text-xs text-red-700">{receiptError}</p> : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void handleConfirmReceipt(true)}
+              disabled={confirmingReceipt}
+              className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'var(--pvg-primary)' }}
+            >
+              {confirmingReceipt ? 'Saving…' : 'Yes, received properly'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmReceipt(false)}
+              disabled={confirmingReceipt}
+              className="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-50 disabled:opacity-50"
+            >
+              No — request return / refund
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {status === 'delivered' && receiptConfirmed && receiptOk === true ? (
+        <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-3 text-sm text-emerald-900 md:px-6">
+          Thanks — you confirmed this order was received properly.
         </div>
       ) : null}
 
@@ -505,6 +607,9 @@ export function AccountOrderCard({
                       {submittedReturnReason ? (
                         <span className="mt-1 block">Your reason: {submittedReturnReason}</span>
                       ) : null}
+                      <span className="mt-1 block">
+                        Refund status updates only after our team verifies your product photos.
+                      </span>
                     </p>
                   ) : canReturn ? (
                     !returnOpen ? (
@@ -526,15 +631,58 @@ export function AccountOrderCard({
                     ) : (
                       <>
                         <p className="mt-1 text-xs leading-relaxed text-[var(--pvg-muted)]">
-                          Tell us why you want to return this order.
+                          Share a reason and upload clear photos of the product. Our team verifies the
+                          images before any refund is processed.
                         </p>
                         <textarea
                           value={returnReason}
                           onChange={(e) => setReturnReason(e.target.value)}
                           rows={3}
                           className="mt-2 w-full rounded-lg border border-[var(--pvg-border)] bg-brand-bg-alt px-3 py-2 text-sm outline-none focus:border-[var(--pvg-accent)]"
-                          placeholder="Reason for return"
+                          placeholder="Reason for return / refund"
                         />
+                        <div className="mt-3">
+                          <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--pvg-muted)]">
+                            Product photos *
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="mt-1.5 w-full text-xs text-[var(--pvg-muted)]"
+                            disabled={uploadingReturnImage || returning || returnImages.length >= 6}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = '';
+                              if (file) void handleUploadReturnImage(file);
+                            }}
+                          />
+                          {uploadingReturnImage ? (
+                            <p className="mt-1 text-xs text-[var(--pvg-muted)]">Uploading…</p>
+                          ) : null}
+                          {returnImages.length ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {returnImages.map((url) => (
+                                <div
+                                  key={url}
+                                  className="relative h-16 w-16 overflow-hidden rounded-lg border border-[var(--pvg-border)]"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt="Return evidence" className="h-full w-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReturnImages((current) => current.filter((item) => item !== url))
+                                    }
+                                    className="absolute right-0.5 top-0.5 rounded bg-black/60 px-1 text-[10px] text-white"
+                                    aria-label="Remove photo"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                         {returnError ? (
                           <p className="mt-2 text-xs text-red-700">{returnError}</p>
                         ) : null}
@@ -542,7 +690,7 @@ export function AccountOrderCard({
                           <button
                             type="button"
                             onClick={() => void handleRequestReturn()}
-                            disabled={returning}
+                            disabled={returning || uploadingReturnImage}
                             className="inline-flex items-center justify-center rounded-lg bg-amber-700 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-amber-800 disabled:opacity-50"
                           >
                             {returning ? 'Submitting…' : 'Submit return request'}

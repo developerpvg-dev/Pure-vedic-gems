@@ -28,6 +28,7 @@ const baseDesignSchema = z.object({
     .nullable()
     .optional(),
   image_url: z.string().max(2000).nullable().optional(),
+  video_url: z.string().max(2000).nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
   sort_order: z.number().int().min(0).max(9999).default(0),
   is_active: z.boolean().default(true),
@@ -154,6 +155,7 @@ export function normalizeDesignPayload(input: JewelryDesignFormInput) {
     product_scope: input.product_scope,
     rudraksha_category: input.product_scope === 'rudraksha' ? input.rudraksha_category ?? null : null,
     image_url: input.image_url?.trim() || null,
+    video_url: input.video_url?.trim() || null,
     description: mergedDescription,
     making_charges: encoded.making_charges,
     estimated_metal_weight: encoded.estimated_metal_weight,

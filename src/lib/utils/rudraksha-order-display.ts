@@ -8,6 +8,7 @@ import {
   type ConfigurationSnapshot,
   type RudrakshaBeadSnapshot,
 } from '@/lib/utils/configuration-snapshot';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export type { RudrakshaBeadSnapshot };
 
@@ -50,7 +51,7 @@ export function buildRudrakshaBeadSnapshots(
     {
       role: 'primary',
       id: primary.id,
-      name: primary.name,
+      name: formatProductDisplayName(primary.name),
       sku: primary.sku,
       tag_number: primary.tag_number,
       slug: primary.slug,
@@ -67,7 +68,7 @@ export function buildRudrakshaBeadSnapshots(
     beads.push({
       role: 'combo',
       id: combo.id,
-      name: combo.name,
+      name: formatProductDisplayName(combo.name),
       sku: combo.sku,
       tag_number: combo.tag_number,
       slug: combo.slug,
@@ -89,7 +90,10 @@ export function parseRudrakshaBeadsFromSnapshot(
   if (!parsed) return [];
 
   if (parsed.selections?.rudraksha_beads?.length) {
-    return parsed.selections.rudraksha_beads;
+    return parsed.selections.rudraksha_beads.map((bead) => ({
+      ...bead,
+      name: formatProductDisplayName(bead.name),
+    }));
   }
 
   const beads: RudrakshaBeadSnapshot[] = [];
@@ -98,7 +102,7 @@ export function parseRudrakshaBeadsFromSnapshot(
     beads.push({
       role: 'primary',
       id: product.id,
-      name: product.name,
+      name: formatProductDisplayName(product.name),
       sku: product.sku ?? null,
       tag_number: product.tag_number ?? null,
       sub_category: product.sub_category ?? null,
@@ -214,7 +218,7 @@ export function getConfigurationDetailChips(
 ): string[] {
   const parsed = parseConfigurationSnapshot(snapshot);
   if (!parsed && summary) {
-    return summary.split(' · ').filter(Boolean);
+    return formatProductDisplayName(summary).split(' · ').filter(Boolean);
   }
   if (!parsed) return [];
 
@@ -225,7 +229,7 @@ export function getConfigurationDetailChips(
     const beads = parseRudrakshaBeadsFromSnapshot(parsed);
     if (beads.length <= 1) {
       const bead = beads[0];
-      if (bead) chips.push(`${bead.mukhi_label} — ${bead.name}`);
+      if (bead) chips.push(`${bead.mukhi_label} — ${formatProductDisplayName(bead.name)}`);
     } else {
       chips.push(`${beads.length} beads`);
       for (const bead of beads) {
@@ -233,7 +237,7 @@ export function getConfigurationDetailChips(
       }
     }
   } else if (parsed.product?.name) {
-    chips.push(parsed.product.name);
+    chips.push(formatProductDisplayName(parsed.product.name));
   }
 
   if (selections?.setting_type && selections.setting_type !== 'loose') {
@@ -251,7 +255,11 @@ export function getConfigurationDetailChips(
   if (selections?.certification_skipped) chips.push('No certification');
   if (selections?.energization?.name) chips.push(selections.energization.name);
 
-  return chips.length > 0 ? chips : summary ? summary.split(' · ').filter(Boolean) : [];
+  return chips.length > 0
+    ? chips
+    : summary
+      ? formatProductDisplayName(summary).split(' · ').filter(Boolean)
+      : [];
 }
 
 export function formatConfigurationDetailText(
@@ -265,7 +273,7 @@ export function formatConfigurationDetailText(
     for (const bead of sections.beads) {
       const tag = bead.tag_number ? ` · Tag ${bead.tag_number}` : bead.sku ? ` · SKU ${bead.sku}` : '';
       lines.push(
-        `${bead.role === 'primary' ? 'Primary' : 'Combo'}: ${bead.mukhi_label} — ${bead.name}${tag}`
+        `${bead.role === 'primary' ? 'Primary' : 'Combo'}: ${bead.mukhi_label} — ${formatProductDisplayName(bead.name)}${tag}`
       );
     }
   }
@@ -283,5 +291,6 @@ export function formatConfigurationDetailText(
   if (sections.deliveryEta) lines.push(`Delivery: ${sections.deliveryEta}`);
 
   if (lines.length > 0) return lines.join(' · ');
-  return summary ?? sections.summary ?? null;
+  const fallback = summary ?? sections.summary ?? null;
+  return fallback ? formatProductDisplayName(fallback) : null;
 }

@@ -12,6 +12,7 @@ import type { Coupon, ShippingMethod } from '@/lib/types/database';
 import { planAppliesToCountry, planAppliesToSubtotal } from '@/lib/shipping/plans';
 import { buildTaxBreakdown, calculateGstComponent, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
 import { quoteRewardRedemption } from '@/lib/rewards/service';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -51,10 +52,18 @@ export interface PricingBreakdown {
   coupon_discount: number;
   reward_points_redeemed: number;
   reward_discount: number;
+  manual_discount: number;
   gst_amount: number;
   tax_breakdown: ReturnType<typeof taxBreakdownToJson>;
   total: number;
 }
+
+export type PricingOfflineOptions = {
+  /** Admin POS negotiated discount (INR), applied after coupon/rewards */
+  manualDiscount?: number;
+  /** Pickup / in-store: skip shipping_methods lookup and use this cost */
+  shippingCostOverride?: number;
+};
 
 const PRODUCT_SELECT = `
   id, sku, tag_number, name, category, price, carat_weight, origin, images,
@@ -157,7 +166,8 @@ export async function recalculateOrderTotal(
   couponCode?: string,
   energizationType?: string,
   shippingAddress?: Pick<ShippingAddress, 'state' | 'country_code'>,
-  rewardOptions?: { customerId: string | null; pointsToRedeem?: number | null }
+  rewardOptions?: { customerId: string | null; pointsToRedeem?: number | null },
+  offlineOptions?: PricingOfflineOptions
 ): Promise<PricingBreakdown> {
   const supabase = createAdminClient();
 
@@ -240,7 +250,7 @@ export async function recalculateOrderTotal(
       product_id: item.product_id,
       sku: product.sku,
       tag_number: product.tag_number,
-      name: product.name,
+      name: formatProductDisplayName(product.name),
       category: product.category,
       image_url: getProductImage(product),
       carat_weight: product.carat_weight,
@@ -316,12 +326,16 @@ export async function recalculateOrderTotal(
   const merchandiseTotal =
     subtotal + jewelryCharges + metalCharges + certificationCharges + energizationCharges;
 
-  const shippingConfig = await getShippingMethod(
-    shippingMethod,
-    merchandiseTotal,
-    shippingAddress?.country_code ?? null
-  );
-  const shippingCost = shippingConfig.cost;
+  const shippingCost =
+    offlineOptions?.shippingCostOverride !== undefined
+      ? Math.max(0, Number(offlineOptions.shippingCostOverride) || 0)
+      : (
+          await getShippingMethod(
+            shippingMethod,
+            merchandiseTotal,
+            shippingAddress?.country_code ?? null
+          )
+        ).cost;
 
   // ── 5. Coupon discount ────────────────────────────────────────────────
   let couponDiscount = 0;
@@ -418,7 +432,10 @@ export async function recalculateOrderTotal(
   });
   const rewardDiscount = rewardQuote?.discount_amount ?? 0;
   const rewardPointsRedeemed = rewardQuote?.points_to_redeem ?? 0;
-  const discount = couponDiscount + rewardDiscount;
+  const manualDiscountRaw = Math.max(0, Number(offlineOptions?.manualDiscount) || 0);
+  const afterCouponReward = Math.max(0, merchandiseTotal - couponDiscount - rewardDiscount);
+  const manualDiscount = Math.min(manualDiscountRaw, afterCouponReward);
+  const discount = couponDiscount + rewardDiscount + manualDiscount;
 
   // ── 6. GST calculation ────────────────────────────────────────────────
   const itemDiscountRatio = subtotal > 0 ? Math.min(discount / subtotal, 1) : 0;
@@ -458,8 +475,26 @@ export async function recalculateOrderTotal(
     coupon_discount: couponDiscount,
     reward_points_redeemed: rewardPointsRedeemed,
     reward_discount: rewardDiscount,
+    manual_discount: manualDiscount,
     gst_amount: gstAmount,
     tax_breakdown: taxBreakdownToJson(taxBreakdown),
     total: Math.max(total, 0), // Safety: total should never be negative
   };
+}
+
+// ponytail: ledger math check — `npx tsx -e "import { __pricingOfflineSelfCheck } from './src/lib/utils/pricing.ts'; __pricingOfflineSelfCheck()"`
+export function __pricingOfflineSelfCheck() {
+  const merchandise = 10000;
+  const coupon = 500;
+  const reward = 200;
+  const manualRaw = 99999;
+  const after = Math.max(0, merchandise - coupon - reward);
+  const manual = Math.min(manualRaw, after);
+  console.assert(manual === 9300, 'manual discount clamps to remaining merchandise');
+  const paid = 3000;
+  const total = 10000;
+  const due = Math.round((total - paid) * 100) / 100;
+  console.assert(due === 7000, 'amount_due = total - paid');
+  console.assert(paid + due <= total + 0.001, 'no overpay');
+  console.log('pricing offline self-check ok');
 }

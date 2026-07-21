@@ -441,7 +441,7 @@ export default function GemBrowser({
           <li className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-white/70 px-2 py-1 text-[11px]">
             <span className="min-w-0 text-primary">
               <span className="font-semibold text-accent">Primary · </span>
-              {rudrakshaSubcategoryLabel(selected.sub_category ?? '')} — {selected.name}
+              {rudrakshaSubcategoryLabel(selected.sub_category ?? '')} — {formatProductDisplayName(selected.name)}
             </span>
           </li>
           {comboProducts
@@ -453,7 +453,7 @@ export default function GemBrowser({
               >
                 <span className="min-w-0 text-primary">
                   <span className="font-semibold text-muted-foreground">Combo · </span>
-                  {rudrakshaSubcategoryLabel(item.sub_category ?? '')} — {item.name}
+                  {rudrakshaSubcategoryLabel(item.sub_category ?? '')} — {formatProductDisplayName(item.name)}
                 </span>
                 <button
                   type="button"
@@ -535,7 +535,7 @@ export default function GemBrowser({
                       {product.thumbnail_url || (product.images as string[] | null)?.[0] ? (
                         <Image
                           src={product.thumbnail_url || (product.images as string[])[0]}
-                          alt={product.name}
+                          alt={displayName}
                           fill
                           className="object-cover transition-transform duration-200 group-hover:scale-105"
                           sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 20vw"

@@ -37,6 +37,17 @@ type CurrencyContextValue = {
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
+/** Stable getServerSnapshot — inline object literals re-render forever. */
+const SERVER_CURRENCY_SNAPSHOT = {
+  enabled: false,
+  currency: 'INR',
+  rates: { INR: 1 },
+};
+
+function getServerCurrencySnapshot() {
+  return SERVER_CURRENCY_SNAPSHOT;
+}
+
 function ratesFromPayload(rows: Array<{ currency: string; rate: number; is_active?: boolean }>) {
   const rates: Record<string, number> = { INR: 1 };
   for (const row of rows) {
@@ -53,7 +64,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const snapshot = useSyncExternalStore(
     subscribeCurrencyDisplay,
     getCurrencyDisplayState,
-    () => ({ enabled: false, currency: 'INR', rates: { INR: 1 } })
+    getServerCurrencySnapshot
   );
 
   useEffect(() => {
@@ -133,7 +144,7 @@ export function useCurrency(): CurrencyContextValue {
   useSyncExternalStore(
     subscribeCurrencyDisplay,
     getCurrencyDisplayState,
-    () => ({ enabled: false, currency: 'INR', rates: { INR: 1 } })
+    getServerCurrencySnapshot
   );
 
   if (ctx) return ctx;
@@ -155,6 +166,6 @@ export function useCurrencySubscription() {
   return useSyncExternalStore(
     subscribeCurrencyDisplay,
     getCurrencyDisplayState,
-    () => ({ enabled: false, currency: 'INR', rates: { INR: 1 } })
+    getServerCurrencySnapshot
   );
 }

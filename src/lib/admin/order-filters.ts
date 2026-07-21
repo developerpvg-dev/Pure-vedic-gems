@@ -3,6 +3,9 @@ export const ORDER_STATUSES = [
   'placed',
   'confirmed',
   'processing',
+  'design_assigned',
+  'design_in_progress',
+  'design_completed',
   'jewelry_making',
   'certification',
   'energization',
@@ -18,6 +21,7 @@ export const PAYMENT_STATUSES = [
   'pending',
   'authorized',
   'captured',
+  'partial',
   'failed',
   'refunded',
   'amount_mismatch',
@@ -31,6 +35,7 @@ export type AdminOrderFilterState = {
   search: string;
   status: string;
   payment_status: string;
+  order_source: string;
   date_from: string;
   date_to: string;
   period: OrderPeriodPreset | '';
@@ -50,6 +55,7 @@ export const EMPTY_ADMIN_ORDER_FILTERS: AdminOrderFilterState = {
   search: '',
   status: '',
   payment_status: '',
+  order_source: '',
   date_from: '',
   date_to: '',
   period: '30d',
@@ -73,6 +79,7 @@ export type OrderAnalyticsRow = {
   payment_method: string | null;
   created_at: string;
   customer_id: string | null;
+  order_source?: string | null;
 };
 
 export function cleanOrderSearch(value: string) {
@@ -136,6 +143,7 @@ export function applyAdminOrderFilters(
     return_status?: string | null;
     invoice_status?: string | null;
     customer_type?: string | null;
+    order_source?: string | null;
     matchedProfileIds?: string[];
   }
 ): OrderQuery {
@@ -143,6 +151,7 @@ export function applyAdminOrderFilters(
 
   if (filters.status) nextQuery = nextQuery.eq('status', filters.status);
   if (filters.payment_status) nextQuery = nextQuery.eq('payment_status', filters.payment_status);
+  if (filters.order_source) nextQuery = nextQuery.eq('order_source', filters.order_source);
   if (filters.payment_method) nextQuery = nextQuery.eq('payment_method', filters.payment_method);
   if (filters.refund_status) nextQuery = nextQuery.eq('refund_status', filters.refund_status);
   if (filters.return_status) nextQuery = nextQuery.eq('return_status', filters.return_status);
@@ -186,6 +195,7 @@ export function adminOrderFiltersToParams(filters: AdminOrderFilterState, page: 
     ['search', filters.search],
     ['status', filters.status],
     ['payment_status', filters.payment_status],
+    ['order_source', filters.order_source],
     ['date_from', filters.date_from],
     ['date_to', filters.date_to],
     ['period', filters.period],
@@ -267,10 +277,19 @@ export function buildOrderTrendData(rows: OrderAnalyticsRow[], period: string) {
     }));
 }
 
-export function buildBreakdown(rows: OrderAnalyticsRow[], key: 'status' | 'payment_status' | 'payment_method') {
+export function buildBreakdown(
+  rows: OrderAnalyticsRow[],
+  key: 'status' | 'payment_status' | 'payment_method' | 'order_source',
+) {
   const counts = new Map<string, { count: number; total: number }>();
   for (const row of rows) {
-    const value = (key === 'payment_method' ? row.payment_method : row[key]) || 'unknown';
+    const raw =
+      key === 'order_source'
+        ? row.order_source || 'online'
+        : key === 'payment_method'
+          ? row.payment_method
+          : row[key];
+    const value = raw || 'unknown';
     const bucket = counts.get(value) ?? { count: 0, total: 0 };
     bucket.count += 1;
     bucket.total += row.total ?? 0;

@@ -1,4 +1,5 @@
 import type { CartItem } from '@/lib/types/cart';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export const CART_STORAGE_KEY = 'pvg_cart';
 export const GUEST_SESSION_KEY = 'pvg_guest_session_id';
@@ -54,7 +55,9 @@ export function readStoredCartItems(): CartItem[] {
     return saved
       .map((row) => {
         const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
-        return quantity > 0 ? { ...row, quantity } : null;
+        return quantity > 0
+          ? { ...row, quantity, name: formatProductDisplayName(row.name) }
+          : null;
       })
       .filter((row): row is CartItem => row != null);
   } catch {

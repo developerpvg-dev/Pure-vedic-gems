@@ -5,7 +5,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
 import { OrderActions } from '@/components/admin/OrderActions';
 import { OrderAssignDesigner } from '@/components/admin/OrderAssignDesigner';
+import { OrderPaymentLedger } from '@/components/admin/OrderPaymentLedger';
 import {
+  energizationFormFromOrderItems,
   mergeConfigurationDetails,
   type ConfigurationSnapshot,
 } from '@/lib/utils/configuration-snapshot';
@@ -16,10 +18,20 @@ import {
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { resolveOrderFulfillmentContext } from '@/lib/orders/fulfillment-profile';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
+import { collectOrderProductIds } from '@/lib/inventory/order-availability';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
-  User, FileText, ExternalLink, Settings,
+  User, FileText, ExternalLink, Settings, Printer,
 } from 'lucide-react';
+
+const AVAILABILITY_STYLE: Record<string, string> = {
+  reserved: 'bg-amber-100 text-amber-900',
+  sold: 'bg-emerald-100 text-emerald-900',
+  in_stock: 'bg-sky-100 text-sky-900',
+  out_of_stock: 'bg-stone-100 text-stone-700',
+  archived: 'bg-stone-200 text-stone-600',
+};
 
 function fmt(amount: number | null | undefined) {
   const n = amount ?? 0;
@@ -71,6 +83,7 @@ const PAYMENT_STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-900',
   completed: 'bg-emerald-50 text-emerald-800',
   captured: 'bg-emerald-50 text-emerald-800',
+  partial: 'bg-amber-50 text-amber-900',
   authorized: 'bg-sky-50 text-sky-800',
   failed: 'bg-red-50 text-red-800',
   refunded: 'bg-rose-50 text-rose-800',
@@ -199,6 +212,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     design_price?: number | null;
     design_due_at?: string | null;
     design_slip_notes?: string | null;
+    design_metal_estimate?: string | null;
     carrier?: string | null;
     delivery_status?: string | null;
     shipped_at?: string | null;
@@ -211,6 +225,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
     compliance_flags?: unknown;
     internal_notes?: string | null;
     admin_notes?: string | null;
+    commission_source?: string | null;
+    commission_name?: string | null;
+    commission_amount?: number | null;
   };
 
   let assignedDesignerName: string | null = orderExtras.designer_name ?? null;
@@ -231,7 +248,33 @@ export default async function OrderDetailPage({ params }: PageProps) {
     pincode?: string;
     country?: string;
   };
-  const items: OrderItemRecord[] = Array.isArray(o.items) ? o.items : [];
+  const items: OrderItemRecord[] = (Array.isArray(o.items) ? o.items : []).map((item) => ({
+    ...item,
+    name: formatProductDisplayName(item.name),
+    configuration_summary: item.configuration_summary
+      ? formatProductDisplayName(item.configuration_summary)
+      : item.configuration_summary,
+  }));
+  const productIds = collectOrderProductIds({
+    id: o.id,
+    order_number: o.order_number,
+    items,
+  });
+  const availabilityByProductId = new Map<string, string>();
+  if (productIds.length > 0) {
+    const { data: stockRows } = await supabase
+      .from('products')
+      .select('id, availability_status')
+      .in('id', productIds);
+    for (const row of stockRows ?? []) {
+      availabilityByProductId.set(
+        row.id,
+        String((row as { availability_status?: string | null }).availability_status ?? ''),
+      );
+    }
+  }
+  const ceremonyForm = energizationFormFromOrderItems(items);
+  const ceremonyDob = o.ceremony_dob || ceremonyForm?.dob || null;
   const fulfillmentContext = resolveOrderFulfillmentContext({
     items: items.map((item) => ({
       product_id: item.product_id,
@@ -302,23 +345,28 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   const slipItems = items.map((item) => {
     const cfg = item.configuration_id ? configMap.get(item.configuration_id) : null;
-    const snap = (item.configuration_snapshot ?? cfg?.configuration_snapshot) as
-      | { setting_type?: string; metal?: string; ring_size?: string; chain_length?: string }
-      | null;
-    const metalKey = cfg?.metal || snap?.metal || null;
-    const settingKey = cfg?.setting_type || snap?.setting_type || null;
+    const details = mergeConfigurationDetails({
+      snapshot: item.configuration_snapshot ?? cfg?.configuration_snapshot,
+      dbConfig: cfg,
+    });
+    const selections = details.selections;
+    const metalKey = selections?.metal || cfg?.metal || null;
+    const settingKey = selections?.setting_type || cfg?.setting_type || null;
     return {
       name: item.name,
       setting: settingKey
         ? SETTING_LABELS[settingKey] || settingKey.replace(/_/g, ' ')
         : null,
       metal: metalKey ? METAL_LABELS[metalKey] || metalKey.replace(/_/g, ' ') : null,
-      ring_size: cfg?.ring_size || snap?.ring_size || null,
-      chain_length: cfg?.chain_length || snap?.chain_length || null,
-      design_name: cfg?.jewelry_designs?.name || null,
-      summary: item.configuration_summary || null,
+      ring_size: selections?.ring_size || cfg?.ring_size || null,
+      chain_length: selections?.chain_length || cfg?.chain_length || null,
+      design_name: selections?.design?.name || cfg?.jewelry_designs?.name || null,
+      design_image_url:
+        cfg?.jewelry_designs?.image_url ||
+        selections?.custom_design_url ||
+        null,
+      summary: item.configuration_summary || details.summary || null,
       carat: item.carat_weight != null ? `${item.carat_weight} ct` : null,
-      sku: item.sku || item.tag_number || null,
     };
   });
 
@@ -371,6 +419,15 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
           <div className="flex flex-wrap items-center gap-2">
             <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                o.order_source === 'offline'
+                  ? 'bg-stone-800 text-white'
+                  : 'bg-sky-100 text-sky-800'
+              }`}
+            >
+              {o.order_source === 'offline' ? 'Offline' : 'Online'}
+            </span>
+            <span
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_STYLE[o.status] ?? 'bg-stone-100 text-stone-700'}`}
             >
               {cap(o.status) ?? o.status}
@@ -385,6 +442,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 Return: {cap(returnStatus)}
               </span>
             ) : null}
+            <Link
+              href={`/admin/orders/${o.id}/receipt`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
+            >
+              <Printer className="h-3 w-3" />
+              Receipt
+            </Link>
             {o.invoice_url ? (
               <a
                 href={o.invoice_url}
@@ -402,11 +466,15 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-4">
           <Field label="Total">{fmt(o.total)}</Field>
-          <Field label="Items">
-            {items.length} piece{items.length === 1 ? '' : 's'}
+          <Field label="Paid / Due">
+            {fmt(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0))}
+            {' / '}
+            {fmt(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total))}
           </Field>
           <Field label="Payment">{cap(o.payment_method) ?? '—'}</Field>
-          <Field label="Shipping">{cap(o.shipping_method) ?? 'Standard'}</Field>
+          <Field label="Fulfillment">
+            {cap(o.fulfillment_type) ?? cap(o.shipping_method) ?? 'Standard'}
+          </Field>
         </div>
       </header>
 
@@ -425,6 +493,14 @@ export default async function OrderDetailPage({ params }: PageProps) {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Main */}
         <div className="space-y-5">
+          <OrderPaymentLedger
+            orderId={o.id}
+            total={Number(o.total) || 0}
+            amountPaid={Number(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0)) || 0}
+            amountDue={Number(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total)) || 0}
+            paymentStatus={o.payment_status}
+          />
+
           <Panel title={`Items (${items.length})`} icon={Package}>
             {items.length === 0 ? (
               <p className="px-5 py-10 text-center text-sm text-stone-400">No items on this order</p>
@@ -482,6 +558,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 {item.category ? <span>{item.category}</span> : null}
                                 {item.carat_weight ? <span>{item.carat_weight} ct</span> : null}
                                 {item.origin ? <span>{item.origin}</span> : null}
+                                {item.product_id && availabilityByProductId.get(item.product_id) ? (
+                                  <span
+                                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                      AVAILABILITY_STYLE[availabilityByProductId.get(item.product_id)!] ??
+                                      'bg-stone-100 text-stone-700'
+                                    }`}
+                                  >
+                                    {cap(availabilityByProductId.get(item.product_id)) ??
+                                      availabilityByProductId.get(item.product_id)}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
                             <div className="shrink-0 text-right">
@@ -904,18 +991,28 @@ export default async function OrderDetailPage({ params }: PageProps) {
             <Panel title="Ceremony" icon={Zap}>
               <dl className="grid gap-3 px-5 py-4 sm:grid-cols-2">
                 <Field label="Type">{cap(o.energization_type) ?? 'Not specified'}</Field>
-                {o.ceremony_gotra ? <Field label="Gotra">{o.ceremony_gotra}</Field> : null}
-                {o.ceremony_dob ? (
+                {o.ceremony_gotra || ceremonyForm?.gotra ? (
+                  <Field label="Gotra">{o.ceremony_gotra || ceremonyForm?.gotra}</Field>
+                ) : null}
+                {ceremonyDob ? (
                   <Field label="Date of birth">
-                    {new Date(o.ceremony_dob).toLocaleDateString('en-IN', {
+                    {new Date(ceremonyDob).toLocaleDateString('en-IN', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
                   </Field>
                 ) : null}
-                {o.ceremony_rashi ? <Field label="Rashi">{o.ceremony_rashi}</Field> : null}
-                {o.record_ceremony ? (
+                {ceremonyForm?.birth_time ? (
+                  <Field label="Birth time">{ceremonyForm.birth_time}</Field>
+                ) : null}
+                {ceremonyForm?.birth_place ? (
+                  <Field label="Birth place">{ceremonyForm.birth_place}</Field>
+                ) : null}
+                {o.ceremony_rashi || ceremonyForm?.rashi ? (
+                  <Field label="Rashi">{o.ceremony_rashi || ceremonyForm?.rashi}</Field>
+                ) : null}
+                {o.record_ceremony || ceremonyForm?.record_ceremony ? (
                   <p className="sm:col-span-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
                     Ceremony video recording requested
                   </p>
@@ -937,10 +1034,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
             currentDesignPrice={orderExtras.design_price ?? null}
             currentDesignDueAt={orderExtras.design_due_at ?? null}
             currentDesignSlipNotes={orderExtras.design_slip_notes ?? null}
-            customerName={displayName}
-            customerPhone={displayPhone}
+            currentDesignMetalEstimate={orderExtras.design_metal_estimate ?? null}
             slipItems={slipItems}
-            orderTotal={o.total}
           />
 
           <OrderActions
@@ -957,6 +1052,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
             currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
             productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
+            orderSource={o.order_source ?? null}
             orderTotal={o.total}
             customerPhone={displayPhone}
             customerName={displayName}
@@ -973,6 +1069,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
             currentReturnStatus={orderExtras.return_status ?? 'none'}
             cancelReason={orderExtras.payment_failure_reason ?? null}
             complianceFlags={orderExtras.compliance_flags ?? null}
+            currentCommissionSource={orderExtras.commission_source ?? null}
+            currentCommissionName={orderExtras.commission_name ?? null}
+            currentCommissionAmount={orderExtras.commission_amount ?? null}
           />
         </aside>
       </div>

@@ -8,6 +8,7 @@ import { buildGemRecommendation } from '@/lib/utils/rashi-calculator';
 import { searchAgentKnowledge } from '@/lib/agent/knowledge';
 import { mergeSessionContext } from '@/lib/agent/session';
 import type { AgentLocale, AgentProductCard, AgentSessionContext } from '@/lib/agent/types';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 const PRODUCT_SELECT =
   'id, slug, name, hindi_name, category, sub_category, price, thumbnail_url, planet, in_stock, images';
@@ -18,7 +19,7 @@ function toProductCard(row: Record<string, unknown>): AgentProductCard {
   const slug = String(row.slug ?? '');
   return {
     id: String(row.id),
-    name: String(row.name ?? ''),
+    name: formatProductDisplayName(String(row.name ?? '')),
     hindiName: row.hindi_name ? String(row.hindi_name) : null,
     slug,
     href: productHref({ category, sub_category: subCategory, slug }),

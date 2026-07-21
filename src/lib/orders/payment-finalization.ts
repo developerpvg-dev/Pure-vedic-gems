@@ -11,6 +11,7 @@ import {
   keepProductsReservedAfterPayment,
   releaseProductsForOrder,
 } from '@/lib/inventory/order-availability';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -40,7 +41,14 @@ export interface PaymentEventInput {
 }
 
 function orderItems(order: Order): OrderItemSnapshot[] {
-  return Array.isArray(order.items) ? (order.items as unknown as OrderItemSnapshot[]) : [];
+  const items = Array.isArray(order.items) ? (order.items as unknown as OrderItemSnapshot[]) : [];
+  return items.map((item) => ({
+    ...item,
+    name: formatProductDisplayName(item.name),
+    configuration_summary: item.configuration_summary
+      ? formatProductDisplayName(item.configuration_summary)
+      : item.configuration_summary,
+  }));
 }
 
 function emailHash(email: string | null) {

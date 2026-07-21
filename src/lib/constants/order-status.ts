@@ -65,3 +65,35 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export function isPaidPaymentStatus(status: string | null | undefined) {
   return status === PAID_PAYMENT_STATUS;
 }
+
+/** Customer self-serve cancel: early statuses only, within 24h of order.created_at. */
+export const CUSTOMER_CANCELLABLE_STATUSES = [
+  'pending_payment',
+  'placed',
+  'confirmed',
+] as const;
+
+export const CUSTOMER_CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function isCustomerCancellable(
+  status: string,
+  createdAt: string | Date | null | undefined,
+  now = Date.now(),
+): boolean {
+  if (!(CUSTOMER_CANCELLABLE_STATUSES as readonly string[]).includes(status)) return false;
+  if (createdAt == null) return false;
+  const t = typeof createdAt === 'string' ? Date.parse(createdAt) : createdAt.getTime();
+  if (!Number.isFinite(t)) return false;
+  return now - t <= CUSTOMER_CANCEL_WINDOW_MS;
+}
+
+// ponytail: `npx tsx -e "import { __cancelWindowSelfCheck } from './src/lib/constants/order-status.ts'; __cancelWindowSelfCheck()"`
+export function __cancelWindowSelfCheck() {
+  const now = Date.now();
+  const fresh = new Date(now - 60 * 60 * 1000).toISOString();
+  const stale = new Date(now - 25 * 60 * 60 * 1000).toISOString();
+  console.assert(isCustomerCancellable('placed', fresh, now), 'within 24h');
+  console.assert(!isCustomerCancellable('placed', stale, now), 'past 24h');
+  console.assert(!isCustomerCancellable('shipped', fresh, now), 'wrong status');
+  console.log('cancel-window self-check ok');
+}

@@ -23,6 +23,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
 import { DirectorPickPrice } from '@/components/home/DirectorPickPrice';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
+import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 export type HomeManagedCategory = {
   id: string;
@@ -904,7 +905,7 @@ function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
             fill
             src={imageUrl}
             fallbackSrc={fallbackImage}
-            alt={product.name}
+            alt={formatProductDisplayName(product.name)}
             loading="lazy"
             sizes="(max-width: 768px) 92vw, (max-width: 1200px) 42vw, 250px"
             style={{ objectFit: 'cover', boxSizing: 'border-box' }}
@@ -915,7 +916,7 @@ function DirectorPickCard({ product }: { product: HomeDirectorPick }) {
       </Link>
       <div className="director-pick-body">
         <div className="director-pick-info">
-          <h4><Link href={productHref(product)}>{product.name}</Link></h4>
+          <h4><Link href={productHref(product)}>{formatProductDisplayName(product.name)}</Link></h4>
           <span className="pick-meta">{directorMeta(product) || product.origin || 'Curated selection'}</span>
           <span className="pick-review-row" aria-label={`${reviews} reviews`}>
             <span className="pick-stars" aria-hidden="true">★★★★☆</span>

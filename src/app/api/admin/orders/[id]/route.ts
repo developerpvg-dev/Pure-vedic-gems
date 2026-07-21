@@ -73,6 +73,9 @@ export async function PUT(
     notify_customer,
     product_video_url,
     puja_video_url,
+    commission_source,
+    commission_name,
+    commission_amount,
   } = body;
 
   // Validate status if provided
@@ -85,6 +88,24 @@ export async function PUT(
   if (delivery_status && !VALID_DELIVERY_STATUSES.includes(delivery_status)) {
     return NextResponse.json({ error: `Invalid delivery_status. Must be one of: ${VALID_DELIVERY_STATUSES.join(', ')}` }, { status: 400 });
   }
+  if (
+    commission_source !== undefined &&
+    commission_source !== null &&
+    commission_source !== '' &&
+    commission_source !== 'salesperson' &&
+    commission_source !== 'astrologer'
+  ) {
+    return NextResponse.json(
+      { error: 'commission_source must be salesperson, astrologer, or empty' },
+      { status: 400 },
+    );
+  }
+  if (commission_amount !== undefined && commission_amount !== null && commission_amount !== '') {
+    const amt = Number(commission_amount);
+    if (!Number.isFinite(amt) || amt < 0) {
+      return NextResponse.json({ error: 'commission_amount must be a non-negative number' }, { status: 400 });
+    }
+  }
 
   const supabase = createAdminClient();
   const db = asUntypedSupabase(supabase);
@@ -92,7 +113,7 @@ export async function PUT(
   // Fetch current order for logging
   const { data: currentRaw } = await db
     .from('orders')
-    .select('id, order_number, guest_email, guest_name, guest_phone, customer_id, status, tracking_number, tracking_url, internal_notes, assigned_to, product_video_url, puja_video_url, items, delivery_status, compliance_flags')
+    .select('id, order_number, guest_email, guest_name, guest_phone, customer_id, status, tracking_number, tracking_url, internal_notes, assigned_to, product_video_url, puja_video_url, items, delivery_status, compliance_flags, design_completed_at')
     .eq('id', id)
     .single();
 
@@ -111,6 +132,7 @@ export async function PUT(
     items?: unknown;
     delivery_status?: string | null;
     compliance_flags?: unknown;
+    design_completed_at?: string | null;
   };
 
   const current = currentRaw as CurrentOrderRow | null;
@@ -136,6 +158,9 @@ export async function PUT(
     if (status === 'design_completed') {
       updates.design_completed_at = new Date().toISOString();
     }
+    if (status === 'design_assigned' && current.design_completed_at) {
+      updates.design_completed_at = null;
+    }
     if (status === 'delivered' && current.status !== 'delivered') {
       const flags = parseComplianceFlags(current.compliance_flags);
       if (!flags.delivered_at) {
@@ -155,6 +180,20 @@ export async function PUT(
   if (assigned_to !== undefined) updates.assigned_to = assigned_to;
   if (product_video_url !== undefined) updates.product_video_url = product_video_url || null;
   if (puja_video_url !== undefined) updates.puja_video_url = puja_video_url || null;
+  if (commission_source !== undefined) {
+    updates.commission_source =
+      commission_source === '' || commission_source === null ? null : commission_source;
+  }
+  if (commission_name !== undefined) {
+    updates.commission_name =
+      typeof commission_name === 'string' ? commission_name.trim() || null : commission_name;
+  }
+  if (commission_amount !== undefined) {
+    updates.commission_amount =
+      commission_amount === '' || commission_amount === null
+        ? null
+        : Number(commission_amount);
+  }
 
   const preShipStatuses = new Set([
     'pending_payment', 'placed', 'confirmed', 'processing',
@@ -183,7 +222,14 @@ export async function PUT(
 
   if (error) {
     console.error('[admin/orders] Update error:', error);
-    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+    const detail = error.message || '';
+    const hint = detail.includes('commission_')
+      ? ' Run supabase/week39_order_commission.sql in Supabase.'
+      : '';
+    return NextResponse.json(
+      { error: `Failed to update order.${hint}` },
+      { status: 500 },
+    );
   }
   const updatedOrder = updated as { status: string };
 
