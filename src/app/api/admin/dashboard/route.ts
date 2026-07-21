@@ -4,8 +4,23 @@ import { requireAdminAccess } from '@/lib/admin/api';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 import { callRpc } from '@/lib/supabase/rpc';
 import { loadDashboardStatsFallback, type DashboardRpcResult } from '@/lib/admin/dashboard-fallback';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
 
 const CACHE_TTL_MS = 60_000;
+
+type RecentOrderRow = {
+  id: string;
+  order_number: string;
+  customer_id: string | null;
+  guest_name: string | null;
+  guest_email: string | null;
+  total: number;
+  status: string;
+  payment_status: string;
+  created_at: string;
+  items: unknown;
+  order_source?: string | null;
+};
 
 /**
  * GET /api/admin/dashboard
@@ -16,6 +31,8 @@ export async function GET() {
   if ('error' in auth) return auth.error;
 
   const supabase = createAdminClient();
+  // ponytail: order_source not in generated Database types until types regen
+  const db = asUntypedSupabase(supabase);
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -39,7 +56,7 @@ export async function GET() {
       rpc = await loadDashboardStatsFallback(supabase, todayISO, weekISO);
     }
 
-    let recentOrdersResult = await supabase
+    let recentOrdersResult = await db
       .from('orders')
       .select(
         'id, order_number, customer_id, guest_name, guest_email, total, status, payment_status, created_at, items, order_source',
@@ -48,7 +65,7 @@ export async function GET() {
       .limit(10);
 
     if (recentOrdersResult.error && String(recentOrdersResult.error.message ?? '').includes('order_source')) {
-      recentOrdersResult = await supabase
+      recentOrdersResult = await db
         .from('orders')
         .select(
           'id, order_number, customer_id, guest_name, guest_email, total, status, payment_status, created_at, items',
@@ -65,7 +82,7 @@ export async function GET() {
         .lte('stock_quantity', 0)
         .order('name', { ascending: true })
         .limit(8),
-      supabase
+      db
         .from('orders')
         .select('id, total, payment_status')
         .eq('order_source', 'offline')
@@ -77,8 +94,10 @@ export async function GET() {
         .eq('is_active', true),
     ]);
 
-    const recentOrders = recentOrdersResult.data ?? [];
-    const offlineToday = offlineTodayResult.error ? [] : (offlineTodayResult.data ?? []);
+    const recentOrders = (recentOrdersResult.data ?? []) as RecentOrderRow[];
+    const offlineToday = (
+      offlineTodayResult.error ? [] : (offlineTodayResult.data ?? [])
+    ) as Array<{ id: string; total: number; payment_status: string }>;
     const reservedCount = reservedResult.count ?? 0;
 
     const recentCustomerIds = Array.from(
@@ -150,7 +169,6 @@ export async function GET() {
       outOfStockProducts,
       recentOrders: recentOrders.map((o) => {
         const profile = o.customer_id ? recentProfileById.get(o.customer_id) : undefined;
-        const row = o as typeof o & { order_source?: string | null };
         return {
           id: o.id,
           order_number: o.order_number,
@@ -158,7 +176,7 @@ export async function GET() {
           total: o.total,
           status: o.status,
           payment_status: o.payment_status,
-          order_source: row.order_source ?? 'online',
+          order_source: o.order_source ?? 'online',
           items_count: Array.isArray(o.items) ? o.items.length : 0,
           created_at: o.created_at,
         };

@@ -269,7 +269,7 @@ export function OrderActions({
         }
         if (data.compliance_flags) setFlagsState(data.compliance_flags);
         if (data.return_images_verified) {
-          setFlagsState((current) => ({
+          setFlagsState((current: unknown) => ({
             ...parseComplianceFlags(current),
             return_images_verified: true,
             return_images_verified_at: new Date().toISOString(),

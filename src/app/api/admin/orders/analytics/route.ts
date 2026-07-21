@@ -9,6 +9,7 @@ import {
   cleanOrderSearch,
   type OrderAnalyticsRow,
 } from '@/lib/admin/order-filters';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
 
 const SELECT_WITH_SOURCE =
   'id, total, status, payment_status, payment_method, created_at, customer_id, order_source';
@@ -24,6 +25,8 @@ export async function GET(request: NextRequest) {
   const period = searchParams.get('period') ?? '30d';
 
   const supabase = createAdminClient();
+  // ponytail: order_source not in generated Database types until types regen
+  const db = asUntypedSupabase(supabase);
   let matchedProfileIds: string[] = [];
 
   if (search) {
@@ -55,7 +58,7 @@ export async function GET(request: NextRequest) {
     matchedProfileIds,
   };
 
-  let query = supabase
+  let query = db
     .from('orders')
     .select(SELECT_WITH_SOURCE)
     .order('created_at', { ascending: true })
@@ -66,7 +69,7 @@ export async function GET(request: NextRequest) {
   let { data, error } = await query;
 
   if (error && String(error.message ?? '').includes('order_source')) {
-    let fallback = supabase
+    let fallback = db
       .from('orders')
       .select(SELECT_WITHOUT_SOURCE)
       .order('created_at', { ascending: true })
