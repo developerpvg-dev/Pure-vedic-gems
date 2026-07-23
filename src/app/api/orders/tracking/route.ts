@@ -6,6 +6,10 @@ import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { enrichOrderItemsWithImages, parseOrderItems } from '@/lib/customer/orders';
 import { isCustomerCancellable } from '@/lib/constants/order-status';
+import {
+  parseBankTransferProof,
+  publicBankTransferSummary,
+} from '@/lib/orders/bank-transfer-proof';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -27,6 +31,9 @@ const ORDER_SELECT = [
   'guest_access_token',
   'status',
   'payment_status',
+  'payment_method',
+  'payment_review_reason',
+  'compliance_flags',
   'created_at',
   'total',
   'subtotal',
@@ -105,6 +112,9 @@ export async function POST(request: NextRequest) {
     guest_access_token: string | null;
     status: string;
     payment_status: string | null;
+    payment_method: string | null;
+    payment_review_reason: string | null;
+    compliance_flags: unknown;
     created_at: string;
     total: number;
     subtotal: number;
@@ -174,6 +184,9 @@ export async function POST(request: NextRequest) {
       order_number: order.order_number,
       status: order.status,
       payment_status: order.payment_status,
+      payment_method: order.payment_method,
+      payment_review_reason: order.payment_review_reason,
+      bank_transfer: publicBankTransferSummary(parseBankTransferProof(order.compliance_flags)),
       created_at: order.created_at,
       total: Number(order.total ?? 0),
       subtotal: Number(order.subtotal ?? 0),

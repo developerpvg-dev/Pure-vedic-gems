@@ -20,6 +20,13 @@ import {
   RETURN_STATUS_LABELS,
   type ReturnStatus,
 } from '@/lib/orders/returns';
+import { parseBankTransferProof, mergeBankTransferProof } from '@/lib/orders/bank-transfer-proof';
+import { finalizeCapturedPayment } from '@/lib/orders/payment-finalization';
+import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
+import { sendBankTransferRejectedEmail } from '@/lib/resend/send-bank-transfer-rejected';
+import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
+import { BANK_TRANSFER_HOLD_MS } from '@/lib/constants/bank-accounts';
+import type { Order } from '@/lib/types/database';
 
 const actionSchema = z.discriminatedUnion('action', [
   z.object({
@@ -36,6 +43,13 @@ const actionSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('verify_return_images'),
+  }),
+  z.object({
+    action: z.literal('verify_bank_transfer'),
+  }),
+  z.object({
+    action: z.literal('reject_bank_transfer'),
+    reason: z.string().trim().min(5).max(1000),
   }),
   z.object({
     action: z.literal('record_refund'),
@@ -146,7 +160,7 @@ export async function POST(
 
   const { data: order, error } = await db
     .from('orders')
-    .select('id, order_number, status, payment_status, total, guest_phone, guest_name, guest_email, customer_id, items, products_marked_sold_at, refund_status, return_status, compliance_flags')
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -159,6 +173,7 @@ export async function POST(
     order_number: string;
     status: string;
     payment_status: string | null;
+    payment_method: string | null;
     total: number;
     guest_phone: string | null;
     guest_name: string | null;
@@ -221,6 +236,21 @@ export async function POST(
           entityId: id,
           metadata: { order_number: orderRow.order_number, status: 'cancelled', reason },
         });
+      }
+
+      try {
+        const recipient = await resolveOrderCustomerEmail(order as Order);
+        if (recipient) {
+          await sendOrderCancelledEmail({
+            to: recipient.email,
+            customerName: recipient.name,
+            orderNumber: orderRow.order_number,
+            reason,
+            cancelledBy: 'admin',
+          });
+        }
+      } catch (emailErr) {
+        console.error('[admin/orders/actions] cancel email failed', emailErr);
       }
 
       await logAdminAction({
@@ -367,6 +397,165 @@ export async function POST(
         return_images_verified: true,
         compliance_flags,
       });
+    }
+
+    if (parsed.data.action === 'verify_bank_transfer') {
+      const proof = parseBankTransferProof(orderRow.compliance_flags);
+      if (!proof || proof.proof_urls.length === 0) {
+        return NextResponse.json(
+          { error: 'No bank transfer proof on this order' },
+          { status: 400 },
+        );
+      }
+      if (orderRow.payment_status === 'captured') {
+        return NextResponse.json({ error: 'Payment already captured' }, { status: 400 });
+      }
+
+      const marked = mergeBankTransferProof(orderRow.compliance_flags, {
+        ...proof,
+        status: 'verified',
+        verified_at: new Date().toISOString(),
+        verified_by: auth.user.id,
+        rejected_at: undefined,
+        reject_reason: undefined,
+        rejected_by: undefined,
+      });
+
+      await db.from('orders').update({ compliance_flags: marked }).eq('id', id);
+
+      await finalizeCapturedPayment({
+        order: order as Order,
+        method: 'bank_transfer',
+      });
+
+      if (orderRow.customer_id) {
+        await notifyUser({
+          recipientUserId: orderRow.customer_id,
+          type: 'order_status_update',
+          title: 'Payment verified',
+          message: `Bank transfer for order ${orderRow.order_number} was verified. Your order is confirmed.`,
+          href: '/account/orders',
+          entityType: 'order',
+          entityId: id,
+          metadata: { order_number: orderRow.order_number, status: 'confirmed' },
+        });
+      }
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'order_verify_bank_transfer',
+        resourceType: 'order',
+        resourceId: id,
+        details: {
+          order_number: orderRow.order_number,
+          reference: proof.reference,
+          bank_id: proof.bank_id,
+        },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({
+        success: true,
+        status: 'confirmed',
+        payment_status: 'captured',
+      });
+    }
+
+    if (parsed.data.action === 'reject_bank_transfer') {
+      const proof = parseBankTransferProof(orderRow.compliance_flags);
+      if (!proof || proof.proof_urls.length === 0) {
+        return NextResponse.json(
+          { error: 'No bank transfer proof on this order' },
+          { status: 400 },
+        );
+      }
+      if (orderRow.payment_status === 'captured') {
+        return NextResponse.json({ error: 'Payment already captured' }, { status: 400 });
+      }
+
+      const reason = parsed.data.reason.trim();
+      const now = new Date().toISOString();
+      const rejected = mergeBankTransferProof(orderRow.compliance_flags, {
+        ...proof,
+        status: 'rejected',
+        rejected_at: now,
+        reject_reason: reason,
+        rejected_by: auth.user.id,
+        verified_at: undefined,
+        verified_by: undefined,
+      });
+
+      const holdUntil = new Date(Date.now() + BANK_TRANSFER_HOLD_MS).toISOString();
+      const { error: rejectError } = await db
+        .from('orders')
+        .update({
+          compliance_flags: rejected,
+          payment_method: 'bank_transfer',
+          payment_status: 'pending',
+          status: 'pending_payment',
+          payment_review_reason: reason,
+          reservation_expires_at: holdUntil,
+        })
+        .eq('id', id);
+
+      if (rejectError) {
+        console.error('[admin/orders/actions] reject bank transfer failed', rejectError);
+        return NextResponse.json({ error: 'Failed to reject bank transfer proof' }, { status: 500 });
+      }
+
+      const recipient = await resolveOrderCustomerEmail(order as Order);
+      if (recipient) {
+        try {
+          await sendBankTransferRejectedEmail({
+            to: recipient.email,
+            customerName: recipient.name,
+            orderNumber: orderRow.order_number,
+            orderId: id,
+            rejectReason: reason,
+            isLoggedInCustomer: Boolean(orderRow.customer_id),
+          });
+        } catch (emailErr) {
+          console.error('[admin/orders/actions] reject email failed', emailErr);
+        }
+      }
+
+      if (orderRow.customer_id) {
+        await notifyUser({
+          recipientUserId: orderRow.customer_id,
+          type: 'order_status_update',
+          title: 'Payment proof needs an update',
+          message: `Bank transfer for order ${orderRow.order_number} was not verified: ${reason}`,
+          href: '/account/orders',
+          entityType: 'order',
+          entityId: id,
+          metadata: { order_number: orderRow.order_number, status: 'pending_payment', reject_reason: reason },
+        });
+      }
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'order_reject_bank_transfer',
+        resourceType: 'order',
+        resourceId: id,
+        details: {
+          order_number: orderRow.order_number,
+          reference: proof.reference,
+          reason,
+        },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({
+        success: true,
+        status: 'pending_payment',
+        payment_status: 'pending',
+        compliance_flags: rejected,
+        reject_reason: reason,
+      });
+    }
+
+    if (parsed.data.action !== 'record_refund') {
+      return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
     }
 
     // record_refund — manual offline refund with transaction proof

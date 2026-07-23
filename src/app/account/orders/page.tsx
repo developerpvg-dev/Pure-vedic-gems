@@ -14,6 +14,7 @@ import {
   parseComplianceFlags,
   resolveReturnWindowDays,
 } from '@/lib/orders/returns';
+import { publicBankTransferSummary, parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
 import type { Order } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -102,6 +103,10 @@ export default async function OrdersPage() {
         order_number: order.order_number,
         status: order.status,
         payment_status: extras.payment_status ?? null,
+        payment_method: (order as Order & { payment_method?: string | null }).payment_method ?? null,
+        payment_review_reason:
+          (order as Order & { payment_review_reason?: string | null }).payment_review_reason ?? null,
+        bank_transfer: publicBankTransferSummary(parseBankTransferProof(extras.compliance_flags)),
         created_at: order.created_at,
         total: order.total,
         subtotal: order.subtotal,

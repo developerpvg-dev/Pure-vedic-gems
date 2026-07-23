@@ -386,7 +386,8 @@ export async function finalizeCapturedPayment({
 }: {
   order: Order;
   eventId?: string | null;
-  razorpayPaymentId: string;
+  /** Optional for manual / bank-transfer capture. */
+  razorpayPaymentId?: string | null;
   razorpaySignature?: string | null;
   method?: string | null;
 }) {
@@ -411,10 +412,10 @@ export async function finalizeCapturedPayment({
   const { data: claimed, error: claimError } = await supabase
     .from('orders')
     .update({
-      razorpay_payment_id: razorpayPaymentId,
-      razorpay_signature: razorpaySignature ?? order.razorpay_signature,
+      ...(razorpayPaymentId ? { razorpay_payment_id: razorpayPaymentId } : {}),
+      ...(razorpaySignature != null ? { razorpay_signature: razorpaySignature } : {}),
       payment_status: 'captured',
-      payment_method: method ?? 'razorpay',
+      payment_method: method ?? order.payment_method ?? 'razorpay',
       status: 'confirmed',
       amount_verified_at: new Date().toISOString(),
       payment_failure_reason: null,

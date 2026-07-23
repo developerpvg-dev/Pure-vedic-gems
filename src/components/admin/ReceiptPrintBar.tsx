@@ -23,7 +23,7 @@ export function ReceiptPrintBar({ orderId }: { orderId: string }) {
         className="inline-flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white"
       >
         <Printer className="h-4 w-4" />
-        Print / Save as PDF
+        Print all details / PDF
       </button>
     </div>
   );

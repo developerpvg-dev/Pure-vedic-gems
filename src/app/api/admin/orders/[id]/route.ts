@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
+import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
@@ -305,16 +306,26 @@ export async function PUT(
 
   let trackingEmailId: string | null = null;
   if (notify_customer && customerEmail) {
-    trackingEmailId = await sendTrackingUpdateEmail({
-      to: customerEmail,
-      customerName,
-      orderNumber: current.order_number,
-      status: status || updatedOrder.status,
-      carrier: carrier ?? null,
-      trackingNumber: tracking_number ?? current.tracking_number ?? null,
-      trackingUrl: tracking_url ?? current.tracking_url ?? null,
-      estimatedDelivery: estimated_delivery ?? null,
-    });
+    if (becameCancelledOrRefunded && status === 'cancelled') {
+      trackingEmailId = await sendOrderCancelledEmail({
+        to: customerEmail,
+        customerName,
+        orderNumber: current.order_number,
+        reason: 'Cancelled by Pure Vedic Gems',
+        cancelledBy: 'admin',
+      });
+    } else {
+      trackingEmailId = await sendTrackingUpdateEmail({
+        to: customerEmail,
+        customerName,
+        orderNumber: current.order_number,
+        status: status || updatedOrder.status,
+        carrier: carrier ?? null,
+        trackingNumber: tracking_number ?? current.tracking_number ?? null,
+        trackingUrl: tracking_url ?? current.tracking_url ?? null,
+        estimatedDelivery: estimated_delivery ?? null,
+      });
+    }
   }
 
   if (trackingChanged || productVideoAdded || pujaVideoAdded || (status && status !== current.status)) {

@@ -1,52 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { cookies } from 'next/headers';
 import { PaymentCreateOrderSchema } from '@/lib/validators/order';
 import { getRazorpayClient } from '@/lib/razorpay/client';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { isPaidPaymentStatus } from '@/lib/constants/order-status';
-
-type OrderForOwnership = {
-  id: string;
-  customer_id: string | null;
-  guest_access_token?: string | null;
-};
-
-/**
- * Verify the caller is allowed to pay for this order.
- * - Authenticated orders: the signed-in user must be the order's customer.
- * - Guest orders: the pvg_guest_order_token cookie must match the stored hash.
- * Returns false for any mismatch so the caller can respond with a generic 404
- * (avoiding order-id enumeration).
- */
-async function canPayOrder(order: OrderForOwnership): Promise<boolean> {
-  if (order.customer_id) {
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      return !!user && user.id === order.customer_id;
-    } catch {
-      return false;
-    }
-  }
-
-  try {
-    const cookieStore = await cookies();
-    const cookieValue = cookieStore.get('pvg_guest_order_token')?.value ?? '';
-    const [cookieOrderId, guestToken] = cookieValue.split('.');
-    if (!guestToken || cookieOrderId !== order.id || !order.guest_access_token) {
-      return false;
-    }
-    const expectedHash = crypto.createHash('sha256').update(guestToken).digest('hex');
-    return expectedHash === order.guest_access_token;
-  } catch {
-    return false;
-  }
-}
+import { canPayOrder } from '@/lib/orders/order-ownership';
 
 /**
  * POST /api/payment/create-order

@@ -60,7 +60,9 @@ function getStepValue(step: number, state: ConfiguratorState): string | null {
     case 6:
       return state.selected_lab?.name ?? (state.certification_skipped ? 'Without Certification' : null);
     case 7:
-      return state.selected_energization?.name ?? 'Skipped';
+      // Don't label future steps as Skipped before the user reaches energization
+      if (state.selected_energization?.name) return state.selected_energization.name;
+      return state.current_step >= 7 ? 'Skipped' : null;
     default:
       return null;
   }

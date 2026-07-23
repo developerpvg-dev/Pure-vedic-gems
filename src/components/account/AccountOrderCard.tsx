@@ -22,6 +22,11 @@ import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { RETURN_STATUS_LABELS, type ReturnStatus } from '@/lib/orders/returns';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
+import {
+  canCustomerResubmitBankTransfer,
+  type BankTransferProof,
+} from '@/lib/orders/bank-transfer-proof';
+import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
 type ShippingAddress = {
   line1?: string;
@@ -37,6 +42,20 @@ export type AccountOrderCardData = {
   order_number: string;
   status: string;
   payment_status: string | null;
+  payment_method?: string | null;
+  payment_review_reason?: string | null;
+  bank_transfer?: {
+    bank_id: string;
+    bank_label: string;
+    reference: string;
+    notes?: string | null;
+    proof_urls: string[];
+    submitted_at: string;
+    status: string;
+    reject_reason?: string | null;
+    rejected_at?: string | null;
+    verified_at?: string | null;
+  } | null;
   created_at: string;
   total: number;
   subtotal: number;
@@ -89,6 +108,7 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   cancelled: { label: 'Cancelled', bg: '#fee2e2', text: '#991b1b' },
   refunded: { label: 'Refunded', bg: '#f3f4f6', text: '#374151' },
   placed: { label: 'Placed', bg: '#dbeafe', text: '#1e40af' },
+  payment_review: { label: 'Payment Review', bg: '#fef3c7', text: '#92400e' },
 };
 
 function OrderItemRow({ item, showConfig = false }: { item: OrderLineItem; showConfig?: boolean }) {
@@ -153,10 +173,13 @@ export function AccountOrderCard({
   order,
   defaultDetailsOpen = false,
   allowCancel = true,
+  requireBankContactConfirm = false,
 }: {
   order: AccountOrderCardData;
   defaultDetailsOpen?: boolean;
   allowCancel?: boolean;
+  /** Track-order guests: confirm email/phone to resubmit proof */
+  requireBankContactConfirm?: boolean;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(defaultDetailsOpen);
   const [status, setStatus] = useState(order.status);
@@ -342,6 +365,14 @@ export function AccountOrderCard({
         <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-900 md:px-6">
           This order was cancelled. If a payment was made, our team will process the refund.
         </div>
+      ) : null}
+
+      {order.payment_method === 'bank_transfer' || order.bank_transfer ? (
+        <BankTransferAccountBlock
+          order={order}
+          requireContactConfirm={requireBankContactConfirm}
+          onUpdated={() => setDetailsOpen(true)}
+        />
       ) : null}
 
       {status === 'delivered' && !receiptConfirmed ? (
@@ -767,3 +798,90 @@ export function AccountOrderCard({
     </div>
   );
 }
+
+function toProof(order: AccountOrderCardData): BankTransferProof | null {
+  if (order.bank_transfer) {
+    return {
+      bank_id: order.bank_transfer.bank_id,
+      bank_label: order.bank_transfer.bank_label,
+      reference: order.bank_transfer.reference,
+      notes: order.bank_transfer.notes ?? undefined,
+      proof_urls: order.bank_transfer.proof_urls,
+      submitted_at: order.bank_transfer.submitted_at,
+      status: order.bank_transfer.status as BankTransferProof['status'],
+      reject_reason: order.bank_transfer.reject_reason ?? undefined,
+      rejected_at: order.bank_transfer.rejected_at ?? undefined,
+      verified_at: order.bank_transfer.verified_at ?? undefined,
+    };
+  }
+  return null;
+}
+
+function BankTransferAccountBlock({
+  order,
+  requireContactConfirm = false,
+  onUpdated,
+}: {
+  order: AccountOrderCardData;
+  requireContactConfirm?: boolean;
+  onUpdated: () => void;
+}) {
+  const [localStatus, setLocalStatus] = useState(order.status);
+  const [proof, setProof] = useState<BankTransferProof | null>(() => toProof(order));
+  const canResubmit = canCustomerResubmitBankTransfer(
+    proof,
+    localStatus,
+    order.payment_status,
+  );
+
+  if (order.payment_status === 'captured' && proof?.status === 'verified') {
+    return (
+      <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-3 text-sm text-emerald-900 md:px-6">
+        Bank transfer verified · {proof.bank_label} · {proof.reference}
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-[var(--pvg-border)] bg-amber-50/60 px-5 py-4 md:px-6">
+      <p className="text-sm font-semibold text-[var(--pvg-primary)]">Bank transfer payment</p>
+      {proof?.status === 'rejected' ? (
+        <p className="mt-1 text-sm text-red-800">
+          Proof rejected: {proof.reject_reason || order.payment_review_reason || 'Please update and resubmit.'}
+        </p>
+      ) : proof ? (
+        <p className="mt-1 text-sm text-[var(--pvg-muted)]">
+          Submitted {proof.bank_label} · {proof.reference}
+          {proof.status === 'pending_review'
+            ? ' — we will review and confirm within 24 hours'
+            : ''}
+        </p>
+      ) : (
+        <p className="mt-1 text-sm text-[var(--pvg-muted)]">
+          Complete your transfer and submit proof below.
+        </p>
+      )}
+
+      {canResubmit ? (
+        <div className="mt-3">
+          <BankTransferResubmitForm
+            orderId={order.id}
+            orderTotalLabel={formatPrice(order.total, 'INR')}
+            existing={proof}
+            requireContactConfirm={requireContactConfirm}
+            onSubmitted={(result) => {
+              setLocalStatus(result.status);
+              setProof((prev) =>
+                prev
+                  ? { ...prev, status: 'pending_review', reject_reason: undefined, rejected_at: undefined }
+                  : prev,
+              );
+              onUpdated();
+            }}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+

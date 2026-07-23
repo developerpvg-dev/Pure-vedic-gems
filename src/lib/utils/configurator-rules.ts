@@ -180,7 +180,6 @@ type ConfiguratorProductRef = {
   category: string;
   sub_category?: string | null;
   configurator_enabled?: boolean | null;
-  certificate_display_enabled?: boolean | null;
 };
 
 /** Merge DB option rules with product-level configurator defaults. */
@@ -206,8 +205,9 @@ export function resolveConfiguratorOptionRules(
       metal_enabled: true,
       ring_size_enabled: false,
       allowed_setting_types: ['pendant'],
+      // Labs in rules mean the cert step is on — don't leave stale certificate_enabled:false
       certificate_enabled:
-        product.certificate_display_enabled ?? rules.certificate_enabled,
+        rules.certificate_enabled || rules.allowed_certification_lab_ids.length > 0,
       energization_enabled: false,
       allowed_energization_option_ids: [],
     };
@@ -226,7 +226,7 @@ export function resolveConfiguratorOptionRules(
       ring_size_enabled: true,
       allowed_setting_types: DEFAULT_SETTING_TYPES,
       certificate_enabled:
-        product.certificate_display_enabled ?? rules.certificate_enabled,
+        rules.certificate_enabled || rules.allowed_certification_lab_ids.length > 0,
     };
   }
 
@@ -234,8 +234,6 @@ export function resolveConfiguratorOptionRules(
     return {
       ...rules,
       product_id: product.id,
-      certificate_enabled:
-        product.certificate_display_enabled || rules.certificate_enabled,
       jewelry_design_enabled: configuratorActive,
       metal_enabled: configuratorActive,
       ring_size_enabled: configuratorActive,
@@ -246,8 +244,9 @@ export function resolveConfiguratorOptionRules(
   return {
     ...rules,
     product_id: product.id,
+    // ponytail: storefront "display certificate" used to override this and hide the step
     certificate_enabled:
-      product.certificate_display_enabled ?? rules.certificate_enabled,
+      rules.certificate_enabled || rules.allowed_certification_lab_ids.length > 0,
   };
 }
 

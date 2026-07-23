@@ -61,4 +61,43 @@ describe('resolveConfiguratorOptionRules', () => {
     expect(rules.metal_enabled).toBe(true);
     expect(rules.allowed_setting_types).toEqual(['ring', 'pendant', 'bracelet', 'loose']);
   });
+
+  it('keeps certificate step from option rules, not storefront display flag', () => {
+    const rules = resolveConfiguratorOptionRules(
+      {
+        id: 'prod-4',
+        category: 'navaratna',
+        sub_category: 'ruby',
+        configurator_enabled: true,
+      },
+      normalizeConfiguratorRules({
+        product_id: 'prod-4',
+        certificate_enabled: true,
+        allowed_certification_lab_ids: ['11111111-1111-1111-1111-111111111111'],
+      })
+    );
+
+    expect(rules.certificate_enabled).toBe(true);
+    expect(rules.allowed_certification_lab_ids).toEqual([
+      '11111111-1111-1111-1111-111111111111',
+    ]);
+  });
+
+  it('enables certification when labs are configured even if flag was left false', () => {
+    const rules = resolveConfiguratorOptionRules(
+      {
+        id: 'prod-5',
+        category: 'navaratna',
+        sub_category: 'ruby',
+        configurator_enabled: true,
+      },
+      normalizeConfiguratorRules({
+        product_id: 'prod-5',
+        certificate_enabled: false,
+        allowed_certification_lab_ids: ['11111111-1111-1111-1111-111111111111'],
+      })
+    );
+
+    expect(rules.certificate_enabled).toBe(true);
+  });
 });

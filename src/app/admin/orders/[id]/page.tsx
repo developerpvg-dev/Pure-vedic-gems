@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -6,6 +6,9 @@ import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
 import { OrderActions } from '@/components/admin/OrderActions';
 import { OrderAssignDesigner } from '@/components/admin/OrderAssignDesigner';
 import { OrderPaymentLedger } from '@/components/admin/OrderPaymentLedger';
+import { BankTransferManagePanel } from '@/components/admin/BankTransferManagePanel';
+import { AdminOrderDetailShell } from '@/components/admin/AdminOrderDetailShell';
+import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
 import {
   energizationFormFromOrderItems,
   mergeConfigurationDetails,
@@ -371,6 +374,18 @@ export default async function OrderDetailPage({ params }: PageProps) {
   });
 
   const returnStatus = orderExtras.return_status;
+  const bankProof = parseBankTransferProof(orderExtras.compliance_flags);
+  const needsPaymentReview =
+    o.status === 'payment_review' ||
+    o.payment_status === 'amount_mismatch' ||
+    (o.payment_method === 'bank_transfer' &&
+      o.payment_status !== 'captured' &&
+      bankProof?.status !== 'verified');
+  const defaultTab = needsPaymentReview
+    ? 'payment'
+    : fulfillmentContext.needsDesigner && !orderExtras.assigned_designer_id
+      ? 'manage'
+      : 'overview';
   const placedOn = new Date(o.created_at).toLocaleString('en-IN', {
     year: 'numeric',
     month: 'short',
@@ -403,13 +418,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 <span>{placedOn}</span>
                 {displayName ? (
                   <>
-                    <span className="text-stone-300">·</span>
+                    <span className="text-stone-300">Â·</span>
                     <span className="font-medium text-stone-700">{displayName}</span>
                   </>
                 ) : null}
                 {displayPhone ? (
                   <>
-                    <span className="text-stone-300">·</span>
+                    <span className="text-stone-300">Â·</span>
                     <span>{displayPhone}</span>
                   </>
                 ) : null}
@@ -447,7 +462,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
             >
               <Printer className="h-3 w-3" />
-              Receipt
+              Print all details
             </Link>
             {o.invoice_url ? (
               <a
@@ -471,7 +486,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             {' / '}
             {fmt(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total))}
           </Field>
-          <Field label="Payment">{cap(o.payment_method) ?? '—'}</Field>
+          <Field label="Payment">{cap(o.payment_method) ?? 'â€”'}</Field>
           <Field label="Fulfillment">
             {cap(o.fulfillment_type) ?? cap(o.shipping_method) ?? 'Standard'}
           </Field>
@@ -485,22 +500,153 @@ export default async function OrderDetailPage({ params }: PageProps) {
             {orderExtras.payment_failure_reason
               ? `Reason: ${orderExtras.payment_failure_reason}. `
               : ''}
-            Use Manual Refund in the sidebar if payment was captured.
+            Use Manual Refund under Manage if payment was captured.
           </p>
         </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        {/* Main */}
-        <div className="space-y-5">
-          <OrderPaymentLedger
-            orderId={o.id}
-            total={Number(o.total) || 0}
-            amountPaid={Number(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0)) || 0}
-            amountDue={Number(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total)) || 0}
-            paymentStatus={o.payment_status}
-          />
+      <AdminOrderDetailShell
+        defaultTab={defaultTab}
+        badges={{
+          items: String(items.length),
+          payment: needsPaymentReview ? 'Review' : null,
+          manage: fulfillmentContext.needsDesigner && !orderExtras.assigned_designer_id ? 'Assign' : null,
+        }}
+        overview={
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Panel title="Customer" icon={User}>
+                <dl className="space-y-3 px-5 py-4">
+                  <Field label="Name">{displayName ?? 'Not provided'}</Field>
+                  <Field label="Email">
+                    <span className="flex items-start gap-1.5 break-all">
+                      <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" />
+                      {displayEmail ?? 'Not provided'}
+                    </span>
+                  </Field>
+                  <Field label="Phone">
+                    <span className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+                      {displayPhone ?? 'Not provided'}
+                    </span>
+                  </Field>
+                  {o.customer_id ? (
+                    <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-800">
+                      Registered account
+                    </span>
+                  ) : (
+                    <span className="inline-block rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-600">
+                      Guest checkout
+                    </span>
+                  )}
+                </dl>
+              </Panel>
 
+              <Panel title="Shipping" icon={MapPin}>
+                <div className="space-y-3 px-5 py-4 text-sm leading-relaxed text-stone-700">
+                  {displayName ? <p className="font-semibold text-stone-900">{displayName}</p> : null}
+                  {addr.line1 ? <p>{addr.line1}</p> : null}
+                  {addr.line2 ? <p>{addr.line2}</p> : null}
+                  {addr.city || addr.state || addr.pincode ? (
+                    <p>{[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}</p>
+                  ) : null}
+                  {addr.country ? <p>{addr.country}</p> : null}
+                  {!addr.line1 && !addr.city ? (
+                    <p className="italic text-stone-400">No address recorded</p>
+                  ) : null}
+                  {o.special_instructions ? (
+                    <div className="rounded-lg bg-stone-50 px-3 py-2.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+                        Special instructions
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-stone-700">
+                        {o.special_instructions}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              </Panel>
+
+              <Panel title="Delivery" icon={Truck}>
+                <dl className="space-y-3 px-5 py-4">
+                  <Field label="Method">{cap(o.shipping_method) ?? 'Standard'}</Field>
+                  {orderExtras.carrier ? (
+                    <Field label="Carrier">{orderExtras.carrier}</Field>
+                  ) : null}
+                  {o.tracking_number ? (
+                    <Field label="Tracking">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[11px]">
+                          {o.tracking_number}
+                        </code>
+                        {o.tracking_url ? (
+                          <a
+                            href={o.tracking_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-stone-600 underline-offset-2 hover:underline"
+                          >
+                            Track <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : null}
+                      </span>
+                    </Field>
+                  ) : null}
+                  {orderExtras.delivery_status ? (
+                    <Field label="Status">{cap(orderExtras.delivery_status)}</Field>
+                  ) : null}
+                  {o.estimated_delivery ? (
+                    <Field label="Est. delivery">
+                      {new Date(o.estimated_delivery).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </Field>
+                  ) : null}
+                  {!o.tracking_number && !o.estimated_delivery && !orderExtras.carrier ? (
+                    <p className="text-xs italic text-stone-400">No tracking yet â€” update in Manage</p>
+                  ) : null}
+                </dl>
+              </Panel>
+
+              {o.include_energization ? (
+                <Panel title="Ceremony" icon={Zap}>
+                  <dl className="grid gap-3 px-5 py-4 sm:grid-cols-2">
+                    <Field label="Type">{cap(o.energization_type) ?? 'Not specified'}</Field>
+                    {o.ceremony_gotra || ceremonyForm?.gotra ? (
+                      <Field label="Gotra">{o.ceremony_gotra || ceremonyForm?.gotra}</Field>
+                    ) : null}
+                    {ceremonyDob ? (
+                      <Field label="Date of birth">
+                        {new Date(ceremonyDob).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </Field>
+                    ) : null}
+                    {ceremonyForm?.birth_time ? (
+                      <Field label="Birth time">{ceremonyForm.birth_time}</Field>
+                    ) : null}
+                    {ceremonyForm?.birth_place ? (
+                      <Field label="Birth place">{ceremonyForm.birth_place}</Field>
+                    ) : null}
+                    {o.ceremony_rashi || ceremonyForm?.rashi ? (
+                      <Field label="Rashi">{o.ceremony_rashi || ceremonyForm?.rashi}</Field>
+                    ) : null}
+                    {o.record_ceremony || ceremonyForm?.record_ceremony ? (
+                      <p className="sm:col-span-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                        Ceremony video recording requested
+                      </p>
+                    ) : null}
+                  </dl>
+                </Panel>
+              ) : null}
+            </div>
+          </div>
+        }
+        items={
           <Panel title={`Items (${items.length})`} icon={Package}>
             {items.length === 0 ? (
               <p className="px-5 py-10 text-center text-sm text-stone-400">No items on this order</p>
@@ -576,7 +722,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 {fmt(item.line_total)}
                               </p>
                               <p className="text-xs text-stone-400">
-                                {fmt(item.unit_price)} × {item.quantity}
+                                {fmt(item.unit_price)} Ã— {item.quantity}
                               </p>
                             </div>
                           </div>
@@ -614,9 +760,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                       <div>
                                         <p className="font-semibold text-stone-800">
                                           <span className="text-stone-400">
-                                            {bead.role === 'primary' ? 'Primary' : 'Combo'} ·{' '}
+                                            {bead.role === 'primary' ? 'Primary' : 'Combo'} Â·{' '}
                                           </span>
-                                          {bead.mukhi_label} — {bead.name}
+                                          {bead.mukhi_label} â€” {bead.name}
                                         </p>
                                         <p className="mt-0.5 text-[10px] text-stone-400">
                                           {[
@@ -624,7 +770,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                             bead.tag_number ? `Tag ${bead.tag_number}` : null,
                                           ]
                                             .filter(Boolean)
-                                            .join(' · ')}
+                                            .join(' Â· ')}
                                         </p>
                                       </div>
                                       {bead.price > 0 ? (
@@ -717,31 +863,31 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                   <div>
                                     <p className="text-stone-400">DOB</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.dob || '—'}
+                                      {selections.energization_form.dob || 'â€”'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Birth time</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.birth_time || '—'}
+                                      {selections.energization_form.birth_time || 'â€”'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Birth place</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.birth_place || '—'}
+                                      {selections.energization_form.birth_place || 'â€”'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Gotra</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.gotra || '—'}
+                                      {selections.energization_form.gotra || 'â€”'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Rashi</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.rashi || '—'}
+                                      {selections.energization_form.rashi || 'â€”'}
                                     </p>
                                   </div>
                                   <div>
@@ -822,259 +968,150 @@ export default async function OrderDetailPage({ params }: PageProps) {
               </ul>
             )}
           </Panel>
+        }
+        payment={
+          <div className="space-y-5">
+            <BankTransferManagePanel
+              orderId={o.id}
+              paymentMethod={o.payment_method ?? null}
+              paymentStatus={o.payment_status ?? null}
+              complianceFlags={orderExtras.compliance_flags ?? null}
+              paymentReviewReason={
+                (orderExtras as { payment_review_reason?: string | null }).payment_review_reason ?? null
+              }
+            />
 
-          <Panel title="Price breakdown" icon={CreditCard}>
-            <div className="space-y-2 px-5 py-4 text-sm">
-              {pricingLines.map((line) => (
-                <div key={line.label} className="flex items-center justify-between text-stone-700">
-                  <span className={line.sign < 0 ? 'text-emerald-700' : 'text-stone-500'}>
-                    {line.label}
-                  </span>
-                  <span
-                    className={`font-medium tabular-nums ${line.sign < 0 ? 'text-emerald-700' : ''}`}
-                  >
-                    {line.sign < 0 ? '−' : ''}
-                    {fmt(line.value)}
-                  </span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between border-t border-stone-200 pt-3">
-                <span className="text-sm font-semibold text-stone-900">Grand total</span>
-                <span className="text-lg font-bold tabular-nums text-stone-900">{fmt(o.total)}</span>
-              </div>
-            </div>
-          </Panel>
+            <OrderPaymentLedger
+              orderId={o.id}
+              total={Number(o.total) || 0}
+              amountPaid={Number(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0)) || 0}
+              amountDue={Number(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total)) || 0}
+              paymentStatus={o.payment_status}
+            />
 
-          {/* Customer / ship / delivery / payment — one calm grid */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Panel title="Customer" icon={User}>
-              <dl className="space-y-3 px-5 py-4">
-                <Field label="Name">{displayName ?? 'Not provided'}</Field>
-                <Field label="Email">
-                  <span className="flex items-start gap-1.5 break-all">
-                    <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" />
-                    {displayEmail ?? 'Not provided'}
-                  </span>
-                </Field>
-                <Field label="Phone">
-                  <span className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 shrink-0 text-stone-400" />
-                    {displayPhone ?? 'Not provided'}
-                  </span>
-                </Field>
-                {o.customer_id ? (
-                  <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-800">
-                    Registered account
-                  </span>
-                ) : (
-                  <span className="inline-block rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-600">
-                    Guest checkout
-                  </span>
-                )}
-              </dl>
-            </Panel>
-
-            <Panel title="Shipping" icon={MapPin}>
-              <div className="space-y-3 px-5 py-4 text-sm leading-relaxed text-stone-700">
-                {displayName ? <p className="font-semibold text-stone-900">{displayName}</p> : null}
-                {addr.line1 ? <p>{addr.line1}</p> : null}
-                {addr.line2 ? <p>{addr.line2}</p> : null}
-                {addr.city || addr.state || addr.pincode ? (
-                  <p>{[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}</p>
-                ) : null}
-                {addr.country ? <p>{addr.country}</p> : null}
-                {!addr.line1 && !addr.city ? (
-                  <p className="italic text-stone-400">No address recorded</p>
-                ) : null}
-                {o.special_instructions ? (
-                  <div className="rounded-lg bg-stone-50 px-3 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
-                      Special instructions
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-stone-700">
-                      {o.special_instructions}
-                    </p>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <Panel title="Price breakdown" icon={CreditCard}>
+                <div className="space-y-2 px-5 py-4 text-sm">
+                  {pricingLines.map((line) => (
+                    <div key={line.label} className="flex items-center justify-between text-stone-700">
+                      <span className={line.sign < 0 ? 'text-emerald-700' : 'text-stone-500'}>
+                        {line.label}
+                      </span>
+                      <span
+                        className={`font-medium tabular-nums ${line.sign < 0 ? 'text-emerald-700' : ''}`}
+                      >
+                        {line.sign < 0 ? 'âˆ’' : ''}
+                        {fmt(line.value)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between border-t border-stone-200 pt-3">
+                    <span className="text-sm font-semibold text-stone-900">Grand total</span>
+                    <span className="text-lg font-bold tabular-nums text-stone-900">{fmt(o.total)}</span>
                   </div>
-                ) : null}
-              </div>
-            </Panel>
-
-            <Panel title="Delivery" icon={Truck}>
-              <dl className="space-y-3 px-5 py-4">
-                <Field label="Method">{cap(o.shipping_method) ?? 'Standard'}</Field>
-                {orderExtras.carrier ? (
-                  <Field label="Carrier">{orderExtras.carrier}</Field>
-                ) : null}
-                {o.tracking_number ? (
-                  <Field label="Tracking">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[11px]">
-                        {o.tracking_number}
-                      </code>
-                      {o.tracking_url ? (
-                        <a
-                          href={o.tracking_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-stone-600 underline-offset-2 hover:underline"
-                        >
-                          Track <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ) : null}
-                    </span>
-                  </Field>
-                ) : null}
-                {orderExtras.delivery_status ? (
-                  <Field label="Status">{cap(orderExtras.delivery_status)}</Field>
-                ) : null}
-                {o.estimated_delivery ? (
-                  <Field label="Est. delivery">
-                    {new Date(o.estimated_delivery).toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </Field>
-                ) : null}
-                {!o.tracking_number && !o.estimated_delivery && !orderExtras.carrier ? (
-                  <p className="text-xs italic text-stone-400">No tracking yet</p>
-                ) : null}
-              </dl>
-            </Panel>
-
-            <Panel title="Payment" icon={CreditCard}>
-              <dl className="space-y-3 px-5 py-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Method">{cap(o.payment_method) ?? '—'}</Field>
-                  <Field label="Status">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'}`}
-                    >
-                      {cap(o.payment_status) ?? o.payment_status}
-                    </span>
-                  </Field>
                 </div>
-                {o.razorpay_order_id ? (
-                  <Field label="Razorpay order">
-                    <code className="block break-all font-mono text-[11px] text-stone-600">
-                      {o.razorpay_order_id}
-                    </code>
-                  </Field>
-                ) : null}
-                {o.razorpay_payment_id ? (
-                  <Field label="Payment ID">
-                    <code className="block break-all font-mono text-[11px] text-stone-600">
-                      {o.razorpay_payment_id}
-                    </code>
-                  </Field>
-                ) : null}
-                {o.invoice_number ? (
-                  <Field label="Invoice #">{o.invoice_number}</Field>
-                ) : null}
-                {o.invoice_url ? (
-                  <a
-                    href={o.invoice_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    View invoice
-                    <ExternalLink className="ml-auto h-3 w-3" />
-                  </a>
-                ) : null}
-              </dl>
-            </Panel>
+              </Panel>
+
+              <Panel title="Payment references" icon={CreditCard}>
+                <dl className="space-y-3 px-5 py-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Method">{cap(o.payment_method) ?? 'â€”'}</Field>
+                    <Field label="Status">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'}`}
+                      >
+                        {cap(o.payment_status) ?? o.payment_status}
+                      </span>
+                    </Field>
+                  </div>
+                  {o.razorpay_order_id ? (
+                    <Field label="Razorpay order">
+                      <code className="block break-all font-mono text-[11px] text-stone-600">
+                        {o.razorpay_order_id}
+                      </code>
+                    </Field>
+                  ) : null}
+                  {o.razorpay_payment_id ? (
+                    <Field label="Payment ID">
+                      <code className="block break-all font-mono text-[11px] text-stone-600">
+                        {o.razorpay_payment_id}
+                      </code>
+                    </Field>
+                  ) : null}
+                  {o.invoice_number ? (
+                    <Field label="Invoice #">{o.invoice_number}</Field>
+                  ) : null}
+                  {o.invoice_url ? (
+                    <a
+                      href={o.invoice_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      View invoice
+                      <ExternalLink className="ml-auto h-3 w-3" />
+                    </a>
+                  ) : null}
+                </dl>
+              </Panel>
+            </div>
           </div>
+        }
+        manage={
+          <div className="grid gap-5 lg:grid-cols-2">
+            <OrderAssignDesigner
+              orderId={o.id}
+              orderNumber={o.order_number}
+              currentDesignerId={orderExtras.assigned_designer_id ?? null}
+              currentDesignerName={assignedDesignerName}
+              orderStatus={o.status}
+              needsDesigner={fulfillmentContext.needsDesigner}
+              currentDesignPrice={orderExtras.design_price ?? null}
+              currentDesignDueAt={orderExtras.design_due_at ?? null}
+              currentDesignSlipNotes={orderExtras.design_slip_notes ?? null}
+              currentDesignMetalEstimate={orderExtras.design_metal_estimate ?? null}
+              slipItems={slipItems}
+            />
 
-          {o.include_energization ? (
-            <Panel title="Ceremony" icon={Zap}>
-              <dl className="grid gap-3 px-5 py-4 sm:grid-cols-2">
-                <Field label="Type">{cap(o.energization_type) ?? 'Not specified'}</Field>
-                {o.ceremony_gotra || ceremonyForm?.gotra ? (
-                  <Field label="Gotra">{o.ceremony_gotra || ceremonyForm?.gotra}</Field>
-                ) : null}
-                {ceremonyDob ? (
-                  <Field label="Date of birth">
-                    {new Date(ceremonyDob).toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </Field>
-                ) : null}
-                {ceremonyForm?.birth_time ? (
-                  <Field label="Birth time">{ceremonyForm.birth_time}</Field>
-                ) : null}
-                {ceremonyForm?.birth_place ? (
-                  <Field label="Birth place">{ceremonyForm.birth_place}</Field>
-                ) : null}
-                {o.ceremony_rashi || ceremonyForm?.rashi ? (
-                  <Field label="Rashi">{o.ceremony_rashi || ceremonyForm?.rashi}</Field>
-                ) : null}
-                {o.record_ceremony || ceremonyForm?.record_ceremony ? (
-                  <p className="sm:col-span-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-                    Ceremony video recording requested
-                  </p>
-                ) : null}
-              </dl>
-            </Panel>
-          ) : null}
-        </div>
-
-        {/* Actions column */}
-        <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
-          <OrderAssignDesigner
-            orderId={o.id}
-            orderNumber={o.order_number}
-            currentDesignerId={orderExtras.assigned_designer_id ?? null}
-            currentDesignerName={assignedDesignerName}
-            orderStatus={o.status}
-            needsDesigner={fulfillmentContext.needsDesigner}
-            currentDesignPrice={orderExtras.design_price ?? null}
-            currentDesignDueAt={orderExtras.design_due_at ?? null}
-            currentDesignSlipNotes={orderExtras.design_slip_notes ?? null}
-            currentDesignMetalEstimate={orderExtras.design_metal_estimate ?? null}
-            slipItems={slipItems}
-          />
-
-          <OrderActions
-            orderId={o.id}
-            currentStatus={o.status}
-            currentNotes={orderExtras.internal_notes ?? orderExtras.admin_notes ?? null}
-            currentTracking={o.tracking_number}
-            currentTrackingUrl={o.tracking_url}
-            currentEstDelivery={o.estimated_delivery}
-            currentCarrier={orderExtras.carrier ?? null}
-            currentShippedAt={orderExtras.shipped_at ?? null}
-            currentDeliveryStatus={orderExtras.delivery_status ?? null}
-            currentProductVideoUrl={orderExtras.product_video_url ?? null}
-            currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
-            currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
-            productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
-            orderSource={o.order_source ?? null}
-            orderTotal={o.total}
-            customerPhone={displayPhone}
-            customerName={displayName}
-            orderNumber={o.order_number}
-            orderItems={items.map((item) => ({
-              product_id: item.product_id,
-              category: item.category,
-              configuration_id: item.configuration_id,
-              configuration_snapshot: item.configuration_snapshot,
-            }))}
-            includeEnergization={o.include_energization ?? false}
-            certificationCharges={o.certification_charges ?? 0}
-            energizationCharges={o.energization_charges ?? 0}
-            currentReturnStatus={orderExtras.return_status ?? 'none'}
-            cancelReason={orderExtras.payment_failure_reason ?? null}
-            complianceFlags={orderExtras.compliance_flags ?? null}
-            currentCommissionSource={orderExtras.commission_source ?? null}
-            currentCommissionName={orderExtras.commission_name ?? null}
-            currentCommissionAmount={orderExtras.commission_amount ?? null}
-          />
-        </aside>
-      </div>
+            <OrderActions
+              orderId={o.id}
+              currentStatus={o.status}
+              currentNotes={orderExtras.internal_notes ?? orderExtras.admin_notes ?? null}
+              currentTracking={o.tracking_number}
+              currentTrackingUrl={o.tracking_url}
+              currentEstDelivery={o.estimated_delivery}
+              currentCarrier={orderExtras.carrier ?? null}
+              currentShippedAt={orderExtras.shipped_at ?? null}
+              currentDeliveryStatus={orderExtras.delivery_status ?? null}
+              currentProductVideoUrl={orderExtras.product_video_url ?? null}
+              currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
+              currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
+              productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
+              orderSource={o.order_source ?? null}
+              orderTotal={o.total}
+              customerPhone={displayPhone}
+              customerName={displayName}
+              orderNumber={o.order_number}
+              orderItems={items.map((item) => ({
+                product_id: item.product_id,
+                category: item.category,
+                configuration_id: item.configuration_id,
+                configuration_snapshot: item.configuration_snapshot,
+              }))}
+              includeEnergization={o.include_energization ?? false}
+              certificationCharges={o.certification_charges ?? 0}
+              energizationCharges={o.energization_charges ?? 0}
+              currentReturnStatus={orderExtras.return_status ?? 'none'}
+              cancelReason={orderExtras.payment_failure_reason ?? null}
+              complianceFlags={orderExtras.compliance_flags ?? null}
+              currentCommissionSource={orderExtras.commission_source ?? null}
+              currentCommissionName={orderExtras.commission_name ?? null}
+              currentCommissionAmount={orderExtras.commission_amount ?? null}
+            />
+          </div>
+        }
+      />
     </div>
   );
 }

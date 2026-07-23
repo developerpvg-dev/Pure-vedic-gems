@@ -20,6 +20,7 @@ import type {
 } from '@/lib/types/configurator';
 import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
 import {
+  getConfiguratorLastVisibleStep,
   getConfiguratorNextStep,
   getConfiguratorPrevStep,
   getConfiguratorStepMeta,
@@ -435,7 +436,9 @@ export default function ConfiguratorWrapper({
     }
   };
 
-  const complete = isComplete();
+  const lastVisibleStep = getConfiguratorLastVisibleStep(startStep, state, optionRules);
+  // ponytail: certification can auto-skip, so field-complete alone unlocked Add to Cart before energization
+  const complete = isComplete() && state.current_step >= lastVisibleStep;
   const pricing = state.pricing;
   const displayTotal = useMemo(
     () =>
@@ -810,7 +813,7 @@ export default function ConfiguratorWrapper({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                  {state.current_step < 7 ? (
+                  {state.current_step < lastVisibleStep ? (
                     <Button
                       onClick={handleNext}
                       disabled={!canProceed()}

@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/order-status';
+import { BANK_TRANSFER_HOLD_MS } from '@/lib/constants/bank-accounts';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Json } from '@/lib/types/database';
 import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
@@ -186,6 +187,7 @@ export async function POST(req: NextRequest) {
     coupon_code,
     reward_points_to_redeem,
     checkout_consent,
+    payment_method,
   } = parsed.data;
 
   // ── Get authenticated user (if logged in) ────────────────────────────
@@ -249,7 +251,9 @@ export async function POST(req: NextRequest) {
   // ── Insert order into database ───────────────────────────────────────
   const supabaseAdmin = createAdminClient();
   const guestAccess = customerId ? null : createGuestOrderToken();
-  const reservationHoldUntil = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+  // ponytail: Razorpay keeps 20m hold; bank transfer needs days for NEFT/IMPS + proof review
+  const holdMs = payment_method === 'bank_transfer' ? BANK_TRANSFER_HOLD_MS : 20 * 60 * 1000;
+  const reservationHoldUntil = new Date(Date.now() + holdMs).toISOString();
 
   const ceremony = deriveCeremonyFromCartItems(items, energization);
 
@@ -301,6 +305,7 @@ export async function POST(req: NextRequest) {
       ceremony_rashi: ceremony.ceremony_rashi,
       record_ceremony: ceremony.record_ceremony,
       payment_status: 'pending',
+      payment_method: payment_method === 'bank_transfer' ? 'bank_transfer' : null,
       status: 'pending_payment',
       guest_access_token: guestAccess?.hash ?? null,
       reservation_expires_at: reservationHoldUntil,

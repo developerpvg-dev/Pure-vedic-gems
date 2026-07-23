@@ -230,6 +230,7 @@ export function OrderTrackingLookup() {
                 order={result.order}
                 defaultDetailsOpen
                 allowCancel={Boolean(result.order.can_cancel)}
+                requireBankContactConfirm={!isAuthenticated}
               />
 
               <div className="rounded-xl border border-[#ede6d5] bg-white p-5 shadow-[0_10px_32px_rgba(44,4,4,0.06)] md:p-6">

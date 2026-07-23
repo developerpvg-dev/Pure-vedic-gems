@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const [productResult, rulesResult] = await Promise.all([
     supabase
       .from('products')
-      .select('id, category, sub_category, configurator_enabled, certificate_display_enabled')
+      .select('id, category, sub_category, configurator_enabled')
       .eq('id', productId)
       .eq('is_active', true)
       .maybeSingle(),
@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
     category: string;
     sub_category: string | null;
     configurator_enabled: boolean;
-    certificate_display_enabled: boolean;
   };
 
   const rules: ConfiguratorOptionRules = resolveConfiguratorOptionRules(

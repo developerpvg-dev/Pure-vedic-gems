@@ -8,6 +8,9 @@ import {
   CUSTOMER_CANCELLABLE_STATUSES,
   isCustomerCancellable,
 } from '@/lib/constants/order-status';
+import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
+import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
+import type { Order } from '@/lib/types/database';
 
 /**
  * POST /api/orders/[id]/cancel
@@ -95,6 +98,23 @@ export async function POST(
     entityId: id,
     metadata: { order_number: orderRow.order_number, status: 'cancelled' },
   });
+
+  try {
+    const recipient = await resolveOrderCustomerEmail(
+      orderRow as Pick<Order, 'guest_email' | 'guest_name' | 'customer_id'>,
+    );
+    if (recipient) {
+      await sendOrderCancelledEmail({
+        to: recipient.email,
+        customerName: recipient.name,
+        orderNumber: orderRow.order_number,
+        reason: 'Cancelled by customer',
+        cancelledBy: 'customer',
+      });
+    }
+  } catch (emailErr) {
+    console.error('[orders/cancel] email failed', emailErr);
+  }
 
   return NextResponse.json({ success: true, status: 'cancelled' });
 }

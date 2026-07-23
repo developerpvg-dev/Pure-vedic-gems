@@ -20,6 +20,11 @@ import {
   buildOrderPriceLines,
   orderItemMerchandiseTotal,
 } from '@/lib/orders/price-breakdown-lines';
+import {
+  canCustomerResubmitBankTransfer,
+  parseBankTransferProof,
+} from '@/lib/orders/bank-transfer-proof';
+import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
 const CONFETTI_COLORS = ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'];
 const CONFETTI_PIECES = Array.from({ length: 40 }, (_, i) => ({
@@ -67,6 +72,9 @@ interface OrderData {
     country: string;
   };
   payment_status: string;
+  payment_method?: string | null;
+  payment_review_reason?: string | null;
+  compliance_flags?: unknown;
   status: string;
   guest_name: string | null;
   guest_email: string | null;
@@ -80,14 +88,33 @@ interface Props {
 }
 
 export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
-  const [showConfetti, setShowConfetti] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [copied, setCopied] = useState(false);
   const priceLines = buildOrderPriceLines(order);
 
+  const isPaid = isPaidPaymentStatus(order.payment_status);
+  const isPaymentReview = order.payment_status === 'amount_mismatch' || order.status === 'payment_review';
+  const isFailed = order.payment_status === 'failed' || order.payment_status === 'cancelled';
+  const bankProof = parseBankTransferProof(order.compliance_flags);
+  const isBankTransfer =
+    order.payment_method === 'bank_transfer' || Boolean(bankProof);
+  const isBankRejected = bankProof?.status === 'rejected';
+  const isBankTransferPending =
+    isBankTransfer &&
+    !isPaid &&
+    (isPaymentReview || order.status === 'pending_payment');
+  const canResubmit = canCustomerResubmitBankTransfer(
+    bankProof,
+    order.status,
+    order.payment_status,
+  );
+
   useEffect(() => {
+    if (!isPaid) return;
+    setShowConfetti(true);
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isPaid]);
 
   const whatsappMessage = `Hi, I just placed order ${order.order_number} on PureVedicGems. Looking forward to receiving my gems! ✨`;
   const whatsappUrl = `https://wa.me/919871582404?text=${encodeURIComponent(whatsappMessage)}`;
@@ -102,11 +129,12 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
     }
   };
 
-  const isPaid = isPaidPaymentStatus(order.payment_status);
-  const isPaymentReview = order.payment_status === 'amount_mismatch' || order.status === 'payment_review';
-  const isFailed = order.payment_status === 'failed' || order.payment_status === 'cancelled';
   const statusTitle = isPaid
     ? 'Thank You!'
+    : isBankRejected
+      ? 'Payment Proof Needs an Update'
+    : isBankTransferPending
+      ? 'We Got Your Transfer'
     : isPaymentReview
       ? 'Payment Under Review'
       : isFailed
@@ -114,6 +142,12 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
         : 'Order Created';
   const statusMessage = isPaid
     ? 'Your payment was successful. We\'re preparing your order with utmost care.'
+    : isBankRejected
+      ? bankProof?.reject_reason ||
+        order.payment_review_reason ||
+        'We could not match your bank transfer. Please update the details below and resubmit.'
+    : isBankTransferPending
+      ? 'Thanks for submitting your bank transfer proof. We will review your payment and confirm the order within 24 hours.'
     : isPaymentReview
       ? 'We received a payment update that needs manual review. Our team will contact you before processing the order.'
       : isFailed
@@ -121,16 +155,22 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
         : 'Your order has been created. We\'re confirming your payment.';
   const badgeClass = isPaid
     ? 'bg-green-100 text-green-700'
-    : isPaymentReview || isFailed
+    : isBankRejected
       ? 'bg-red-100 text-red-700'
+    : isPaymentReview || isFailed || isBankTransferPending
+      ? 'bg-amber-100 text-amber-800'
       : 'bg-amber-100 text-amber-700';
   const badgeDotClass = isPaid
     ? 'bg-green-500'
-    : isPaymentReview || isFailed
+    : isBankRejected
       ? 'bg-red-500'
-      : 'bg-amber-500';
+    : 'bg-amber-500';
   const badgeText = isPaid
     ? 'Payment Confirmed'
+    : isBankRejected
+      ? 'Proof Rejected'
+    : isBankTransferPending
+      ? 'Review within 24 hours'
     : isPaymentReview
       ? 'Payment Under Review'
       : isFailed
@@ -207,19 +247,46 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
               year: 'numeric',
             })}
           </p>
-
-          {/* Status badge */}
-          <div className="mt-4">
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${badgeClass}`}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${badgeDotClass}`}
-              />
-              {badgeText}
-            </span>
+          <div className={`inline-flex items-center gap-2 mt-4 px-3 py-1.5 rounded-full text-sm font-medium ${badgeClass}`}>
+            <span className={`h-2 w-2 rounded-full ${badgeDotClass}`} />
+            {badgeText}
           </div>
         </div>
+
+        {isBankTransfer && !isPaid ? (
+          <div className="mb-6 space-y-4">
+            {isBankTransferPending && !isBankRejected ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
+                <p className="font-semibold">We will review and confirm within 24 hours</p>
+                <p className="mt-1 text-amber-900/85">
+                  Your bank transfer details are with our team. You will get an email once the payment
+                  is verified and the order is confirmed.
+                </p>
+              </div>
+            ) : null}
+            {bankProof && bankProof.status !== 'rejected' ? (
+              <div className="rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-5 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pvg-muted)]">
+                  Submitted transfer
+                </p>
+                <p className="mt-2 font-medium text-[var(--pvg-text)]">
+                  {bankProof.bank_label} · {bankProof.reference}
+                </p>
+                {bankProof.notes ? (
+                  <p className="mt-1 text-[var(--pvg-muted)]">{bankProof.notes}</p>
+                ) : null}
+              </div>
+            ) : null}
+            {canResubmit ? (
+              <BankTransferResubmitForm
+                orderId={order.id}
+                orderTotalLabel={formatPrice(order.total, 'INR')}
+                existing={bankProof}
+                onSubmitted={() => window.location.reload()}
+              />
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Items Summary */}
         <div className="bg-brand-surface rounded-2xl border border-[var(--pvg-border)] p-6 mb-6">

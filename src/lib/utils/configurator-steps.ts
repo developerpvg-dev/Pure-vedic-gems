@@ -58,6 +58,21 @@ export function isConfiguratorStepSkipped(
   return false;
 }
 
+/** Last non-skipped step id — Add to Cart only after the user reaches this. */
+export function getConfiguratorLastVisibleStep(
+  startStep: number,
+  state: ConfiguratorState,
+  optionRules?: ConfiguratorOptionRules | null
+): number {
+  let last = startStep;
+  for (let step = startStep; step <= 7; step += 1) {
+    if (!isConfiguratorStepSkipped(step, state, optionRules)) {
+      last = step;
+    }
+  }
+  return last;
+}
+
 function advancePastSkippedSteps(
   step: number,
   state: ConfiguratorState,
