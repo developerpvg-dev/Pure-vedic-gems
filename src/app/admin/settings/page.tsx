@@ -43,6 +43,8 @@ const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
   admin: 'Admin',
   sales: 'Sales',
+  telecom: 'Telecommunication',
+  astrologer: 'Astrologer',
   content: 'Website Maintenance',
   inventory: 'Products Uploading',
   stock_manager: 'Order / Stock Incharge',
@@ -58,6 +60,8 @@ const ROLE_LABELS: Record<string, string> = {
 const DEFAULT_INVITE_ROLES = [
   'admin',
   'sales',
+  'telecom',
+  'astrologer',
   'content',
   'inventory',
   'stock_manager',

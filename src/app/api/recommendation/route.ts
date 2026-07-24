@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
     try {
       const admin = createAdminClient();
       adminClient = admin;
+      const geo =
+        request.headers.get('x-vercel-ip-city') && request.headers.get('x-vercel-ip-country')
+          ? `${request.headers.get('x-vercel-ip-city')}, ${request.headers.get('x-vercel-ip-country')}`
+          : null;
+
       const { data: enquiry, error } = await admin
         .from('enquiries')
         .insert({
@@ -67,6 +72,13 @@ export async function POST(request: NextRequest) {
           message,
           source: 'homepage_recommendation',
           status: 'new',
+          pipeline_stage: 'new',
+          enquiry_type: 'Remedies Recommendation',
+          date_of_birth: parsed.data.birthDate || null,
+          birth_time: parsed.data.birthTime || null,
+          birth_place: parsed.data.birthPlace || null,
+          area_of_concern: parsed.data.purpose || null,
+          ip_location: geo,
         })
         .select('id')
         .single();
@@ -92,9 +104,9 @@ export async function POST(request: NextRequest) {
               audience: 'admin',
               recipientRole: 'sales',
               type: 'homepage_recommendation_request',
-              title: 'New gemstone recommendation request',
-              message: `${customerName} requested a gemstone recommendation from the homepage.`,
-              href: '/admin/leads?type=enquiry',
+              title: 'New recommendation — assign telecaller',
+              message: `${customerName} requested remedies. Assign a telecaller to verify details.`,
+              href: `/admin/leads?type=enquiry&id=${enquiry.id}`,
               entityType: 'enquiry',
               entityId: enquiry.id,
               metadata: { source: 'homepage_recommendation', purpose: parsed.data.purpose ?? null },

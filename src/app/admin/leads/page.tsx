@@ -1,100 +1,104 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Search, Phone, Mail, MessageSquare, User, ChevronDown, ChevronUp, BarChart3, Users, IndianRupee } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Loader2,
+  Search,
+  Phone,
+  Mail,
+  MessageSquare,
+  User,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  CheckCircle2,
+} from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
-import { AdminAnalyticsPanel, AdminStatCard } from '@/components/admin/AdminPageShell';
-import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
+import { AdminStatCard } from '@/components/admin/AdminPageShell';
+import { EnquiryDetail, type EnquiryLead, type LeadCaps } from '@/components/admin/leads/EnquiryDetail';
+import {
+  LEAD_PIPELINE_LABELS,
+  LEAD_PIPELINE_STAGES,
+  LEAD_REMARK_CODES,
+  type LeadPipelineStage,
+  type LeadRemarkCode,
+} from '@/lib/leads/constants';
 
-interface Enquiry {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  subject: string | null;
-  message: string;
-  source: string;
-  status: string;
-  assigned_to: string | null;
-  follow_up_date: string | null;
-  internal_notes: string | null;
-  created_at: string;
-}
+type StaffMember = { id: string; name: string; role: string };
 
-interface Consultation {
+type ConsultationLead = {
   id: string;
-  customer_id: string | null;
-  plan_id: string | null;
-  plan_title_snapshot: string | null;
-  plan_description_snapshot: string | null;
   full_name: string;
   email: string;
   phone: string | null;
+  status: string;
+  amount_inr: number | null;
+  currency: string;
+  payment_status: string;
+  plan_title_snapshot: string | null;
   date_of_birth: string | null;
   birth_time: string | null;
   birth_place: string | null;
-  life_situation: string | null;
-  consultation_type: string | null;
-  mode: string | null;
-  preferred_date: string | null;
-  preferred_time: string | null;
+  internal_notes: string | null;
   scheduled_date: string | null;
   scheduled_time: string | null;
   scheduled_mode: string | null;
   meeting_link: string | null;
   admin_schedule_notes: string | null;
-  scheduled_at: string | null;
-  scheduled_email_sent_at: string | null;
-  scheduled_notification_sent_at: string | null;
-  message: string | null;
-  amount_inr: number | null;
-  amount_paise: number | null;
-  currency: string;
-  payment_status: string;
-  payment_method: string | null;
-  payment_failure_reason: string | null;
-  payment_review_reason: string | null;
-  razorpay_order_id: string | null;
-  razorpay_payment_id: string | null;
-  amount_verified_at: string | null;
-  completed_at: string | null;
-  completed_email_sent_at: string | null;
-  status: string;
-  assigned_expert: string | null;
-  internal_notes: string | null;
+  mode: string | null;
   created_at: string;
-}
-
-type Lead = (Enquiry & { _type: 'enquiry' }) | (Consultation & { _type: 'consultation' });
-
-const STATUS_OPTIONS = ['new', 'contacted', 'resolved', 'closed'];
-const CONSULT_STATUS_OPTIONS = ['pending_payment', 'pending', 'confirmed', 'payment_review', 'completed', 'cancelled'];
-const LEADS_PER_PAGE = 20;
-
-const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-100 text-blue-700',
-  contacted: 'bg-yellow-100 text-yellow-700',
-  resolved: 'bg-green-100 text-green-700',
-  closed: 'bg-gray-100 text-gray-600',
-  pending: 'bg-blue-100 text-blue-700',
-  pending_payment: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-amber-100 text-amber-700',
-  payment_review: 'bg-purple-100 text-purple-700',
-  completed: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-600',
-  captured: 'bg-green-100 text-green-700',
-  created: 'bg-blue-100 text-blue-700',
-  failed: 'bg-red-100 text-red-600',
-  amount_mismatch: 'bg-purple-100 text-purple-700',
+  _type: 'consultation';
 };
 
-function formatMoney(amount: number | null, currency = 'INR') {
-  if (amount == null) return '-';
-  return `${currency} ${amount.toLocaleString('en-IN')}`;
+type Lead = EnquiryLead | ConsultationLead;
+
+type Remark = {
+  id: string;
+  remark_code: string;
+  remark_label: string;
+  note: string | null;
+  created_by_name: string | null;
+  created_at: string;
+};
+
+type Caps = LeadCaps;
+
+const LEADS_PER_PAGE = 25;
+
+const STAGE_COLORS: Record<string, string> = {
+  new: 'bg-sky-100 text-sky-800',
+  assigned: 'bg-indigo-100 text-indigo-800',
+  verifying: 'bg-amber-100 text-amber-800',
+  verified: 'bg-emerald-100 text-emerald-800',
+  with_astrologer: 'bg-violet-100 text-violet-800',
+  remedies_ready: 'bg-fuchsia-100 text-fuchsia-800',
+  sent_to_customer: 'bg-teal-100 text-teal-800',
+  follow_up: 'bg-orange-100 text-orange-800',
+  closed: 'bg-gray-100 text-gray-600',
+};
+
+function fmtDate(value: string | null | undefined) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function timeInputValue(value: string | null) {
-  return value ? value.slice(0, 5) : '';
+function buildAstroPacket(lead: EnquiryLead) {
+  return [
+    `SR. No. ${lead.lead_number ?? '—'}`,
+    `Date: ${fmtDate(lead.created_at)}`,
+    `Enquiry Type: ${lead.enquiry_type || lead.subject || 'Enquiry'}`,
+    lead.ip_location ? `IP Location: ${lead.ip_location}` : null,
+    `Name: ${lead.name}`,
+    `Phone No: ${lead.phone || '—'}`,
+    `Email ID: ${lead.email}`,
+    `Date of Birth: ${lead.date_of_birth || '—'}`,
+    `Time of Birth: ${lead.birth_time || '—'}`,
+    `Place of Birth: ${lead.birth_place || '—'}`,
+    `Area of Concern: ${lead.area_of_concern || '—'}`,
+    lead.payment_received ? `Payment: Received${lead.payment_note ? ` — ${lead.payment_note}` : ''}` : 'Payment: Pending',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 export default function LeadsPage() {
@@ -103,66 +107,163 @@ export default function LeadsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'enquiry' | 'consultation'>('all');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [filter, setFilter] = useState<'enquiry' | 'consultation' | 'all'>('enquiry');
+  const [pipeline, setPipeline] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [astrologerId, setAstrologerId] = useState('');
+  const [remarkFilter, setRemarkFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [followUp, setFollowUp] = useState('');
+  const [saleClose, setSaleClose] = useState('');
+  const [paymentReceived, setPaymentReceived] = useState('');
+  const [detailsConfirmed, setDetailsConfirmed] = useState('');
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState({
+  const [copied, setCopied] = useState(false);
+  const [remarks, setRemarks] = useState<Remark[]>([]);
+  const [remarkCode, setRemarkCode] = useState<LeadRemarkCode>('call_not_answering');
+  const [remarkNote, setRemarkNote] = useState('');
+  const [staff, setStaff] = useState<{ telecom: StaffMember[]; astrologers: StaffMember[] }>({
+    telecom: [],
+    astrologers: [],
+  });
+  const [caps, setCaps] = useState<Caps>({
+    canAssign: true,
+    canForwardAstrologer: true,
+    canEditRemedies: true,
+    canSendToTelecaller: true,
+    scoped: false,
+  });
+  const [summary, setSummary] = useState<{
+    total: number;
+    totalEnquiries: number;
+    totalConsultations: number;
+    newEnquiries: number;
+    unassigned: number;
+    needsFollowUp: number;
+    verifying: number;
+    verified: number;
+    withAstrologer: number;
+    remediesReady: number;
+    saleClosed: number;
+    byStage?: Record<string, number>;
+  }>({
     total: 0,
     totalEnquiries: 0,
     totalConsultations: 0,
     newEnquiries: 0,
-    pendingConsultations: 0,
-    completedConsultations: 0,
+    unassigned: 0,
+    needsFollowUp: 0,
+    verifying: 0,
+    verified: 0,
+    withAstrologer: 0,
+    remediesReady: 0,
+    saleClosed: 0,
+    byStage: {},
   });
-  const [analytics, setAnalytics] = useState<{
-    trend: Array<{ date: string; label: string; orders: number; revenue: number; capturedRevenue?: number }>;
-    enquiryStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
-    consultationStatusBreakdown: Array<{ label: string; value: number; meta: number }>;
-    summary: { consultationRevenue: number };
-  } | null>(null);
-  const [analyticsOpen, setAnalyticsOpen] = useState(true);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    fetch('/api/admin/leads/staff')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setStaff({ telecom: data.telecom ?? [], astrologers: data.astrologers ?? [] });
+      })
+      .catch(() => undefined);
+  }, []);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), per_page: String(LEADS_PER_PAGE) });
-    if (filter !== 'all') params.set('type', filter);
-    if (statusFilter) params.set('status', statusFilter);
-    if (search) params.set('search', search);
+    const params = new URLSearchParams({ page: String(page), per_page: String(LEADS_PER_PAGE), type: filter });
+    if (pipeline) params.set('pipeline', pipeline);
+    if (assignedTo) params.set('assigned_to', assignedTo);
+    if (astrologerId) params.set('astrologer_id', astrologerId);
+    if (remarkFilter) params.set('remark', remarkFilter);
+    if (sourceFilter) params.set('source', sourceFilter);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    if (followUp) params.set('follow_up', followUp);
+    if (saleClose) params.set('sale_close', saleClose);
+    if (paymentReceived) params.set('payment_received', paymentReceived);
+    if (detailsConfirmed) params.set('details_confirmed', detailsConfirmed);
+    if (unassignedOnly) params.set('unassigned', '1');
+    if (debouncedSearch) params.set('search', debouncedSearch);
 
     try {
       const res = await fetch(`/api/admin/leads?${params}`);
       if (!res.ok) throw new Error();
-      const data = await res.json() as {
+      const data = (await res.json()) as {
         leads?: Lead[];
         total?: number;
         total_pages?: number;
         summary?: typeof summary;
+        capabilities?: Caps;
+        role?: string;
       };
       setLeads(data.leads ?? []);
       setTotal(data.total ?? 0);
       setTotalPages(data.total_pages ?? 1);
-      if (data.summary) setSummary(data.summary);
+      if (data.summary) setSummary((s) => ({ ...s, ...data.summary }));
+      if (data.capabilities) {
+        setCaps({ ...data.capabilities, role: data.role ?? data.capabilities.role });
+      }
     } catch {
       setLeads([]);
       setTotal(0);
       setTotalPages(1);
     }
     setLoading(false);
-  }, [filter, page, search, statusFilter]);
-
-  useEffect(() => { fetchLeads(); }, [fetchLeads]);
+  }, [
+    page,
+    filter,
+    pipeline,
+    assignedTo,
+    astrologerId,
+    remarkFilter,
+    sourceFilter,
+    dateFrom,
+    dateTo,
+    followUp,
+    saleClose,
+    paymentReceived,
+    detailsConfirmed,
+    unassignedOnly,
+    debouncedSearch,
+  ]);
 
   useEffect(() => {
-    setAnalyticsLoading(true);
-    fetch('/api/admin/leads/analytics')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (data) setAnalytics(data); })
-      .finally(() => setAnalyticsLoading(false));
+    void fetchLeads();
+  }, [fetchLeads]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) setExpandedId(id);
   }, []);
+
+  useEffect(() => {
+    if (!expandedId) {
+      setRemarks([]);
+      return;
+    }
+    const lead = leads.find((l) => l.id === expandedId);
+    if (!lead || lead._type !== 'enquiry') return;
+    fetch(`/api/admin/leads/${expandedId}/remarks`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setRemarks(data?.remarks ?? []))
+      .catch(() => setRemarks([]));
+  }, [expandedId, leads]);
 
   async function updateLead(id: string, type: string, updates: Record<string, unknown>) {
     setSaving(id);
@@ -174,7 +275,7 @@ export default function LeadsPage() {
         body: JSON.stringify({ type, ...updates }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => null) as { error?: string } | null;
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(data?.error || 'Unable to update lead');
       }
       await fetchLeads();
@@ -184,11 +285,69 @@ export default function LeadsPage() {
     setSaving(null);
   }
 
+  async function addRemark(id: string) {
+    setSaving(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/leads/${id}/remarks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: remarkCode, note: remarkNote || null }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || 'Unable to add remark');
+      }
+      setRemarkNote('');
+      const data = await res.json();
+      setRemarks((prev) => [...prev, data.remark]);
+      await fetchLeads();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to add remark');
+    }
+    setSaving(null);
+  }
+
+  const staffName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of [...staff.telecom, ...staff.astrologers]) map.set(m.id, m.name);
+    return map;
+  }, [staff]);
+
+  function resetFilters() {
+    setPipeline('');
+    setAssignedTo('');
+    setAstrologerId('');
+    setRemarkFilter('');
+    setSourceFilter('');
+    setDateFrom('');
+    setDateTo('');
+    setFollowUp('');
+    setSaleClose('');
+    setPaymentReceived('');
+    setDetailsConfirmed('');
+    setUnassignedOnly(false);
+    setSearch('');
+    setPage(1);
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Leads & Enquiries</h1>
-        <p className="mt-0.5 text-sm text-gray-500">Manage customer enquiries and consultation bookings</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Leads CRM</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Manager assigns → Telecaller verifies → Manager → Astrologer → Manager edits → Telecaller delivers
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+        >
+          <Filter className="h-3.5 w-3.5" />
+          {showFilters ? 'Hide filters' : 'Show filters'}
+        </button>
       </div>
 
       {error && (
@@ -197,70 +356,175 @@ export default function LeadsPage() {
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminStatCard label="Total leads" value={summary.total.toLocaleString('en-IN')} icon={Users} tone="text-gray-900" bg="bg-gray-50" />
-        <AdminStatCard label="New enquiries" value={summary.newEnquiries.toLocaleString('en-IN')} icon={MessageSquare} tone="text-blue-600" bg="bg-blue-50" />
-        <AdminStatCard label="Pending consultations" value={summary.pendingConsultations.toLocaleString('en-IN')} icon={User} tone="text-amber-600" bg="bg-amber-50" />
-        <AdminStatCard label="Consultation revenue" value={fmtInr(analytics?.summary.consultationRevenue ?? 0)} icon={IndianRupee} tone="text-green-600" bg="bg-green-50" subtext={`${summary.completedConsultations} completed`} />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
+        <AdminStatCard label="Total enquiries" value={summary.totalEnquiries.toLocaleString('en-IN')} icon={UsersIcon} tone="text-gray-900" bg="bg-gray-50" />
+        <AdminStatCard label="New / unassigned" value={`${summary.newEnquiries} / ${summary.unassigned}`} icon={MessageSquare} tone="text-sky-700" bg="bg-sky-50" />
+        <AdminStatCard label="Verifying" value={summary.verifying.toLocaleString('en-IN')} icon={Phone} tone="text-amber-700" bg="bg-amber-50" />
+        <AdminStatCard label="Verified" value={summary.verified.toLocaleString('en-IN')} icon={CheckCircle2} tone="text-emerald-700" bg="bg-emerald-50" />
+        <AdminStatCard label="With astrologer" value={summary.withAstrologer.toLocaleString('en-IN')} icon={User} tone="text-violet-700" bg="bg-violet-50" />
+        <AdminStatCard label="Follow-ups due" value={summary.needsFollowUp.toLocaleString('en-IN')} icon={Mail} tone="text-orange-700" bg="bg-orange-50" />
       </div>
 
-      <AdminAnalyticsPanel
-        title="Lead analytics"
-        subtitle="Last 30 days · enquiries & consultations"
-        loading={analyticsLoading}
-        open={analyticsOpen}
-        onToggle={() => setAnalyticsOpen((v) => !v)}
-      >
-        <div className="grid gap-5 xl:grid-cols-5">
-          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-3">
-            <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Activity trend</h3>
-            {analytics ? <RevenueTrendChart data={analytics.trend} /> : null}
-          </div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 xl:col-span-2">
-            <MetricBars embedded title="Enquiry status" icon={BarChart3} items={analytics?.enquiryStatusBreakdown.slice(0, 6) ?? []} />
-          </div>
-        </div>
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-            <MetricBars embedded title="Consultation status" icon={User} items={analytics?.consultationStatusBreakdown.slice(0, 6) ?? []} />
-          </div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-            <MetricBars embedded title="Enquiries vs consultations" icon={MessageSquare} items={[
-              { label: 'Enquiries', value: summary.totalEnquiries, meta: 0 },
-              { label: 'Consultations', value: summary.totalConsultations, meta: analytics?.summary.consultationRevenue ?? 0 },
-            ]} />
-          </div>
-        </div>
-      </AdminAnalyticsPanel>
+      {/* Pipeline quick filters */}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={() => { setPipeline(''); setPage(1); }}
+          className={`rounded-full px-3 py-1 text-[11px] font-semibold ${!pipeline ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          All stages
+        </button>
+        {LEAD_PIPELINE_STAGES.map((stage) => (
+          <button
+            key={stage}
+            type="button"
+            onClick={() => { setPipeline(stage); setFilter('enquiry'); setPage(1); }}
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+              pipeline === stage ? 'bg-amber-600 text-white' : `${STAGE_COLORS[stage]} hover:opacity-80`
+            }`}
+          >
+            {LEAD_PIPELINE_LABELS[stage]}
+            {summary.byStage?.[stage] != null ? ` (${summary.byStage[stage]})` : ''}
+          </button>
+        ))}
+      </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {(['all', 'enquiry', 'consultation'] as const).map((t) => (
-            <button key={t} onClick={() => { setFilter(t); setPage(1); }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === t ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>
-              {t === 'all' ? 'All' : t === 'enquiry' ? 'Enquiries' : 'Consultations'}
+      {showFilters && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {(['enquiry', 'consultation', 'all'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => { setFilter(t); setPage(1); }}
+                  disabled={caps.scoped && t !== 'enquiry'}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
+                    filter === t ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t === 'all' ? 'All types' : t === 'enquiry' ? 'Enquiry CRM' : 'Consultations'}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={resetFilters} className="text-xs font-medium text-amber-700 hover:underline">
+              Reset filters
             </button>
-          ))}
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs">
-            <option value="">All Status</option>
-            {(filter === 'consultation' ? CONSULT_STATUS_OPTIONS : STATUS_OPTIONS).map((s) => (
-              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-            ))}
-          </select>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search name, email, phone..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm sm:w-64" />
-        </div>
-        </div>
-      </div>
+          </div>
 
-      {/* Table */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <label className="text-xs font-medium text-gray-500">
+              Search
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  placeholder="Name, email, phone, place..."
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm"
+                />
+              </div>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Coordinator
+              <select
+                value={assignedTo}
+                onChange={(e) => { setAssignedTo(e.target.value); setPage(1); }}
+                disabled={caps.scoped}
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+              >
+                <option value="">All</option>
+                {staff.telecom.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Astrologer
+              <select
+                value={astrologerId}
+                onChange={(e) => { setAstrologerId(e.target.value); setPage(1); }}
+                disabled={caps.scoped && !caps.canEditRemedies}
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+              >
+                <option value="">All</option>
+                {staff.astrologers.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Last remark
+              <select
+                value={remarkFilter}
+                onChange={(e) => { setRemarkFilter(e.target.value); setPage(1); }}
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">All remarks</option>
+                {LEAD_REMARK_CODES.map((r) => (
+                  <option key={r.code} value={r.code}>{r.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Date from
+              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Date to
+              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Follow-up
+              <select value={followUp} onChange={(e) => { setFollowUp(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                <option value="">Any</option>
+                <option value="overdue">Overdue</option>
+                <option value="today">Today</option>
+                <option value="upcoming">Upcoming</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Source
+              <select value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                <option value="">All sources</option>
+                <option value="homepage_recommendation">Homepage recommendation</option>
+                <option value="contact_form">Contact form</option>
+                <option value="yagya_booking">Yagya booking</option>
+                <option value="agent_chat">Ratna AI</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Payment
+              <select value={paymentReceived} onChange={(e) => { setPaymentReceived(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                <option value="">Any</option>
+                <option value="1">Received</option>
+                <option value="0">Pending</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Details confirmed
+              <select value={detailsConfirmed} onChange={(e) => { setDetailsConfirmed(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                <option value="">Any</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-gray-500">
+              Sale close
+              <select value={saleClose} onChange={(e) => { setSaleClose(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                <option value="">Any</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 pt-6 text-xs font-medium text-gray-700">
+              <input type="checkbox" checked={unassignedOnly} onChange={(e) => { setUnassignedOnly(e.target.checked); setPage(1); }} disabled={caps.scoped} />
+              Unassigned only
+            </label>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
@@ -268,7 +532,7 @@ export default function LeadsPage() {
       ) : leads.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white py-16 text-center">
           <MessageSquare className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-3 text-sm text-gray-500">No leads found</p>
+          <p className="mt-3 text-sm text-gray-500">No leads match these filters</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -276,190 +540,98 @@ export default function LeadsPage() {
             const isEnquiry = lead._type === 'enquiry';
             const name = isEnquiry ? lead.name : lead.full_name;
             const expanded = expandedId === lead.id;
-            const statusOpts = isEnquiry ? STATUS_OPTIONS : CONSULT_STATUS_OPTIONS;
+            const stage = isEnquiry ? (lead.pipeline_stage || 'new') : lead.status;
 
             return (
-              <div key={lead.id} className="rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-sm">
-                {/* Row */}
-                <button type="button" onClick={() => setExpandedId(expanded ? null : lead.id)}
-                  className="flex w-full items-center gap-3 p-4 text-left">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100">
-                    <User className="h-4 w-4 text-gray-500" />
+              <div key={`${lead._type}-${lead.id}`} className="rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(expanded ? null : lead.id)}
+                  className="flex w-full items-center gap-3 p-4 text-left"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                    {isEnquiry && lead.lead_number ? `#${lead.lead_number}` : <User className="h-4 w-4" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-semibold text-gray-900">{name}</p>
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        isEnquiry ? 'bg-amber-50 text-amber-600' : 'bg-purple-50 text-purple-600'
-                      }`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${isEnquiry ? 'bg-amber-50 text-amber-700' : 'bg-purple-50 text-purple-700'}`}>
                         {isEnquiry ? 'Enquiry' : 'Consultation'}
                       </span>
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS[lead.status] || 'bg-gray-100 text-gray-600'}`}>
-                        {lead.status}
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100 text-gray-600'}`}>
+                        {isEnquiry ? LEAD_PIPELINE_LABELS[stage as LeadPipelineStage] || stage : stage}
                       </span>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{lead.email}</span>
-                      {lead.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</span>}
-                      {!isEnquiry && (
-                        <span className="hidden sm:inline">
-                          {formatMoney(lead.amount_inr, lead.currency)} · {lead.payment_status.replace(/_/g, ' ')}
-                        </span>
+                      {isEnquiry && lead.payment_received && (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">₹ paid</span>
+                      )}
+                      {isEnquiry && lead.sale_close && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Sale closed</span>
                       )}
                     </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{lead.email}</span>
+                      {lead.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</span>}
+                      {isEnquiry && lead.assigned_to && (
+                        <span>Coord: {staffName.get(lead.assigned_to) || 'Assigned'}</span>
+                      )}
+                      {isEnquiry && lead.astrologer_name && <span>Astro: {lead.astrologer_name}</span>}
+                    </div>
                   </div>
-                  <span className="hidden text-xs text-gray-400 sm:block">
-                    {new Date(lead.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </span>
+                  <span className="hidden text-xs text-gray-400 sm:block">{fmtDate(lead.created_at)}</span>
                   {expanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
                 </button>
 
-                {/* Expanded detail */}
-                {expanded && (
-                  <div className="border-t border-gray-100 p-4">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {/* Left: details */}
-                      <div className="space-y-3 text-sm">
-                        {isEnquiry && lead.subject && (
-                          <div><span className="font-medium text-gray-700">Subject:</span> <span className="text-gray-600">{lead.subject}</span></div>
-                        )}
-                        {isEnquiry && (
-                          <div><span className="font-medium text-gray-700">Message:</span><p className="mt-1 whitespace-pre-wrap text-gray-600">{lead.message}</p></div>
-                        )}
-                        {!isEnquiry && (
-                          <>
-                            <div><span className="font-medium text-gray-700">Plan:</span> <span className="text-gray-600">{lead.plan_title_snapshot || 'Vedic Consultation'}</span></div>
-                            <div><span className="font-medium text-gray-700">Amount:</span> <span className="text-gray-600">{formatMoney(lead.amount_inr, lead.currency)}</span></div>
-                            <div><span className="font-medium text-gray-700">Payment:</span> <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS[lead.payment_status] || 'bg-gray-100 text-gray-600'}`}>{lead.payment_status.replace(/_/g, ' ')}</span></div>
-                            {lead.payment_method && <div><span className="font-medium text-gray-700">Payment Method:</span> <span className="text-gray-600">{lead.payment_method}</span></div>}
-                            {lead.razorpay_order_id && <div><span className="font-medium text-gray-700">Razorpay Order:</span> <span className="break-all text-gray-600">{lead.razorpay_order_id}</span></div>}
-                            {lead.razorpay_payment_id && <div><span className="font-medium text-gray-700">Razorpay Payment:</span> <span className="break-all text-gray-600">{lead.razorpay_payment_id}</span></div>}
-                            {lead.payment_review_reason && <div><span className="font-medium text-gray-700">Payment Review:</span> <span className="text-gray-600">{lead.payment_review_reason}</span></div>}
-                            {lead.payment_failure_reason && <div><span className="font-medium text-gray-700">Payment Failure:</span> <span className="text-gray-600">{lead.payment_failure_reason}</span></div>}
-                            {lead.customer_id && <div><span className="font-medium text-gray-700">Customer ID:</span> <span className="break-all text-gray-600">{lead.customer_id}</span></div>}
-                            {lead.consultation_type && <div><span className="font-medium text-gray-700">Type:</span> <span className="text-gray-600 capitalize">{lead.consultation_type}</span></div>}
-                            {lead.mode && <div><span className="font-medium text-gray-700">Mode:</span> <span className="text-gray-600 capitalize">{lead.mode.replace('_', ' ')}</span></div>}
-                            {lead.preferred_date && <div><span className="font-medium text-gray-700">Preferred Date:</span> <span className="text-gray-600">{lead.preferred_date}</span></div>}
-                            {lead.preferred_time && <div><span className="font-medium text-gray-700">Preferred Time:</span> <span className="text-gray-600">{lead.preferred_time}</span></div>}
-                            {lead.scheduled_date && <div><span className="font-medium text-gray-700">Scheduled Date:</span> <span className="text-gray-600">{lead.scheduled_date}</span></div>}
-                            {lead.scheduled_time && <div><span className="font-medium text-gray-700">Scheduled Time:</span> <span className="text-gray-600">{lead.scheduled_time}</span></div>}
-                            {lead.scheduled_mode && <div><span className="font-medium text-gray-700">Scheduled Mode:</span> <span className="text-gray-600 capitalize">{lead.scheduled_mode.replace('_', ' ')}</span></div>}
-                            {lead.meeting_link && <div><span className="font-medium text-gray-700">Meeting Link / Venue:</span> <span className="break-all text-gray-600">{lead.meeting_link}</span></div>}
-                            {lead.admin_schedule_notes && <div><span className="font-medium text-gray-700">Schedule Notes:</span><p className="mt-1 text-gray-600">{lead.admin_schedule_notes}</p></div>}
-                            {lead.scheduled_at && <div><span className="font-medium text-gray-700">Scheduled At:</span> <span className="text-gray-600">{new Date(lead.scheduled_at).toLocaleString('en-IN')}</span></div>}
-                            {lead.scheduled_email_sent_at && <div><span className="font-medium text-gray-700">Schedule Email:</span> <span className="text-gray-600">Sent {new Date(lead.scheduled_email_sent_at).toLocaleString('en-IN')}</span></div>}
-                            {lead.scheduled_notification_sent_at && <div><span className="font-medium text-gray-700">Schedule Notification:</span> <span className="text-gray-600">Sent {new Date(lead.scheduled_notification_sent_at).toLocaleString('en-IN')}</span></div>}
-                            {lead.date_of_birth && <div><span className="font-medium text-gray-700">DOB:</span> <span className="text-gray-600">{lead.date_of_birth}</span></div>}
-                            {lead.birth_time && <div><span className="font-medium text-gray-700">Birth Time:</span> <span className="text-gray-600">{lead.birth_time}</span></div>}
-                            {lead.birth_place && <div><span className="font-medium text-gray-700">Birth Place:</span> <span className="text-gray-600">{lead.birth_place}</span></div>}
-                            {lead.completed_at && <div><span className="font-medium text-gray-700">Completed At:</span> <span className="text-gray-600">{new Date(lead.completed_at).toLocaleString('en-IN')}</span></div>}
-                            {lead.completed_email_sent_at && <div><span className="font-medium text-gray-700">Completion Email:</span> <span className="text-gray-600">Sent {new Date(lead.completed_email_sent_at).toLocaleString('en-IN')}</span></div>}
-                            {lead.life_situation && <div><span className="font-medium text-gray-700">Life Situation:</span><p className="mt-1 text-gray-600">{lead.life_situation}</p></div>}
-                            {lead.message && <div><span className="font-medium text-gray-700">Message:</span><p className="mt-1 text-gray-600">{lead.message}</p></div>}
-                          </>
-                        )}
-                        {isEnquiry && lead.source && (
-                          <div><span className="font-medium text-gray-700">Source:</span> <span className="text-gray-600">{lead.source}</span></div>
-                        )}
-                      </div>
+                {expanded && isEnquiry && (
+                  <EnquiryDetail
+                    lead={lead}
+                    remarks={remarks}
+                    staff={staff}
+                    caps={caps}
+                    saving={saving === lead.id}
+                    remarkCode={remarkCode}
+                    remarkNote={remarkNote}
+                    copied={copied}
+                    onRemarkCode={setRemarkCode}
+                    onRemarkNote={setRemarkNote}
+                    onAddRemark={() => addRemark(lead.id)}
+                    onUpdate={(updates) => updateLead(lead.id, 'enquiry', updates)}
+                    onCopy={async () => {
+                      await navigator.clipboard.writeText(buildAstroPacket(lead));
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    }}
+                  />
+                )}
 
-                      {/* Right: actions */}
-                      <div className="space-y-3">
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-gray-500">Status</label>
-                          <select value={lead.status}
-                            onChange={(e) => updateLead(lead.id, lead._type, { status: e.target.value })}
-                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                            {statusOpts.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                          </select>
-                        </div>
-
-                        {isEnquiry && (
-                          <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-500">Follow-up Date</label>
-                            <input type="date" value={lead.follow_up_date || ''}
-                              onChange={(e) => updateLead(lead.id, lead._type, { follow_up_date: e.target.value || null })}
-                              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-                          </div>
-                        )}
-
-                        {!isEnquiry && (
-                          <form
-                            className="rounded-xl border border-amber-100 bg-amber-50/40 p-3"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              const formData = new FormData(event.currentTarget);
-                              const field = (key: string) => {
-                                const value = formData.get(key);
-                                return typeof value === 'string' && value.trim() ? value.trim() : null;
-                              };
-                              updateLead(lead.id, lead._type, {
-                                scheduled_date: field('scheduled_date'),
-                                scheduled_time: field('scheduled_time'),
-                                scheduled_mode: field('scheduled_mode'),
-                                meeting_link: field('meeting_link'),
-                                admin_schedule_notes: field('admin_schedule_notes'),
-                              });
-                            }}
-                          >
-                            <p className="mb-3 text-xs font-semibold text-amber-800">Schedule Consultation</p>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              <label className="text-xs font-medium text-gray-500">
-                                Date
-                                <input name="scheduled_date" type="date" defaultValue={lead.scheduled_date || ''} required className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-                              </label>
-                              <label className="text-xs font-medium text-gray-500">
-                                Time
-                                <input name="scheduled_time" type="time" defaultValue={timeInputValue(lead.scheduled_time)} required className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-                              </label>
-                            </div>
-                            <label className="mt-2 block text-xs font-medium text-gray-500">
-                              Mode
-                              <select name="scheduled_mode" defaultValue={lead.scheduled_mode || lead.mode || 'video'} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                                <option value="video">Video</option>
-                                <option value="phone">Phone</option>
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="in_person">In Person</option>
-                              </select>
-                            </label>
-                            <label className="mt-2 block text-xs font-medium text-gray-500">
-                              Meeting Link / Venue
-                              <input name="meeting_link" defaultValue={lead.meeting_link || ''} placeholder="Zoom/Meet link or venue" className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-                            </label>
-                            <label className="mt-2 block text-xs font-medium text-gray-500">
-                              Customer Notes
-                              <textarea name="admin_schedule_notes" defaultValue={lead.admin_schedule_notes || ''} rows={3} placeholder="Any details to include in the customer email" className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-                            </label>
-                            <button type="submit" disabled={saving === lead.id} className="mt-3 w-full rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60">
-                              Save Schedule & Notify Customer
-                            </button>
-                          </form>
-                        )}
-
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-gray-500">Internal Notes</label>
-                          <textarea defaultValue={lead.internal_notes || ''} rows={3} placeholder="Add notes..."
-                            onBlur={(e) => {
-                              if (e.target.value !== (lead.internal_notes || '')) {
-                                updateLead(lead.id, lead._type, { internal_notes: e.target.value || null });
-                              }
-                            }}
-                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-                        </div>
-
-                        {lead.phone && (
-                          <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=Hello ${encodeURIComponent(name)}, this is PureVedicGems. Following up on your ${isEnquiry ? 'enquiry' : 'consultation request'}.`}
-                            target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-xs font-medium text-white hover:bg-green-700">
-                            💬 WhatsApp
-                          </a>
-                        )}
-
-                        {saving === lead.id && (
-                          <p className="flex items-center gap-1 text-xs text-amber-600"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</p>
-                        )}
-                      </div>
-                    </div>
+                {expanded && !isEnquiry && (
+                  <div className="border-t border-gray-100 p-4 text-sm text-gray-600">
+                    <p className="font-medium text-gray-800">{lead.plan_title_snapshot || 'Consultation'}</p>
+                    <p className="mt-1">Payment: {lead.payment_status} · {lead.amount_inr != null ? `₹${lead.amount_inr}` : '—'}</p>
+                    <label className="mt-3 block text-xs font-medium text-gray-500">
+                      Status
+                      <select
+                        value={lead.status}
+                        onChange={(e) => updateLead(lead.id, 'consultation', { status: e.target.value })}
+                        className="mt-1 w-full max-w-xs rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                      >
+                        {['pending_payment', 'pending', 'confirmed', 'payment_review', 'completed', 'cancelled'].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="mt-3 block text-xs font-medium text-gray-500">
+                      Notes
+                      <textarea
+                        defaultValue={lead.internal_notes || ''}
+                        rows={3}
+                        onBlur={(e) => {
+                          if (e.target.value !== (lead.internal_notes || '')) {
+                            updateLead(lead.id, 'consultation', { internal_notes: e.target.value || null });
+                          }
+                        }}
+                        className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
                   </div>
                 )}
               </div>
@@ -470,4 +642,8 @@ export default function LeadsPage() {
       )}
     </div>
   );
+}
+
+function UsersIcon(props: { className?: string }) {
+  return <User {...props} />;
 }

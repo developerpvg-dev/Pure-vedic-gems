@@ -108,6 +108,20 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/compliance', label: 'Returns & RMA', match: 'prefix' },
     ],
   },
+  telecom: {
+    title: 'Telecommunication',
+    subtitle: 'Verify leads & update remarks',
+    home: '/admin/leads',
+    allowPrefixes: ['/admin/leads'],
+    nav: [{ href: '/admin/leads', label: 'My leads', match: 'prefix' }],
+  },
+  astrologer: {
+    title: 'Astrologer',
+    subtitle: 'Review verified leads & write remedies',
+    home: '/admin/leads',
+    allowPrefixes: ['/admin/leads'],
+    nav: [{ href: '/admin/leads', label: 'Assigned leads', match: 'prefix' }],
+  },
 };
 
 export function getScopedRoleDashboard(role: string | null | undefined): RoleDashboardConfig | null {
@@ -144,4 +158,8 @@ export function assertRoleDashboardAllowlists() {
   if (!isScopedRolePathAllowed('fulfillment', '/admin/commissions')) throw new Error('fulfillment commissions');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/shipping')) throw new Error('fulfillment shipping');
   if (finance.home !== '/admin/finance') throw new Error('finance home path');
+  if (!isScopedRolePathAllowed('telecom', '/admin/leads')) throw new Error('telecom leads');
+  if (isScopedRolePathAllowed('telecom', '/admin/orders')) throw new Error('telecom must not open orders');
+  if (!isScopedRolePathAllowed('astrologer', '/admin/leads')) throw new Error('astrologer leads');
+  if (isScopedRolePathAllowed('astrologer', '/admin/settings')) throw new Error('astrologer must not open settings');
 }
