@@ -146,25 +146,38 @@ export const consultationPlanUpdateSchema = z
 export type ConsultationPlanInput = z.infer<typeof consultationPlanSchema>;
 export type ConsultationPlanUpdateInput = z.infer<typeof consultationPlanUpdateSchema>;
 
-export const consultationBookingCreateOrderSchema = z.object({
-  plan_id: z.union([z.string().uuid(), z.literal('rs101')]),
-  full_name: z.string().min(1, 'Name is required').max(200).trim(),
-  email: z.string().email('Invalid email').max(255).trim(),
-  phone: z.string().regex(/^[0-9+\-\s()]{7,20}$/, 'Invalid phone').trim(),
-  date_of_birth: optionalIsoDate.refine((value) => !value || new Date(`${value}T00:00:00`) <= new Date(), 'Date of birth cannot be in the future'),
-  birth_time: optionalTime,
-  birth_place: optionalTrimmedText(200),
-  life_situation: optionalTrimmedText(5000),
-  preferred_date: optionalIsoDate.refine((value) => {
-    if (!value) return true;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return new Date(`${value}T00:00:00`) >= today;
-  }, 'Preferred date cannot be in the past'),
-  preferred_time: optionalTime,
-  message: optionalTrimmedText(5000),
-  website: z.string().max(0).optional(),
-});
+export const consultationBookingCreateOrderSchema = z
+  .object({
+    plan_id: z.union([z.string().uuid(), z.literal('rs101')]),
+    full_name: z.string().min(1, 'Name is required').max(200).trim(),
+    email: z.string().email('Invalid email').max(255).trim(),
+    phone: z.string().regex(/^[0-9+\-\s()]{7,20}$/, 'Invalid phone').trim(),
+    date_of_birth: optionalIsoDate.refine((value) => !value || new Date(`${value}T00:00:00`) <= new Date(), 'Date of birth cannot be in the future'),
+    birth_time: optionalTime,
+    birth_place: optionalTrimmedText(200),
+    life_situation: optionalTrimmedText(5000),
+    preferred_date: optionalIsoDate.refine((value) => {
+      if (!value) return true;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return new Date(`${value}T00:00:00`) >= today;
+    }, 'Preferred date cannot be in the past'),
+    preferred_time: optionalTime,
+    message: optionalTrimmedText(5000),
+    website: z.string().max(0).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.plan_id !== 'rs101') return;
+    if (!value.date_of_birth) {
+      ctx.addIssue({ code: 'custom', path: ['date_of_birth'], message: 'Date of birth is required' });
+    }
+    if (!value.birth_place?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['birth_place'], message: 'Birth place is required' });
+    }
+    if (!value.life_situation?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['life_situation'], message: 'Purpose / area of concern is required' });
+    }
+  });
 
 export type ConsultationBookingCreateOrderInput = z.infer<typeof consultationBookingCreateOrderSchema>;
 

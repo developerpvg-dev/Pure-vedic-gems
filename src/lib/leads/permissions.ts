@@ -72,7 +72,8 @@ export function canEditBirthFields(role: string | null | undefined) {
 }
 
 export function canEditOutcomeFlags(role: string | null | undefined) {
-  return isLeadManager(role) || isTelecomRole(role);
+  // ponytail: sale/outcome toggles are manager-only — telecaller uses call remarks
+  return isLeadManager(role);
 }
 
 export function canAddRemarks(role: string | null | undefined) {

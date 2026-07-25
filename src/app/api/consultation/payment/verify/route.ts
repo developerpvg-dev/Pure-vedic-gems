@@ -8,7 +8,15 @@ import { sendConsultationBookingEmails } from '@/lib/resend/send-consultation-bo
 import { consultationPaymentVerifySchema } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { hasValidBookingToken } from '@/lib/security/booking-token';
+import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
 import type { Consultation, Json } from '@/lib/types/database';
+
+function geoFromRequest(request: NextRequest) {
+  const city = request.headers.get('x-vercel-ip-city');
+  const country = request.headers.get('x-vercel-ip-country');
+  if (city && country) return `${city}, ${country}`;
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
@@ -60,7 +68,20 @@ export async function POST(request: NextRequest) {
   }
 
   if (consultation.payment_status === 'captured') {
-    return NextResponse.json({ success: true, consultation_id: consultation.id, status: consultation.status });
+    let enquiryId: string | null = null;
+    try {
+      enquiryId = await ensureLeadFromConsultation(admin, consultation, {
+        ipLocation: geoFromRequest(request),
+      });
+    } catch (error) {
+      console.error('[Consultation payment] CRM lead ensure failed (already captured):', error);
+    }
+    return NextResponse.json({
+      success: true,
+      consultation_id: consultation.id,
+      enquiry_id: enquiryId,
+      status: consultation.status,
+    });
   }
 
   if (!consultation.razorpay_order_id || consultation.razorpay_order_id !== parsed.data.razorpay_order_id) {
@@ -239,6 +260,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  let enquiryId: string | null = null;
+  try {
+    enquiryId = await ensureLeadFromConsultation(admin, updated, {
+      ipLocation: geoFromRequest(request),
+    });
+  } catch (error) {
+    console.error('[Consultation payment] CRM lead create failed:', error);
+  }
+
   await createInAppNotifications([
     ...(updated.customer_id
       ? [{
@@ -253,18 +283,12 @@ export async function POST(request: NextRequest) {
           metadata: { plan_title: updated.plan_title_snapshot, amount_inr: updated.amount_inr },
         }]
       : []),
-    {
-      audience: 'admin',
-      recipientRole: 'sales',
-      type: 'consultation_confirmed',
-      title: 'Consultation paid',
-      message: `${updated.full_name} paid for ${updated.plan_title_snapshot ?? 'a consultation'}.`,
-      href: '/admin/leads',
-      entityType: 'consultation',
-      entityId: updated.id,
-      metadata: { plan_title: updated.plan_title_snapshot, amount_inr: updated.amount_inr },
-    },
   ]);
 
-  return NextResponse.json({ success: true, consultation_id: updated.id, status: updated.status });
+  return NextResponse.json({
+    success: true,
+    consultation_id: updated.id,
+    enquiry_id: enquiryId,
+    status: updated.status,
+  });
 }

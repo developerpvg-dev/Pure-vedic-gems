@@ -1,5 +1,6 @@
 import type { createAdminClient } from '@/lib/supabase/admin';
 import { LEAD_REMARK_BY_CODE, type LeadRemarkCode } from '@/lib/leads/constants';
+import { createInAppNotifications } from '@/lib/notifications/in-app';
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -53,12 +54,21 @@ export async function appendLeadRemark(
 
   if (error) throw new Error(error.message);
 
+  const { data: current } = await admin
+    .from('enquiries')
+    .select('pipeline_stage, remedies_text, name, lead_number')
+    .eq('id', input.enquiryId)
+    .maybeSingle();
+  const stage = (current?.pipeline_stage as string | null) || 'new';
+  const currentHasRemedies = Boolean((current?.remedies_text as string | null)?.trim());
+
   const enquiryPatch: Record<string, unknown> = {
     last_remark_code: input.code,
     last_remark_at: now,
     updated_at: now,
   };
 
+  // ponytail: no follow_up stage — callback/retry remarks stay on verifying or deliver
   if (def.terminal) {
     enquiryPatch.pipeline_stage = 'closed';
     enquiryPatch.status = 'closed';
@@ -66,12 +76,30 @@ export async function appendLeadRemark(
     enquiryPatch.closed_reason = input.code;
   } else if (input.code === 'details_confirmed') {
     enquiryPatch.details_confirmed = true;
-    enquiryPatch.verified_at = now;
-    enquiryPatch.verified_by = input.actorId ?? null;
-    enquiryPatch.pipeline_stage = 'verified';
+    if (stage === 'assigned' || stage === 'verifying' || (stage === 'follow_up' && !currentHasRemedies)) {
+      enquiryPatch.pipeline_stage = 'verifying';
+      enquiryPatch.status = 'contacted';
+    }
+  } else if (
+    (input.code === 'remedies_explain' || input.code === 'satisfied') &&
+    (stage === 'sent_to_customer' || stage === 'follow_up' || stage === 'remedies_explained')
+  ) {
+    enquiryPatch.pipeline_stage = 'remedies_explained';
     enquiryPatch.status = 'contacted';
-  } else if (input.code === 'followup' || input.code === 'call_back_later') {
-    enquiryPatch.pipeline_stage = 'follow_up';
+  } else if (
+    input.code === 'option_sent' &&
+    (stage === 'sent_to_customer' || stage === 'follow_up')
+  ) {
+    enquiryPatch.pipeline_stage = 'sent_to_customer';
+    enquiryPatch.status = 'contacted';
+  } else if (stage === 'assigned' || stage === 'verifying' || (stage === 'follow_up' && !currentHasRemedies)) {
+    enquiryPatch.pipeline_stage = 'verifying';
+    enquiryPatch.status = 'contacted';
+  } else if (stage === 'follow_up' && currentHasRemedies) {
+    enquiryPatch.pipeline_stage = 'sent_to_customer';
+    enquiryPatch.status = 'contacted';
+  } else if (stage === 'sent_to_customer' || stage === 'remedies_explained') {
+    enquiryPatch.status = 'contacted';
   }
 
   await admin.from('enquiries').update(enquiryPatch).eq('id', input.enquiryId);
@@ -83,6 +111,65 @@ export async function appendLeadRemark(
     actorId: input.actorId,
     actorName: input.actorName,
   });
+
+  const who = current?.name || 'Lead';
+  const sr = current?.lead_number != null ? `SR #${current.lead_number}` : '';
+
+  // Explained remedies → notify manager to close (once, on transition)
+  if (enquiryPatch.pipeline_stage === 'remedies_explained' && stage !== 'remedies_explained') {
+    await createInAppNotifications([
+      {
+        audience: 'admin',
+        recipientRole: 'sales',
+        type: 'lead_remedies_explained',
+        title: 'Remedies explained — ready to close',
+        message: `${who} ${sr} · telecaller explained remedies`.trim(),
+        href: `/admin/leads?id=${input.enquiryId}&pipeline=remedies_explained`,
+        entityType: 'enquiry',
+        entityId: input.enquiryId,
+        metadata: { remark_code: input.code },
+      },
+      {
+        audience: 'admin',
+        recipientRole: 'admin',
+        type: 'lead_remedies_explained',
+        title: 'Remedies explained — ready to close',
+        message: `${who} ${sr} · telecaller explained remedies`.trim(),
+        href: `/admin/leads?id=${input.enquiryId}&pipeline=remedies_explained`,
+        entityType: 'enquiry',
+        entityId: input.enquiryId,
+        metadata: { remark_code: input.code },
+      },
+    ]).catch(() => undefined);
+  }
+
+  // Terminal close → notify leads managers (fake / not interested / invalid number)
+  if (def.terminal) {
+    await createInAppNotifications([
+      {
+        audience: 'admin',
+        recipientRole: 'sales',
+        type: 'lead_closed_terminal',
+        title: `Lead closed — ${def.label}`,
+        message: `${who} ${sr} · marked ${def.label} by ${input.actorName || 'telecaller'}`.trim(),
+        href: `/admin/leads?id=${input.enquiryId}&pipeline=closed`,
+        entityType: 'enquiry',
+        entityId: input.enquiryId,
+        metadata: { remark_code: input.code, closed_reason: input.code },
+      },
+      {
+        audience: 'admin',
+        recipientRole: 'admin',
+        type: 'lead_closed_terminal',
+        title: `Lead closed — ${def.label}`,
+        message: `${who} ${sr} · marked ${def.label} by ${input.actorName || 'telecaller'}`.trim(),
+        href: `/admin/leads?id=${input.enquiryId}&pipeline=closed`,
+        entityType: 'enquiry',
+        entityId: input.enquiryId,
+        metadata: { remark_code: input.code, closed_reason: input.code },
+      },
+    ]).catch(() => undefined);
+  }
 
   return remark;
 }

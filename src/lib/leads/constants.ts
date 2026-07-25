@@ -1,4 +1,4 @@
-/** Lead CRM — clear pipeline matching ops flow */
+/** Lead CRM — one shared pipeline for manager / telecaller / astrologer */
 
 export const LEAD_PIPELINE_STAGES = [
   'new',
@@ -7,13 +7,14 @@ export const LEAD_PIPELINE_STAGES = [
   'verified',
   'with_astrologer',
   'remedies_ready',
-  'sent_to_customer', // delivery: telecaller contacts customer with final remedies
-  'follow_up',
+  'sent_to_customer',
+  'remedies_explained',
   'closed',
 ] as const;
 
 export type LeadPipelineStage = (typeof LEAD_PIPELINE_STAGES)[number];
 
+/** Same labels everywhere — roles only choose which chips they see */
 export const LEAD_PIPELINE_LABELS: Record<LeadPipelineStage, string> = {
   new: '1. New',
   assigned: '2. With Telecaller',
@@ -22,23 +23,22 @@ export const LEAD_PIPELINE_LABELS: Record<LeadPipelineStage, string> = {
   with_astrologer: '5. With Astrologer',
   remedies_ready: '6. Remedies Ready',
   sent_to_customer: '7. Deliver Remedies',
-  follow_up: '8. Follow-up',
-  closed: 'Closed',
+  remedies_explained: '8. Explained Remedies',
+  closed: '9. Closed',
 };
 
 export const LEAD_PIPELINE_HELP: Record<LeadPipelineStage, string> = {
-  new: 'Leads manager assigns this to a telecaller',
-  assigned: 'Telecaller calls & checks customer details',
-  verifying: 'Telecaller is confirming / editing details',
-  verified: 'Details OK — leads manager can forward to astrologer',
-  with_astrologer: 'Astrologer analyses chart & writes remedies',
-  remedies_ready: 'Leads manager reviews / edits remedies, then sends to telecaller',
-  sent_to_customer: 'Telecaller delivers remedies & updates remarks',
-  follow_up: 'Ongoing follow-up after remedies shared',
-  closed: 'Enquiry closed (sold, fake, not interested, etc.)',
+  new: 'Manager assigns this lead to a telecaller',
+  assigned: 'Telecaller calls the customer and checks form details',
+  verifying: 'Telecaller is confirming or correcting details',
+  verified: 'Telecaller done — manager forwards to an astrologer',
+  with_astrologer: 'Astrologer writes remedies from the birth chart',
+  remedies_ready: 'Manager reviews remedies, then sends to the same telecaller',
+  sent_to_customer: 'Telecaller calls to explain remedies to the customer',
+  remedies_explained: 'Remedies explained — manager can close the lead',
+  closed: 'Lead closed (done, fake, not interested, etc.)',
 };
 
-/** Who owns the next action at each stage */
 export const LEAD_STAGE_OWNER: Record<LeadPipelineStage, 'manager' | 'telecom' | 'astrologer' | 'done'> = {
   new: 'manager',
   assigned: 'telecom',
@@ -47,11 +47,53 @@ export const LEAD_STAGE_OWNER: Record<LeadPipelineStage, 'manager' | 'telecom' |
   with_astrologer: 'astrologer',
   remedies_ready: 'manager',
   sent_to_customer: 'telecom',
-  follow_up: 'telecom',
+  remedies_explained: 'manager',
   closed: 'done',
 };
 
-/** Canonical remark codes from ops sheet (1–21) */
+/** Manager sees the full pipeline in order */
+export const MANAGER_STAGE_FILTERS: LeadPipelineStage[] = [...LEAD_PIPELINE_STAGES];
+
+/**
+ * Telecaller chips — chronological pipeline order (not “active then waiting” scramble).
+ */
+export const TELECOM_STAGE_CHIPS: LeadPipelineStage[] = [
+  'assigned',
+  'verifying',
+  'verified',
+  'with_astrologer',
+  'remedies_ready',
+  'sent_to_customer',
+  'remedies_explained',
+  'closed',
+];
+
+/** Telecaller active work (needs their call / action) */
+export const TELECOM_ACTIVE_STAGES: LeadPipelineStage[] = [
+  'assigned',
+  'verifying',
+  'sent_to_customer',
+];
+
+/** Telecaller waiting on manager / astrologer (or ready for manager to close) */
+export const TELECOM_WAITING_STAGES: LeadPipelineStage[] = [
+  'verified',
+  'with_astrologer',
+  'remedies_ready',
+  'remedies_explained',
+];
+
+/** Astrologer chips in order */
+export const ASTRO_STAGE_CHIPS: LeadPipelineStage[] = [
+  'with_astrologer',
+  'remedies_ready',
+  'sent_to_customer',
+  'remedies_explained',
+  'closed',
+];
+
+export const ASTRO_ACTIVE_STAGES: LeadPipelineStage[] = ['with_astrologer', 'remedies_ready'];
+
 export const LEAD_REMARK_CODES = [
   { code: 'details_confirmed', label: 'All Details are confirmed by the Customer / Payment received', terminal: false },
   { code: 'call_not_answering', label: 'Call Not Answering', terminal: false },
@@ -91,17 +133,38 @@ export const LEAD_ENQUIRY_TYPES = [
   'Other',
 ] as const;
 
-/** Telecaller may move among these stages */
 export const TELECOM_EDITABLE_STAGES: LeadPipelineStage[] = [
   'assigned',
   'verifying',
-  'verified',
   'sent_to_customer',
-  'follow_up',
+  'remedies_explained',
   'closed',
 ];
 
-/** Astrologer only works while assigned remedies */
+export const TELECOM_CALL_OUTCOMES = [
+  { code: 'call_not_answering' as const, short: 'Not answering', hint: 'No pickup — try again later' },
+  { code: 'call_disconnected' as const, short: 'Disconnected', hint: 'Call dropped mid-way' },
+  { code: 'call_back_later' as const, short: 'Callback requested', hint: 'Customer asked to call back' },
+  { code: 'language_issue' as const, short: 'Language issue', hint: 'Need different language' },
+  { code: 'not_interested' as const, short: 'Not interested', hint: 'Closes the lead — manager notified' },
+  { code: 'fake_inquiry' as const, short: 'Fake enquiry', hint: 'Closes the lead — manager notified' },
+  { code: 'invalid_number' as const, short: 'Invalid number', hint: 'Closes the lead — manager notified' },
+] as const;
+
+export const TELECOM_DELIVERY_OUTCOMES = [
+  { code: 'call_not_answering' as const, short: 'Not answering', hint: 'No pickup — try again later' },
+  { code: 'call_disconnected' as const, short: 'Disconnected', hint: 'Call dropped mid-way' },
+  { code: 'call_back_later' as const, short: 'Callback requested', hint: 'Customer asked to call back' },
+  { code: 'language_issue' as const, short: 'Language issue', hint: 'Need different language' },
+  { code: 'remedies_explain' as const, short: 'Remedies explained', hint: 'Moves lead to Explained — manager can close' },
+  { code: 'option_sent' as const, short: 'Option sent', hint: 'Product / remedy options shared' },
+  { code: 'satisfied' as const, short: 'Satisfied', hint: 'Customer happy — marks Explained for manager' },
+  { code: 'dissatisfied' as const, short: 'Dissatisfied', hint: 'Customer unhappy — try again later' },
+  { code: 'followup' as const, short: 'Follow-up needed', hint: 'Schedule another call (use follow-up date)' },
+  { code: 'not_interested' as const, short: 'Not interested', hint: 'Closes the lead — manager notified' },
+  { code: 'invalid_number' as const, short: 'Invalid number', hint: 'Closes the lead — manager notified' },
+] as const;
+
 export const ASTROLOGER_EDITABLE_STAGES: LeadPipelineStage[] = ['with_astrologer', 'remedies_ready'];
 
 export const REMEDIES_TEMPLATE = `*Remedies Recommended:*
@@ -131,20 +194,16 @@ export function isLeadRemarkCode(value: string): value is LeadRemarkCode {
   return value in LEAD_REMARK_BY_CODE;
 }
 
-/**
- * Strict forward transitions — matches:
- * manager assign → telecom verify → manager → astrologer → manager edit → telecom deliver
- */
 const FORWARD: Record<LeadPipelineStage, LeadPipelineStage[]> = {
   new: ['assigned', 'closed'],
   assigned: ['verifying', 'verified', 'closed'],
-  verifying: ['verified', 'assigned', 'follow_up', 'closed'],
+  verifying: ['verified', 'assigned', 'closed'],
   verified: ['with_astrologer', 'verifying', 'closed'],
   with_astrologer: ['remedies_ready', 'verified', 'closed'],
   remedies_ready: ['sent_to_customer', 'with_astrologer', 'closed'],
-  sent_to_customer: ['follow_up', 'closed'],
-  follow_up: ['sent_to_customer', 'closed'],
-  closed: ['assigned', 'follow_up'],
+  sent_to_customer: ['remedies_explained', 'closed'],
+  remedies_explained: ['closed', 'sent_to_customer'],
+  closed: ['assigned', 'verifying', 'sent_to_customer'],
 };
 
 export function canTransitionPipeline(from: string, to: string): boolean {
@@ -159,6 +218,8 @@ export function assertLeadConstants() {
   if (!canTransitionPipeline('verified', 'with_astrologer')) throw new Error('verified→astrologer');
   if (!canTransitionPipeline('with_astrologer', 'remedies_ready')) throw new Error('astro→remedies');
   if (!canTransitionPipeline('remedies_ready', 'sent_to_customer')) throw new Error('remedies→delivery');
+  if (!canTransitionPipeline('sent_to_customer', 'remedies_explained')) throw new Error('deliver→explained');
+  if (!canTransitionPipeline('remedies_explained', 'closed')) throw new Error('explained→closed');
   if (canTransitionPipeline('new', 'with_astrologer')) throw new Error('new must not skip to astrologer');
   if (canTransitionPipeline('assigned', 'with_astrologer')) throw new Error('telecom must verify first');
   if (!LEAD_REMARK_BY_CODE.fake_inquiry.terminal) throw new Error('fake should be terminal');

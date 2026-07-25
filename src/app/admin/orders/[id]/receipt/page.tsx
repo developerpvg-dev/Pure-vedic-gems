@@ -93,6 +93,11 @@ export default async function OrderReceiptPage({
     commission_source?: string | null;
     commission_name?: string | null;
     commission_amount?: number | null;
+    commissions?: Array<{
+      source: 'salesperson' | 'astrologer';
+      name: string;
+      amount: number;
+    }>;
     assigned_designer_id?: string | null;
     design_notes?: string | null;
     design_price?: number | null;
@@ -586,18 +591,25 @@ export default async function OrderReceiptPage({
           </dl>
         </Section>
 
-        {(order.commission_source || order.commission_name || order.commission_amount != null) && (
+        {(order.commissions?.length ||
+          order.commission_source ||
+          order.commission_name ||
+          order.commission_amount != null) && (
           <Section title="Commission">
-            <dl>
-              <Row label="Source" value={cap(order.commission_source)} />
-              <Row label="Name" value={order.commission_name} />
-              <Row
-                label="Amount"
-                value={
-                  order.commission_amount != null ? fmt(order.commission_amount) : null
-                }
-              />
-            </dl>
+            {(order.commissions?.length
+              ? order.commissions
+              : [{
+                  source: order.commission_source,
+                  name: order.commission_name,
+                  amount: order.commission_amount,
+                }]
+            ).map((entry, index) => (
+              <dl key={index} className={index ? 'mt-3 border-t border-stone-100 pt-3' : ''}>
+                <Row label="Source" value={cap(entry.source)} />
+                <Row label="Name" value={entry.name} />
+                <Row label="Amount" value={entry.amount != null ? fmt(entry.amount) : null} />
+              </dl>
+            ))}
           </Section>
         )}
 

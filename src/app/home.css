@@ -4165,6 +4165,49 @@
       font-size: 13px;
       font-weight: 700;
     }
+    .reco-form-guest-choice {
+      margin-top: 4px;
+      padding: 14px;
+      border: 1px solid rgba(122, 21, 21, 0.18);
+      border-radius: 4px;
+      background: rgba(122, 21, 21, 0.04);
+    }
+    .reco-form-guest-title {
+      margin: 0 0 6px;
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--maroon-deep);
+    }
+    .reco-form-guest-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .pvg-react-home-root button.reco-form-cta.reco-form-cta-secondary {
+      background: transparent;
+      color: var(--maroon-deep);
+      border: 1px solid rgba(122, 21, 21, 0.35);
+    }
+    .pvg-react-home-root button.reco-form-cta.reco-form-cta-secondary:hover {
+      background: rgba(122, 21, 21, 0.06);
+      color: var(--maroon-deep);
+      transform: none;
+    }
+    .reco-form-guest-cancel {
+      align-self: center;
+      margin-top: 2px;
+      border: 0;
+      background: transparent;
+      color: rgba(107, 91, 78, 0.85);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
 
     /* ============================================================
        18. OUR SERVICES

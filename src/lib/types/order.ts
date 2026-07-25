@@ -114,6 +114,11 @@ export interface OrderRecord {
   commission_source?: 'salesperson' | 'astrologer' | null;
   commission_name?: string | null;
   commission_amount?: number | null;
+  commissions?: Array<{
+    source: 'salesperson' | 'astrologer';
+    name: string;
+    amount: number;
+  }>;
   created_at: string;
   updated_at: string;
 }

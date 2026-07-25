@@ -28,16 +28,6 @@ type CustomerProfileRow = {
 
 const SORT_COLUMNS = ['created_at', 'total', 'order_number', 'status', 'payment_status'] as const;
 
-const PICKUP_ADDRESS = {
-  line1: 'In-store / counter sale',
-  line2: '',
-  city: 'Jaipur',
-  state: 'Rajasthan',
-  pincode: '302001',
-  country: 'India',
-  country_code: 'IN' as const,
-};
-
 function customerDisplay(order: OrderRow, profile?: CustomerProfileRow) {
   return {
     name: order.guest_name || profile?.full_name || profile?.email || 'Guest',
@@ -158,16 +148,18 @@ export async function POST(request: NextRequest) {
 
   const data = parsed.data;
   const isDelivery = data.fulfillment_type === 'delivery';
-  const shippingAddress = isDelivery ? data.shipping_address! : PICKUP_ADDRESS;
+  const shippingAddress = isDelivery ? data.shipping_address! : data.customer_address;
   const shippingMethod = isDelivery ? data.shipping_method! : 'pickup';
 
   let pricing;
   try {
     pricing = await recalculateOrderTotal(
       data.items.map((i) => ({
+        line_id: i.line_id,
         product_id: i.product_id,
         quantity: i.quantity,
         configuration_id: i.configuration_id,
+        manual_design: i.manual_design,
       })),
       shippingMethod,
       data.coupon_code,
@@ -185,7 +177,17 @@ export async function POST(request: NextRequest) {
   }
 
   const orderItems = pricing.items.map((pricedItem) => {
-    const clientItem = data.items.find((i) => i.product_id === pricedItem.product_id);
+    const clientItem = data.items.find((i) =>
+      pricedItem.line_id
+        ? i.line_id === pricedItem.line_id
+        : Boolean(pricedItem.product_id && i.product_id === pricedItem.product_id),
+    );
+    const manualSnapshot = clientItem?.manual_design
+      ? {
+          source: 'offline_manual_design',
+          manual_design: clientItem.manual_design,
+        }
+      : null;
     const designBits =
       clientItem?.design_id || clientItem?.design_name
         ? {
@@ -195,13 +197,14 @@ export async function POST(request: NextRequest) {
         : null;
     const snapshot =
       clientItem?.configuration_snapshot ??
+      manualSnapshot ??
       (designBits
         ? { source: 'offline_pos', selections: { design: designBits } }
         : null);
 
     return {
-      product_id: pricedItem.product_id,
-      name: pricedItem.name,
+      product_id: pricedItem.product_id || null,
+      name: clientItem?.name || pricedItem.name,
       sku: pricedItem.sku,
       tag_number: pricedItem.tag_number,
       quantity: pricedItem.quantity,
@@ -214,6 +217,11 @@ export async function POST(request: NextRequest) {
       configuration_id: clientItem?.configuration_id ?? null,
       configuration_summary:
         clientItem?.configuration_summary ??
+        (clientItem?.manual_design?.description
+          ? `Manual design: ${clientItem.manual_design.description}`
+          : clientItem?.manual_design
+            ? 'Customer-provided manual design'
+            : null) ??
         (clientItem?.design_name ? `Design: ${clientItem.design_name}` : null),
       configuration_snapshot: snapshot,
     };
@@ -268,7 +276,7 @@ export async function POST(request: NextRequest) {
       shipping_method: isDelivery ? data.shipping_method : data.fulfillment_type,
       buyer_business_name: data.contact.business_name || null,
       buyer_gstin: data.contact.billing_gstin || null,
-      billing_address: shippingAddress,
+      billing_address: data.customer_address,
       tax_invoice_required: Boolean(data.contact.billing_gstin),
       invoice_status: data.contact.billing_gstin ? 'pending' : 'not_required',
       invoice_number: invoiceNumber,
@@ -292,9 +300,10 @@ export async function POST(request: NextRequest) {
       payment_method: data.payment.method,
       payment_status: balances.payment_status,
       status: 'confirmed',
-      commission_source: data.commission_source ?? null,
-      commission_name: data.commission_name ?? null,
-      commission_amount: data.commission_amount ?? null,
+      commissions: data.commissions as Json,
+      commission_source: data.commissions[0]?.source ?? null,
+      commission_name: data.commissions[0]?.name ?? null,
+      commission_amount: data.commissions[0]?.amount ?? null,
     })
     .select('id, order_number, total, amount_paid, amount_due, payment_status, invoice_number')
     .single();
@@ -302,16 +311,18 @@ export async function POST(request: NextRequest) {
   if (orderError || !order) {
     console.error('[admin/orders] create failed:', orderError);
     const detail = String((orderError as { message?: string } | null)?.message ?? '');
+    const needsWeek44 = detail.includes('commissions');
     const needsMigration =
       detail.includes('order_source') ||
       detail.includes('amount_paid') ||
       detail.includes('manual_discount') ||
       detail.includes('fulfillment_type') ||
+      detail.includes('commissions') ||
       detail.includes('partial');
     return NextResponse.json(
       {
         error: needsMigration
-          ? 'Offline orders require migration week40_offline_orders.sql. Run it in Supabase SQL editor.'
+          ? `Offline orders require migration ${needsWeek44 ? 'week44_offline_order_manual_designs.sql' : 'week40_offline_orders.sql'}. Run it in Supabase SQL editor.`
           : 'Failed to create offline order.',
       },
       { status: needsMigration ? 503 : 500 },

@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react';
 import {
   Loader2, Save, ChevronRight, ChevronDown, MessageCircle,
-  PackageCheck, Gem, Ban, Banknote, RotateCcw,
+  PackageCheck, Gem, Ban, Banknote, RotateCcw, Plus, Trash2,
 } from 'lucide-react';
 import {
   FULFILLMENT_PROFILE_LABELS,
@@ -99,6 +99,11 @@ interface OrderActionsProps {
   currentCommissionSource?: string | null;
   currentCommissionName?: string | null;
   currentCommissionAmount?: number | null;
+  currentCommissions?: Array<{
+    source: 'salesperson' | 'astrologer';
+    name: string;
+    amount: number;
+  }>;
 }
 
 export function OrderActions({
@@ -130,6 +135,7 @@ export function OrderActions({
   currentCommissionSource = null,
   currentCommissionName = null,
   currentCommissionAmount = null,
+  currentCommissions,
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -155,10 +161,16 @@ export function OrderActions({
   const [refundNotes, setRefundNotes] = useState('');
   const [refundMethod, setRefundMethod] = useState('manual');
   const [refundProofs, setRefundProofs] = useState<FileList | null>(null);
-  const [commissionSource, setCommissionSource] = useState(currentCommissionSource ?? '');
-  const [commissionName, setCommissionName] = useState(currentCommissionName ?? '');
-  const [commissionAmount, setCommissionAmount] = useState(
-    currentCommissionAmount != null ? String(currentCommissionAmount) : '',
+  const [commissions, setCommissions] = useState(
+    currentCommissions?.length
+      ? currentCommissions.map((entry) => ({ ...entry, amount: String(entry.amount) }))
+      : currentCommissionSource
+        ? [{
+            source: currentCommissionSource as 'salesperson' | 'astrologer',
+            name: currentCommissionName ?? '',
+            amount: currentCommissionAmount != null ? String(currentCommissionAmount) : '',
+          }]
+        : [],
   );
 
   const hasActiveReturn = (currentReturnStatus || 'none') !== 'none';
@@ -166,7 +178,7 @@ export function OrderActions({
   const [openInventory, setOpenInventory] = useState(true);
   const [openReturns, setOpenReturns] = useState(hasActiveReturn);
   const [openRefund, setOpenRefund] = useState(currentStatus === 'cancelled');
-  const [openCommission, setOpenCommission] = useState(Boolean(currentCommissionSource || currentCommissionName));
+  const [openCommission, setOpenCommission] = useState(commissions.length > 0);
 
   const returnMeta = parseComplianceFlags(flagsState);
   const returnImages = returnMeta.return_image_urls ?? [];
@@ -418,9 +430,13 @@ export function OrderActions({
   };
 
   const commissionPayload = {
-    commission_source: commissionSource || null,
-    commission_name: commissionName.trim() || null,
-    commission_amount: commissionAmount.trim() === '' ? null : Number(commissionAmount),
+    commissions: commissions
+      .filter((entry) => entry.name.trim() && entry.amount !== '')
+      .map((entry) => ({
+        source: entry.source,
+        name: entry.name.trim(),
+        amount: Number(entry.amount),
+      })),
   };
 
   return (
@@ -624,42 +640,83 @@ export function OrderActions({
         title="Commission"
         open={openCommission}
         onToggle={() => setOpenCommission((v) => !v)}
-        badge={commissionSource ? (commissionSource === 'astrologer' ? 'Astrologer' : 'Sales') : null}
+        badge={commissions.length ? `${commissions.length} recipient${commissions.length === 1 ? '' : 's'}` : null}
       >
         <p className="text-xs text-stone-400">Internal only — not shown to customers.</p>
-        <div>
-          <label className={labelCls}>Came through</label>
-          <select
-            value={commissionSource}
-            onChange={(e) => setCommissionSource(e.target.value)}
-            className={field}
-          >
-            <option value="">None</option>
-            <option value="salesperson">Salesperson</option>
-            <option value="astrologer">Astrologer</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>Name</label>
-          <input
-            value={commissionName}
-            onChange={(e) => setCommissionName(e.target.value)}
-            placeholder="Person’s name"
-            className={field}
-          />
-        </div>
-        <div>
-          <label className={labelCls}>Commission (₹)</label>
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={commissionAmount}
-            onChange={(e) => setCommissionAmount(e.target.value)}
-            placeholder="0"
-            className={field}
-          />
-        </div>
+        {commissions.map((entry, index) => (
+          <div key={index} className="space-y-2 rounded-xl border border-stone-100 p-3">
+            <div className="grid gap-2 sm:grid-cols-3">
+              <select
+                aria-label={`Commission source ${index + 1}`}
+                value={entry.source}
+                onChange={(e) =>
+                  setCommissions((items) =>
+                    items.map((item, itemIndex) =>
+                      itemIndex === index
+                        ? { ...item, source: e.target.value as 'salesperson' | 'astrologer' }
+                        : item,
+                    ),
+                  )
+                }
+                className={field}
+              >
+                <option value="salesperson">Salesperson</option>
+                <option value="astrologer">Astrologer</option>
+              </select>
+              <input
+                aria-label={`Commission name ${index + 1}`}
+                value={entry.name}
+                onChange={(e) =>
+                  setCommissions((items) =>
+                    items.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, name: e.target.value } : item,
+                    ),
+                  )
+                }
+                placeholder="Person’s name"
+                className={field}
+              />
+              <div className="flex gap-2">
+                <input
+                  aria-label={`Commission amount ${index + 1}`}
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={entry.amount}
+                  onChange={(e) =>
+                    setCommissions((items) =>
+                      items.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, amount: e.target.value } : item,
+                      ),
+                    )
+                  }
+                  placeholder="Amount ₹"
+                  className={field}
+                />
+                <button
+                  type="button"
+                  onClick={() => setCommissions((items) => items.filter((_, itemIndex) => itemIndex !== index))}
+                  aria-label={`Remove commission recipient ${index + 1}`}
+                  className="rounded-lg border border-stone-200 p-2 text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            setCommissions((items) => [
+              ...items,
+              { source: 'salesperson', name: '', amount: '' },
+            ])
+          }
+          className={btnGhost}
+        >
+          <Plus className="h-4 w-4" /> Add recipient
+        </button>
         <button
           type="button"
           onClick={() => handleSave(commissionPayload)}

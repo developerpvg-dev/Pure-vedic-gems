@@ -17,13 +17,22 @@ import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface OrderItemForPricing {
-  product_id: string;
+  line_id?: string;
+  product_id?: string | null;
   quantity: number;
   configuration_id?: string;
+  manual_design?: {
+    description?: string;
+    item_price: number;
+    metal_price: number;
+    labour_charge: number;
+    other_charge: number;
+  };
 }
 
 export interface PricingBreakdown {
   items: Array<{
+    line_id?: string;
     product_id: string;
     sku: string;
     tag_number: string | null;
@@ -41,6 +50,7 @@ export interface PricingBreakdown {
     unit_price: number;
     quantity: number;
     line_total: number;
+    manual_design?: OrderItemForPricing['manual_design'];
   }>;
   subtotal: number;
   jewelry_charges: number;
@@ -172,11 +182,13 @@ export async function recalculateOrderTotal(
   const supabase = createAdminClient();
 
   // ── 1. Fetch current product prices from DB ────────────────────────────
-  const productIds = items.map((i) => i.product_id);
-  const { data: products, error: prodError } = await supabase
-    .from('products')
-    .select(PRODUCT_SELECT)
-    .in('id', productIds);
+  const productIds = items
+    .map((item) => item.product_id)
+    .filter((id): id is string => Boolean(id));
+  const productResult = productIds.length
+    ? await supabase.from('products').select(PRODUCT_SELECT).in('id', productIds)
+    : { data: [] as ProductForPricing[], error: null };
+  const { data: products, error: prodError } = productResult;
 
   if (prodError || !products) {
     throw new Error('Failed to fetch product prices');
@@ -212,6 +224,34 @@ export async function recalculateOrderTotal(
   }
 
   for (const item of items) {
+    if (item.manual_design) {
+      const manual = item.manual_design;
+      const itemPrice = Number(manual.item_price) || 0;
+      const otherCharge = Number(manual.other_charge) || 0;
+      pricedItems.push({
+        line_id: item.line_id,
+        product_id: '',
+        sku: 'MANUAL-DESIGN',
+        tag_number: null,
+        name: 'Manual design',
+        category: 'manual_design',
+        image_url: '',
+        carat_weight: null,
+        origin: null,
+        sold_individually: true,
+        hsn_code: '7113',
+        gst_rate: 3,
+        tax_status: 'taxable',
+        tax_class: 'jewelry',
+        tax_rate_percent: 3,
+        unit_price: itemPrice + otherCharge,
+        quantity: 1,
+        line_total: itemPrice + otherCharge,
+        manual_design: manual,
+      });
+      continue;
+    }
+    if (!item.product_id) throw new Error('Each order item must be a product or a manual design');
     const product = productMap.get(item.product_id);
     if (!product) {
       throw new Error(`Product ${item.product_id} not found`);
@@ -247,6 +287,7 @@ export async function recalculateOrderTotal(
         : product.price;
 
     pricedItems.push({
+      line_id: item.line_id,
       product_id: item.product_id,
       sku: product.sku,
       tag_number: product.tag_number,
@@ -274,6 +315,12 @@ export async function recalculateOrderTotal(
   let metalCharges = 0;
   let certificationCharges = 0;
   let energizationCharges = 0;
+
+  for (const item of items) {
+    if (!item.manual_design) continue;
+    metalCharges += Number(item.manual_design.metal_price) || 0;
+    jewelryCharges += Number(item.manual_design.labour_charge) || 0;
+  }
 
   const configIdsForCharges = configIds;
 
@@ -402,9 +449,9 @@ export async function recalculateOrderTotal(
     const excludeCategories = values(coupon.excluded_category_slugs);
 
     const eligibleItems = pricedItems.filter((item) => {
-      if (excludeProducts.includes(item.product_id)) return false;
+      if (item.product_id && excludeProducts.includes(item.product_id)) return false;
       if (excludeCategories.includes(item.category)) return false;
-      if (includeProducts.length > 0 && !includeProducts.includes(item.product_id)) return false;
+      if (includeProducts.length > 0 && (!item.product_id || !includeProducts.includes(item.product_id))) return false;
       if (includeCategories.length > 0 && !includeCategories.includes(item.category)) return false;
       return true;
     });
@@ -496,5 +543,10 @@ export function __pricingOfflineSelfCheck() {
   const due = Math.round((total - paid) * 100) / 100;
   console.assert(due === 7000, 'amount_due = total - paid');
   console.assert(paid + due <= total + 0.001, 'no overpay');
+  const manualDesign = { item_price: 5000, metal_price: 2500, labour_charge: 1200, other_charge: 300 };
+  console.assert(
+    manualDesign.item_price + manualDesign.metal_price + manualDesign.labour_charge + manualDesign.other_charge === 9000,
+    'manual design components total correctly',
+  );
   console.log('pricing offline self-check ok');
 }

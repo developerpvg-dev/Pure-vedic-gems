@@ -9,6 +9,7 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
 import { cancelRewardRedemption } from '@/lib/rewards/service';
 import { mergeComplianceFlags, parseComplianceFlags } from '@/lib/orders/returns';
+import { OrderCommissionSchema } from '@/lib/validators/order';
 
 const VALID_STATUSES = [
   'pending_payment', 'placed', 'confirmed', 'processing',
@@ -77,6 +78,7 @@ export async function PUT(
     commission_source,
     commission_name,
     commission_amount,
+    commissions,
   } = body;
 
   // Validate status if provided
@@ -106,6 +108,11 @@ export async function PUT(
     if (!Number.isFinite(amt) || amt < 0) {
       return NextResponse.json({ error: 'commission_amount must be a non-negative number' }, { status: 400 });
     }
+  }
+  const parsedCommissions =
+    commissions === undefined ? null : OrderCommissionSchema.array().max(20).safeParse(commissions);
+  if (parsedCommissions && !parsedCommissions.success) {
+    return NextResponse.json({ error: 'Invalid commission recipients' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
@@ -195,6 +202,13 @@ export async function PUT(
         ? null
         : Number(commission_amount);
   }
+  if (parsedCommissions?.success) {
+    const first = parsedCommissions.data[0];
+    updates.commissions = parsedCommissions.data;
+    updates.commission_source = first?.source ?? null;
+    updates.commission_name = first?.name ?? null;
+    updates.commission_amount = first?.amount ?? null;
+  }
 
   const preShipStatuses = new Set([
     'pending_payment', 'placed', 'confirmed', 'processing',
@@ -224,8 +238,10 @@ export async function PUT(
   if (error) {
     console.error('[admin/orders] Update error:', error);
     const detail = error.message || '';
-    const hint = detail.includes('commission_')
-      ? ' Run supabase/week39_order_commission.sql in Supabase.'
+    const hint = detail.includes('commissions')
+      ? ' Run supabase/week44_offline_order_manual_designs.sql in Supabase.'
+      : detail.includes('commission_')
+        ? ' Run supabase/week39_order_commission.sql in Supabase.'
       : '';
     return NextResponse.json(
       { error: `Failed to update order.${hint}` },

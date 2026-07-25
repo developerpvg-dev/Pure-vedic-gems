@@ -10,6 +10,8 @@ type ProfileStub = {
   whatsapp: string | null;
   rashi: string | null;
   account_status: string;
+  addresses: unknown;
+  default_address_index: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -130,7 +132,7 @@ export async function listAdminCustomers({
   if (sort === 'signup') {
     let query = admin
       .from('customer_profiles')
-      .select('id, full_name, email, phone, whatsapp, rashi, account_status, created_at, updated_at', { count: 'exact' })
+      .select('id, full_name, email, phone, whatsapp, rashi, account_status, addresses, default_address_index, created_at, updated_at', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, from + perPage - 1);
 
@@ -157,7 +159,7 @@ export async function listAdminCustomers({
 
   let stubQuery = admin
     .from('customer_profiles')
-    .select('id, full_name, email, phone, whatsapp, rashi, account_status, created_at, updated_at');
+    .select('id, full_name, email, phone, whatsapp, rashi, account_status, addresses, default_address_index, created_at, updated_at');
 
   stubQuery = applySearchFilter(stubQuery, search);
 

@@ -231,6 +231,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
     commission_source?: string | null;
     commission_name?: string | null;
     commission_amount?: number | null;
+    commissions?: Array<{
+      source: 'salesperson' | 'astrologer';
+      name: string;
+      amount: number;
+    }>;
   };
 
   let assignedDesignerName: string | null = orderExtras.designer_name ?? null;
@@ -1108,6 +1113,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               currentCommissionSource={orderExtras.commission_source ?? null}
               currentCommissionName={orderExtras.commission_name ?? null}
               currentCommissionAmount={orderExtras.commission_amount ?? null}
+              currentCommissions={orderExtras.commissions ?? []}
             />
           </div>
         }

@@ -48,11 +48,23 @@ type CustomerHit = {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  addresses?: Array<Partial<typeof EMPTY_ADDRESS>> | null;
+  default_address_index?: number | null;
+};
+
+const EMPTY_ADDRESS = {
+  line1: '',
+  line2: '',
+  city: '',
+  state: 'Rajasthan',
+  pincode: '',
+  country: 'India',
+  country_code: 'IN',
 };
 
 type LineItem = {
   key: string;
-  product_id: string;
+  product_id: string | null;
   name: string;
   sku?: string;
   tag_number?: string | null;
@@ -66,6 +78,19 @@ type LineItem = {
   configuration_summary?: string;
   configuration_snapshot?: unknown;
   delivery_eta_label?: string;
+  manual_design?: {
+    description: string;
+    item_price: number;
+    metal_price: number;
+    labour_charge: number;
+    other_charge: number;
+  };
+};
+
+type Commission = {
+  source: 'salesperson' | 'astrologer';
+  name: string;
+  amount: string;
 };
 
 type Pricing = {
@@ -245,14 +270,20 @@ export function OfflineOrderPOS() {
   const [configuringProduct, setConfiguringProduct] = useState<ProductCard | null>(null);
   const [configuringComboIds, setConfiguringComboIds] = useState<string[]>([]);
   const [loadingConfigure, setLoadingConfigure] = useState(false);
-  const [showSkuSearch, setShowSkuSearch] = useState(false);
+  const [showManualDesign, setShowManualDesign] = useState(false);
+  const [manualDesign, setManualDesign] = useState({
+    name: '',
+    description: '',
+    item_price: '',
+    metal_price: '',
+    labour_charge: '',
+    other_charge: '',
+  });
 
   // Charges
   const [manualDiscount, setManualDiscount] = useState('');
   const [couponCode, setCouponCode] = useState('');
-  const [commissionSource, setCommissionSource] = useState('');
-  const [commissionName, setCommissionName] = useState('');
-  const [commissionAmount, setCommissionAmount] = useState('');
+  const [commissions, setCommissions] = useState<Commission[]>([]);
   const [pricing, setPricing] = useState<Pricing | null>(null);
   const [pricingError, setPricingError] = useState('');
   const [quoting, setQuoting] = useState(false);
@@ -261,15 +292,7 @@ export function OfflineOrderPOS() {
   const [fulfillmentType, setFulfillmentType] = useState<'in_store' | 'pickup' | 'delivery'>('in_store');
   const [shippingMethod, setShippingMethod] = useState('');
   const [shippingPlans, setShippingPlans] = useState<ShippingPlan[]>([]);
-  const [addr, setAddr] = useState({
-    line1: '',
-    line2: '',
-    city: '',
-    state: 'Rajasthan',
-    pincode: '',
-    country: 'India',
-    country_code: 'IN',
-  });
+  const [addr, setAddr] = useState(EMPTY_ADDRESS);
   const [notes, setNotes] = useState('');
 
   // Payment
@@ -343,6 +366,53 @@ export function OfflineOrderPOS() {
     ]);
     setProductQuery('');
     setProductHits([]);
+  }
+
+  function addManualDesign() {
+    const itemPrice = Number(manualDesign.item_price) || 0;
+    const metalPrice = Number(manualDesign.metal_price) || 0;
+    const labourCharge = Number(manualDesign.labour_charge) || 0;
+    const otherCharge = Number(manualDesign.other_charge) || 0;
+    if (manualDesign.name.trim().length < 2) {
+      setError('Enter a name for the manual design.');
+      return;
+    }
+    if (itemPrice + metalPrice + labourCharge + otherCharge <= 0) {
+      setError('Enter at least one price for the manual design.');
+      return;
+    }
+    const key = `manual-${Date.now()}`;
+    setItems((prev) => [
+      ...prev,
+      {
+        key,
+        product_id: null,
+        name: manualDesign.name.trim(),
+        price: itemPrice + metalPrice + labourCharge + otherCharge,
+        quantity: 1,
+        category: 'manual_design',
+        configuration_summary: manualDesign.description.trim()
+          ? `Manual design: ${manualDesign.description.trim()}`
+          : 'Customer-provided manual design',
+        manual_design: {
+          description: manualDesign.description.trim(),
+          item_price: itemPrice,
+          metal_price: metalPrice,
+          labour_charge: labourCharge,
+          other_charge: otherCharge,
+        },
+      },
+    ]);
+    setManualDesign({
+      name: '',
+      description: '',
+      item_price: '',
+      metal_price: '',
+      labour_charge: '',
+      other_charge: '',
+    });
+    setShowManualDesign(false);
+    setError('');
   }
 
   async function addProduct(p: ProductHit) {
@@ -446,6 +516,7 @@ export function OfflineOrderPOS() {
   const quotePayload = useMemo(
     () => ({
       items: items.map((i) => ({
+        line_id: i.key,
         product_id: i.product_id,
         quantity: i.quantity,
         name: i.name,
@@ -460,10 +531,11 @@ export function OfflineOrderPOS() {
         configuration_summary: i.configuration_summary,
         configuration_snapshot: i.configuration_snapshot,
         delivery_eta_label: i.delivery_eta_label,
+        manual_design: i.manual_design,
       })),
       fulfillment_type: fulfillmentType,
       shipping_method: fulfillmentType === 'delivery' ? shippingMethod || undefined : undefined,
-      shipping_address: fulfillmentType === 'delivery' ? addr : undefined,
+      shipping_address: addr,
       coupon_code: couponCode.trim() || undefined,
       manual_discount: Number(manualDiscount) || 0,
       customer_id: customerId,
@@ -527,7 +599,16 @@ export function OfflineOrderPOS() {
   }, [step, pricing]);
 
   function canNext() {
-    if (step === 0) return fullName.trim().length >= 2 && phone.trim().length >= 10;
+    if (step === 0) {
+      return (
+        fullName.trim().length >= 2 &&
+        phone.trim().length >= 10 &&
+        addr.line1.trim().length >= 5 &&
+        addr.city.trim().length >= 2 &&
+        addr.state.trim().length >= 2 &&
+        addr.pincode.trim().length >= 2
+      );
+    }
     if (step === 1) return items.length > 0;
     if (step === 2) return Boolean(pricing) && !pricingError;
     if (step === 3) {
@@ -558,6 +639,7 @@ export function OfflineOrderPOS() {
           email: email.trim(),
           billing_gstin: gstin.trim(),
         },
+        customer_address: addr,
         items: quotePayload.items,
         fulfillment_type: fulfillmentType,
         shipping_method: fulfillmentType === 'delivery' ? shippingMethod : undefined,
@@ -565,9 +647,13 @@ export function OfflineOrderPOS() {
         special_instructions: notes.trim() || undefined,
         coupon_code: couponCode.trim() || undefined,
         manual_discount: Number(manualDiscount) || 0,
-        commission_source: commissionSource || null,
-        commission_name: commissionName.trim() || null,
-        commission_amount: commissionAmount === '' ? null : Number(commissionAmount),
+        commissions: commissions
+          .filter((entry) => entry.name.trim() && entry.amount !== '')
+          .map((entry) => ({
+            source: entry.source,
+            name: entry.name.trim(),
+            amount: Number(entry.amount),
+          })),
         payment: {
           amount: Number(payAmount),
           method: payMethod,
@@ -649,6 +735,11 @@ export function OfflineOrderPOS() {
                         setFullName(c.full_name || '');
                         setPhone(c.phone || '');
                         setEmail(c.email || '');
+                        const savedAddress =
+                          c.addresses?.[c.default_address_index ?? 0] ?? c.addresses?.[0];
+                        if (savedAddress) {
+                          setAddr((current) => ({ ...current, ...savedAddress }));
+                        }
                         setCustomerHits([]);
                         setCustomerQuery(c.full_name || c.phone || '');
                       }}
@@ -696,6 +787,37 @@ export function OfflineOrderPOS() {
                 />
               </label>
             </div>
+            <div className="border-t border-gray-100 pt-4">
+              <p className="mb-3 text-sm font-semibold text-gray-900">Customer address *</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm sm:col-span-2">
+                  <span className="mb-1 block text-gray-600">Address line 1 *</span>
+                  <input
+                    value={addr.line1}
+                    onChange={(e) => setAddr((a) => ({ ...a, line1: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                  />
+                </label>
+                <label className="text-sm sm:col-span-2">
+                  <span className="mb-1 block text-gray-600">Address line 2</span>
+                  <input
+                    value={addr.line2}
+                    onChange={(e) => setAddr((a) => ({ ...a, line2: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                  />
+                </label>
+                {(['city', 'state', 'pincode'] as const).map((fieldName) => (
+                  <label key={fieldName} className="text-sm">
+                    <span className="mb-1 block capitalize text-gray-600">{fieldName} *</span>
+                    <input
+                      value={addr[fieldName]}
+                      onChange={(e) => setAddr((a) => ({ ...a, [fieldName]: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -711,16 +833,11 @@ export function OfflineOrderPOS() {
 
             <OfflinePosCatalogPicker onConfigure={openConfigurator} />
 
-            <div className="border-t border-gray-100 pt-3">
-              <button
-                type="button"
-                onClick={() => setShowSkuSearch((v) => !v)}
-                className="text-xs font-semibold text-stone-600 underline-offset-2 hover:underline"
-              >
-                {showSkuSearch ? 'Hide' : 'Add'} non-configurable product by SKU / tag
-              </button>
-              {showSkuSearch ? (
-                <div className="mt-2 space-y-2">
+            <div className="space-y-2 border-t border-gray-100 pt-3">
+              <p className="text-xs font-semibold text-stone-700">
+                Add any catalog product by tag number, SKU, or name
+              </p>
+              <div className="space-y-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <input
@@ -780,6 +897,66 @@ export function OfflineOrderPOS() {
                       <Loader2 className="h-4 w-4 animate-spin" /> Opening configurator…
                     </p>
                   ) : null}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowManualDesign((value) => !value)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-700 hover:text-stone-900"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {showManualDesign ? 'Close manual design' : 'Add customer-provided manual design'}
+              </button>
+              {showManualDesign ? (
+                <div className="mt-3 grid gap-3 rounded-lg border border-amber-100 bg-amber-50/50 p-3 sm:grid-cols-2">
+                  <label className="text-sm sm:col-span-2">
+                    <span className="mb-1 block text-gray-600">Design name *</span>
+                    <input
+                      value={manualDesign.name}
+                      onChange={(e) => setManualDesign((value) => ({ ...value, name: e.target.value }))}
+                      placeholder="e.g. Customer sketch ring"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                  </label>
+                  <label className="text-sm sm:col-span-2">
+                    <span className="mb-1 block text-gray-600">Design details</span>
+                    <textarea
+                      rows={2}
+                      value={manualDesign.description}
+                      onChange={(e) => setManualDesign((value) => ({ ...value, description: e.target.value }))}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                    />
+                  </label>
+                  {(
+                    [
+                      ['item_price', 'Stone / item price (₹)'],
+                      ['metal_price', 'Metal price (₹)'],
+                      ['labour_charge', 'Labour charge (₹)'],
+                      ['other_charge', 'Other charge (₹)'],
+                    ] as const
+                  ).map(([fieldName, label]) => (
+                    <label key={fieldName} className="text-sm">
+                      <span className="mb-1 block text-gray-600">{label}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={manualDesign[fieldName]}
+                        onChange={(e) =>
+                          setManualDesign((value) => ({ ...value, [fieldName]: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                      />
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addManualDesign}
+                    className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-950 sm:col-span-2"
+                  >
+                    Add manual design
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -859,36 +1036,86 @@ export function OfflineOrderPOS() {
                   className="w-full rounded-lg border border-gray-200 px-3 py-2"
                 />
               </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-gray-600">Commission source</span>
-                <select
-                  value={commissionSource}
-                  onChange={(e) => setCommissionSource(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2"
+            </div>
+            <div className="space-y-3 border-t border-gray-100 pt-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-gray-900">Commission recipients</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCommissions((entries) => [
+                      ...entries,
+                      { source: 'salesperson', name: '', amount: '' },
+                    ])
+                  }
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-900"
                 >
-                  <option value="">None</option>
-                  <option value="salesperson">Salesperson</option>
-                  <option value="astrologer">Astrologer</option>
-                </select>
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-gray-600">Commission name</span>
-                <input
-                  value={commissionName}
-                  onChange={(e) => setCommissionName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2"
-                />
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-gray-600">Commission amount (₹)</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={commissionAmount}
-                  onChange={(e) => setCommissionAmount(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2"
-                />
-              </label>
+                  <Plus className="h-3.5 w-3.5" /> Add recipient
+                </button>
+              </div>
+              {commissions.length === 0 ? (
+                <p className="text-xs text-gray-500">No commission recipients.</p>
+              ) : (
+                commissions.map((entry, index) => (
+                  <div key={index} className="grid gap-2 rounded-lg border border-gray-100 p-3 sm:grid-cols-[1fr_1.5fr_1fr_auto]">
+                    <select
+                      aria-label={`Commission source ${index + 1}`}
+                      value={entry.source}
+                      onChange={(e) =>
+                        setCommissions((entries) =>
+                          entries.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? { ...item, source: e.target.value as Commission['source'] }
+                              : item,
+                          ),
+                        )
+                      }
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    >
+                      <option value="salesperson">Salesperson</option>
+                      <option value="astrologer">Astrologer</option>
+                    </select>
+                    <input
+                      aria-label={`Commission name ${index + 1}`}
+                      value={entry.name}
+                      onChange={(e) =>
+                        setCommissions((entries) =>
+                          entries.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, name: e.target.value } : item,
+                          ),
+                        )
+                      }
+                      placeholder="Person’s name"
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    />
+                    <input
+                      aria-label={`Commission amount ${index + 1}`}
+                      type="number"
+                      min={0}
+                      value={entry.amount}
+                      onChange={(e) =>
+                        setCommissions((entries) =>
+                          entries.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, amount: e.target.value } : item,
+                          ),
+                        )
+                      }
+                      placeholder="Amount ₹"
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCommissions((entries) => entries.filter((_, itemIndex) => itemIndex !== index))
+                      }
+                      aria-label={`Remove commission recipient ${index + 1}`}
+                      className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
             <button
               type="button"

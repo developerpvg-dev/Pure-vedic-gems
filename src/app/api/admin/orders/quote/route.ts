@@ -60,9 +60,11 @@ export async function POST(request: NextRequest) {
   try {
     const pricing = await recalculateOrderTotal(
       data.items.map((i) => ({
+        line_id: i.line_id,
         product_id: i.product_id,
         quantity: i.quantity,
         configuration_id: i.configuration_id,
+        manual_design: i.manual_design,
       })),
       isDelivery ? data.shipping_method! : 'pickup',
       data.coupon_code,

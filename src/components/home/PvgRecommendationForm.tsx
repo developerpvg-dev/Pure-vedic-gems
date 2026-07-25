@@ -38,6 +38,7 @@ export function PvgRecommendationForm() {
   const [paying, setPaying] = useState(false);
   const [success, setSuccess] = useState<{ id: string } | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [guestChoiceOpen, setGuestChoiceOpen] = useState(false);
 
   useEffect(() => {
     if (!user && !profile) return;
@@ -72,7 +73,9 @@ export function PvgRecommendationForm() {
     if (!form.phone.trim() || !/^[0-9+\-\s()]{7,20}$/.test(form.phone)) {
       nextErrors.phone = 'Please enter a valid phone number.';
     }
-    if (form.date_of_birth) {
+    if (!form.date_of_birth) {
+      nextErrors.date_of_birth = 'Please enter your date of birth.';
+    } else {
       const dob = new Date(`${form.date_of_birth}T00:00:00`);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -85,6 +88,8 @@ export function PvgRecommendationForm() {
     if (form.birth_time && !/^\d{2}:\d{2}$/.test(form.birth_time)) {
       nextErrors.birth_time = 'Please enter a valid birth time.';
     }
+    if (!form.birth_place.trim()) nextErrors.birth_place = 'Please enter your birth place.';
+    if (!form.life_situation.trim()) nextErrors.life_situation = 'Please enter your purpose / area of concern.';
     return nextErrors;
   }
 
@@ -104,8 +109,9 @@ export function PvgRecommendationForm() {
       return;
     }
 
+    // Logged-in: pay immediately. Guest: offer login OR continue without account.
     if (!isAuthenticated) {
-      setAuthModalOpen(true);
+      setGuestChoiceOpen(true);
       return;
     }
 
@@ -113,6 +119,7 @@ export function PvgRecommendationForm() {
   }
 
   async function proceedToPayment() {
+    setGuestChoiceOpen(false);
     setPaying(true);
     setErrors({});
 
@@ -163,7 +170,11 @@ export function PvgRecommendationForm() {
             <Link href="/account/consultations" className="reco-form-cta reco-form-cta-secondary">
               View My Booking
             </Link>
-          ) : null}
+          ) : (
+            <p className="reco-form-note" style={{ margin: 0 }}>
+              Check your email for confirmation. You can create an account anytime to track bookings.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -218,7 +229,9 @@ export function PvgRecommendationForm() {
             onChange={(event) => updateField('birth_place', event.target.value)}
             placeholder="City"
             autoComplete="address-level2"
+            required
           />
+          {errors.birth_place ? <p className="reco-form-field-error">{errors.birth_place}</p> : null}
         </div>
         <div className="reco-form-group">
           <label className="reco-form-label" htmlFor="recoName">Your Name</label>
@@ -263,7 +276,7 @@ export function PvgRecommendationForm() {
           {errors.phone ? <p className="reco-form-field-error">{errors.phone}</p> : null}
         </div>
         <div className="reco-form-group full">
-          <label className="reco-form-label" htmlFor="recoPurpose">Purpose</label>
+          <label className="reco-form-label" htmlFor="recoPurpose">Purpose / Area of concern</label>
           <input
             className="reco-form-input"
             id="recoPurpose"
@@ -273,6 +286,7 @@ export function PvgRecommendationForm() {
             onChange={(event) => updateField('life_situation', event.target.value)}
             placeholder="Select a suggestion or type your purpose"
             maxLength={200}
+            required
           />
           <datalist id="reco-purpose-suggestions">
             {GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS.map((purpose) => (
@@ -282,10 +296,52 @@ export function PvgRecommendationForm() {
           {errors.life_situation ? <p className="reco-form-field-error">{errors.life_situation}</p> : null}
         </div>
       </div>
-      <button type="submit" className="reco-form-cta" disabled={paying}>
-        {paying ? 'Opening Payment...' : 'Proceed to Pay Rs 101'}
-      </button>
-      <p className="reco-form-note">Secure payment via Razorpay. Confirmation email sent after booking.</p>
+
+      {guestChoiceOpen ? (
+        <div className="reco-form-guest-choice" role="dialog" aria-labelledby="recoGuestChoiceTitle">
+          <p id="recoGuestChoiceTitle" className="reco-form-guest-title">
+            Have an account?
+          </p>
+          <p className="reco-form-note" style={{ marginTop: 0 }}>
+            Log in or sign up to track this booking in your account — or continue and pay as a guest.
+          </p>
+          <div className="reco-form-guest-actions">
+            <button
+              type="button"
+              className="reco-form-cta"
+              disabled={paying}
+              onClick={() => {
+                setGuestChoiceOpen(false);
+                setAuthModalOpen(true);
+              }}
+            >
+              Login / Sign up
+            </button>
+            <button
+              type="button"
+              className="reco-form-cta reco-form-cta-secondary"
+              disabled={paying}
+              onClick={() => void proceedToPayment()}
+            >
+              Continue without login
+            </button>
+            <button
+              type="button"
+              className="reco-form-guest-cancel"
+              disabled={paying}
+              onClick={() => setGuestChoiceOpen(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="submit" className="reco-form-cta" disabled={paying}>
+          {paying ? 'Opening Payment...' : 'Proceed to Pay Rs 101'}
+        </button>
+      )}
+
+      <p className="reco-form-note">Secure payment via Razorpay. Confirmation email sent after booking. Login not required.</p>
       {errors._form ? <p className="reco-form-status" role="alert">{errors._form}</p> : null}
       <LoginModal
         open={authModalOpen}

@@ -2272,6 +2272,7 @@ export interface Database {
           last_remark_at: string | null;
           closed_at: string | null;
           closed_reason: string | null;
+          consultation_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -2318,6 +2319,7 @@ export interface Database {
           last_remark_at?: string | null;
           closed_at?: string | null;
           closed_reason?: string | null;
+          consultation_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -2364,6 +2366,7 @@ export interface Database {
           last_remark_at?: string | null;
           closed_at?: string | null;
           closed_reason?: string | null;
+          consultation_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

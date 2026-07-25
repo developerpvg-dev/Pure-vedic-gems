@@ -113,6 +113,8 @@ export async function agentCreateEnquiry(
       product_id: input.productId ?? null,
       source: 'agent_chat',
       status: 'new',
+      pipeline_stage: 'new',
+      enquiry_type: 'Enquiry',
     })
     .select('id')
     .single();

@@ -276,8 +276,8 @@ export default function CommissionsPage() {
 
       {data?.needsMigration ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Run <code className="font-mono text-xs">supabase/week39_order_commission.sql</code> in
-          Supabase first.
+          Run <code className="font-mono text-xs">supabase/week39_order_commission.sql</code>, then{' '}
+          <code className="font-mono text-xs">supabase/week44_offline_order_manual_designs.sql</code>.
         </p>
       ) : null}
 
@@ -382,8 +382,8 @@ export default function CommissionsPage() {
                       </td>
                     </tr>
                   ) : (
-                    data.orders.map((o) => (
-                      <tr key={o.id} className="border-t border-gray-100">
+                    data.orders.map((o, index) => (
+                      <tr key={`${o.id}-${o.commission_source}-${o.commission_name}-${index}`} className="border-t border-gray-100">
                         <td className="px-4 py-3">
                           <Link
                             href={`/admin/orders/${o.id}`}

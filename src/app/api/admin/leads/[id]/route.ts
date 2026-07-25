@@ -253,6 +253,13 @@ export async function PUT(
     if (!canAssignLeads(role)) {
       return NextResponse.json({ error: 'Only leads manager can assign telecallers' }, { status: 403 });
     }
+    // Locked once set — no reassign, no double-assign
+    if (current.assigned_to) {
+      return NextResponse.json(
+        { error: 'This lead is already assigned to a telecaller and cannot be reassigned' },
+        { status: 409 }
+      );
+    }
     const telecallerId = typeof updateData.assigned_to === 'string' ? updateData.assigned_to : null;
     if (!telecallerId) {
       return NextResponse.json({ error: 'Select a telecaller' }, { status: 400 });
@@ -266,12 +273,12 @@ export async function PUT(
     if (!member || (member.role !== 'telecom' && member.role !== 'sales')) {
       return NextResponse.json({ error: 'Invalid telecaller' }, { status: 400 });
     }
-    if (!['new', 'closed', 'assigned', 'verifying', 'verified'].includes(current.pipeline_stage)) {
-      return NextResponse.json({ error: 'Cannot assign telecaller at this stage' }, { status: 400 });
+    if (!['new', 'closed'].includes(current.pipeline_stage)) {
+      return NextResponse.json({ error: 'Can only assign a telecaller on New (or reopen Closed) leads' }, { status: 400 });
     }
-    const nextStage: LeadPipelineStage =
-      current.pipeline_stage === 'new' || current.pipeline_stage === 'closed' ? 'assigned' : (current.pipeline_stage as LeadPipelineStage);
+    const nextStage: LeadPipelineStage = 'assigned';
 
+    // Race-safe: only succeed if still unassigned
     const { data, error } = await admin
       .from('enquiries')
       .update({
@@ -283,9 +290,16 @@ export async function PUT(
         ...(current.pipeline_stage === 'closed' ? { closed_at: null, closed_reason: null } : {}),
       })
       .eq('id', id)
+      .is('assigned_to', null)
       .select()
-      .single();
+      .maybeSingle();
     if (error) return NextResponse.json({ error: 'Assign failed', detail: error.message }, { status: 500 });
+    if (!data) {
+      return NextResponse.json(
+        { error: 'This lead is already assigned to a telecaller and cannot be reassigned' },
+        { status: 409 }
+      );
+    }
 
     await logLeadActivity(admin, {
       enquiryId: id,
@@ -321,6 +335,12 @@ export async function PUT(
     if (!['assigned', 'verifying', 'verified'].includes(current.pipeline_stage)) {
       return NextResponse.json({ error: 'Lead must be with telecaller before verifying' }, { status: 400 });
     }
+    if (isTelecomRole(role) && !current.details_confirmed) {
+      return NextResponse.json(
+        { error: 'Confirm customer details first (mark details correct), then mark verified' },
+        { status: 400 }
+      );
+    }
     const { data, error } = await admin
       .from('enquiries')
       .update({
@@ -329,6 +349,8 @@ export async function PUT(
         verified_by: auth.user.id,
         pipeline_stage: 'verified',
         status: 'contacted',
+        last_remark_code: 'details_confirmed',
+        last_remark_at: now,
         updated_at: now,
       })
       .eq('id', id)
@@ -369,7 +391,14 @@ export async function PUT(
     if (current.pipeline_stage !== 'verified') {
       return NextResponse.json({ error: 'Lead must be Verified before forwarding to astrologer' }, { status: 400 });
     }
-    const astrologerId = typeof updateData.astrologer_id === 'string' ? updateData.astrologer_id : current.astrologer_id;
+    // Locked once set — no reassign, no double-forward
+    if (current.astrologer_id) {
+      return NextResponse.json(
+        { error: 'This lead is already assigned to an astrologer and cannot be reassigned' },
+        { status: 409 }
+      );
+    }
+    const astrologerId = typeof updateData.astrologer_id === 'string' ? updateData.astrologer_id : null;
     if (!astrologerId) {
       return NextResponse.json({ error: 'Select an astrologer / pandit ji' }, { status: 400 });
     }
@@ -388,9 +417,16 @@ export async function PUT(
         updated_at: now,
       })
       .eq('id', id)
+      .is('astrologer_id', null)
       .select()
-      .single();
+      .maybeSingle();
     if (error) return NextResponse.json({ error: 'Forward failed' }, { status: 500 });
+    if (!data) {
+      return NextResponse.json(
+        { error: 'This lead is already assigned to an astrologer and cannot be reassigned' },
+        { status: 409 }
+      );
+    }
 
     await logLeadActivity(admin, {
       enquiryId: id,
@@ -528,6 +564,75 @@ export async function PUT(
     return NextResponse.json({ lead: data });
   }
 
+  if (action === 'mark_remedies_explained') {
+    if (!isLeadManager(role) && !isTelecomRole(role)) {
+      return NextResponse.json({ error: 'Only manager or telecaller can mark remedies explained' }, { status: 403 });
+    }
+    if (current.pipeline_stage !== 'sent_to_customer') {
+      return NextResponse.json(
+        { error: 'Lead must be in Deliver Remedies before marking explained' },
+        { status: 400 }
+      );
+    }
+    if (isTelecomRole(role) && current.assigned_to !== auth.user.id) {
+      return NextResponse.json({ error: 'This lead is not assigned to you' }, { status: 403 });
+    }
+
+    const { data, error } = await admin
+      .from('enquiries')
+      .update({
+        pipeline_stage: 'remedies_explained',
+        status: 'contacted',
+        last_remark_code: 'remedies_explain',
+        last_remark_at: now,
+        updated_at: now,
+      })
+      .eq('id', id)
+      .eq('pipeline_stage', 'sent_to_customer')
+      .select()
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 });
+    if (!data) {
+      return NextResponse.json({ error: 'Lead is no longer in Deliver Remedies' }, { status: 409 });
+    }
+
+    await logLeadActivity(admin, {
+      enquiryId: id,
+      action: 'remedies_explained',
+      fromValue: 'sent_to_customer',
+      toValue: 'remedies_explained',
+      actorId: auth.user.id,
+      actorName,
+    });
+
+    await admin.from('lead_remarks').insert({
+      enquiry_id: id,
+      remark_code: 'remedies_explain',
+      remark_label: 'Remedies Explain',
+      note: isLeadManager(role) ? 'Marked explained by leads manager' : null,
+      created_by: auth.user.id,
+      created_by_name: actorName,
+    });
+
+    if (isTelecomRole(role)) {
+      await createInAppNotifications([
+        {
+          audience: 'admin',
+          recipientRole: 'sales',
+          type: 'lead_remedies_explained',
+          title: 'Remedies explained — ready to close',
+          message: `${current.name} · telecaller explained remedies`,
+          href: `/admin/leads?id=${id}&pipeline=remedies_explained`,
+          entityType: 'enquiry',
+          entityId: id,
+          metadata: {},
+        },
+      ]).catch(() => undefined);
+    }
+
+    return NextResponse.json({ lead: data });
+  }
+
   // legacy aliases
   if (action === 'mark_remedies_ready') {
     return NextResponse.json(
@@ -557,9 +662,18 @@ export async function PUT(
     if (!canAssignLeads(role)) {
       return NextResponse.json({ error: 'Cannot assign leads' }, { status: 403 });
     }
+    if (current.assigned_to) {
+      return NextResponse.json(
+        { error: 'This lead is already assigned to a telecaller and cannot be reassigned' },
+        { status: 409 }
+      );
+    }
+    if (!d.assigned_to) {
+      return NextResponse.json({ error: 'Cannot clear telecaller assignment' }, { status: 400 });
+    }
     patch.assigned_to = d.assigned_to;
-    patch.assigned_at = d.assigned_to ? now : null;
-    if (d.assigned_to && current.pipeline_stage === 'new') {
+    patch.assigned_at = now;
+    if (current.pipeline_stage === 'new') {
       patch.pipeline_stage = 'assigned';
       patch.status = 'contacted';
     }
@@ -591,6 +705,15 @@ export async function PUT(
     if (!canForwardToAstrologer(role) && !canAssignLeads(role)) {
       return NextResponse.json({ error: 'Cannot set astrologer' }, { status: 403 });
     }
+    if (current.astrologer_id) {
+      return NextResponse.json(
+        { error: 'This lead is already assigned to an astrologer and cannot be reassigned' },
+        { status: 409 }
+      );
+    }
+    if (d.astrologer_id === null || d.astrologer_id === '') {
+      return NextResponse.json({ error: 'Cannot clear astrologer assignment' }, { status: 400 });
+    }
     if (d.astrologer_id !== undefined) patch.astrologer_id = d.astrologer_id;
     if (d.astrologer_name !== undefined) patch.astrologer_name = d.astrologer_name;
   }
@@ -598,6 +721,13 @@ export async function PUT(
   if (d.remedies_text !== undefined) {
     if (!canEditRemedies(role)) {
       return NextResponse.json({ error: 'Cannot edit remedies' }, { status: 403 });
+    }
+    if (
+      isAstrologerRole(role) &&
+      current.pipeline_stage !== 'with_astrologer' &&
+      current.pipeline_stage !== 'remedies_ready'
+    ) {
+      return NextResponse.json({ error: 'Lead is not with you right now' }, { status: 400 });
     }
     patch.remedies_text = d.remedies_text;
   }
@@ -625,6 +755,14 @@ export async function PUT(
     if (d.name !== undefined) patch.name = d.name;
     if (d.email !== undefined) patch.email = d.email;
     if (d.phone !== undefined) patch.phone = d.phone;
+    if (
+      isTelecomRole(role) &&
+      (current.pipeline_stage === 'assigned' || current.pipeline_stage === 'verifying')
+    ) {
+      patch.pipeline_stage = 'verifying';
+      patch.details_confirmed = false; // edited — must re-confirm with customer
+      patch.status = 'contacted';
+    }
   }
 
   if (
@@ -658,12 +796,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     patch.details_confirmed = d.details_confirmed;
-    if (d.details_confirmed) {
-      patch.verified_at = now;
-      patch.verified_by = auth.user.id;
-      if (current.pipeline_stage === 'assigned' || current.pipeline_stage === 'verifying') {
-        patch.pipeline_stage = 'verified' satisfies LeadPipelineStage;
-      }
+    if (d.details_confirmed && (current.pipeline_stage === 'assigned' || current.pipeline_stage === 'verifying')) {
+      // Confirm details only — mark_verified advances to manager
+      patch.pipeline_stage = 'verifying' satisfies LeadPipelineStage;
+      patch.status = 'contacted';
     }
   }
 

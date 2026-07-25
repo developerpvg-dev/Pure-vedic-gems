@@ -17,9 +17,14 @@ import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminStatCard } from '@/components/admin/AdminPageShell';
 import { EnquiryDetail, type EnquiryLead, type LeadCaps } from '@/components/admin/leads/EnquiryDetail';
 import {
+  ASTRO_STAGE_CHIPS,
   LEAD_PIPELINE_LABELS,
   LEAD_PIPELINE_STAGES,
+  LEAD_REMARK_BY_CODE,
   LEAD_REMARK_CODES,
+  MANAGER_STAGE_FILTERS,
+  TELECOM_CALL_OUTCOMES,
+  TELECOM_STAGE_CHIPS,
   type LeadPipelineStage,
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
@@ -73,7 +78,7 @@ const STAGE_COLORS: Record<string, string> = {
   with_astrologer: 'bg-violet-100 text-violet-800',
   remedies_ready: 'bg-fuchsia-100 text-fuchsia-800',
   sent_to_customer: 'bg-teal-100 text-teal-800',
-  follow_up: 'bg-orange-100 text-orange-800',
+  remedies_explained: 'bg-lime-100 text-lime-800',
   closed: 'bg-gray-100 text-gray-600',
 };
 
@@ -82,7 +87,18 @@ function fmtDate(value: string | null | undefined) {
   return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function buildAstroPacket(lead: EnquiryLead) {
+function buildAstroPacket(lead: EnquiryLead, hideContact = false) {
+  if (hideContact) {
+    return [
+      `SR. No. ${lead.lead_number ?? '—'}`,
+      `Enquiry Type: ${lead.enquiry_type || lead.subject || 'Enquiry'}`,
+      `Name: ${lead.name}`,
+      `Date of Birth: ${lead.date_of_birth || '—'}`,
+      `Time of Birth: ${lead.birth_time || '—'}`,
+      `Place of Birth: ${lead.birth_place || '—'}`,
+      `Area of Concern: ${lead.area_of_concern || '—'}`,
+    ].join('\n');
+  }
   return [
     `SR. No. ${lead.lead_number ?? '—'}`,
     `Date: ${fmtDate(lead.created_at)}`,
@@ -107,22 +123,19 @@ export default function LeadsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'enquiry' | 'consultation' | 'all'>('enquiry');
+  const [kind, setKind] = useState<'remedies' | 'consultation'>('remedies');
   const [pipeline, setPipeline] = useState('');
+  const [queue, setQueue] = useState<'active' | 'waiting' | 'past' | 'all'>('all');
   const [assignedTo, setAssignedTo] = useState('');
   const [astrologerId, setAstrologerId] = useState('');
   const [remarkFilter, setRemarkFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [followUp, setFollowUp] = useState('');
-  const [saleClose, setSaleClose] = useState('');
-  const [paymentReceived, setPaymentReceived] = useState('');
-  const [detailsConfirmed, setDetailsConfirmed] = useState('');
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +158,8 @@ export default function LeadsPage() {
     total: number;
     totalEnquiries: number;
     totalConsultations: number;
+    activeQueue: number;
+    pastClosed: number;
     newEnquiries: number;
     unassigned: number;
     needsFollowUp: number;
@@ -152,12 +167,17 @@ export default function LeadsPage() {
     verified: number;
     withAstrologer: number;
     remediesReady: number;
+    deliverRemedies: number;
+    remediesExplained: number;
     saleClosed: number;
     byStage?: Record<string, number>;
+    pastOutcomes?: Record<string, number>;
   }>({
     total: 0,
     totalEnquiries: 0,
     totalConsultations: 0,
+    activeQueue: 0,
+    pastClosed: 0,
     newEnquiries: 0,
     unassigned: 0,
     needsFollowUp: 0,
@@ -165,8 +185,11 @@ export default function LeadsPage() {
     verified: 0,
     withAstrologer: 0,
     remediesReady: 0,
+    deliverRemedies: 0,
+    remediesExplained: 0,
     saleClosed: 0,
     byStage: {},
+    pastOutcomes: {},
   });
 
   useEffect(() => {
@@ -185,18 +208,16 @@ export default function LeadsPage() {
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), per_page: String(LEADS_PER_PAGE), type: filter });
+    const params = new URLSearchParams({ page: String(page), per_page: String(LEADS_PER_PAGE), type: 'enquiry' });
+    params.set('enquiry_type', kind === 'remedies' ? 'remedies' : 'consultation');
     if (pipeline) params.set('pipeline', pipeline);
+    else params.set('queue', queue);
     if (assignedTo) params.set('assigned_to', assignedTo);
     if (astrologerId) params.set('astrologer_id', astrologerId);
     if (remarkFilter) params.set('remark', remarkFilter);
-    if (sourceFilter) params.set('source', sourceFilter);
     if (dateFrom) params.set('date_from', dateFrom);
     if (dateTo) params.set('date_to', dateTo);
     if (followUp) params.set('follow_up', followUp);
-    if (saleClose) params.set('sale_close', saleClose);
-    if (paymentReceived) params.set('payment_received', paymentReceived);
-    if (detailsConfirmed) params.set('details_confirmed', detailsConfirmed);
     if (unassignedOnly) params.set('unassigned', '1');
     if (debouncedSearch) params.set('search', debouncedSearch);
 
@@ -226,18 +247,15 @@ export default function LeadsPage() {
     setLoading(false);
   }, [
     page,
-    filter,
+    kind,
     pipeline,
+    queue,
     assignedTo,
     astrologerId,
     remarkFilter,
-    sourceFilter,
     dateFrom,
     dateTo,
     followUp,
-    saleClose,
-    paymentReceived,
-    detailsConfirmed,
     unassignedOnly,
     debouncedSearch,
   ]);
@@ -285,20 +303,22 @@ export default function LeadsPage() {
     setSaving(null);
   }
 
-  async function addRemark(id: string) {
+  async function addRemark(id: string, code?: LeadRemarkCode) {
     setSaving(id);
     setError(null);
+    const used = code ?? remarkCode;
     try {
       const res = await fetch(`/api/admin/leads/${id}/remarks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: remarkCode, note: remarkNote || null }),
+        body: JSON.stringify({ code: used, note: remarkNote || null }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(data?.error || 'Unable to add remark');
       }
       setRemarkNote('');
+      if (code) setRemarkCode(code);
       const data = await res.json();
       setRemarks((prev) => [...prev, data.remark]);
       await fetchLeads();
@@ -314,40 +334,54 @@ export default function LeadsPage() {
     return map;
   }, [staff]);
 
+  const isAstroDesk = caps.role === 'astrologer';
+  const isTelecomDesk = !isAstroDesk && (caps.role === 'telecom' || (caps.scoped && !caps.canAssign));
+  const isManagerDesk = !isAstroDesk && !isTelecomDesk;
+
+  const stageChips: LeadPipelineStage[] = isAstroDesk
+    ? [...ASTRO_STAGE_CHIPS]
+    : isTelecomDesk
+      ? [...TELECOM_STAGE_CHIPS]
+      : [...MANAGER_STAGE_FILTERS];
+
   function resetFilters() {
     setPipeline('');
+    setQueue('all');
     setAssignedTo('');
     setAstrologerId('');
     setRemarkFilter('');
-    setSourceFilter('');
     setDateFrom('');
     setDateTo('');
     setFollowUp('');
-    setSaleClose('');
-    setPaymentReceived('');
-    setDetailsConfirmed('');
     setUnassignedOnly(false);
     setSearch('');
     setPage(1);
   }
 
+  const pastOutcomeBars = useMemo(() => {
+    const entries = Object.entries(summary.pastOutcomes ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const max = Math.max(1, ...entries.map(([, n]) => n));
+    return entries.map(([code, count]) => ({
+      code,
+      count,
+      label: LEAD_REMARK_BY_CODE[code as LeadRemarkCode]?.label || code,
+      pct: Math.round((count / max) * 100),
+    }));
+  }, [summary.pastOutcomes]);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Leads CRM</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Manager assigns → Telecaller verifies → Manager → Astrologer → Manager edits → Telecaller delivers
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowFilters((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-        >
-          <Filter className="h-3.5 w-3.5" />
-          {showFilters ? 'Hide filters' : 'Show filters'}
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isAstroDesk ? 'Astrologer desk' : isTelecomDesk ? 'Telecaller desk' : 'Leads pipeline'}
+        </h1>
+        <p className="mt-0.5 text-sm text-gray-500">
+          {isAstroDesk
+            ? 'Write remedies for charts forwarded to you, then submit to the leads manager'
+            : isTelecomDesk
+              ? 'Filter by pipeline stage. Call status & dates are under More filters.'
+              : 'New → Telecaller → Verified → Astrologer → Remedies ready → Deliver → Explained → Close'}
+        </p>
       </div>
 
       {error && (
@@ -356,82 +390,101 @@ export default function LeadsPage() {
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
-        <AdminStatCard label="Total enquiries" value={summary.totalEnquiries.toLocaleString('en-IN')} icon={UsersIcon} tone="text-gray-900" bg="bg-gray-50" />
-        <AdminStatCard label="New / unassigned" value={`${summary.newEnquiries} / ${summary.unassigned}`} icon={MessageSquare} tone="text-sky-700" bg="bg-sky-50" />
-        <AdminStatCard label="Verifying" value={summary.verifying.toLocaleString('en-IN')} icon={Phone} tone="text-amber-700" bg="bg-amber-50" />
-        <AdminStatCard label="Verified" value={summary.verified.toLocaleString('en-IN')} icon={CheckCircle2} tone="text-emerald-700" bg="bg-emerald-50" />
-        <AdminStatCard label="With astrologer" value={summary.withAstrologer.toLocaleString('en-IN')} icon={User} tone="text-violet-700" bg="bg-violet-50" />
-        <AdminStatCard label="Follow-ups due" value={summary.needsFollowUp.toLocaleString('en-IN')} icon={Mail} tone="text-orange-700" bg="bg-orange-50" />
-      </div>
+      {isAstroDesk ? (
+        <div className="grid gap-3 sm:grid-cols-4">
+          <AdminStatCard label="Active for me" value={summary.activeQueue.toLocaleString('en-IN')} icon={User} tone="text-violet-700" bg="bg-violet-50" />
+          <AdminStatCard label="To write" value={summary.withAstrologer.toLocaleString('en-IN')} icon={MessageSquare} tone="text-fuchsia-700" bg="bg-fuchsia-50" />
+          <AdminStatCard label="Submitted" value={summary.remediesReady.toLocaleString('en-IN')} icon={CheckCircle2} tone="text-emerald-700" bg="bg-emerald-50" />
+          <AdminStatCard label="Past closed" value={summary.pastClosed.toLocaleString('en-IN')} icon={Mail} tone="text-gray-700" bg="bg-gray-50" />
+        </div>
+      ) : isTelecomDesk ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <AdminStatCard label="Active calls" value={summary.activeQueue.toLocaleString('en-IN')} icon={Phone} tone="text-indigo-700" bg="bg-indigo-50" />
+          <AdminStatCard label="Verifying" value={summary.verifying.toLocaleString('en-IN')} icon={MessageSquare} tone="text-amber-700" bg="bg-amber-50" />
+          <AdminStatCard label="Deliver remedies" value={(summary.deliverRemedies ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-teal-700" bg="bg-teal-50" />
+          <AdminStatCard label="Explained" value={(summary.remediesExplained ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-lime-700" bg="bg-lime-50" />
+          <AdminStatCard label="Past closed" value={summary.pastClosed.toLocaleString('en-IN')} icon={User} tone="text-gray-700" bg="bg-gray-50" />
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
+          <AdminStatCard label={kind === 'remedies' ? 'Remedies leads' : 'Consultations'} value={summary.totalEnquiries.toLocaleString('en-IN')} icon={UsersIcon} tone="text-gray-900" bg="bg-gray-50" />
+          <AdminStatCard label="New / unassigned" value={`${summary.newEnquiries} / ${summary.unassigned}`} icon={MessageSquare} tone="text-sky-700" bg="bg-sky-50" />
+          <AdminStatCard label="Verifying" value={summary.verifying.toLocaleString('en-IN')} icon={Phone} tone="text-amber-700" bg="bg-amber-50" />
+          <AdminStatCard label="Verified" value={summary.verified.toLocaleString('en-IN')} icon={CheckCircle2} tone="text-emerald-700" bg="bg-emerald-50" />
+          <AdminStatCard label="With astrologer" value={summary.withAstrologer.toLocaleString('en-IN')} icon={User} tone="text-violet-700" bg="bg-violet-50" />
+          <AdminStatCard label="Explained (close)" value={(summary.remediesExplained ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-lime-700" bg="bg-lime-50" />
+        </div>
+      )}
 
-      {/* Pipeline quick filters */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          type="button"
-          onClick={() => { setPipeline(''); setPage(1); }}
-          className={`rounded-full px-3 py-1 text-[11px] font-semibold ${!pipeline ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-        >
-          All stages
-        </button>
-        {LEAD_PIPELINE_STAGES.map((stage) => (
-          <button
-            key={stage}
-            type="button"
-            onClick={() => { setPipeline(stage); setFilter('enquiry'); setPage(1); }}
-            className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
-              pipeline === stage ? 'bg-amber-600 text-white' : `${STAGE_COLORS[stage]} hover:opacity-80`
-            }`}
-          >
-            {LEAD_PIPELINE_LABELS[stage]}
-            {summary.byStage?.[stage] != null ? ` (${summary.byStage[stage]})` : ''}
-          </button>
-        ))}
-      </div>
-
-      {showFilters && (
+      {(isTelecomDesk || isAstroDesk) && pastOutcomeBars.length > 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-2">
-              {(['enquiry', 'consultation', 'all'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => { setFilter(t); setPage(1); }}
-                  disabled={caps.scoped && t !== 'enquiry'}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
-                    filter === t ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {t === 'all' ? 'All types' : t === 'enquiry' ? 'Enquiry CRM' : 'Consultations'}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={resetFilters} className="text-xs font-medium text-amber-700 hover:underline">
-              Reset filters
-            </button>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <label className="text-xs font-medium text-gray-500">
-              Search
-              <div className="relative mt-1">
-                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                <input
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Name, email, phone, place..."
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm"
-                />
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Past closed outcomes</p>
+          <div className="mt-3 space-y-2">
+            {pastOutcomeBars.map((bar) => (
+              <div key={bar.code} className="grid grid-cols-[minmax(0,1fr)_3rem] items-center gap-3">
+                <div>
+                  <div className="mb-1 flex justify-between gap-2 text-[11px] text-gray-600">
+                    <span className="truncate">{bar.label}</span>
+                    <span className="font-semibold text-gray-800">{bar.count}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-full rounded-full bg-indigo-500" style={{ width: `${bar.pct}%` }} />
+                  </div>
+                </div>
+                <span className="text-right text-[10px] text-gray-400">{bar.pct}%</span>
               </div>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Coordinator
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => { setKind('remedies'); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${kind === 'remedies' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>Remedies leads (₹101)</button>
+          <button type="button" onClick={() => { setKind('consultation'); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${kind === 'consultation' ? 'bg-violet-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>Detailed consultations</button>
+        </div>
+        <button type="button" onClick={() => setShowFilters((v) => !v)} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+          <Filter className="h-3.5 w-3.5" />
+          {showFilters ? 'Hide filters' : 'More filters'}
+          {remarkFilter ? (
+            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">on</span>
+          ) : null}
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" onClick={() => { setPipeline(''); setQueue('all'); setPage(1); }} className={`rounded-full px-3 py-1 text-[11px] font-semibold ${!pipeline ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>All stages</button>
+          {stageChips.map((stage) => (
+            <button key={stage} type="button" onClick={() => { setPipeline(stage); setQueue('all'); setPage(1); }} className={`rounded-full px-3 py-1 text-[11px] font-semibold ${pipeline === stage ? 'bg-amber-600 text-white' : `${STAGE_COLORS[stage]} hover:opacity-80`}`}>
+              {LEAD_PIPELINE_LABELS[stage]}
+              {summary.byStage?.[stage] != null ? ` (${summary.byStage[stage]})` : ''}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="min-w-0 flex-1 text-xs font-medium text-gray-500">
+            Search
+            <div className="relative mt-1">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Name, email, phone..."
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm"
+              />
+            </div>
+          </label>
+          {!caps.scoped && (
+            <label className="text-xs font-medium text-gray-500 sm:w-48">
+              Telecaller
               <select
                 value={assignedTo}
                 onChange={(e) => { setAssignedTo(e.target.value); setPage(1); }}
-                disabled={caps.scoped}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
               >
                 <option value="">All</option>
                 {staff.telecom.map((m) => (
@@ -439,91 +492,91 @@ export default function LeadsPage() {
                 ))}
               </select>
             </label>
-            <label className="text-xs font-medium text-gray-500">
-              Astrologer
-              <select
-                value={astrologerId}
-                onChange={(e) => { setAstrologerId(e.target.value); setPage(1); }}
-                disabled={caps.scoped && !caps.canEditRemedies}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
-              >
-                <option value="">All</option>
-                {staff.astrologers.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Last remark
-              <select
-                value={remarkFilter}
-                onChange={(e) => { setRemarkFilter(e.target.value); setPage(1); }}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-              >
-                <option value="">All remarks</option>
-                {LEAD_REMARK_CODES.map((r) => (
-                  <option key={r.code} value={r.code}>{r.label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Date from
-              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Date to
-              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Follow-up
-              <select value={followUp} onChange={(e) => { setFollowUp(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                <option value="">Any</option>
-                <option value="overdue">Overdue</option>
-                <option value="today">Today</option>
-                <option value="upcoming">Upcoming</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Source
-              <select value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                <option value="">All sources</option>
-                <option value="homepage_recommendation">Homepage recommendation</option>
-                <option value="contact_form">Contact form</option>
-                <option value="yagya_booking">Yagya booking</option>
-                <option value="agent_chat">Ratna AI</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Payment
-              <select value={paymentReceived} onChange={(e) => { setPaymentReceived(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                <option value="">Any</option>
-                <option value="1">Received</option>
-                <option value="0">Pending</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Details confirmed
-              <select value={detailsConfirmed} onChange={(e) => { setDetailsConfirmed(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                <option value="">Any</option>
-                <option value="1">Yes</option>
-                <option value="0">No</option>
-              </select>
-            </label>
-            <label className="text-xs font-medium text-gray-500">
-              Sale close
-              <select value={saleClose} onChange={(e) => { setSaleClose(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
-                <option value="">Any</option>
-                <option value="1">Yes</option>
-                <option value="0">No</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2 pt-6 text-xs font-medium text-gray-700">
-              <input type="checkbox" checked={unassignedOnly} onChange={(e) => { setUnassignedOnly(e.target.checked); setPage(1); }} disabled={caps.scoped} />
+          )}
+          {!caps.scoped && (
+            <label className="flex items-center gap-2 pb-2 text-xs font-medium text-gray-700">
+              <input
+                type="checkbox"
+                checked={unassignedOnly}
+                onChange={(e) => { setUnassignedOnly(e.target.checked); setPage(1); }}
+              />
               Unassigned only
             </label>
-          </div>
+          )}
         </div>
-      )}
+
+        {showFilters && (
+          <div className="mt-4 space-y-4 border-t border-gray-100 pt-4">
+            {isTelecomDesk && (
+              <div>
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-500">Call status</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button type="button" onClick={() => { setRemarkFilter(''); setPage(1); }} className={`rounded-full px-3 py-1 text-[11px] font-semibold ${!remarkFilter ? 'bg-indigo-900 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200'}`}>All</button>
+                  {TELECOM_CALL_OUTCOMES.map((s) => (
+                    <button key={s.code} type="button" onClick={() => { setRemarkFilter(s.code); setPage(1); }} className={`rounded-full px-3 py-1 text-[11px] font-semibold ${remarkFilter === s.code ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200'}`}>{s.short}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {!caps.scoped && (
+                <label className="text-xs font-medium text-gray-500">
+                  Astrologer
+                  <select
+                    value={astrologerId}
+                    onChange={(e) => { setAstrologerId(e.target.value); setPage(1); }}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All</option>
+                    {staff.astrologers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {!isAstroDesk && !isTelecomDesk && (
+                <label className="text-xs font-medium text-gray-500">
+                  Last remark
+                  <select
+                    value={remarkFilter}
+                    onChange={(e) => { setRemarkFilter(e.target.value); setPage(1); }}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All remarks</option>
+                    {LEAD_REMARK_CODES.map((r) => (
+                      <option key={r.code} value={r.code}>{r.label}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label className="text-xs font-medium text-gray-500">
+                Date from
+                <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+              </label>
+              <label className="text-xs font-medium text-gray-500">
+                Date to
+                <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" />
+              </label>
+              {!isAstroDesk && (
+                <label className="text-xs font-medium text-gray-500">
+                  Follow-up
+                  <select value={followUp} onChange={(e) => { setFollowUp(e.target.value); setPage(1); }} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                    <option value="">Any</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="today">Today</option>
+                    <option value="upcoming">Upcoming</option>
+                  </select>
+                </label>
+              )}
+              <div className="flex items-end">
+                <button type="button" onClick={resetFilters} className="text-xs font-medium text-amber-700 hover:underline">
+                  Reset filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -555,26 +608,56 @@ export default function LeadsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-semibold text-gray-900">{name}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${isEnquiry ? 'bg-amber-50 text-amber-700' : 'bg-purple-50 text-purple-700'}`}>
-                        {isEnquiry ? 'Enquiry' : 'Consultation'}
-                      </span>
+                      {isEnquiry ? (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          (lead.enquiry_type || '').toLowerCase().includes('consultation')
+                            ? 'bg-purple-50 text-purple-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}>
+                          {(lead.enquiry_type || '').toLowerCase().includes('consultation')
+                            ? 'Consultation'
+                            : 'Remedies lead'}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
+                          Payment booking
+                        </span>
+                      )}
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100 text-gray-600'}`}>
                         {isEnquiry ? LEAD_PIPELINE_LABELS[stage as LeadPipelineStage] || stage : stage}
                       </span>
-                      {isEnquiry && lead.payment_received && (
+                      {isEnquiry && lead.details_confirmed && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Details OK</span>
+                      )}
+                      {isEnquiry && lead.last_remark_code && !isAstroDesk && (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                          {LEAD_REMARK_CODES.find((r) => r.code === lead.last_remark_code)?.label || lead.last_remark_code}
+                        </span>
+                      )}
+                      {isEnquiry && lead.payment_received && !isAstroDesk && (
                         <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">₹ paid</span>
                       )}
-                      {isEnquiry && lead.sale_close && (
+                      {isEnquiry && lead.sale_close && !isTelecomDesk && (
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Sale closed</span>
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{lead.email}</span>
-                      {lead.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</span>}
-                      {isEnquiry && lead.assigned_to && (
-                        <span>Coord: {staffName.get(lead.assigned_to) || 'Assigned'}</span>
+                      {isAstroDesk && isEnquiry ? (
+                        <>
+                          <span>DOB: {lead.date_of_birth || '—'}</span>
+                          <span>Time: {(lead.birth_time || '—').slice(0, 5)}</span>
+                          <span>Place: {lead.birth_place || '—'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{lead.email}</span>
+                          {lead.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</span>}
+                          {isEnquiry && lead.assigned_to && (
+                            <span>Coord: {staffName.get(lead.assigned_to) || 'Assigned'}</span>
+                          )}
+                          {isEnquiry && lead.astrologer_name && <span>Astro: {lead.astrologer_name}</span>}
+                        </>
                       )}
-                      {isEnquiry && lead.astrologer_name && <span>Astro: {lead.astrologer_name}</span>}
                     </div>
                   </div>
                   <span className="hidden text-xs text-gray-400 sm:block">{fmtDate(lead.created_at)}</span>
@@ -593,10 +676,10 @@ export default function LeadsPage() {
                     copied={copied}
                     onRemarkCode={setRemarkCode}
                     onRemarkNote={setRemarkNote}
-                    onAddRemark={() => addRemark(lead.id)}
+                    onAddRemark={(code) => addRemark(lead.id, code)}
                     onUpdate={(updates) => updateLead(lead.id, 'enquiry', updates)}
                     onCopy={async () => {
-                      await navigator.clipboard.writeText(buildAstroPacket(lead));
+                      await navigator.clipboard.writeText(buildAstroPacket(lead, isAstroDesk));
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1500);
                     }}

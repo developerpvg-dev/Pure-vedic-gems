@@ -178,8 +178,8 @@ export type PaymentCreateOrder = z.infer<typeof PaymentCreateOrderSchema>;
 export const CounterPaymentMethodSchema = z.enum(['cash', 'upi', 'card', 'bank_transfer']);
 export const FulfillmentTypeSchema = z.enum(['delivery', 'pickup', 'in_store']);
 
-export const OfflineOrderItemSchema = z.object({
-  product_id: z.string().uuid('Invalid product ID'),
+const OfflineOrderItemBaseSchema = z.object({
+  line_id: z.string().min(1).max(100).optional(),
   quantity: z.number().int().min(1).max(10).default(1),
   name: z.string().min(1).optional(),
   sku: z.string().optional(),
@@ -193,6 +193,31 @@ export const OfflineOrderItemSchema = z.object({
   /** Catalog design pick without full configurator (stored on line snapshot) */
   design_id: z.string().uuid().optional(),
   design_name: z.string().max(200).optional(),
+});
+
+export const OfflineOrderItemSchema = z.union([
+  OfflineOrderItemBaseSchema.extend({
+    product_id: z.string().uuid('Invalid product ID'),
+    manual_design: z.undefined().optional(),
+  }),
+  OfflineOrderItemBaseSchema.extend({
+    product_id: z.null().optional(),
+    name: z.string().trim().min(2).max(200),
+    quantity: z.literal(1).default(1),
+    manual_design: z.object({
+      description: z.string().trim().max(1000).optional().default(''),
+      item_price: z.coerce.number().min(0).max(100_000_000),
+      metal_price: z.coerce.number().min(0).max(100_000_000).default(0),
+      labour_charge: z.coerce.number().min(0).max(100_000_000).default(0),
+      other_charge: z.coerce.number().min(0).max(100_000_000).default(0),
+    }),
+  }),
+]);
+
+export const OrderCommissionSchema = z.object({
+  source: z.enum(['salesperson', 'astrologer']),
+  name: z.string().trim().min(1).max(200),
+  amount: z.coerce.number().min(0).max(100_000_000),
 });
 
 export const OfflineOrderCreateSchema = z
@@ -218,6 +243,7 @@ export const OfflineOrderCreateSchema = z
         .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid GSTIN'),
     }),
     items: z.array(OfflineOrderItemSchema).min(1, 'Add at least one item'),
+    customer_address: ShippingAddressSchema,
     fulfillment_type: FulfillmentTypeSchema.default('in_store'),
     shipping_address: ShippingAddressSchema.optional(),
     shipping_method: ShippingMethodIdSchema.optional(),
@@ -229,9 +255,7 @@ export const OfflineOrderCreateSchema = z
     ceremony_gotra: z.string().max(100).optional(),
     ceremony_rashi: z.string().max(50).optional(),
     record_ceremony: z.boolean().optional().default(false),
-    commission_source: z.enum(['salesperson', 'astrologer']).nullable().optional(),
-    commission_name: z.string().max(200).trim().nullable().optional(),
-    commission_amount: z.coerce.number().min(0).nullable().optional(),
+    commissions: z.array(OrderCommissionSchema).max(20).optional().default([]),
     payment: z.object({
       amount: z.coerce.number().positive('Payment amount is required'),
       method: CounterPaymentMethodSchema,

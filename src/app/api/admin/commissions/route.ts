@@ -5,7 +5,13 @@ import { resolveDateRange } from '@/lib/admin/analytics-utils';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 
 const SELECT =
-  'id, order_number, status, created_at, total, guest_name, commission_source, commission_name, commission_amount';
+  'id, order_number, status, created_at, total, guest_name, commissions, commission_source, commission_name, commission_amount';
+
+type CommissionEntry = {
+  source: 'salesperson' | 'astrologer';
+  name: string;
+  amount: number;
+};
 
 type CommissionOrder = {
   id: string;
@@ -17,6 +23,7 @@ type CommissionOrder = {
   commission_source: string | null;
   commission_name: string | null;
   commission_amount: number | null;
+  commissions?: CommissionEntry[] | null;
 };
 
 function isMissingColumnError(error: { code?: string; message?: string } | null) {
@@ -49,16 +56,11 @@ export async function GET(request: NextRequest) {
   let query = db
     .from('orders')
     .select(SELECT)
-    .or('commission_source.not.is.null,commission_name.not.is.null,commission_amount.not.is.null')
     .order('created_at', { ascending: false })
     .limit(2000);
 
   if (from) query = query.gte('created_at', from);
   if (to) query = query.lte('created_at', to);
-  if (source === 'salesperson' || source === 'astrologer') {
-    query = query.eq('commission_source', source);
-  }
-
   const { data, error } = await query;
 
   if (error) {
@@ -75,7 +77,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to load commissions' }, { status: 500 });
   }
 
-  let orders = (data ?? []) as CommissionOrder[];
+  const sourceOrders = (data ?? []) as CommissionOrder[];
+  let orders = sourceOrders.flatMap((order) => {
+    const entries =
+      Array.isArray(order.commissions) && order.commissions.length
+        ? order.commissions
+        : order.commission_source
+          ? [{
+              source: order.commission_source as CommissionEntry['source'],
+              name: order.commission_name || '',
+              amount: Number(order.commission_amount) || 0,
+            }]
+          : [];
+    return entries.map((entry) => ({
+      ...order,
+      commission_source: entry.source,
+      commission_name: entry.name,
+      commission_amount: Number(entry.amount) || 0,
+    }));
+  });
+  if (source === 'salesperson' || source === 'astrologer') {
+    orders = orders.filter((order) => order.commission_source === source);
+  }
   if (name) {
     orders = orders.filter((o) => (o.commission_name || '').toLowerCase().includes(name));
   }
@@ -86,7 +109,8 @@ export async function GET(request: NextRequest) {
   >();
 
   let totalCommission = 0;
-  let totalOrderValue = 0;
+  const totalOrderValue = Array.from(new Map(orders.map((order) => [order.id, order])).values())
+    .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
 
   for (const order of orders) {
     const personName = order.commission_name?.trim() || 'Unnamed';
@@ -95,7 +119,6 @@ export async function GET(request: NextRequest) {
     const commission = Number(order.commission_amount) || 0;
     const orderValue = Number(order.total) || 0;
     totalCommission += commission;
-    totalOrderValue += orderValue;
 
     const row = byPersonMap.get(key) ?? {
       name: personName,
@@ -129,7 +152,7 @@ export async function GET(request: NextRequest) {
     needsMigration: false,
     periodLabel,
     totals: {
-      orders: orders.length,
+      orders: new Set(orders.map((order) => order.id)).size,
       commission: totalCommission,
       orderValue: totalOrderValue,
     },
