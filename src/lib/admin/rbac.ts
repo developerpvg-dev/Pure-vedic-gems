@@ -38,7 +38,7 @@ export type AdminPermission =
   | 'settings.team';
 
 export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
-  owner: 'Owner',
+  owner: 'Super Admin',
   admin: 'Admin',
   sales: 'Sales',
   telecom: 'Telecommunication',
@@ -76,10 +76,12 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'settings.commerce',
     'settings.team',
   ],
+  // Admin has the same full access as a Super Admin (owner).
   admin: [
     'dashboard.read',
     'products.read',
     'products.write',
+    'products.delete',
     'imports.write',
     'orders.read',
     'orders.write',

@@ -15,9 +15,20 @@ type Tab = 'commerce' | 'team';
 interface TeamMember {
   id: string;
   name: string;
+  email: string | null;
   role: string;
   is_active: boolean;
   created_at: string;
+}
+
+interface TeamInvitation {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  expires_at: string;
+  created_at: string;
+  status: 'pending' | 'expired';
 }
 
 interface Coupon {
@@ -40,7 +51,7 @@ interface Coupon {
 type CurrencyRate = NormalizedCurrencyRate;
 
 const ROLE_LABELS: Record<string, string> = {
-  owner: 'Owner',
+  owner: 'Super Admin',
   admin: 'Admin',
   sales: 'Sales',
   telecom: 'Telecommunication',
@@ -52,7 +63,7 @@ const ROLE_LABELS: Record<string, string> = {
   fulfillment: 'Parcel Dispatch',
   support: 'Support',
   designer: 'Jewelry Designer',
-  director: 'Owner',
+  director: 'Super Admin',
   manager: 'Admin',
   accounts: 'Accountant',
 };
@@ -70,6 +81,8 @@ const DEFAULT_INVITE_ROLES = [
   'support',
   'designer',
 ];
+
+const DEFAULT_ALL_ROLES = ['owner', ...DEFAULT_INVITE_ROLES];
 
 const EMPTY_COUPON_FORM = {
   id: '',
@@ -132,8 +145,13 @@ function formatCouponDiscount(coupon: Coupon) {
 export default function SettingsPage() {
   const [tab, setTab] = useState<Tab>('commerce');
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [roles, setRoles] = useState<string[]>(DEFAULT_INVITE_ROLES);
+  const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
+  const [roles, setRoles] = useState<string[]>(DEFAULT_ALL_ROLES);
   const [inviteRoles, setInviteRoles] = useState<string[]>(DEFAULT_INVITE_ROLES);
+  const [currentUser, setCurrentUser] = useState<{ id: string; role: string; email: string | null } | null>(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberFilter, setMemberFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [busyInviteId, setBusyInviteId] = useState<string | null>(null);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,8 +179,10 @@ export default function SettingsPage() {
       if (teamRes.ok) {
         const data = await teamRes.json();
         setMembers(data.members || []);
-        setRoles(data.roles || DEFAULT_INVITE_ROLES);
+        setInvitations(data.invitations || []);
+        setRoles(data.roles || DEFAULT_ALL_ROLES);
         setInviteRoles(data.inviteRoles || DEFAULT_INVITE_ROLES);
+        setCurrentUser(data.currentUser || null);
       }
       if (!commerceRes.ok) {
         const data = await commerceRes.json().catch(() => ({}));
@@ -248,9 +268,59 @@ export default function SettingsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ member_id: id, ...updates }),
     });
-    setMessage(res.ok ? 'Team member updated' : 'Team update failed');
+    const data = await res.json().catch(() => ({}));
+    setMessage(res.ok ? 'Team member updated' : data.error || 'Team update failed');
     await loadAll();
   }
+
+  async function resendInvite(invitationId: string) {
+    setBusyInviteId(invitationId);
+    setInviteLink('');
+    const res = await fetch('/api/admin/team/invite', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitation_id: invitationId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusyInviteId(null);
+    if (!res.ok) {
+      setMessage(data.error || 'Failed to resend invitation');
+      return;
+    }
+    setInviteLink(data.inviteUrl || '');
+    setMessage(data.message || 'Invitation resent');
+    await loadAll();
+  }
+
+  async function revokeInvite(invitationId: string) {
+    if (!confirm('Revoke this invitation? The link will stop working.')) return;
+    setBusyInviteId(invitationId);
+    const res = await fetch(`/api/admin/team/invite?id=${encodeURIComponent(invitationId)}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    setBusyInviteId(null);
+    setMessage(res.ok ? 'Invitation revoked' : data.error || 'Failed to revoke invitation');
+    await loadAll();
+  }
+
+  const filteredMembers = members.filter((member) => {
+    if (memberFilter === 'active' && !member.is_active) return false;
+    if (memberFilter === 'inactive' && member.is_active) return false;
+    const q = memberSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      member.name.toLowerCase().includes(q) ||
+      (member.email || '').toLowerCase().includes(q) ||
+      (ROLE_LABELS[member.role] || member.role).toLowerCase().includes(q)
+    );
+  });
+
+  // Admin has the same authority as Super Admin (owner).
+  const canManageOwner = currentUser?.role === 'owner' || currentUser?.role === 'admin';
+
+  const assignableRolesFor = (member: TeamMember) => {
+    if (canManageOwner) return roles;
+    return roles.filter((role) => role !== 'owner' || member.role === 'owner');
+  };
 
   function resetCouponForm() {
     setEditingCouponId(null);
@@ -807,39 +877,176 @@ export default function SettingsPage() {
           </section>
         </div>
       ) : (
-        <section className="rounded-lg border border-gray-200 bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
-            <div>
-              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Users className="h-4 w-4" /> Team & RBAC</h2>
-              <p className="mt-1 text-xs text-gray-500">All team members are invited by email. The link is valid for 15 minutes.</p>
+        <div className="space-y-6">
+          <section className="rounded-lg border border-gray-200 bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Users className="h-4 w-4" /> Team members</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Manage roles, access, and active status. Super Admins have full admin-panel access.
+                </p>
+              </div>
+              <button onClick={openInviteModal} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
+                <UserPlus className="h-4 w-4" /> Invite Team Member
+              </button>
             </div>
-            <button onClick={openInviteModal} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
-              <UserPlus className="h-4 w-4" /> Invite Team Member
-            </button>
-          </div>
-          {inviteLink ? (
-            <div className="border-b border-indigo-100 bg-indigo-50 px-5 py-3 text-sm text-indigo-900">
-              <p className="font-semibold">Invitation link (15 min):</p>
-              <p className="mt-1 break-all font-mono text-xs">{inviteLink}</p>
+            {inviteLink ? (
+              <div className="border-b border-indigo-100 bg-indigo-50 px-5 py-3 text-sm text-indigo-900">
+                <p className="font-semibold">Invitation link (15 min):</p>
+                <p className="mt-1 break-all font-mono text-xs">{inviteLink}</p>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-3">
+              <div className="relative min-w-[220px] flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  placeholder="Search name, email, or role"
+                  className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm"
+                />
+              </div>
+              <select
+                value={memberFilter}
+                onChange={(e) => setMemberFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <p className="text-xs text-gray-500">{filteredMembers.length} shown</p>
             </div>
-          ) : null}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold text-gray-500"><th className="p-3">Name</th><th className="p-3">Role</th><th className="p-3">Status</th><th className="p-3">Joined</th><th className="p-3">Actions</th></tr></thead>
-              <tbody>
-                {members.map((member) => (
-                  <tr key={member.id} className="border-b border-gray-50">
-                    <td className="p-3"><span className="inline-flex items-center gap-2 font-medium text-gray-900"><Shield className="h-4 w-4 text-gray-300" />{member.name}</span></td>
-                    <td className="p-3"><select value={member.role} onChange={(e) => updateMember(member.id, { role: e.target.value })} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{roles.map((role) => <option key={role} value={role}>{ROLE_LABELS[role] || role}</option>)}</select></td>
-                    <td className="p-3"><button onClick={() => updateMember(member.id, { is_active: !member.is_active })} className={`rounded-full px-3 py-1 text-xs font-semibold ${member.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{member.is_active ? 'Active' : 'Inactive'}</button></td>
-                    <td className="p-3 text-gray-500">{new Date(member.created_at).toLocaleDateString('en-IN')}</td>
-                    <td className="p-3"><button onClick={() => updateMember(member.id, { is_active: false })} disabled={!member.is_active} className="text-xs font-semibold text-red-600 disabled:text-gray-300">Deactivate</button></td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold text-gray-500">
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Email</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Joined</th>
+                    <th className="p-3">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
+                <tbody>
+                  {filteredMembers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-sm text-gray-500">No team members match this filter.</td>
+                    </tr>
+                  ) : filteredMembers.map((member) => {
+                    const isSelf = member.id === currentUser?.id;
+                    const canEditOwner = canManageOwner || member.role !== 'owner';
+                    return (
+                      <tr key={member.id} className="border-b border-gray-50">
+                        <td className="p-3">
+                          <span className="inline-flex items-center gap-2 font-medium text-gray-900">
+                            <Shield className={`h-4 w-4 ${member.role === 'owner' ? 'text-amber-500' : 'text-gray-300'}`} />
+                            {member.name}
+                            {isSelf ? <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-500">You</span> : null}
+                          </span>
+                        </td>
+                        <td className="p-3 text-gray-600">{member.email || '—'}</td>
+                        <td className="p-3">
+                          <select
+                            value={member.role}
+                            disabled={!canEditOwner || (isSelf && member.role === 'owner')}
+                            onChange={(e) => updateMember(member.id, { role: e.target.value })}
+                            className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 disabled:opacity-60"
+                          >
+                            {assignableRolesFor(member).map((role) => (
+                              <option key={role} value={role}>{ROLE_LABELS[role] || role}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-3">
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${member.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {member.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-gray-500">{new Date(member.created_at).toLocaleDateString('en-IN')}</td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => updateMember(member.id, { is_active: !member.is_active })}
+                            disabled={isSelf || !canEditOwner}
+                            className={`text-xs font-semibold disabled:text-gray-300 ${member.is_active ? 'text-red-600' : 'text-green-700'}`}
+                          >
+                            {member.is_active ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white">
+            <div className="border-b border-gray-100 px-5 py-4">
+              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gray-600"><Mail className="h-4 w-4" /> Pending invitations</h2>
+              <p className="mt-1 text-xs text-gray-500">Resend a fresh 15-minute link, or revoke an invite that should no longer be used.</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold text-gray-500">
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Email</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Sent</th>
+                    <th className="p-3">Expires</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invitations.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-6 text-center text-sm text-gray-500">No pending invitations.</td>
+                    </tr>
+                  ) : invitations.map((invite) => (
+                    <tr key={invite.id} className="border-b border-gray-50">
+                      <td className="p-3 font-medium text-gray-900">{invite.name}</td>
+                      <td className="p-3 text-gray-600">{invite.email}</td>
+                      <td className="p-3">
+                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                          {ROLE_LABELS[invite.role] || invite.role}
+                        </span>
+                      </td>
+                      <td className="p-3 text-gray-500">{new Date(invite.created_at).toLocaleString('en-IN')}</td>
+                      <td className="p-3 text-gray-500">{new Date(invite.expires_at).toLocaleString('en-IN')}</td>
+                      <td className="p-3">
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${invite.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-orange-100 text-orange-700'}`}>
+                          {invite.status === 'pending' ? 'Pending' : 'Expired'}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <button
+                            onClick={() => resendInvite(invite.id)}
+                            disabled={busyInviteId === invite.id}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 disabled:opacity-50"
+                          >
+                            {busyInviteId === invite.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                            Resend
+                          </button>
+                          <button
+                            onClick={() => revokeInvite(invite.id)}
+                            disabled={busyInviteId === invite.id}
+                            className="text-xs font-semibold text-red-600 disabled:opacity-50"
+                          >
+                            Revoke
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
       )}
 
       {showInviteMember && (
@@ -870,15 +1077,22 @@ export default function SettingsPage() {
                 placeholder="Display name"
                 className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
               />
-              <select
-                value={inviteForm.role}
-                onChange={(e) => setInviteForm((p) => ({ ...p, role: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"
-              >
-                {inviteRoles.map((role) => (
-                  <option key={role} value={role}>{ROLE_LABELS[role] || role}</option>
-                ))}
-              </select>
+              <div>
+                <select
+                  value={inviteForm.role}
+                  onChange={(e) => setInviteForm((p) => ({ ...p, role: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                >
+                  {inviteRoles.map((role) => (
+                    <option key={role} value={role}>{ROLE_LABELS[role] || role}</option>
+                  ))}
+                </select>
+                {inviteForm.role === 'owner' ? (
+                  <p className="mt-2 text-xs text-amber-700">
+                    Super Admin gets full access to the entire admin panel, including team management.
+                  </p>
+                ) : null}
+              </div>
 
               {inviteModalError ? (
                 <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{inviteModalError}</p>
