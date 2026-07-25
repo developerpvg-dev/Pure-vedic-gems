@@ -207,11 +207,9 @@ export function EnquiryDetail({
 
   // ── Restricted telecaller desk ──────────────────────────────────────────
   if (isTelecom) {
-    const verifyPhase =
-      stage === 'assigned' || stage === 'verifying' || (stage === 'follow_up' && !lead.remedies_text);
-    const deliveryPhase =
-      (stage === 'sent_to_customer' || (stage === 'follow_up' && Boolean(lead.remedies_text))) &&
-      Boolean(lead.remedies_text);
+    // ponytail: follow_up stage retired — verify/deliver cover those rows
+    const verifyPhase = stage === 'assigned' || stage === 'verifying';
+    const deliveryPhase = stage === 'sent_to_customer' && Boolean(lead.remedies_text);
     const explainedPhase = stage === 'remedies_explained';
     const lastLabel = lead.last_remark_code
       ? LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code
