@@ -30,10 +30,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       '/admin/commissions',
       '/admin/yagya-bookings',
       '/admin/design-jobs',
-      '/admin/customers',
-      '/admin/rewards',
-      '/admin/metals',
-      '/admin/leads',
+      '/admin/erp-sync',
     ],
     nav: [
       { href: '/admin/finance', label: 'Finance', match: 'prefix' },
@@ -42,10 +39,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/commissions', label: 'Commissions', match: 'prefix' },
       { href: '/admin/yagya-bookings', label: 'Yagya bookings', match: 'prefix' },
       { href: '/admin/design-jobs', label: 'Design jobs', match: 'prefix' },
-      { href: '/admin/customers', label: 'Customers', match: 'prefix' },
-      { href: '/admin/rewards', label: 'Rewards', match: 'prefix' },
-      { href: '/admin/metals', label: 'Metals & pricing', match: 'prefix' },
-      { href: '/admin/leads', label: 'Leads', match: 'prefix' },
+      { href: '/admin/erp-sync', label: 'Store ERP sync', match: 'prefix' },
     ],
   },
   // ponytail: Website Maintenance uses full AdminShell with a hidden-href filter (too many content pages for a scoped nav)
@@ -138,10 +132,11 @@ export function isScopedRolePathAllowed(role: string | null | undefined, pathnam
 export function assertRoleDashboardAllowlists() {
   const finance = SCOPED_ROLE_DASHBOARDS.finance!;
   if (!isScopedRolePathAllowed('finance', '/admin/finance')) throw new Error('finance home');
-  if (!isScopedRolePathAllowed('finance', '/admin/customers')) throw new Error('finance customers');
-  if (!isScopedRolePathAllowed('finance', '/admin/rewards')) throw new Error('finance rewards');
-  if (!isScopedRolePathAllowed('finance', '/admin/metals')) throw new Error('finance metals');
-  if (!isScopedRolePathAllowed('finance', '/admin/leads')) throw new Error('finance leads');
+  if (isScopedRolePathAllowed('finance', '/admin/customers')) throw new Error('finance must not open customers');
+  if (isScopedRolePathAllowed('finance', '/admin/rewards')) throw new Error('finance must not open rewards');
+  if (!isScopedRolePathAllowed('finance', '/admin/erp-sync')) throw new Error('finance erp-sync');
+  if (isScopedRolePathAllowed('finance', '/admin/metals')) throw new Error('finance must not open metals');
+  if (isScopedRolePathAllowed('finance', '/admin/leads')) throw new Error('finance must not open leads');
   if (!isScopedRolePathAllowed('finance', '/admin/design-jobs')) throw new Error('finance design-jobs');
   if (!isScopedRolePathAllowed('finance', '/admin/commissions')) throw new Error('finance commissions');
   if (isScopedRolePathAllowed('finance', '/admin/products')) throw new Error('finance must not open products');

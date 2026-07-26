@@ -130,8 +130,6 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'orders.read',
     'finance.read',
     'compliance.manage',
-    'leads.read',
-    'leads.write',
     'settings.commerce',
     'products.read',
     'products.write',

@@ -32,7 +32,7 @@ export function canViewEnquiry(
   userId: string,
   enquiry: { assigned_to?: string | null; astrologer_id?: string | null }
 ) {
-  if (isLeadManager(role) || role === 'support' || role === 'finance' || role === 'stock_manager') {
+  if (isLeadManager(role) || role === 'support' || role === 'stock_manager') {
     return true;
   }
   if (isTelecomRole(role)) return enquiry.assigned_to === userId;

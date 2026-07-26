@@ -162,8 +162,11 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/admin/products', request.url));
       }
     }
-    // Products Uploading: orders are read-only (no POS create)
-    if (normalizedRole === 'inventory' && pathname.startsWith('/admin/orders/new')) {
+    // Products Uploading / Accountant: orders are read-only (no POS create)
+    if (
+      (normalizedRole === 'inventory' || normalizedRole === 'finance') &&
+      pathname.startsWith('/admin/orders/new')
+    ) {
       return NextResponse.redirect(new URL('/admin/orders', request.url));
     }
     if (normalizedRole === 'stock_manager') {

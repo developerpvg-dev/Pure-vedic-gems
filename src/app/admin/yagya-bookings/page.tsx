@@ -92,6 +92,16 @@ export default function AdminYagyaBookingsPage() {
   } | null>(null);
   const [analyticsOpen, setAnalyticsOpen] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [canWriteOrders, setCanWriteOrders] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch('/api/admin/session');
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      setCanWriteOrders(Boolean(data.canWriteOrders));
+    })();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -249,7 +259,7 @@ export default function AdminYagyaBookingsPage() {
                       onClick={() => setActive(b)}
                       className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
                     >
-                      Manage
+                      {canWriteOrders ? 'Manage' : 'View'}
                     </button>
                   </td>
                 </tr>
@@ -262,6 +272,7 @@ export default function AdminYagyaBookingsPage() {
       {active && (
         <ManageDialog
           booking={active}
+          readOnly={!canWriteOrders}
           onClose={() => setActive(null)}
           onSaved={(updated) => {
             setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
@@ -275,10 +286,12 @@ export default function AdminYagyaBookingsPage() {
 
 function ManageDialog({
   booking,
+  readOnly = false,
   onClose,
   onSaved,
 }: {
   booking: YagyaBooking;
+  readOnly?: boolean;
   onClose: () => void;
   onSaved: (updated: YagyaBooking) => void;
 }) {
@@ -290,6 +303,7 @@ function ManageDialog({
   const [saving, setSaving] = useState(false);
 
   async function save() {
+    if (readOnly) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/yagya-bookings/${booking.id}`, {
@@ -357,7 +371,8 @@ function ManageDialog({
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400"
+                disabled={readOnly}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:bg-gray-50"
               >
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -369,21 +384,24 @@ function ManageDialog({
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400"
+                disabled={readOnly}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:bg-gray-50"
               />
             </Field>
             <Field label="Muhurat note">
               <input
                 value={muhuratNote}
                 onChange={(e) => setMuhuratNote(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400"
+                disabled={readOnly}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:bg-gray-50"
               />
             </Field>
             <Field label="Recording link">
               <input
                 value={recordingLink}
                 onChange={(e) => setRecordingLink(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400"
+                disabled={readOnly}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:bg-gray-50"
               />
             </Field>
           </div>
@@ -393,24 +411,27 @@ function ManageDialog({
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400"
+              disabled={readOnly}
+              className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-400 disabled:bg-gray-50"
             />
           </Field>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
           <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-            Cancel
+            {readOnly ? 'Close' : 'Cancel'}
           </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save changes
-          </button>
+          {readOnly ? null : (
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save changes
+            </button>
+          )}
         </div>
       </div>
     </div>
