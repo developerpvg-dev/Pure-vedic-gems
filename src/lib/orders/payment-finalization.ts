@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import type { OrderBalances } from '@/lib/orders/online-payments';
 import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation';
 import { sendAdminOrderAlertEmail } from '@/lib/resend/send-admin-order-alert';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
@@ -177,8 +179,25 @@ export async function markOrderPaymentReview({
   });
 }
 
+/** Money already banked against this order — its advance must survive a later failure. */
+function amountPaidOn(order: Order) {
+  return Number(order.amount_paid ?? 0);
+}
+
 export async function markOrderPaymentFailed(order: Order, reason: string, razorpayPaymentId?: string | null) {
   const supabase = createAdminClient();
+
+  // A failed *balance* attempt must not unwind a confirmed, part-paid order:
+  // releasing the pieces or cancelling the reward redemption here would punish a
+  // customer who already paid their advance and simply mistyped a card.
+  if (amountPaidOn(order) > 0.009) {
+    await asUntypedSupabase(supabase)
+      .from('orders')
+      .update({ payment_failure_reason: reason })
+      .eq('id', order.id);
+    return;
+  }
+
   await supabase
     .from('orders')
     .update({
@@ -191,6 +210,34 @@ export async function markOrderPaymentFailed(order: Order, reason: string, razor
   // Restore pieces held for this unpaid order
   await releaseProductsForOrder(order);
   await cancelRewardRedemption(order.id);
+}
+
+/**
+ * Razorpay authorized the payment but server-side capture has not landed yet.
+ * Shared by the client-verify and webhook paths so neither downgrades a
+ * part-paid order's `payment_status` back to 'authorized'.
+ */
+export async function markOrderPaymentAuthorized(
+  order: Order,
+  input: {
+    razorpayPaymentId: string;
+    razorpaySignature?: string | null;
+    method?: string | null;
+    reason?: string | null;
+  },
+) {
+  await asUntypedSupabase(createAdminClient())
+    .from('orders')
+    .update({
+      razorpay_payment_id: input.razorpayPaymentId,
+      ...(input.razorpaySignature ? { razorpay_signature: input.razorpaySignature } : {}),
+      ...(amountPaidOn(order) > 0.009 ? {} : { payment_status: 'authorized' }),
+      payment_method: input.method ?? 'razorpay',
+      payment_failure_reason: null,
+      payment_review_reason:
+        input.reason ?? 'Payment authorized but server-side capture is still pending',
+    })
+    .eq('id', order.id);
 }
 
 async function updateInventoryForCapturedOrder(order: Order) {
@@ -244,8 +291,11 @@ async function resolveOrderEmail(order: Order) {
   return { email: profile.email, name: profile.full_name ?? 'Valued Customer' };
 }
 
-async function sendVerifiedOrderNotifications(order: Order) {
+async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalances) {
   const supabase = createAdminClient();
+  const partial = balances.amount_due > 0.009;
+  const dueLabel = `₹${balances.amount_due.toLocaleString('en-IN')}`;
+  const paidLabel = `₹${balances.amount_paid.toLocaleString('en-IN')}`;
   const { data: latestOrder } = await supabase
     .from('orders')
     .select('confirmation_email_sent_at, admin_notification_sent_at')
@@ -284,6 +334,8 @@ async function sendVerifiedOrderNotifications(order: Order) {
         gst_amount: order.gst_amount,
         total: order.total,
       },
+      amountPaid: balances.amount_paid,
+      amountDue: balances.amount_due,
       shippingAddress: order.shipping_address as {
         line1: string;
         line2?: string;
@@ -324,7 +376,9 @@ async function sendVerifiedOrderNotifications(order: Order) {
         customerName: recipient.name,
         customerEmail: recipient.email,
         itemCount: orderItems(order).length,
-        paymentMethod: order.payment_method,
+        paymentMethod: partial
+          ? `${order.payment_method ?? 'razorpay'} — advance ${paidLabel}, ${dueLabel} due`
+          : order.payment_method,
       });
     }
 
@@ -357,25 +411,76 @@ async function sendVerifiedOrderNotifications(order: Order) {
       audience: 'user' as const,
       recipientUserId: order.customer_id,
       type: 'order_confirmed',
-      title: 'Order confirmed',
-      message: `Payment received for order ${order.order_number}. You can track the order from your dashboard.`,
+      title: partial ? 'Advance received — order confirmed' : 'Order confirmed',
+      message: partial
+        ? `We received your advance of ${paidLabel} for order ${order.order_number}. The remaining ${dueLabel} is payable once your order is ready — we will notify you.`
+        : `Payment received for order ${order.order_number}. You can track the order from your dashboard.`,
       href: '/account/orders',
       entityType: 'order',
       entityId: order.id,
-      metadata: { order_number: order.order_number, total: order.total },
+      metadata: {
+        order_number: order.order_number,
+        total: order.total,
+        amount_paid: balances.amount_paid,
+        amount_due: balances.amount_due,
+      },
     }] : []),
     ...(!adminNotificationSentAt ? [{
       audience: 'admin' as const,
       type: 'order_paid',
-      title: 'Order paid',
-      message: `Order ${order.order_number} was paid for ₹${Number(order.total ?? 0).toLocaleString('en-IN')}.`,
+      title: partial ? 'Order advance paid' : 'Order paid',
+      message: partial
+        ? `Order ${order.order_number}: advance ${paidLabel} received, ${dueLabel} still due.`
+        : `Order ${order.order_number} was paid for ₹${Number(order.total ?? 0).toLocaleString('en-IN')}.`,
       href: `/admin/orders/${order.id}`,
       entityType: 'order',
       entityId: order.id,
-      metadata: { order_number: order.order_number, total: order.total },
+      metadata: {
+        order_number: order.order_number,
+        total: order.total,
+        amount_paid: balances.amount_paid,
+        amount_due: balances.amount_due,
+      },
     }] : []),
   ]);
 }
+
+/** Customer settled the remaining balance — tell them and unblock fulfillment. */
+async function sendBalanceSettledNotifications(order: Order, balances: OrderBalances) {
+  await createInAppNotifications([
+    ...(order.customer_id ? [{
+      audience: 'user' as const,
+      recipientUserId: order.customer_id,
+      type: 'order_paid',
+      title: 'Balance payment received',
+      message: `Order ${order.order_number} is now fully paid (₹${balances.amount_paid.toLocaleString('en-IN')}). We are preparing it for dispatch.`,
+      href: '/account/orders',
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { order_number: order.order_number, amount_paid: balances.amount_paid },
+    }] : []),
+    {
+      audience: 'admin' as const,
+      type: 'order_paid',
+      title: 'Balance paid — ready to ship',
+      message: `Order ${order.order_number} is fully paid. Remaining balance settled online.`,
+      href: `/admin/orders/${order.id}`,
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { order_number: order.order_number, amount_paid: balances.amount_paid },
+    },
+  ]);
+}
+
+/**
+ * Order statuses that mean "money has not confirmed this order yet".
+ *
+ * Used as the atomic claim for the one-time confirmation side effects. Claiming
+ * on the *order* status rather than payment_status is what lets an advance
+ * payment confirm the order once, while the later balance payment updates the
+ * money columns without re-running inventory holds or coupon redemption.
+ */
+const PRE_CONFIRM_STATUSES = ['pending_payment', 'payment_review', 'placed'];
 
 export async function finalizeCapturedPayment({
   order,
@@ -383,6 +488,8 @@ export async function finalizeCapturedPayment({
   razorpayPaymentId,
   razorpaySignature,
   method,
+  balances,
+  paymentKind,
 }: {
   order: Order;
   eventId?: string | null;
@@ -390,46 +497,77 @@ export async function finalizeCapturedPayment({
   razorpayPaymentId?: string | null;
   razorpaySignature?: string | null;
   method?: string | null;
+  /**
+   * Ledger-derived balances for part-paid orders. Omit for a full settlement
+   * (bank transfer, legacy full-amount Razorpay orders).
+   */
+  balances?: OrderBalances;
+  /** Which leg of the payment this is; 'balance' switches the customer receipt. */
+  paymentKind?: 'advance' | 'balance' | 'full';
 }) {
   const supabase = createAdminClient();
+  const db = asUntypedSupabase(supabase);
+  const settled: OrderBalances = balances ?? {
+    amount_paid: Number(order.total ?? 0),
+    amount_due: 0,
+    payment_status: 'captured',
+  };
+  const fullyPaid = settled.payment_status === 'captured';
 
-  // ── Atomic claim — only ONE finalizer transitions the order to "captured".
-  //
-  // The client-verify path and the webhook path use DIFFERENT payment-event
-  // idempotency keys (`client:<paymentId>` vs `webhook:...`), so the
-  // upsertPaymentEvent dedupe does not prevent both from finalizing the same
-  // payment. The previous guard (`order.payment_status !== 'captured'`) read
-  // a stale snapshot fetched before any write, so two concurrent finalizers
-  // would both pass it and run the one-time side effects twice:
-  //   • double inventory decrement (lost update → phantom stock),
-  //   • double coupon redemption + used_count bump,
-  //   • double reward-points award.
-  //
-  // The conditional UPDATE below is the single source of truth: the row is
-  // flipped to "captured" only if it is not already captured, and Postgres
-  // row-level locking serializes concurrent claims. The caller that affects
-  // the row is the "winner" and owns the one-time side effects.
-  const { data: claimed, error: claimError } = await supabase
+  // ── Money columns — derived from the ledger, so replays converge ───────
+  // Safe to run on every finalization attempt: recomputed sums are idempotent,
+  // unlike the increment-in-place this used to be.
+  const { error: balanceError } = await db
     .from('orders')
     .update({
       ...(razorpayPaymentId ? { razorpay_payment_id: razorpayPaymentId } : {}),
       ...(razorpaySignature != null ? { razorpay_signature: razorpaySignature } : {}),
-      payment_status: 'captured',
+      payment_status: settled.payment_status,
       payment_method: method ?? order.payment_method ?? 'razorpay',
-      status: 'confirmed',
+      amount_paid: settled.amount_paid,
+      amount_due: settled.amount_due,
       amount_verified_at: new Date().toISOString(),
-      payment_failure_reason: null,
-      payment_review_reason: null,
       last_payment_event_id: eventId ?? order.last_payment_event_id,
     })
+    .eq('id', order.id);
+
+  if (balanceError) {
+    console.error('[Payment] Failed to write order balances:', balanceError);
+    // Cannot prove the money landed on the order — do not run side effects.
+    if (eventId) await markPaymentEventProcessed(eventId);
+    return;
+  }
+
+  // ── Atomic claim — only ONE finalizer confirms the order.
+  //
+  // The client-verify path and the webhook path use DIFFERENT payment-event
+  // idempotency keys (`client:<paymentId>` vs `webhook:...`), so the
+  // upsertPaymentEvent dedupe does not prevent both from finalizing the same
+  // payment. A guard that reads the order snapshot fetched before any write is
+  // stale, so two concurrent finalizers would both pass it and run the one-time
+  // side effects twice:
+  //   • double inventory decrement (lost update → phantom stock),
+  //   • double coupon redemption + used_count bump,
+  //   • double reward-points award.
+  //
+  // The conditional UPDATE below is the single source of truth: the row moves
+  // to "confirmed" only from a pre-confirmation status, and Postgres row-level
+  // locking serializes concurrent claims. The caller that affects the row is
+  // the "winner" and owns the one-time side effects.
+  const { data: claimed, error: claimError } = await db
+    .from('orders')
+    .update({
+      status: 'confirmed',
+      payment_failure_reason: null,
+      payment_review_reason: null,
+    })
     .eq('id', order.id)
-    .neq('payment_status', 'captured')
+    .in('status', PRE_CONFIRM_STATUSES)
     .select('id')
     .maybeSingle();
 
   if (claimError) {
-    console.error('[Payment] Failed to claim order for finalization:', claimError);
-    // Cannot prove we own the transition — do not run side effects.
+    console.error('[Payment] Failed to claim order for confirmation:', claimError);
     if (eventId) await markPaymentEventProcessed(eventId);
     return;
   }
@@ -441,13 +579,21 @@ export async function finalizeCapturedPayment({
   }
 
   // Idempotent side effects — safe to run on every finalization attempt,
-  // including replays where another path already claimed the capture.
+  // including replays where another path already claimed the confirmation.
   // (confirmRewardRedemption is gated on status='pending'; awardOrderRewardPoints
   // is internally idempotent; notifications guard on their own *_sent_at flags.)
   await confirmRewardRedemption(order.id);
-  await awardOrderRewardPoints(order);
+  // Earning points on an unpaid balance would let a 20% advance buy full-order
+  // points and walk away, so points wait for the order to be settled.
+  if (fullyPaid) await awardOrderRewardPoints(order);
 
-  await sendVerifiedOrderNotifications(order);
+  if (paymentKind === 'balance') {
+    // The confirmation receipt already went out with the advance; this leg only
+    // needs the "fully paid, moving to dispatch" notice.
+    await sendBalanceSettledNotifications(order, settled);
+  } else {
+    await sendVerifiedOrderNotifications(order, settled);
+  }
 
   if (eventId) {
     await markPaymentEventProcessed(eventId);

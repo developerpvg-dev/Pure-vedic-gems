@@ -5,11 +5,19 @@ import { captureAuthorizedRazorpayPayment, fetchRazorpayPaymentFacts } from '@/l
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   finalizeCapturedPayment,
+  markOrderPaymentAuthorized,
   markOrderPaymentFailed,
   markOrderPaymentReview,
   markPaymentEventProcessed,
   upsertPaymentEvent,
 } from '@/lib/orders/payment-finalization';
+import {
+  expectedPaiseFor,
+  failPaymentAttempt,
+  findAttemptByRazorpayOrderId,
+  recomputeOrderBalances,
+  settlePaymentAttempt,
+} from '@/lib/orders/online-payments';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import type { Order } from '@/lib/types/database';
 
@@ -112,8 +120,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Verify the Razorpay order ID matches
-  if (order.razorpay_order_id !== razorpay_order_id) {
+  // The Razorpay order must belong to this order — either as the in-flight
+  // attempt on the ledger, or (legacy / full-amount) the column on the order.
+  const attempt = await findAttemptByRazorpayOrderId(razorpay_order_id);
+  const attemptRow = attempt?.order.id === order.id ? attempt.attempt : null;
+
+  if (attempt?.order.id !== order.id && order.razorpay_order_id !== razorpay_order_id) {
     console.error(
       `[Payment] Razorpay order ID mismatch: expected ${order.razorpay_order_id}, got ${razorpay_order_id}`
     );
@@ -123,8 +135,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Don't re-process already captured payments (idempotency)
-  if (order.payment_status === 'captured') {
+  // Don't re-process an already-settled attempt (idempotency). Falls back to
+  // the order-level flag for legacy payments with no ledger row.
+  if (attemptRow ? attemptRow.status === 'paid' : order.payment_status === 'captured') {
     return NextResponse.json({
       success: true,
       order_id: order.id,
@@ -133,7 +146,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const expectedPaise = Math.round(order.total * 100);
+  const expectedPaise = expectedPaiseFor(order, attemptRow);
   const eventId = `client:${razorpay_payment_id}`;
   const { event, alreadyProcessed } = await upsertPaymentEvent({
     eventId,
@@ -152,11 +165,17 @@ export async function POST(req: NextRequest) {
   });
 
   if (alreadyProcessed) {
+    // Re-read rather than trusting the pre-write snapshot: on a balance leg the
+    // order was already 'partial' before this payment, so payment_status alone
+    // cannot tell us whether *this* attempt landed.
+    const settled = attemptRow
+      ? (await findAttemptByRazorpayOrderId(razorpay_order_id))?.attempt?.status === 'paid'
+      : order.payment_status === 'captured';
     return NextResponse.json({
-      success: order.payment_status === 'captured',
+      success: settled,
       order_id: order.id,
       order_number: order.order_number,
-      already_verified: order.payment_status === 'captured',
+      already_verified: settled,
     });
   }
 
@@ -207,17 +226,11 @@ export async function POST(req: NextRequest) {
         facts = await captureAuthorizedRazorpayPayment(facts, razorpay_payment_id, expectedPaise, 'INR');
       } catch (error) {
         console.error('[Payment] Razorpay capture failed after authorization:', error);
-        await supabase
-          .from('orders')
-          .update({
-            razorpay_payment_id,
-            razorpay_signature,
-            payment_status: 'authorized',
-            payment_method: facts.method ?? 'razorpay',
-            payment_failure_reason: null,
-            payment_review_reason: 'Payment authorized but server-side capture is still pending',
-          })
-          .eq('id', order.id);
+        await markOrderPaymentAuthorized(order, {
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          method: facts.method,
+        });
         await markPaymentEventProcessed(event.id, 'capture_pending');
         return NextResponse.json(
           {
@@ -234,7 +247,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!facts.captured) {
-
+    if (attemptRow) await failPaymentAttempt(attemptRow.id, `Razorpay status: ${facts.paymentStatus}`);
     await markOrderPaymentFailed(order, `Razorpay payment status: ${facts.paymentStatus}`, razorpay_payment_id);
     await markPaymentEventProcessed(event.id, 'failed');
     return NextResponse.json(
@@ -243,17 +256,40 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Claim the ledger row. Losing the race means the webhook already finalized
+  // this exact payment, so report success without double-running side effects.
+  const claimed = attemptRow
+    ? await settlePaymentAttempt({
+        attemptId: attemptRow.id,
+        razorpayPaymentId: razorpay_payment_id,
+        method: facts.method,
+      })
+    : null;
+
+  if (attemptRow && !claimed) {
+    await markPaymentEventProcessed(event.id, 'duplicate');
+    return NextResponse.json({
+      success: true,
+      order_id: order.id,
+      order_number: order.order_number,
+      already_verified: true,
+    });
+  }
+
   await finalizeCapturedPayment({
     order,
     eventId: event.id,
     razorpayPaymentId: razorpay_payment_id,
     razorpaySignature: razorpay_signature,
     method: facts.method,
+    balances: claimed ? await recomputeOrderBalances(order.id, order.total) : undefined,
+    paymentKind: claimed?.kind as 'advance' | 'balance' | 'full' | undefined,
   });
 
   return NextResponse.json({
     success: true,
     order_id: order.id,
     order_number: order.order_number,
+    amount_paid: claimed ? Number(claimed.amount) : order.total,
   });
 }

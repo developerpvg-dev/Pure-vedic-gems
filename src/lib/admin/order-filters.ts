@@ -1,21 +1,4 @@
-export const ORDER_STATUSES = [
-  'pending_payment',
-  'placed',
-  'confirmed',
-  'processing',
-  'design_assigned',
-  'design_in_progress',
-  'design_completed',
-  'jewelry_making',
-  'certification',
-  'energization',
-  'quality_check',
-  'shipped',
-  'delivered',
-  'cancelled',
-  'refunded',
-  'payment_review',
-] as const;
+export { ORDER_STATUSES } from '@/lib/constants/order-status';
 
 export const PAYMENT_STATUSES = [
   'pending',

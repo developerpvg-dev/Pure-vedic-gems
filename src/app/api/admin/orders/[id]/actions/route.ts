@@ -23,6 +23,7 @@ import {
 import { parseBankTransferProof, mergeBankTransferProof } from '@/lib/orders/bank-transfer-proof';
 import { finalizeCapturedPayment } from '@/lib/orders/payment-finalization';
 import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
+import { sendBalanceDueEmail } from '@/lib/resend/send-balance-due';
 import { sendBankTransferRejectedEmail } from '@/lib/resend/send-bank-transfer-rejected';
 import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
 import { BANK_TRANSFER_HOLD_MS } from '@/lib/constants/bank-accounts';
@@ -46,6 +47,10 @@ const actionSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('verify_bank_transfer'),
+  }),
+  z.object({
+    action: z.literal('request_balance'),
+    note: z.string().trim().max(500).optional(),
   }),
   z.object({
     action: z.literal('reject_bank_transfer'),
@@ -175,6 +180,8 @@ export async function POST(
     payment_status: string | null;
     payment_method: string | null;
     total: number;
+    amount_paid: number | null;
+    amount_due: number | null;
     guest_phone: string | null;
     guest_name: string | null;
     guest_email: string | null;
@@ -551,6 +558,100 @@ export async function POST(
         payment_status: 'pending',
         compliance_flags: rejected,
         reject_reason: reason,
+      });
+    }
+
+    if (parsed.data.action === 'request_balance') {
+      const amountPaid = Number(orderRow.amount_paid ?? 0);
+      const amountDue = Number(
+        orderRow.amount_due ?? Math.max(0, Number(orderRow.total) - amountPaid),
+      );
+
+      if (amountDue <= 0.009) {
+        return NextResponse.json({ error: 'This order has no outstanding balance.' }, { status: 400 });
+      }
+      // Only account holders can settle a balance online, so there is nowhere to
+      // send a guest. Take payment at the counter instead.
+      if (!orderRow.customer_id) {
+        return NextResponse.json(
+          { error: 'This is a guest order with no account to notify. Record the payment manually instead.' },
+          { status: 400 },
+        );
+      }
+
+      const note = parsed.data.note?.trim() || null;
+      const recipient = await resolveOrderCustomerEmail(order as Order);
+      let emailId: string | null = null;
+      if (recipient) {
+        try {
+          emailId = await sendBalanceDueEmail({
+            to: recipient.email,
+            customerName: recipient.name,
+            orderNumber: orderRow.order_number,
+            total: Number(orderRow.total),
+            amountPaid,
+            amountDue,
+            note,
+          });
+        } catch (emailErr) {
+          console.error('[admin/orders/actions] balance due email failed', emailErr);
+        }
+      }
+
+      await notifyUser({
+        recipientUserId: orderRow.customer_id,
+        type: 'order_balance_due',
+        title: 'Your order is ready — balance due',
+        message: `Order ${orderRow.order_number} is ready. Pay the remaining ₹${amountDue.toLocaleString('en-IN')} to schedule dispatch.${note ? ` ${note}` : ''}`,
+        href: '/account/orders',
+        entityType: 'order',
+        entityId: id,
+        metadata: {
+          order_number: orderRow.order_number,
+          amount_due: amountDue,
+          amount_paid: amountPaid,
+        },
+      });
+
+      const now = new Date().toISOString();
+      await db.from('orders').update({ balance_due_notified_at: now }).eq('id', id);
+
+      await db.from('order_tracking_events').insert({
+        order_id: id,
+        status: orderRow.status,
+        event_time: now,
+        note: `Balance payment requested: ₹${amountDue.toLocaleString('en-IN')} due.${note ? ` ${note}` : ''}`,
+        is_customer_visible: true,
+        created_by: auth.user.id,
+      });
+
+      await db.from('notification_log').insert({
+        type: 'email',
+        recipient: recipient?.email ?? 'unknown',
+        template: 'order_balance_due',
+        context: {
+          order_id: id,
+          order_number: orderRow.order_number,
+          amount_due: amountDue,
+          resend_message_id: emailId,
+        },
+        status: emailId ? 'sent' : 'failed',
+      });
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'order_request_balance',
+        resourceType: 'order',
+        resourceId: id,
+        details: { order_number: orderRow.order_number, amount_due: amountDue, note },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({
+        success: true,
+        amount_due: amountDue,
+        email_sent: Boolean(emailId),
+        balance_due_notified_at: now,
       });
     }
 

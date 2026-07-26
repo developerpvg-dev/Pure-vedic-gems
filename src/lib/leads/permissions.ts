@@ -4,9 +4,9 @@ import {
   type LeadPipelineStage,
 } from '@/lib/leads/constants';
 
-/** Leads manager = owner / admin / sales */
+/** Leads manager = owner / admin / sales / parcel dispatch */
 export function isLeadManager(role: string | null | undefined) {
-  return role === 'owner' || role === 'admin' || role === 'sales';
+  return role === 'owner' || role === 'admin' || role === 'sales' || role === 'fulfillment';
 }
 
 export function isTelecomRole(role: string | null | undefined) {
@@ -32,7 +32,7 @@ export function canViewEnquiry(
   userId: string,
   enquiry: { assigned_to?: string | null; astrologer_id?: string | null }
 ) {
-  if (isLeadManager(role) || role === 'support' || role === 'content' || role === 'finance' || role === 'inventory' || role === 'stock_manager') {
+  if (isLeadManager(role) || role === 'support' || role === 'finance' || role === 'stock_manager') {
     return true;
   }
   if (isTelecomRole(role)) return enquiry.assigned_to === userId;

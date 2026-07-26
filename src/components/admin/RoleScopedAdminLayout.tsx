@@ -44,6 +44,7 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/finance': IndianRupee,
   '/admin/compliance': Scale,
   '/admin/orders': ShoppingCart,
+  '/admin/dispatch': Truck,
   '/admin/commissions': HandCoins,
   '/admin/yagya-bookings': Flame,
   '/admin/hero': Images,

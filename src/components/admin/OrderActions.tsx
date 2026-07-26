@@ -213,9 +213,8 @@ export function OrderActions({
   );
 
   const currentIndex = statusPipeline.indexOf(status as (typeof statusPipeline)[number]);
-  const deliveredIndex = statusPipeline.indexOf('delivered');
   const nextStatus =
-    currentIndex >= 0 && currentIndex < deliveredIndex
+    currentIndex >= 0 && currentIndex < statusPipeline.length - 1
       ? statusPipeline[currentIndex + 1]
       : null;
 
@@ -390,7 +389,7 @@ export function OrderActions({
   const productCompleted =
     !!designCompletedAt ||
     status === 'design_completed' ||
-    ['jewelry_making', 'certification', 'energization', 'quality_check', 'shipped', 'delivered'].includes(
+    ['jewelry_making', 'certification', 'energization', 'quality_check', 'shipped', 'out_for_delivery', 'delivered', 'feedback'].includes(
       status,
     );
 
@@ -472,7 +471,7 @@ export function OrderActions({
 
       {/* Fulfillment — primary */}
       <Accordion title="Fulfillment" open={openFulfill} onToggle={() => setOpenFulfill((v) => !v)}>
-        {nextStatus && status !== 'delivered' && !isTerminal ? (
+        {nextStatus && !isTerminal ? (
           <button
             type="button"
             onClick={advanceStatus}

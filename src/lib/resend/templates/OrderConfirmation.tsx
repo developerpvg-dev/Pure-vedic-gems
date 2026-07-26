@@ -58,6 +58,9 @@ export interface OrderConfirmationEmailProps {
     country: string;
   };
   paymentMethod?: string;
+  /** Advance payments: what landed now and what is still owed. */
+  amountPaid?: number;
+  amountDue?: number;
   siteUrl: string;
 }
 
@@ -75,6 +78,8 @@ export function OrderConfirmationEmail({
   items,
   charges,
   shippingAddress,
+  amountPaid,
+  amountDue,
   siteUrl,
 }: OrderConfirmationEmailProps) {
   const resolvedSiteUrl = siteUrl || getEmailSiteUrl();
@@ -82,6 +87,9 @@ export function OrderConfirmationEmail({
   const whatsappUrl = getWhatsAppUrl(`Hi, I just placed order ${orderNumber}`);
   const priceLines = buildOrderPriceLines(charges);
   const total = Number(charges.total ?? 0);
+  const due = Number(amountDue ?? 0);
+  const paid = Number(amountPaid ?? total);
+  const isAdvance = due > 0.009;
 
   return (
     <EmailLayout
@@ -96,10 +104,17 @@ export function OrderConfirmationEmail({
               Dear {customerName},
             </Text>
             <Text style={textStyle}>
-              Thank you for your order! We have received your payment and your order is
-              being processed. Our gemologists will carefully prepare your order with
-              utmost care.
+              {isAdvance
+                ? `Thank you for your order! We have received your advance payment of ${formatINR(paid)} and your order is confirmed. Our gemologists will now prepare your order with utmost care.`
+                : 'Thank you for your order! We have received your payment and your order is being processed. Our gemologists will carefully prepare your order with utmost care.'}
             </Text>
+            {isAdvance ? (
+              <Text style={textStyle}>
+                The remaining balance of <strong>{formatINR(due)}</strong> becomes payable once your
+                order is ready. We will email you with a secure payment link at that point — your
+                order ships after the balance is settled.
+              </Text>
+            ) : null}
 
             <Section style={highlightBoxStyle}>
               <Text style={highlightLabelStyle}>Order Number</Text>
@@ -152,9 +167,26 @@ export function OrderConfirmationEmail({
             <Hr style={dividerStyle} />
 
             <Row style={totalRowStyle}>
-              <Column><Text style={grandTotalLabelStyle}>Total Paid</Text></Column>
+              <Column><Text style={grandTotalLabelStyle}>{isAdvance ? 'Order Total' : 'Total Paid'}</Text></Column>
               <Column style={{ textAlign: 'right' as const }}><Text style={grandTotalValueStyle}>{formatINR(total)}</Text></Column>
             </Row>
+
+            {isAdvance ? (
+              <>
+                <Row style={totalRowStyle}>
+                  <Column><Text style={totalLabelStyle}>Advance paid now</Text></Column>
+                  <Column style={{ textAlign: 'right' as const }}>
+                    <Text style={totalValueStyle}>{formatINR(paid)}</Text>
+                  </Column>
+                </Row>
+                <Row style={totalRowStyle}>
+                  <Column><Text style={grandTotalLabelStyle}>Balance due later</Text></Column>
+                  <Column style={{ textAlign: 'right' as const }}>
+                    <Text style={grandTotalValueStyle}>{formatINR(due)}</Text>
+                  </Column>
+                </Row>
+              </>
+            ) : null}
 
             {/* Shipping Address */}
             <Heading as="h2" style={h2Style}>

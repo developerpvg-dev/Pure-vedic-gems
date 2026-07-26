@@ -88,7 +88,9 @@ export function getDeliveredAt(input: {
   const flags = parseComplianceFlags(input.compliance_flags);
   if (flags.delivered_at) return flags.delivered_at;
   // ponytail: no delivered_at column — stamp via compliance_flags on admin mark-delivered; fall back to updated_at
-  if (input.status === 'delivered' && input.updated_at) return input.updated_at;
+  if ((input.status === 'delivered' || input.status === 'feedback') && input.updated_at) {
+    return input.updated_at;
+  }
   return null;
 }
 
@@ -134,7 +136,7 @@ export function evaluateReturnEligibility(input: {
       daysLeft: null,
     };
   }
-  if (input.orderStatus !== 'delivered') {
+  if (input.orderStatus !== 'delivered' && input.orderStatus !== 'feedback') {
     return {
       eligible: false,
       reason: 'Returns open only after the order is delivered',
@@ -189,6 +191,15 @@ export function __returnsSelfCheck() {
     allNonReturnable: false,
   });
   console.assert(ok.eligible === true && (ok.daysLeft ?? 0) >= 4, 'within window');
+
+  const afterFeedback = evaluateReturnEligibility({
+    orderStatus: 'feedback',
+    returnStatus: 'none',
+    deliveredAt: tenDaysAgo,
+    windowDays: 15,
+    allNonReturnable: false,
+  });
+  console.assert(afterFeedback.eligible === true, 'feedback stage still returnable');
 
   const late = evaluateReturnEligibility({
     orderStatus: 'delivered',

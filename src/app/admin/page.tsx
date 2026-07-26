@@ -217,7 +217,8 @@ export default function AdminDashboard() {
 
   const PIPELINE_STAGES = [
     'placed', 'confirmed', 'processing', 'jewelry_making',
-    'certification', 'energization', 'quality_check', 'shipped', 'delivered',
+    'certification', 'energization', 'quality_check', 'shipped',
+    'out_for_delivery', 'delivered', 'feedback',
   ];
 
   return (

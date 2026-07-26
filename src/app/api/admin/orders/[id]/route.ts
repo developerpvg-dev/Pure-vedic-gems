@@ -10,14 +10,10 @@ import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
 import { cancelRewardRedemption } from '@/lib/rewards/service';
 import { mergeComplianceFlags, parseComplianceFlags } from '@/lib/orders/returns';
 import { OrderCommissionSchema } from '@/lib/validators/order';
+import { ORDER_STATUSES } from '@/lib/constants/order-status';
 
-const VALID_STATUSES = [
-  'pending_payment', 'placed', 'confirmed', 'processing',
-  'design_assigned', 'design_in_progress', 'design_completed',
-  'jewelry_making', 'certification', 'energization',
-  'quality_check', 'shipped', 'delivered', 'cancelled', 'refunded',
-  'payment_review',
-];
+const VALID_STATUSES = ORDER_STATUSES as readonly string[];
+const AUTO_CUSTOMER_NOTIFY_STATUSES = new Set(['shipped', 'out_for_delivery', 'delivered']);
 
 const VALID_DELIVERY_STATUSES = ['pending', 'label_created', 'in_transit', 'out_for_delivery', 'delivered', 'returned', 'failed'];
 
@@ -121,7 +117,7 @@ export async function PUT(
   // Fetch current order for logging
   const { data: currentRaw } = await db
     .from('orders')
-    .select('id, order_number, guest_email, guest_name, guest_phone, customer_id, status, tracking_number, tracking_url, internal_notes, assigned_to, product_video_url, puja_video_url, items, delivery_status, compliance_flags, design_completed_at')
+    .select('id, order_number, guest_email, guest_name, guest_phone, customer_id, status, tracking_number, tracking_url, carrier, estimated_delivery, internal_notes, assigned_to, product_video_url, puja_video_url, items, delivery_status, compliance_flags, design_completed_at')
     .eq('id', id)
     .single();
 
@@ -135,6 +131,8 @@ export async function PUT(
     status: string;
     tracking_number: string | null;
     tracking_url: string | null;
+    carrier?: string | null;
+    estimated_delivery?: string | null;
     product_video_url?: string | null;
     puja_video_url?: string | null;
     items?: unknown;
@@ -177,6 +175,10 @@ export async function PUT(
         });
       }
     }
+    // Keep courier delivery_status in sync when order status advances through ship/OFD/delivered
+    if (status === 'shipped' && delivery_status === undefined) updates.delivery_status = 'in_transit';
+    if (status === 'out_for_delivery' && delivery_status === undefined) updates.delivery_status = 'out_for_delivery';
+    if (status === 'delivered' && delivery_status === undefined) updates.delivery_status = 'delivered';
   }
   if (tracking_number !== undefined) updates.tracking_number = tracking_number;
   if (tracking_url !== undefined) updates.tracking_url = tracking_url;
@@ -320,9 +322,16 @@ export async function PUT(
     });
   }
 
+  const nextStatus = updatedOrder.status;
+  const statusChanged = nextStatus !== current.status;
+  // Always email customer when order hits ship / OFD / delivered (plus opt-in notify_customer)
+  const shouldEmailCustomer =
+    Boolean(customerEmail) &&
+    (notify_customer || (statusChanged && AUTO_CUSTOMER_NOTIFY_STATUSES.has(nextStatus)));
+
   let trackingEmailId: string | null = null;
-  if (notify_customer && customerEmail) {
-    if (becameCancelledOrRefunded && status === 'cancelled') {
+  if (shouldEmailCustomer && customerEmail) {
+    if (becameCancelledOrRefunded && nextStatus === 'cancelled') {
       trackingEmailId = await sendOrderCancelledEmail({
         to: customerEmail,
         customerName,
@@ -335,16 +344,26 @@ export async function PUT(
         to: customerEmail,
         customerName,
         orderNumber: current.order_number,
-        status: status || updatedOrder.status,
-        carrier: carrier ?? null,
+        status: nextStatus,
+        carrier: carrier ?? current.carrier ?? null,
         trackingNumber: tracking_number ?? current.tracking_number ?? null,
         trackingUrl: tracking_url ?? current.tracking_url ?? null,
-        estimatedDelivery: estimated_delivery ?? null,
+        estimatedDelivery: estimated_delivery ?? current.estimated_delivery ?? null,
       });
     }
   }
 
-  if (trackingChanged || productVideoAdded || pujaVideoAdded || (status && status !== current.status)) {
+  if (trackingChanged || productVideoAdded || pujaVideoAdded || statusChanged) {
+    const customerTitle =
+      nextStatus === 'shipped'
+        ? 'Order shipped'
+        : nextStatus === 'out_for_delivery'
+          ? 'Out for delivery'
+          : nextStatus === 'delivered'
+            ? 'Order delivered'
+            : trackingChanged
+              ? 'Tracking updated'
+              : 'Order status updated';
     await createInAppNotifications([
       ...(current.customer_id ? [{
         audience: 'user' as const,
@@ -360,36 +379,34 @@ export async function PUT(
           ? 'Product video ready'
           : pujaVideoAdded
             ? 'Puja video ready'
-            : trackingChanged
-              ? 'Tracking updated'
-              : 'Order status updated',
+            : customerTitle,
         message: productVideoAdded
           ? `Your product video for order ${current.order_number} is ready.`
           : pujaVideoAdded
             ? `Your puja video for order ${current.order_number} is ready.`
-            : `Order ${current.order_number} is now ${(status || updatedOrder.status).replace(/_/g, ' ')}.`,
+            : `Order ${current.order_number} is now ${nextStatus.replace(/_/g, ' ')}.`,
         href: '/account/orders',
         entityType: 'order',
         entityId: id,
         metadata: {
           order_number: current.order_number,
-          status: status || updatedOrder.status,
+          status: nextStatus,
           tracking_number: tracking_number ?? current.tracking_number ?? null,
         },
       }] : []),
       {
         audience: 'admin' as const,
-        recipientRole: trackingChanged ? 'fulfillment' : null,
+        recipientRole: trackingChanged || AUTO_CUSTOMER_NOTIFY_STATUSES.has(nextStatus) ? 'fulfillment' : null,
         type: trackingChanged ? 'order_tracking_update' : 'order_status_update',
         title: trackingChanged ? 'Order tracking updated' : 'Order status changed',
-        message: `Order ${current.order_number} changed from ${current.status.replace(/_/g, ' ')} to ${(status || updatedOrder.status).replace(/_/g, ' ')}.`,
+        message: `Order ${current.order_number} changed from ${current.status.replace(/_/g, ' ')} to ${nextStatus.replace(/_/g, ' ')}.`,
         href: `/admin/orders/${id}`,
         entityType: 'order',
         entityId: id,
         metadata: {
           order_number: current.order_number,
           previous_status: current.status,
-          status: status || updatedOrder.status,
+          status: nextStatus,
           tracking_number: tracking_number ?? current.tracking_number ?? null,
         },
       },

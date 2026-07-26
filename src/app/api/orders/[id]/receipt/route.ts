@@ -52,7 +52,7 @@ export async function POST(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  if (orderRow.status !== 'delivered') {
+  if (orderRow.status !== 'delivered' && orderRow.status !== 'feedback') {
     return NextResponse.json({ error: 'Confirmation is only available after delivery' }, { status: 400 });
   }
 

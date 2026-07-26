@@ -162,6 +162,8 @@ export const PaymentVerifySchema = z.object({
 // ─── Payment Create Order ───────────────────────────────────────────────────
 export const PaymentCreateOrderSchema = z.object({
   order_id: z.string().uuid('Invalid order ID'),
+  /** Advance payment (20-100% of total). Omit to charge the full amount due. */
+  pay_amount: z.coerce.number().positive().max(100_000_000).optional(),
 });
 
 // ─── Type exports ───────────────────────────────────────────────────────────

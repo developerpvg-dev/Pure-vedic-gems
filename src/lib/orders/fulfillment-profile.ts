@@ -162,7 +162,9 @@ export type JourneyStepKey =
   | 'product_video'
   | 'puja_video'
   | 'shipped'
-  | 'delivered';
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'feedback';
 
 export type JourneyStepTemplate = {
   key: JourneyStepKey;
@@ -226,7 +228,9 @@ export function getJourneyStepsForContext(context: OrderFulfillmentContext): Jou
 
   steps.push(
     { key: 'shipped', label: 'Shipped', shortLabel: 'Ship' },
-    { key: 'delivered', label: 'Delivered', shortLabel: 'Done' }
+    { key: 'out_for_delivery', label: 'Out for Delivery', shortLabel: 'OFD' },
+    { key: 'delivered', label: 'Delivered', shortLabel: 'Done' },
+    { key: 'feedback', label: 'Feedback', shortLabel: 'FB' },
   );
 
   return steps;
@@ -245,7 +249,9 @@ export const ADMIN_STATUS_PIPELINE = [
   'energization',
   'quality_check',
   'shipped',
+  'out_for_delivery',
   'delivered',
+  'feedback',
 ] as const;
 
 export type AdminOrderStatus = (typeof ADMIN_STATUS_PIPELINE)[number];
@@ -257,7 +263,7 @@ export function getAdminStatusPipeline(context: OrderFulfillmentContext): AdminO
       ) ?? context.itemProfiles[0]
     : context.profile;
 
-  const tail: AdminOrderStatus[] = ['shipped', 'delivered'];
+  const tail: AdminOrderStatus[] = ['shipped', 'out_for_delivery', 'delivered', 'feedback'];
 
   if (profile === 'configured_jewelry' || profile === 'rudraksha_configured') {
     const mid: AdminOrderStatus[] = [
@@ -306,7 +312,9 @@ export function getAdminStatusLabels(context: OrderFulfillmentContext): Record<s
     energization: 'Energization',
     quality_check: 'Quality Check',
     shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
     delivered: 'Delivered',
+    feedback: 'Feedback',
     cancelled: 'Cancelled',
     refunded: 'Refunded',
     payment_review: 'Payment Review',
@@ -353,7 +361,9 @@ export const STATUS_RANK: Record<string, number> = {
   energization: 90,
   quality_check: 100,
   shipped: 110,
+  out_for_delivery: 115,
   delivered: 120,
+  feedback: 130,
   cancelled: -1,
   refunded: -1,
 };

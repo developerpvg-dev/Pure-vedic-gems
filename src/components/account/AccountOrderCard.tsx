@@ -27,6 +27,7 @@ import {
   type BankTransferProof,
 } from '@/lib/orders/bank-transfer-proof';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
+import { OrderBalancePanel, type CustomerPaymentRow } from '@/components/account/OrderBalancePanel';
 
 type ShippingAddress = {
   line1?: string;
@@ -58,6 +59,12 @@ export type AccountOrderCardData = {
   } | null;
   created_at: string;
   total: number;
+  amount_paid?: number | null;
+  amount_due?: number | null;
+  balance_due_notified_at?: string | null;
+  payments?: CustomerPaymentRow[];
+  /** Razorpay prefill for the balance payment; omitted for guest lookups. */
+  payer?: { name: string; email: string; contact: string } | null;
   subtotal: number;
   jewelry_charges: number;
   metal_charges: number;
@@ -104,7 +111,9 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   energization: { label: 'Energization', bg: '#dbeafe', text: '#1e40af' },
   quality_check: { label: 'Quality Check', bg: '#dbeafe', text: '#1e40af' },
   shipped: { label: 'Shipped', bg: '#ede9fe', text: '#5b21b6' },
+  out_for_delivery: { label: 'Out for Delivery', bg: '#e0e7ff', text: '#3730a3' },
   delivered: { label: 'Delivered', bg: '#dcfce7', text: '#166534' },
+  feedback: { label: 'Feedback', bg: '#ccfbf1', text: '#115e59' },
   cancelled: { label: 'Cancelled', bg: '#fee2e2', text: '#991b1b' },
   refunded: { label: 'Refunded', bg: '#f3f4f6', text: '#374151' },
   placed: { label: 'Placed', bg: '#dbeafe', text: '#1e40af' },
@@ -367,6 +376,20 @@ export function AccountOrderCard({
         </div>
       ) : null}
 
+      {order.payer && (order.amount_paid ?? 0) > 0.009 ? (
+        <OrderBalancePanel
+          orderId={order.id}
+          orderNumber={order.order_number}
+          total={order.total}
+          amountPaid={Number(order.amount_paid ?? 0)}
+          amountDue={Number(order.amount_due ?? 0)}
+          balanceRequested={Boolean(order.balance_due_notified_at)}
+          canPay={!['cancelled', 'refunded'].includes(status)}
+          payments={order.payments ?? []}
+          prefill={order.payer}
+        />
+      ) : null}
+
       {order.payment_method === 'bank_transfer' || order.bank_transfer ? (
         <BankTransferAccountBlock
           order={order}
@@ -375,7 +398,7 @@ export function AccountOrderCard({
         />
       ) : null}
 
-      {status === 'delivered' && !receiptConfirmed ? (
+      {(status === 'delivered' || status === 'feedback') && !receiptConfirmed ? (
         <div className="border-b border-[var(--pvg-border)] bg-emerald-50/80 px-5 py-4 md:px-6">
           <p className="text-sm font-semibold text-[var(--pvg-primary)]">
             Was the product received properly?
@@ -407,7 +430,7 @@ export function AccountOrderCard({
         </div>
       ) : null}
 
-      {status === 'delivered' && receiptConfirmed && receiptOk === true ? (
+      {(status === 'delivered' || status === 'feedback') && receiptConfirmed && receiptOk === true ? (
         <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-3 text-sm text-emerald-900 md:px-6">
           Thanks — you confirmed this order was received properly.
         </div>
@@ -511,7 +534,11 @@ export function AccountOrderCard({
                     </div>
                   ))}
                   <div className="border-t border-[var(--pvg-border)] pt-2">
-                    <PriceRow label="Total paid" amount={order.total} highlight />
+                    <PriceRow
+                      label={(order.amount_due ?? 0) > 0.009 ? 'Order total' : 'Total paid'}
+                      amount={order.total}
+                      highlight
+                    />
                   </div>
                 </div>
               </div>
@@ -629,7 +656,7 @@ export function AccountOrderCard({
                 </div>
               ) : null}
 
-              {status === 'delivered' || returnStatus !== 'none' ? (
+              {status === 'delivered' || status === 'feedback' || returnStatus !== 'none' ? (
                 <div className="rounded-xl border border-[var(--pvg-border)] bg-brand-surface p-4">
                   <p className="text-sm font-semibold text-[var(--pvg-primary)]">Returns</p>
                   {returnStatus !== 'none' ? (

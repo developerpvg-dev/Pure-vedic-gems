@@ -145,21 +145,37 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/admin/designer', request.url));
       }
     }
-    if (normalizedRole === 'stock_manager') {
-      const allowed =
-        pathname.startsWith('/admin/stock') ||
-        pathname.startsWith('/admin/erp-sync') ||
-        pathname.startsWith('/admin/products') ||
-        pathname.startsWith('/admin/orders') ||
+    if (normalizedRole === 'content') {
+      // Dashboard + ops/finance/leads paths — keep catalog/content pages
+      const blocked =
+        pathname === '/admin' ||
+        pathname.startsWith('/admin/orders/new') ||
+        pathname.startsWith('/admin/commissions') ||
         pathname.startsWith('/admin/design-jobs') ||
         pathname.startsWith('/admin/rewards') ||
-        pathname.startsWith('/admin/designs') ||
         pathname.startsWith('/admin/leads') ||
         pathname.startsWith('/admin/agent-sessions') ||
-        pathname.startsWith('/admin/consultation-plans') ||
+        pathname.startsWith('/admin/finance') ||
+        pathname.startsWith('/admin/compliance') ||
+        pathname.startsWith('/admin/settings');
+      if (blocked) {
+        return NextResponse.redirect(new URL('/admin/products', request.url));
+      }
+    }
+    // Products Uploading: orders are read-only (no POS create)
+    if (normalizedRole === 'inventory' && pathname.startsWith('/admin/orders/new')) {
+      return NextResponse.redirect(new URL('/admin/orders', request.url));
+    }
+    if (normalizedRole === 'stock_manager') {
+      const allowed =
+        pathname.startsWith('/admin/orders') ||
+        pathname.startsWith('/admin/customers') ||
+        pathname.startsWith('/admin/commissions') ||
+        pathname.startsWith('/admin/design-jobs') ||
+        pathname.startsWith('/admin/rewards') ||
         pathname.startsWith('/admin/join');
       if (!allowed) {
-        return NextResponse.redirect(new URL('/admin/stock', request.url));
+        return NextResponse.redirect(new URL('/admin/orders', request.url));
       }
     }
 

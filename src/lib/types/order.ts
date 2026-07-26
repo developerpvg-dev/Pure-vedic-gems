@@ -15,7 +15,9 @@ export type OrderStatus =
   | 'energization'
   | 'quality_check'
   | 'shipped'
+  | 'out_for_delivery'
   | 'delivered'
+  | 'feedback'
   | 'cancelled'
   | 'refunded'
   | 'payment_review';

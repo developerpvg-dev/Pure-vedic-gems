@@ -49,7 +49,9 @@ const STEP_DESCRIPTIONS: Record<JourneyStepKey, string> = {
   product_video: 'A product video of your finished piece will appear here when ready.',
   puja_video: 'A ceremony / puja video will appear here when ready.',
   shipped: 'Package handed to the courier with tracking details.',
+  out_for_delivery: 'Courier is delivering your package today.',
   delivered: 'Order delivered to the shipping address.',
+  feedback: 'We would love to hear your feedback on this order.',
 };
 
 function stepDescription(key: JourneyStepKey, label: string): string {
@@ -119,9 +121,13 @@ function isStepDone(
     case 'puja_video':
       return !!order.tracking_number || statusAtLeast(order.status, 'shipped');
     case 'shipped':
-      return order.status === 'delivered';
+      return statusAtLeast(order.status, 'shipped');
+    case 'out_for_delivery':
+      return statusAtLeast(order.status, 'out_for_delivery');
     case 'delivered':
-      return order.status === 'delivered';
+      return statusAtLeast(order.status, 'delivered');
+    case 'feedback':
+      return order.status === 'feedback';
     default:
       return false;
   }

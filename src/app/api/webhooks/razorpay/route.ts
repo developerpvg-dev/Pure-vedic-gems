@@ -4,11 +4,19 @@ import { captureAuthorizedRazorpayPayment, fetchRazorpayPaymentFacts } from '@/l
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   finalizeCapturedPayment,
+  markOrderPaymentAuthorized,
   markOrderPaymentFailed,
   markOrderPaymentReview,
   markPaymentEventProcessed,
   upsertPaymentEvent,
 } from '@/lib/orders/payment-finalization';
+import {
+  expectedPaiseFor,
+  failPaymentAttempt,
+  findAttemptByRazorpayOrderId,
+  recomputeOrderBalances,
+  settlePaymentAttempt,
+} from '@/lib/orders/online-payments';
 import type { Json, Order } from '@/lib/types/database';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
 import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
@@ -45,18 +53,6 @@ function webhookEventId(payload: UnknownRecord, event: string, entityId: string 
       : 'unknown-time';
 
   return `webhook:${accountId}:${event}:${entityId ?? 'unknown'}:${createdAt}`;
-}
-
-async function findOrderByRazorpayOrderId(razorpayOrderId: string) {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('razorpay_order_id', razorpayOrderId)
-    .single();
-
-  if (error || !data) return null;
-  return data as Order;
 }
 
 export async function POST(req: NextRequest) {
@@ -128,8 +124,12 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
     return NextResponse.json({ error: 'Missing payment entity identifiers' }, { status: 400 });
   }
 
-  const order = await findOrderByRazorpayOrderId(razorpayOrderId);
-  const expectedPaise = order ? Math.round(order.total * 100) : null;
+  const resolved = await findAttemptByRazorpayOrderId(razorpayOrderId);
+  const order = resolved?.order ?? null;
+  const attempt = resolved?.attempt ?? null;
+  // Expected amount comes from the attempt, so a 20% advance verifies against
+  // the 20%, not the order total.
+  const expectedPaise = order ? expectedPaiseFor(order, attempt) : null;
   const { event, alreadyProcessed } = await upsertPaymentEvent({
     eventId: webhookEventId(payload, eventType, razorpayPaymentId),
     eventType,
@@ -181,34 +181,38 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
       facts = await captureAuthorizedRazorpayPayment(facts, razorpayPaymentId, expectedPaise, 'INR');
     } catch (error) {
       console.error('[Webhook] Razorpay capture failed after authorization:', error);
-      const supabase = createAdminClient();
-      await supabase
-        .from('orders')
-        .update({
-          razorpay_payment_id: razorpayPaymentId,
-          payment_status: 'authorized',
-          payment_method: method ?? facts.method ?? 'razorpay',
-          payment_failure_reason: null,
-          payment_review_reason: 'Payment authorized but server-side capture is still pending',
-        })
-        .eq('id', order.id);
+      await markOrderPaymentAuthorized(order, {
+        razorpayPaymentId,
+        method: method ?? facts.method,
+      });
       await markPaymentEventProcessed(event.id, 'capture_pending');
       return NextResponse.json({ status: 'capture_pending' });
     }
   }
 
   if (!facts.captured) {
-    const supabase = createAdminClient();
-    await supabase
-      .from('orders')
-      .update({
-        razorpay_payment_id: razorpayPaymentId,
-        payment_status: 'authorized',
-        payment_method: method ?? facts.method ?? 'razorpay',
-      })
-      .eq('id', order.id);
+    await markOrderPaymentAuthorized(order, {
+      razorpayPaymentId,
+      method: method ?? facts.method,
+      reason: null,
+    });
     await markPaymentEventProcessed(event.id, 'authorized');
     return NextResponse.json({ status: 'authorized' });
+  }
+
+  // Claim the ledger row so client-verify and this webhook cannot both bank the
+  // same payment; the loser exits without touching balances.
+  const claimed = attempt
+    ? await settlePaymentAttempt({
+        attemptId: attempt.id,
+        razorpayPaymentId,
+        method: method ?? facts.method,
+      })
+    : null;
+
+  if (attempt && !claimed) {
+    await markPaymentEventProcessed(event.id, 'duplicate');
+    return NextResponse.json({ status: 'duplicate' });
   }
 
   await finalizeCapturedPayment({
@@ -216,6 +220,8 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
     eventId: event.id,
     razorpayPaymentId,
     method: method ?? facts.method,
+    balances: claimed ? await recomputeOrderBalances(order.id, order.total) : undefined,
+    paymentKind: claimed?.kind as 'advance' | 'balance' | 'full' | undefined,
   });
 
   return NextResponse.json({ status: 'captured' });
@@ -233,7 +239,8 @@ async function handlePaymentFailed(payload: UnknownRecord) {
     return NextResponse.json({ error: 'Missing failed payment identifiers' }, { status: 400 });
   }
 
-  const order = await findOrderByRazorpayOrderId(razorpayOrderId);
+  const failedAttempt = await findAttemptByRazorpayOrderId(razorpayOrderId);
+  const order = failedAttempt?.order ?? null;
   const { event, alreadyProcessed } = await upsertPaymentEvent({
     eventId: webhookEventId(payload, 'payment.failed', razorpayPaymentId),
     eventType: 'payment.failed',
@@ -246,6 +253,9 @@ async function handlePaymentFailed(payload: UnknownRecord) {
   });
 
   if (alreadyProcessed) return NextResponse.json({ status: 'duplicate' });
+  if (failedAttempt?.attempt) {
+    await failPaymentAttempt(failedAttempt.attempt.id, errorDescription);
+  }
   if (order) {
     await markOrderPaymentFailed(order, errorDescription, razorpayPaymentId);
   }

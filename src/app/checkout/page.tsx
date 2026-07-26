@@ -266,6 +266,7 @@ export default function CheckoutPage() {
                   rewardPointsToRedeem={rewardPointsToRedeem}
                   selectedShippingPlan={selectedShippingPlan}
                   rewards={rewardInfo}
+                  isLoggedIn={!!user}
                   isProcessing={isProcessing}
                   setIsProcessing={setIsProcessing}
                   onOrderCreated={setOrderId}

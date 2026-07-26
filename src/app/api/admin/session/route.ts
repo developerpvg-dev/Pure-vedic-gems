@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { hasAdminPermission } from '@/lib/admin/rbac';
 
 export async function GET() {
   const auth = await requireAdminAccess();
@@ -23,5 +24,6 @@ export async function GET() {
     name: member?.name ?? auth.member.name,
     email: auth.user.email ?? null,
     avatar_url: member?.avatar_url ?? null,
+    canWriteOrders: hasAdminPermission(auth.member.role, 'orders.write', auth.member.permissions),
   });
 }

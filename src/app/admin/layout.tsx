@@ -76,6 +76,20 @@ const NAV_GROUPS = [
   },
 ];
 
+/** Website Maintenance: hide ops/finance/leads; orders stay (read-only via RBAC). */
+const CONTENT_HIDDEN_HREFS = new Set([
+  '/admin',
+  '/admin/orders/new',
+  '/admin/commissions',
+  '/admin/design-jobs',
+  '/admin/rewards',
+  '/admin/leads',
+  '/admin/agent-sessions',
+  '/admin/finance',
+  '/admin/compliance',
+  '/admin/settings',
+]);
+
 function navLinkActive(
   pathname: string | null,
   searchParams: URLSearchParams,
@@ -109,17 +123,18 @@ function AdminNavContent({
   const router = useRouter();
   const isWebsiteMaintenance = role === 'content';
   const brand = isWebsiteMaintenance ? 'Website Maintenance' : 'PVG Admin';
+  const homeHref = isWebsiteMaintenance ? '/admin/products' : '/admin';
   const navGroups = isWebsiteMaintenance
     ? NAV_GROUPS.map((group) => ({
         ...group,
-        links: group.links.filter((link) => link.href !== '/admin/settings'),
+        links: group.links.filter((link) => !CONTENT_HIDDEN_HREFS.has(link.href)),
       })).filter((group) => group.links.length > 0)
     : NAV_GROUPS;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
-        <Link href="/admin" className="leading-tight" onClick={() => setSidebarOpen(false)}>
+        <Link href={homeHref} className="leading-tight" onClick={() => setSidebarOpen(false)}>
           <span className="block text-base font-bold text-gray-950">{brand}</span>
           {isWebsiteMaintenance ? (
             <span className="block text-xs text-gray-500">Content & site updates</span>

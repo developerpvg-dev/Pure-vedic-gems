@@ -4,6 +4,8 @@ import { Package } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import { AccountOrderCard, type AccountOrderCardData } from '@/components/account/AccountOrderCard';
+import type { CustomerPaymentRow } from '@/components/account/OrderBalancePanel';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import {
   enrichManyOrderItemLists,
   parseOrderItems,
@@ -40,6 +42,28 @@ export default async function OrdersPage() {
 
   const parsedItemLists = orders.map((order) => parseOrderItems(order.items));
   const enrichedLists = await enrichManyOrderItemLists(parsedItemLists, supabase);
+
+  // Advance / balance receipts — RLS scopes these to the signed-in customer.
+  const paymentsByOrder = new Map<string, CustomerPaymentRow[]>();
+  if (orders.length) {
+    const { data: paymentRows } = await asUntypedSupabase(supabase)
+      .from('order_payments')
+      .select('id, order_id, amount, method, kind, status, reference, paid_at')
+      .in('order_id', orders.map((order) => order.id))
+      .order('paid_at', { ascending: true });
+
+    for (const row of (paymentRows ?? []) as Array<CustomerPaymentRow & { order_id: string }>) {
+      const list = paymentsByOrder.get(row.order_id) ?? [];
+      list.push(row);
+      paymentsByOrder.set(row.order_id, list);
+    }
+  }
+
+  const { data: profile } = await supabase
+    .from('customer_profiles')
+    .select('full_name, email, phone')
+    .eq('id', user.id)
+    .maybeSingle();
 
   const productIds = new Set<string>();
   for (const items of enrichedLists) {
@@ -109,6 +133,15 @@ export default async function OrdersPage() {
         bank_transfer: publicBankTransferSummary(parseBankTransferProof(extras.compliance_flags)),
         created_at: order.created_at,
         total: order.total,
+        amount_paid: order.amount_paid ?? null,
+        amount_due: order.amount_due ?? null,
+        balance_due_notified_at: order.balance_due_notified_at ?? null,
+        payments: paymentsByOrder.get(order.id) ?? [],
+        payer: {
+          name: profile?.full_name || order.guest_name || 'Valued Customer',
+          email: profile?.email || order.guest_email || user.email || '',
+          contact: profile?.phone || order.guest_phone || '',
+        },
         subtotal: order.subtotal,
         jewelry_charges: order.jewelry_charges ?? 0,
         metal_charges: order.metal_charges ?? 0,

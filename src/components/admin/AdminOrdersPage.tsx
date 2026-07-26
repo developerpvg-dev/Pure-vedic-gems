@@ -95,7 +95,9 @@ const STATUS_COLORS: Record<string, string> = {
   energization: 'bg-violet-100 text-violet-800',
   quality_check: 'bg-orange-100 text-orange-800',
   shipped: 'bg-purple-100 text-purple-800',
+  out_for_delivery: 'bg-indigo-100 text-indigo-800',
   delivered: 'bg-green-100 text-green-800',
+  feedback: 'bg-teal-100 text-teal-800',
   cancelled: 'bg-red-100 text-red-800',
   refunded: 'bg-pink-100 text-pink-800',
   payment_review: 'bg-red-100 text-red-800',
@@ -152,6 +154,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(true);
+  const [canWriteOrders, setCanWriteOrders] = useState(false);
 
   const syncUrl = useCallback((nextFilters: AdminOrderFilterState) => {
     const params = adminOrderFiltersToParams(nextFilters, 1, ORDERS_PER_PAGE);
@@ -165,6 +168,15 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     setFilters(readInitialFilters());
     setFiltersReady(true);
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch('/api/admin/session');
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      setCanWriteOrders(Boolean(data.canWriteOrders));
+    })();
   }, []);
 
   useEffect(() => {
@@ -233,13 +245,15 @@ export default function AdminOrdersPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/orders/new"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            New offline order
-          </Link>
+          {canWriteOrders ? (
+            <Link
+              href="/admin/orders/new"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              New offline order
+            </Link>
+          ) : null}
           <a
             href="/api/admin/exports?type=orders"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
@@ -510,6 +524,11 @@ export default function AdminOrdersPage() {
                         <span className={`text-xs font-semibold ${PAYMENT_STATUS_COLORS[order.payment_status] || 'text-gray-600'}`}>
                           {label(order.payment_status)}
                         </span>
+                        {(order.amount_due ?? 0) > 0.009 && order.payment_status !== 'pending' ? (
+                          <p className="text-xs font-medium tabular-nums text-amber-700">
+                            {fmtInr(order.amount_due ?? 0)} due
+                          </p>
+                        ) : null}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500">
                         {new Date(order.created_at).toLocaleDateString('en-IN', {

@@ -63,6 +63,8 @@ interface OrderData {
   reward_points_redeemed: number;
   gst_amount: number;
   total: number;
+  amount_paid?: number | null;
+  amount_due?: number | null;
   shipping_address: {
     line1: string;
     line2?: string;
@@ -92,7 +94,10 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
   const [copied, setCopied] = useState(false);
   const priceLines = buildOrderPriceLines(order);
 
-  const isPaid = isPaidPaymentStatus(order.payment_status);
+  // An advance confirms the order just like a full payment — only the balance differs.
+  const balanceDue = Number(order.amount_due ?? 0);
+  const isAdvance = order.payment_status === 'partial' && balanceDue > 0.009;
+  const isPaid = isPaidPaymentStatus(order.payment_status) || isAdvance;
   const isPaymentReview = order.payment_status === 'amount_mismatch' || order.status === 'payment_review';
   const isFailed = order.payment_status === 'failed' || order.payment_status === 'cancelled';
   const bankProof = parseBankTransferProof(order.compliance_flags);
@@ -129,7 +134,9 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
     }
   };
 
-  const statusTitle = isPaid
+  const statusTitle = isAdvance
+    ? 'Advance Received — Order Confirmed'
+    : isPaid
     ? 'Thank You!'
     : isBankRejected
       ? 'Payment Proof Needs an Update'
@@ -140,7 +147,9 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
       : isFailed
         ? 'Payment Not Completed'
         : 'Order Created';
-  const statusMessage = isPaid
+  const statusMessage = isAdvance
+    ? `We received your advance of ${formatPrice(Number(order.amount_paid ?? 0))}. Your order is confirmed — the remaining ${formatPrice(balanceDue)} is payable once it is ready, and we will notify you by email.`
+    : isPaid
     ? 'Your payment was successful. We\'re preparing your order with utmost care.'
     : isBankRejected
       ? bankProof?.reject_reason ||

@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
 import { OrderActions } from '@/components/admin/OrderActions';
 import { OrderAssignDesigner } from '@/components/admin/OrderAssignDesigner';
@@ -9,6 +10,8 @@ import { OrderPaymentLedger } from '@/components/admin/OrderPaymentLedger';
 import { BankTransferManagePanel } from '@/components/admin/BankTransferManagePanel';
 import { AdminOrderDetailShell } from '@/components/admin/AdminOrderDetailShell';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
+import { hasAdminPermission } from '@/lib/admin/rbac';
+import type { Json } from '@/lib/types/database';
 import {
   energizationFormFromOrderItems,
   mergeConfigurationDetails,
@@ -76,7 +79,9 @@ const ORDER_STATUS_STYLE: Record<string, string> = {
   energization: 'bg-violet-50 text-violet-800',
   quality_check: 'bg-orange-50 text-orange-800',
   shipped: 'bg-purple-50 text-purple-800',
+  out_for_delivery: 'bg-indigo-50 text-indigo-800',
   delivered: 'bg-emerald-50 text-emerald-800',
+  feedback: 'bg-teal-50 text-teal-800',
   cancelled: 'bg-red-50 text-red-800',
   refunded: 'bg-rose-50 text-rose-800',
   payment_review: 'bg-red-50 text-red-800',
@@ -184,6 +189,23 @@ export default async function OrderDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = createAdminClient();
 
+  const authClient = await createClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+  const { data: viewer } = user
+    ? await supabase
+        .from('team_members')
+        .select('role, permissions')
+        .eq('id', user.id)
+        .maybeSingle()
+    : { data: null };
+  const canWriteOrders = hasAdminPermission(
+    viewer?.role,
+    'orders.write',
+    (viewer?.permissions ?? null) as Json,
+  );
+
   const { data: raw } = await supabase
     .from('orders')
     .select('*')
@@ -225,6 +247,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     products_marked_sold_at?: string | null;
     return_status?: string | null;
     payment_failure_reason?: string | null;
+    balance_due_notified_at?: string | null;
     compliance_flags?: unknown;
     internal_notes?: string | null;
     admin_notes?: string | null;
@@ -992,6 +1015,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
               amountPaid={Number(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0)) || 0}
               amountDue={Number(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total)) || 0}
               paymentStatus={o.payment_status}
+              hasCustomerAccount={Boolean(o.customer_id)}
+              balanceRequestedAt={orderExtras.balance_due_notified_at ?? null}
             />
 
             <div className="grid gap-5 lg:grid-cols-2">
@@ -1064,6 +1089,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </div>
         }
         manage={
+          canWriteOrders ? (
           <div className="grid gap-5 lg:grid-cols-2">
             <OrderAssignDesigner
               orderId={o.id}
@@ -1116,6 +1142,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
               currentCommissions={orderExtras.commissions ?? []}
             />
           </div>
+          ) : (
+            <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+              Orders are view-only for your role.
+            </p>
+          )
         }
       />
     </div>

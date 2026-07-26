@@ -15,50 +15,8 @@ import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import type { CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
 import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemption';
 import { BANK_ACCOUNTS, type BankAccountId } from '@/lib/constants/bank-accounts';
-
-// ─── Razorpay Checkout Types ────────────────────────────────────────────────
-
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  handler: (response: RazorpayResponse) => void;
-  prefill: { name: string; email: string; contact: string };
-  theme: { color: string };
-  modal: { ondismiss: () => void };
-  notes: Record<string, string>;
-}
-
-interface RazorpayResponse {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-}
-
-interface PaymentVerifyResponse {
-  success?: boolean;
-  pending?: boolean;
-  retry_after_ms?: number;
-  error?: string;
-}
-
-interface RazorpayInstance {
-  open: () => void;
-  on: (event: string, handler: (response: { error: { description: string } }) => void) => void;
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { ADVANCE_MIN_PERCENT } from '@/lib/orders/counter-payments';
+import { runRazorpayCheckout } from '@/lib/razorpay/checkout-client';
 
 type PayMethod = 'razorpay' | 'bank_transfer';
 
@@ -73,6 +31,8 @@ interface PaymentSectionProps {
   rewardPointsToRedeem?: number;
   selectedShippingPlan?: SelectedShippingPlan | null;
   rewards?: CheckoutRewardState | null;
+  /** Advance payment leaves a balance to chase, so it is account-holders only. */
+  isLoggedIn?: boolean;
   isProcessing: boolean;
   setIsProcessing: (v: boolean) => void;
   onOrderCreated: (orderId: string) => void;
@@ -88,6 +48,7 @@ export function PaymentSection({
   rewardPointsToRedeem = 0,
   selectedShippingPlan = null,
   rewards = null,
+  isLoggedIn = false,
   isProcessing,
   setIsProcessing,
   onOrderCreated,
@@ -119,8 +80,26 @@ export function PaymentSection({
   const [transferNotes, setTransferNotes] = useState('');
   const [proofFiles, setProofFiles] = useState<FileList | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [payFull, setPayFull] = useState(true);
+  const [advancePercent, setAdvancePercent] = useState(ADVANCE_MIN_PERCENT);
 
   const selectedBank = BANK_ACCOUNTS.find((b) => b.id === bankId) ?? BANK_ACCOUNTS[0];
+
+  // Advance is Razorpay-only: a bank transfer is verified against one exact
+  // amount by hand, so part-paying it has no reliable proof trail.
+  const advanceAvailable = isLoggedIn && payMethod === 'razorpay';
+  const advanceFloor = useMemo(
+    () => Math.min(estimate.totalInr, Math.ceil((estimate.totalInr * ADVANCE_MIN_PERCENT) / 100)),
+    [estimate.totalInr],
+  );
+  // Server recomputes the total, so this is a display estimate; it re-derives
+  // the same percentage from the authoritative total after order creation.
+  const advanceAmount = useMemo(
+    () => Math.max(advanceFloor, Math.round((estimate.totalInr * advancePercent) / 100)),
+    [estimate.totalInr, advancePercent, advanceFloor],
+  );
+  const payingPartial = advanceAvailable && !payFull;
+  const chargeNow = payingPartial ? advanceAmount : estimate.totalInr;
 
   const copyField = useCallback(async (key: string, value: string) => {
     try {
@@ -175,28 +154,6 @@ export function PaymentSection({
       marketingConsent,
     ],
   );
-
-  const loadRazorpayScript = useCallback((): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (typeof window !== 'undefined' && window.Razorpay) {
-        resolve(true);
-        return;
-      }
-      const existing = document.querySelector<HTMLScriptElement>(
-        'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
-      );
-      if (existing) {
-        existing.addEventListener('load', () => resolve(true), { once: true });
-        existing.addEventListener('error', () => resolve(false), { once: true });
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
-    });
-  }, []);
 
   const handleBankTransfer = useCallback(async () => {
     if (isProcessing) return;
@@ -291,109 +248,41 @@ export function PaymentSection({
         throw new Error(orderData.error || 'Failed to create order');
       }
 
-      const { order_id, order_number } = orderData;
+      const { order_id, order_number, total } = orderData;
       onOrderCreated(order_id);
 
-      setStep('creating_payment');
-      const paymentRes = await fetch('/api/payment/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id }),
-      });
+      // Re-derive the advance from the server-verified total so a stale client
+      // estimate cannot push the charge below the 20% floor and get rejected.
+      const serverTotal = Number(total ?? estimate.totalInr);
+      const payAmount = payingPartial
+        ? Math.min(serverTotal, Math.max(
+            Math.ceil((serverTotal * ADVANCE_MIN_PERCENT) / 100),
+            Math.round((serverTotal * advancePercent) / 100),
+          ))
+        : null;
 
-      const paymentData = await paymentRes.json();
-      if (!paymentRes.ok) {
-        throw new Error(paymentData.error || 'Failed to create payment');
-      }
-
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error('Failed to load payment gateway. Please try again.');
-      }
-
-      setStep('paying');
-      const options: RazorpayOptions = {
-        key: paymentData.key_id,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        name: 'PureVedicGems',
-        description: `Order ${order_number}`,
-        order_id: paymentData.razorpay_order_id,
-        handler: async (response: RazorpayResponse) => {
-          setStep('verifying');
-          try {
-            let verifyData: PaymentVerifyResponse | null = null;
-            for (let attempt = 1; attempt <= 3; attempt += 1) {
-              const verifyRes = await fetch('/api/payment/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  order_id,
-                }),
-              });
-
-              const data = (await verifyRes.json()) as PaymentVerifyResponse;
-              verifyData = data;
-              if (!verifyRes.ok) {
-                throw new Error(data.error || 'Payment verification failed');
-              }
-              if (data.success) break;
-              if (!data.pending || attempt === 3) break;
-              await wait(data.retry_after_ms ?? 2500);
-            }
-
-            if (!verifyData?.success) {
-              throw new Error(
-                verifyData?.pending
-                  ? 'Payment is still being confirmed. Please wait a moment, then check your order status or contact support with your order number.'
-                  : 'Payment could not be confirmed. Please retry or contact support.',
-              );
-            }
-
-            onPaymentSuccess(order_id);
-          } catch (verifyErr) {
-            console.error('[Checkout] Verification error:', verifyErr);
-            setIsProcessing(false);
-            setStep('idle');
-            setError(
-              verifyErr instanceof Error
-                ? verifyErr.message
-                : 'Payment could not be confirmed. Please retry or contact support.',
-            );
-          }
-        },
+      await runRazorpayCheckout({
+        orderId: order_id,
+        orderNumber: order_number,
+        payAmount,
         prefill: {
           name: contact.full_name,
           email: contact.email,
           contact: contact.phone,
         },
-        theme: { color: '#C9A84C' },
-        modal: {
-          ondismiss: () => {
-            setIsProcessing(false);
-            setStep('idle');
-            setError('Payment was cancelled. Your order is saved — you can retry anytime.');
-          },
+        onStage: setStep,
+        onSuccess: () => onPaymentSuccess(order_id),
+        onDismiss: () => {
+          setIsProcessing(false);
+          setStep('idle');
+          setError('Payment was cancelled. Your order is saved — you can retry anytime.');
         },
-        notes: {
-          order_id,
-          order_number,
+        onError: (message) => {
+          setIsProcessing(false);
+          setStep('idle');
+          setError(message);
         },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', (response: { error: { description: string } }) => {
-        setIsProcessing(false);
-        setStep('idle');
-        setError(
-          response.error.description ||
-            'Payment failed. Please try again. Your order is saved for a short time.',
-        );
       });
-      rzp.open();
     } catch (err) {
       setIsProcessing(false);
       setStep('idle');
@@ -408,9 +297,11 @@ export function PaymentSection({
     setIsProcessing,
     buildOrderBody,
     onOrderCreated,
-    loadRazorpayScript,
     contact,
     onPaymentSuccess,
+    payingPartial,
+    advancePercent,
+    estimate.totalInr,
   ]);
 
   const stepLabels: Record<string, string> = {
@@ -481,7 +372,7 @@ export function PaymentSection({
               <p className="font-semibold">Order total: {formatPrice(estimate.totalInr)}</p>
               <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
                 Razorpay charges in Indian Rupees only: you will pay{' '}
-                <strong>{formatPrice(estimate.totalInr, 'INR')}</strong>. International cards still
+                <strong>{formatPrice(chargeNow, 'INR')}</strong>. International cards still
                 work; your bank converts at their rate.
               </p>
             </div>
@@ -490,6 +381,95 @@ export function PaymentSection({
               Order total: {formatPrice(estimate.totalInr, 'INR')}
             </p>
           )}
+
+          {/* ── Pay in full or reserve with an advance ─────────────────── */}
+          {advanceAvailable ? (
+            <fieldset className="mb-4 rounded-lg border border-stone-200 bg-white/70 p-3">
+              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                How much to pay now
+              </legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label
+                  className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
+                    payFull ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="pvg-pay-split"
+                    className="mt-0.5"
+                    checked={payFull}
+                    disabled={isProcessing}
+                    onChange={() => setPayFull(true)}
+                  />
+                  <span>
+                    <span className="block font-semibold text-[#3d2b1f]">Pay in full</span>
+                    <span className="block text-xs text-stone-500">
+                      {formatPrice(estimate.totalInr, 'INR')} now
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
+                    !payFull ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="pvg-pay-split"
+                    className="mt-0.5"
+                    checked={!payFull}
+                    disabled={isProcessing}
+                    onChange={() => setPayFull(false)}
+                  />
+                  <span>
+                    <span className="block font-semibold text-[#3d2b1f]">Pay an advance</span>
+                    <span className="block text-xs text-stone-500">
+                      From {ADVANCE_MIN_PERCENT}% — balance when ready
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              {payingPartial ? (
+                <div className="mt-3 rounded-lg bg-stone-50 p-3">
+                  <label
+                    htmlFor="pvg-advance-percent"
+                    className="flex items-center justify-between text-sm font-semibold text-[#3d2b1f]"
+                  >
+                    <span>Advance: {advancePercent}%</span>
+                    <span>{formatPrice(advanceAmount, 'INR')}</span>
+                  </label>
+                  <input
+                    id="pvg-advance-percent"
+                    type="range"
+                    min={ADVANCE_MIN_PERCENT}
+                    max={100}
+                    step={5}
+                    value={advancePercent}
+                    disabled={isProcessing}
+                    onChange={(e) => setAdvancePercent(Number(e.target.value))}
+                    className="mt-2 w-full accent-[#C9A84C]"
+                  />
+                  <div className="mt-1 flex justify-between text-[10px] font-medium text-stone-400">
+                    <span>{ADVANCE_MIN_PERCENT}%</span>
+                    <span>100%</span>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-stone-600">
+                    Your order is confirmed as soon as this advance is paid. The remaining{' '}
+                    <strong>{formatPrice(Math.max(0, estimate.totalInr - advanceAmount), 'INR')}</strong>{' '}
+                    becomes payable when we tell you the order is ready — we ship after that.
+                  </p>
+                </div>
+              ) : null}
+            </fieldset>
+          ) : !isLoggedIn && payMethod === 'razorpay' ? (
+            <p className="mb-4 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">
+              Want to reserve this order with a {ADVANCE_MIN_PERCENT}% advance and pay the rest when
+              it is ready? Sign in to your account first — guest checkout must be paid in full.
+            </p>
+          ) : null}
+
           <div className="pvg-checkout-pay-methods">
             <span className="pvg-checkout-pay-tag">UPI</span>
             <span className="pvg-checkout-pay-tag">Credit card</span>
@@ -696,7 +676,9 @@ export function PaymentSection({
         ) : (
           <>
             <ShieldCheck className="h-5 w-5" />
-            Pay {formatPrice(estimate.totalInr)} Securely
+            {payingPartial
+              ? `Pay ${formatPrice(chargeNow)} Advance Securely`
+              : `Pay ${formatPrice(chargeNow)} Securely`}
           </>
         )}
       </button>
@@ -704,9 +686,11 @@ export function PaymentSection({
       <p className="pvg-checkout-footnote mt-3">
         {payMethod === 'bank_transfer'
           ? 'Order stays on hold until we verify your transfer (usually within 1 business day).'
-          : showFxNote
-            ? `Payment window shows ${formatPrice(estimate.totalInr, 'INR')}. Tax totals are verified on our server before Razorpay opens.`
-            : 'Payment and tax totals are verified on our server before Razorpay opens.'}
+          : payingPartial
+            ? `Razorpay will charge ${formatPrice(chargeNow, 'INR')} now. The advance amount is re-verified on our server against the final order total before the payment window opens.`
+            : showFxNote
+              ? `Payment window shows ${formatPrice(chargeNow, 'INR')}. Tax totals are verified on our server before Razorpay opens.`
+              : 'Payment and tax totals are verified on our server before Razorpay opens.'}
       </p>
     </div>
   );

@@ -1,14 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Send } from 'lucide-react';
 
 type PaymentRow = {
   id: string;
   amount: number;
   method: string;
   kind: string;
+  provider?: string | null;
+  status?: string | null;
   reference: string | null;
+  razorpay_payment_id?: string | null;
   notes: string | null;
   paid_at: string;
 };
@@ -33,12 +36,17 @@ export function OrderPaymentLedger({
   amountPaid,
   amountDue,
   paymentStatus,
+  hasCustomerAccount = false,
+  balanceRequestedAt = null,
 }: {
   orderId: string;
   total: number;
   amountPaid: number;
   amountDue: number;
   paymentStatus: string;
+  /** Guest orders have no account to send a balance request to. */
+  hasCustomerAccount?: boolean;
+  balanceRequestedAt?: string | null;
 }) {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +60,10 @@ export function OrderPaymentLedger({
   const [paid, setPaid] = useState(amountPaid);
   const [due, setDue] = useState(amountDue);
   const [status, setStatus] = useState(paymentStatus);
+  const [requesting, setRequesting] = useState(false);
+  const [requestedAt, setRequestedAt] = useState(balanceRequestedAt);
+  const [requestNote, setRequestNote] = useState('');
+  const [requestOpen, setRequestOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +115,25 @@ export function OrderPaymentLedger({
     await load();
   }
 
+  async function requestBalance() {
+    setRequesting(true);
+    setError('');
+    const res = await fetch(`/api/admin/orders/${orderId}/actions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'request_balance', note: requestNote.trim() || undefined }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setRequesting(false);
+    if (!res.ok) {
+      setError(data.error || 'Failed to send balance request');
+      return;
+    }
+    setRequestedAt(String(data.balance_due_notified_at));
+    setRequestOpen(false);
+    setRequestNote('');
+  }
+
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -120,16 +151,63 @@ export function OrderPaymentLedger({
           </p>
         </div>
         {due > 0.009 ? (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200"
-          >
-            <Plus className="h-4 w-4" />
-            Record payment
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {hasCustomerAccount ? (
+              <button
+                type="button"
+                onClick={() => setRequestOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-900 hover:bg-sky-200"
+              >
+                <Send className="h-4 w-4" />
+                Order ready — request balance
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200"
+            >
+              <Plus className="h-4 w-4" />
+              Record payment
+            </button>
+          </div>
         ) : null}
       </div>
+
+      {due > 0.009 && requestedAt ? (
+        <p className="mt-2 text-xs font-medium text-sky-800">
+          Balance request last sent {fmtDate(requestedAt)}.
+        </p>
+      ) : null}
+
+      {requestOpen ? (
+        <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50/60 p-4">
+          <p className="text-sm text-sky-950">
+            Emails the customer and posts an in-app notification asking them to pay the remaining{' '}
+            <strong>{fmt(due)}</strong>. They pay from their account; the order stays visible here
+            until settled.
+          </p>
+          <label className="mt-3 block text-sm">
+            <span className="mb-1 block text-gray-600">Message to customer (optional)</span>
+            <input
+              value={requestNote}
+              onChange={(e) => setRequestNote(e.target.value)}
+              maxLength={500}
+              placeholder="e.g. Your ring is ready and photographed."
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
+            />
+          </label>
+          <button
+            type="button"
+            disabled={requesting}
+            onClick={() => void requestBalance()}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          >
+            {requesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Send balance request
+          </button>
+        </div>
+      ) : null}
 
       {needsMigration ? (
         <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -192,28 +270,44 @@ export function OrderPaymentLedger({
             <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
           </div>
         ) : payments.length === 0 ? (
-          <p className="text-sm text-gray-500">No counter payments recorded yet.</p>
+          <p className="text-sm text-gray-500">No payments recorded yet.</p>
         ) : (
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-500">
               <tr>
                 <th className="py-2 pr-3">When</th>
                 <th className="py-2 pr-3">Kind</th>
+                <th className="py-2 pr-3">Source</th>
                 <th className="py-2 pr-3">Method</th>
                 <th className="py-2 pr-3">Amount</th>
                 <th className="py-2">Reference</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {payments.map((p) => (
-                <tr key={p.id}>
-                  <td className="py-2 pr-3 text-gray-600">{fmtDate(p.paid_at)}</td>
-                  <td className="py-2 pr-3 capitalize">{p.kind.replace(/_/g, ' ')}</td>
-                  <td className="py-2 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
-                  <td className="py-2 pr-3 font-semibold tabular-nums">{fmt(Number(p.amount))}</td>
-                  <td className="py-2 text-gray-500">{p.reference || '—'}</td>
-                </tr>
-              ))}
+              {payments.map((p) => {
+                const rowStatus = p.status ?? 'paid';
+                return (
+                  <tr key={p.id} className={rowStatus === 'paid' ? '' : 'text-gray-400'}>
+                    <td className="py-2 pr-3 text-gray-600">{fmtDate(p.paid_at)}</td>
+                    <td className="py-2 pr-3 capitalize">
+                      {p.kind.replace(/_/g, ' ')}
+                      {rowStatus !== 'paid' ? (
+                        <span className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gray-600">
+                          {rowStatus}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="py-2 pr-3 capitalize">
+                      {p.provider === 'razorpay' ? 'Online' : 'Counter'}
+                    </td>
+                    <td className="py-2 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
+                    <td className="py-2 pr-3 font-semibold tabular-nums">{fmt(Number(p.amount))}</td>
+                    <td className="py-2 font-mono text-xs text-gray-500">
+                      {p.razorpay_payment_id || p.reference || '—'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

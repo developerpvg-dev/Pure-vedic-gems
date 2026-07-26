@@ -2,32 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ClipboardList, FileEdit, Gift, HandCoins, LayoutDashboard, LogOut, Menu, MessageSquare, Package, Palette, ShoppingBag, Store, Bot, CalendarClock, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Gift, HandCoins, LayoutDashboard, LogOut, Menu, Palette, Store, Users, X } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/lib/hooks/useAuth';
 
+// ponytail: Orders page already has stats, pipeline, online/offline + filters — reuse as home
+const STOCK_HOME = '/admin/orders';
+
 const STOCK_NAV = [
-  { href: '/admin/stock', label: 'Stock dashboard', icon: LayoutDashboard, match: 'exact' as const },
-  { href: '/admin/stock/completeness', label: 'Content gaps', icon: ClipboardList, match: 'prefix' as const },
-  { href: '/admin/erp-sync', label: 'Store ERP sync', icon: Store, match: 'prefix' as const },
-  { href: '/admin/orders', label: 'Online orders', icon: ShoppingBag, match: 'prefix' as const },
+  { href: '/admin/orders', label: 'Orders dashboard', icon: LayoutDashboard, match: 'prefix' as const },
+  { href: '/admin/orders/new', label: 'New Offline Order', icon: Store, match: 'exact' as const },
+  { href: '/admin/customers', label: 'Customers', icon: Users, match: 'prefix' as const },
   { href: '/admin/commissions', label: 'Commissions', icon: HandCoins, match: 'prefix' as const },
   { href: '/admin/design-jobs', label: 'Design jobs', icon: Palette, match: 'prefix' as const },
-  { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
-  { href: '/admin/products?status=inactive', label: 'Drafts', icon: FileEdit, match: 'drafts' as const },
-  { href: '/admin/designs', label: 'Jewelry designs', icon: Palette, match: 'prefix' as const },
   { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
-  { href: '/admin/leads', label: 'Leads', icon: MessageSquare, match: 'prefix' as const },
-  { href: '/admin/agent-sessions', label: 'Ratna AI sessions', icon: Bot, match: 'prefix' as const },
-  { href: '/admin/consultation-plans', label: 'Consultation plans', icon: CalendarClock, match: 'prefix' as const },
 ];
 
 export function StockManagerAdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { signOut } = useAuth();
 
@@ -42,11 +37,9 @@ export function StockManagerAdminLayout({ children }: { children: React.ReactNod
 
   function navActive(match: (typeof STOCK_NAV)[number]['match'], href: string) {
     if (match === 'exact') return pathname === href;
-    if (match === 'prefix') return pathname === href || Boolean(pathname?.startsWith(href));
-    if (match === 'drafts') return pathname === '/admin/products' && searchParams.get('status') === 'inactive';
-    // products: any products path except draft list
-    if (!pathname?.startsWith('/admin/products')) return false;
-    return !(pathname === '/admin/products' && searchParams.get('status') === 'inactive');
+    // Avoid /admin/orders prefix lighting up on /admin/orders/new
+    if (href === '/admin/orders' && pathname?.startsWith('/admin/orders/new')) return false;
+    return pathname === href || Boolean(pathname?.startsWith(`${href}/`));
   }
 
   return (
@@ -62,9 +55,9 @@ export function StockManagerAdminLayout({ children }: { children: React.ReactNod
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
-            <Link href="/admin/stock" className="leading-tight" onClick={() => setSidebarOpen(false)}>
+            <Link href={STOCK_HOME} className="leading-tight" onClick={() => setSidebarOpen(false)}>
               <span className="block text-base font-bold text-gray-950">Order / Stock Incharge</span>
-              <span className="block text-xs text-gray-500">Offline ↔ website stock</span>
+              <span className="block text-xs text-gray-500">Orders & customers</span>
             </Link>
             <div className="flex items-center gap-2">
               <NotificationBell variant="admin" />
@@ -87,14 +80,7 @@ export function StockManagerAdminLayout({ children }: { children: React.ReactNod
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={(e) => {
-                      setSidebarOpen(false);
-                      // products page only reads ?status on mount; force load for drafts filter
-                      if (link.match === 'drafts' || link.match === 'products') {
-                        e.preventDefault();
-                        window.location.assign(link.href);
-                      }
-                    }}
+                    onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-amber-50 text-amber-800 shadow-[inset_3px_0_0_rgba(217,119,6,0.65)]'

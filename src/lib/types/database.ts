@@ -607,6 +607,13 @@ export interface Database {
           payment_review_reason: string | null;
           amount_verified_at: string | null;
           last_payment_event_id: string | null;
+          // week40 offline orders + week45 online advance payments
+          order_source: string;
+          fulfillment_type: string;
+          amount_paid: number;
+          amount_due: number;
+          manual_discount: number;
+          balance_due_notified_at: string | null;
           status: string;
           guest_access_token: string | null;
           reservation_expires_at: string | null;
@@ -675,6 +682,13 @@ export interface Database {
           payment_review_reason?: string | null;
           amount_verified_at?: string | null;
           last_payment_event_id?: string | null;
+          // week40 offline orders + week45 online advance payments
+          order_source?: string;
+          fulfillment_type?: string;
+          amount_paid?: number;
+          amount_due?: number;
+          manual_discount?: number;
+          balance_due_notified_at?: string | null;
           status?: string;
           guest_access_token?: string | null;
           reservation_expires_at?: string | null;
@@ -743,6 +757,13 @@ export interface Database {
           payment_review_reason?: string | null;
           amount_verified_at?: string | null;
           last_payment_event_id?: string | null;
+          // week40 offline orders + week45 online advance payments
+          order_source?: string;
+          fulfillment_type?: string;
+          amount_paid?: number;
+          amount_due?: number;
+          manual_discount?: number;
+          balance_due_notified_at?: string | null;
           status?: string;
           guest_access_token?: string | null;
           reservation_expires_at?: string | null;

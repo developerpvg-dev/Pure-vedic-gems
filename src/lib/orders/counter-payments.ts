@@ -33,6 +33,44 @@ export function inferPaymentKind(amount: number, total: number, priorPaid: numbe
   return 'balance';
 }
 
+/** Smallest share of the order total an online customer may pay upfront. */
+export const ADVANCE_MIN_PERCENT = 20;
+
+/** Advance floor in INR, rounded up to the rupee so it never lands under 20%. */
+export function minAdvanceAmount(total: number) {
+  return Math.min(roundMoney(total), Math.ceil((roundMoney(total) * ADVANCE_MIN_PERCENT) / 100));
+}
+
+/**
+ * Amount to charge for the next online payment on an order.
+ *
+ * First leg: customer picks anything from the 20% floor up to the full total.
+ * Second leg: always settles the whole remaining balance — no third payment.
+ * Throws with a customer-safe message when the requested amount is not allowed.
+ */
+export function resolveOnlinePaymentAmount(
+  total: number,
+  amountPaid: number,
+  requested?: number | null,
+): { amount: number; kind: Extract<CounterPaymentKind, 'advance' | 'balance' | 'full'> } {
+  const totalR = roundMoney(total);
+  const due = roundMoney(totalR - roundMoney(amountPaid));
+  if (due <= 0.009) throw new Error('This order is already fully paid.');
+  if (roundMoney(amountPaid) > 0.009) return { amount: due, kind: 'balance' };
+
+  const amount = requested == null ? totalR : roundMoney(requested);
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter a valid payment amount.');
+  if (amount > totalR + 0.009) throw new Error('Payment amount exceeds the order total.');
+
+  const floor = minAdvanceAmount(totalR);
+  if (amount < floor - 0.009) {
+    throw new Error(
+      `Minimum advance for this order is ₹${floor.toLocaleString('en-IN')} (${ADVANCE_MIN_PERCENT}% of the total).`,
+    );
+  }
+  return { amount, kind: amount >= totalR - 0.009 ? 'full' : 'advance' };
+}
+
 // ponytail: `npx tsx -e "import { __orderPaymentsSelfCheck } from './src/lib/orders/counter-payments.ts'; __orderPaymentsSelfCheck()"`
 export function __orderPaymentsSelfCheck() {
   const a = applyPaymentToBalances(10000, 0, 3000);
@@ -49,5 +87,34 @@ export function __orderPaymentsSelfCheck() {
   console.assert(inferPaymentKind(10000, 10000, 0) === 'full');
   console.assert(inferPaymentKind(3000, 10000, 0) === 'advance');
   console.assert(inferPaymentKind(7000, 10000, 3000) === 'balance');
+
+  // ── Online advance rules ──────────────────────────────────────────────
+  console.assert(minAdvanceAmount(10000) === 2000, '20% of 10000');
+  console.assert(minAdvanceAmount(1001) === 201, 'floor rounds up, never under 20%');
+  console.assert(minAdvanceAmount(50) === 10, 'small totals still 20%');
+
+  const adv = resolveOnlinePaymentAmount(10000, 0, 2000);
+  console.assert(adv.amount === 2000 && adv.kind === 'advance', 'exact 20% allowed');
+  console.assert(resolveOnlinePaymentAmount(10000, 0, 10000).kind === 'full', '100% is full');
+  console.assert(resolveOnlinePaymentAmount(10000, 0).amount === 10000, 'no request = pay in full');
+
+  const bal = resolveOnlinePaymentAmount(10000, 2000, 500);
+  console.assert(bal.amount === 8000 && bal.kind === 'balance', 'balance ignores request, settles all');
+
+  for (const [total, paid, req, why] of [
+    [10000, 0, 1999, 'below 20% floor'],
+    [10000, 0, 10001, 'above total'],
+    [10000, 0, 0, 'zero'],
+    [10000, 10000, 100, 'already paid'],
+  ] as const) {
+    let rejected = false;
+    try {
+      resolveOnlinePaymentAmount(total, paid, req);
+    } catch {
+      rejected = true;
+    }
+    console.assert(rejected, `must reject: ${why}`);
+  }
+
   console.log('order counter-payments self-check ok');
 }
