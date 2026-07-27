@@ -149,7 +149,7 @@ export async function POST(
   }
 
   const orderRow = order as Order;
-  const items = (Array.isArray(orderRow.items) ? orderRow.items : []) as OrderItemRecord[];
+  const items = (Array.isArray(orderRow.items) ? orderRow.items : []) as unknown as OrderItemRecord[];
 
   if (parsed.data.action === 'notify') {
     const idx =
