@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase/server';
 import type { OrderRecord, OrderItemRecord } from '@/lib/types/order';
 import { OrderActions } from '@/components/admin/OrderActions';
 import { OrderAssignDesigner } from '@/components/admin/OrderAssignDesigner';
+import { OrderMetalWeightEditor } from '@/components/admin/OrderMetalWeightEditor';
 import { OrderPaymentLedger } from '@/components/admin/OrderPaymentLedger';
 import { BankTransferManagePanel } from '@/components/admin/BankTransferManagePanel';
 import { AdminOrderDetailShell } from '@/components/admin/AdminOrderDetailShell';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
-import { hasAdminPermission } from '@/lib/admin/rbac';
+import { hasAdminPermission, normalizeAdminRole } from '@/lib/admin/rbac';
 import type { Json } from '@/lib/types/database';
 import {
   energizationFormFromOrderItems,
@@ -205,6 +206,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
     'orders.write',
     (viewer?.permissions ?? null) as Json,
   );
+  // Parcel Dispatch ships parcels — design work slip is out of scope for them
+  const canManageDesign =
+    canWriteOrders && normalizeAdminRole(viewer?.role) !== 'fulfillment';
 
   const { data: raw } = await supabase
     .from('orders')
@@ -853,6 +857,20 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                     value={METAL_LABELS[selections.metal] ?? cap(selections.metal) ?? ''}
                                   />
                                 ) : null}
+                                {(pricing?.metal_weight_grams ?? 0) > 0 ? (
+                                  <Spec
+                                    label="Metal weight"
+                                    value={`${pricing?.metal_weight_grams} g`}
+                                    sub={
+                                      pricing?.quoted_metal_weight_grams != null &&
+                                      pricing.quoted_metal_weight_grams !== pricing.metal_weight_grams
+                                        ? `Quoted ${pricing.quoted_metal_weight_grams} g`
+                                        : pricing?.gold_rate_per_gram
+                                          ? `₹${Number(pricing.gold_rate_per_gram).toLocaleString('en-IN')}/g`
+                                          : undefined
+                                    }
+                                  />
+                                ) : null}
                                 {selections?.ring_size ? (
                                   <Spec label="Ring size" value={selections.ring_size} />
                                 ) : null}
@@ -977,6 +995,25 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                   </div>
                                 </div>
                               </div>
+
+                              {!rudrakshaConfig &&
+                              (Number(pricing?.metal_weight_grams ?? 0) > 0 ||
+                                pricing?.jewelry_pricing_mode === 'weight') &&
+                              Number(pricing?.gold_rate_per_gram ?? 0) > 0 ? (
+                                <OrderMetalWeightEditor
+                                  orderId={o.id}
+                                  itemIndex={idx}
+                                  currentWeightGrams={Number(pricing?.metal_weight_grams ?? 0)}
+                                  quotedWeightGrams={
+                                    pricing?.quoted_metal_weight_grams ??
+                                    pricing?.metal_weight_grams ??
+                                    null
+                                  }
+                                  goldRatePerGram={Number(pricing?.gold_rate_per_gram ?? 0)}
+                                  metalPrice={Number(pricing?.metal_price ?? 0)}
+                                  itemName={designName ?? item.name}
+                                />
+                              ) : null}
                             </div>
                           ) : item.configuration_summary || item.configuration_snapshot ? (
                             <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50/60 px-3 py-2.5 text-xs">
@@ -1090,7 +1127,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
         }
         manage={
           canWriteOrders ? (
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className={`grid gap-5 ${canManageDesign ? 'lg:grid-cols-2' : ''}`}>
+            {canManageDesign ? (
             <OrderAssignDesigner
               orderId={o.id}
               orderNumber={o.order_number}
@@ -1104,6 +1142,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               currentDesignMetalEstimate={orderExtras.design_metal_estimate ?? null}
               slipItems={slipItems}
             />
+            ) : null}
 
             <OrderActions
               orderId={o.id}
@@ -1140,6 +1179,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
               currentCommissionName={orderExtras.commission_name ?? null}
               currentCommissionAmount={orderExtras.commission_amount ?? null}
               currentCommissions={orderExtras.commissions ?? []}
+              paymentStatus={o.payment_status ?? null}
+              amountPaid={o.amount_paid ?? null}
+              amountDue={o.amount_due ?? null}
             />
           </div>
           ) : (

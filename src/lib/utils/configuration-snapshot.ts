@@ -73,6 +73,8 @@ export interface ConfigurationSnapshot {
     design_note?: string | null;
     metal_price?: number;
     metal_weight_grams?: number;
+    /** Original quoted weight before any post-order actual-weight edit. */
+    quoted_metal_weight_grams?: number;
     gold_rate_per_gram?: number;
     labor_rate_percent?: number;
     jewelry_pricing_mode?: string | null;

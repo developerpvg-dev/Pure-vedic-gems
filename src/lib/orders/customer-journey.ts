@@ -94,6 +94,7 @@ function isStepDone(
     case 'processing':
       if (context.needsCrafting) {
         return (
+          (context.showCertification && statusAtLeast(order.status, 'certification')) ||
           !!order.assigned_designer_id ||
           isDesignPhaseStatus(order.status) ||
           craftingComplete(order)
@@ -105,7 +106,13 @@ function isStepDone(
     case 'preparation':
       return statusAtLeast(order.status, 'quality_check') || !!order.tracking_number;
     case 'certification':
-      return statusAtLeast(order.status, 'energization') || statusAtLeast(order.status, 'quality_check') || !!order.tracking_number;
+      // Done once past cert — design (early-cert jewelry) or QC/ship (loose gems).
+      return (
+        statusAtLeast(order.status, 'design_assigned') ||
+        statusAtLeast(order.status, 'energization') ||
+        statusAtLeast(order.status, 'quality_check') ||
+        !!order.tracking_number
+      );
     case 'energization':
       return (
         !!order.puja_video_url ||

@@ -88,12 +88,24 @@ export function TransactionalEmail({
             </Heading>
             <table style={detailTableStyle} cellPadding={0} cellSpacing={0}>
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.label}>
-                    <td style={detailLabelStyle}>{row.label}</td>
-                    <td style={detailValueStyle}>{String(row.value)}</td>
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const text = String(row.value);
+                  const isHttp = /^https?:\/\//i.test(text);
+                  return (
+                    <tr key={row.label}>
+                      <td style={detailLabelStyle}>{row.label}</td>
+                      <td style={detailValueStyle}>
+                        {isHttp ? (
+                          <Link href={text} style={{ ...detailValueStyle, color: '#1c1917' }}>
+                            View photo
+                          </Link>
+                        ) : (
+                          text
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </>

@@ -7,7 +7,7 @@ import '../tools-page.css';
 
 export const metadata: Metadata = buildMetadata({
   title: 'Carat to Ratti Converter | PureVedicGems Tools',
-  description: 'Convert gemstone carat weight to Indian ratti using 1 carat = 1.1 ratti, with buying guidance for certified Vedic gemstones.',
+  description: 'Convert gemstone carat weight to Indian ratti using 1 carat = 1.09 ratti, with buying guidance for certified Vedic gemstones.',
   path: '/tools/carat-to-ratti',
 });
 
@@ -41,7 +41,7 @@ export default function CaratToRattiPage() {
 
       <JsonLd data={[
         breadcrumbJsonLd([{ name: 'Home', href: '/' }, { name: 'Tools', href: '/tools/recommendation' }, { name: 'Carat to Ratti', href: '/tools/carat-to-ratti' }]),
-        howToJsonLd({ name: 'Convert carat to ratti', description: 'Use 1 carat = 1.1 ratti for gemstone weight conversion.', path: '/tools/carat-to-ratti', steps: ['Enter the gemstone weight in carats.', 'Review the automatically calculated ratti value.', 'Use the result alongside certificate, origin, treatment, and setting guidance.'] }),
+        howToJsonLd({ name: 'Convert carat to ratti', description: 'Use 1 carat = 1.09 ratti for gemstone weight conversion.', path: '/tools/carat-to-ratti', steps: ['Enter the gemstone weight in carats.', 'Review the automatically calculated ratti value.', 'Use the result alongside certificate, origin, treatment, and setting guidance.'] }),
       ]} />
     </main>
   );

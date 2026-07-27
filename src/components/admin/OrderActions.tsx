@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react';
 import {
   Loader2, Save, ChevronRight, ChevronDown, MessageCircle,
-  PackageCheck, Gem, Ban, Banknote, RotateCcw, Plus, Trash2,
+  PackageCheck, Gem, Ban, Banknote, RotateCcw, Plus, Trash2, ShieldCheck, Truck,
 } from 'lucide-react';
 import {
   FULFILLMENT_PROFILE_LABELS,
@@ -20,6 +20,11 @@ import {
   requiresVerifiedReturnImages,
   type ReturnStatus,
 } from '@/lib/orders/returns';
+import {
+  isDispatchPaymentVerified,
+  parseProofOfDelivery,
+  deliveryProofProxyUrl,
+} from '@/lib/orders/dispatch-proof';
 
 const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
 
@@ -104,6 +109,9 @@ interface OrderActionsProps {
     name: string;
     amount: number;
   }>;
+  paymentStatus?: string | null;
+  amountPaid?: number | null;
+  amountDue?: number | null;
 }
 
 export function OrderActions({
@@ -136,6 +144,9 @@ export function OrderActions({
   currentCommissionName = null,
   currentCommissionAmount = null,
   currentCommissions,
+  paymentStatus = null,
+  amountPaid = null,
+  amountDue = null,
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -179,8 +190,20 @@ export function OrderActions({
   const [openReturns, setOpenReturns] = useState(hasActiveReturn);
   const [openRefund, setOpenRefund] = useState(currentStatus === 'cancelled');
   const [openCommission, setOpenCommission] = useState(commissions.length > 0);
+  const [podDetails, setPodDetails] = useState(
+    () => parseProofOfDelivery(complianceFlags)?.details ?? '',
+  );
+  const [podFiles, setPodFiles] = useState<FileList | null>(null);
 
   const returnMeta = parseComplianceFlags(flagsState);
+  const paymentVerifiedStamp = isDispatchPaymentVerified(flagsState);
+  // Legacy mid-pipeline orders without a stamp stay usable
+  const paymentVerified =
+    paymentVerifiedStamp ||
+    !['pending_payment', 'placed', 'confirmed', 'payment_review', 'cancelled', 'refunded'].includes(
+      status,
+    );
+  const deliveryProof = parseProofOfDelivery(flagsState);
   const returnImages = returnMeta.return_image_urls ?? [];
   const imagesVerified = areReturnImagesVerified(returnMeta);
   const needsImageVerify = requiresVerifiedReturnImages(returnMeta, savedReturnStatus);
@@ -287,6 +310,10 @@ export function OrderActions({
           }));
         }
         if (data.products_marked_sold_at) setMarkedSoldAt(data.products_marked_sold_at);
+        const actionName =
+          body instanceof FormData
+            ? String(body.get('action') || '')
+            : String((body as { action?: string }).action || '');
         setSuccess(
           data.status === 'cancelled'
             ? 'Order cancelled — stock restored'
@@ -296,7 +323,13 @@ export function OrderActions({
                 ? 'Customer return photos verified'
               : data.return_status
                 ? `Return → ${RETURN_STATUS_LABELS[data.return_status as ReturnStatus] ?? data.return_status}`
-                : 'Marked sold',
+                : actionName === 'verify_dispatch_payment'
+                  ? 'Payment verified — fulfillment unlocked'
+                  : actionName === 'send_delivery_proof' || data.proof_sent
+                    ? 'Delivery proof sent to customer'
+                    : actionName === 'save_delivery_proof'
+                      ? 'Delivery proof saved'
+                      : 'Marked sold',
         );
         setTimeout(() => setSuccess(''), 4000);
       } catch {
@@ -386,10 +419,42 @@ export function OrderActions({
     void runOrderAction({ action: 'verify_return_images' });
   };
 
+  const verifyDispatchPayment = () => {
+    if (
+      !confirm(
+        'Confirm you checked that payment was received for this order? Fulfillment will unlock after verify.',
+      )
+    ) {
+      return;
+    }
+    void runOrderAction({ action: 'verify_dispatch_payment' });
+  };
+
+  const saveDeliveryProof = (send: boolean) => {
+    const hasExisting = (deliveryProof?.image_urls.length ?? 0) > 0;
+    const hasNew = Boolean(podFiles && podFiles.length > 0);
+    if (!hasExisting && !hasNew) {
+      setError('Attach at least one delivery proof image');
+      return;
+    }
+    if (send && !confirm('Save proof and email it to the customer?')) return;
+    const form = new FormData();
+    form.set('action', send ? 'send_delivery_proof' : 'save_delivery_proof');
+    form.set('details', podDetails.trim());
+    if (deliveryProof?.image_urls.length) {
+      form.set('image_urls', deliveryProof.image_urls.join(','));
+    }
+    if (podFiles) {
+      Array.from(podFiles).forEach((file) => form.append('proofs', file));
+    }
+    void runOrderAction(form).then(() => setPodFiles(null));
+  };
+
   const productCompleted =
     !!designCompletedAt ||
     status === 'design_completed' ||
-    ['jewelry_making', 'certification', 'energization', 'quality_check', 'shipped', 'out_for_delivery', 'delivered', 'feedback'].includes(
+    // certification is early (before design) — do not treat it as product-complete
+    ['jewelry_making', 'energization', 'quality_check', 'shipped', 'out_for_delivery', 'delivered', 'feedback'].includes(
       status,
     );
 
@@ -456,6 +521,45 @@ export function OrderActions({
         </div>
       ) : null}
 
+      {!isTerminal ? (
+        paymentVerifiedStamp ? (
+          <div className="border-b border-emerald-100 bg-emerald-50/80 px-5 py-3 text-sm text-emerald-900">
+            <p className="flex items-center gap-2 font-semibold">
+              <ShieldCheck className="h-4 w-4" />
+              Payment verified by Parcel Dispatch
+            </p>
+          </div>
+        ) : !paymentVerified ? (
+          <div className="space-y-3 border-b border-amber-100 bg-amber-50/90 px-5 py-4">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-amber-950">
+                <ShieldCheck className="h-4 w-4" />
+                Step 1 — Verify payment
+              </p>
+              <p className="mt-1 text-xs text-amber-900/80">
+                Check that payment was received, then mark verified. Fulfillment stays locked until then.
+              </p>
+              <p className="mt-1.5 text-xs text-amber-900/70">
+                Payment: {paymentStatus || '—'}
+                {amountPaid != null ? ` · Paid ₹${Number(amountPaid).toLocaleString('en-IN')}` : ''}
+                {amountDue != null && Number(amountDue) > 0.009
+                  ? ` · Due ₹${Number(amountDue).toLocaleString('en-IN')}`
+                  : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={verifyDispatchPayment}
+              disabled={saving}
+              className={btnPrimary}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              Mark payment verified
+            </button>
+          </div>
+        ) : null
+      ) : null}
+
       {(success || error) && (
         <div className="border-b border-stone-100 px-5 py-2.5">
           {success ? (
@@ -475,10 +579,14 @@ export function OrderActions({
           <button
             type="button"
             onClick={advanceStatus}
-            disabled={saving}
+            disabled={saving || !paymentVerified}
             className="flex w-full items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-50"
           >
-            <span>Advance → {statusLabels[nextStatus] ?? nextStatus}</span>
+            <span>
+              {paymentVerified
+                ? `Advance → ${statusLabels[nextStatus] ?? nextStatus}`
+                : 'Verify payment to advance'}
+            </span>
             <ChevronRight className="h-4 w-4" />
           </button>
         ) : null}
@@ -614,6 +722,87 @@ export function OrderActions({
             />
           </div>
         </div>
+
+        {status === 'delivered' || status === 'feedback' || deliveryStatus === 'delivered' ? (
+          <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50/70 p-3">
+            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+              <Truck className="h-3.5 w-3.5" />
+              Proof of delivery
+            </p>
+            {deliveryProof?.image_urls.length ? (
+              <div className="flex flex-wrap gap-2">
+                {deliveryProof.image_urls.map((_, index) => (
+                  <a
+                    key={index}
+                    href={deliveryProofProxyUrl(orderId, index)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block h-16 w-16 overflow-hidden rounded-lg border border-stone-200 bg-white"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={deliveryProofProxyUrl(orderId, index)}
+                      alt={`Delivery proof ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+            ) : null}
+            {deliveryProof?.sent_at ? (
+              <p className="text-xs text-emerald-700">
+                Sent to customer{' '}
+                {new Date(deliveryProof.sent_at).toLocaleString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </p>
+            ) : null}
+            <div>
+              <label className={labelCls}>Delivery details</label>
+              <textarea
+                value={podDetails}
+                onChange={(e) => setPodDetails(e.target.value)}
+                rows={2}
+                placeholder="Recipient name, location notes, courier remark…"
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Attach proof images</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                onChange={(e) => setPodFiles(e.target.files)}
+                className="block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+              />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => saveDeliveryProof(false)}
+                disabled={saving}
+                className={btnGhost}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save proof
+              </button>
+              <button
+                type="button"
+                onClick={() => saveDeliveryProof(true)}
+                disabled={saving}
+                className={btnPrimary}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                Send proof to customer
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <button
           type="button"

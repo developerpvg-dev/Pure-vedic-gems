@@ -79,13 +79,6 @@ export function resolveLineItemFulfillmentProfile(
   return 'loose_gemstone';
 }
 
-function orderHasCertification(items: LineItemForFulfillment[]): boolean {
-  return items.some((item) => {
-    const snapshot = parseConfigurationSnapshot(item.configuration_snapshot);
-    return Boolean(snapshot?.selections?.certification?.name);
-  });
-}
-
 export function resolveOrderFulfillmentContext(args: {
   items: LineItemForFulfillment[];
   includeEnergization?: boolean;
@@ -111,8 +104,8 @@ export function resolveOrderFulfillmentContext(args: {
     profile = dominant;
   }
 
-  const hasCertification =
-    (args.certificationCharges ?? 0) > 0 || orderHasCertification(args.items);
+  // Paid additional labs only — free lab (extra_charge 0) skips the certification stage.
+  const hasCertification = (args.certificationCharges ?? 0) > 0;
   const hasEnergization = Boolean(args.includeEnergization) || (args.energizationCharges ?? 0) > 0;
 
   const needsCrafting =
@@ -186,16 +179,22 @@ export function getJourneyStepsForContext(context: OrderFulfillmentContext): Jou
     { key: 'confirmed', label: 'Confirmed', shortLabel: 'OK' },
   ];
 
+  const needsEarlyCert =
+    context.showCertification &&
+    (profile === 'configured_jewelry' || profile === 'rudraksha_configured');
+
   if (profile === 'configured_jewelry') {
-    steps.push(
-      { key: 'processing', label: 'Design Routing', shortLabel: 'Route' },
-      { key: 'crafting', label: 'Jewelry Crafting', shortLabel: 'Craft' }
-    );
+    steps.push({ key: 'processing', label: 'Design Routing', shortLabel: 'Route' });
+    if (needsEarlyCert) {
+      steps.push({ key: 'certification', label: 'Certification', shortLabel: 'Cert' });
+    }
+    steps.push({ key: 'crafting', label: 'Jewelry Crafting', shortLabel: 'Craft' });
   } else if (profile === 'rudraksha_configured') {
-    steps.push(
-      { key: 'processing', label: 'Beads Verified', shortLabel: 'Verify' },
-      { key: 'crafting', label: 'Pendant Mounting', shortLabel: 'Mount' }
-    );
+    steps.push({ key: 'processing', label: 'Beads Verified', shortLabel: 'Verify' });
+    if (needsEarlyCert) {
+      steps.push({ key: 'certification', label: 'Certification', shortLabel: 'Cert' });
+    }
+    steps.push({ key: 'crafting', label: 'Pendant Mounting', shortLabel: 'Mount' });
   } else if (profile === 'rudraksha_loose') {
     steps.push({ key: 'processing', label: 'Bead Preparation', shortLabel: 'Prep' });
   } else if (profile === 'loose_gemstone') {
@@ -210,7 +209,8 @@ export function getJourneyStepsForContext(context: OrderFulfillmentContext): Jou
     steps.push({ key: 'processing', label: 'Processing', shortLabel: 'Prep' });
   }
 
-  if (context.showCertification) {
+  // Loose / non-crafted: certification after prep. Crafted jewelry already inserted it early.
+  if (context.showCertification && !needsEarlyCert) {
     steps.push({ key: 'certification', label: 'Certification', shortLabel: 'Cert' });
   }
 
@@ -241,11 +241,11 @@ export const ADMIN_STATUS_PIPELINE = [
   'placed',
   'confirmed',
   'processing',
+  'certification',
   'design_assigned',
   'design_in_progress',
   'design_completed',
   'jewelry_making',
-  'certification',
   'energization',
   'quality_check',
   'shipped',
@@ -266,15 +266,15 @@ export function getAdminStatusPipeline(context: OrderFulfillmentContext): AdminO
   const tail: AdminOrderStatus[] = ['shipped', 'out_for_delivery', 'delivered', 'feedback'];
 
   if (profile === 'configured_jewelry' || profile === 'rudraksha_configured') {
-    const mid: AdminOrderStatus[] = [
-      'confirmed',
-      'processing',
+    // Paid cert first: stone goes to lab before design is assigned.
+    const mid: AdminOrderStatus[] = ['confirmed', 'processing'];
+    if (context.showCertification) mid.push('certification');
+    mid.push(
       'design_assigned',
       'design_in_progress',
       'design_completed',
       'jewelry_making',
-    ];
-    if (context.showCertification) mid.push('certification');
+    );
     if (context.showEnergization && profile === 'configured_jewelry') mid.push('energization');
     mid.push('quality_check');
     return ['pending_payment', 'placed', ...mid, ...tail];
@@ -353,11 +353,12 @@ export const STATUS_RANK: Record<string, number> = {
   placed: 10,
   confirmed: 20,
   processing: 30,
+  // Paid cert sits between prep and design (stone → lab → then craft).
+  certification: 35,
   design_assigned: 40,
   design_in_progress: 50,
   design_completed: 60,
   jewelry_making: 70,
-  certification: 80,
   energization: 90,
   quality_check: 100,
   shipped: 110,

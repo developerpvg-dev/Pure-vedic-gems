@@ -27,6 +27,7 @@ import {
   productStructuredOfferPrice,
 } from '@/lib/shop/product-pricing';
 import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
+import { isNoCertification } from '@/lib/utils/format';
 
 export const revalidate = 300;
 
@@ -51,7 +52,7 @@ function buildSKUMeta(product: Product): string {
   if (product.origin) parts.push(product.origin);
   if (product.shape) parts.push(product.shape);
   if (product.treatment && product.treatment !== 'none') parts.push(product.treatment);
-  if (product.certification) parts.push(product.certification);
+  if (product.certification && !isNoCertification(product.certification)) parts.push(product.certification);
   return parts.join(' · ');
 }
 
@@ -458,7 +459,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
               {/* Product name + SKU */}
               <div>
                 <div className="mb-1 flex flex-wrap items-center gap-1 lg:mb-2 lg:gap-1.5">
-                  {product.certification && (
+                  {product.certification && !isNoCertification(product.certification) && (
                     <span className="rounded border border-[#7A1515]/25 px-2 py-0.5 text-[10px] font-medium text-[#7A1515]">
                       {product.certification} Certified
                     </span>
@@ -509,8 +510,12 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                   { label: 'Quality', value: product.quality_label ?? product.commercial_quality_grade },
                   { label: 'Treatment', value: product.treatment_summary ?? formatLabel(product.treatment) },
                   { label: 'Dimensions', value: formatDimensions(product.dimensions_mm) },
-                  { label: 'Lab', value: product.certificate_lab ?? product.certification },
-                  { label: 'Certificate No.', value: product.certificate_number },
+                  ...(!isNoCertification(product.certification)
+                    ? [
+                        { label: 'Lab', value: product.certificate_lab ?? product.certification },
+                        { label: 'Certificate No.', value: product.certificate_number },
+                      ]
+                    : []),
                   { label: 'Planet', value: product.planet },
                   { label: 'Rashi', value: product.rashi },
                   { label: 'Vedic Name', value: product.vedic_name },

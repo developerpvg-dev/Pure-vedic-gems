@@ -3,8 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRightLeft, Scale } from 'lucide-react';
 import { trackAnalyticsEvent } from '@/lib/utils/analytics';
-
-const RATTI_PER_CARAT = 1.1;
+import { RATTI_PER_CARAT, caratToRatti, rattiToCarat } from '@/lib/utils/format';
 
 function formatDecimal(value: number) {
   if (!Number.isFinite(value)) return '';
@@ -13,7 +12,7 @@ function formatDecimal(value: number) {
 
 export function CaratRattiTool() {
   const [carat, setCarat] = useState('1');
-  const ratti = useMemo(() => formatDecimal(Number(carat || 0) * RATTI_PER_CARAT), [carat]);
+  const ratti = useMemo(() => formatDecimal(caratToRatti(Number(carat || 0))), [carat]);
   const quickValues = [1, 2, 3, 5, 7.25, 9];
 
   const updateCarat = (value: string) => {
@@ -22,8 +21,7 @@ export function CaratRattiTool() {
   };
 
   const updateRatti = (value: string) => {
-    const nextCarat = Number(value || 0) / RATTI_PER_CARAT;
-    setCarat(value ? formatDecimal(nextCarat) : '');
+    setCarat(value ? formatDecimal(rattiToCarat(Number(value || 0))) : '');
     trackAnalyticsEvent('tool_use', { tool: 'carat_to_ratti', input_unit: 'ratti' });
   };
 
@@ -36,7 +34,7 @@ export function CaratRattiTool() {
           </div>
           <div>
             <h2 className="pvg-tool-card-title">Carat to Ratti Converter</h2>
-            <p className="pvg-tool-card-sub">Using 1 carat = 1.1 ratti.</p>
+            <p className="pvg-tool-card-sub">Using 1 carat = {RATTI_PER_CARAT} ratti.</p>
           </div>
         </div>
 

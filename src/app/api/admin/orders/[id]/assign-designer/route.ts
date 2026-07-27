@@ -30,6 +30,10 @@ export async function POST(
 ) {
   const auth = await requireAdminAccess('orders.write');
   if ('error' in auth) return auth.error;
+  // Parcel Dispatch may ship/track but must not edit design work slips
+  if (auth.member.normalizedRole === 'fulfillment') {
+    return NextResponse.json({ error: 'Design work slip is not editable for Parcel Dispatch' }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = (await request.json().catch(() => null)) as AssignBody | null;

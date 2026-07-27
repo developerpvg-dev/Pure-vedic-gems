@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { MediaUploader, type MediaFile } from '@/components/admin/MediaUploader';
 import { productCategoryToStorefrontGroupSlug } from '@/lib/categories/storefront';
 import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
+import { caratToRatti, isNoCertification } from '@/lib/utils/format';
 import {
   CharCounter,
   FaqEditor,
@@ -478,6 +479,20 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     }
   }
 
+  function handleCaratChange(val: string) {
+    setCaratWeight(val);
+    const cw = parseFloat(val);
+    if (!Number.isNaN(cw) && cw > 0) {
+      setRattiWeight(String(caratToRatti(cw)));
+      const ppc = parseFloat(pricePerCarat);
+      if (!Number.isNaN(ppc) && ppc > 0) {
+        setPrice(String(Math.round(ppc * cw)));
+      }
+    } else if (!val.trim()) {
+      setRattiWeight('');
+    }
+  }
+
   function handlePerCaratChange(val: string) {
     setPricePerCarat(val);
     const ppc = parseFloat(val);
@@ -487,11 +502,28 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     }
   }
 
+  function handleCertificationChange(val: string) {
+    setCertification(val);
+    if (isNoCertification(val)) {
+      setCertificateNumber('');
+      setCertificateLab('');
+      setCertificateDisplayEnabled(false);
+    }
+  }
+
   const steps = config.steps;
   const totalSteps = steps.length;
 
   function stepFor(section: SectionKey) {
     return Math.max(1, steps.indexOf(section) + 1);
+  }
+
+  function isOnDemandFromPricing() {
+    // Gems: empty per-carat rate → on demand. Other kinds: empty sale price → on demand.
+    if (config.kind === 'navratna' || config.kind === 'upratna') {
+      return !pricePerCarat.trim();
+    }
+    return !price.trim();
   }
 
   function validateRequiredFields() {
@@ -510,7 +542,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     if (config.kind === 'jewellery' && (!jewelleryType || !baseMetal)) {
       return { message: 'Jewellery type and base metal are required for Vedic Jewellery.', section: 'jewellery' as SectionKey };
     }
-    if (!price.trim()) {
+    // Empty price fields intentionally mean on-demand — no sale price required
+    if (!isOnDemandFromPricing() && !price.trim()) {
       return { message: 'Sale / final price is required.', section: 'pricing' as SectionKey };
     }
     return null;
@@ -538,17 +571,24 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     );
     const defaultCanonicalUrl = productCanonicalUrl(config.category, trimmedSlug);
     const effectiveOrigin = config.kind === 'rudraksha' ? rudrakshaOrigin || undefined : origin || undefined;
+    const onDemandPricing = isOnDemandFromPricing();
     // ponytail: each piece is unique — stock is only 0 or 1
     const unavailableStatuses = ['sold', 'reserved', 'out_of_stock', 'archived'];
     const stockQuantity =
-      inStock && !unavailableStatuses.includes(availabilityStatus) ? 1 : 0;
-    const effectiveAvailabilityStatus =
-      stockQuantity <= 0 && availabilityStatus === 'in_stock'
+      inStock && !unavailableStatuses.includes(availabilityStatus) && !onDemandPricing ? 1 : 0;
+    const effectiveAvailabilityStatus = onDemandPricing
+      ? 'on_demand'
+      : stockQuantity <= 0 && availabilityStatus === 'in_stock'
         ? 'out_of_stock'
         : availabilityStatus;
     const effectiveInStock =
       inStock && stockQuantity > 0 && effectiveAvailabilityStatus === 'in_stock';
     const effectiveConfiguratorEnabled = configuratorEnabled || isDirectorsPick;
+    const effectivePriceMode = onDemandPricing
+      ? 'on_demand'
+      : pricePerCarat.trim()
+        ? 'per_carat'
+        : 'fixed';
 
     const seo_data: Record<string, unknown> = {
       ...initialSeoData,
@@ -590,11 +630,16 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
             unit: 'mm',
           }
         : undefined,
-      certification: certification || undefined,
-      certificate_number: certificateNumber || undefined,
-      certificate_lab: certificateLab || certification || undefined,
-      certificate_status: certificateDisplayEnabled || certification ? 'available' : 'not_required',
-      certificate_display_enabled: certificateDisplayEnabled,
+      // Keep "None" so the API can null out leftover lab fields on update
+      certification: isNoCertification(certification) ? (certification.trim() || 'None') : certification || undefined,
+      certificate_number: isNoCertification(certification) ? undefined : certificateNumber || undefined,
+      certificate_lab: isNoCertification(certification) ? undefined : certificateLab || certification || undefined,
+      certificate_status: isNoCertification(certification)
+        ? 'not_required'
+        : certificateDisplayEnabled || certification
+          ? 'available'
+          : 'not_required',
+      certificate_display_enabled: isNoCertification(certification) ? false : certificateDisplayEnabled,
 
       // Rudraksha
       mukhi_count: config.kind === 'rudraksha' ? parsePositiveInteger(mukhiCount) : undefined,
@@ -622,10 +667,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       making_charge: config.kind === 'jewellery' ? parsePositiveNumber(makingCharge) : undefined,
       ready_stock: config.kind === 'jewellery' ? readyStock : undefined,
 
-      // Pricing
+      // Pricing — empty per-carat (gems) or empty sale price (other kinds) → on_demand
       price: parseFloat(price) || 0,
-      price_mode: pricePerCarat ? 'per_carat' : availabilityStatus === 'on_demand' ? 'on_demand' : 'fixed',
-      price_per_carat: pricePerCarat ? parseFloat(pricePerCarat) : undefined,
+      price_mode: effectivePriceMode,
+      price_per_carat: pricePerCarat.trim() ? parseFloat(pricePerCarat) : undefined,
       compare_price: comparePrice ? parseFloat(comparePrice) : undefined,
 
       // Vedic
@@ -889,11 +934,11 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <Label htmlFor="carat_weight">Carat Weight *</Label>
-              <FormInput id="carat_weight" value={caratWeight} onChange={setCaratWeight} placeholder="e.g. 4.51" type="number" />
+              <FormInput id="carat_weight" value={caratWeight} onChange={handleCaratChange} placeholder="e.g. 4.51" type="number" />
             </div>
             <div>
               <Label htmlFor="ratti_weight">Ratti Weight</Label>
-              <FormInput id="ratti_weight" value={rattiWeight} onChange={setRattiWeight} placeholder="e.g. 5.00" type="number" />
+              <FormInput id="ratti_weight" value={rattiWeight} onChange={setRattiWeight} placeholder="auto from carat (×1.09)" type="number" />
             </div>
             <div>
               <Label htmlFor="quality">Quality Grade</Label>
@@ -955,26 +1000,30 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
             </div>
             <div>
               <Label htmlFor="certification">Certification Lab</Label>
-              <FormSelect id="certification" value={certification} onChange={setCertification} options={CERTIFICATIONS} placeholder="Select lab" />
+              <FormSelect id="certification" value={certification} onChange={handleCertificationChange} options={CERTIFICATIONS} placeholder="Select lab" />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="certificate_number">Certificate Number</Label>
-              <FormInput id="certificate_number" value={certificateNumber} onChange={setCertificateNumber} placeholder="e.g. IGI-GTL-12345" />
-            </div>
-            <div>
-              <Label htmlFor="certificate_lab">Certificate Lab / Authority</Label>
-              <FormInput id="certificate_lab" value={certificateLab} onChange={setCertificateLab} placeholder="e.g. IGI-GTL Delhi" />
-            </div>
-          </div>
+          {!isNoCertification(certification) && (
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="certificate_number">Certificate Number</Label>
+                  <FormInput id="certificate_number" value={certificateNumber} onChange={setCertificateNumber} placeholder="e.g. IGI-GTL-12345" />
+                </div>
+                <div>
+                  <Label htmlFor="certificate_lab">Certificate Lab / Authority</Label>
+                  <FormInput id="certificate_lab" value={certificateLab} onChange={setCertificateLab} placeholder="e.g. IGI-GTL Delhi" />
+                </div>
+              </div>
 
-          <FormCheckbox
-            checked={certificateDisplayEnabled}
-            onChange={setCertificateDisplayEnabled}
-            label="Display certificate / lab report on product page"
-          />
+              <FormCheckbox
+                checked={certificateDisplayEnabled}
+                onChange={setCertificateDisplayEnabled}
+                label="Display certificate / lab report on product page"
+              />
+            </>
+          )}
         </div>
       )}
 
@@ -1026,14 +1075,16 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
             </div>
             <div>
               <Label htmlFor="certification">Authentication Lab</Label>
-              <FormSelect id="certification" value={certification} onChange={setCertification} options={CERTIFICATIONS} placeholder="Select lab" />
+              <FormSelect id="certification" value={certification} onChange={handleCertificationChange} options={CERTIFICATIONS} placeholder="Select lab" />
             </div>
           </div>
 
           <div className="flex flex-wrap gap-4">
             <FormCheckbox checked={xrayCertified} onChange={setXrayCertified} label="X-Ray certified authentic" />
             <FormCheckbox checked={energizationEligible} onChange={setEnergizationEligible} label="Eligible for Vedic energization" />
-            <FormCheckbox checked={certificateDisplayEnabled} onChange={setCertificateDisplayEnabled} label="Display certificate publicly" />
+            {!isNoCertification(certification) && (
+              <FormCheckbox checked={certificateDisplayEnabled} onChange={setCertificateDisplayEnabled} label="Display certificate publicly" />
+            )}
           </div>
         </div>
       )}
@@ -1151,26 +1202,49 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
           <h2 className="text-lg font-semibold text-gray-900">Pricing (INR)</h2>
           <p className="text-sm text-gray-500">
             {config.kind === 'navratna' || config.kind === 'upratna'
-              ? 'Per-carat rate auto-calculates the final price when carat weight is set.'
-              : 'Enter the final selling price and an optional compare price (MRP / strikethrough).'}
+              ? 'Per-carat rate auto-calculates the final price when carat weight is set. Leave Price per Carat empty to mark this gem as on demand.'
+              : 'Enter the final selling price and an optional compare price (MRP / strikethrough). Leave sale price empty to mark this product as on demand.'}
           </p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {(config.kind === 'navratna' || config.kind === 'upratna') && (
               <div>
                 <Label htmlFor="price_per_carat">Price per Carat (₹)</Label>
-                <FormInput id="price_per_carat" value={pricePerCarat} onChange={handlePerCaratChange} placeholder="e.g. 1150" type="number" />
+                <FormInput id="price_per_carat" value={pricePerCarat} onChange={handlePerCaratChange} placeholder="Empty = on demand" type="number" />
               </div>
             )}
             <div>
-              <Label htmlFor="price">Sale / Final Price (₹) *</Label>
-              <FormInput id="price" value={price} onChange={setPrice} placeholder="Auto or manual" type="number" required />
+              <Label htmlFor="price">
+                Sale / Final Price (₹){isOnDemandFromPricing() ? '' : ' *'}
+              </Label>
+              <FormInput
+                id="price"
+                value={price}
+                onChange={setPrice}
+                placeholder={
+                  config.kind === 'navratna' || config.kind === 'upratna'
+                    ? 'Auto or manual'
+                    : 'Empty = on demand'
+                }
+                type="number"
+                required={!isOnDemandFromPricing()}
+              />
             </div>
             <div>
               <Label htmlFor="compare_price">Regular / Compare Price (₹)</Label>
               <FormInput id="compare_price" value={comparePrice} onChange={setComparePrice} placeholder="e.g. 6000" type="number" />
             </div>
           </div>
+
+          {isOnDemandFromPricing() && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              This product will save as <strong>on demand</strong> (price on request) because{' '}
+              {config.kind === 'navratna' || config.kind === 'upratna'
+                ? 'Price per Carat is empty'
+                : 'Sale / Final Price is empty'}
+              .
+            </div>
+          )}
 
           <div className={`rounded-lg ${accent.bg} p-4 text-sm ${accent.text}`}>
             <strong>Tip:</strong> The compare price must be greater than or equal to the sale price.

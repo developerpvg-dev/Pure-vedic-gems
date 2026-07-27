@@ -43,7 +43,9 @@ describe('fulfillment-profile', () => {
       'confirmed',
       'processing',
       'shipped',
+      'out_for_delivery',
       'delivered',
+      'feedback',
     ]);
     expect(context.needsCrafting).toBe(false);
   });
@@ -69,6 +71,39 @@ describe('fulfillment-profile', () => {
     const steps = getJourneyStepsForContext(context).map((step) => step.key);
     expect(steps).toContain('preparation');
     expect(steps).not.toContain('crafting');
+  });
+
+  it('puts certification before design when paid cert charges exist', () => {
+    const context = resolveOrderFulfillmentContext({
+      items: [{
+        category: 'gemstone',
+        configuration_snapshot: { selections: { setting_type: 'ring' } },
+      }],
+      certificationCharges: 1200,
+    });
+    expect(context.showCertification).toBe(true);
+    const pipeline = getAdminStatusPipeline(context);
+    expect(pipeline.indexOf('certification')).toBeLessThan(pipeline.indexOf('design_assigned'));
+    const steps = getJourneyStepsForContext(context).map((s) => s.key);
+    expect(steps.indexOf('certification')).toBeLessThan(steps.indexOf('crafting'));
+  });
+
+  it('skips certification stage for free lab (0 charge)', () => {
+    const context = resolveOrderFulfillmentContext({
+      items: [{
+        category: 'gemstone',
+        configuration_snapshot: {
+          selections: {
+            setting_type: 'ring',
+            certification: { name: 'Free Lab' },
+          },
+        },
+      }],
+      certificationCharges: 0,
+    });
+    expect(context.showCertification).toBe(false);
+    expect(getAdminStatusPipeline(context)).not.toContain('certification');
+    expect(getJourneyStepsForContext(context).map((s) => s.key)).not.toContain('certification');
   });
 });
 

@@ -53,6 +53,33 @@ export function formatEMI(price: number, months = 12): string {
   return formatPrice(Math.ceil(price / months));
 }
 
+/** Catalog / Vedic trade convention: 1 carat = 1.09 ratti (≈ 0.91 ct per ratti). */
+export const RATTI_PER_CARAT = 1.09;
+
+export function caratToRatti(carat: number): number {
+  return Math.round(carat * RATTI_PER_CARAT * 1000) / 1000;
+}
+
+export function rattiToCarat(ratti: number): number {
+  return Math.round((ratti / RATTI_PER_CARAT) * 1000) / 1000;
+}
+
+/** "None" / empty means the product has no lab certificate. */
+export function isNoCertification(value?: string | null): boolean {
+  return !value?.trim() || value.trim().toLowerCase() === 'none';
+}
+
+/** Clear lab fields when certification is None (mutates; use before insert/update). */
+export function applyNoCertificationFields(payload: Record<string, unknown>): void {
+  if (!('certification' in payload)) return;
+  if (!isNoCertification(typeof payload.certification === 'string' ? payload.certification : null)) return;
+  payload.certification = null;
+  payload.certificate_number = null;
+  payload.certificate_lab = null;
+  payload.certificate_status = 'not_required';
+  payload.certificate_display_enabled = false;
+}
+
 /**
  * Format carat weight with up to 2 decimal places, e.g. "4.22 ct"
  */
@@ -84,6 +111,6 @@ export function buildProductMeta(fields: {
   if (fields.origin) parts.push(fields.origin);
   if (fields.shape) parts.push(fields.shape);
   if (fields.treatment && fields.treatment !== 'none') parts.push(fields.treatment);
-  if (fields.certification) parts.push(fields.certification);
+  if (fields.certification && !isNoCertification(fields.certification)) parts.push(fields.certification);
   return parts.join(' · ');
 }

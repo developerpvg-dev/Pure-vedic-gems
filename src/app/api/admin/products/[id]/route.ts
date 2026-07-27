@@ -6,6 +6,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
+import { applyNoCertificationFields } from '@/lib/utils/format';
 
 type RelatedProductPayload = Pick<
   ProductUpdateInput,
@@ -169,6 +170,7 @@ export async function PUT(
     .single();
 
   const { productPayload, relatedPayload } = splitProductPayload(parsed.data);
+  applyNoCertificationFields(productPayload as Record<string, unknown>);
   const updatePayload = { ...productPayload, updated_at: new Date().toISOString() };
   const { data: product, error } = await (admin
     .from('products') as ReturnType<typeof admin.from>)

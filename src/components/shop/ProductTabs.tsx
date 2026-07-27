@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Star, Shield, Book, Gem, MessageSquare } from 'lucide-react';
 import type { Product } from '@/lib/types/product';
+import { isNoCertification } from '@/lib/utils/format';
 
 interface ProductTabsProps {
   product: Product;
@@ -27,7 +28,7 @@ const REVIEWS_PAGE_SIZE = 8;
 
 type TabKey = 'description' | 'vedic' | 'certificate' | 'wearing' | 'reviews';
 
-const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+const ALL_TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'description', label: 'Description', icon: <Book className="h-3.5 w-3.5" /> },
   { key: 'vedic', label: 'Vedic Properties', icon: <Gem className="h-3.5 w-3.5" /> },
   { key: 'certificate', label: 'Certificate', icon: <Shield className="h-3.5 w-3.5" /> },
@@ -68,6 +69,11 @@ function formatLabel(value?: string | null) {
 }
 
 export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: ProductTabsProps) {
+  const showCertificate = !isNoCertification(product.certification);
+  const tabs = useMemo(
+    () => ALL_TABS.filter((tab) => tab.key !== 'certificate' || showCertificate),
+    [showCertificate],
+  );
   const [active, setActive] = useState<TabKey>('description');
   const [reviewFilter, setReviewFilter] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(REVIEWS_PAGE_SIZE);
@@ -89,6 +95,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
   );
   const visibleReviews = filteredReviews.slice(0, visibleCount);
   const hasMoreReviews = visibleCount < filteredReviews.length;
+  const activeTab = tabs.some((tab) => tab.key === active) ? active : 'description';
 
   return (
     <div className="product-tabs">
@@ -97,15 +104,15 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
         className="product-tabs-nav -mx-1 flex overflow-x-auto border-b border-brand-border px-1 max-sm:scrollbar-hide"
         style={{ gap: 0 }}
       >
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActive(tab.key)}
             className="product-tabs-trigger flex shrink-0 items-center gap-1 px-2.5 py-2 text-[10px] font-medium transition-all lg:gap-1.5 lg:px-4 lg:py-2.5 lg:text-[12px] xl:px-5 xl:py-3"
             style={{
-              color: active === tab.key ? 'var(--pvg-primary)' : 'var(--pvg-muted)',
+              color: activeTab === tab.key ? 'var(--pvg-primary)' : 'var(--pvg-muted)',
               borderBottom:
-                active === tab.key
+                activeTab === tab.key
                   ? '1px solid var(--pvg-accent)'
                   : '1px solid transparent',
             }}
@@ -120,7 +127,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
       {/* Tab Content */}
       <div className="py-4 lg:py-6">
         {/* Description */}
-        {active === 'description' && (
+        {activeTab === 'description' && (
           <div className="space-y-4">
             {product.short_desc && (
               <p className="text-[15px] font-medium leading-relaxed text-brand-text">
@@ -157,29 +164,56 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
         )}
 
         {/* Vedic Properties */}
-        {active === 'vedic' && (
+        {activeTab === 'vedic' && (
           <div>
             {product.vedic_significance && (
-              <p className="mb-5 text-[14px] leading-[1.9] text-brand-text">
+              <p className="mb-5 text-[14px] leading-[1.9] text-brand-text whitespace-pre-line">
                 {product.vedic_significance}
               </p>
             )}
-            <div className="rounded-xl border border-brand-border bg-brand-bg-alt/50 px-5">
-              <VedicRow label="Vedic Name" value={product.vedic_name} />
-              <VedicRow label="Hindi Name" value={product.hindi_name} />
-              <VedicRow label="Ruling Planet" value={product.planet} />
-              <VedicRow label="Ruling Deity" value={product.ruling_deity} />
-              <VedicRow label="Chakra" value={product.chakra} />
-              <VedicRow label="Rashi (Zodiac)" value={product.rashi} />
-              <VedicRow label="Wearing Finger" value={product.finger} />
-              <VedicRow label="Wearing Day" value={product.wearing_day} />
-              <VedicRow label="Wearing Metal" value={product.wearing_metal} />
-            </div>
+            {(product.vedic_name ||
+              product.hindi_name ||
+              product.planet ||
+              product.ruling_deity ||
+              product.chakra ||
+              product.rashi ||
+              product.finger ||
+              product.wearing_day ||
+              product.wearing_metal ||
+              product.mantra) && (
+              <div className="rounded-xl border border-brand-border bg-brand-bg-alt/50 px-5">
+                <VedicRow label="Vedic Name" value={product.vedic_name} />
+                <VedicRow label="Hindi Name" value={product.hindi_name} />
+                <VedicRow label="Ruling Planet" value={product.planet} />
+                <VedicRow label="Ruling Deity" value={product.ruling_deity} />
+                <VedicRow label="Chakra" value={product.chakra} />
+                <VedicRow label="Rashi (Zodiac)" value={product.rashi} />
+                <VedicRow label="Wearing Finger" value={product.finger} />
+                <VedicRow label="Wearing Day" value={product.wearing_day} />
+                <VedicRow label="Wearing Metal" value={product.wearing_metal} />
+                <VedicRow label="Mantra" value={product.mantra} />
+              </div>
+            )}
+            {!product.vedic_significance &&
+              !product.vedic_name &&
+              !product.hindi_name &&
+              !product.planet &&
+              !product.ruling_deity &&
+              !product.chakra &&
+              !product.rashi &&
+              !product.finger &&
+              !product.wearing_day &&
+              !product.wearing_metal &&
+              !product.mantra && (
+                <p className="text-[14px] text-brand-muted">
+                  Vedic details coming soon. Contact us for guidance.
+                </p>
+              )}
           </div>
         )}
 
         {/* Certificate */}
-        {active === 'certificate' && (
+        {activeTab === 'certificate' && showCertificate && (
           <div className="space-y-4">
             <div className="rounded-xl border border-brand-border bg-brand-bg-alt/50 p-5">
               <div className="flex items-center gap-3">
@@ -229,7 +263,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
         )}
 
         {/* Wearing Guide */}
-        {active === 'wearing' && (
+        {activeTab === 'wearing' && (
           <div className="space-y-4">
             {product.wearing_guide ? (
               <p className="text-[14px] leading-[1.9] text-brand-text">
@@ -247,7 +281,9 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
                       `Set in ${product.wearing_metal} for maximum efficacy`,
                     product.finger && `Wear on the ${product.finger}`,
                     'Purify the stone in Ganges water or raw milk before wearing',
-                    'Energize with the ruling planet mantra 108 times',
+                    product.mantra
+                      ? `Energize with the mantra: ${product.mantra} (108 times)`
+                      : 'Energize with the ruling planet mantra 108 times',
                   ]
                     .filter(Boolean)
                     .map((step, i) => (
@@ -265,7 +301,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
         )}
 
         {/* Reviews */}
-        {active === 'reviews' && (
+        {activeTab === 'reviews' && (
           <div className="space-y-6">
             {reviews.length > 0 ? (
               <>

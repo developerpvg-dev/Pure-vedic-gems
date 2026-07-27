@@ -7,6 +7,7 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import { LOW_STOCK_THRESHOLD, notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import { PRICE_MODES, PRODUCT_TYPES } from '@/lib/constants/product-taxonomy';
 import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
+import { applyNoCertificationFields } from '@/lib/utils/format';
 
 type RelatedProductPayload = Pick<
   ProductCreateInput,
@@ -251,6 +252,7 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
   const { productPayload, relatedPayload } = splitProductPayload(parsed.data);
+  applyNoCertificationFields(productPayload as Record<string, unknown>);
   const { data: product, error } = await (admin
     .from('products') as ReturnType<typeof admin.from>)
     .insert(productPayload as Record<string, unknown>)
