@@ -18,6 +18,10 @@ import { isPaidPaymentStatus } from '@/lib/constants/order-status';
 import { notifyAdmins, notifyUser } from '@/lib/notifications/in-app';
 import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
 import { sendBankTransferReceivedEmail } from '@/lib/resend/send-bank-transfer-received';
+import {
+  resolveOnlinePaymentAmount,
+  roundMoney,
+} from '@/lib/orders/counter-payments';
 import type { Order } from '@/lib/types/database';
 
 const BUCKET = 'custom-uploads';
@@ -28,6 +32,7 @@ const fieldsSchema = z.object({
   bank_id: z.enum(['icici', 'hdfc', 'indusind']),
   reference: z.string().trim().min(4).max(120),
   notes: z.string().trim().max(1000).optional(),
+  amount_claimed: z.coerce.number().positive().optional(),
   confirm_email: z.string().trim().email().optional(),
   confirm_phone: z.string().trim().min(8).max(20).optional(),
 });
@@ -91,6 +96,7 @@ export async function POST(request: NextRequest) {
     bank_id: form.get('bank_id'),
     reference: form.get('reference'),
     notes: form.get('notes') || undefined,
+    amount_claimed: form.get('amount_claimed') || undefined,
     confirm_email: form.get('confirm_email') || undefined,
     confirm_phone: form.get('confirm_phone') || undefined,
   });
@@ -117,7 +123,7 @@ export async function POST(request: NextRequest) {
   const { data: order, error: fetchError } = await supabase
     .from('orders')
     .select(
-      'id, order_number, status, payment_status, customer_id, guest_access_token, guest_email, guest_name, guest_phone, compliance_flags',
+      'id, order_number, status, payment_status, total, amount_paid, amount_due, customer_id, guest_access_token, guest_email, guest_name, guest_phone, compliance_flags',
     )
     .eq('id', parsed.data.order_id)
     .single();
@@ -140,11 +146,48 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Order is already paid.' }, { status: 400 });
   }
 
-  if (!['pending_payment', 'payment_review'].includes(order.status)) {
+  const isBalanceLeg =
+    order.status === 'confirmed' && order.payment_status === 'partial' && Number(order.amount_due) > 0;
+  const canSubmit =
+    ['pending_payment', 'payment_review'].includes(order.status) || isBalanceLeg;
+  if (!canSubmit) {
     return NextResponse.json(
       { error: 'This order can no longer accept a bank transfer proof.' },
       { status: 400 },
     );
+  }
+
+  const orderTotal = roundMoney(Number(order.total ?? 0));
+  const amountPaid = roundMoney(Number(order.amount_paid ?? 0));
+  let amountClaimed: number;
+  try {
+    if (amountPaid > 0.009) {
+      // Balance leg — must settle the full remaining balance
+      const due = roundMoney(orderTotal - amountPaid);
+      amountClaimed = parsed.data.amount_claimed != null
+        ? roundMoney(parsed.data.amount_claimed)
+        : due;
+      if (Math.abs(amountClaimed - due) > 0.009) {
+        return NextResponse.json(
+          { error: `Balance payment must be exactly ₹${due.toLocaleString('en-IN')}.` },
+          { status: 400 },
+        );
+      }
+    } else if (parsed.data.amount_claimed != null) {
+      const resolved = resolveOnlinePaymentAmount(orderTotal, 0, parsed.data.amount_claimed);
+      amountClaimed = resolved.amount;
+      if (!order.customer_id && resolved.kind === 'advance') {
+        return NextResponse.json(
+          { error: 'Sign in to reserve with an advance. Guest checkout must transfer the full amount.' },
+          { status: 400 },
+        );
+      }
+    } else {
+      amountClaimed = orderTotal;
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Invalid payment amount';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   const existing = parseBankTransferProof(order.compliance_flags);
@@ -200,6 +243,7 @@ export async function POST(request: NextRequest) {
       bank_id: bank.id,
       bank_label: bank.label,
       reference: parsed.data.reference,
+      amount_claimed: amountClaimed,
       notes: parsed.data.notes,
       proof_urls: finalUrls,
       submitted_at: new Date().toISOString(),
@@ -208,13 +252,16 @@ export async function POST(request: NextRequest) {
 
     const holdUntil = new Date(Date.now() + BANK_TRANSFER_HOLD_MS).toISOString();
     const db = asUntypedSupabase(supabase);
+    const reviewNote = isBalanceLeg
+      ? `Balance bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference}, ₹${amountClaimed})`
+      : `Bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference}, ₹${amountClaimed})`;
     const { error: updateError } = await db
       .from('orders')
       .update({
         payment_method: 'bank_transfer',
-        payment_status: 'pending',
-        status: 'payment_review',
-        payment_review_reason: `Bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference})`,
+        payment_status: isBalanceLeg ? order.payment_status : 'pending',
+        status: isBalanceLeg ? order.status : 'payment_review',
+        payment_review_reason: reviewNote,
         reservation_expires_at: holdUntil,
         compliance_flags: mergeBankTransferProof(order.compliance_flags, proof),
       })

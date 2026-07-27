@@ -77,7 +77,7 @@ export function ContactSection({
         <div className="pvg-checkout-step-head pvg-checkout-step-head--tight">
           <div className="pvg-checkout-step-title-row">
             <span className="pvg-checkout-step-badge">✓</span>
-            <h2 className="pvg-checkout-step-title">Contact information</h2>
+            <h2 className="pvg-checkout-step-title">Contact</h2>
           </div>
           <button type="button" onClick={onEdit} className="pvg-checkout-step-edit">
             <Pencil className="h-3.5 w-3.5" />
@@ -85,9 +85,12 @@ export function ContactSection({
           </button>
         </div>
         <div className="pvg-checkout-step-summary">
-          <p>{savedData.full_name}</p>
-          <p>{savedData.email} · {savedData.phone}</p>
-          {savedData.billing_gstin && <p>GST invoice: {savedData.business_name || 'Business'} · {savedData.billing_gstin}</p>}
+          <p className="font-medium text-[#3d2b1f]">{savedData.full_name}</p>
+          <p className="truncate">{savedData.email}</p>
+          <p>{savedData.phone}</p>
+          {savedData.billing_gstin ? (
+            <p className="truncate">GST: {savedData.billing_gstin}</p>
+          ) : null}
         </div>
       </div>
     );

@@ -130,4 +130,38 @@ describe('customer-journey', () => {
     });
     expect(journey?.milestones.some((m) => m.label === 'Pendant Mounting')).toBe(true);
   });
+
+  it('hides Design Routing from configured jewelry customers', () => {
+    const journey = getCustomerJourney({
+      status: 'design_assigned',
+      payment_status: 'captured',
+      assigned_designer_id: 'designer-1',
+      items: [{
+        category: 'gemstone',
+        configuration_snapshot: { selections: { setting_type: 'ring' } },
+      }],
+      certification_charges: 1200,
+    });
+    const labels = journey?.milestones.map((m) => m.label) ?? [];
+    expect(labels).not.toContain('Design Routing');
+    expect(labels).toContain('Jewelry Crafting');
+    expect(labels).toContain('Certification');
+  });
+
+  it('merges energization and puja video into one customer step', () => {
+    const journey = getCustomerJourney({
+      status: 'confirmed',
+      payment_status: 'captured',
+      include_energization: true,
+      energization_charges: 2100,
+      items: [{
+        category: 'gemstone',
+        configuration_snapshot: { selections: { setting_type: 'ring' } },
+      }],
+    });
+    const keys = journey?.milestones.map((m) => m.key) ?? [];
+    expect(keys.filter((k) => k === 'energization')).toHaveLength(1);
+    expect(keys).not.toContain('puja_video');
+    expect(keys).toContain('energization');
+  });
 });

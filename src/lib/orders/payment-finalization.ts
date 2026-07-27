@@ -8,7 +8,7 @@ import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
 import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import type { Json, Order, PaymentEvent } from '@/lib/types/database';
-import { awardOrderRewardPoints, cancelRewardRedemption, confirmRewardRedemption } from '@/lib/rewards/service';
+import { cancelRewardRedemption, confirmRewardRedemption } from '@/lib/rewards/service';
 import {
   keepProductsReservedAfterPayment,
   releaseProductsForOrder,
@@ -512,8 +512,6 @@ export async function finalizeCapturedPayment({
     amount_due: 0,
     payment_status: 'captured',
   };
-  const fullyPaid = settled.payment_status === 'captured';
-
   // ── Money columns — derived from the ledger, so replays converge ───────
   // Safe to run on every finalization attempt: recomputed sums are idempotent,
   // unlike the increment-in-place this used to be.
@@ -580,12 +578,10 @@ export async function finalizeCapturedPayment({
 
   // Idempotent side effects — safe to run on every finalization attempt,
   // including replays where another path already claimed the confirmation.
-  // (confirmRewardRedemption is gated on status='pending'; awardOrderRewardPoints
-  // is internally idempotent; notifications guard on their own *_sent_at flags.)
+  // (confirmRewardRedemption is gated on status='pending'; notifications guard on their
+  // own *_sent_at flags.)
   await confirmRewardRedemption(order.id);
-  // Earning points on an unpaid balance would let a 20% advance buy full-order
-  // points and walk away, so points wait for the order to be settled.
-  if (fullyPaid) await awardOrderRewardPoints(order);
+  // Note: reward-points earning is admin-controlled now (no automatic point awards).
 
   if (paymentKind === 'balance') {
     // The confirmation receipt already went out with the advance; this leg only

@@ -104,6 +104,11 @@ export function BankTransferManagePanel({
             <Field label="UTR / reference">
               <code className="break-all font-mono text-[12px] text-stone-700">{proof.reference}</code>
             </Field>
+            {proof.amount_claimed != null ? (
+              <Field label="Amount claimed">
+                ₹{proof.amount_claimed.toLocaleString('en-IN')}
+              </Field>
+            ) : null}
             {proof.notes ? (
               <div className="sm:col-span-2">
                 <Field label="Customer notes">{proof.notes}</Field>

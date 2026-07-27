@@ -199,7 +199,7 @@ export function ShippingSection({
         <div className="pvg-checkout-step-head pvg-checkout-step-head--tight">
           <div className="pvg-checkout-step-title-row">
             <span className="pvg-checkout-step-badge">✓</span>
-            <h2 className="pvg-checkout-step-title">Shipping address</h2>
+            <h2 className="pvg-checkout-step-title">Shipping</h2>
           </div>
           <button type="button" onClick={onEdit} className="pvg-checkout-step-edit">
             <Pencil className="h-3.5 w-3.5" />
@@ -207,10 +207,16 @@ export function ShippingSection({
           </button>
         </div>
         <div className="pvg-checkout-step-summary">
-          <p>{savedData.line1}{savedData.line2 ? `, ${savedData.line2}` : ''}</p>
-          <p>{savedData.city}, {savedData.state} - {savedData.pincode}</p>
-          <p>{savedData.country}</p>
-          <p className="text-xs">{savedPlan?.label ?? savedMethod}</p>
+          <p className="line-clamp-2">
+            {savedData.line1}
+            {savedData.line2 ? `, ${savedData.line2}` : ''}
+          </p>
+          <p>
+            {savedData.city}, {savedData.state} {savedData.pincode}
+          </p>
+          <p className="text-[0.7rem] text-[#8a6400]">
+            {savedPlan?.label ?? savedMethod} · {savedData.country}
+          </p>
         </div>
       </div>
     );

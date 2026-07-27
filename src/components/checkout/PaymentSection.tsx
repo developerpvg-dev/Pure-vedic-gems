@@ -29,6 +29,8 @@ interface PaymentSectionProps {
   shippingMethod: ShippingMethodId;
   specialInstructions?: string;
   rewardPointsToRedeem?: number;
+  couponCode?: string | null;
+  couponDiscount?: number;
   selectedShippingPlan?: SelectedShippingPlan | null;
   rewards?: CheckoutRewardState | null;
   /** Advance payment leaves a balance to chase, so it is account-holders only. */
@@ -46,6 +48,8 @@ export function PaymentSection({
   shippingMethod,
   specialInstructions,
   rewardPointsToRedeem = 0,
+  couponCode = null,
+  couponDiscount = 0,
   selectedShippingPlan = null,
   rewards = null,
   isLoggedIn = false,
@@ -62,9 +66,9 @@ export function PaymentSection({
     const shipping = selectedShippingPlan?.cost ?? 0;
     const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
     const gst = estimateClientTax(cartItems, shipping);
-    const totalInr = Math.max(0, subtotal - rewardDiscount + shipping + gst);
+    const totalInr = Math.max(0, subtotal - couponDiscount - rewardDiscount + shipping + gst);
     return { totalInr };
-  }, [cartItems, selectedShippingPlan, rewardPointsToRedeem, rewards]);
+  }, [cartItems, selectedShippingPlan, rewardPointsToRedeem, rewards, couponDiscount]);
 
   const showFxNote = currency !== 'INR';
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +89,8 @@ export function PaymentSection({
 
   const selectedBank = BANK_ACCOUNTS.find((b) => b.id === bankId) ?? BANK_ACCOUNTS[0];
 
-  // Advance is Razorpay-only: a bank transfer is verified against one exact
-  // amount by hand, so part-paying it has no reliable proof trail.
-  const advanceAvailable = isLoggedIn && payMethod === 'razorpay';
+  // Logged-in customers may pay 20–100% upfront via Razorpay or bank transfer.
+  const advanceAvailable = isLoggedIn;
   const advanceFloor = useMemo(
     () => Math.min(estimate.totalInr, Math.ceil((estimate.totalInr * ADVANCE_MIN_PERCENT) / 100)),
     [estimate.totalInr],
@@ -134,6 +137,7 @@ export function PaymentSection({
       shipping_method: shippingMethod,
       special_instructions: specialInstructions,
       reward_points_to_redeem: rewardPointsToRedeem,
+      coupon_code: couponCode || undefined,
       payment_method: payMethod,
       checkout_consent: {
         terms_accepted: true,
@@ -150,6 +154,7 @@ export function PaymentSection({
       shippingMethod,
       specialInstructions,
       rewardPointsToRedeem,
+      couponCode,
       payMethod,
       marketingConsent,
     ],
@@ -183,14 +188,21 @@ export function PaymentSection({
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
 
-      const { order_id } = orderData;
+      const { order_id, total } = orderData;
       onOrderCreated(order_id);
+
+      const serverTotal = Number(total ?? estimate.totalInr);
+      const serverFloor = Math.ceil((serverTotal * ADVANCE_MIN_PERCENT) / 100);
+      const payAmount = payingPartial
+        ? Math.min(serverTotal, Math.max(serverFloor, Math.round((serverTotal * advancePercent) / 100)))
+        : serverTotal;
 
       setStep('submitting_proof');
       const form = new FormData();
       form.set('order_id', order_id);
       form.set('bank_id', bankId);
       form.set('reference', transferRef.trim());
+      form.set('amount_claimed', String(payAmount));
       if (transferNotes.trim()) form.set('notes', transferNotes.trim());
       Array.from(proofFiles).forEach((file) => form.append('proofs', file));
 
@@ -219,6 +231,9 @@ export function PaymentSection({
     bankId,
     transferNotes,
     onPaymentSuccess,
+    payingPartial,
+    advancePercent,
+    estimate.totalInr,
   ]);
 
   const handlePayNow = useCallback(async () => {
@@ -329,7 +344,7 @@ export function PaymentSection({
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-2">
+      <div className="mb-3 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setPayMethod('razorpay')}
@@ -358,8 +373,96 @@ export function PaymentSection({
         </button>
       </div>
 
+      {/* ── Pay in full or reserve with an advance (logged-in) ─────────── */}
+      {advanceAvailable ? (
+        <fieldset className="mb-3 rounded-lg border border-stone-200 bg-white/70 p-2.5">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            How much to pay now
+          </legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label
+              className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
+                payFull ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
+              }`}
+            >
+              <input
+                type="radio"
+                name="pvg-pay-split"
+                className="mt-0.5"
+                checked={payFull}
+                disabled={isProcessing}
+                onChange={() => setPayFull(true)}
+              />
+              <span>
+                <span className="block font-semibold text-[#3d2b1f]">Pay in full</span>
+                <span className="block text-xs text-stone-500">
+                  {formatPrice(estimate.totalInr, 'INR')} now
+                </span>
+              </span>
+            </label>
+            <label
+              className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
+                !payFull ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
+              }`}
+            >
+              <input
+                type="radio"
+                name="pvg-pay-split"
+                className="mt-0.5"
+                checked={!payFull}
+                disabled={isProcessing}
+                onChange={() => setPayFull(false)}
+              />
+              <span>
+                <span className="block font-semibold text-[#3d2b1f]">Pay an advance</span>
+                <span className="block text-xs text-stone-500">
+                  From {ADVANCE_MIN_PERCENT}% — balance when ready
+                </span>
+              </span>
+            </label>
+          </div>
+
+          {payingPartial ? (
+            <div className="mt-3 rounded-lg bg-stone-50 p-3">
+              <label
+                htmlFor="pvg-advance-percent"
+                className="flex items-center justify-between text-sm font-semibold text-[#3d2b1f]"
+              >
+                <span>Advance: {advancePercent}%</span>
+                <span>{formatPrice(advanceAmount, 'INR')}</span>
+              </label>
+              <input
+                id="pvg-advance-percent"
+                type="range"
+                min={ADVANCE_MIN_PERCENT}
+                max={100}
+                step={5}
+                value={advancePercent}
+                disabled={isProcessing}
+                onChange={(e) => setAdvancePercent(Number(e.target.value))}
+                className="mt-2 w-full accent-[#C9A84C]"
+              />
+              <div className="mt-1 flex justify-between text-[10px] font-medium text-stone-400">
+                <span>{ADVANCE_MIN_PERCENT}%</span>
+                <span>100%</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-stone-600">
+                Your order is confirmed once we verify this payment. The remaining{' '}
+                <strong>{formatPrice(Math.max(0, estimate.totalInr - advanceAmount), 'INR')}</strong>{' '}
+                becomes payable when we tell you the order is ready — we ship after that.
+              </p>
+            </div>
+          ) : null}
+        </fieldset>
+      ) : !isLoggedIn ? (
+        <p className="mb-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">
+          Want to reserve this order with a {ADVANCE_MIN_PERCENT}% advance and pay the rest when
+          it is ready? Sign in to your account first — guest checkout must be paid in full.
+        </p>
+      ) : null}
+
       {payMethod === 'razorpay' ? (
-        <div className="pvg-checkout-panel mb-6">
+        <div className="pvg-checkout-panel mb-4">
           <div className="mb-3 flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-[#8a6400]" />
             <span className="text-sm font-semibold text-[#3d2b1f]">Razorpay secure payment</span>
@@ -382,94 +485,6 @@ export function PaymentSection({
             </p>
           )}
 
-          {/* ── Pay in full or reserve with an advance ─────────────────── */}
-          {advanceAvailable ? (
-            <fieldset className="mb-4 rounded-lg border border-stone-200 bg-white/70 p-3">
-              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
-                How much to pay now
-              </legend>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <label
-                  className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
-                    payFull ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="pvg-pay-split"
-                    className="mt-0.5"
-                    checked={payFull}
-                    disabled={isProcessing}
-                    onChange={() => setPayFull(true)}
-                  />
-                  <span>
-                    <span className="block font-semibold text-[#3d2b1f]">Pay in full</span>
-                    <span className="block text-xs text-stone-500">
-                      {formatPrice(estimate.totalInr, 'INR')} now
-                    </span>
-                  </span>
-                </label>
-                <label
-                  className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
-                    !payFull ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="pvg-pay-split"
-                    className="mt-0.5"
-                    checked={!payFull}
-                    disabled={isProcessing}
-                    onChange={() => setPayFull(false)}
-                  />
-                  <span>
-                    <span className="block font-semibold text-[#3d2b1f]">Pay an advance</span>
-                    <span className="block text-xs text-stone-500">
-                      From {ADVANCE_MIN_PERCENT}% — balance when ready
-                    </span>
-                  </span>
-                </label>
-              </div>
-
-              {payingPartial ? (
-                <div className="mt-3 rounded-lg bg-stone-50 p-3">
-                  <label
-                    htmlFor="pvg-advance-percent"
-                    className="flex items-center justify-between text-sm font-semibold text-[#3d2b1f]"
-                  >
-                    <span>Advance: {advancePercent}%</span>
-                    <span>{formatPrice(advanceAmount, 'INR')}</span>
-                  </label>
-                  <input
-                    id="pvg-advance-percent"
-                    type="range"
-                    min={ADVANCE_MIN_PERCENT}
-                    max={100}
-                    step={5}
-                    value={advancePercent}
-                    disabled={isProcessing}
-                    onChange={(e) => setAdvancePercent(Number(e.target.value))}
-                    className="mt-2 w-full accent-[#C9A84C]"
-                  />
-                  <div className="mt-1 flex justify-between text-[10px] font-medium text-stone-400">
-                    <span>{ADVANCE_MIN_PERCENT}%</span>
-                    <span>100%</span>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-stone-600">
-                    Your order is confirmed as soon as this advance is paid. The remaining{' '}
-                    <strong>{formatPrice(Math.max(0, estimate.totalInr - advanceAmount), 'INR')}</strong>{' '}
-                    becomes payable when we tell you the order is ready — we ship after that.
-                  </p>
-                </div>
-              ) : null}
-            </fieldset>
-          ) : !isLoggedIn && payMethod === 'razorpay' ? (
-            <p className="mb-4 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs leading-relaxed text-stone-600">
-              Want to reserve this order with a {ADVANCE_MIN_PERCENT}% advance and pay the rest when
-              it is ready? Sign in to your account first — guest checkout must be paid in full.
-            </p>
-          ) : null}
-
           <div className="pvg-checkout-pay-methods">
             <span className="pvg-checkout-pay-tag">UPI</span>
             <span className="pvg-checkout-pay-tag">Credit card</span>
@@ -478,14 +493,15 @@ export function PaymentSection({
           </div>
         </div>
       ) : (
-        <div className="pvg-checkout-panel mb-6 space-y-4">
+        <div className="pvg-checkout-panel mb-4 space-y-3">
           <div>
             <div className="mb-2 flex items-center gap-2">
               <Building2 className="h-4 w-4 text-[#8a6400]" />
               <span className="text-sm font-semibold text-[#3d2b1f]">Transfer to any account</span>
             </div>
             <p className="pvg-checkout-hint">
-              Pay exactly {formatPrice(estimate.totalInr, 'INR')} to one of the accounts below, then
+              Transfer {formatPrice(chargeNow, 'INR')}
+              {payingPartial ? ' as your advance' : ''} to one of the accounts below, then
               upload your UTR and screenshot. We confirm the order after our team verifies the
               transfer.
             </p>
@@ -671,7 +687,9 @@ export function PaymentSection({
         ) : payMethod === 'bank_transfer' ? (
           <>
             <Upload className="h-5 w-5" />
-            Submit transfer proof
+            {payingPartial
+              ? `Submit ${formatPrice(chargeNow)} advance proof`
+              : 'Submit transfer proof'}
           </>
         ) : (
           <>
@@ -685,7 +703,9 @@ export function PaymentSection({
 
       <p className="pvg-checkout-footnote mt-3">
         {payMethod === 'bank_transfer'
-          ? 'Order stays on hold until we verify your transfer (usually within 1 business day).'
+          ? payingPartial
+            ? `Transfer exactly ${formatPrice(chargeNow, 'INR')} now. We verify the amount against your proof before confirming the order.`
+            : 'Order stays on hold until we verify your transfer (usually within 1 business day).'
           : payingPartial
             ? `Razorpay will charge ${formatPrice(chargeNow, 'INR')} now. The advance amount is re-verified on our server against the final order total before the payment window opens.`
             : showFxNote

@@ -6,7 +6,6 @@ import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import {
   calculateMaxRedeemablePoints,
   calculateRewardDiscount,
-  calculateEarnedPointsPreview,
 } from '@/lib/rewards/rules';
 
 export interface CheckoutRewardState {
@@ -52,19 +51,13 @@ export function RewardPointsRedemption({
   const maxRedeem = calculateMaxRedeem(rewards, subtotal);
   const appliedPoints = Math.min(pointsToRedeem, maxRedeem);
   const discount = estimateRewardDiscount(appliedPoints, rewards, subtotal);
-  const earnAfterOrder = rewards
-    ? calculateEarnedPointsPreview(rewards, appliedPoints)
-    : 0;
 
   if (!userSignedIn) {
     return (
-      <div className="pvg-checkout-step">
-        <div className="flex gap-3">
-          <Gift className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" />
-          <div>
-            <h3 className="font-heading text-base font-semibold text-brand-primary">Reward Points</h3>
-            <p className="mt-1 text-sm text-brand-muted">Sign in before payment to redeem migrated PVG reward points on this order.</p>
-          </div>
+      <div className="pvg-checkout-optional">
+        <div className="flex items-center gap-2 text-sm text-[#7a6250]">
+          <Gift className="h-4 w-4 shrink-0 text-[#8a6400]" />
+          <span>Sign in to redeem reward points on this order.</span>
         </div>
       </div>
     );
@@ -72,9 +65,9 @@ export function RewardPointsRedemption({
 
   if (loading) {
     return (
-      <div className="pvg-checkout-step flex items-center gap-3 text-sm text-[#7a6250]">
-        <Loader2 className="h-4 w-4 animate-spin text-brand-accent" />
-        Loading reward points...
+      <div className="pvg-checkout-optional flex items-center gap-2 text-sm text-[#7a6250]">
+        <Loader2 className="h-4 w-4 animate-spin text-[#8a6400]" />
+        Loading reward points…
       </div>
     );
   }
@@ -82,69 +75,58 @@ export function RewardPointsRedemption({
   if (!rewards?.is_active) return null;
 
   return (
-    <div className="pvg-checkout-step">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex gap-3">
-          <Gift className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" />
-          <div>
-            <h3 className="font-heading text-base font-semibold text-brand-primary">Reward Points</h3>
-            <p className="mt-1 text-sm text-brand-muted">
-              {rewards.available_points.toLocaleString('en-IN')} points available (1 point ={' '}
-              {formatPrice(Number(rewards.point_value_inr))}). Max redeemable is{' '}
-              {Number(rewards.max_redeem_percent).toLocaleString('en-IN')}% of this order
-              {maxRedeem > 0 ? ` (up to ${maxRedeem.toLocaleString('en-IN')} pts)` : ''}.
-              {appliedPoints > 0
-                ? ` You will earn ${earnAfterOrder.toLocaleString('en-IN')} points after payment.`
-                : ` Earn up to ${rewards.earn_points_per_order.toLocaleString('en-IN')} points after payment.`}
+    <div className="pvg-checkout-optional">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Gift className="h-4 w-4 shrink-0 text-[#8a6400]" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#3d2b1f]">Reward points</p>
+            <p className="text-xs text-[#7a6250]">
+              {rewards.available_points.toLocaleString('en-IN')} available · max{' '}
+              {maxRedeem.toLocaleString('en-IN')} pts
+              {discount > 0 ? ` · −${formatPrice(discount)}` : ''}
             </p>
           </div>
         </div>
-        {discount > 0 && (
-          <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-            -{formatPrice(discount)}
-          </span>
+        {maxRedeem > 0 ? (
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <input
+              type="number"
+              min={rewards.min_redeem_points}
+              max={maxRedeem}
+              value={pointsToRedeem || ''}
+              onChange={(event) => {
+                const value = Number(event.target.value) || 0;
+                onChange(
+                  value === 0
+                    ? 0
+                    : Math.min(maxRedeem, Math.max(rewards.min_redeem_points, value)),
+                );
+              }}
+              placeholder={`Up to ${maxRedeem}`}
+              className="pvg-checkout-input !py-2 sm:w-28"
+            />
+            <button
+              type="button"
+              onClick={() => onChange(maxRedeem)}
+              className="shrink-0 rounded-lg border border-stone-200 px-2.5 py-2 text-xs font-semibold text-[#3d2b1f] hover:bg-stone-50"
+            >
+              Max
+            </button>
+            {appliedPoints > 0 ? (
+              <button
+                type="button"
+                onClick={() => onChange(0)}
+                className="shrink-0 rounded-lg bg-[#3d2b1f] px-2.5 py-2 text-xs font-semibold text-white"
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-xs text-[#7a6250]">None redeemable on this total.</p>
         )}
       </div>
-
-      {maxRedeem > 0 ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-          <input
-            type="number"
-            min={rewards.min_redeem_points}
-            max={maxRedeem}
-            value={pointsToRedeem || ''}
-            onChange={(event) => {
-              const value = Number(event.target.value) || 0;
-              onChange(value === 0 ? 0 : Math.min(maxRedeem, Math.max(rewards.min_redeem_points, value)));
-            }}
-            placeholder={`Redeem up to ${maxRedeem}`}
-            className="pvg-checkout-input"
-          />
-          <button
-            type="button"
-            onClick={() => onChange(maxRedeem)}
-            className="rounded-lg border border-brand-border px-4 py-2 text-sm font-semibold text-brand-primary transition hover:bg-brand-bg-alt"
-          >
-            Use Max
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange(0)}
-            className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
-          >
-            Clear
-          </button>
-        </div>
-      ) : (
-        <p className="mt-3 text-sm text-brand-muted">No points are currently redeemable for this order total.</p>
-      )}
-
-      {appliedPoints > 0 && (
-        <p className="mt-3 text-xs text-brand-muted">
-          {appliedPoints.toLocaleString('en-IN')} point(s) = {formatPrice(discount)} off this order.
-          Points are reserved at checkout and confirmed only after successful payment.
-        </p>
-      )}
     </div>
   );
 }

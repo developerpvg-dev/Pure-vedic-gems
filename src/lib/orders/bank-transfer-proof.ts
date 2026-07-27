@@ -6,6 +6,8 @@ export type BankTransferProof = {
   bank_id: string;
   bank_label: string;
   reference: string;
+  /** INR the customer says they transferred (advance or balance leg). */
+  amount_claimed?: number;
   notes?: string;
   proof_urls: string[];
   submitted_at: string;
@@ -37,6 +39,10 @@ export function parseBankTransferProof(complianceFlags: unknown): BankTransferPr
     bank_id: String(bt.bank_id),
     bank_label: String(bt.bank_label || bt.bank_id),
     reference: String(bt.reference),
+    amount_claimed:
+      bt.amount_claimed != null && Number.isFinite(Number(bt.amount_claimed))
+        ? Number(bt.amount_claimed)
+        : undefined,
     notes: bt.notes ? String(bt.notes) : undefined,
     proof_urls: bt.proof_urls.filter((u): u is string => typeof u === 'string' && /^https?:\/\//i.test(u)),
     submitted_at: String(bt.submitted_at),
@@ -67,6 +73,7 @@ export function publicBankTransferSummary(proof: BankTransferProof | null) {
     bank_id: proof.bank_id,
     bank_label: proof.bank_label,
     reference: proof.reference,
+    amount_claimed: proof.amount_claimed ?? null,
     notes: proof.notes ?? null,
     proof_urls: proof.proof_urls,
     submitted_at: proof.submitted_at,
@@ -81,7 +88,11 @@ export function canAdminReviewBankTransfer(
   proof: BankTransferProof | null,
   paymentStatus: string | null | undefined,
 ) {
-  return Boolean(proof?.proof_urls.length) && paymentStatus !== 'captured' && proof?.status !== 'verified';
+  return (
+    Boolean(proof?.proof_urls.length) &&
+    paymentStatus !== 'captured' &&
+    proof?.status === 'pending_review'
+  );
 }
 
 export function canCustomerResubmitBankTransfer(
@@ -90,6 +101,10 @@ export function canCustomerResubmitBankTransfer(
   paymentStatus: string | null | undefined,
 ) {
   if (paymentStatus === 'captured') return false;
+  // Balance leg on a confirmed, part-paid order
+  if (orderStatus === 'confirmed' && paymentStatus === 'partial') {
+    return !proof || proof.status !== 'pending_review';
+  }
   if (!['pending_payment', 'payment_review'].includes(orderStatus)) return false;
   // First submit never reaches customer UI with null proof from checkout; resubmit after reject or while still pending
   if (!proof) return orderStatus === 'pending_payment';
@@ -113,7 +128,8 @@ export function __bankTransferProofSelfCheck() {
   console.assert(parsed?.status === 'rejected', 'status');
   console.assert(canCustomerResubmitBankTransfer(parsed, 'pending_payment', 'pending'), 'resubmit');
   console.assert(!canCustomerResubmitBankTransfer(parsed, 'confirmed', 'captured'), 'no resubmit paid');
-  console.assert(canAdminReviewBankTransfer(parsed, 'pending'), 'admin review');
+  console.assert(canAdminReviewBankTransfer({ ...proof, status: 'pending_review' }, 'pending'), 'admin review');
+  console.assert(!canAdminReviewBankTransfer({ ...proof, status: 'verified' }, 'partial'), 'no review verified');
   console.assert(publicBankTransferSummary(parsed)?.reject_reason === 'UTR not found', 'public');
   console.log('bank-transfer-proof self-check ok');
 }

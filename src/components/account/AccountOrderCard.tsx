@@ -894,6 +894,11 @@ function BankTransferAccountBlock({
           <BankTransferResubmitForm
             orderId={order.id}
             orderTotalLabel={formatPrice(order.total, 'INR')}
+            amountDue={
+              order.payment_status === 'partial' && Number(order.amount_due) > 0
+                ? Number(order.amount_due)
+                : undefined
+            }
             existing={proof}
             requireContactConfirm={requireContactConfirm}
             onSubmitted={(result) => {

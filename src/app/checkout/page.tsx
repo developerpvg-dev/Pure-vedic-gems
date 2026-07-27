@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
@@ -48,6 +48,8 @@ export default function CheckoutPage() {
   const [rewardInfo, setRewardInfo] = useState<CheckoutRewardState | null>(null);
   const [rewardLoading, setRewardLoading] = useState(false);
   const [rewardPointsToRedeem, setRewardPointsToRedeem] = useState(0);
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
 
   const isContactComplete = contactData !== null;
   const isShippingComplete = shippingData !== null;
@@ -115,6 +117,61 @@ export default function CheckoutPage() {
     router.push(`/order-confirmation/${resultOrderId}`);
   };
 
+  const quotePayload = useMemo(() => {
+    if (!shippingData || !shippingMethod) return null;
+    return {
+      items: cart.items.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        configuration_id: item.configuration_id,
+      })),
+      shipping_address: shippingData,
+      shipping_method: shippingMethod,
+      reward_points_to_redeem: rewardPointsToRedeem,
+    };
+  }, [cart.items, shippingData, shippingMethod, rewardPointsToRedeem]);
+
+  const fetchQuote = useCallback(
+    async (couponCode?: string) => {
+      if (!quotePayload) return null;
+      const res = await fetch('/api/orders/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...quotePayload,
+          coupon_code: couponCode?.trim() || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false as const, error: data.error || 'Could not apply coupon' };
+      }
+      return { ok: true as const, pricing: data.pricing };
+    },
+    [quotePayload],
+  );
+
+  const handleApplyCoupon = useCallback(
+    async (code: string) => {
+      const result = await fetchQuote(code);
+      if (!result) return { ok: false, error: 'Complete shipping details first.' };
+      if (!result.ok) return { ok: false, error: result.error };
+      const discount = Number(result.pricing?.coupon_discount ?? 0);
+      if (discount <= 0) {
+        return { ok: false, error: 'This coupon does not apply to your order.' };
+      }
+      setAppliedCouponCode(code.toUpperCase());
+      setCouponDiscount(discount);
+      return { ok: true };
+    },
+    [fetchQuote],
+  );
+
+  const handleRemoveCoupon = useCallback(() => {
+    setAppliedCouponCode(null);
+    setCouponDiscount(0);
+  }, []);
+
   const stepComplete = (id: CheckoutStep) => {
     if (id === 'contact') return isContactComplete;
     if (id === 'shipping') return isShippingComplete;
@@ -161,7 +218,7 @@ export default function CheckoutPage() {
   return (
     <div className="pvg-checkout-page">
       <div className="pvg-checkout-shell">
-        <header className="pvg-checkout-hero">
+        <header className={`pvg-checkout-hero${currentStep === 'payment' ? ' pvg-checkout-hero--compact' : ''}`}>
           <div className="pvg-checkout-hero-top">
             <div>
               <Link href="/cart" className="pvg-checkout-back">
@@ -169,7 +226,9 @@ export default function CheckoutPage() {
                 Back to cart
               </Link>
               <p className="pvg-checkout-eyebrow mt-3">Secure checkout</p>
-              <h1 className="pvg-checkout-title">Complete your order</h1>
+              <h1 className="pvg-checkout-title">
+                {currentStep === 'payment' ? 'Payment' : 'Complete your order'}
+              </h1>
               <p className="pvg-checkout-subtitle">
                 A few quick steps — we&apos;ll confirm pricing and taxes before payment opens.
               </p>
@@ -208,46 +267,58 @@ export default function CheckoutPage() {
         </nav>
 
         <div className="pvg-checkout-grid">
-          <div className="pvg-checkout-main">
-            <ContactSection
-              isActive={currentStep === 'contact'}
-              isComplete={isContactComplete}
-              defaultValues={defaultContact}
-              savedData={contactData}
-              onComplete={handleContactComplete}
-              onEdit={() => setCurrentStep('contact')}
-              isLoggedIn={!!user}
-            />
-
-            <ShippingSection
-              isActive={currentStep === 'shipping'}
-              isComplete={isShippingComplete}
-              savedData={shippingData}
-              savedMethod={shippingMethod}
-              savedPlan={selectedShippingPlan}
-              cartSubtotal={cartSubtotal}
-              onComplete={handleShippingComplete}
-              onPlanChange={setSelectedShippingPlan}
-              onEdit={() => setCurrentStep('shipping')}
-              disabled={!isContactComplete}
-            />
-
-            {currentStep === 'payment' && (
-              <div className="pvg-checkout-step pvg-checkout-step--active">
-                <h3 className="pvg-checkout-step-title mb-3">Special instructions</h3>
-                <p className="pvg-checkout-hint mb-3">Optional — sizing notes, gifting, or delivery preferences.</p>
-                <textarea
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
-                  placeholder="Any special requests for your order…"
-                  maxLength={1000}
-                  rows={3}
-                  className="pvg-checkout-input resize-none"
+          <div className={`pvg-checkout-main${currentStep === 'payment' ? ' pvg-checkout-main--payment' : ''}`}>
+            {currentStep === 'payment' ? (
+              <div className="pvg-checkout-summary-strip">
+                <ContactSection
+                  isActive={false}
+                  isComplete={isContactComplete}
+                  defaultValues={defaultContact}
+                  savedData={contactData}
+                  onComplete={handleContactComplete}
+                  onEdit={() => setCurrentStep('contact')}
+                  isLoggedIn={!!user}
+                />
+                <ShippingSection
+                  isActive={false}
+                  isComplete={isShippingComplete}
+                  savedData={shippingData}
+                  savedMethod={shippingMethod}
+                  savedPlan={selectedShippingPlan}
+                  cartSubtotal={cartSubtotal}
+                  onComplete={handleShippingComplete}
+                  onPlanChange={setSelectedShippingPlan}
+                  onEdit={() => setCurrentStep('shipping')}
+                  disabled={!isContactComplete}
                 />
               </div>
+            ) : (
+              <>
+                <ContactSection
+                  isActive={currentStep === 'contact'}
+                  isComplete={isContactComplete}
+                  defaultValues={defaultContact}
+                  savedData={contactData}
+                  onComplete={handleContactComplete}
+                  onEdit={() => setCurrentStep('contact')}
+                  isLoggedIn={!!user}
+                />
+                <ShippingSection
+                  isActive={currentStep === 'shipping'}
+                  isComplete={isShippingComplete}
+                  savedData={shippingData}
+                  savedMethod={shippingMethod}
+                  savedPlan={selectedShippingPlan}
+                  cartSubtotal={cartSubtotal}
+                  onComplete={handleShippingComplete}
+                  onPlanChange={setSelectedShippingPlan}
+                  onEdit={() => setCurrentStep('shipping')}
+                  disabled={!isContactComplete}
+                />
+              </>
             )}
 
-            {currentStep === 'payment' && contactData && shippingData && shippingMethod && (
+            {currentStep === 'payment' && contactData && shippingData && shippingMethod ? (
               <>
                 <RewardPointsRedemption
                   userSignedIn={!!user}
@@ -257,6 +328,30 @@ export default function CheckoutPage() {
                   pointsToRedeem={rewardPointsToRedeem}
                   onChange={setRewardPointsToRedeem}
                 />
+
+                <details className="pvg-checkout-optional">
+                  <summary>
+                    <span>
+                      Special instructions
+                      {specialInstructions.trim() ? (
+                        <span className="ml-2 text-xs font-normal text-[#8a6400]">(added)</span>
+                      ) : (
+                        <span className="ml-2 text-xs font-normal text-[#7a6250]">optional</span>
+                      )}
+                    </span>
+                  </summary>
+                  <div className="pvg-checkout-optional-body">
+                    <textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="Sizing notes, gifting, or delivery preferences…"
+                      maxLength={1000}
+                      rows={2}
+                      className="pvg-checkout-input resize-none"
+                    />
+                  </div>
+                </details>
+
                 <PaymentSection
                   cartItems={cart.items}
                   contact={contactData}
@@ -264,6 +359,8 @@ export default function CheckoutPage() {
                   shippingMethod={shippingMethod}
                   specialInstructions={specialInstructions}
                   rewardPointsToRedeem={rewardPointsToRedeem}
+                  couponCode={appliedCouponCode}
+                  couponDiscount={couponDiscount}
                   selectedShippingPlan={selectedShippingPlan}
                   rewards={rewardInfo}
                   isLoggedIn={!!user}
@@ -273,7 +370,7 @@ export default function CheckoutPage() {
                   onPaymentSuccess={handlePaymentSuccess}
                 />
               </>
-            )}
+            ) : null}
           </div>
 
           <aside>
@@ -283,6 +380,12 @@ export default function CheckoutPage() {
                 selectedShippingPlan={selectedShippingPlan}
                 rewardPointsToRedeem={rewardPointsToRedeem}
                 rewards={rewardInfo}
+                couponCode={appliedCouponCode ?? ''}
+                appliedCouponCode={appliedCouponCode}
+                couponDiscount={couponDiscount}
+                onApplyCoupon={isShippingComplete ? handleApplyCoupon : undefined}
+                onRemoveCoupon={isShippingComplete ? handleRemoveCoupon : undefined}
+                couponDisabled={isProcessing}
               />
 
               <div className="pvg-checkout-trust">

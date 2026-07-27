@@ -29,6 +29,8 @@ import {
   parseProofOfDelivery,
 } from '@/lib/orders/dispatch-proof';
 import { finalizeCapturedPayment } from '@/lib/orders/payment-finalization';
+import { applyPaymentToBalances, inferPaymentKind, roundMoney } from '@/lib/orders/counter-payments';
+import { recomputeOrderBalances } from '@/lib/orders/online-payments';
 import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
 import { sendBalanceDueEmail } from '@/lib/resend/send-balance-due';
 import { sendBankTransferRejectedEmail } from '@/lib/resend/send-bank-transfer-rejected';
@@ -462,6 +464,18 @@ export async function POST(
         return NextResponse.json({ error: 'Payment already captured' }, { status: 400 });
       }
 
+      const orderTotal = roundMoney(Number(orderRow.total ?? 0));
+      const priorPaid = roundMoney(Number(orderRow.amount_paid ?? 0));
+      const claimed = roundMoney(proof.amount_claimed ?? orderTotal - priorPaid);
+      let balances;
+      try {
+        balances = applyPaymentToBalances(orderTotal, priorPaid, claimed);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Invalid payment amount';
+        return NextResponse.json({ error: message }, { status: 400 });
+      }
+      const kind = inferPaymentKind(claimed, orderTotal, priorPaid);
+
       const marked = mergeBankTransferProof(orderRow.compliance_flags, {
         ...proof,
         status: 'verified',
@@ -474,17 +488,39 @@ export async function POST(
 
       await db.from('orders').update({ compliance_flags: marked }).eq('id', id);
 
+      const { error: payError } = await db.from('order_payments').insert({
+        order_id: id,
+        amount: claimed,
+        method: 'bank_transfer',
+        kind,
+        reference: proof.reference,
+        notes: `Verified ${proof.bank_label} transfer`,
+        recorded_by: auth.user.id,
+        paid_at: new Date().toISOString(),
+      });
+      if (payError) {
+        console.error('[admin/orders/actions] bank transfer ledger insert', payError);
+        return NextResponse.json({ error: 'Failed to record payment in ledger.' }, { status: 500 });
+      }
+
+      const ledgerBalances = await recomputeOrderBalances(id, orderTotal);
+
       await finalizeCapturedPayment({
         order: order as Order,
         method: 'bank_transfer',
+        balances: ledgerBalances,
+        paymentKind: kind === 'advance' ? 'advance' : kind === 'balance' ? 'balance' : 'full',
       });
 
       if (orderRow.customer_id) {
+        const isPartial = ledgerBalances.payment_status === 'partial';
         await notifyUser({
           recipientUserId: orderRow.customer_id,
           type: 'order_status_update',
-          title: 'Payment verified',
-          message: `Bank transfer for order ${orderRow.order_number} was verified. Your order is confirmed.`,
+          title: isPartial ? 'Advance payment verified' : 'Payment verified',
+          message: isPartial
+            ? `We verified your bank transfer of ₹${claimed.toLocaleString('en-IN')} for order ${orderRow.order_number}. Your order is confirmed — balance ₹${ledgerBalances.amount_due.toLocaleString('en-IN')} is due when ready.`
+            : `Bank transfer for order ${orderRow.order_number} was verified. Your order is confirmed.`,
           href: '/account/orders',
           entityType: 'order',
           entityId: id,
@@ -501,6 +537,9 @@ export async function POST(
           order_number: orderRow.order_number,
           reference: proof.reference,
           bank_id: proof.bank_id,
+          amount_claimed: claimed,
+          amount_paid: ledgerBalances.amount_paid,
+          amount_due: ledgerBalances.amount_due,
         },
         ipAddress: getRequestIp(request),
       });
@@ -508,7 +547,9 @@ export async function POST(
       return NextResponse.json({
         success: true,
         status: 'confirmed',
-        payment_status: 'captured',
+        payment_status: ledgerBalances.payment_status,
+        amount_paid: ledgerBalances.amount_paid,
+        amount_due: ledgerBalances.amount_due,
       });
     }
 

@@ -45,9 +45,9 @@ const STEP_DESCRIPTIONS: Record<JourneyStepKey, string> = {
   crafting: 'Your piece is being crafted or assembled by our artisans.',
   preparation: 'Items are being prepared, checked, and packed for dispatch.',
   certification: 'Lab certification documents are being prepared for your gem.',
-  energization: 'Energization / puja ritual is being performed as requested.',
+  energization: 'Puja ritual is performed as requested. Ceremony video appears here when ready.',
   product_video: 'A product video of your finished piece will appear here when ready.',
-  puja_video: 'A ceremony / puja video will appear here when ready.',
+  puja_video: 'Puja ritual is performed as requested. Ceremony video appears here when ready.',
   shipped: 'Package handed to the courier with tracking details.',
   out_for_delivery: 'Courier is delivering your package today.',
   delivered: 'Order delivered to the shipping address.',
@@ -179,7 +179,7 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
     videoUrl:
       step.key === 'product_video'
         ? order.product_video_url
-        : step.key === 'puja_video'
+        : step.key === 'energization' || step.key === 'puja_video'
           ? order.puja_video_url
           : null,
     detail: stepDetail(step.key, order),

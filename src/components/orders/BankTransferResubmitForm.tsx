@@ -8,6 +8,8 @@ import type { BankTransferProof } from '@/lib/orders/bank-transfer-proof';
 type Props = {
   orderId: string;
   orderTotalLabel?: string;
+  /** When set, customer must transfer exactly this amount (balance leg). */
+  amountDue?: number;
   existing?: BankTransferProof | null;
   /** Guest recovery when cookie expired */
   requireContactConfirm?: boolean;
@@ -17,6 +19,7 @@ type Props = {
 export function BankTransferResubmitForm({
   orderId,
   orderTotalLabel,
+  amountDue,
   existing = null,
   requireContactConfirm = false,
   onSubmitted,
@@ -72,6 +75,9 @@ export function BankTransferResubmitForm({
       if (notes.trim()) form.set('notes', notes.trim());
       if (confirmEmail.trim()) form.set('confirm_email', confirmEmail.trim());
       if (confirmPhone.trim()) form.set('confirm_phone', confirmPhone.trim());
+      if (amountDue != null && amountDue > 0) {
+        form.set('amount_claimed', String(amountDue));
+      }
       if (proofFiles) {
         Array.from(proofFiles).forEach((f) => form.append('proofs', f));
       }
@@ -107,9 +113,11 @@ export function BankTransferResubmitForm({
         <div>
           <p className="text-sm font-semibold text-[var(--pvg-text)]">Update bank transfer proof</p>
           <p className="mt-0.5 text-xs text-[var(--pvg-muted)]">
-            {orderTotalLabel
-              ? `Transfer exactly ${orderTotalLabel}, then update UTR and screenshot below.`
-              : 'Update UTR / bank details and screenshot, then resubmit for verification.'}
+            {amountDue != null && amountDue > 0
+              ? `Transfer exactly ₹${amountDue.toLocaleString('en-IN')} as your balance payment, then update UTR and screenshot below.`
+              : orderTotalLabel
+                ? `Transfer exactly ${orderTotalLabel}, then update UTR and screenshot below.`
+                : 'Update UTR / bank details and screenshot, then resubmit for verification.'}
           </p>
         </div>
       </div>

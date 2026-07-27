@@ -6,19 +6,25 @@ import { ChevronDown } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
-import { CartItemPriceBreakdown } from '@/components/cart/CartItemPriceBreakdown';
 import { buildCartItemPriceBreakdown } from '@/lib/cart/price-breakdown';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import type { CartItem } from '@/lib/types/cart';
 import { estimateClientTax } from '@/lib/utils/tax';
 import type { CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
 import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemption';
+import { CheckoutCouponField } from '@/components/checkout/CheckoutCouponField';
 
 interface CheckoutOrderSummaryProps {
   items: CartItem[];
   selectedShippingPlan: SelectedShippingPlan | null;
   rewardPointsToRedeem?: number;
   rewards?: CheckoutRewardState | null;
+  couponCode?: string | null;
+  appliedCouponCode?: string | null;
+  couponDiscount?: number;
+  onApplyCoupon?: (code: string) => Promise<{ ok: boolean; error?: string }>;
+  onRemoveCoupon?: () => void;
+  couponDisabled?: boolean;
 }
 
 function amountLabel(amount: number | null, display?: string) {
@@ -32,6 +38,12 @@ export function CheckoutOrderSummary({
   selectedShippingPlan,
   rewardPointsToRedeem = 0,
   rewards = null,
+  couponCode = null,
+  appliedCouponCode = null,
+  couponDiscount = 0,
+  onApplyCoupon,
+  onRemoveCoupon,
+  couponDisabled = false,
 }: CheckoutOrderSummaryProps) {
   useCurrencySubscription();
   const [breakupOpen, setBreakupOpen] = useState(false);
@@ -40,7 +52,7 @@ export function CheckoutOrderSummary({
   const shipping = selectedShippingPlan?.cost ?? 0;
   const rewardDiscount = estimateRewardDiscount(rewardPointsToRedeem, rewards, subtotal);
   const gst = estimateClientTax(items, shipping);
-  const total = Math.max(0, subtotal - rewardDiscount + shipping + gst);
+  const total = Math.max(0, subtotal - couponDiscount - rewardDiscount + shipping + gst);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const itemBreakups = useMemo(
@@ -98,13 +110,20 @@ export function CheckoutOrderSummary({
                 </div>
                 <p className="pvg-checkout-item-price">{formatPrice(item.price * item.quantity)}</p>
               </div>
-              <CartItemPriceBreakdown
-                item={item}
-                gstNote="GST is estimated here. Final HSN/GST is confirmed with your shipping address before payment."
-              />
             </div>
           ))}
         </div>
+
+        {onApplyCoupon && onRemoveCoupon ? (
+          <CheckoutCouponField
+            couponCode={couponCode ?? ''}
+            appliedCode={appliedCouponCode}
+            couponDiscount={couponDiscount}
+            disabled={couponDisabled}
+            onApply={onApplyCoupon}
+            onRemove={onRemoveCoupon}
+          />
+        ) : null}
 
         <div className="pvg-checkout-breakup">
           <button
@@ -113,11 +132,52 @@ export function CheckoutOrderSummary({
             aria-expanded={breakupOpen}
             onClick={() => setBreakupOpen((open) => !open)}
           >
-            <span>Full price breakup</span>
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${breakupOpen ? 'rotate-180' : ''}`}
-            />
+            <span>Price details</span>
+            <span className="inline-flex items-center gap-1.5">
+              {!breakupOpen ? (
+                <span className="tabular-nums text-[#8a6400]">{formatPrice(total)}</span>
+              ) : null}
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${breakupOpen ? 'rotate-180' : ''}`}
+              />
+            </span>
           </button>
+
+          <div className="pvg-checkout-lines">
+            <div className="pvg-checkout-line">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            <div className="pvg-checkout-line">
+              <span>
+                Shipping
+                {selectedShippingPlan ? (
+                  <span className="block text-[0.7rem] text-[var(--pvg-muted)]">
+                    {selectedShippingPlan.label}
+                  </span>
+                ) : null}
+              </span>
+              <span>
+                {selectedShippingPlan ? formatPrice(shipping) : 'Select shipping above'}
+              </span>
+            </div>
+            {rewardDiscount > 0 && (
+              <div className="pvg-checkout-line pvg-checkout-line--discount">
+                <span>Reward points</span>
+                <span>-{formatPrice(rewardDiscount)}</span>
+              </div>
+            )}
+            {couponDiscount > 0 && (
+              <div className="pvg-checkout-line pvg-checkout-line--discount">
+                <span>Coupon{appliedCouponCode ? ` (${appliedCouponCode})` : ''}</span>
+                <span>-{formatPrice(couponDiscount)}</span>
+              </div>
+            )}
+            <div className="pvg-checkout-line">
+              <span>Estimated GST/IGST</span>
+              <span>{formatPrice(gst)}</span>
+            </div>
+          </div>
 
           {breakupOpen ? (
             <div className="pvg-checkout-lines pvg-checkout-lines--breakup">
@@ -145,62 +205,8 @@ export function CheckoutOrderSummary({
                   ))}
                 </div>
               ))}
-              <div className="pvg-checkout-line">
-                <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
-              </div>
-              <div className="pvg-checkout-line">
-                <span>
-                  Shipping
-                  {selectedShippingPlan ? (
-                    <span className="block text-[0.7rem] text-[var(--pvg-muted)]">
-                      {selectedShippingPlan.label}
-                    </span>
-                  ) : null}
-                </span>
-                <span>
-                  {selectedShippingPlan ? formatPrice(shipping) : 'Select shipping above'}
-                </span>
-              </div>
-              {rewardDiscount > 0 && (
-                <div className="pvg-checkout-line pvg-checkout-line--discount">
-                  <span>Reward points</span>
-                  <span>-{formatPrice(rewardDiscount)}</span>
-                </div>
-              )}
-              <div className="pvg-checkout-line">
-                <span>Estimated GST/IGST</span>
-                <span>{formatPrice(gst)}</span>
-              </div>
-              <div className="pvg-checkout-line pvg-checkout-line--emphasis">
-                <span>Order total</span>
-                <span>{formatPrice(total)}</span>
-              </div>
             </div>
-          ) : (
-            <div className="pvg-checkout-lines">
-              <div className="pvg-checkout-line">
-                <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
-              </div>
-              <div className="pvg-checkout-line">
-                <span>Shipping</span>
-                <span>
-                  {selectedShippingPlan ? formatPrice(shipping) : 'Select shipping above'}
-                </span>
-              </div>
-              {rewardDiscount > 0 && (
-                <div className="pvg-checkout-line pvg-checkout-line--discount">
-                  <span>Reward points</span>
-                  <span>-{formatPrice(rewardDiscount)}</span>
-                </div>
-              )}
-              <div className="pvg-checkout-line">
-                <span>Estimated GST/IGST</span>
-                <span>{formatPrice(gst)}</span>
-              </div>
-            </div>
-          )}
+          ) : null}
         </div>
 
         <div className="pvg-checkout-total">

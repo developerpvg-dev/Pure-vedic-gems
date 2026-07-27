@@ -184,7 +184,7 @@ export function getJourneyStepsForContext(context: OrderFulfillmentContext): Jou
     (profile === 'configured_jewelry' || profile === 'rudraksha_configured');
 
   if (profile === 'configured_jewelry') {
-    steps.push({ key: 'processing', label: 'Design Routing', shortLabel: 'Route' });
+    // ponytail: Design Routing is internal — customers go Confirmed → Cert/Craft
     if (needsEarlyCert) {
       steps.push({ key: 'certification', label: 'Certification', shortLabel: 'Cert' });
     }
@@ -214,16 +214,13 @@ export function getJourneyStepsForContext(context: OrderFulfillmentContext): Jou
     steps.push({ key: 'certification', label: 'Certification', shortLabel: 'Cert' });
   }
 
-  if (context.showEnergization) {
-    steps.push({ key: 'energization', label: 'Energization', shortLabel: 'Energy' });
+  // ponytail: one customer step for ritual + ceremony video (admin still tracks both)
+  if (context.showEnergization || context.showPujaVideo) {
+    steps.push({ key: 'energization', label: 'Energization', shortLabel: 'Puja' });
   }
 
   if (context.showProductVideo) {
     steps.push({ key: 'product_video', label: 'Product Video', shortLabel: 'Video' });
-  }
-
-  if (context.showPujaVideo) {
-    steps.push({ key: 'puja_video', label: 'Puja Video', shortLabel: 'Puja' });
   }
 
   steps.push(

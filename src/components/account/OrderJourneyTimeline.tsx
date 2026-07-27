@@ -3,6 +3,7 @@ import { Check, ExternalLink, PlayCircle, Truck } from 'lucide-react';
 import {
   getCustomerJourney,
   type CustomerJourneyInput,
+  type JourneyMilestone,
 } from '@/lib/orders/customer-journey';
 
 type OrderJourneyTimelineProps = CustomerJourneyInput & {
@@ -20,10 +21,50 @@ function formatDeliveryDate(value: string | null | undefined) {
   });
 }
 
-function stageStateLabel(done: boolean, current: boolean) {
-  if (done && !current) return 'Completed';
-  if (current) return done ? 'In progress' : 'Current stage';
-  return 'Upcoming';
+function ProgressHeader({
+  milestones,
+  activeIndex,
+}: {
+  milestones: JourneyMilestone[];
+  activeIndex: number;
+}) {
+  const current = milestones[activeIndex];
+  const doneCount = milestones.filter((m) => m.done && !m.current).length;
+  const pct = Math.round(((doneCount + (current?.current ? 0.4 : 0)) / milestones.length) * 100);
+
+  return (
+    <div className="mb-1">
+      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--pvg-muted)]">
+            Current stage
+          </p>
+          <p className="mt-0.5 text-base font-semibold text-[var(--pvg-primary)]">
+            {current?.label ?? 'Order progress'}
+          </p>
+        </div>
+        <p className="pb-0.5 text-[11px] tabular-nums text-[var(--pvg-muted)]">
+          {Math.min(activeIndex + 1, milestones.length)} / {milestones.length}
+        </p>
+      </div>
+      <div
+        className="mt-3 h-1 overflow-hidden rounded-full bg-[#efe8dc]"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Order progress"
+      >
+        <div
+          className="h-full rounded-full bg-[var(--pvg-accent)] transition-[width] duration-500 ease-out"
+          style={{ width: `${Math.min(100, Math.max(6, pct))}%` }}
+        />
+      </div>
+      {current?.description ? (
+        <p className="mt-2.5 text-[13px] leading-relaxed text-[#6b5b4e]">{current.description}</p>
+      ) : null}
+    </div>
+  );
 }
 
 export function OrderJourneyTimeline({
@@ -33,143 +74,101 @@ export function OrderJourneyTimeline({
   const journey = getCustomerJourney(order);
   if (!journey) return null;
 
-  const { milestones, hasTracking, fulfillmentContext } = journey;
-  const minWidth = Math.max(360, milestones.length * 88);
+  const { milestones, activeIndex, hasTracking, fulfillmentContext } = journey;
 
   return (
-    <div className={compact ? 'px-0 py-3' : 'px-6 py-4'}>
-      <div className="overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
-        <div className="flex items-center" style={{ minWidth: `${minWidth}px` }}>
-          {milestones.map((milestone, index) => (
-            <div key={milestone.key} className="flex flex-1 items-center">
-              <div className="flex min-w-0 flex-col items-center px-0.5">
-                <div
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors"
-                  style={{
-                    background:
-                      milestone.done || milestone.current
-                        ? 'var(--pvg-accent)'
-                        : 'var(--pvg-bg-alt)',
-                    color:
-                      milestone.done || milestone.current
-                        ? 'white'
-                        : 'var(--pvg-muted)',
-                    border:
-                      milestone.done || milestone.current
-                        ? 'none'
-                        : '2px solid var(--pvg-border)',
-                  }}
-                >
-                  {milestone.done && !milestone.current ? '✓' : index + 1}
-                </div>
-                <span
-                  className="mt-1 max-w-[4.5rem] truncate text-center text-[8px] font-semibold uppercase tracking-wide sm:max-w-none sm:text-[9px]"
-                  style={{
-                    color:
-                      milestone.done || milestone.current
-                        ? 'var(--pvg-primary)'
-                        : 'var(--pvg-muted)',
-                    fontWeight: milestone.current ? 700 : 400,
-                  }}
-                  title={milestone.label}
-                >
-                  <span className="sm:hidden">{milestone.shortLabel}</span>
-                  <span className="hidden sm:inline">{milestone.label}</span>
-                </span>
-              </div>
-              {index < milestones.length - 1 ? (
-                <div
-                  className="mb-4 h-0.5 flex-1"
-                  style={{
-                    background: milestone.done
-                      ? 'var(--pvg-accent)'
-                      : 'var(--pvg-border)',
-                  }}
-                />
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </div>
+    <div
+      className={`font-body ${compact ? 'px-0 py-3' : 'px-5 py-4 md:px-6'}`}
+      style={{ fontFamily: "var(--font-roboto), 'Roboto', Arial, sans-serif" }}
+    >
+      <div className="rounded-2xl border border-[#ebe3d4] bg-gradient-to-b from-[#fffdf9] to-[#f7f2ea] p-4 sm:p-5">
+        <ProgressHeader milestones={milestones} activeIndex={activeIndex} />
 
-      <ol className="mt-5 space-y-0 rounded-xl border border-[#ede6d5] bg-[#faf8f4] px-3 py-2 sm:px-4">
-        {milestones.map((milestone, index) => {
-          const state = stageStateLabel(milestone.done, milestone.current);
-          const active = milestone.done || milestone.current;
-          const rowClass =
-            index < milestones.length - 1
-              ? 'flex gap-3 border-b border-[#ede6d5] py-3'
-              : 'flex gap-3 py-3';
-          return (
-            <li key={`detail-${milestone.key}`} className={rowClass}>
-              <div
-                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                style={{
-                  background: active ? 'var(--pvg-accent)' : 'white',
-                  color: active ? 'white' : 'var(--pvg-muted)',
-                  border: active ? 'none' : '1.5px solid var(--pvg-border)',
-                }}
-                aria-hidden="true"
+        <ol className="relative mt-5 ms-2.5 border-s border-[#e5dccf] ps-5">
+          {milestones.map((milestone) => {
+            const active = milestone.done || milestone.current;
+            const isCurrent = milestone.current;
+            const isDone = milestone.done && !milestone.current;
+
+            return (
+              <li
+                key={milestone.key}
+                className={`relative pb-4 last:pb-0 ${
+                  isCurrent
+                    ? '-ms-2 rounded-xl bg-[rgba(138,100,0,0.07)] px-2 py-2.5 ps-2'
+                    : ''
+                }`}
               >
-                {milestone.done && !milestone.current ? (
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                ) : (
-                  index + 1
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="absolute flex h-[18px] w-[18px] items-center justify-center rounded-full"
+                  style={{
+                    left: isCurrent ? '-1.7rem' : '-1.45rem',
+                    top: isCurrent ? '0.7rem' : '0.15rem',
+                    background: active ? 'var(--pvg-accent)' : '#fff',
+                    border: active ? 'none' : '1.5px solid #d9cebe',
+                    boxShadow: isCurrent ? '0 0 0 4px rgba(138, 100, 0, 0.12)' : undefined,
+                  }}
+                  aria-hidden="true"
+                >
+                  {isDone ? (
+                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3.5} />
+                  ) : isCurrent ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  ) : null}
+                </span>
+
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <p
-                    className="text-sm font-semibold"
-                    style={{ color: active ? 'var(--pvg-primary)' : 'var(--pvg-muted)' }}
+                    className={`text-[13px] ${isCurrent ? 'font-semibold' : isDone ? 'font-medium' : 'font-medium'}`}
+                    style={{
+                      color: isCurrent
+                        ? 'var(--pvg-primary)'
+                        : isDone
+                          ? '#5c4f42'
+                          : '#9a8b7a',
+                    }}
                   >
                     {milestone.label}
                   </p>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                    style={{
-                      background: milestone.current
-                        ? 'rgba(138, 100, 0, 0.12)'
-                        : milestone.done
-                          ? 'rgba(22, 101, 52, 0.1)'
-                          : 'rgba(0,0,0,0.04)',
-                      color: milestone.current
-                        ? '#8a6400'
-                        : milestone.done
-                          ? '#166534'
-                          : '#7a6250',
-                    }}
-                  >
-                    {state}
-                  </span>
-                  {milestone.detail ? (
-                    <span className="text-[11px] text-[var(--pvg-muted)]">
-                      · {milestone.detail}
+                  {isCurrent ? (
+                    <span className="rounded-full bg-[rgba(138,100,0,0.14)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#8a6400]">
+                      In progress
                     </span>
                   ) : null}
+                  {isDone ? (
+                    <span className="text-[10px] font-medium text-[#2f7a4a]">Done</span>
+                  ) : null}
+                  {milestone.detail && isCurrent ? (
+                    <span className="text-[11px] text-[var(--pvg-muted)]">· {milestone.detail}</span>
+                  ) : null}
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-[#6b5b4e]">
-                  {milestone.description}
-                </p>
+
+                {/* Descriptions: current (also in header) skipped; upcoming keep copy; done stay quiet */}
+                {!isDone && !isCurrent ? (
+                  <p className="mt-0.5 text-[12px] leading-snug text-[#a89888]">
+                    {milestone.description}
+                  </p>
+                ) : null}
+
                 {milestone.videoUrl ? (
                   <a
                     href={milestone.videoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#8a6400] underline-offset-2 hover:underline"
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#8a6400] underline-offset-2 hover:underline"
                   >
                     <PlayCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                    Watch {milestone.label}
+                    Watch video
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 ) : null}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-3">
         {fulfillmentContext.mixed ? (
           <p className="text-[11px] text-[var(--pvg-muted)]">
             Tracking reflects the primary fulfillment path for this order.
@@ -177,15 +176,15 @@ export function OrderJourneyTimeline({
         ) : null}
 
         {hasTracking ? (
-          <div className="rounded-lg border border-[#ede6d5] bg-white px-4 py-3">
+          <div className="rounded-2xl border border-[#ebe3d4] bg-white px-4 py-3.5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--pvg-muted)]">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--pvg-muted)]">
                   <Truck className="h-3.5 w-3.5" aria-hidden="true" />
                   Shipment tracking
                 </p>
                 {order.carrier ? (
-                  <p className="mt-1 text-sm text-[var(--pvg-text)]">
+                  <p className="mt-1.5 text-[13px] text-[var(--pvg-text)]">
                     Carrier: <span className="font-semibold">{order.carrier}</span>
                   </p>
                 ) : null}
@@ -195,7 +194,7 @@ export function OrderJourneyTimeline({
                   </p>
                 ) : null}
                 {order.estimated_delivery ? (
-                  <p className="mt-1 text-xs text-[var(--pvg-muted)]">
+                  <p className="mt-1 text-[12px] text-[var(--pvg-muted)]">
                     Est. delivery: {formatDeliveryDate(order.estimated_delivery)}
                   </p>
                 ) : null}
@@ -205,11 +204,8 @@ export function OrderJourneyTimeline({
                   href={order.tracking_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all hover:-translate-y-0.5"
-                  style={{
-                    background: 'var(--pvg-primary)',
-                    color: 'var(--pvg-bg)',
-                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition hover:opacity-90"
+                  style={{ background: 'var(--pvg-primary)' }}
                 >
                   Track package
                   <ExternalLink className="h-3 w-3" aria-hidden="true" />
