@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Loader2, Pencil, Save, X } from 'lucide-react';
 import {
   LEAD_ENQUIRY_TYPES,
+  LEAD_NOT_CONVERTED_BY_CODE,
+  LEAD_NOT_CONVERTED_REASONS,
   LEAD_PIPELINE_HELP,
   LEAD_PIPELINE_LABELS,
   LEAD_PIPELINE_STAGES,
@@ -13,6 +15,7 @@ import {
   REMEDIES_TEMPLATE,
   TELECOM_CALL_OUTCOMES,
   TELECOM_DELIVERY_OUTCOMES,
+  type LeadNotConvertedReason,
   type LeadPipelineStage,
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
@@ -54,6 +57,14 @@ export type EnquiryLead = {
   sale_close?: boolean | null;
   feedback_received?: boolean | null;
   last_remark_code?: string | null;
+  conversion_status?: string | null;
+  conversion_reason_code?: string | null;
+  conversion_reason_note?: string | null;
+  order_id?: string | null;
+  order_number?: string | null;
+  converted_at?: string | null;
+  not_converted_at?: string | null;
+  conversion_recorded_by_name?: string | null;
   created_at: string;
   _type: 'enquiry';
 };
@@ -85,12 +96,137 @@ const STAGE_COLORS: Record<string, string> = {
   remedies_ready: 'bg-fuchsia-100 text-fuchsia-800',
   sent_to_customer: 'bg-teal-100 text-teal-800',
   remedies_explained: 'bg-lime-100 text-lime-800',
+  conversion: 'bg-orange-100 text-orange-900',
   closed: 'bg-gray-100 text-gray-600',
 };
 
 function fmtDate(value: string | null | undefined) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function ConversionBanner({ lead }: { lead: EnquiryLead }) {
+  if (lead.conversion_status === 'converted') {
+    return (
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <p className="font-semibold">Sale converted</p>
+        <p className="mt-0.5 text-xs">
+          Order{' '}
+          {lead.order_id ? (
+            <a href={`/admin/orders/${lead.order_id}`} className="font-semibold underline underline-offset-2">
+              {lead.order_number || '—'}
+            </a>
+          ) : (
+            <span className="font-semibold">{lead.order_number || '—'}</span>
+          )}
+          {lead.converted_at ? ` · ${fmtDate(lead.converted_at)}` : ''}
+          {lead.conversion_recorded_by_name ? ` · by ${lead.conversion_recorded_by_name}` : ''}
+        </p>
+      </div>
+    );
+  }
+  if (lead.conversion_status === 'not_converted') {
+    const reason =
+      LEAD_NOT_CONVERTED_BY_CODE[lead.conversion_reason_code as LeadNotConvertedReason]?.label ||
+      lead.conversion_reason_code ||
+      'Not converted';
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+        <p className="font-semibold">Not converted</p>
+        <p className="mt-0.5 text-xs">
+          {reason}
+          {lead.conversion_reason_note ? ` — ${lead.conversion_reason_note}` : ''}
+          {lead.not_converted_at ? ` · ${fmtDate(lead.not_converted_at)}` : ''}
+          {lead.conversion_recorded_by_name ? ` · by ${lead.conversion_recorded_by_name}` : ''}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
+function NotConvertedPanel({
+  saving,
+  onUpdate,
+}: {
+  saving: boolean;
+  onUpdate: (updates: Record<string, unknown>) => void;
+}) {
+  const [reason, setReason] = useState<LeadNotConvertedReason>('budget_issue');
+  const [note, setNote] = useState('');
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-2">
+      <p className="text-xs font-semibold text-amber-950">Not converted — pick a reason</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {LEAD_NOT_CONVERTED_REASONS.map((r) => (
+          <button
+            key={r.code}
+            type="button"
+            disabled={saving}
+            onClick={() => setReason(r.code)}
+            className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-50 ${
+              reason === r.code
+                ? 'border-amber-500 bg-amber-100 text-amber-950'
+                : 'border-gray-200 bg-white text-gray-800 hover:bg-amber-50'
+            }`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={2}
+        placeholder={reason === 'other' ? 'Write why not converted (required)…' : 'Optional note…'}
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+      />
+      <button
+        type="button"
+        disabled={saving || (reason === 'other' && !note.trim())}
+        onClick={() =>
+          onUpdate({
+            action: 'mark_not_converted',
+            conversion_reason_code: reason,
+            conversion_reason_note: note.trim() || null,
+          })
+        }
+        className="w-full rounded-lg bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+      >
+        Save not converted &amp; close lead
+      </button>
+    </div>
+  );
+}
+
+function ConvertedPanel({
+  saving,
+  onUpdate,
+}: {
+  saving: boolean;
+  onUpdate: (updates: Record<string, unknown>) => void;
+}) {
+  const [orderNumber, setOrderNumber] = useState('');
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 space-y-2">
+      <p className="text-xs font-semibold text-emerald-950">Converted — link a real order</p>
+      <p className="text-[11px] text-emerald-900/80">Order number must exist in the system (e.g. PVG-2026-00001).</p>
+      <input
+        value={orderNumber}
+        onChange={(e) => setOrderNumber(e.target.value)}
+        placeholder="Order number"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-mono uppercase"
+      />
+      <button
+        type="button"
+        disabled={saving || !orderNumber.trim()}
+        onClick={() => onUpdate({ action: 'mark_converted', order_number: orderNumber.trim() })}
+        className="w-full rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+      >
+        Link order &amp; mark converted
+      </button>
+    </div>
+  );
 }
 
 function PipelineStepper({ stage }: { stage: string }) {
@@ -211,6 +347,7 @@ export function EnquiryDetail({
     const verifyPhase = stage === 'assigned' || stage === 'verifying';
     const deliveryPhase = stage === 'sent_to_customer' && Boolean(lead.remedies_text);
     const explainedPhase = stage === 'remedies_explained';
+    const conversionPhase = stage === 'conversion';
     const lastLabel = lead.last_remark_code
       ? LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code
       : null;
@@ -244,6 +381,8 @@ export function EnquiryDetail({
               ? 'Remedies already explained — waiting for the leads manager to close this lead.'
             : verifyPhase
               ? 'Call the customer, correct any wrong form fields, mark the call result, then mark verified only when details are confirmed and they want to proceed. The leads manager sees every status you set.'
+              : conversionPhase
+                ? 'Remedies were explained. Record Not converted (with reason) or wait for the leads manager / parcel dispatch to link the order when converted.'
               : stage === 'verified'
                 ? 'This lead is with the manager. No action needed until remedies come back for delivery.'
                 : 'Review this lead’s current status below.'}
@@ -338,13 +477,13 @@ export function EnquiryDetail({
             </div>
 
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-900 pt-1">Step 2 — Call result</p>
-            <p className="text-[11px] text-emerald-800/90">Tap the situation that matches this call. Manager sees this status instantly.</p>
+            <p className="text-[11px] text-emerald-800/90">Tap the situation that matches this call. Manager sees this status instantly. Invalid number keeps the lead open — use email options or a custom remark.</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {TELECOM_CALL_OUTCOMES.map((o) => (
                 <button
                   key={o.code}
                   type="button"
-                  disabled={saving}
+                  disabled={saving || (o.code === 'custom' && !remarkNote.trim())}
                   title={o.hint}
                   onClick={() => onAddRemark(o.code)}
                   className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-50 ${
@@ -361,9 +500,19 @@ export function EnquiryDetail({
               value={remarkNote}
               onChange={(e) => onRemarkNote(e.target.value)}
               rows={2}
-              placeholder="Optional note for manager (saved with the next status you tap)…"
+              placeholder="Note for manager (required for Custom remark; otherwise saved with the next status you tap)…"
               className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
             />
+            {remarkNote.trim() ? (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onAddRemark('custom')}
+                className="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-50 disabled:opacity-50"
+              >
+                Save custom remark
+              </button>
+            ) : null}
 
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-900 pt-1">Step 3 — Ready for manager</p>
             <p className="text-[11px] text-emerald-800/90">
@@ -391,14 +540,32 @@ export function EnquiryDetail({
 
         {explainedPhase && (
           <p className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
-            Remedies explained — the leads manager can now close this lead. No further telecaller action needed unless they send it back.
+            Remedies explained — this lead should move to Conversion for the sale outcome.
           </p>
         )}
 
+        {conversionPhase && (
+          <div className="space-y-3">
+            <p className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-950">
+              <span className="font-semibold">Conversion:</span> Was this sale converted? If not, pick a reason. If yes, the leads manager / parcel dispatch will enter the order number.
+            </p>
+            <NotConvertedPanel saving={saving} onUpdate={onUpdate} />
+          </div>
+        )}
+
         {stage === 'closed' && (
-          <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-            Lead closed{lead.last_remark_code ? ` (${LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code})` : ''}.
-          </p>
+          <div className="space-y-2">
+            <ConversionBanner lead={lead} />
+            {!lead.conversion_status ? (
+              <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                Lead closed
+                {lead.last_remark_code
+                  ? ` (${LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code})`
+                  : ''}
+                .
+              </p>
+            ) : null}
+          </div>
         )}
 
         {deliveryPhase && (
@@ -407,13 +574,13 @@ export function EnquiryDetail({
             <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-teal-100 bg-white p-3 font-mono text-xs text-gray-800">
               {lead.remedies_text}
             </pre>
-            <p className="text-[11px] text-teal-800">Mark what happened on this delivery call. Callbacks stay on Deliver Remedies — set a follow-up date if needed.</p>
+            <p className="text-[11px] text-teal-800">Mark what happened on this delivery call. Callbacks stay on Deliver Remedies — set a follow-up date if needed. Invalid number keeps the lead open — use email options or a custom remark.</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {TELECOM_DELIVERY_OUTCOMES.map((o) => (
                 <button
                   key={o.code}
                   type="button"
-                  disabled={saving}
+                  disabled={saving || (o.code === 'custom' && !remarkNote.trim())}
                   title={o.hint}
                   onClick={() =>
                     o.code === 'remedies_explain' || o.code === 'satisfied'
@@ -430,6 +597,23 @@ export function EnquiryDetail({
                 </button>
               ))}
             </div>
+            <textarea
+              value={remarkNote}
+              onChange={(e) => onRemarkNote(e.target.value)}
+              rows={2}
+              placeholder="Note for manager (required for Custom remark; otherwise saved with the next status you tap)…"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+            />
+            {remarkNote.trim() ? (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onAddRemark('custom')}
+                className="rounded-lg border border-teal-300 bg-white px-3 py-2 text-xs font-semibold text-teal-900 hover:bg-teal-50 disabled:opacity-50"
+              >
+                Save custom remark
+              </button>
+            ) : null}
             <label className="block text-xs font-medium text-gray-500">
               Follow-up date
               <input
@@ -459,19 +643,31 @@ export function EnquiryDetail({
           </div>
         )}
 
-        {lead.phone ? (
+        {(lead.phone || lead.email) ? (
           <div className="flex flex-wrap gap-2">
-            <a href={`tel:${lead.phone}`} className="rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-700">
-              Call
-            </a>
-            <a
-              href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${lead.name}, this is Pure Vedic Gems.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg bg-green-600 px-4 py-2 text-xs font-semibold text-white hover:bg-green-700"
-            >
-              WhatsApp
-            </a>
+            {lead.phone ? (
+              <>
+                <a href={`tel:${lead.phone}`} className="rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-700">
+                  Call
+                </a>
+                <a
+                  href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${lead.name}, this is Pure Vedic Gems.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg bg-green-600 px-4 py-2 text-xs font-semibold text-white hover:bg-green-700"
+                >
+                  WhatsApp
+                </a>
+              </>
+            ) : null}
+            {lead.email ? (
+              <a
+                href={`mailto:${lead.email}?subject=${encodeURIComponent('Pure Vedic Gems')}&body=${encodeURIComponent(`Hello ${lead.name},\n\n`)}`}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+              >
+                Email
+              </a>
+            ) : null}
           </div>
         ) : null}
 
@@ -646,9 +842,10 @@ export function EnquiryDetail({
                   type="button"
                   onClick={onCopy}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+                  title="Copies birth details only — phone and email are never included"
                 >
                   {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? 'Copied' : 'Copy packet'}
+                  {copied ? 'Copied' : 'Copy chart for astrologer'}
                 </button>
               ) : null}
             </div>
@@ -933,23 +1130,27 @@ export function EnquiryDetail({
             </div>
           )}
 
-          {/* MANAGER: close after remedies explained */}
-          {isManager && stage === 'remedies_explained' && (
-            <div className="rounded-lg border border-lime-200 bg-lime-50/50 p-3 space-y-2">
-              <p className="text-xs font-semibold text-lime-900">8. Remedies explained — close lead</p>
-              <p className="text-[11px] text-lime-800">
-                Remedies have been explained to the customer. Close this lead when you are done.
+          {/* Conversion outcome — stage 9 */}
+          {(isManager || isTelecom) && (stage === 'conversion' || stage === 'remedies_explained') && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-orange-950">9. Conversion</p>
+              <p className="text-[11px] text-orange-900/80">
+                Record whether the customer bought. Not converted (with reason) is available to telecaller and manager. Linking a real order (Converted) is manager / parcel dispatch only.
               </p>
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'closed' })}
-                className="w-full rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
-              >
-                Mark lead closed
-              </button>
+              {lead.conversion_status ? (
+                <ConversionBanner lead={lead} />
+              ) : (
+                <>
+                  <NotConvertedPanel saving={saving} onUpdate={onUpdate} />
+                  {isManager ? <ConvertedPanel saving={saving} onUpdate={onUpdate} /> : null}
+                </>
+              )}
             </div>
           )}
+
+          {stage === 'closed' && (lead.conversion_status || isManager || isTelecom) ? (
+            <ConversionBanner lead={lead} />
+          ) : null}
 
           {/* Astrologer read-only dossier note when waiting */}
           {isAstro && stage !== 'with_astrologer' && stage !== 'remedies_ready' && (

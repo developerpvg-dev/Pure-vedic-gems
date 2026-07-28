@@ -72,6 +72,7 @@ export async function PUT(
     notify_customer,
     product_video_url,
     puja_video_url,
+    energization_image_urls,
     commission_source,
     commission_name,
     commission_amount,
@@ -177,7 +178,7 @@ export async function PUT(
       }
     }
     // Keep courier delivery_status in sync when order status advances through ship/OFD/delivered
-    if (status === 'shipped' && delivery_status === undefined) updates.delivery_status = 'in_transit';
+    if (status === 'shipped' && delivery_status === undefined) updates.delivery_status = 'label_created';
     if (status === 'out_for_delivery' && delivery_status === undefined) updates.delivery_status = 'out_for_delivery';
     if (status === 'delivered' && delivery_status === undefined) updates.delivery_status = 'delivered';
   }
@@ -191,6 +192,18 @@ export async function PUT(
   if (assigned_to !== undefined) updates.assigned_to = assigned_to;
   if (product_video_url !== undefined) updates.product_video_url = product_video_url || null;
   if (puja_video_url !== undefined) updates.puja_video_url = puja_video_url || null;
+  if (energization_image_urls !== undefined) {
+    const urls = Array.isArray(energization_image_urls)
+      ? energization_image_urls
+          .filter((u: unknown): u is string => typeof u === 'string')
+          .map((u: string) => u.trim())
+          .filter((u: string) => /^https?:\/\//i.test(u))
+          .slice(0, 8)
+      : [];
+    updates.compliance_flags = mergeComplianceFlags(current.compliance_flags, {
+      energization_image_urls: urls,
+    });
+  }
   if (commission_source !== undefined) {
     updates.commission_source =
       commission_source === '' || commission_source === null ? null : commission_source;

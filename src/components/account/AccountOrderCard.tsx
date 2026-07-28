@@ -49,6 +49,7 @@ export type AccountOrderCardData = {
     bank_id: string;
     bank_label: string;
     reference: string;
+    amount_claimed?: number | null;
     notes?: string | null;
     proof_urls: string[];
     submitted_at: string;
@@ -88,6 +89,10 @@ export type AccountOrderCardData = {
   estimated_delivery: string | null;
   product_video_url: string | null;
   puja_video_url: string | null;
+  delivery_status?: string | null;
+  shipped_at?: string | null;
+  energization_image_urls?: string[];
+  compliance_flags?: unknown;
   assigned_designer_id?: string | null;
   design_completed_at?: string | null;
   items: OrderLineItem[];
@@ -103,13 +108,13 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   pending_payment: { label: 'Pending Payment', bg: '#fef9c3', text: '#854d0e' },
   confirmed: { label: 'Confirmed', bg: '#dcfce7', text: '#166534' },
   processing: { label: 'Processing', bg: '#dbeafe', text: '#1e40af' },
-  design_assigned: { label: 'Design Assigned', bg: '#e0e7ff', text: '#3730a3' },
-  design_in_progress: { label: 'Design In Progress', bg: '#e0e7ff', text: '#3730a3' },
-  design_completed: { label: 'Product Completed', bg: '#e0e7ff', text: '#3730a3' },
-  jewelry_making: { label: 'Jewelry Making', bg: '#dbeafe', text: '#1e40af' },
+  design_assigned: { label: 'Jewelry Assigned', bg: '#e0e7ff', text: '#3730a3' },
+  design_in_progress: { label: 'Jewelry Preparation', bg: '#e0e7ff', text: '#3730a3' },
+  design_completed: { label: 'Jewelry Completed', bg: '#e0e7ff', text: '#3730a3' },
+  jewelry_making: { label: 'Final Assembly', bg: '#dbeafe', text: '#1e40af' },
   certification: { label: 'Certification', bg: '#dbeafe', text: '#1e40af' },
   energization: { label: 'Energization', bg: '#dbeafe', text: '#1e40af' },
-  quality_check: { label: 'Quality Check', bg: '#dbeafe', text: '#1e40af' },
+  quality_check: { label: 'Packed for Shipping', bg: '#dbeafe', text: '#1e40af' },
   shipped: { label: 'Shipped', bg: '#ede9fe', text: '#5b21b6' },
   out_for_delivery: { label: 'Out for Delivery', bg: '#e0e7ff', text: '#3730a3' },
   delivered: { label: 'Delivered', bg: '#dcfce7', text: '#166534' },
@@ -198,6 +203,7 @@ export function AccountOrderCard({
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
   const [returnOpen, setReturnOpen] = useState(false);
+  const [returnShippingAckOpen, setReturnShippingAckOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('');
   const [returnImages, setReturnImages] = useState<string[]>([]);
   const [uploadingReturnImage, setUploadingReturnImage] = useState(false);
@@ -270,7 +276,8 @@ export function AccountOrderCard({
       setReceiptOk(Boolean(data.receipt_ok ?? ok));
       if (!ok) {
         setDetailsOpen(true);
-        setReturnOpen(true);
+        setReturnError('');
+        setReturnShippingAckOpen(true);
       }
     } catch {
       setReceiptError('Network error — please try again');
@@ -328,6 +335,7 @@ export function AccountOrderCard({
       setReturnStatus(data.return_status || 'requested');
       setSubmittedReturnReason(returnReason.trim());
       setReturnOpen(false);
+      setReturnShippingAckOpen(false);
     } catch {
       setReturnError('Network error — please try again');
     } finally {
@@ -438,16 +446,21 @@ export function AccountOrderCard({
 
       {showJourney ? (
         <OrderJourneyTimeline
+          orderId={order.id}
           status={status}
           payment_status={order.payment_status}
           assigned_designer_id={order.assigned_designer_id}
           design_completed_at={order.design_completed_at}
           product_video_url={order.product_video_url}
           puja_video_url={order.puja_video_url}
+          energization_image_urls={order.energization_image_urls}
           tracking_number={order.tracking_number}
           tracking_url={order.tracking_url}
           carrier={order.carrier}
           estimated_delivery={order.estimated_delivery}
+          shipped_at={order.shipped_at}
+          delivery_status={order.delivery_status}
+          compliance_flags={order.compliance_flags}
           items={order.items}
           include_energization={order.include_energization}
           energization_charges={order.energization_charges}
@@ -670,7 +683,7 @@ export function AccountOrderCard({
                       </span>
                     </p>
                   ) : canReturn ? (
-                    !returnOpen ? (
+                    !returnOpen && !returnShippingAckOpen ? (
                       <>
                         <p className="mt-1 text-xs leading-relaxed text-[var(--pvg-muted)]">
                           {order.return_message ?? 'You can request a return for this order.'}
@@ -679,12 +692,45 @@ export function AccountOrderCard({
                           type="button"
                           onClick={() => {
                             setReturnError('');
-                            setReturnOpen(true);
+                            setReturnShippingAckOpen(true);
                           }}
                           className="mt-3 inline-flex items-center justify-center rounded-lg border border-amber-200 px-4 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-50"
                         >
                           Request a return
                         </button>
+                      </>
+                    ) : returnShippingAckOpen && !returnOpen ? (
+                      <>
+                        <p className="mt-1 text-sm font-semibold text-[var(--pvg-primary)]">
+                          Before you continue
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-[var(--pvg-muted)]">
+                          Shipping charges are non-refundable. If you proceed with a return, only the
+                          product amount (subject to our returns policy) may be refunded — not the
+                          shipping amount paid on this order.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReturnShippingAckOpen(false);
+                              setReturnOpen(true);
+                            }}
+                            className="inline-flex items-center justify-center rounded-lg bg-amber-700 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-amber-800"
+                          >
+                            I understand, continue
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReturnShippingAckOpen(false);
+                              setReturnError('');
+                            }}
+                            className="inline-flex items-center justify-center rounded-lg border border-[var(--pvg-border)] px-4 py-2.5 text-xs font-semibold text-[var(--pvg-primary)] transition hover:bg-brand-bg-alt"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </>
                     ) : (
                       <>
@@ -757,6 +803,7 @@ export function AccountOrderCard({
                             type="button"
                             onClick={() => {
                               setReturnOpen(false);
+                              setReturnShippingAckOpen(false);
                               setReturnError('');
                             }}
                             disabled={returning}
@@ -832,6 +879,10 @@ function toProof(order: AccountOrderCardData): BankTransferProof | null {
       bank_id: order.bank_transfer.bank_id,
       bank_label: order.bank_transfer.bank_label,
       reference: order.bank_transfer.reference,
+      amount_claimed:
+        order.bank_transfer.amount_claimed != null
+          ? Number(order.bank_transfer.amount_claimed)
+          : undefined,
       notes: order.bank_transfer.notes ?? undefined,
       proof_urls: order.bank_transfer.proof_urls,
       submitted_at: order.bank_transfer.submitted_at,
@@ -861,10 +912,18 @@ function BankTransferAccountBlock({
     order.payment_status,
   );
 
-  if (order.payment_status === 'captured' && proof?.status === 'verified') {
+  if (proof?.status === 'verified' && (order.payment_status === 'captured' || order.payment_status === 'partial')) {
+    const paid = Number(order.amount_paid ?? proof.amount_claimed ?? 0);
+    const due = Number(order.amount_due ?? 0);
     return (
       <div className="border-b border-emerald-100 bg-emerald-50 px-5 py-3 text-sm text-emerald-900 md:px-6">
         Bank transfer verified · {proof.bank_label} · {proof.reference}
+        {paid > 0.009 ? (
+          <span className="mt-0.5 block text-xs text-emerald-800/90">
+            Recorded ₹{paid.toLocaleString('en-IN')}
+            {due > 0.009 ? ` · balance ₹${due.toLocaleString('en-IN')} still due` : ' · fully paid'}
+          </span>
+        ) : null}
       </div>
     );
   }
@@ -897,6 +956,11 @@ function BankTransferAccountBlock({
             amountDue={
               order.payment_status === 'partial' && Number(order.amount_due) > 0
                 ? Number(order.amount_due)
+                : undefined
+            }
+            amountClaimed={
+              order.payment_status !== 'partial' && proof?.amount_claimed != null
+                ? Number(proof.amount_claimed)
                 : undefined
             }
             existing={proof}

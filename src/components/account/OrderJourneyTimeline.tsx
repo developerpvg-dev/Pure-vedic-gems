@@ -1,13 +1,15 @@
 import Link from 'next/link';
-import { Check, ExternalLink, PlayCircle, Truck } from 'lucide-react';
+import { Check, ExternalLink, ImageIcon, PlayCircle, Truck, AlertTriangle } from 'lucide-react';
 import {
   getCustomerJourney,
   type CustomerJourneyInput,
   type JourneyMilestone,
 } from '@/lib/orders/customer-journey';
+import { deliveryProofProxyUrl } from '@/lib/orders/dispatch-proof';
 
 type OrderJourneyTimelineProps = CustomerJourneyInput & {
   compact?: boolean;
+  orderId?: string;
 };
 
 function formatDeliveryDate(value: string | null | undefined) {
@@ -69,12 +71,14 @@ function ProgressHeader({
 
 export function OrderJourneyTimeline({
   compact = false,
+  orderId,
   ...order
 }: OrderJourneyTimelineProps) {
   const journey = getCustomerJourney(order);
   if (!journey) return null;
 
-  const { milestones, activeIndex, hasTracking, fulfillmentContext } = journey;
+  const { milestones, activeIndex, hasTracking, fulfillmentContext, deliveryFailed, deliveryProof } =
+    journey;
 
   return (
     <div
@@ -83,6 +87,19 @@ export function OrderJourneyTimeline({
     >
       <div className="rounded-2xl border border-[#ebe3d4] bg-gradient-to-b from-[#fffdf9] to-[#f7f2ea] p-4 sm:p-5">
         <ProgressHeader milestones={milestones} activeIndex={activeIndex} />
+
+        {deliveryFailed ? (
+          <div className="mt-4 flex gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-900">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div>
+              <p className="font-semibold">Delivery failed</p>
+              <p className="mt-0.5 text-[12px] text-red-800/90">
+                Please update your delivery address from order details or contact support. We will
+                schedule out for delivery again.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <ol className="relative mt-5 ms-2.5 border-s border-[#e5dccf] ps-5">
           {milestones.map((milestone) => {
@@ -94,9 +111,7 @@ export function OrderJourneyTimeline({
               <li
                 key={milestone.key}
                 className={`relative pb-4 last:pb-0 ${
-                  isCurrent
-                    ? '-ms-2 rounded-xl bg-[rgba(138,100,0,0.07)] px-2 py-2.5 ps-2'
-                    : ''
+                  isCurrent ? '-ms-2 rounded-xl bg-[rgba(138,100,0,0.07)] px-2 py-2.5 ps-2' : ''
                 }`}
               >
                 <span
@@ -119,7 +134,7 @@ export function OrderJourneyTimeline({
 
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <p
-                    className={`text-[13px] ${isCurrent ? 'font-semibold' : isDone ? 'font-medium' : 'font-medium'}`}
+                    className={`text-[13px] ${isCurrent ? 'font-semibold' : 'font-medium'}`}
                     style={{
                       color: isCurrent
                         ? 'var(--pvg-primary)'
@@ -138,12 +153,11 @@ export function OrderJourneyTimeline({
                   {isDone ? (
                     <span className="text-[10px] font-medium text-[#2f7a4a]">Done</span>
                   ) : null}
-                  {milestone.detail && isCurrent ? (
+                  {milestone.detail && (isCurrent || milestone.key === 'shipped') ? (
                     <span className="text-[11px] text-[var(--pvg-muted)]">· {milestone.detail}</span>
                   ) : null}
                 </div>
 
-                {/* Descriptions: current (also in header) skipped; upcoming keep copy; done stay quiet */}
                 {!isDone && !isCurrent ? (
                   <p className="mt-0.5 text-[12px] leading-snug text-[#a89888]">
                     {milestone.description}
@@ -161,6 +175,37 @@ export function OrderJourneyTimeline({
                     Watch video
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
+                ) : null}
+
+                {milestone.imageUrls && milestone.imageUrls.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {milestone.imageUrls.map((url, index) => {
+                      const href =
+                        milestone.key === 'delivered' && orderId && !/^https?:/i.test(url)
+                          ? deliveryProofProxyUrl(orderId, index)
+                          : url;
+                      return (
+                        <a
+                          key={`${url}-${index}`}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative block h-14 w-14 overflow-hidden rounded-lg border border-[#e5dccf] bg-white"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={href}
+                            alt={`${milestone.label} ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </a>
+                      );
+                    })}
+                    <span className="flex items-center gap-1 text-[11px] text-[var(--pvg-muted)]">
+                      <ImageIcon className="h-3 w-3" aria-hidden="true" />
+                      Photos
+                    </span>
+                  </div>
                 ) : null}
               </li>
             );
@@ -193,8 +238,13 @@ export function OrderJourneyTimeline({
                     {order.tracking_number}
                   </p>
                 ) : null}
-                {order.estimated_delivery ? (
+                {order.shipped_at ? (
                   <p className="mt-1 text-[12px] text-[var(--pvg-muted)]">
+                    Shipped: {formatDeliveryDate(order.shipped_at)}
+                  </p>
+                ) : null}
+                {order.estimated_delivery ? (
+                  <p className="mt-0.5 text-[12px] text-[var(--pvg-muted)]">
                     Est. delivery: {formatDeliveryDate(order.estimated_delivery)}
                   </p>
                 ) : null}
@@ -212,6 +262,11 @@ export function OrderJourneyTimeline({
                 </Link>
               ) : null}
             </div>
+            {deliveryProof?.details ? (
+              <p className="mt-3 border-t border-[#efe8dc] pt-3 text-[12px] text-[#6b5b4e]">
+                {deliveryProof.details}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

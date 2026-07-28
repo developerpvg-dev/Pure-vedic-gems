@@ -82,9 +82,9 @@ export async function appendLeadRemark(
     }
   } else if (
     (input.code === 'remedies_explain' || input.code === 'satisfied') &&
-    (stage === 'sent_to_customer' || stage === 'follow_up' || stage === 'remedies_explained')
+    (stage === 'sent_to_customer' || stage === 'follow_up' || stage === 'remedies_explained' || stage === 'conversion')
   ) {
-    enquiryPatch.pipeline_stage = 'remedies_explained';
+    enquiryPatch.pipeline_stage = 'conversion';
     enquiryPatch.status = 'contacted';
   } else if (
     input.code === 'option_sent' &&
@@ -98,7 +98,7 @@ export async function appendLeadRemark(
   } else if (stage === 'follow_up' && currentHasRemedies) {
     enquiryPatch.pipeline_stage = 'sent_to_customer';
     enquiryPatch.status = 'contacted';
-  } else if (stage === 'sent_to_customer' || stage === 'remedies_explained') {
+  } else if (stage === 'sent_to_customer' || stage === 'remedies_explained' || stage === 'conversion') {
     enquiryPatch.status = 'contacted';
   }
 
@@ -115,16 +115,16 @@ export async function appendLeadRemark(
   const who = current?.name || 'Lead';
   const sr = current?.lead_number != null ? `SR #${current.lead_number}` : '';
 
-  // Explained remedies → notify manager to close (once, on transition)
-  if (enquiryPatch.pipeline_stage === 'remedies_explained' && stage !== 'remedies_explained') {
+  // Explained remedies → conversion queue (notify manager)
+  if (enquiryPatch.pipeline_stage === 'conversion' && stage !== 'conversion') {
     await createInAppNotifications([
       {
         audience: 'admin',
         recipientRole: 'sales',
         type: 'lead_remedies_explained',
-        title: 'Remedies explained — ready to close',
+        title: 'Remedies explained — conversion pending',
         message: `${who} ${sr} · telecaller explained remedies`.trim(),
-        href: `/admin/leads?id=${input.enquiryId}&pipeline=remedies_explained`,
+        href: `/admin/leads?id=${input.enquiryId}&pipeline=conversion`,
         entityType: 'enquiry',
         entityId: input.enquiryId,
         metadata: { remark_code: input.code },
@@ -133,9 +133,9 @@ export async function appendLeadRemark(
         audience: 'admin',
         recipientRole: 'admin',
         type: 'lead_remedies_explained',
-        title: 'Remedies explained — ready to close',
+        title: 'Remedies explained — conversion pending',
         message: `${who} ${sr} · telecaller explained remedies`.trim(),
-        href: `/admin/leads?id=${input.enquiryId}&pipeline=remedies_explained`,
+        href: `/admin/leads?id=${input.enquiryId}&pipeline=conversion`,
         entityType: 'enquiry',
         entityId: input.enquiryId,
         metadata: { remark_code: input.code },
@@ -143,7 +143,7 @@ export async function appendLeadRemark(
     ]).catch(() => undefined);
   }
 
-  // Terminal close → notify leads managers (fake / not interested / invalid number)
+  // Terminal close → notify leads managers (fake / not interested / refused to pay)
   if (def.terminal) {
     await createInAppNotifications([
       {

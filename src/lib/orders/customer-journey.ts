@@ -8,6 +8,7 @@ import {
   type LineItemForFulfillment,
   type OrderFulfillmentContext,
 } from '@/lib/orders/fulfillment-profile';
+import { parseProofOfDelivery } from '@/lib/orders/dispatch-proof';
 
 export type CustomerJourneyInput = {
   status: string;
@@ -16,15 +17,19 @@ export type CustomerJourneyInput = {
   design_completed_at?: string | null;
   product_video_url?: string | null;
   puja_video_url?: string | null;
+  energization_image_urls?: string[] | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
   carrier?: string | null;
   estimated_delivery?: string | null;
+  shipped_at?: string | null;
+  delivery_status?: string | null;
   items?: LineItemForFulfillment[];
   include_energization?: boolean;
   energization_charges?: number;
   certification_charges?: number;
   record_ceremony?: boolean;
+  compliance_flags?: unknown;
 };
 
 export type JourneyMilestone = {
@@ -35,6 +40,7 @@ export type JourneyMilestone = {
   done: boolean;
   current: boolean;
   videoUrl?: string | null;
+  imageUrls?: string[];
   detail?: string | null;
 };
 
@@ -45,10 +51,12 @@ const STEP_DESCRIPTIONS: Record<JourneyStepKey, string> = {
   crafting: 'Your piece is being crafted or assembled by our artisans.',
   preparation: 'Items are being prepared, checked, and packed for dispatch.',
   certification: 'Lab certification documents are being prepared for your gem.',
-  energization: 'Puja ritual is performed as requested. Ceremony video appears here when ready.',
+  energization: 'Puja ritual is performed as requested. Video or pictures appear here when ready.',
   product_video: 'A product video of your finished piece will appear here when ready.',
   puja_video: 'Puja ritual is performed as requested. Ceremony video appears here when ready.',
+  packed: 'Order packed and ready for courier handoff.',
   shipped: 'Package handed to the courier with tracking details.',
+  in_transit: 'Your package is on the way with the courier.',
   out_for_delivery: 'Courier is delivering your package today.',
   delivered: 'Order delivered to the shipping address.',
   feedback: 'We would love to hear your feedback on this order.',
@@ -75,6 +83,19 @@ function craftingComplete(order: CustomerJourneyInput) {
   );
 }
 
+function deliveryRank(status: string | null | undefined): number {
+  const rank: Record<string, number> = {
+    pending: 0,
+    label_created: 1,
+    in_transit: 2,
+    out_for_delivery: 3,
+    delivered: 4,
+    failed: 3,
+    returned: 2,
+  };
+  return rank[status ?? ''] ?? -1;
+}
+
 function isStepDone(
   key: JourneyStepKey,
   order: CustomerJourneyInput,
@@ -85,6 +106,7 @@ function isStepDone(
     !['pending_payment', 'payment_review'].includes(order.status);
   const confirmed =
     paid && !['pending_payment', 'payment_review'].includes(order.status);
+  const ds = order.delivery_status;
 
   switch (key) {
     case 'payment':
@@ -106,7 +128,6 @@ function isStepDone(
     case 'preparation':
       return statusAtLeast(order.status, 'quality_check') || !!order.tracking_number;
     case 'certification':
-      // Done once past cert — design (early-cert jewelry) or QC/ship (loose gems).
       return (
         statusAtLeast(order.status, 'design_assigned') ||
         statusAtLeast(order.status, 'energization') ||
@@ -116,23 +137,42 @@ function isStepDone(
     case 'energization':
       return (
         !!order.puja_video_url ||
+        (order.energization_image_urls?.length ?? 0) > 0 ||
         statusAtLeast(order.status, 'quality_check') ||
         !!order.tracking_number
       );
     case 'product_video':
       return (
-        !!order.puja_video_url ||
+        !!order.product_video_url ||
+        statusAtLeast(order.status, 'quality_check') ||
         !!order.tracking_number ||
         statusAtLeast(order.status, 'shipped')
       );
     case 'puja_video':
       return !!order.tracking_number || statusAtLeast(order.status, 'shipped');
+    case 'packed':
+      return (
+        statusAtLeast(order.status, 'quality_check') ||
+        !!order.tracking_number ||
+        statusAtLeast(order.status, 'shipped')
+      );
     case 'shipped':
       return statusAtLeast(order.status, 'shipped');
+    case 'in_transit':
+      return (
+        deliveryRank(ds) >= deliveryRank('in_transit') ||
+        statusAtLeast(order.status, 'out_for_delivery')
+      );
     case 'out_for_delivery':
-      return statusAtLeast(order.status, 'out_for_delivery');
+      return (
+        deliveryRank(ds) >= deliveryRank('out_for_delivery') ||
+        statusAtLeast(order.status, 'out_for_delivery')
+      );
     case 'delivered':
-      return statusAtLeast(order.status, 'delivered');
+      return (
+        ds === 'delivered' ||
+        statusAtLeast(order.status, 'delivered')
+      );
     case 'feedback':
       return order.status === 'feedback';
     default:
@@ -149,6 +189,8 @@ function stepDetail(
     if (order.status === 'design_in_progress') return 'In progress';
   }
   if (key === 'preparation' && order.status === 'processing') return 'In progress';
+  if (key === 'delivered' && order.delivery_status === 'failed') return 'Delivery failed';
+  if (key === 'shipped' && order.carrier) return order.carrier;
   return null;
 }
 
@@ -168,6 +210,7 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
   const doneFlags = stepTemplates.map((step) => isStepDone(step.key, order, context));
   const firstOpen = doneFlags.findIndex((done) => !done);
   const activeIndex = firstOpen === -1 ? stepTemplates.length - 1 : firstOpen;
+  const pod = parseProofOfDelivery(order.compliance_flags);
 
   const milestones: JourneyMilestone[] = stepTemplates.map((step, index) => ({
     key: step.key,
@@ -182,6 +225,12 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
         : step.key === 'energization' || step.key === 'puja_video'
           ? order.puja_video_url
           : null,
+    imageUrls:
+      step.key === 'energization'
+        ? order.energization_image_urls ?? []
+        : step.key === 'delivered' && pod?.image_urls?.length
+          ? pod.image_urls
+          : [],
     detail: stepDetail(step.key, order),
   }));
 
@@ -190,6 +239,8 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
     activeIndex,
     hasTracking: !!(order.tracking_number || order.tracking_url),
     fulfillmentContext: context,
+    deliveryFailed: order.delivery_status === 'failed',
+    deliveryProof: pod,
   };
 }
 

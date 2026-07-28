@@ -154,7 +154,9 @@ export type JourneyStepKey =
   | 'energization'
   | 'product_video'
   | 'puja_video'
+  | 'packed'
   | 'shipped'
+  | 'in_transit'
   | 'out_for_delivery'
   | 'delivered'
   | 'feedback';
@@ -214,17 +216,20 @@ export function getJourneyStepsForContext(context: OrderFulfillmentContext): Jou
     steps.push({ key: 'certification', label: 'Certification', shortLabel: 'Cert' });
   }
 
-  // ponytail: one customer step for ritual + ceremony video (admin still tracks both)
-  if (context.showEnergization || context.showPujaVideo) {
-    steps.push({ key: 'energization', label: 'Energization', shortLabel: 'Puja' });
-  }
-
   if (context.showProductVideo) {
     steps.push({ key: 'product_video', label: 'Product Video', shortLabel: 'Video' });
   }
 
+  // ponytail: one customer step for ritual + ceremony video/pictures
+  if (context.showEnergization || context.showPujaVideo) {
+    steps.push({ key: 'energization', label: 'Energization', shortLabel: 'Puja' });
+  }
+
+  steps.push({ key: 'packed', label: 'Packed for Shipping', shortLabel: 'Packed' });
+
   steps.push(
     { key: 'shipped', label: 'Shipped', shortLabel: 'Ship' },
+    { key: 'in_transit', label: 'In Transit', shortLabel: 'Transit' },
     { key: 'out_for_delivery', label: 'Out for Delivery', shortLabel: 'OFD' },
     { key: 'delivered', label: 'Delivered', shortLabel: 'Done' },
     { key: 'feedback', label: 'Feedback', shortLabel: 'FB' },
@@ -301,13 +306,13 @@ export function getAdminStatusLabels(context: OrderFulfillmentContext): Record<s
     placed: 'Placed',
     confirmed: 'Confirmed',
     processing: 'Processing',
-    design_assigned: 'Crafting Started',
-    design_in_progress: 'Crafting In Progress',
-    design_completed: 'Crafting Completed',
+    design_assigned: 'Jewelry Assigned',
+    design_in_progress: 'Jewelry Preparation',
+    design_completed: 'Jewelry Completed',
     jewelry_making: 'Final Assembly',
     certification: 'Certification',
     energization: 'Energization',
-    quality_check: 'Quality Check',
+    quality_check: 'Packed for Shipping',
     shipped: 'Shipped',
     out_for_delivery: 'Out for Delivery',
     delivered: 'Delivered',
@@ -318,9 +323,9 @@ export function getAdminStatusLabels(context: OrderFulfillmentContext): Record<s
   };
 
   if (profile === 'rudraksha_configured' || context.itemProfiles.includes('rudraksha_configured')) {
-    base.design_assigned = 'Mounting Started';
-    base.design_in_progress = 'Pendant In Progress';
-    base.design_completed = 'Pendant Completed';
+    base.design_assigned = 'Jewelry Assigned';
+    base.design_in_progress = 'Jewelry Preparation';
+    base.design_completed = 'Jewelry Completed';
     base.jewelry_making = 'Chain & Finishing';
     base.processing = 'Beads Verified';
   } else if (profile === 'loose_gemstone') {
@@ -330,14 +335,13 @@ export function getAdminStatusLabels(context: OrderFulfillmentContext): Record<s
     base.design_completed = 'Gem Ready';
   } else if (profile === 'idol') {
     base.processing = 'Idol Preparation';
-    base.quality_check = 'Packing & QC';
   } else if (profile === 'mala') {
     base.processing = 'Mala Preparation';
   } else if (profile === 'ready_jewelry') {
     base.processing = 'Jewelry Preparation';
   } else if (profile === 'configured_jewelry') {
-    base.design_assigned = 'Design Assigned';
-    base.design_in_progress = 'Jewelry In Progress';
+    base.design_assigned = 'Jewelry Assigned';
+    base.design_in_progress = 'Jewelry Preparation';
     base.design_completed = 'Jewelry Completed';
   }
 
@@ -359,6 +363,7 @@ export const STATUS_RANK: Record<string, number> = {
   energization: 90,
   quality_check: 100,
   shipped: 110,
+  in_transit: 112,
   out_for_delivery: 115,
   delivered: 120,
   feedback: 130,

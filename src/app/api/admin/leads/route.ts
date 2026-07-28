@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { sanitizeSearchTerm } from '@/lib/utils/search';
-import { leadListScope, isLeadManager } from '@/lib/leads/permissions';
+import { leadListScope, isLeadManager, redactLeadContactForRole } from '@/lib/leads/permissions';
 import { LEAD_PIPELINE_STAGES, TELECOM_ACTIVE_STAGES, ASTRO_ACTIVE_STAGES } from '@/lib/leads/constants';
 import { mergeBirthFields, needsBirthHydration } from '@/lib/leads/hydrate';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
@@ -13,6 +13,10 @@ type CombinedLead = Record<string, unknown> & {
   created_at: string;
   _type: 'enquiry' | 'consultation';
 };
+
+function presentLeadForRole(role: string | null | undefined, lead: Record<string, unknown>) {
+  return redactLeadContactForRole(role, lead);
+}
 
 function applyKindFilter(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,6 +158,7 @@ async function fetchLeadSummary(
     remediesReady: byStage.remedies_ready ?? 0,
     deliverRemedies: byStage.sent_to_customer ?? 0,
     remediesExplained: byStage.remedies_explained ?? 0,
+    conversion: byStage.conversion ?? 0,
     byStage,
     pastOutcomes,
     asOf: today,
@@ -180,6 +185,7 @@ function applyEnquiryFilters(
     saleClose: string | null;
     paymentReceived: string | null;
     detailsConfirmed: string | null;
+    conversionStatus: string | null;
     searchTerm: string | null;
   }
 ) {
@@ -192,6 +198,13 @@ function applyEnquiryFilters(
   if (!opts.scope && opts.astrologerId) q = q.eq('astrologer_id', opts.astrologerId);
   if (opts.source) q = q.eq('source', opts.source);
   if (opts.remark) q = q.eq('last_remark_code', opts.remark);
+  if (opts.conversionStatus === 'converted' || opts.conversionStatus === 'not_converted') {
+    q = q.eq('conversion_status', opts.conversionStatus);
+  } else if (opts.conversionStatus === 'pending') {
+    q = q.in('pipeline_stage', ['conversion', 'remedies_explained']).is('conversion_status', null);
+  } else if (opts.conversionStatus === 'none') {
+    q = q.is('conversion_status', null);
+  }
   q = applyKindFilter(q, opts.enquiryType);
   if (opts.dateFrom) q = q.gte('created_at', `${opts.dateFrom}T00:00:00.000Z`);
   if (opts.dateTo) q = q.lte('created_at', `${opts.dateTo}T23:59:59.999Z`);
@@ -219,9 +232,12 @@ function applyEnquiryFilters(
 }
 
 function normalizeEnquiryRow(row: Record<string, unknown>) {
+  let stage = (row.pipeline_stage as string | null) || 'new';
+  // Display-only: explained without outcome shows on Conversion chip
+  if (stage === 'remedies_explained' && !row.conversion_status) stage = 'conversion';
   return {
     ...row,
-    pipeline_stage: (row.pipeline_stage as string | null) || 'new',
+    pipeline_stage: stage,
   };
 }
 
@@ -343,6 +359,12 @@ export async function GET(request: NextRequest) {
     .eq('pipeline_stage', 'follow_up')
     .not('remedies_text', 'is', null);
   await admin.from('enquiries').update({ pipeline_stage: 'verifying' }).eq('pipeline_stage', 'follow_up');
+  // ponytail: park post-explain leads on Conversion chip (legacy remedies_explained without outcome)
+  await admin
+    .from('enquiries')
+    .update({ pipeline_stage: 'conversion' })
+    .eq('pipeline_stage', 'remedies_explained')
+    .is('conversion_status', null);
   // Backfill missing kinds so ₹101 / consultation tabs match existing rows
   await Promise.all([
     admin
@@ -402,6 +424,7 @@ export async function GET(request: NextRequest) {
     saleClose: searchParams.get('sale_close'),
     paymentReceived: searchParams.get('payment_received'),
     detailsConfirmed: searchParams.get('details_confirmed'),
+    conversionStatus: searchParams.get('conversion') || searchParams.get('conversion_status'),
     searchTerm,
   };
 
@@ -455,7 +478,7 @@ export async function GET(request: NextRequest) {
         const merged = [...newRows, ...otherRows].map(normalizeEnquiryRow);
         const hydrated = await hydrateEnquiryLeads(admin, merged);
         return NextResponse.json({
-          leads: hydrated.map((lead) => ({ ...lead, _type: 'enquiry' as const })),
+          leads: hydrated.map((lead) => presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'enquiry' as const })),
           total: listTotal,
           page,
           per_page: perPage,
@@ -473,7 +496,7 @@ export async function GET(request: NextRequest) {
       const listTotal = totalCount ?? newRows.length;
       const hydrated = await hydrateEnquiryLeads(admin, newRows.map(normalizeEnquiryRow));
       return NextResponse.json({
-        leads: hydrated.map((lead) => ({ ...lead, _type: 'enquiry' as const })),
+        leads: hydrated.map((lead) => presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'enquiry' as const })),
         total: listTotal,
         page,
         per_page: perPage,
@@ -496,7 +519,7 @@ export async function GET(request: NextRequest) {
     const normalized = ((data ?? []) as Record<string, unknown>[]).map(normalizeEnquiryRow);
     const hydrated = await hydrateEnquiryLeads(admin, normalized);
     return NextResponse.json({
-      leads: hydrated.map((lead) => ({ ...lead, _type: 'enquiry' as const })),
+      leads: hydrated.map((lead) => presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'enquiry' as const })),
       total: count ?? 0,
       page,
       per_page: perPage,
@@ -521,7 +544,9 @@ export async function GET(request: NextRequest) {
     const { data, count, error } = await query;
     if (error) return NextResponse.json({ error: 'Failed to fetch consultations' }, { status: 500 });
     return NextResponse.json({
-      leads: (data ?? []).map((lead) => ({ ...lead, _type: 'consultation' as const })),
+      leads: (data ?? []).map((lead) =>
+        presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'consultation' as const })
+      ),
       total: count ?? 0,
       page,
       per_page: perPage,
@@ -551,10 +576,18 @@ export async function GET(request: NextRequest) {
   const [{ data: enquiries }, { data: consultations }] = await Promise.all([enquiryQuery, consultationQuery]);
   const combined: CombinedLead[] = [
     ...((enquiries ?? []) as Record<string, unknown>[]).map(
-      (lead) => ({ ...lead, _type: 'enquiry' as const }) as CombinedLead
+      (lead) =>
+        presentLeadForRole(auth.member.normalizedRole, {
+          ...lead,
+          _type: 'enquiry' as const,
+        }) as CombinedLead
     ),
     ...((consultations ?? []) as Record<string, unknown>[]).map(
-      (lead) => ({ ...lead, _type: 'consultation' as const }) as CombinedLead
+      (lead) =>
+        presentLeadForRole(auth.member.normalizedRole, {
+          ...lead,
+          _type: 'consultation' as const,
+        }) as CombinedLead
     ),
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 

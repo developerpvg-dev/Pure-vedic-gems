@@ -18,6 +18,7 @@ import {
   recomputeOrderBalances,
   settlePaymentAttempt,
 } from '@/lib/orders/online-payments';
+import { applyPaymentToBalances, roundMoney } from '@/lib/orders/counter-payments';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import type { Order } from '@/lib/types/database';
 
@@ -282,14 +283,20 @@ export async function POST(req: NextRequest) {
     razorpayPaymentId: razorpay_payment_id,
     razorpaySignature: razorpay_signature,
     method: facts.method,
-    balances: claimed ? await recomputeOrderBalances(order.id, order.total) : undefined,
-    paymentKind: claimed?.kind as 'advance' | 'balance' | 'full' | undefined,
+    balances: claimed
+      ? await recomputeOrderBalances(order.id, order.total)
+      : applyPaymentToBalances(
+          Number(order.total),
+          roundMoney(Number(order.amount_paid ?? 0)),
+          roundMoney(expectedPaise / 100),
+        ),
+    paymentKind: (claimed?.kind as 'advance' | 'balance' | 'full' | undefined) ?? 'full',
   });
 
   return NextResponse.json({
     success: true,
     order_id: order.id,
     order_number: order.order_number,
-    amount_paid: claimed ? Number(claimed.amount) : order.total,
+    amount_paid: claimed ? Number(claimed.amount) : roundMoney(expectedPaise / 100),
   });
 }

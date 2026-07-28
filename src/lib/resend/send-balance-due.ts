@@ -33,7 +33,7 @@ export async function sendBalanceDueEmail(input: {
       paragraphs: [
         `Good news — your Pure Vedic Gems order ${input.orderNumber} is ready. We have received your advance of ${formatINR(input.amountPaid)}, and the remaining balance of ${formatINR(input.amountDue)} is now payable.`,
         ...(input.note ? [input.note] : []),
-        'Sign in to your account and use "Pay balance" on this order to complete the payment securely through Razorpay. We dispatch as soon as the balance is settled.',
+        'Sign in to your account and use Pay online or Bank transfer on this order to settle the balance. We dispatch as soon as the balance is settled.',
       ],
       highlight: { label: 'Balance due', value: formatINR(input.amountDue) },
       details: [

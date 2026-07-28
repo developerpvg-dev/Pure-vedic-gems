@@ -19,7 +19,8 @@ export async function GET() {
 
   const members = data ?? [];
   return NextResponse.json({
-    telecom: members.filter((m) => m.role === 'telecom' || m.role === 'sales'),
+    // ponytail: filter/assign roster is telecom-only — sales are leads managers, not callers
+    telecom: members.filter((m) => m.role === 'telecom'),
     astrologers: members.filter((m) => m.role === 'astrologer'),
     managers: members.filter((m) => m.role === 'admin' || m.role === 'owner' || m.role === 'sales'),
     all: members,

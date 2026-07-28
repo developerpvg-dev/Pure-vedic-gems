@@ -16,12 +16,12 @@ export type ReturnStatus = (typeof RETURN_STATUSES)[number];
 export const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
   none: 'No return',
   requested: 'Return requested',
-  authorized: 'Return authorized',
-  received: 'Return received',
+  authorized: 'Return verified',
+  received: 'Return initiated (pickup)',
   inspection: 'Under inspection',
-  approved: 'Return approved',
+  approved: 'Refund initiated',
   rejected: 'Return rejected',
-  closed: 'Return closed',
+  closed: 'Refund completed',
 };
 
 const NON_RETURNABLE = new Set([
@@ -46,6 +46,8 @@ export type ReturnComplianceFlags = {
   /** Admin verified customer photos before refund can proceed */
   return_images_verified?: boolean;
   return_images_verified_at?: string;
+  /** Energization / puja picture plan — shown on customer tracking */
+  energization_image_urls?: string[];
 };
 
 export function parseComplianceFlags(value: unknown): ReturnComplianceFlags {

@@ -97,6 +97,8 @@ export default async function OrdersPage() {
         assigned_designer_id?: string | null;
         design_completed_at?: string | null;
         carrier?: string | null;
+        delivery_status?: string | null;
+        shipped_at?: string | null;
         payment_status?: string | null;
         return_status?: string;
         compliance_flags?: unknown;
@@ -165,6 +167,10 @@ export default async function OrdersPage() {
         estimated_delivery: order.estimated_delivery,
         product_video_url: extras.product_video_url ?? null,
         puja_video_url: extras.puja_video_url ?? null,
+        delivery_status: extras.delivery_status ?? null,
+        shipped_at: extras.shipped_at ?? null,
+        energization_image_urls: flags.energization_image_urls ?? [],
+        compliance_flags: extras.compliance_flags ?? null,
         assigned_designer_id: extras.assigned_designer_id ?? null,
         design_completed_at: extras.design_completed_at ?? null,
         items,

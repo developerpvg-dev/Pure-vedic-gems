@@ -498,20 +498,16 @@ export async function finalizeCapturedPayment({
   razorpaySignature?: string | null;
   method?: string | null;
   /**
-   * Ledger-derived balances for part-paid orders. Omit for a full settlement
-   * (bank transfer, legacy full-amount Razorpay orders).
+   * Ledger-derived balances. Required — never invent a full settlement here.
+   * Callers that omit this used to mark every bank-transfer verify as fully paid.
    */
-  balances?: OrderBalances;
+  balances: OrderBalances;
   /** Which leg of the payment this is; 'balance' switches the customer receipt. */
   paymentKind?: 'advance' | 'balance' | 'full';
 }) {
   const supabase = createAdminClient();
   const db = asUntypedSupabase(supabase);
-  const settled: OrderBalances = balances ?? {
-    amount_paid: Number(order.total ?? 0),
-    amount_due: 0,
-    payment_status: 'captured',
-  };
+  const settled = balances;
   // ── Money columns — derived from the ledger, so replays converge ───────
   // Safe to run on every finalization attempt: recomputed sums are idempotent,
   // unlike the increment-in-place this used to be.

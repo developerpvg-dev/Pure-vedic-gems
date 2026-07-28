@@ -157,6 +157,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const existing = parseBankTransferProof(order.compliance_flags);
+
   const orderTotal = roundMoney(Number(order.total ?? 0));
   const amountPaid = roundMoney(Number(order.amount_paid ?? 0));
   let amountClaimed: number;
@@ -182,6 +184,9 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
+    } else if (existing?.amount_claimed != null) {
+      // Resubmit without a fresh claim — keep the prior advance/full amount.
+      amountClaimed = roundMoney(existing.amount_claimed);
     } else {
       amountClaimed = orderTotal;
     }
@@ -189,8 +194,6 @@ export async function POST(request: NextRequest) {
     const message = err instanceof Error ? err.message : 'Invalid payment amount';
     return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  const existing = parseBankTransferProof(order.compliance_flags);
 
   try {
     await ensureBucket(supabase);

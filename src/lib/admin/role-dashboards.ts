@@ -95,7 +95,8 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
     nav: [
       { href: '/admin/dispatch', label: 'Dispatch dashboard', match: 'prefix' },
       { href: '/admin/orders', label: 'Orders', match: 'prefix' },
-      { href: '/admin/leads', label: 'Leads', match: 'prefix' },
+      { href: '/admin/leads', label: 'Leads', match: 'exact' },
+      { href: '/admin/leads/metrics', label: 'Lead metrics', match: 'prefix' },
       { href: '/admin/shipping', label: 'Shipping zones & plans', match: 'prefix' },
       { href: '/admin/compliance', label: 'Returns & RMA', match: 'prefix' },
     ],
@@ -151,6 +152,7 @@ export function assertRoleDashboardAllowlists() {
   if (isScopedRolePathAllowed('inventory', '/admin/rewards')) throw new Error('inventory must not open rewards');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/orders/abc')) throw new Error('fulfillment order detail');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/leads')) throw new Error('fulfillment leads');
+  if (!isScopedRolePathAllowed('fulfillment', '/admin/leads/metrics')) throw new Error('fulfillment lead metrics');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/dispatch')) throw new Error('fulfillment dispatch');
   if (isScopedRolePathAllowed('fulfillment', '/admin/commissions')) throw new Error('fulfillment must not open commissions');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/shipping')) throw new Error('fulfillment shipping');

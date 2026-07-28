@@ -13,16 +13,21 @@ import {
   canEditOutcomeFlags,
   canEditRemedies,
   canForwardToAstrologer,
+  canMarkConverted,
+  canMarkNotConverted,
   canSendRemediesToTelecaller,
   canSetPipelineStage,
   canViewEnquiry,
   isAstrologerRole,
   isLeadManager,
   isTelecomRole,
+  redactLeadContactForRole,
 } from '@/lib/leads/permissions';
 import {
   canTransitionPipeline,
+  isLeadNotConvertedReason,
   isLeadPipelineStage,
+  LEAD_NOT_CONVERTED_BY_CODE,
   type LeadPipelineStage,
 } from '@/lib/leads/constants';
 import { logLeadActivity } from '@/lib/leads/assign';
@@ -76,7 +81,7 @@ export async function GET(
   ]);
 
   return NextResponse.json({
-    lead: { ...enquiry, _type: 'enquiry' },
+    lead: redactLeadContactForRole(auth.member.normalizedRole, { ...enquiry, _type: 'enquiry' }),
     remarks: remarks ?? [],
     activity: activity ?? [],
     assignee: assignee ?? null,
@@ -581,7 +586,8 @@ export async function PUT(
     const { data, error } = await admin
       .from('enquiries')
       .update({
-        pipeline_stage: 'remedies_explained',
+        // ponytail: explained lands on Conversion chip — outcome recorded there before Closed
+        pipeline_stage: 'conversion',
         status: 'contacted',
         last_remark_code: 'remedies_explain',
         last_remark_at: now,
@@ -600,7 +606,7 @@ export async function PUT(
       enquiryId: id,
       action: 'remedies_explained',
       fromValue: 'sent_to_customer',
-      toValue: 'remedies_explained',
+      toValue: 'conversion',
       actorId: auth.user.id,
       actorName,
     });
@@ -620,12 +626,225 @@ export async function PUT(
           audience: 'admin',
           recipientRole: 'sales',
           type: 'lead_remedies_explained',
-          title: 'Remedies explained — ready to close',
+          title: 'Remedies explained — conversion pending',
           message: `${current.name} · telecaller explained remedies`,
-          href: `/admin/leads?id=${id}&pipeline=remedies_explained`,
+          href: `/admin/leads?id=${id}&pipeline=conversion`,
           entityType: 'enquiry',
           entityId: id,
           metadata: {},
+        },
+      ]).catch(() => undefined);
+    }
+
+    return NextResponse.json({ lead: data });
+  }
+
+  if (action === 'mark_not_converted') {
+    if (!canMarkNotConverted(role)) {
+      return NextResponse.json({ error: 'Not allowed to mark not converted' }, { status: 403 });
+    }
+    if (current.pipeline_stage !== 'conversion' && current.pipeline_stage !== 'remedies_explained') {
+      return NextResponse.json(
+        { error: 'Lead must be in Conversion before recording not converted' },
+        { status: 400 }
+      );
+    }
+    if (isTelecomRole(role) && current.assigned_to !== auth.user.id) {
+      return NextResponse.json({ error: 'This lead is not assigned to you' }, { status: 403 });
+    }
+    if (current.conversion_status) {
+      return NextResponse.json({ error: 'Conversion outcome already recorded' }, { status: 409 });
+    }
+
+    const reasonCode =
+      typeof updateData.conversion_reason_code === 'string' ? updateData.conversion_reason_code.trim() : '';
+    const reasonNote =
+      typeof updateData.conversion_reason_note === 'string' ? updateData.conversion_reason_note.trim() : '';
+    if (!isLeadNotConvertedReason(reasonCode)) {
+      return NextResponse.json({ error: 'Select a not-converted reason' }, { status: 400 });
+    }
+    if (reasonCode === 'other' && !reasonNote) {
+      return NextResponse.json({ error: 'Write the reason when selecting Other' }, { status: 400 });
+    }
+
+    const reasonLabel = LEAD_NOT_CONVERTED_BY_CODE[reasonCode].label;
+    const fromStage = current.pipeline_stage;
+    const { data, error } = await admin
+      .from('enquiries')
+      .update({
+        conversion_status: 'not_converted',
+        conversion_reason_code: reasonCode,
+        conversion_reason_note: reasonNote || null,
+        not_converted_at: now,
+        conversion_recorded_by: auth.user.id,
+        conversion_recorded_by_name: actorName,
+        pipeline_stage: 'closed',
+        status: 'closed',
+        closed_at: now,
+        closed_reason: 'not_converted',
+        last_remark_code: reasonCode === 'other' ? 'custom' : reasonCode,
+        last_remark_at: now,
+        updated_at: now,
+      })
+      .eq('id', id)
+      .in('pipeline_stage', ['conversion', 'remedies_explained'])
+      .is('conversion_status', null)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error('[leads] mark_not_converted failed', error);
+      return NextResponse.json({ error: 'Update failed' }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ error: 'Lead is no longer awaiting conversion outcome' }, { status: 409 });
+    }
+
+    await logLeadActivity(admin, {
+      enquiryId: id,
+      action: 'mark_not_converted',
+      fromValue: fromStage,
+      toValue: 'closed',
+      meta: { reason_code: reasonCode, note: reasonNote || null },
+      actorId: auth.user.id,
+      actorName,
+    });
+
+    await admin.from('lead_remarks').insert({
+      enquiry_id: id,
+      remark_code: reasonCode === 'other' ? 'custom' : reasonCode,
+      remark_label: `Not converted — ${reasonLabel}`,
+      note: reasonNote || null,
+      created_by: auth.user.id,
+      created_by_name: actorName,
+    });
+
+    return NextResponse.json({ lead: data });
+  }
+
+  if (action === 'mark_converted') {
+    if (!canMarkConverted(role)) {
+      return NextResponse.json({ error: 'Only leads manager / parcel dispatch can mark converted' }, { status: 403 });
+    }
+    if (current.pipeline_stage !== 'conversion' && current.pipeline_stage !== 'remedies_explained') {
+      return NextResponse.json(
+        { error: 'Lead must be in Conversion before recording conversion' },
+        { status: 400 }
+      );
+    }
+    if (current.conversion_status) {
+      return NextResponse.json({ error: 'Conversion outcome already recorded' }, { status: 409 });
+    }
+
+    const rawOrder =
+      typeof updateData.order_number === 'string' ? updateData.order_number.trim().toUpperCase() : '';
+    if (!rawOrder) {
+      return NextResponse.json({ error: 'Enter a real order number' }, { status: 400 });
+    }
+
+    const { data: order, error: orderError } = await admin
+      .from('orders')
+      .select('id, order_number')
+      .eq('order_number', rawOrder)
+      .maybeSingle();
+
+    if (orderError) {
+      console.error('[leads] order lookup failed', orderError);
+      return NextResponse.json({ error: 'Order lookup failed' }, { status: 500 });
+    }
+    if (!order) {
+      return NextResponse.json(
+        { error: `No order found for ${rawOrder}. Conversion requires a real order in the system.` },
+        { status: 404 }
+      );
+    }
+
+    const { data: taken } = await admin
+      .from('enquiries')
+      .select('id, lead_number')
+      .eq('order_id', order.id)
+      .maybeSingle();
+    if (taken) {
+      return NextResponse.json(
+        {
+          error: `Order ${order.order_number} is already linked to lead #${taken.lead_number ?? taken.id}`,
+        },
+        { status: 409 }
+      );
+    }
+
+    const fromStage = current.pipeline_stage;
+    const { data, error } = await admin
+      .from('enquiries')
+      .update({
+        conversion_status: 'converted',
+        order_id: order.id,
+        order_number: order.order_number,
+        converted_at: now,
+        conversion_recorded_by: auth.user.id,
+        conversion_recorded_by_name: actorName,
+        conversion_reason_code: null,
+        conversion_reason_note: null,
+        not_converted_at: null,
+        sale_close: true,
+        product_purchase: true,
+        pipeline_stage: 'closed',
+        status: 'resolved',
+        closed_at: now,
+        closed_reason: 'sale_close',
+        last_remark_code: 'details_confirmed',
+        last_remark_at: now,
+        updated_at: now,
+      })
+      .eq('id', id)
+      .in('pipeline_stage', ['conversion', 'remedies_explained'])
+      .is('conversion_status', null)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      // Unique index race on order_id
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'This order is already linked to another lead' }, { status: 409 });
+      }
+      console.error('[leads] mark_converted failed', error);
+      return NextResponse.json({ error: 'Update failed' }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ error: 'Lead is no longer awaiting conversion outcome' }, { status: 409 });
+    }
+
+    await logLeadActivity(admin, {
+      enquiryId: id,
+      action: 'mark_converted',
+      fromValue: fromStage,
+      toValue: 'closed',
+      meta: { order_id: order.id, order_number: order.order_number },
+      actorId: auth.user.id,
+      actorName,
+    });
+
+    await admin.from('lead_remarks').insert({
+      enquiry_id: id,
+      remark_code: 'details_confirmed',
+      remark_label: `Converted — order ${order.order_number}`,
+      note: `Sale linked to order ${order.order_number}`,
+      created_by: auth.user.id,
+      created_by_name: actorName,
+    });
+
+    if (current.assigned_to) {
+      await createInAppNotifications([
+        {
+          audience: 'admin',
+          recipientUserId: current.assigned_to,
+          type: 'lead_converted',
+          title: 'Sale converted on your lead',
+          message: `${current.name} · order ${order.order_number}`,
+          href: `/admin/leads?id=${id}&pipeline=closed`,
+          entityType: 'enquiry',
+          entityId: id,
+          metadata: { order_id: order.id, order_number: order.order_number },
         },
       ]).catch(() => undefined);
     }

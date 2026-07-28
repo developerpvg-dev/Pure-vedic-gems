@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ShieldCheck, Wallet } from 'lucide-react';
+import { Building2, CreditCard, Loader2, ShieldCheck, Wallet } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
 import { runRazorpayCheckout, type CheckoutStage } from '@/lib/razorpay/checkout-client';
+import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
 export type CustomerPaymentRow = {
   id: string;
@@ -42,7 +43,7 @@ function fmtDate(iso: string | null) {
 
 /**
  * Advance / balance summary on a customer's own order, with the receipt trail
- * and a Razorpay button when money is still owed.
+ * and Razorpay / bank-transfer options when money is still owed.
  */
 export function OrderBalancePanel({
   orderId,
@@ -71,11 +72,13 @@ export function OrderBalancePanel({
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<CheckoutStage | null>(null);
   const [error, setError] = useState('');
+  const [payMethod, setPayMethod] = useState<'razorpay' | 'bank_transfer' | null>(null);
   const settled = payments.filter((p) => p.status === 'paid');
 
-  async function payBalance() {
+  async function payBalanceOnline() {
     setBusy(true);
     setError('');
+    setPayMethod('razorpay');
     await runRazorpayCheckout({
       orderId,
       orderNumber,
@@ -86,6 +89,7 @@ export function OrderBalancePanel({
       onSuccess: () => {
         setStage(null);
         setBusy(false);
+        setPayMethod(null);
         router.refresh();
       },
       onDismiss: () => {
@@ -135,25 +139,59 @@ export function OrderBalancePanel({
         </div>
 
         {owing && canPay ? (
-          <button
-            type="button"
-            onClick={() => void payBalance()}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-            style={{ background: 'var(--pvg-primary)' }}
-          >
-            {busy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            ) : (
-              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            Pay balance {formatPrice(amountDue)}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void payBalanceOnline()}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'var(--pvg-primary)' }}
+            >
+              {busy && payMethod === 'razorpay' ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              Pay online {formatPrice(amountDue)}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError('');
+                setPayMethod((m) => (m === 'bank_transfer' ? null : 'bank_transfer'));
+              }}
+              disabled={busy}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2.5 text-xs font-semibold transition disabled:opacity-50 ${
+                payMethod === 'bank_transfer'
+                  ? 'border-[#C9A84C] bg-[#C9A84C]/15 text-[#3d2b1f]'
+                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Bank transfer
+            </button>
+          </div>
         ) : null}
       </div>
 
+      {owing && canPay && payMethod === 'bank_transfer' ? (
+        <div className="mt-3">
+          <BankTransferResubmitForm
+            orderId={orderId}
+            amountDue={amountDue}
+            onSubmitted={() => {
+              setPayMethod(null);
+              router.refresh();
+            }}
+          />
+        </div>
+      ) : null}
+
       {stage ? (
-        <p className="mt-2 text-xs font-medium text-amber-900">{STAGE_LABELS[stage]}</p>
+        <p className="mt-2 text-xs font-medium text-amber-900">
+          <CreditCard className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
+          {STAGE_LABELS[stage]}
+        </p>
       ) : null}
       {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
 

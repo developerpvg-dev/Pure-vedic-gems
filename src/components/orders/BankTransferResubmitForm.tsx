@@ -10,6 +10,8 @@ type Props = {
   orderTotalLabel?: string;
   /** When set, customer must transfer exactly this amount (balance leg). */
   amountDue?: number;
+  /** Prior claim to preserve on resubmit (advance leg). */
+  amountClaimed?: number;
   existing?: BankTransferProof | null;
   /** Guest recovery when cookie expired */
   requireContactConfirm?: boolean;
@@ -20,6 +22,7 @@ export function BankTransferResubmitForm({
   orderId,
   orderTotalLabel,
   amountDue,
+  amountClaimed,
   existing = null,
   requireContactConfirm = false,
   onSubmitted,
@@ -77,6 +80,9 @@ export function BankTransferResubmitForm({
       if (confirmPhone.trim()) form.set('confirm_phone', confirmPhone.trim());
       if (amountDue != null && amountDue > 0) {
         form.set('amount_claimed', String(amountDue));
+      } else {
+        const claim = amountClaimed ?? existing?.amount_claimed;
+        if (claim != null && claim > 0) form.set('amount_claimed', String(claim));
       }
       if (proofFiles) {
         Array.from(proofFiles).forEach((f) => form.append('proofs', f));
@@ -115,9 +121,11 @@ export function BankTransferResubmitForm({
           <p className="mt-0.5 text-xs text-[var(--pvg-muted)]">
             {amountDue != null && amountDue > 0
               ? `Transfer exactly ₹${amountDue.toLocaleString('en-IN')} as your balance payment, then update UTR and screenshot below.`
-              : orderTotalLabel
-                ? `Transfer exactly ${orderTotalLabel}, then update UTR and screenshot below.`
-                : 'Update UTR / bank details and screenshot, then resubmit for verification.'}
+              : (amountClaimed ?? existing?.amount_claimed) != null
+                ? `Transfer exactly ₹${Number(amountClaimed ?? existing?.amount_claimed).toLocaleString('en-IN')} (your advance), then update UTR and screenshot below.`
+                : orderTotalLabel
+                  ? `Transfer exactly ${orderTotalLabel}, then update UTR and screenshot below.`
+                  : 'Update UTR / bank details and screenshot, then resubmit for verification.'}
           </p>
         </div>
       </div>

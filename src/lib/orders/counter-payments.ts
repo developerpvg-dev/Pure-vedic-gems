@@ -98,8 +98,13 @@ export function __orderPaymentsSelfCheck() {
   console.assert(resolveOnlinePaymentAmount(10000, 0, 10000).kind === 'full', '100% is full');
   console.assert(resolveOnlinePaymentAmount(10000, 0).amount === 10000, 'no request = pay in full');
 
-  const bal = resolveOnlinePaymentAmount(10000, 2000, 500);
-  console.assert(bal.amount === 8000 && bal.kind === 'balance', 'balance ignores request, settles all');
+  console.assert(resolveOnlinePaymentAmount(10000, 2000, 500).amount === 8000, 'balance settles all');
+
+  // Partial bank-transfer verify must never invent a full settlement.
+  const half = applyPaymentToBalances(9450, 0, 4725);
+  console.assert(half.payment_status === 'partial' && half.amount_paid === 4725 && half.amount_due === 4725);
+  console.assert(resolveOnlinePaymentAmount(9450, 0, 4725).kind === 'advance');
+  console.assert(resolveOnlinePaymentAmount(9450, 4725).kind === 'balance');
 
   for (const [total, paid, req, why] of [
     [10000, 0, 1999, 'below 20% floor'],

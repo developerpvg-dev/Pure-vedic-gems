@@ -29,7 +29,11 @@ import {
   parseProofOfDelivery,
 } from '@/lib/orders/dispatch-proof';
 import { finalizeCapturedPayment } from '@/lib/orders/payment-finalization';
-import { applyPaymentToBalances, inferPaymentKind, roundMoney } from '@/lib/orders/counter-payments';
+import {
+  applyPaymentToBalances,
+  resolveOnlinePaymentAmount,
+  roundMoney,
+} from '@/lib/orders/counter-payments';
 import { recomputeOrderBalances } from '@/lib/orders/online-payments';
 import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
 import { sendBalanceDueEmail } from '@/lib/resend/send-balance-due';
@@ -57,6 +61,12 @@ const actionSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('verify_bank_transfer'),
+    /** INR admin confirms against the bank statement; defaults to customer claim. */
+    verified_amount: z.coerce.number().positive().optional(),
+  }),
+  z.object({
+    action: z.literal('correct_bank_transfer_amount'),
+    verified_amount: z.coerce.number().positive(),
   }),
   z.object({
     action: z.literal('verify_dispatch_payment'),
@@ -466,7 +476,28 @@ export async function POST(
 
       const orderTotal = roundMoney(Number(orderRow.total ?? 0));
       const priorPaid = roundMoney(Number(orderRow.amount_paid ?? 0));
-      const claimed = roundMoney(proof.amount_claimed ?? orderTotal - priorPaid);
+      const rawClaim = parsed.data.verified_amount ?? proof.amount_claimed;
+      if (rawClaim == null || !Number.isFinite(Number(rawClaim))) {
+        return NextResponse.json(
+          {
+            error:
+              'No amount to verify. Enter the INR credited on the bank statement, or ask the customer to resubmit with the amount transferred.',
+          },
+          { status: 400 },
+        );
+      }
+
+      let claimed: number;
+      let kind: 'advance' | 'balance' | 'full';
+      try {
+        const resolved = resolveOnlinePaymentAmount(orderTotal, priorPaid, Number(rawClaim));
+        claimed = resolved.amount;
+        kind = resolved.kind;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Invalid payment amount';
+        return NextResponse.json({ error: message }, { status: 400 });
+      }
+
       let balances;
       try {
         balances = applyPaymentToBalances(orderTotal, priorPaid, claimed);
@@ -474,10 +505,10 @@ export async function POST(
         const message = err instanceof Error ? err.message : 'Invalid payment amount';
         return NextResponse.json({ error: message }, { status: 400 });
       }
-      const kind = inferPaymentKind(claimed, orderTotal, priorPaid);
 
       const marked = mergeBankTransferProof(orderRow.compliance_flags, {
         ...proof,
+        amount_claimed: claimed,
         status: 'verified',
         verified_at: new Date().toISOString(),
         verified_by: auth.user.id,
@@ -493,6 +524,8 @@ export async function POST(
         amount: claimed,
         method: 'bank_transfer',
         kind,
+        provider: 'counter',
+        status: 'paid',
         reference: proof.reference,
         notes: `Verified ${proof.bank_label} transfer`,
         recorded_by: auth.user.id,
@@ -504,12 +537,22 @@ export async function POST(
       }
 
       const ledgerBalances = await recomputeOrderBalances(id, orderTotal);
+      if (Math.abs(ledgerBalances.amount_paid - balances.amount_paid) > 0.009) {
+        console.error('[admin/orders/actions] bank transfer ledger mismatch', {
+          expected: balances,
+          ledger: ledgerBalances,
+        });
+        return NextResponse.json(
+          { error: 'Payment ledger did not match the verified amount. No confirmation email was sent — retry or contact eng.' },
+          { status: 500 },
+        );
+      }
 
       await finalizeCapturedPayment({
         order: order as Order,
         method: 'bank_transfer',
         balances: ledgerBalances,
-        paymentKind: kind === 'advance' ? 'advance' : kind === 'balance' ? 'balance' : 'full',
+        paymentKind: kind,
       });
 
       if (orderRow.customer_id) {
@@ -550,6 +593,114 @@ export async function POST(
         payment_status: ledgerBalances.payment_status,
         amount_paid: ledgerBalances.amount_paid,
         amount_due: ledgerBalances.amount_due,
+      });
+    }
+
+    if (parsed.data.action === 'correct_bank_transfer_amount') {
+      const proof = parseBankTransferProof(orderRow.compliance_flags);
+      if (!proof || proof.status !== 'verified') {
+        return NextResponse.json(
+          { error: 'Only a verified bank transfer can be corrected.' },
+          { status: 400 },
+        );
+      }
+
+      const orderTotal = roundMoney(Number(orderRow.total ?? 0));
+
+      const { data: payRows } = await db
+        .from('order_payments')
+        .select('id, amount')
+        .eq('order_id', id)
+        .eq('method', 'bank_transfer')
+        .eq('status', 'paid')
+        .order('paid_at', { ascending: false })
+        .limit(1);
+
+      const payRow = (payRows as Array<{ id: string; amount: number }> | null)?.[0];
+      if (!payRow) {
+        return NextResponse.json({ error: 'No bank transfer ledger row to correct.' }, { status: 400 });
+      }
+
+      const { data: otherRows } = await db
+        .from('order_payments')
+        .select('amount')
+        .eq('order_id', id)
+        .eq('status', 'paid')
+        .neq('id', payRow.id);
+      const priorPaid = roundMoney(
+        ((otherRows as Array<{ amount: number }> | null) ?? []).reduce(
+          (sum, row) => sum + Number(row.amount ?? 0),
+          0,
+        ),
+      );
+
+      let claimed: number;
+      let kind: 'advance' | 'balance' | 'full';
+      try {
+        const resolved = resolveOnlinePaymentAmount(
+          orderTotal,
+          priorPaid,
+          parsed.data.verified_amount,
+        );
+        claimed = resolved.amount;
+        kind = resolved.kind;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Invalid payment amount';
+        return NextResponse.json({ error: message }, { status: 400 });
+      }
+
+      const { error: payError } = await db
+        .from('order_payments')
+        .update({
+          amount: claimed,
+          kind,
+          notes: `Corrected verified ${proof.bank_label} transfer to ₹${claimed}`,
+        })
+        .eq('id', payRow.id);
+      if (payError) {
+        return NextResponse.json({ error: 'Failed to update payment ledger.' }, { status: 500 });
+      }
+
+      const ledgerBalances = await recomputeOrderBalances(id, orderTotal);
+      const flags = mergeBankTransferProof(orderRow.compliance_flags, {
+        ...proof,
+        amount_claimed: claimed,
+      });
+      const { error: balError } = await db
+        .from('orders')
+        .update({
+          amount_paid: ledgerBalances.amount_paid,
+          amount_due: ledgerBalances.amount_due,
+          payment_status: ledgerBalances.payment_status,
+          compliance_flags: flags,
+        })
+        .eq('id', id);
+      if (balError) {
+        return NextResponse.json({ error: 'Failed to update order balances.' }, { status: 500 });
+      }
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'order_correct_bank_transfer_amount',
+        resourceType: 'order',
+        resourceId: id,
+        details: {
+          order_number: orderRow.order_number,
+          previous_amount: Number(payRow.amount),
+          verified_amount: claimed,
+          amount_paid: ledgerBalances.amount_paid,
+          amount_due: ledgerBalances.amount_due,
+          payment_status: ledgerBalances.payment_status,
+        },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({
+        success: true,
+        payment_status: ledgerBalances.payment_status,
+        amount_paid: ledgerBalances.amount_paid,
+        amount_due: ledgerBalances.amount_due,
+        compliance_flags: flags,
       });
     }
 

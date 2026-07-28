@@ -88,7 +88,9 @@ export function OrderConfirmationEmail({
   const priceLines = buildOrderPriceLines(charges);
   const total = Number(charges.total ?? 0);
   const due = Number(amountDue ?? 0);
-  const paid = Number(amountPaid ?? total);
+  // Never invent "paid = total" when amountPaid was omitted — that made partial
+  // settlements look fully paid in the confirmation email.
+  const paid = amountPaid != null ? Number(amountPaid) : due > 0.009 ? 0 : total;
   const isAdvance = due > 0.009;
 
   return (
@@ -167,7 +169,7 @@ export function OrderConfirmationEmail({
             <Hr style={dividerStyle} />
 
             <Row style={totalRowStyle}>
-              <Column><Text style={grandTotalLabelStyle}>{isAdvance ? 'Order Total' : 'Total Paid'}</Text></Column>
+              <Column><Text style={grandTotalLabelStyle}>Order Total</Text></Column>
               <Column style={{ textAlign: 'right' as const }}><Text style={grandTotalValueStyle}>{formatINR(total)}</Text></Column>
             </Row>
 
@@ -186,7 +188,14 @@ export function OrderConfirmationEmail({
                   </Column>
                 </Row>
               </>
-            ) : null}
+            ) : (
+              <Row style={totalRowStyle}>
+                <Column><Text style={totalLabelStyle}>Amount paid</Text></Column>
+                <Column style={{ textAlign: 'right' as const }}>
+                  <Text style={totalValueStyle}>{formatINR(paid)}</Text>
+                </Column>
+              </Row>
+            )}
 
             {/* Shipping Address */}
             <Heading as="h2" style={h2Style}>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   Loader2,
   Search,
@@ -12,6 +13,7 @@ import {
   ChevronUp,
   Filter,
   CheckCircle2,
+  BarChart3,
 } from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminStatCard } from '@/components/admin/AdminPageShell';
@@ -28,6 +30,20 @@ import {
   type LeadPipelineStage,
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
+
+function readLeadQuery() {
+  if (typeof window === 'undefined') {
+    return { assigned_to: '', astrologer_id: '', conversion: '', date_from: '', date_to: '' };
+  }
+  const q = new URLSearchParams(window.location.search);
+  return {
+    assigned_to: q.get('assigned_to') || '',
+    astrologer_id: q.get('astrologer_id') || '',
+    conversion: q.get('conversion') || '',
+    date_from: q.get('date_from') || '',
+    date_to: q.get('date_to') || '',
+  };
+}
 
 type StaffMember = { id: string; name: string; role: string };
 
@@ -79,6 +95,7 @@ const STAGE_COLORS: Record<string, string> = {
   remedies_ready: 'bg-fuchsia-100 text-fuchsia-800',
   sent_to_customer: 'bg-teal-100 text-teal-800',
   remedies_explained: 'bg-lime-100 text-lime-800',
+  conversion: 'bg-orange-100 text-orange-900',
   closed: 'bg-gray-100 text-gray-600',
 };
 
@@ -87,37 +104,21 @@ function fmtDate(value: string | null | undefined) {
   return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function buildAstroPacket(lead: EnquiryLead, hideContact = false) {
-  if (hideContact) {
-    return [
-      `SR. No. ${lead.lead_number ?? '—'}`,
-      `Enquiry Type: ${lead.enquiry_type || lead.subject || 'Enquiry'}`,
-      `Name: ${lead.name}`,
-      `Date of Birth: ${lead.date_of_birth || '—'}`,
-      `Time of Birth: ${lead.birth_time || '—'}`,
-      `Place of Birth: ${lead.birth_place || '—'}`,
-      `Area of Concern: ${lead.area_of_concern || '—'}`,
-    ].join('\n');
-  }
+/** Chart packet for astrologers — never include phone/email (manual WhatsApp/email forwards). */
+function buildAstroPacket(lead: EnquiryLead) {
   return [
     `SR. No. ${lead.lead_number ?? '—'}`,
-    `Date: ${fmtDate(lead.created_at)}`,
     `Enquiry Type: ${lead.enquiry_type || lead.subject || 'Enquiry'}`,
-    lead.ip_location ? `IP Location: ${lead.ip_location}` : null,
     `Name: ${lead.name}`,
-    `Phone No: ${lead.phone || '—'}`,
-    `Email ID: ${lead.email}`,
     `Date of Birth: ${lead.date_of_birth || '—'}`,
     `Time of Birth: ${lead.birth_time || '—'}`,
     `Place of Birth: ${lead.birth_place || '—'}`,
     `Area of Concern: ${lead.area_of_concern || '—'}`,
-    lead.payment_received ? `Payment: Received${lead.payment_note ? ` — ${lead.payment_note}` : ''}` : 'Payment: Pending',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  ].join('\n');
 }
 
 export default function LeadsPage() {
+  const initialQ = useMemo(() => readLeadQuery(), []);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -126,16 +127,19 @@ export default function LeadsPage() {
   const [kind, setKind] = useState<'remedies' | 'consultation'>('remedies');
   const [pipeline, setPipeline] = useState('');
   const [queue, setQueue] = useState<'active' | 'waiting' | 'past' | 'all'>('all');
-  const [assignedTo, setAssignedTo] = useState('');
-  const [astrologerId, setAstrologerId] = useState('');
+  const [assignedTo, setAssignedTo] = useState(initialQ.assigned_to);
+  const [astrologerId, setAstrologerId] = useState(initialQ.astrologer_id);
   const [remarkFilter, setRemarkFilter] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [conversionFilter, setConversionFilter] = useState(initialQ.conversion);
+  const [dateFrom, setDateFrom] = useState(initialQ.date_from);
+  const [dateTo, setDateTo] = useState(initialQ.date_to);
   const [followUp, setFollowUp] = useState('');
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(
+    Boolean(initialQ.conversion || initialQ.assigned_to || initialQ.astrologer_id)
+  );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +173,7 @@ export default function LeadsPage() {
     remediesReady: number;
     deliverRemedies: number;
     remediesExplained: number;
+    conversion: number;
     saleClosed: number;
     byStage?: Record<string, number>;
     pastOutcomes?: Record<string, number>;
@@ -187,6 +192,7 @@ export default function LeadsPage() {
     remediesReady: 0,
     deliverRemedies: 0,
     remediesExplained: 0,
+    conversion: 0,
     saleClosed: 0,
     byStage: {},
     pastOutcomes: {},
@@ -215,6 +221,7 @@ export default function LeadsPage() {
     if (assignedTo) params.set('assigned_to', assignedTo);
     if (astrologerId) params.set('astrologer_id', astrologerId);
     if (remarkFilter) params.set('remark', remarkFilter);
+    if (conversionFilter) params.set('conversion', conversionFilter);
     if (dateFrom) params.set('date_from', dateFrom);
     if (dateTo) params.set('date_to', dateTo);
     if (followUp) params.set('follow_up', followUp);
@@ -253,6 +260,7 @@ export default function LeadsPage() {
     assignedTo,
     astrologerId,
     remarkFilter,
+    conversionFilter,
     dateFrom,
     dateTo,
     followUp,
@@ -350,6 +358,7 @@ export default function LeadsPage() {
     setAssignedTo('');
     setAstrologerId('');
     setRemarkFilter('');
+    setConversionFilter('');
     setDateFrom('');
     setDateTo('');
     setFollowUp('');
@@ -371,17 +380,28 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isAstroDesk ? 'Astrologer desk' : isTelecomDesk ? 'Telecaller desk' : 'Leads pipeline'}
-        </h1>
-        <p className="mt-0.5 text-sm text-gray-500">
-          {isAstroDesk
-            ? 'Write remedies for charts forwarded to you, then submit to the leads manager'
-            : isTelecomDesk
-              ? 'Filter by pipeline stage. Call status & dates are under More filters.'
-              : 'New → Telecaller → Verified → Astrologer → Remedies ready → Deliver → Explained → Close'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isAstroDesk ? 'Astrologer desk' : isTelecomDesk ? 'Telecaller desk' : 'Leads pipeline'}
+          </h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {isAstroDesk
+              ? 'Write remedies for charts forwarded to you, then submit to the leads manager'
+              : isTelecomDesk
+                ? 'Filter by pipeline stage. Call status & dates are under More filters.'
+                : 'New → Telecaller → Verified → Astrologer → Remedies ready → Deliver → Explained → Conversion → Closed'}
+          </p>
+        </div>
+        {isManagerDesk ? (
+          <Link
+            href="/admin/leads/metrics"
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-100"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            Lead metrics
+          </Link>
+        ) : null}
       </div>
 
       {error && (
@@ -402,17 +422,17 @@ export default function LeadsPage() {
           <AdminStatCard label="Active calls" value={summary.activeQueue.toLocaleString('en-IN')} icon={Phone} tone="text-indigo-700" bg="bg-indigo-50" />
           <AdminStatCard label="Verifying" value={summary.verifying.toLocaleString('en-IN')} icon={MessageSquare} tone="text-amber-700" bg="bg-amber-50" />
           <AdminStatCard label="Deliver remedies" value={(summary.deliverRemedies ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-teal-700" bg="bg-teal-50" />
-          <AdminStatCard label="Explained" value={(summary.remediesExplained ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-lime-700" bg="bg-lime-50" />
+          <AdminStatCard label="Conversion" value={(summary.conversion ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-orange-700" bg="bg-orange-50" />
           <AdminStatCard label="Past closed" value={summary.pastClosed.toLocaleString('en-IN')} icon={User} tone="text-gray-700" bg="bg-gray-50" />
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
           <AdminStatCard label={kind === 'remedies' ? 'Remedies leads' : 'Consultations'} value={summary.totalEnquiries.toLocaleString('en-IN')} icon={UsersIcon} tone="text-gray-900" bg="bg-gray-50" />
           <AdminStatCard label="New / unassigned" value={`${summary.newEnquiries} / ${summary.unassigned}`} icon={MessageSquare} tone="text-sky-700" bg="bg-sky-50" />
           <AdminStatCard label="Verifying" value={summary.verifying.toLocaleString('en-IN')} icon={Phone} tone="text-amber-700" bg="bg-amber-50" />
           <AdminStatCard label="Verified" value={summary.verified.toLocaleString('en-IN')} icon={CheckCircle2} tone="text-emerald-700" bg="bg-emerald-50" />
           <AdminStatCard label="With astrologer" value={summary.withAstrologer.toLocaleString('en-IN')} icon={User} tone="text-violet-700" bg="bg-violet-50" />
-          <AdminStatCard label="Explained (close)" value={(summary.remediesExplained ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-lime-700" bg="bg-lime-50" />
+          <AdminStatCard label="Conversion" value={(summary.conversion ?? 0).toLocaleString('en-IN')} icon={CheckCircle2} tone="text-orange-700" bg="bg-orange-50" />
         </div>
       )}
 
@@ -480,13 +500,13 @@ export default function LeadsPage() {
           </label>
           {!caps.scoped && (
             <label className="text-xs font-medium text-gray-500 sm:w-48">
-              Telecaller
+              Assigned telecaller
               <select
                 value={assignedTo}
                 onChange={(e) => { setAssignedTo(e.target.value); setPage(1); }}
                 className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
               >
-                <option value="">All</option>
+                <option value="">All telecallers</option>
                 {staff.telecom.map((m) => (
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
@@ -546,6 +566,21 @@ export default function LeadsPage() {
                     {LEAD_REMARK_CODES.map((r) => (
                       <option key={r.code} value={r.code}>{r.label}</option>
                     ))}
+                  </select>
+                </label>
+              )}
+              {!isAstroDesk && !isTelecomDesk && (
+                <label className="text-xs font-medium text-gray-500">
+                  Conversion
+                  <select
+                    value={conversionFilter}
+                    onChange={(e) => { setConversionFilter(e.target.value); setPage(1); }}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="">All</option>
+                    <option value="converted">Converted</option>
+                    <option value="not_converted">Not converted</option>
+                    <option value="pending">Pending outcome</option>
                   </select>
                 </label>
               )}
@@ -637,7 +672,17 @@ export default function LeadsPage() {
                       {isEnquiry && lead.payment_received && !isAstroDesk && (
                         <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">₹ paid</span>
                       )}
-                      {isEnquiry && lead.sale_close && !isTelecomDesk && (
+                      {isEnquiry && lead.conversion_status === 'converted' && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          Converted{lead.order_number ? ` · ${lead.order_number}` : ''}
+                        </span>
+                      )}
+                      {isEnquiry && lead.conversion_status === 'not_converted' && (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                          Not converted
+                        </span>
+                      )}
+                      {isEnquiry && lead.sale_close && !lead.conversion_status && !isTelecomDesk && (
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Sale closed</span>
                       )}
                     </div>
@@ -679,7 +724,7 @@ export default function LeadsPage() {
                     onAddRemark={(code) => addRemark(lead.id, code)}
                     onUpdate={(updates) => updateLead(lead.id, 'enquiry', updates)}
                     onCopy={async () => {
-                      await navigator.clipboard.writeText(buildAstroPacket(lead, isAstroDesk));
+                      await navigator.clipboard.writeText(buildAstroPacket(lead));
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1500);
                     }}

@@ -79,3 +79,22 @@ export function canEditOutcomeFlags(role: string | null | undefined) {
 export function canAddRemarks(role: string | null | undefined) {
   return isLeadManager(role) || isTelecomRole(role) || role === 'support';
 }
+
+/** Telecaller or manager can mark not converted after remedies explained */
+export function canMarkNotConverted(role: string | null | undefined) {
+  return isLeadManager(role) || isTelecomRole(role);
+}
+
+/** Only leads manager / parcel dispatch can link a real order as converted */
+export function canMarkConverted(role: string | null | undefined) {
+  return isLeadManager(role);
+}
+
+/** Astrologers get chart fields only — never customer phone/email */
+export function redactLeadContactForRole<T extends { phone?: string | null; email?: string | null }>(
+  role: string | null | undefined,
+  lead: T
+): T {
+  if (!isAstrologerRole(role)) return lead;
+  return { ...lead, phone: null, email: '' };
+}

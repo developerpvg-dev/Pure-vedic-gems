@@ -218,6 +218,21 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   if (!raw) notFound();
 
+  const { data: trackingEventRows } = await supabase
+    .from('order_tracking_events')
+    .select('status, event_time, note, carrier, tracking_number')
+    .eq('order_id', id)
+    .order('event_time', { ascending: true })
+    .limit(80);
+
+  const trackingEvents = (trackingEventRows ?? []).map((row) => ({
+    status: String((row as { status?: string }).status ?? ''),
+    event_time: String((row as { event_time?: string }).event_time ?? ''),
+    note: (row as { note?: string | null }).note ?? null,
+    carrier: (row as { carrier?: string | null }).carrier ?? null,
+    tracking_number: (row as { tracking_number?: string | null }).tracking_number ?? null,
+  }));
+
   const o = raw as unknown as OrderRecord;
 
   let profile: CustomerProfile | null = null;
@@ -514,9 +529,12 @@ export default async function OrderDetailPage({ params }: PageProps) {
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-4">
           <Field label="Total">{fmt(o.total)}</Field>
           <Field label="Paid / Due">
-            {fmt(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0))}
+            {fmt(o.amount_paid ?? 0)}
             {' / '}
-            {fmt(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total))}
+            {fmt(
+              o.amount_due ??
+                Math.max(0, Number(o.total ?? 0) - Number(o.amount_paid ?? 0)),
+            )}
           </Field>
           <Field label="Payment">{cap(o.payment_method) ?? 'â€”'}</Field>
           <Field label="Fulfillment">
@@ -1049,8 +1067,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
             <OrderPaymentLedger
               orderId={o.id}
               total={Number(o.total) || 0}
-              amountPaid={Number(o.amount_paid ?? (o.payment_status === 'captured' ? o.total : 0)) || 0}
-              amountDue={Number(o.amount_due ?? (o.payment_status === 'captured' ? 0 : o.total)) || 0}
+              amountPaid={Number(o.amount_paid ?? 0) || 0}
+              amountDue={
+                Number(
+                  o.amount_due ??
+                    Math.max(0, Number(o.total ?? 0) - Number(o.amount_paid ?? 0)),
+                ) || 0
+              }
               paymentStatus={o.payment_status}
               hasCustomerAccount={Boolean(o.customer_id)}
               balanceRequestedAt={orderExtras.balance_due_notified_at ?? null}
@@ -1182,6 +1205,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
               paymentStatus={o.payment_status ?? null}
               amountPaid={o.amount_paid ?? null}
               amountDue={o.amount_due ?? null}
+              createdAt={o.created_at}
+              trackingEvents={trackingEvents}
             />
           </div>
           ) : (

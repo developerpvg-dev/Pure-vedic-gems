@@ -85,7 +85,8 @@ export function PaymentSection({
   const [proofFiles, setProofFiles] = useState<FileList | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [payFull, setPayFull] = useState(true);
-  const [advancePercent, setAdvancePercent] = useState(ADVANCE_MIN_PERCENT);
+  /** Absolute INR advance; 0 means “use the 20% floor until the customer edits”. */
+  const [advanceRupees, setAdvanceRupees] = useState(0);
 
   const selectedBank = BANK_ACCOUNTS.find((b) => b.id === bankId) ?? BANK_ACCOUNTS[0];
 
@@ -95,14 +96,21 @@ export function PaymentSection({
     () => Math.min(estimate.totalInr, Math.ceil((estimate.totalInr * ADVANCE_MIN_PERCENT) / 100)),
     [estimate.totalInr],
   );
-  // Server recomputes the total, so this is a display estimate; it re-derives
-  // the same percentage from the authoritative total after order creation.
-  const advanceAmount = useMemo(
-    () => Math.max(advanceFloor, Math.round((estimate.totalInr * advancePercent) / 100)),
-    [estimate.totalInr, advancePercent, advanceFloor],
-  );
+  const advanceAmount = useMemo(() => {
+    const raw = advanceRupees > 0 ? advanceRupees : advanceFloor;
+    return Math.min(estimate.totalInr, Math.max(advanceFloor, Math.round(raw)));
+  }, [estimate.totalInr, advanceRupees, advanceFloor]);
+  const advancePercent =
+    estimate.totalInr > 0
+      ? Math.min(100, Math.max(1, Math.round((advanceAmount / estimate.totalInr) * 100)))
+      : ADVANCE_MIN_PERCENT;
   const payingPartial = advanceAvailable && !payFull;
   const chargeNow = payingPartial ? advanceAmount : estimate.totalInr;
+
+  function clampAdvanceRupees(value: number) {
+    if (!Number.isFinite(value)) return;
+    setAdvanceRupees(Math.min(estimate.totalInr, Math.max(advanceFloor, Math.round(value))));
+  }
 
   const copyField = useCallback(async (key: string, value: string) => {
     try {
@@ -193,8 +201,10 @@ export function PaymentSection({
 
       const serverTotal = Number(total ?? estimate.totalInr);
       const serverFloor = Math.ceil((serverTotal * ADVANCE_MIN_PERCENT) / 100);
+      // Scale the customer's rupee pick if the server total differs slightly from the estimate.
+      const ratio = estimate.totalInr > 0 ? serverTotal / estimate.totalInr : 1;
       const payAmount = payingPartial
-        ? Math.min(serverTotal, Math.max(serverFloor, Math.round((serverTotal * advancePercent) / 100)))
+        ? Math.min(serverTotal, Math.max(serverFloor, Math.round(advanceAmount * ratio)))
         : serverTotal;
 
       setStep('submitting_proof');
@@ -232,7 +242,7 @@ export function PaymentSection({
     transferNotes,
     onPaymentSuccess,
     payingPartial,
-    advancePercent,
+    advanceAmount,
     estimate.totalInr,
   ]);
 
@@ -269,11 +279,10 @@ export function PaymentSection({
       // Re-derive the advance from the server-verified total so a stale client
       // estimate cannot push the charge below the 20% floor and get rejected.
       const serverTotal = Number(total ?? estimate.totalInr);
+      const serverFloor = Math.ceil((serverTotal * ADVANCE_MIN_PERCENT) / 100);
+      const ratio = estimate.totalInr > 0 ? serverTotal / estimate.totalInr : 1;
       const payAmount = payingPartial
-        ? Math.min(serverTotal, Math.max(
-            Math.ceil((serverTotal * ADVANCE_MIN_PERCENT) / 100),
-            Math.round((serverTotal * advancePercent) / 100),
-          ))
+        ? Math.min(serverTotal, Math.max(serverFloor, Math.round(advanceAmount * ratio)))
         : null;
 
       await runRazorpayCheckout({
@@ -315,7 +324,7 @@ export function PaymentSection({
     contact,
     onPaymentSuccess,
     payingPartial,
-    advancePercent,
+    advanceAmount,
     estimate.totalInr,
   ]);
 
@@ -423,30 +432,65 @@ export function PaymentSection({
           </div>
 
           {payingPartial ? (
-            <div className="mt-3 rounded-lg bg-stone-50 p-3">
-              <label
-                htmlFor="pvg-advance-percent"
-                className="flex items-center justify-between text-sm font-semibold text-[#3d2b1f]"
-              >
-                <span>Advance: {advancePercent}%</span>
-                <span>{formatPrice(advanceAmount, 'INR')}</span>
-              </label>
-              <input
-                id="pvg-advance-percent"
-                type="range"
-                min={ADVANCE_MIN_PERCENT}
-                max={100}
-                step={5}
-                value={advancePercent}
-                disabled={isProcessing}
-                onChange={(e) => setAdvancePercent(Number(e.target.value))}
-                className="mt-2 w-full accent-[#C9A84C]"
-              />
-              <div className="mt-1 flex justify-between text-[10px] font-medium text-stone-400">
-                <span>{ADVANCE_MIN_PERCENT}%</span>
-                <span>100%</span>
+            <div className="mt-3 space-y-3 rounded-lg bg-stone-50 p-3">
+              <div>
+                <label
+                  htmlFor="pvg-advance-amount"
+                  className="flex items-center justify-between text-sm font-semibold text-[#3d2b1f]"
+                >
+                  <span>Advance amount (₹)</span>
+                  <span className="font-medium text-stone-500">{advancePercent}% of total</span>
+                </label>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="text-sm font-semibold text-stone-500">₹</span>
+                  <input
+                    id="pvg-advance-amount"
+                    type="number"
+                    inputMode="numeric"
+                    min={advanceFloor}
+                    max={estimate.totalInr}
+                    step={1}
+                    value={advanceAmount}
+                    disabled={isProcessing}
+                    onChange={(e) => clampAdvanceRupees(Number(e.target.value))}
+                    onBlur={(e) => clampAdvanceRupees(Number(e.target.value) || advanceFloor)}
+                    className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-semibold tabular-nums text-[#3d2b1f] outline-none focus:border-[#C9A84C]"
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-stone-400">
+                  Min ₹{advanceFloor.toLocaleString('en-IN')} ({ADVANCE_MIN_PERCENT}%) · Max{' '}
+                  ₹{estimate.totalInr.toLocaleString('en-IN')}
+                </p>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-stone-600">
+
+              <div>
+                <label
+                  htmlFor="pvg-advance-percent"
+                  className="flex items-center justify-between text-xs font-semibold text-stone-600"
+                >
+                  <span>Or use slider</span>
+                  <span>{formatPrice(advanceAmount, 'INR')}</span>
+                </label>
+                <input
+                  id="pvg-advance-percent"
+                  type="range"
+                  min={ADVANCE_MIN_PERCENT}
+                  max={100}
+                  step={1}
+                  value={advancePercent}
+                  disabled={isProcessing}
+                  onChange={(e) =>
+                    clampAdvanceRupees(Math.round((estimate.totalInr * Number(e.target.value)) / 100))
+                  }
+                  className="mt-1.5 w-full accent-[#C9A84C]"
+                />
+                <div className="mt-0.5 flex justify-between text-[10px] font-medium text-stone-400">
+                  <span>{ADVANCE_MIN_PERCENT}%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              <p className="text-xs leading-relaxed text-stone-600">
                 Your order is confirmed once we verify this payment. The remaining{' '}
                 <strong>{formatPrice(Math.max(0, estimate.totalInr - advanceAmount), 'INR')}</strong>{' '}
                 becomes payable when we tell you the order is ready — we ship after that.

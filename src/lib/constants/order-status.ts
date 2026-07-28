@@ -58,7 +58,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   jewelry_making: 'Jewelry Making',
   certification: 'Certification',
   energization: 'Energization',
-  quality_check: 'Quality Check',
+  quality_check: 'Packed for Shipping',
   shipped: 'Shipped',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',

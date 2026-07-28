@@ -17,6 +17,7 @@ import {
   recomputeOrderBalances,
   settlePaymentAttempt,
 } from '@/lib/orders/online-payments';
+import { applyPaymentToBalances, roundMoney } from '@/lib/orders/counter-payments';
 import type { Json, Order } from '@/lib/types/database';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
 import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
@@ -220,8 +221,14 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
     eventId: event.id,
     razorpayPaymentId,
     method: method ?? facts.method,
-    balances: claimed ? await recomputeOrderBalances(order.id, order.total) : undefined,
-    paymentKind: claimed?.kind as 'advance' | 'balance' | 'full' | undefined,
+    balances: claimed
+      ? await recomputeOrderBalances(order.id, order.total)
+      : applyPaymentToBalances(
+          Number(order.total),
+          roundMoney(Number(order.amount_paid ?? 0)),
+          roundMoney((expectedPaise ?? Math.round(Number(order.total) * 100)) / 100),
+        ),
+    paymentKind: (claimed?.kind as 'advance' | 'balance' | 'full' | undefined) ?? 'full',
   });
 
   return NextResponse.json({ status: 'captured' });

@@ -22,11 +22,27 @@ import {
 } from '@/lib/orders/returns';
 import {
   isDispatchPaymentVerified,
+  parseDispatchPaymentVerified,
   parseProofOfDelivery,
   deliveryProofProxyUrl,
 } from '@/lib/orders/dispatch-proof';
+import {
+  LIFECYCLE_SECTIONS,
+  CARRIER_DELIVERY_LABELS,
+  CARRIER_DELIVERY_STATUSES,
+  type LifecycleSectionId,
+} from '@/lib/orders/order-lifecycle';
+import { AdminOrderTimeline } from '@/components/admin/AdminOrderTimeline';
+import type { TrackingEventRow } from '@/lib/orders/admin-timeline';
 
 const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
+const CARRIER_ORDER_STATUSES = new Set(['shipped', 'out_for_delivery', 'delivered', 'feedback']);
+
+function energizationUrlsFromFlags(value: unknown): string[] {
+  const flags = parseComplianceFlags(value) as { energization_image_urls?: unknown };
+  if (!Array.isArray(flags.energization_image_urls)) return [];
+  return flags.energization_image_urls.filter((u): u is string => typeof u === 'string');
+}
 
 const field =
   'w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-400 focus:ring-2 focus:ring-stone-900/5';
@@ -36,41 +52,59 @@ const btnPrimary =
 const btnGhost =
   'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-800 transition hover:bg-stone-50 disabled:opacity-50';
 
-function Accordion({
-  title,
+const SECTION_BAR: Record<LifecycleSectionId, string> = {
+  payment: 'bg-amber-500',
+  workshop: 'bg-sky-500',
+  media: 'bg-violet-500',
+  carrier: 'bg-teal-500',
+  returns: 'bg-rose-500',
+  refund: 'bg-orange-500',
+  inventory: 'bg-stone-400',
+  commission: 'bg-stone-400',
+};
+
+function Section({
+  sectionId,
   open,
   onToggle,
   children,
   badge,
 }: {
-  title: string;
+  sectionId: LifecycleSectionId;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
   badge?: string | null;
 }) {
+  const cfg = LIFECYCLE_SECTIONS[sectionId];
   return (
-    <div className="border-t border-stone-100">
+    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-2 px-5 py-3.5 text-left transition hover:bg-stone-50/80"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-stone-50/80"
       >
-        <span className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-            {title}
+        <span className={`h-8 w-1 shrink-0 rounded-full ${SECTION_BAR[sectionId]}`} aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className={`text-[12px] font-semibold ${cfg.header}`}>{cfg.title}</span>
+            {badge ? (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${cfg.accent}`}>
+                {badge}
+              </span>
+            ) : null}
           </span>
-          {badge ? (
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-600">
-              {badge}
-            </span>
-          ) : null}
+          {!open ? <span className="mt-0.5 block truncate text-[11px] text-stone-400">{cfg.hint}</span> : null}
         </span>
         <ChevronDown
-          className={`h-4 w-4 text-stone-400 transition ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 shrink-0 text-stone-400 transition ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      {open ? <div className="space-y-3 px-5 pb-5">{children}</div> : null}
+      {open ? (
+        <div className="space-y-3 border-t border-stone-100 bg-stone-50/40 px-4 py-4">
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -112,6 +146,8 @@ interface OrderActionsProps {
   paymentStatus?: string | null;
   amountPaid?: number | null;
   amountDue?: number | null;
+  createdAt?: string | null;
+  trackingEvents?: TrackingEventRow[];
 }
 
 export function OrderActions({
@@ -147,6 +183,8 @@ export function OrderActions({
   paymentStatus = null,
   amountPaid = null,
   amountDue = null,
+  createdAt = null,
+  trackingEvents = [],
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -158,6 +196,9 @@ export function OrderActions({
   const [deliveryStatus, setDeliveryStatus] = useState(currentDeliveryStatus ?? 'pending');
   const [productVideoUrl, setProductVideoUrl] = useState(currentProductVideoUrl ?? '');
   const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
+  const [energizationImageUrls, setEnergizationImageUrls] = useState(() =>
+    energizationUrlsFromFlags(complianceFlags).join('\n'),
+  );
   const [designCompletedAt, setDesignCompletedAt] = useState(currentDesignCompletedAt ?? '');
   const [markedSoldAt, setMarkedSoldAt] = useState(productsMarkedSoldAt);
   const [returnStatus, setReturnStatus] = useState(currentReturnStatus || 'none');
@@ -185,11 +226,23 @@ export function OrderActions({
   );
 
   const hasActiveReturn = (currentReturnStatus || 'none') !== 'none';
-  const [openFulfill, setOpenFulfill] = useState(true);
-  const [openInventory, setOpenInventory] = useState(true);
+  const isShippedOrLater = ['shipped', 'out_for_delivery', 'delivered', 'feedback'].includes(
+    currentStatus,
+  );
+  const isMediaStage = ['design_completed', 'jewelry_making', 'energization', 'quality_check'].includes(
+    currentStatus,
+  );
+  // ponytail: open only the stage that matches current work — less accordion noise
+  const [openWorkshop, setOpenWorkshop] = useState(!isShippedOrLater && !hasActiveReturn);
+  const [openMedia, setOpenMedia] = useState(isMediaStage);
+  const [openCarrier, setOpenCarrier] = useState(
+    isShippedOrLater || Boolean(currentTracking?.trim()),
+  );
+  const [openInventory, setOpenInventory] = useState(false);
   const [openReturns, setOpenReturns] = useState(hasActiveReturn);
   const [openRefund, setOpenRefund] = useState(currentStatus === 'cancelled');
-  const [openCommission, setOpenCommission] = useState(commissions.length > 0);
+  const [openCommission, setOpenCommission] = useState(false);
+  const [openTimeline, setOpenTimeline] = useState(true);
   const [podDetails, setPodDetails] = useState(
     () => parseProofOfDelivery(complianceFlags)?.details ?? '',
   );
@@ -234,6 +287,16 @@ export function OrderActions({
     () => [...statusPipeline, ...TERMINAL_STATUSES],
     [statusPipeline],
   );
+
+  const workshopStatuses = useMemo(
+    () => selectableStatuses.filter((s) => !CARRIER_ORDER_STATUSES.has(s)),
+    [selectableStatuses],
+  );
+
+  const showMediaSection =
+    fulfillmentContext.showProductVideo ||
+    fulfillmentContext.showPujaVideo ||
+    fulfillmentContext.showEnergization;
 
   const currentIndex = statusPipeline.indexOf(status as (typeof statusPipeline)[number]);
   const nextStatus =
@@ -480,17 +543,27 @@ export function OrderActions({
   const isTerminal = status === 'cancelled' || status === 'refunded';
   const showRefund = !isTerminal || status === 'cancelled';
 
-  const savePayload = {
+  const saveWorkshopPayload = {
     status,
-    product_video_url: productVideoUrl || null,
-    puja_video_url: pujaVideoUrl || null,
+    admin_notes: notes || null,
+  };
+
+  const saveCarrierPayload = {
     carrier: carrier || null,
     tracking_number: tracking || null,
     tracking_url: trackingUrl || null,
     delivery_status: deliveryStatus || null,
     shipped_at: shippedAt ? `${shippedAt}T00:00:00.000Z` : null,
     estimated_delivery: estimatedDelivery || null,
-    admin_notes: notes || null,
+  };
+
+  const saveMediaPayload = {
+    product_video_url: productVideoUrl || null,
+    puja_video_url: pujaVideoUrl || null,
+    energization_image_urls: energizationImageUrls
+      .split('\n')
+      .map((url) => url.trim())
+      .filter(Boolean),
   };
 
   const commissionPayload = {
@@ -504,77 +577,162 @@ export function OrderActions({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
-      <div className="border-b border-stone-100 px-5 py-3.5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-          Manage order
-        </h2>
-        <p className="mt-1 text-xs text-stone-400">
-          {FULFILLMENT_PROFILE_LABELS[fulfillmentContext.profile]}
-        </p>
-      </div>
-
-      {status === 'cancelled' ? (
-        <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-900">
-          <p className="font-semibold">Cancelled</p>
-          {cancelReason ? <p className="mt-0.5 text-xs text-red-800/90">{cancelReason}</p> : null}
-        </div>
-      ) : null}
-
-      {!isTerminal ? (
-        paymentVerifiedStamp ? (
-          <div className="border-b border-emerald-100 bg-emerald-50/80 px-5 py-3 text-sm text-emerald-900">
-            <p className="flex items-center gap-2 font-semibold">
-              <ShieldCheck className="h-4 w-4" />
-              Payment verified by Parcel Dispatch
-            </p>
-          </div>
-        ) : !paymentVerified ? (
-          <div className="space-y-3 border-b border-amber-100 bg-amber-50/90 px-5 py-4">
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+        <div className="border-b border-stone-100 px-5 py-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="flex items-center gap-2 text-sm font-semibold text-amber-950">
-                <ShieldCheck className="h-4 w-4" />
-                Step 1 — Verify payment
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                Manage order
+              </h2>
+              <p className="mt-1 text-sm font-semibold text-stone-900">
+                {statusLabels[status] ?? status.replace(/_/g, ' ')}
               </p>
-              <p className="mt-1 text-xs text-amber-900/80">
-                Check that payment was received, then mark verified. Fulfillment stays locked until then.
-              </p>
-              <p className="mt-1.5 text-xs text-amber-900/70">
-                Payment: {paymentStatus || '—'}
-                {amountPaid != null ? ` · Paid ₹${Number(amountPaid).toLocaleString('en-IN')}` : ''}
-                {amountDue != null && Number(amountDue) > 0.009
-                  ? ` · Due ₹${Number(amountDue).toLocaleString('en-IN')}`
-                  : ''}
+              <p className="mt-0.5 text-xs text-stone-400">
+                {FULFILLMENT_PROFILE_LABELS[fulfillmentContext.profile]} · #{orderNumber}
               </p>
             </div>
+            {nextStatus && !isTerminal && paymentVerified ? (
+              <button
+                type="button"
+                onClick={advanceStatus}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                Next: {statusLabels[nextStatus] ?? nextStatus}
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Compact pipeline */}
+          <div className="mt-4 flex gap-1 overflow-x-auto pb-1">
+            {statusPipeline
+              .filter((s) => !['pending_payment', 'placed'].includes(s))
+              .map((step) => {
+                const stepIndex = statusPipeline.indexOf(step);
+                const done = currentIndex > stepIndex;
+                const current = step === status;
+                return (
+                  <div
+                    key={step}
+                    title={statusLabels[step] ?? step}
+                    className={`h-1.5 min-w-[1.75rem] flex-1 rounded-full ${
+                      current ? 'bg-stone-900' : done ? 'bg-emerald-500' : 'bg-stone-200'
+                    }`}
+                  />
+                );
+              })}
+          </div>
+          <p className="mt-1.5 text-[10px] text-stone-400">
+            {currentIndex >= 0
+              ? `Step ${currentIndex + 1} of ${statusPipeline.length}`
+              : 'Custom / terminal status'}
+          </p>
+        </div>
+
+        {status === 'cancelled' ? (
+          <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-900">
+            <p className="font-semibold">Cancelled</p>
+            {cancelReason ? <p className="mt-0.5 text-xs text-red-800/90">{cancelReason}</p> : null}
+          </div>
+        ) : null}
+
+        {!isTerminal ? (
+          paymentVerifiedStamp ? (
+            <div className="border-b border-emerald-100 bg-emerald-50/80 px-5 py-3 text-sm text-emerald-900">
+              <p className="flex items-center gap-2 font-semibold">
+                <ShieldCheck className="h-4 w-4" />
+                Payment verified
+                {parseDispatchPaymentVerified(flagsState)?.verified_at ? (
+                  <span className="font-normal text-emerald-800/80">
+                    ·{' '}
+                    {formatCompletedDate(
+                      parseDispatchPaymentVerified(flagsState)!.verified_at,
+                    )}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+          ) : !paymentVerified ? (
+            <div className="space-y-3 border-b border-amber-100 bg-amber-50/90 px-5 py-4">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold text-amber-950">
+                  <ShieldCheck className="h-4 w-4" />
+                  Step 1 — Verify payment
+                </p>
+                <p className="mt-1 text-xs text-amber-900/80">
+                  Razorpay is auto-verified by webhook. For bank transfer, confirm receipt then mark
+                  verified. Workshop stays locked until then.
+                </p>
+                <p className="mt-1.5 text-xs text-amber-900/70">
+                  Payment: {paymentStatus || '—'}
+                  {amountPaid != null ? ` · Paid ₹${Number(amountPaid).toLocaleString('en-IN')}` : ''}
+                  {amountDue != null && Number(amountDue) > 0.009
+                    ? ` · Due ₹${Number(amountDue).toLocaleString('en-IN')}`
+                    : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={verifyDispatchPayment}
+                disabled={saving}
+                className={btnPrimary}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                Mark payment verified
+              </button>
+            </div>
+          ) : null
+        ) : null}
+
+        {(success || error) && (
+          <div className="border-b border-stone-100 px-5 py-2.5">
+            {success ? (
+              <p className="rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-800">
+                {success}
+              </p>
+            ) : null}
+            {error ? (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-700">{error}</p>
+            ) : null}
+          </div>
+        )}
+
+        {createdAt ? (
+          <div className="border-b border-stone-100 px-4 py-3">
             <button
               type="button"
-              onClick={verifyDispatchPayment}
-              disabled={saving}
-              className={btnPrimary}
+              onClick={() => setOpenTimeline((v) => !v)}
+              className="mb-2 flex w-full items-center justify-between text-left"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-              Mark payment verified
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                Dated timeline
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 text-stone-400 transition ${openTimeline ? 'rotate-180' : ''}`}
+              />
             </button>
+            {openTimeline ? (
+              <AdminOrderTimeline
+                createdAt={createdAt}
+                statusLabels={statusLabels}
+                events={trackingEvents}
+                designCompletedAt={designCompletedAt || null}
+                shippedAt={currentShippedAt ?? null}
+                deliveredAt={returnMeta.delivered_at ?? null}
+                productsMarkedSoldAt={markedSoldAt}
+                paymentVerifiedAt={parseDispatchPaymentVerified(flagsState)?.verified_at ?? null}
+                currentStatus={status}
+              />
+            ) : null}
           </div>
-        ) : null
-      ) : null}
+        ) : null}
+      </div>
 
-      {(success || error) && (
-        <div className="border-b border-stone-100 px-5 py-2.5">
-          {success ? (
-            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-800">
-              {success}
-            </p>
-          ) : null}
-          {error ? (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-700">{error}</p>
-          ) : null}
-        </div>
-      )}
-
-      {/* Fulfillment — primary */}
-      <Accordion title="Fulfillment" open={openFulfill} onToggle={() => setOpenFulfill((v) => !v)}>
+      <div className="space-y-2.5">
+      {/* Workshop — crafting & status */}
+      <Section sectionId="workshop" open={openWorkshop} onToggle={() => setOpenWorkshop((v) => !v)}>
         {nextStatus && !isTerminal ? (
           <button
             type="button"
@@ -593,7 +751,7 @@ export function OrderActions({
 
         {fulfillmentContext.needsCrafting ? (
           productCompleted ? (
-            <p className="rounded-xl bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
+            <p className="rounded-xl bg-white/70 px-3 py-2.5 text-sm text-stone-700">
               {craftingCompleteLabel}
               {designCompletedAt ? (
                 <span className="mt-0.5 block text-xs text-stone-400">
@@ -617,7 +775,7 @@ export function OrderActions({
         <div>
           <label className={labelCls}>Status</label>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className={field}>
-            {selectableStatuses.map((s) => (
+            {workshopStatuses.map((s) => (
               <option key={s} value={s}>
                 {statusLabels[s] ?? s.replace(/_/g, ' ')}
               </option>
@@ -625,33 +783,76 @@ export function OrderActions({
           </select>
         </div>
 
-        {(fulfillmentContext.showProductVideo || fulfillmentContext.showPujaVideo) && (
-          <div className="space-y-3 rounded-xl border border-stone-100 bg-stone-50/60 p-3">
-            {fulfillmentContext.showProductVideo ? (
-              <div>
-                <label className={labelCls}>Product video URL</label>
-                <input
-                  value={productVideoUrl}
-                  onChange={(e) => setProductVideoUrl(e.target.value)}
-                  placeholder="Video link"
-                  className={field}
-                />
-              </div>
-            ) : null}
-            {fulfillmentContext.showPujaVideo ? (
-              <div>
-                <label className={labelCls}>Puja video URL</label>
-                <input
-                  value={pujaVideoUrl}
-                  onChange={(e) => setPujaVideoUrl(e.target.value)}
-                  placeholder="Puja video link"
-                  className={field}
-                />
-              </div>
-            ) : null}
-          </div>
-        )}
+        <div>
+          <label className={labelCls}>Internal notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className={field}
+          />
+        </div>
 
+        <button
+          type="button"
+          onClick={() => handleSave(saveWorkshopPayload)}
+          disabled={saving}
+          className={btnPrimary}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? 'Saving…' : 'Save workshop'}
+        </button>
+      </Section>
+
+      {showMediaSection ? (
+        <Section sectionId="media" open={openMedia} onToggle={() => setOpenMedia((v) => !v)}>
+          {fulfillmentContext.showProductVideo ? (
+            <div>
+              <label className={labelCls}>Product video URL</label>
+              <input
+                value={productVideoUrl}
+                onChange={(e) => setProductVideoUrl(e.target.value)}
+                placeholder="Video link"
+                className={field}
+              />
+            </div>
+          ) : null}
+          {fulfillmentContext.showPujaVideo ? (
+            <div>
+              <label className={labelCls}>Puja / energization video URL</label>
+              <input
+                value={pujaVideoUrl}
+                onChange={(e) => setPujaVideoUrl(e.target.value)}
+                placeholder="Puja video link"
+                className={field}
+              />
+            </div>
+          ) : null}
+          {fulfillmentContext.showEnergization ? (
+            <div>
+              <label className={labelCls}>Energization picture URLs</label>
+              <textarea
+                value={energizationImageUrls}
+                onChange={(e) => setEnergizationImageUrls(e.target.value)}
+                rows={3}
+                placeholder="One image URL per line"
+                className={field}
+              />
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => handleSave(saveMediaPayload)}
+            disabled={saving}
+            className={btnPrimary}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? 'Saving…' : 'Save media'}
+          </button>
+        </Section>
+      ) : null}
+
+      <Section sectionId="carrier" open={openCarrier} onToggle={() => setOpenCarrier((v) => !v)}>
         <div className="grid grid-cols-2 gap-2">
           <div className="col-span-2">
             <label className={labelCls}>Carrier</label>
@@ -703,29 +904,18 @@ export function OrderActions({
               onChange={(e) => setDeliveryStatus(e.target.value)}
               className={field}
             >
-              {['pending', 'label_created', 'in_transit', 'out_for_delivery', 'delivered', 'returned', 'failed'].map(
-                (value) => (
-                  <option key={value} value={value}>
-                    {value.replace(/_/g, ' ')}
-                  </option>
-                ),
-              )}
+              {CARRIER_DELIVERY_STATUSES.map((value) => (
+                <option key={value} value={value}>
+                  {CARRIER_DELIVERY_LABELS[value]}
+                </option>
+              ))}
             </select>
-          </div>
-          <div className="col-span-2">
-            <label className={labelCls}>Internal notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className={field}
-            />
           </div>
         </div>
 
         {status === 'delivered' || status === 'feedback' || deliveryStatus === 'delivered' ? (
-          <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50/70 p-3">
-            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+          <div className="space-y-3 rounded-xl border border-teal-200 bg-white/70 p-3">
+            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-teal-800">
               <Truck className="h-3.5 w-3.5" />
               Proof of delivery
             </p>
@@ -806,7 +996,7 @@ export function OrderActions({
 
         <button
           type="button"
-          onClick={() => handleSave(savePayload)}
+          onClick={() => handleSave(saveCarrierPayload)}
           disabled={saving}
           className={btnPrimary}
         >
@@ -815,17 +1005,17 @@ export function OrderActions({
         </button>
         <button
           type="button"
-          onClick={() => handleSave({ ...savePayload, notify_customer: true })}
+          onClick={() => handleSave({ ...saveCarrierPayload, notify_customer: true })}
           disabled={saving || (!tracking && !trackingUrl)}
           className={btnGhost}
         >
           <MessageCircle className="h-4 w-4" />
           Save &amp; notify customer
         </button>
-      </Accordion>
+      </Section>
 
-      <Accordion
-        title="Commission"
+      <Section
+        sectionId="commission"
         open={openCommission}
         onToggle={() => setOpenCommission((v) => !v)}
         badge={commissions.length ? `${commissions.length} recipient${commissions.length === 1 ? '' : 's'}` : null}
@@ -914,9 +1104,9 @@ export function OrderActions({
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? 'Saving…' : 'Save commission'}
         </button>
-      </Accordion>
+      </Section>
 
-      <Accordion title="Inventory" open={openInventory} onToggle={() => setOpenInventory((v) => !v)}>
+      <Section sectionId="inventory" open={openInventory} onToggle={() => setOpenInventory((v) => !v)}>
         {markedSoldAt ? (
           <p className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
             Marked sold {formatCompletedDate(markedSoldAt)} — items show as Sold on the website.
@@ -945,10 +1135,10 @@ export function OrderActions({
             <span className="text-red-700">Cancel &amp; restore stock</span>
           </button>
         ) : null}
-      </Accordion>
+      </Section>
 
-      <Accordion
-        title="Returns"
+      <Section
+        sectionId="returns"
         open={openReturns}
         onToggle={() => setOpenReturns((v) => !v)}
         badge={hasActiveReturn ? RETURN_STATUS_LABELS[savedReturnStatus as ReturnStatus] : null}
@@ -1046,10 +1236,10 @@ export function OrderActions({
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
           Update return
         </button>
-      </Accordion>
+      </Section>
 
       {showRefund ? (
-        <Accordion title="Refund" open={openRefund} onToggle={() => setOpenRefund((v) => !v)}>
+        <Section sectionId="refund" open={openRefund} onToggle={() => setOpenRefund((v) => !v)}>
           <div>
             <label className={labelCls}>Amount (₹)</label>
             <input
@@ -1111,22 +1301,21 @@ export function OrderActions({
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Banknote className="h-4 w-4" />}
             Record refund
           </button>
-        </Accordion>
+        </Section>
       ) : null}
 
       {whatsappUrl ? (
-        <div className="border-t border-stone-100 p-4">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp customer
-          </a>
-        </div>
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp customer
+        </a>
       ) : null}
+      </div>
     </div>
   );
 }
