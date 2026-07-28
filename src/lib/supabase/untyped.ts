@@ -30,6 +30,7 @@ export type UntypedQuery<T = unknown> = PromiseLike<SupabaseResult<T>> & {
 
 export type UntypedSupabase = {
   from: <T = unknown>(table: string) => UntypedQuery<T>;
+  rpc: <T = unknown>(fn: string, args?: Record<string, unknown>) => Promise<SupabaseResult<T>>;
 };
 
 export function asUntypedSupabase(client: unknown): UntypedSupabase {

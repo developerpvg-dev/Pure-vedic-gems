@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { isLeadManager } from '@/lib/leads/permissions';
 
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
   const enquiryType = searchParams.get('enquiry_type');
 
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc('lead_conversion_metrics', {
+  const { data, error } = await asUntypedSupabase(admin).rpc('lead_conversion_metrics', {
     p_date_from: dateFrom ? `${dateFrom}T00:00:00.000Z` : null,
     p_date_to: dateTo ? `${dateTo}T23:59:59.999Z` : null,
     p_assigned_to: assignedTo || null,
