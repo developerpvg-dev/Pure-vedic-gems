@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { enquiryCreateSchema } from '@/lib/validators/enquiry';
 import { sendEnquiryEmails } from '@/lib/resend/send-enquiry';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
+import { logLeadActivity } from '@/lib/leads/assign';
 
 // Simple in-memory rate limiter (per IP, 3 requests per minute)
 const rateMap = new Map<string, { count: number; resetAt: number }>();
@@ -68,12 +70,36 @@ export async function POST(request: NextRequest) {
       area_of_concern: parsed.data.area_of_concern || null,
       ip_location: geo,
     })
-    .select('id')
+    .select('id, lead_number, date_of_birth, birth_time, birth_place, created_at')
     .single();
 
   if (error) {
     console.error('Enquiry insert error:', error);
     return NextResponse.json({ error: 'Failed to submit enquiry' }, { status: 500 });
+  }
+
+  const matches = await findPriorDuplicateMatches(admin, {
+    id: data.id,
+    lead_number: data.lead_number,
+    date_of_birth: parsed.data.date_of_birth || null,
+    birth_time: parsed.data.birth_time || null,
+    birth_place: parsed.data.birth_place || null,
+    created_at: data.created_at,
+  });
+  const dupeNote = duplicateNotifySuffix(matches);
+  if (matches[0]) {
+    void logLeadActivity(admin, {
+      enquiryId: data.id,
+      action: 'duplicate_detected',
+      toValue: matches[0].status,
+      meta: {
+        prior_id: matches[0].id,
+        prior_lead_number: matches[0].lead_number,
+        matched_fields: matches[0].matched_fields,
+        prior_telecaller: matches[0].telecaller_name,
+      },
+      actorName: 'system',
+    });
   }
 
   void Promise.allSettled([
@@ -92,12 +118,19 @@ export async function POST(request: NextRequest) {
         audience: 'admin',
         recipientRole: 'sales',
         type: 'new_enquiry',
-        title: 'New enquiry — assign telecaller',
-        message: `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
+        title: dupeNote ? `${dupeNote.split(' ·')[0]} — assign telecaller` : 'New enquiry — assign telecaller',
+        message: dupeNote
+          ? `${parsed.data.name} · ${dupeNote}`
+          : `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
         href: `/admin/leads?type=enquiry&id=${data.id}`,
         entityType: 'enquiry',
         entityId: data.id,
-        metadata: { source: parsed.data.source, subject: parsed.data.subject ?? null },
+        metadata: {
+          source: parsed.data.source,
+          subject: parsed.data.subject ?? null,
+          duplicate_status: matches[0]?.status ?? null,
+          prior_lead_id: matches[0]?.id ?? null,
+        },
       },
     ]),
   ]);

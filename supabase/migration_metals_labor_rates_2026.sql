@@ -18,4 +18,4 @@ UPDATE metals SET pricing_mode = 'weight', labor_rate_percent = 25
 WHERE slug IN ('gold_18k', 'gold_14k');
 
 UPDATE metals SET pricing_mode = 'fixed_sheet', labor_rate_percent = NULL
-WHERE slug IN ('silver_925', 'panchdhatu', 'panchdhatu_with_gold');
+WHERE slug IN ('silver_925', 'panchdhatu', 'panchdhatu_with_gold', 'copper_pital');

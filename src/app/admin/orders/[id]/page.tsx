@@ -57,6 +57,7 @@ const METAL_LABELS: Record<string, string> = {
   silver_925: '925 Sterling Silver',
   panchdhatu: 'Panchdhatu (Without Gold)',
   panchdhatu_with_gold: 'Panchdhatu (With Gold)',
+  copper_pital: 'Copper/Pital',
   platinum: 'Platinum',
 };
 

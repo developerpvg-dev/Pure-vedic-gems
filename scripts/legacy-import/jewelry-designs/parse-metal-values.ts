@@ -29,10 +29,11 @@ const METAL_LABEL_TO_SLUG: Array<{ pattern: RegExp; slug: string; label: string 
   { pattern: /^platinum$/i, slug: 'platinum', label: 'Platinum' },
   { pattern: /^panchdhatu \(without gold\)$/i, slug: 'panchdhatu', label: 'Panchdhatu (Without Gold)' },
   { pattern: /^panchdhatu \(with gold\)$/i, slug: 'panchdhatu_with_gold', label: 'Panchdhatu (With Gold)' },
+  { pattern: /^copper\/?pital$/i, slug: 'copper_pital', label: 'Copper/Pital' },
 ];
 
 const WEIGHT_METALS = new Set(['gold_14k', 'gold_18k', 'gold_22k', 'platinum']);
-const FIXED_METALS = new Set(['silver_925', 'panchdhatu', 'panchdhatu_with_gold']);
+const FIXED_METALS = new Set(['silver_925', 'panchdhatu', 'panchdhatu_with_gold', 'copper_pital']);
 
 export function normalizeMetalLabel(raw: string): { slug: string; label: string } | null {
   const cleaned = raw.trim();

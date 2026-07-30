@@ -682,6 +682,16 @@ export default function LeadsPage() {
                           Not converted
                         </span>
                       )}
+                      {isEnquiry && lead.duplicate_status === 'duplicate' && (
+                        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-800">
+                          Duplicate
+                        </span>
+                      )}
+                      {isEnquiry && lead.duplicate_status === 'potential' && (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
+                          Potential duplicate
+                        </span>
+                      )}
                       {isEnquiry && lead.sale_close && !lead.conversion_status && !isTelecomDesk && (
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Sale closed</span>
                       )}
@@ -723,6 +733,25 @@ export default function LeadsPage() {
                     onRemarkNote={setRemarkNote}
                     onAddRemark={(code) => addRemark(lead.id, code)}
                     onUpdate={(updates) => updateLead(lead.id, 'enquiry', updates)}
+                    onOpenPrior={async (priorId) => {
+                      if (leads.some((l) => l.id === priorId)) {
+                        setExpandedId(priorId);
+                        return;
+                      }
+                      try {
+                        const res = await fetch(`/api/admin/leads/${priorId}`);
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        if (data?.lead) {
+                          setLeads((prev) =>
+                            prev.some((l) => l.id === priorId) ? prev : [data.lead as EnquiryLead, ...prev]
+                          );
+                          setExpandedId(priorId);
+                        }
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
                     onCopy={async () => {
                       await navigator.clipboard.writeText(buildAstroPacket(lead));
                       setCopied(true);

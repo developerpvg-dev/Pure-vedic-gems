@@ -31,6 +31,7 @@ import {
   type LeadPipelineStage,
 } from '@/lib/leads/constants';
 import { logLeadActivity } from '@/lib/leads/assign';
+import { findPriorDuplicateMatches } from '@/lib/leads/duplicates';
 
 const SCHEDULE_FIELDS: (keyof ConsultationUpdateInput)[] = [
   'scheduled_date',
@@ -69,23 +70,31 @@ export async function GET(
   const assignedTo = enquiry.assigned_to;
   const astrologerId = enquiry.astrologer_id;
 
-  const [{ data: remarks }, { data: activity }, { data: assignee }, { data: astrologer }] = await Promise.all([
-    admin.from('lead_remarks').select('*').eq('enquiry_id', id).order('created_at', { ascending: true }),
-    admin.from('lead_activity').select('*').eq('enquiry_id', id).order('created_at', { ascending: false }).limit(50),
-    assignedTo
-      ? admin.from('team_members').select('id, name, role').eq('id', assignedTo).maybeSingle()
-      : Promise.resolve({ data: null as { id: string; name: string; role: string } | null }),
-    astrologerId
-      ? admin.from('team_members').select('id, name, role').eq('id', astrologerId).maybeSingle()
-      : Promise.resolve({ data: null as { id: string; name: string; role: string } | null }),
-  ]);
+  const [{ data: remarks }, { data: activity }, { data: assignee }, { data: astrologer }, duplicate_matches] =
+    await Promise.all([
+      admin.from('lead_remarks').select('*').eq('enquiry_id', id).order('created_at', { ascending: true }),
+      admin.from('lead_activity').select('*').eq('enquiry_id', id).order('created_at', { ascending: false }).limit(50),
+      assignedTo
+        ? admin.from('team_members').select('id, name, role').eq('id', assignedTo).maybeSingle()
+        : Promise.resolve({ data: null as { id: string; name: string; role: string } | null }),
+      astrologerId
+        ? admin.from('team_members').select('id, name, role').eq('id', astrologerId).maybeSingle()
+        : Promise.resolve({ data: null as { id: string; name: string; role: string } | null }),
+      findPriorDuplicateMatches(admin, enquiry),
+    ]);
 
   return NextResponse.json({
-    lead: redactLeadContactForRole(auth.member.normalizedRole, { ...enquiry, _type: 'enquiry' }),
+    lead: redactLeadContactForRole(auth.member.normalizedRole, {
+      ...enquiry,
+      _type: 'enquiry',
+      duplicate_status: duplicate_matches[0]?.status ?? null,
+      duplicate_matches,
+    }),
     remarks: remarks ?? [],
     activity: activity ?? [],
     assignee: assignee ?? null,
     astrologer: astrologer ?? null,
+    duplicate_matches,
   });
 }
 
@@ -1053,6 +1062,28 @@ export async function PUT(
     });
   }
 
+  const birthTouched =
+    d.date_of_birth !== undefined || d.birth_time !== undefined || d.birth_place !== undefined;
+  let duplicate_matches = undefined as Awaited<ReturnType<typeof findPriorDuplicateMatches>> | undefined;
+  if (birthTouched && data) {
+    duplicate_matches = await findPriorDuplicateMatches(admin, data as Enquiry);
+    if (duplicate_matches[0]) {
+      await logLeadActivity(admin, {
+        enquiryId: id,
+        action: 'duplicate_detected',
+        toValue: duplicate_matches[0].status,
+        meta: {
+          prior_id: duplicate_matches[0].id,
+          prior_lead_number: duplicate_matches[0].lead_number,
+          matched_fields: duplicate_matches[0].matched_fields,
+          prior_telecaller: duplicate_matches[0].telecaller_name,
+        },
+        actorId: auth.user.id,
+        actorName,
+      });
+    }
+  }
+
   logAdminAction({
     userId: auth.user!.id,
     action: 'update_enquiry',
@@ -1060,5 +1091,16 @@ export async function PUT(
     resourceId: id,
     details: patch,
   });
-  return NextResponse.json({ lead: data });
+  return NextResponse.json({
+    lead: {
+      ...data,
+      ...(duplicate_matches
+        ? {
+            duplicate_status: duplicate_matches[0]?.status ?? null,
+            duplicate_matches,
+          }
+        : {}),
+    },
+    ...(duplicate_matches ? { duplicate_matches } : {}),
+  });
 }

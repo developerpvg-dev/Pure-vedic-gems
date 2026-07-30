@@ -66,7 +66,26 @@ export type EnquiryLead = {
   not_converted_at?: string | null;
   conversion_recorded_by_name?: string | null;
   created_at: string;
+  duplicate_status?: 'duplicate' | 'potential' | null;
+  duplicate_matches?: DuplicateMatchSummary[];
   _type: 'enquiry';
+};
+
+export type DuplicateMatchSummary = {
+  id: string;
+  lead_number: number | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  date_of_birth: string | null;
+  birth_time: string | null;
+  birth_place: string | null;
+  pipeline_stage: string;
+  assigned_to: string | null;
+  telecaller_name: string | null;
+  created_at: string;
+  status: 'duplicate' | 'potential';
+  matched_fields: ('dob' | 'time' | 'place')[];
 };
 
 type Remark = {
@@ -99,6 +118,111 @@ const STAGE_COLORS: Record<string, string> = {
   conversion: 'bg-orange-100 text-orange-900',
   closed: 'bg-gray-100 text-gray-600',
 };
+
+const MATCH_FIELD_LABEL: Record<'dob' | 'time' | 'place', string> = {
+  dob: 'DOB',
+  time: 'Time of birth',
+  place: 'Place of birth',
+};
+
+function DuplicateBanner({
+  matches,
+  canAssign,
+  unassigned,
+  saving,
+  onAssignSame,
+  onOpenPrior,
+}: {
+  matches: DuplicateMatchSummary[];
+  canAssign: boolean;
+  unassigned: boolean;
+  saving: boolean;
+  onAssignSame: (telecallerId: string) => void;
+  onOpenPrior: (id: string) => void;
+}) {
+  if (!matches.length) return null;
+  const best = matches[0];
+  const exact = best.status === 'duplicate';
+  return (
+    <div
+      className={`rounded-lg border p-3 space-y-2 ${
+        exact ? 'border-rose-200 bg-rose-50/70' : 'border-amber-200 bg-amber-50/70'
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+            exact ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-900'
+          }`}
+        >
+          {exact ? 'Duplicate lead' : 'Potential duplicate'}
+        </span>
+        <span className="text-[11px] text-gray-600">
+          Matched: {best.matched_fields.map((f) => MATCH_FIELD_LABEL[f]).join(' + ')}
+        </span>
+      </div>
+      <p className={`text-xs ${exact ? 'text-rose-900' : 'text-amber-950'}`}>
+        Same birth details as earlier lead{' '}
+        <button
+          type="button"
+          onClick={() => onOpenPrior(best.id)}
+          className="font-semibold underline underline-offset-2"
+        >
+          SR #{best.lead_number ?? '—'} · {best.name}
+        </button>
+        {best.telecaller_name
+          ? ` — handled by telecaller ${best.telecaller_name}`
+          : ' — prior lead had no telecaller assigned'}
+        .
+      </p>
+      <div className="grid gap-2 rounded-md border border-white/60 bg-white/70 p-2 text-[11px] text-gray-700 sm:grid-cols-2">
+        <p>
+          <span className="font-medium text-gray-500">Prior DOB:</span> {best.date_of_birth || '—'}
+        </p>
+        <p>
+          <span className="font-medium text-gray-500">Prior time:</span>{' '}
+          {(best.birth_time || '—').slice(0, 5)}
+        </p>
+        <p>
+          <span className="font-medium text-gray-500">Prior place:</span> {best.birth_place || '—'}
+        </p>
+        <p>
+          <span className="font-medium text-gray-500">Prior stage:</span> {best.pipeline_stage}
+        </p>
+        <p className="sm:col-span-2">
+          <span className="font-medium text-gray-500">Prior contact:</span> {best.phone || '—'} ·{' '}
+          {best.email}
+        </p>
+      </div>
+      {canAssign && unassigned && best.assigned_to ? (
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => onAssignSame(best.assigned_to!)}
+          className={`rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 ${
+            exact ? 'bg-rose-700 hover:bg-rose-800' : 'bg-amber-700 hover:bg-amber-800'
+          }`}
+        >
+          Assign to same telecaller ({best.telecaller_name || 'prior'})
+        </button>
+      ) : null}
+      {matches.length > 1 ? (
+        <ul className="space-y-1 border-t border-black/5 pt-2 text-[11px] text-gray-600">
+          {matches.slice(1).map((m) => (
+            <li key={m.id}>
+              Also {m.status === 'duplicate' ? 'duplicate' : 'potential'} of{' '}
+              <button type="button" onClick={() => onOpenPrior(m.id)} className="font-medium underline">
+                SR #{m.lead_number ?? '—'}
+              </button>
+              {m.telecaller_name ? ` (${m.telecaller_name})` : ''} ·{' '}
+              {m.matched_fields.map((f) => MATCH_FIELD_LABEL[f]).join('+')}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 function fmtDate(value: string | null | undefined) {
   if (!value) return '—';
@@ -271,6 +395,7 @@ export function EnquiryDetail({
   onAddRemark,
   onUpdate,
   onCopy,
+  onOpenPrior,
 }: {
   lead: EnquiryLead;
   remarks: Remark[];
@@ -285,6 +410,7 @@ export function EnquiryDetail({
   onAddRemark: (code?: LeadRemarkCode) => void;
   onUpdate: (updates: Record<string, unknown>) => void;
   onCopy: () => void;
+  onOpenPrior?: (id: string) => void;
 }) {
   const stage = (lead.pipeline_stage || 'new') as LeadPipelineStage;
   const role = caps.role || '';
@@ -292,8 +418,11 @@ export function EnquiryDetail({
   const isTelecom = role === 'telecom';
   const isAstro = role === 'astrologer';
   const owner = LEAD_STAGE_OWNER[stage] ?? 'manager';
+  const duplicateMatches = lead.duplicate_matches ?? [];
 
-  const [telePick, setTelePick] = useState(lead.assigned_to || '');
+  const [telePick, setTelePick] = useState(
+    lead.assigned_to || lead.duplicate_matches?.[0]?.assigned_to || ''
+  );
   const [astroPick, setAstroPick] = useState(lead.astrologer_id || '');
   const [remedies, setRemedies] = useState(lead.remedies_text || REMEDIES_TEMPLATE);
   const [editingDetails, setEditingDetails] = useState(false);
@@ -310,7 +439,7 @@ export function EnquiryDetail({
   });
 
   useEffect(() => {
-    setTelePick(lead.assigned_to || '');
+    setTelePick(lead.assigned_to || lead.duplicate_matches?.[0]?.assigned_to || '');
     setAstroPick(lead.astrologer_id || '');
     setRemedies(lead.remedies_text || REMEDIES_TEMPLATE);
     setEditingDetails(false);
@@ -339,6 +468,7 @@ export function EnquiryDetail({
     lead.assigned_to,
     lead.astrologer_id,
     lead.remedies_text,
+    lead.duplicate_matches,
   ]);
 
   // ── Restricted telecaller desk ──────────────────────────────────────────
@@ -373,6 +503,17 @@ export function EnquiryDetail({
             </span>
           ) : null}
         </div>
+
+        {duplicateMatches.length > 0 ? (
+          <DuplicateBanner
+            matches={duplicateMatches}
+            canAssign={false}
+            unassigned={false}
+            saving={saving}
+            onAssignSame={() => undefined}
+            onOpenPrior={(id) => onOpenPrior?.(id)}
+          />
+        ) : null}
 
         <p className="text-sm text-gray-600">
           {deliveryPhase
@@ -814,6 +955,19 @@ export function EnquiryDetail({
         </p>
       </div>
 
+      {(isManager || isTelecom) && duplicateMatches.length > 0 ? (
+        <DuplicateBanner
+          matches={duplicateMatches}
+          canAssign={isManager}
+          unassigned={!lead.assigned_to && (stage === 'new' || stage === 'closed')}
+          saving={saving}
+          onAssignSame={(telecallerId) =>
+            onUpdate({ action: 'assign_telecaller', assigned_to: telecallerId })
+          }
+          onOpenPrior={(id) => onOpenPrior?.(id)}
+        />
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between gap-2">
@@ -956,6 +1110,11 @@ export function EnquiryDetail({
             <div className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
               <p className="mb-2 text-xs font-semibold text-indigo-900">1. Assign telecaller</p>
               <p className="mb-2 text-[11px] text-indigo-800">Assignment is permanent — cannot be changed later.</p>
+              {duplicateMatches[0]?.assigned_to ? (
+                <p className="mb-2 text-[11px] text-indigo-900">
+                  Suggested from prior lead: <span className="font-semibold">{duplicateMatches[0].telecaller_name}</span>
+                </p>
+              ) : null}
               <select
                 value={telePick}
                 onChange={(e) => setTelePick(e.target.value)}

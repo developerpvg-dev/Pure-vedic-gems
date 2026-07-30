@@ -45,6 +45,16 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function formatTime(value: string | null) {
+  if (!value) return '-';
+  return value.slice(0, 5);
+}
+
+function formatLabel(value: string | null) {
+  if (!value) return '-';
+  return value.replace(/_/g, ' ');
+}
+
 export default async function AccountConsultationsPage() {
   const supabase = await createClient();
   const {
@@ -65,7 +75,7 @@ export default async function AccountConsultationsPage() {
     <div className="pvg-account-stack">
       <AccountPageHeader
         title="My Consultations"
-        subtitle="Track your paid consultation bookings, Razorpay payment reference, and service status."
+        subtitle="Review the details you submitted, payment status, and scheduled consultation info."
         action={(
           <Link href="/consultation" className="pvg-account-btn">
             <CalendarClock className="h-4 w-4" aria-hidden="true" /> Book Consultation
@@ -109,18 +119,45 @@ export default async function AccountConsultationsPage() {
 
               <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 <Info label="Amount" value={formatPrice(consultation.amount_inr)} icon={<CreditCard className="h-4 w-4" />} />
-                <Info label="Preferred Date" value={consultation.preferred_date || '-'} />
-                <Info label="Preferred Time" value={consultation.preferred_time || '-'} />
+                <Info label="Type" value={formatLabel(consultation.consultation_type)} />
+                <Info label="Mode" value={formatLabel(consultation.mode)} />
                 <Info label="Completed" value={formatDate(consultation.completed_at)} />
+              </div>
+
+              <div className="pvg-account-info-box mt-5 text-sm">
+                <p className="pvg-account-row-title">Your submitted details</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <Info label="Full Name" value={consultation.full_name || '-'} />
+                  <Info label="Email" value={consultation.email || '-'} />
+                  <Info label="Phone" value={consultation.phone || '-'} />
+                  <Info label="Birth Date" value={formatDate(consultation.date_of_birth)} />
+                  <Info label="Birth Time" value={formatTime(consultation.birth_time)} />
+                  <Info label="Birth Place" value={consultation.birth_place || '-'} />
+                  <Info label="Preferred Date" value={formatDate(consultation.preferred_date)} />
+                  <Info label="Preferred Time" value={formatTime(consultation.preferred_time)} />
+                </div>
+                {(consultation.life_situation || consultation.message || consultation.plan_description_snapshot) && (
+                  <div className="mt-4 space-y-3 text-sm">
+                    {consultation.life_situation && (
+                      <DetailBlock label="Life Situation / Concern" value={consultation.life_situation} />
+                    )}
+                    {consultation.message && (
+                      <DetailBlock label="Specific Question / Message" value={consultation.message} />
+                    )}
+                    {consultation.plan_description_snapshot && (
+                      <DetailBlock label="Plan" value={consultation.plan_description_snapshot} />
+                    )}
+                  </div>
+                )}
               </div>
 
               {(consultation.scheduled_date || consultation.scheduled_time || consultation.meeting_link || consultation.admin_schedule_notes) && (
                 <div className="pvg-account-info-box mt-5 text-sm">
                   <p className="pvg-account-row-title">Scheduled Consultation</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Info label="Date" value={consultation.scheduled_date || '-'} />
-                    <Info label="Time" value={consultation.scheduled_time?.slice(0, 5) || '-'} />
-                    <Info label="Mode" value={consultation.scheduled_mode?.replace('_', ' ') || '-'} />
+                    <Info label="Date" value={formatDate(consultation.scheduled_date)} />
+                    <Info label="Time" value={formatTime(consultation.scheduled_time)} />
+                    <Info label="Mode" value={formatLabel(consultation.scheduled_mode)} />
                     <Info label="Link / Venue" value={consultation.meeting_link || '-'} />
                   </div>
                   {consultation.admin_schedule_notes && (
@@ -152,6 +189,15 @@ function Info({ label, value, icon }: { label: string; value: string; icon?: Rea
     <div>
       <p className="pvg-account-info-label">{icon}{label}</p>
       <p className="pvg-account-info-value">{value}</p>
+    </div>
+  );
+}
+
+function DetailBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="pvg-account-info-label">{label}</p>
+      <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#2c0404]">{value}</p>
     </div>
   );
 }

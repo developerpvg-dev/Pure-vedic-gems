@@ -26,6 +26,23 @@ describe('jewelry-pricing', () => {
 
 
 
+  it('uses fixed sheet price for copper/pital', () => {
+    const result = calculateJewelryDesignPricing({
+      metal: 'copper_pital',
+      makingCharges: { copper_pital: 2000, silver_925: 3000 },
+      estimatedMetalWeight: { gold_22k: 5 },
+      metalRatePerGram: 9999,
+    });
+    expect(result).toEqual({
+      makingCharge: 2000,
+      diamondCharge: 0,
+      metalPrice: 0,
+      metalWeightGrams: 0,
+      laborRatePercent: 0,
+      pricingKind: 'fixed',
+    });
+  });
+
   it('uses fixed sheet price for silver', () => {
 
     const result = calculateJewelryDesignPricing({

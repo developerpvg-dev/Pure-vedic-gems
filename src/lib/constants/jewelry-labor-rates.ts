@@ -14,6 +14,7 @@ export const FIXED_PRICE_JEWELRY_METALS = [
   'silver_925',
   'panchdhatu',
   'panchdhatu_with_gold',
+  'copper_pital',
 ] as const;
 
 /** Metals priced by weight (grams) × market rate + labor %. */

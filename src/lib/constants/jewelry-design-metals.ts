@@ -83,6 +83,13 @@ export const JEWELRY_DESIGN_METALS: JewelryDesignMetalDefinition[] = [
     laborRatePercent: null,
     rateKey: null,
   },
+  {
+    slug: 'copper_pital',
+    label: 'Copper/Pital',
+    pricingMode: 'fixed',
+    laborRatePercent: null,
+    rateKey: null,
+  },
 ];
 
 export function isFixedPriceMetal(slug: string): boolean {

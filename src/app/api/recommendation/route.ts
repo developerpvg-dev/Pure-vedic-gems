@@ -6,6 +6,8 @@ import { sendRecommendationRequestEmails } from '@/lib/resend/send-recommendatio
 import type { Json } from '@/lib/types/database';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { buildGemRecommendation } from '@/lib/utils/rashi-calculator';
+import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
+import { logLeadActivity } from '@/lib/leads/assign';
 
 const recommendationSchema = z.object({
   name: z.string().max(200).trim().optional(),
@@ -80,13 +82,36 @@ export async function POST(request: NextRequest) {
           area_of_concern: parsed.data.purpose || null,
           ip_location: geo,
         })
-        .select('id')
+        .select('id, lead_number, created_at')
         .single();
 
       if (error || !enquiry) {
         console.error('[Recommendation] Failed to store lead:', error);
       } else {
         enquiryId = enquiry.id;
+        const matches = await findPriorDuplicateMatches(admin, {
+          id: enquiry.id,
+          lead_number: enquiry.lead_number,
+          date_of_birth: parsed.data.birthDate || null,
+          birth_time: parsed.data.birthTime || null,
+          birth_place: parsed.data.birthPlace || null,
+          created_at: enquiry.created_at,
+        });
+        const dupeNote = duplicateNotifySuffix(matches);
+        if (matches[0]) {
+          void logLeadActivity(admin, {
+            enquiryId: enquiry.id,
+            action: 'duplicate_detected',
+            toValue: matches[0].status,
+            meta: {
+              prior_id: matches[0].id,
+              prior_lead_number: matches[0].lead_number,
+              matched_fields: matches[0].matched_fields,
+              prior_telecaller: matches[0].telecaller_name,
+            },
+            actorName: 'system',
+          });
+        }
         await Promise.allSettled([
           sendRecommendationRequestEmails({
             id: enquiry.id,
@@ -104,12 +129,19 @@ export async function POST(request: NextRequest) {
               audience: 'admin',
               recipientRole: 'sales',
               type: 'homepage_recommendation_request',
-              title: 'New recommendation — assign telecaller',
-              message: `${customerName} requested remedies. Assign a telecaller to verify details.`,
+              title: dupeNote ? `${dupeNote.split(' ·')[0]} — assign telecaller` : 'New recommendation — assign telecaller',
+              message: dupeNote
+                ? `${customerName} · ${dupeNote}`
+                : `${customerName} requested remedies. Assign a telecaller to verify details.`,
               href: `/admin/leads?type=enquiry&id=${enquiry.id}`,
               entityType: 'enquiry',
               entityId: enquiry.id,
-              metadata: { source: 'homepage_recommendation', purpose: parsed.data.purpose ?? null },
+              metadata: {
+                source: 'homepage_recommendation',
+                purpose: parsed.data.purpose ?? null,
+                duplicate_status: matches[0]?.status ?? null,
+                prior_lead_id: matches[0]?.id ?? null,
+              },
             },
           ]),
         ]);

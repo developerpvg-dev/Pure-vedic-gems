@@ -5,6 +5,7 @@ import { sanitizeSearchTerm } from '@/lib/utils/search';
 import { leadListScope, isLeadManager, redactLeadContactForRole } from '@/lib/leads/permissions';
 import { LEAD_PIPELINE_STAGES, TELECOM_ACTIVE_STAGES, ASTRO_ACTIVE_STAGES } from '@/lib/leads/constants';
 import { mergeBirthFields, needsBirthHydration } from '@/lib/leads/hydrate';
+import { attachDuplicateHints } from '@/lib/leads/duplicates';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
 import type { Consultation } from '@/lib/types/database';
 
@@ -334,6 +335,18 @@ async function hydrateEnquiryLeads(
   return hydrated;
 }
 
+async function presentEnquiryLeads(
+  admin: ReturnType<typeof createAdminClient>,
+  role: string | null | undefined,
+  rows: Record<string, unknown>[]
+) {
+  const hydrated = await hydrateEnquiryLeads(admin, rows);
+  const withDupes = await attachDuplicateHints(admin, hydrated as Parameters<typeof attachDuplicateHints>[1]);
+  return withDupes.map((lead) =>
+    presentLeadForRole(role, { ...lead, _type: 'enquiry' as const })
+  );
+}
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdminAccess('leads.read');
   if ('error' in auth) return auth.error;
@@ -476,9 +489,8 @@ export async function GET(request: NextRequest) {
           .slice(0, remaining);
         const listTotal = otherCount ?? summary.totalEnquiries;
         const merged = [...newRows, ...otherRows].map(normalizeEnquiryRow);
-        const hydrated = await hydrateEnquiryLeads(admin, merged);
         return NextResponse.json({
-          leads: hydrated.map((lead) => presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'enquiry' as const })),
+          leads: await presentEnquiryLeads(admin, auth.member.normalizedRole, merged),
           total: listTotal,
           page,
           per_page: perPage,
@@ -494,9 +506,8 @@ export async function GET(request: NextRequest) {
         filterOpts
       );
       const listTotal = totalCount ?? newRows.length;
-      const hydrated = await hydrateEnquiryLeads(admin, newRows.map(normalizeEnquiryRow));
       return NextResponse.json({
-        leads: hydrated.map((lead) => presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'enquiry' as const })),
+        leads: await presentEnquiryLeads(admin, auth.member.normalizedRole, newRows.map(normalizeEnquiryRow)),
         total: listTotal,
         page,
         per_page: perPage,
@@ -517,9 +528,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch enquiries', detail: error.message }, { status: 500 });
     }
     const normalized = ((data ?? []) as Record<string, unknown>[]).map(normalizeEnquiryRow);
-    const hydrated = await hydrateEnquiryLeads(admin, normalized);
     return NextResponse.json({
-      leads: hydrated.map((lead) => presentLeadForRole(auth.member.normalizedRole, { ...lead, _type: 'enquiry' as const })),
+      leads: await presentEnquiryLeads(admin, auth.member.normalizedRole, normalized),
       total: count ?? 0,
       page,
       per_page: perPage,

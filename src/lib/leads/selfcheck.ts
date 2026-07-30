@@ -1,5 +1,6 @@
 import { assertLeadConstants } from '@/lib/leads/constants';
 import { assertHydrateParse } from '@/lib/leads/hydrate';
+import { assertDuplicateScoring } from '@/lib/leads/duplicates';
 import { assertRoleDashboardAllowlists } from '@/lib/admin/role-dashboards';
 import {
   canMarkConverted,
@@ -9,6 +10,7 @@ import {
 
 assertLeadConstants();
 assertHydrateParse();
+assertDuplicateScoring();
 assertRoleDashboardAllowlists();
 
 // Conversion permissions

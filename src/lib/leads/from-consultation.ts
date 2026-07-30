@@ -2,6 +2,7 @@ import type { createAdminClient } from '@/lib/supabase/admin';
 import type { Consultation } from '@/lib/types/database';
 import { logLeadActivity } from '@/lib/leads/assign';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -104,7 +105,7 @@ export async function ensureLeadFromConsultation(
       payment_received_at: consultation.payment_status === 'captured' ? now : null,
       consultation_id: consultation.id,
     })
-    .select('id, lead_number')
+    .select('id, lead_number, created_at')
     .single();
 
   if (error || !enquiry) {
@@ -135,13 +136,43 @@ export async function ensureLeadFromConsultation(
     actorName: 'system',
   });
 
+  const matches = await findPriorDuplicateMatches(admin, {
+    id: enquiry.id,
+    lead_number: enquiry.lead_number,
+    date_of_birth: consultation.date_of_birth,
+    birth_time: consultation.birth_time,
+    birth_place: consultation.birth_place,
+    created_at: enquiry.created_at,
+  });
+  const dupeNote = duplicateNotifySuffix(matches);
+  if (matches[0]) {
+    await logLeadActivity(admin, {
+      enquiryId: enquiry.id,
+      action: 'duplicate_detected',
+      toValue: matches[0].status,
+      meta: {
+        prior_id: matches[0].id,
+        prior_lead_number: matches[0].lead_number,
+        matched_fields: matches[0].matched_fields,
+        prior_telecaller: matches[0].telecaller_name,
+      },
+      actorName: 'system',
+    });
+  }
+
   await createInAppNotifications([
     {
       audience: 'admin',
       recipientRole: 'sales',
       type: rs101 ? 'new_remedies_lead' : 'new_consultation_lead',
-      title: rs101 ? 'New remedies lead (₹101) — assign telecaller' : 'New consultation lead — assign telecaller',
-      message: `${consultation.full_name} · ${enquiryType} (SR #${enquiry.lead_number ?? ''})`,
+      title: dupeNote
+        ? `${dupeNote.split(' ·')[0]} — assign telecaller`
+        : rs101
+          ? 'New remedies lead (₹101) — assign telecaller'
+          : 'New consultation lead — assign telecaller',
+      message: dupeNote
+        ? `${consultation.full_name} · ${enquiryType} (SR #${enquiry.lead_number ?? ''}) · ${dupeNote}`
+        : `${consultation.full_name} · ${enquiryType} (SR #${enquiry.lead_number ?? ''})`,
       href: `/admin/leads?type=enquiry&id=${enquiry.id}`,
       entityType: 'enquiry',
       entityId: enquiry.id,
@@ -149,6 +180,8 @@ export async function ensureLeadFromConsultation(
         consultation_id: consultation.id,
         enquiry_type: enquiryType,
         source,
+        duplicate_status: matches[0]?.status ?? null,
+        prior_lead_id: matches[0]?.id ?? null,
       },
     },
   ]);

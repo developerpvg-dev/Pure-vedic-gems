@@ -45,6 +45,7 @@ export const METAL_OPTIONS = [
   { id: 'silver_925', label: 'Silver 925', priceKey: 'silver' as const },
   { id: 'panchdhatu', label: 'Panchdhatu (Without Gold)', priceKey: 'panchdhatu' as const },
   { id: 'panchdhatu_with_gold', label: 'Panchdhatu (With Gold)', priceKey: 'panchdhatu' as const },
+  { id: 'copper_pital', label: 'Copper/Pital', priceKey: 'panchdhatu' as const },
   { id: 'gold_14k', label: 'Gold 14K', priceKey: 'gold_14k' as const },
   { id: 'gold_18k', label: 'Gold 18K', priceKey: 'gold_18k' as const },
   { id: 'gold_22k', label: 'Gold 22K', priceKey: 'gold_22k' as const },
