@@ -245,7 +245,7 @@ function normalizeEnquiryRow(row: Record<string, unknown>) {
 async function hydrateEnquiryLeads(
   admin: ReturnType<typeof createAdminClient>,
   rows: Record<string, unknown>[]
-) {
+): Promise<Record<string, unknown>[]> {
   const needIds = rows
     .filter((r) => needsBirthHydration(r as { date_of_birth?: string | null }))
     .map((r) => r.id as string)
@@ -341,7 +341,14 @@ async function presentEnquiryLeads(
   rows: Record<string, unknown>[]
 ) {
   const hydrated = await hydrateEnquiryLeads(admin, rows);
-  const withDupes = await attachDuplicateHints(admin, hydrated as Parameters<typeof attachDuplicateHints>[1]);
+  const withDupes = await attachDuplicateHints(admin, hydrated as Array<{
+    id: string;
+    created_at?: string | null;
+    lead_number?: number | null;
+    date_of_birth?: string | null;
+    birth_time?: string | null;
+    birth_place?: string | null;
+  }>);
   return withDupes.map((lead) =>
     presentLeadForRole(role, { ...lead, _type: 'enquiry' as const })
   );

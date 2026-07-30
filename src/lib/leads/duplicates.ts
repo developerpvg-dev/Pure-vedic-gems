@@ -206,16 +206,20 @@ function matchesForLead(
 /** Attach duplicate_status + duplicate_matches for a page of enquiry rows (batched). */
 export async function attachDuplicateHints(
   admin: Admin,
-  leads: (BirthTriplet & {
+  leads: Array<{
     id: string;
     created_at?: string | null;
     lead_number?: number | null;
-  } & Record<string, unknown>)[]
+    date_of_birth?: string | null;
+    birth_time?: string | null;
+    birth_place?: string | null;
+    [key: string]: unknown;
+  }>
 ) {
   const pool = await loadCandidatePool(admin, leads);
   const names = await telecallerNames(
     admin,
-    pool.map((c) => c.assigned_to)
+    pool.map((c) => c.assigned_to).filter((id): id is string => Boolean(id))
   );
   return leads.map((lead) => {
     const duplicate_matches = matchesForLead(lead, pool, names);
@@ -231,7 +235,16 @@ export async function findPriorDuplicateMatches(
   admin: Admin,
   lead: BirthTriplet & { id: string; created_at?: string | null; lead_number?: number | null }
 ): Promise<DuplicateMatch[]> {
-  const [enriched] = await attachDuplicateHints(admin, [lead]);
+  const [enriched] = await attachDuplicateHints(admin, [
+    {
+      id: lead.id,
+      created_at: lead.created_at,
+      lead_number: lead.lead_number,
+      date_of_birth: lead.date_of_birth,
+      birth_time: lead.birth_time,
+      birth_place: lead.birth_place,
+    },
+  ]);
   return (enriched.duplicate_matches ?? []) as DuplicateMatch[];
 }
 
