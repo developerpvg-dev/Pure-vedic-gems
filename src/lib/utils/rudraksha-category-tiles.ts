@@ -23,8 +23,10 @@ export function buildRudrakshaCategoryTiles(
   sampleThumbs: ReadonlyMap<string, string> | Record<string, string> = {},
 ): RudrakshaCategoryTile[] {
   const bySlug = new Map(apiCategories.map((row) => [row.id, row]));
-  const sampleOf = (slug: string) =>
-    sampleThumbs instanceof Map ? sampleThumbs.get(slug) : sampleThumbs[slug];
+  const thumbs =
+    sampleThumbs instanceof Map
+      ? sampleThumbs
+      : new Map(Object.entries(sampleThumbs));
 
   return [...RUDRAKSHA_STOREFRONT_SLUGS]
     .sort((a, b) => rudrakshaStorefrontSortOrder(a) - rudrakshaStorefrontSortOrder(b))
@@ -37,7 +39,7 @@ export function buildRudrakshaCategoryTiles(
         planet: '',
         color: '#5C4A2A',
         type: 'rudraksha' as const,
-        image_url: resolveRudrakshaNavImage(slug, api?.image_url, sampleOf(slug)) ?? undefined,
+        image_url: resolveRudrakshaNavImage(slug, api?.image_url, thumbs.get(slug)) ?? undefined,
       };
     });
 }
