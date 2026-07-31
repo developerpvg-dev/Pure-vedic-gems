@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { BarChart3, Clock, ExternalLink, FileText, IndianRupee, Layers, Loader2, Palette, Search, TrendingUp } from 'lucide-react';
+import { BarChart3, Clock, FileText, IndianRupee, Layers, Loader2, Palette, Search, TrendingUp } from 'lucide-react';
 import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
 import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
 import { formatPrice } from '@/lib/utils/format';
 import { parseRudrakshaBeadsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
+import { CustomDesignBriefCard } from '@/components/admin/CustomDesignBriefCard';
 
 type ConfigurationRow = {
   id: string;
@@ -81,6 +81,10 @@ function snapshotCustomDesignBrief(snapshot: unknown) {
     preferred_metal:
       typeof (brief as Record<string, unknown>).preferred_metal === 'string'
         ? String((brief as Record<string, unknown>).preferred_metal)
+        : undefined,
+    additional_stones:
+      typeof (brief as Record<string, unknown>).additional_stones === 'string'
+        ? String((brief as Record<string, unknown>).additional_stones)
         : undefined,
     additional_notes:
       typeof (brief as Record<string, unknown>).additional_notes === 'string'
@@ -227,21 +231,11 @@ export default function AdminConfigurationsPage() {
                           </ul>
                         )}
                         {snapshotCustomDesignBrief(row.configuration_snapshot) && (
-                          <div className="mt-2 max-w-sm rounded-lg border border-amber-100 bg-amber-50/70 p-2 text-xs text-amber-950">
-                            <p className="font-semibold">Custom design request</p>
-                            <p className="mt-1 leading-relaxed">
-                              {snapshotCustomDesignBrief(row.configuration_snapshot)?.description}
-                            </p>
-                            <p className="mt-1 text-amber-800">
-                              Contact: {snapshotCustomDesignBrief(row.configuration_snapshot)?.contact_phone}
-                            </p>
-                            {snapshotCustomDesignBrief(row.configuration_snapshot)?.preferred_metal ? (
-                              <p className="mt-1 text-amber-800">
-                                Preferred metal:{' '}
-                                {snapshotCustomDesignBrief(row.configuration_snapshot)?.preferred_metal}
-                              </p>
-                            ) : null}
-                          </div>
+                          <CustomDesignBriefCard
+                            className="mt-2 max-w-sm text-xs"
+                            brief={snapshotCustomDesignBrief(row.configuration_snapshot)}
+                            fileUrl={row.custom_design_url}
+                          />
                         )}
                       </td>
                       <td className="px-4 py-4 text-xs text-gray-600">
@@ -259,9 +253,7 @@ export default function AdminConfigurationsPage() {
                       <td className="px-4 py-4 text-right font-semibold text-gray-900">{formatPrice(row.total_price ?? 0)}</td>
                       <td className="px-4 py-4">
                         {row.custom_design_url ? (
-                          <Link href={row.custom_design_url} target="_blank" className="inline-flex items-center gap-1 rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50">
-                            Open file <ExternalLink className="h-3 w-3" />
-                          </Link>
+                          <span className="text-xs font-medium text-amber-700">See request card</span>
                         ) : <span className="text-xs text-gray-400">Standard design</span>}
                       </td>
                     </tr>

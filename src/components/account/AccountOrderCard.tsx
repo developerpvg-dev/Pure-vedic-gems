@@ -13,10 +13,9 @@ import {
 } from '@/lib/customer/orders';
 import {
   ORDER_STATUS_LABELS,
-  PAYMENT_STATUS_LABELS,
+  paymentStatusLabelForOrder,
   isCustomerCancellable,
   type OrderStatus,
-  type PaymentStatus,
 } from '@/lib/constants/order-status';
 import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
@@ -226,10 +225,11 @@ export function AccountOrderCard({
   const canReview = isReviewEligibleStatus(status);
   const returnLabel =
     RETURN_STATUS_LABELS[returnStatus as ReturnStatus] ?? returnStatus.replace(/_/g, ' ');
-  const paymentLabel =
-    PAYMENT_STATUS_LABELS[order.payment_status as PaymentStatus] ??
-    order.payment_status?.replace(/_/g, ' ') ??
-    '—';
+  const paymentLabel = paymentStatusLabelForOrder({
+    payment_status: order.payment_status,
+    amount_due: order.amount_due,
+    items: order.items,
+  });
   const fulfillmentLabel =
     ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replace(/_/g, ' ');
   const address = order.shipping_address;

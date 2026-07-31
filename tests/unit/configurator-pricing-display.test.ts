@@ -105,11 +105,11 @@ describe('buildConfiguratorPriceTotals', () => {
     expect(totals.gst_gemstone).toBe(gstOnAmount(15048, 0.25)); // 37.62
     expect(totals.gst_metal).toBe(1239);
     expect(totals.gst_making).toBe(516.25);
-    expect(totals.gst_certification).toBe(720);
-    expect(totals.gst_energization).toBe(630);
+    expect(totals.gst_certification).toBe(0);
+    expect(totals.gst_energization).toBe(0);
     expect(totals.gst_total).toBe(
-      Math.round(37.62 + 1239 + 516.25 + 720 + 630),
-    ); // 3143
+      Math.round(37.62 + 1239 + 516.25),
+    ); // 1793
   });
 
   it('shows diamond add-on before metal is chosen and design note for remark-only designs', () => {
@@ -132,5 +132,20 @@ describe('buildConfiguratorPriceTotals', () => {
     expect(totals.lines.map((l) => l.key)).toContain('design-note');
     const noteLine = totals.lines.find((l) => l.key === 'design-note');
     expect(noteLine?.display).toContain('small stones');
+  });
+
+  it('shows TBD mounting line when custom design pricing is pending', () => {
+    const pricing: ConfigPricingBreakdown = {
+      ...basePricing,
+      gem_price: 20000,
+      custom_design_pricing_pending: true,
+      total: 20000,
+    };
+    const totals = buildConfiguratorPriceTotals(pricing, {
+      settingType: 'ring',
+      productCategory: 'gemstone',
+    });
+    expect(totals.lines.some((l) => l.key === 'custom-design-pending')).toBe(true);
+    expect(totals.lines.find((l) => l.key === 'custom-design-pending')?.display).toBe('TBD');
   });
 });

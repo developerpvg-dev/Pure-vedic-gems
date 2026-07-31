@@ -37,6 +37,8 @@ interface MetalSizeSelectorProps {
   pricingModes?: Record<string, MetalPricingMode> | null;
   ratesBySlug?: Record<string, number> | null;
   selectedDesign: JewelryDesign | null;
+  /** Customer-uploaded design — metal/size are preferences; mounting priced later. */
+  isCustomDesign?: boolean;
   optionRules: ConfiguratorOptionRules | null;
   onMetalChange: (metal: MetalId) => void;
   onRingSizeChange: (size: string | null) => void;
@@ -111,10 +113,10 @@ function buildMetalPriceLines(
   const stoneName = stoneLabel?.trim() || 'Diamond';
 
   if (estimate.pricingKind === 'fixed') {
-    if (estimate.makingCharge > 0) {
+    // Flat setting fee — only break out Making when another line (e.g. diamond) differs from total
+    if (estimate.makingCharge > 0 && estimate.diamondCharge > 0) {
       lines.push({
         label: 'Making',
-        detail: 'Fixed sheet',
         amount: estimate.makingCharge,
       });
     }
@@ -186,6 +188,10 @@ function MetalOptionCard({
 }) {
   const priceLines = hasRates ? buildMetalPriceLines(estimate, stoneLabel) : [];
   const showTotal = hasRates && estimate.total > 0;
+  // When the only line equals the total (flat fee), skip the duplicate footer
+  const showBreakdown =
+    priceLines.length > 0 &&
+    !(priceLines.length === 1 && priceLines[0].amount === estimate.total);
 
   return (
     <button
@@ -229,34 +235,39 @@ function MetalOptionCard({
         </span>
       </div>
 
-      {priceLines.length > 0 ? (
+      {showTotal ? (
         <div className="border-t border-border/40 px-3.5 py-2.5">
-          <ul className="space-y-1.5">
-            {priceLines.map((line) => (
-              <li key={line.label} className="flex items-baseline justify-between gap-3">
-                <div className="min-w-0">
-                  <span className="text-[11px] text-muted-foreground">{line.label}</span>
-                  {line.detail ? (
-                    <span className="mt-0.5 block truncate text-[10px] text-muted-foreground/75">
-                      {line.detail}
-                    </span>
-                  ) : null}
-                </div>
-                <span className="shrink-0 text-[11px] font-medium tabular-nums text-foreground/90">
-                  {formatPrice(line.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {showTotal ? (
-            <div className="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-border/50 pt-2">
-              <span className="text-[11px] font-medium text-foreground/80">Est. mounting</span>
-              <span className="text-[12px] font-semibold tabular-nums text-foreground">
-                {formatPrice(estimate.total)}
-              </span>
-            </div>
+          {showBreakdown ? (
+            <ul className="space-y-1.5">
+              {priceLines.map((line) => (
+                <li key={line.label} className="flex items-baseline justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-[11px] text-muted-foreground">{line.label}</span>
+                    {line.detail ? (
+                      <span className="mt-0.5 block truncate text-[10px] text-muted-foreground/75">
+                        {line.detail}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 text-[11px] font-medium tabular-nums text-foreground/90">
+                    {formatPrice(line.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           ) : null}
+
+          <div
+            className={cn(
+              'flex items-center justify-between gap-3',
+              showBreakdown && 'mt-2 border-t border-dashed border-border/50 pt-2'
+            )}
+          >
+            <span className="text-[11px] font-medium text-foreground/80">Est. mounting</span>
+            <span className="text-[12px] font-semibold tabular-nums text-foreground">
+              {formatPrice(estimate.total)}
+            </span>
+          </div>
         </div>
       ) : (
         <div className="border-t border-border/40 px-3.5 py-2.5">
@@ -305,6 +316,7 @@ export default function MetalSizeSelector({
   pricingModes = null,
   ratesBySlug = null,
   selectedDesign,
+  isCustomDesign = false,
   optionRules,
   onMetalChange,
   onRingSizeChange,
@@ -368,6 +380,13 @@ export default function MetalSizeSelector({
 
   return (
     <div className="pvg-metal-step space-y-6">
+      {isCustomDesign ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] leading-relaxed text-amber-950">
+          Preferred metal{settingType === 'ring' ? ' and ring size' : ''} only — mounting weight, labour, and final price are set after our team reviews your custom design.
+          {settingType === 'pendant' ? ' Pendants are supplied without a chain.' : ''}
+        </p>
+      ) : null}
+
       {visibleMetals.length > 0 ? <MetalTrustMarquee /> : null}
 
       <fieldset>
@@ -471,8 +490,13 @@ export default function MetalSizeSelector({
           </div>
 
           <p className="mt-3 text-[11px] text-muted-foreground">
-            <a href="/tools/ring-size-guide" className="font-medium text-accent underline-offset-2 hover:underline">
-              Size guide
+            <a
+              href="/tools/ring-size-guide"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-accent underline underline-offset-2 hover:text-accent/80"
+            >
+              Ring size guide
             </a>
             {parsedRingSize.size ? (
               <span className="text-muted-foreground/80">

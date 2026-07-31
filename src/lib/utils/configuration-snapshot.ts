@@ -53,6 +53,7 @@ export interface ConfigurationSnapshot {
       description?: string;
       contact_phone?: string;
       preferred_metal?: string;
+      additional_stones?: string;
       additional_notes?: string;
     } | null;
     rudraksha_beads?: RudrakshaBeadSnapshot[];
@@ -81,6 +82,8 @@ export interface ConfigurationSnapshot {
     certification_fee?: number;
     energization_fee?: number;
     custom_design_fee?: number;
+    /** True until admin sets metal/weight/labor for a customer-uploaded design. */
+    custom_design_pricing_pending?: boolean;
     total?: number;
   };
   delivery_eta?: {
@@ -96,6 +99,26 @@ export function parseConfigurationSnapshot(
 ): ConfigurationSnapshot | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as ConfigurationSnapshot;
+}
+
+/** Custom upload still waiting for admin metal/weight/labor pricing. */
+export function isCustomDesignPricingPending(snapshot: unknown): boolean {
+  const parsed = parseConfigurationSnapshot(snapshot);
+  if (!parsed) return false;
+  if (parsed.pricing?.custom_design_pricing_pending === true) return true;
+  // Legacy: custom file present but jewelry never priced
+  const hasCustom = Boolean(parsed.selections?.custom_design_url);
+  if (!hasCustom) return false;
+  const metal = Number(parsed.pricing?.metal_price ?? 0);
+  const making = Number(parsed.pricing?.making_charge ?? 0);
+  const fee = Number(parsed.pricing?.custom_design_fee ?? 0);
+  return metal <= 0 && making <= 0 && fee <= 0;
+}
+
+export function orderHasCustomDesignPricingPending(
+  items: Array<{ configuration_snapshot?: unknown }>,
+): boolean {
+  return items.some((item) => isCustomDesignPricingPending(item.configuration_snapshot));
 }
 
 /** First energization_form found on order line-item snapshots. */
@@ -175,6 +198,10 @@ export function mergeConfigurationDetails(args: {
       energization_fee:
         parsed.pricing?.energization_fee ?? db?.energization_fee ?? undefined,
       custom_design_fee: parsed.pricing?.custom_design_fee,
+      custom_design_pricing_pending: parsed.pricing?.custom_design_pricing_pending,
+      labor_rate_percent: parsed.pricing?.labor_rate_percent,
+      jewelry_pricing_mode: parsed.pricing?.jewelry_pricing_mode,
+      quoted_metal_weight_grams: parsed.pricing?.quoted_metal_weight_grams,
       total: parsed.pricing?.total ?? db?.total_price ?? undefined,
     },
     delivery_eta: parsed.delivery_eta,

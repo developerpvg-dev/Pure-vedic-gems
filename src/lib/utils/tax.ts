@@ -57,8 +57,8 @@ const TAX_CLASS_DEFAULTS: Record<string, { rate: number; hsn: string | null }> =
   jewelry: { rate: 3, hsn: '7113' },
   metal: { rate: 3, hsn: '7113' },
   making_charge: { rate: 5, hsn: null },
-  certification: { rate: 18, hsn: null },
-  energization: { rate: 18, hsn: null },
+  certification: { rate: 0, hsn: null },
+  energization: { rate: 0, hsn: null },
   service: { rate: 18, hsn: null },
   shipping: { rate: 18, hsn: '9968' },
   spiritual_goods: { rate: 12, hsn: null },
@@ -190,7 +190,8 @@ export function taxBreakdownToJson(breakdown: TaxBreakdown): Json {
 
 /**
  * Client-side GST estimate matching `recalculateOrderTotal`:
- * gem @ product rate, metal 3%, making+diamond+custom 5%, cert/energization/shipping 18%.
+ * gem @ product rate, metal 3%, making+diamond+custom 5%, shipping 18%.
+ * Certification and energization fees are GST-exempt.
  */
 export function estimateClientTax(
   items: Array<{
@@ -214,16 +215,12 @@ export function estimateClientTax(
           Number(pricing.diamond_charge ?? 0) +
           Number(pricing.custom_design_fee ?? 0)) *
         qty;
-      const cert = Number(pricing.certification_fee ?? 0) * qty;
-      const energ = Number(pricing.energization_fee ?? 0) * qty;
       const gemRate = resolveProductTax({
         category: snap?.product?.category ?? item.category,
       }).rate_percent;
       gst += gstOnAmount(gem, gemRate);
       gst += gstOnAmount(metal, TAX_CLASS_DEFAULTS.metal.rate);
       gst += gstOnAmount(making, TAX_CLASS_DEFAULTS.making_charge.rate);
-      gst += gstOnAmount(cert, TAX_CLASS_DEFAULTS.certification.rate);
-      gst += gstOnAmount(energ, TAX_CLASS_DEFAULTS.energization.rate);
       continue;
     }
     const tax = resolveProductTax({ category: item.category });

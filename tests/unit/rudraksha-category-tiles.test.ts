@@ -19,4 +19,14 @@ describe('rudraksha-category-tiles', () => {
     ]);
     expect(tiles.find((tile) => tile.id === '5-mukhi')?.image_url).toBe('https://cdn.example/5-mukhi.webp');
   });
+
+  it('uses product sample thumbs when admin image is missing (shop parity)', () => {
+    const tiles = buildRudrakshaCategoryTiles(
+      [{ id: 'gauri-shankar', name: 'Gauri Shankar Rudraksha' }],
+      { 'gauri-shankar': 'https://cdn.example/gauri-sample.webp' },
+    );
+    expect(tiles.find((tile) => tile.id === 'gauri-shankar')?.image_url).toBe(
+      'https://cdn.example/gauri-sample.webp',
+    );
+  });
 });

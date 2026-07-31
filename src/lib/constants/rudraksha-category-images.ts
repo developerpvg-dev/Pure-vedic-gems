@@ -27,13 +27,8 @@ export const RUDRAKSHA_MUKHI_IMAGE_BY_SLUG: Record<string, string> = {
   '21-mukhi': card('21-mukhi'),
 };
 
-export const RUDRAKSHA_SPECIAL_IMAGE_BY_SLUG: Record<string, string> = {
-  'gauri-shankar': card('gauri-shankar'),
-  'ganesh-rudraksha': card('ganesh-rudraksha'),
-  'nir-mukhi': card('nir-mukhi'),
-  'garbh-gauri': card('garbh-gauri'),
-  'sawar-rudraksha': card('sawar-rudraksha'),
-};
+// ponytail: no local card PNGs for specials yet — use product sample thumbs until admin uploads
+export const RUDRAKSHA_SPECIAL_IMAGE_BY_SLUG: Record<string, string> = {};
 
 export const RUDRAKSHA_FEATURE_IMAGES = {
   collection: `${RUDRAKSHA_CARDS_BASE}/finest-quality-collection.png`,
@@ -49,9 +44,27 @@ export function rudrakshaMukhiImageByNumber(mukhi: number): string | null {
   return rudrakshaMukhiImage(`${mukhi}-mukhi`);
 }
 
-export function resolveRudrakshaNavImage(slug: string, image?: string | null): string | null {
+/** Admin category image → product sample thumb → local card. Same chain as /shop/rudraksha. */
+export function resolveRudrakshaNavImage(
+  slug: string,
+  image?: string | null,
+  sampleThumb?: string | null,
+): string | null {
   if (image) return image;
+  if (sampleThumb) return sampleThumb;
   return rudrakshaMukhiImage(slug);
+}
+
+export function collectRudrakshaSampleThumbs(
+  rows: Array<{ sub_category?: string | null; thumbnail_url?: string | null }>,
+): Map<string, string> {
+  const sampleThumb = new Map<string, string>();
+  for (const row of rows) {
+    const slug = String(row.sub_category ?? '');
+    const thumb = row.thumbnail_url ? String(row.thumbnail_url) : '';
+    if (slug && thumb && !sampleThumb.has(slug)) sampleThumb.set(slug, thumb);
+  }
+  return sampleThumb;
 }
 
 export { resolveCategoryNavImage, collectGemstoneNavImageUrls } from '@/lib/constants/category-nav-images';

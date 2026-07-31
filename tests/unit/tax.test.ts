@@ -82,17 +82,15 @@ describe('tax helpers', () => {
       1500,
     );
 
-    // Server-style: sum of gstOnAmount then Math.round
+    // Server-style: sum of gstOnAmount then Math.round (cert + energization exempt)
     const expected = Math.round(
       gstOnAmount(15048, 0.25) +
         gstOnAmount(41300, 3) +
         gstOnAmount(10325, 5) +
-        gstOnAmount(4000, 18) +
-        gstOnAmount(3500, 18) +
         gstOnAmount(1500, 18),
     );
     expect(gst).toBe(expected);
-    expect(gst).toBe(3413);
+    expect(gst).toBe(2063);
   });
 });
 
@@ -250,11 +248,11 @@ describe('labor FIXED vs % end-to-end with GST', () => {
     );
 
     // DB stores making+diamond together → jewelryCharges = 7500+17500 = 25000 @ 5%
+    // Certification fee is GST-exempt
     const serverGst = Math.round(
       gstOnAmount(gem, 0.25) +
         gstOnAmount(jewelry.metalPrice, 3) +
-        gstOnAmount(jewelry.makingCharge + jewelry.diamondCharge, 5) +
-        gstOnAmount(cert, 18),
+        gstOnAmount(jewelry.makingCharge + jewelry.diamondCharge, 5),
     );
 
     expect(display.gst_total).toBe(serverGst);

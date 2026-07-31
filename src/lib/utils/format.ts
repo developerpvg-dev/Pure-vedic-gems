@@ -114,3 +114,19 @@ export function buildProductMeta(fields: {
   if (fields.certification && !isNoCertification(fields.certification)) parts.push(fields.certification);
   return parts.join(' · ');
 }
+
+const DOB_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+
+/** Admin display DOB: 30/Jul/2026. Parse YYYY-MM-DD without timezone shift. */
+export function formatDob(value: string | null | undefined): string {
+  if (!value?.trim()) return '—';
+  const iso = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const month = DOB_MONTHS[parseInt(iso[2], 10) - 1];
+    if (!month) return value.trim();
+    return `${iso[3]}/${month}/${iso[1]}`;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value.trim();
+  return `${String(d.getUTCDate()).padStart(2, '0')}/${DOB_MONTHS[d.getUTCMonth()]}/${d.getUTCFullYear()}`;
+}

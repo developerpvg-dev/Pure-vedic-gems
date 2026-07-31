@@ -397,6 +397,7 @@ export default function ConfiguratorWrapper({
             pricingModes={pricingModes}
             ratesBySlug={ratesBySlug}
             selectedDesign={state.selected_design}
+            isCustomDesign={Boolean(state.custom_design_url && state.custom_design_brief)}
             optionRules={optionRules}
             onMetalChange={(metal) => dispatch({ type: 'SET_METAL', payload: metal })}
             onRingSizeChange={(size) => dispatch({ type: 'SET_RING_SIZE', payload: size })}

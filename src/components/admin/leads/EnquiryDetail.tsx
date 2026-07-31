@@ -19,6 +19,7 @@ import {
   type LeadPipelineStage,
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
+import { formatDob } from '@/lib/utils/format';
 
 type StaffMember = { id: string; name: string; role: string };
 
@@ -177,7 +178,7 @@ function DuplicateBanner({
       </p>
       <div className="grid gap-2 rounded-md border border-white/60 bg-white/70 p-2 text-[11px] text-gray-700 sm:grid-cols-2">
         <p>
-          <span className="font-medium text-gray-500">Prior DOB:</span> {best.date_of_birth || '—'}
+          <span className="font-medium text-gray-500">Prior DOB:</span> {formatDob(best.date_of_birth)}
         </p>
         <p>
           <span className="font-medium text-gray-500">Prior time:</span>{' '}
@@ -587,7 +588,7 @@ export function EnquiryDetail({
               <ResponseField label="Name" value={lead.name} />
               <ResponseField label="Phone" value={lead.phone || ''} />
               <ResponseField label="Email" value={lead.email} />
-              <ResponseField label="DOB" value={lead.date_of_birth || ''} />
+              <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
               <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} wide />
@@ -849,7 +850,7 @@ export function EnquiryDetail({
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Birth details (verified by telecaller)</h3>
             <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white">
               <ResponseField label="Name" value={lead.name} />
-              <ResponseField label="DOB" value={lead.date_of_birth || ''} />
+              <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
               <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} wide />
@@ -1069,7 +1070,7 @@ export function EnquiryDetail({
               <ResponseField label="Phone" value={lead.phone || ''} />
               <ResponseField label="Email" value={lead.email} />
               <ResponseField label="IP location" value={lead.ip_location || ''} />
-              <ResponseField label="DOB" value={lead.date_of_birth || ''} />
+              <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
               <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} />

@@ -13,6 +13,8 @@ import {
   type StorefrontSubCategory,
 } from '@/lib/categories/storefront';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
+import { resolveRudrakshaNavImage } from '@/lib/constants/rudraksha-category-images';
+import { loadRudrakshaSampleThumbs } from '@/lib/utils/rudraksha-sample-thumbs';
 
 type GemCategoryRow = {
   id: string;
@@ -190,6 +192,21 @@ async function queryCatalogCategories(
     .order('sort_order', { ascending: true }) as unknown as Promise<DbResult<CatalogCategoryRow>>;
 }
 
+async function withRudrakshaImageFallbacks(
+  gemRows: GemCategoryRow[],
+  supabase: ReturnType<typeof createPublicClient>,
+): Promise<GemCategoryRow[]> {
+  if (!gemRows.some((row) => row.type === 'rudraksha' && !row.image_url)) return gemRows;
+  const sampleThumbs = await loadRudrakshaSampleThumbs(supabase);
+  return gemRows.map((row) => {
+    if (row.type !== 'rudraksha') return row;
+    return {
+      ...row,
+      image_url: resolveRudrakshaNavImage(row.slug, row.image_url, sampleThumbs.get(row.slug)),
+    };
+  });
+}
+
 async function fetchStorefrontPayload(
   supabase: ReturnType<typeof createPublicClient>
 ): Promise<StorefrontPayload> {
@@ -198,11 +215,13 @@ async function fetchStorefrontPayload(
     raceTimeout(DB_TIMEOUT_MS),
   ]);
 
-  const gemRows = gemResult.error || !gemResult.data ? [] : gemResult.data;
+  const gemRowsRaw = gemResult.error || !gemResult.data ? [] : gemResult.data;
   const catalogRows = catalogResult.error || !catalogResult.data ? [] : catalogResult.data;
 
   if (gemResult.error) console.error('[categories] gem_categories error:', gemResult.error);
   if (catalogResult.error) console.error('[categories] product_categories error:', catalogResult.error);
+
+  const gemRows = await withRudrakshaImageFallbacks(gemRowsRaw, supabase);
 
   return {
     categories: gemRows,
@@ -271,8 +290,10 @@ export async function GET(request: NextRequest) {
       console.error('[categories] Fetch error:', result.error);
     }
 
+    const categories = await withRudrakshaImageFallbacks(result.data ?? [], supabase);
+
     return NextResponse.json(
-      { categories: result.data ?? [] },
+      { categories },
       { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=150' } }
     );
   } catch (err) {

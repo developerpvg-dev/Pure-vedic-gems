@@ -44,6 +44,7 @@ const ConfigurationSchema = z.object({
       description: z.string().min(10),
       contact_phone: z.string().min(8),
       preferred_metal: z.string().optional(),
+      additional_stones: z.string().optional(),
       additional_notes: z.string().optional(),
     })
     .nullable()
@@ -308,7 +309,12 @@ function buildSnapshot(args: {
       rudraksha_combo_product_ids: args.input.rudraksha_combo_product_ids ?? [],
       metal: args.settingType === 'loose' ? null : args.input.metal,
       ring_size: args.settingType === 'ring' ? args.input.ring_size ?? null : null,
-      chain_length: args.settingType === 'pendant' ? args.input.chain_length ?? null : null,
+      chain_length:
+        args.settingType === 'pendant'
+          ? args.input.custom_design_url
+            ? null
+            : args.input.chain_length ?? null
+          : null,
       certification: args.certification ? { id: args.certification.id, name: args.certification.name } : null,
       certification_skipped: !args.certification,
       energization: args.energization ? { id: args.energization.id, name: args.energization.name } : null,
@@ -399,6 +405,10 @@ export async function POST(request: NextRequest) {
       }
     }
   }
+
+  // Custom design pendants: no chain length (prefs only; admin prices later)
+  const chainLength =
+    hasCustomDesign && settingType === 'pendant' ? null : input.chain_length ?? null;
 
   if (input.certification_id && !isCertificationAllowed(rules, input.certification_id)) {
     return NextResponse.json({ error: 'This certification lab is not available for the selected product.' }, { status: 400 });
@@ -619,7 +629,7 @@ export async function POST(request: NextRequest) {
     rudrakshaProduct,
     comboProducts,
     design,
-    chainLength: input.chain_length ?? null,
+    chainLength: chainLength,
   });
   const breakdown = {
     gem_price: gemPrice,
@@ -635,6 +645,7 @@ export async function POST(request: NextRequest) {
     certification_fee: certificationFee,
     energization_fee: energizationFee,
     custom_design_fee: customDesignFee,
+    custom_design_pricing_pending: hasCustomDesign,
     total,
   };
   const configurationSnapshot = buildSnapshot({
@@ -677,7 +688,7 @@ export async function POST(request: NextRequest) {
       custom_design_status: hasCustomDesign ? 'pending_review' : null,
       metal: settingType === 'loose' ? null : input.metal,
       ring_size: settingType === 'ring' ? input.ring_size ?? null : null,
-      chain_length: settingType === 'pendant' ? input.chain_length ?? null : null,
+      chain_length: settingType === 'pendant' ? chainLength : null,
       certification_id: certification?.id ?? null,
       energization_id: energization?.id ?? null,
       gem_price: gemPrice,
@@ -703,6 +714,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: 'Failed to save configuration', details: insertError?.message },
       { status: 500 }
+    );
+  }
+
+  // Notify admin so design team can call the customer (fire-and-forget)
+  if (hasCustomDesign && input.custom_design_brief) {
+    const brief = input.custom_design_brief;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
+    void import('@/lib/resend/send-admin-alert').then(({ sendAdminOperationalAlertEmail }) =>
+      sendAdminOperationalAlertEmail({
+        subject: `Custom design request — ${product.name}`,
+        heading: 'New custom design request',
+        preview: `${product.name}: customer left design details and a contact number.`,
+        paragraphs: [
+          brief.description,
+          brief.additional_notes ? `Additional notes: ${brief.additional_notes}` : null,
+        ].filter((p): p is string => Boolean(p)),
+        details: [
+          { label: 'Product', value: product.name },
+          { label: 'SKU / Tag', value: [product.sku, product.tag_number].filter(Boolean).join(' · ') || null },
+          { label: 'Contact phone', value: brief.contact_phone },
+          { label: 'Preferred metal', value: brief.preferred_metal ?? null },
+          { label: 'Setting', value: settingType },
+          { label: 'Configuration ID', value: config.id },
+        ],
+        cta: {
+          label: 'Review in admin',
+          href: `${siteUrl}/admin/configurations?status=pending_custom_design_review`,
+        },
+      }).catch(() => null)
     );
   }
 

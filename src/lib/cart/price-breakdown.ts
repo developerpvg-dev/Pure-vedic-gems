@@ -26,6 +26,7 @@ function snapshotToPricing(pricing: NonNullable<ReturnType<typeof parseConfigura
     certification_fee: Number(pricing?.certification_fee ?? 0),
     energization_fee: Number(pricing?.energization_fee ?? 0),
     custom_design_fee: Number(pricing?.custom_design_fee ?? 0),
+    custom_design_pricing_pending: pricing?.custom_design_pricing_pending === true,
     total: Number(pricing?.total ?? 0),
   };
 }

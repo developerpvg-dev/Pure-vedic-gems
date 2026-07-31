@@ -65,9 +65,9 @@ export interface MetalOption {
 
 // ─── Ring Sizes ─────────────────────────────────────────────────────────────
 
-export const RING_SIZES = Array.from({ length: 24 }, (_, i) => ({
-  value: String(i + 5),
-  label: `Size ${i + 5}`,
+export const RING_SIZES = Array.from({ length: 27 }, (_, i) => ({
+  value: String(i + 1),
+  label: `Size ${i + 1}`,
 }));
 
 export const CHAIN_LENGTHS = [
@@ -123,6 +123,8 @@ export interface ConfigPricingBreakdown {
   certification_fee: number;
   energization_fee: number;
   custom_design_fee: number;
+  /** True until admin sets metal/weight/labor for a customer-uploaded design. */
+  custom_design_pricing_pending?: boolean;
   total: number;
 }
 
@@ -163,6 +165,7 @@ export interface CustomDesignBrief {
   description: string;
   contact_phone: string;
   preferred_metal?: string;
+  additional_stones?: string;
   additional_notes?: string;
 }
 

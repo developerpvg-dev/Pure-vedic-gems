@@ -1,3 +1,5 @@
+import { orderHasCustomDesignPricingPending } from '@/lib/utils/configuration-snapshot';
+
 export const PAYMENT_STATUSES = [
   'pending',
   'authorized',
@@ -70,6 +72,30 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export function isPaidPaymentStatus(status: string | null | undefined) {
   return status === PAID_PAYMENT_STATUS;
+}
+
+/** Fully settled for customer/admin UI — false while any custom design price is still TBD. */
+export function isOrderFullyPaid(args: {
+  payment_status: string | null | undefined;
+  amount_due?: number | null;
+  items?: Array<{ configuration_snapshot?: unknown }>;
+}): boolean {
+  if (args.items && orderHasCustomDesignPricingPending(args.items)) return false;
+  if (Number(args.amount_due ?? 0) > 0.009) return false;
+  return isPaidPaymentStatus(args.payment_status);
+}
+
+export function paymentStatusLabelForOrder(args: {
+  payment_status: string | null | undefined;
+  amount_due?: number | null;
+  items?: Array<{ configuration_snapshot?: unknown }>;
+}): string {
+  if (args.items && orderHasCustomDesignPricingPending(args.items)) {
+    return 'Custom design price TBD';
+  }
+  const status = args.payment_status as PaymentStatus | undefined;
+  if (status && PAYMENT_STATUS_LABELS[status]) return PAYMENT_STATUS_LABELS[status];
+  return args.payment_status ?? 'Pending';
 }
 
 /** Customer self-serve cancel: early statuses only, within 24h of order.created_at. */

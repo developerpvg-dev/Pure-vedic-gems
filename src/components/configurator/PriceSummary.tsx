@@ -225,7 +225,7 @@ export default function PriceSummary({
       toast.success('Added to cart', {
         description:
           state.custom_design_url && state.custom_design_brief
-            ? 'Our design team will contact you soon to discuss your custom design.'
+            ? 'We will contact you soon with custom design mounting pricing. You can pay for the gem and selected services now.'
             : state.selected_product.name,
       });
 

@@ -1,6 +1,5 @@
 import Image from 'next/image';
-import Link from 'next/link';
-import { ExternalLink, Gem, Package, Settings } from 'lucide-react';
+import { Gem, Package, Settings } from 'lucide-react';
 import type { OrderItemRecord } from '@/lib/types/order';
 import {
   mergeConfigurationDetails,
@@ -11,6 +10,7 @@ import {
   parseRudrakshaBeadsFromSnapshot,
 } from '@/lib/utils/rudraksha-order-display';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { CustomDesignBriefCard } from '@/components/admin/CustomDesignBriefCard';
 
 const METAL_LABELS: Record<string, string> = {
   gold_22k: '22K Gold',
@@ -190,16 +190,15 @@ export function DesignerOrderItemCard({
                 </div>
               ) : null}
 
-              {selections?.custom_design_url ? (
-                <Link
-                  href={selections.custom_design_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-                >
-                  View customer reference file
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Link>
+              {selections?.custom_design_url || selections?.custom_design_brief ? (
+                <CustomDesignBriefCard
+                  brief={selections.custom_design_brief}
+                  fileUrl={selections.custom_design_url}
+                  ringSize={selections.ring_size}
+                  settingType={selections.setting_type}
+                  productName={item.name}
+                  printId={`designer-custom-brief-${item.configuration_id ?? item.product_id}`}
+                />
               ) : null}
 
               {details.pricing?.design_note ? (

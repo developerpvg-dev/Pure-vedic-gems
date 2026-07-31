@@ -22,6 +22,7 @@ export default function CustomDesignDetailsForm({
   const [description, setDescription] = useState(initial?.description ?? '');
   const [contactPhone, setContactPhone] = useState(initial?.contact_phone ?? '');
   const [preferredMetal, setPreferredMetal] = useState(initial?.preferred_metal ?? '');
+  const [additionalStones, setAdditionalStones] = useState(initial?.additional_stones ?? '');
   const [additionalNotes, setAdditionalNotes] = useState(initial?.additional_notes ?? '');
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +45,7 @@ export default function CustomDesignDetailsForm({
       description: trimmedDescription,
       contact_phone: trimmedPhone,
       preferred_metal: preferredMetal.trim() || undefined,
+      additional_stones: additionalStones.trim() || undefined,
       additional_notes: additionalNotes.trim() || undefined,
     });
   }
@@ -53,7 +55,7 @@ export default function CustomDesignDetailsForm({
       <div>
         <p className="text-sm font-semibold text-primary">Tell us about your custom design</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Our design team will review your reference and contact you shortly to discuss the piece.
+          Our design team will review your reference, contact you with mounting pricing, and finalize metal weight and labour.
         </p>
       </div>
 
@@ -108,11 +110,21 @@ export default function CustomDesignDetailsForm({
       </div>
 
       <div>
+        <label className="mb-1 block text-[11px] font-medium text-foreground">Additional stones (optional)</label>
+        <Input
+          value={additionalStones}
+          onChange={(e) => setAdditionalStones(e.target.value)}
+          placeholder="e.g. side diamonds, melee accent stones"
+          className="h-9 text-xs"
+        />
+      </div>
+
+      <div>
         <label className="mb-1 block text-[11px] font-medium text-foreground">Additional notes (optional)</label>
         <Textarea
           value={additionalNotes}
           onChange={(e) => setAdditionalNotes(e.target.value)}
-          placeholder="Chain length, budget range, timeline, or other preferences…"
+          placeholder="Budget range, timeline, or other preferences…"
           className="min-h-[56px] text-xs"
         />
       </div>

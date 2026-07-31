@@ -498,8 +498,7 @@ export async function recalculateOrderTotal(
     ...productTaxComponents,
     calculateGstComponent({ label: 'Metal value', component: 'metal', amount: metalCharges, ratePercent: 3, hsnCode: '7113', destinationState: shippingAddress?.state }),
     calculateGstComponent({ label: 'Making and custom design charges', component: 'making_charge', amount: jewelryCharges, ratePercent: 5, hsnCode: null, destinationState: shippingAddress?.state }),
-    calculateGstComponent({ label: 'Certification charges', component: 'certification', amount: certificationCharges, ratePercent: 18, hsnCode: null, destinationState: shippingAddress?.state }),
-    calculateGstComponent({ label: 'Energization and ritual services', component: 'energization', amount: energizationCharges, ratePercent: 18, hsnCode: null, destinationState: shippingAddress?.state }),
+    // ponytail: cert + energization fees are GST-exempt (fee already final); shipping stays 18%
     calculateGstComponent({ label: 'Shipping, insurance, and handling', component: 'shipping', amount: shippingCost, ratePercent: 18, hsnCode: '9968', destinationState: shippingAddress?.state }),
   ]);
   const gstAmount = Math.round(taxBreakdown.totals.gst_amount);

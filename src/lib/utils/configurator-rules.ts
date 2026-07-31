@@ -36,8 +36,8 @@ export const RING_SIZE_SYSTEMS: RingSizeSystem[] = [
     id: 'indian',
     label: 'Indian',
     aliases: ['india', 'indian', 'in'],
-    sizes: Array.from({ length: 24 }, (_, index) => {
-      const value = String(index + 5);
+    sizes: Array.from({ length: 27 }, (_, index) => {
+      const value = String(index + 1);
       return { value, label: value };
     }),
   },
@@ -45,8 +45,8 @@ export const RING_SIZE_SYSTEMS: RingSizeSystem[] = [
     id: 'european',
     label: 'EU',
     aliases: ['eu', 'europe', 'european'],
-    sizes: Array.from({ length: 14 }, (_, index) => {
-      const value = String(44 + index * 2);
+    sizes: Array.from({ length: 16 }, (_, index) => {
+      const value = String(40 + index * 2);
       return { value, label: value };
     }),
   },
@@ -55,14 +55,14 @@ export const RING_SIZE_SYSTEMS: RingSizeSystem[] = [
     label: 'UK',
     aliases: ['uk', 'au', 'uk_au', 'uk-au'],
     sizes: [
-      'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     ].map((value) => ({ value, label: value })),
   },
   {
     id: 'us',
     label: 'US',
     aliases: ['us', 'usa'],
-    sizes: ['4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13']
+    sizes: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13']
       .map((value) => ({ value, label: value })),
   },
 ];

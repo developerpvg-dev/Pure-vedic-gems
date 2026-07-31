@@ -14,6 +14,7 @@ import {
   releaseProductsForOrder,
 } from '@/lib/inventory/order-availability';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { orderHasCustomDesignPricingPending } from '@/lib/utils/configuration-snapshot';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -507,7 +508,11 @@ export async function finalizeCapturedPayment({
 }) {
   const supabase = createAdminClient();
   const db = asUntypedSupabase(supabase);
-  const settled = balances;
+  // Known subtotal may be fully paid while custom mounting is still TBD
+  const settled =
+    orderHasCustomDesignPricingPending(orderItems(order)) && balances.payment_status === 'captured'
+      ? { ...balances, payment_status: 'partial' as const }
+      : balances;
   // ── Money columns — derived from the ledger, so replays converge ───────
   // Safe to run on every finalization attempt: recomputed sums are idempotent,
   // unlike the increment-in-place this used to be.

@@ -17,11 +17,14 @@ type ApiRudrakshaCategory = {
   image_url?: string;
 };
 
-/** Canonical Rudraksha tiles — local mukhi images with optional admin overrides. */
+/** Canonical Rudraksha tiles — admin image, then sample product thumb, then local mukhi card. */
 export function buildRudrakshaCategoryTiles(
-  apiCategories: ApiRudrakshaCategory[] = []
+  apiCategories: ApiRudrakshaCategory[] = [],
+  sampleThumbs: ReadonlyMap<string, string> | Record<string, string> = {},
 ): RudrakshaCategoryTile[] {
   const bySlug = new Map(apiCategories.map((row) => [row.id, row]));
+  const sampleOf = (slug: string) =>
+    sampleThumbs instanceof Map ? sampleThumbs.get(slug) : sampleThumbs[slug];
 
   return [...RUDRAKSHA_STOREFRONT_SLUGS]
     .sort((a, b) => rudrakshaStorefrontSortOrder(a) - rudrakshaStorefrontSortOrder(b))
@@ -34,7 +37,7 @@ export function buildRudrakshaCategoryTiles(
         planet: '',
         color: '#5C4A2A',
         type: 'rudraksha' as const,
-        image_url: resolveRudrakshaNavImage(slug, api?.image_url) ?? undefined,
+        image_url: resolveRudrakshaNavImage(slug, api?.image_url, sampleOf(slug)) ?? undefined,
       };
     });
 }

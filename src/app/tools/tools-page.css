@@ -183,17 +183,9 @@ a.pvg-tool-btn {
   }
 }
 
-/* Ring size guide — balanced, readable chart */
+/* Ring size guide — full-width chart */
 .pvg-ring-size-layout {
-  display: grid;
-  gap: 1.25rem;
-}
-
-@media (min-width: 1024px) {
-  .pvg-ring-size-layout {
-    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.75fr);
-    align-items: start;
-  }
+  display: block;
 }
 
 .pvg-ring-size-table-wrap {

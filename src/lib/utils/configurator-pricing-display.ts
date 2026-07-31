@@ -51,13 +51,22 @@ export function buildConfiguratorPriceTotals(
   });
 
   if (showJewelry) {
+    const customPending = pricing.custom_design_pricing_pending === true;
     const hasJewelryDetail =
       pricing.metal_price > 0 ||
       pricing.making_charge > 0 ||
       pricing.diamond_charge > 0 ||
       pricing.metal_weight_grams > 0;
 
-    if (hasJewelryDetail) {
+    if (customPending && !hasJewelryDetail) {
+      lines.push({
+        key: 'custom-design-pending',
+        label: 'Custom design mounting',
+        detail: 'Priced after review — we will contact you',
+        amount: null,
+        display: 'TBD',
+      });
+    } else if (hasJewelryDetail) {
       if (pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0) {
         lines.push({
           key: 'metal-weight',
@@ -160,6 +169,8 @@ export function buildConfiguratorPriceTotals(
       label: 'Custom design review',
       amount: pricing.custom_design_fee,
     });
+  } else if (pricing.custom_design_pricing_pending && showJewelry) {
+    // TBD line already added above when jewelry detail is empty
   }
 
   const jewelrySubtotal =
@@ -180,8 +191,9 @@ export function buildConfiguratorPriceTotals(
 
   const gemTax = resolveProductTax({ category: productCategory ?? 'gemstone' });
   const gstGemstone = gstOnAmount(pricing.gem_price, gemTax.rate_percent);
-  const gstCertification = gstOnAmount(pricing.certification_fee, 18);
-  const gstEnergization = gstOnAmount(pricing.energization_fee, 18);
+  // ponytail: cert + energization fees are GST-exempt (fee already final)
+  const gstCertification = 0;
+  const gstEnergization = 0;
 
   const gstTotal = Math.round(
     gstJewelry + gstGemstone + gstCertification + gstEnergization,

@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { rudrakshaMukhiImage } from '@/lib/constants/rudraksha-category-images';
+import {
+  collectRudrakshaSampleThumbs,
+  resolveRudrakshaNavImage,
+  rudrakshaMukhiImage,
+} from '@/lib/constants/rudraksha-category-images';
 import {
   RUDRAKSHA_STOREFRONT_SLUGS,
   rudrakshaSubcategoryLabel,
@@ -59,19 +63,15 @@ async function loadRudrakshaGridItems(): Promise<GridItem[]> {
     counts.set(slug, (counts.get(slug) ?? 0) + 1);
   }
 
-  const sampleThumb = new Map<string, string>();
-  for (const row of samplesResult.data ?? []) {
-    const slug = String(row.sub_category ?? '');
-    const thumb = row.thumbnail_url ? String(row.thumbnail_url) : '';
-    if (slug && thumb && !sampleThumb.has(slug)) sampleThumb.set(slug, thumb);
-  }
+  const sampleThumb = collectRudrakshaSampleThumbs(samplesResult.data ?? []);
 
   return RUDRAKSHA_STOREFRONT_SLUGS.map((slug) => {
     const row = bySlug.get(slug);
-    const imageUrl =
-      (row?.image_url ? String(row.image_url) : null) ??
-      sampleThumb.get(slug) ??
-      rudrakshaMukhiImage(slug);
+    const imageUrl = resolveRudrakshaNavImage(
+      slug,
+      row?.image_url ? String(row.image_url) : null,
+      sampleThumb.get(slug),
+    );
     return {
       slug,
       label: row?.name ? String(row.name) : rudrakshaSubcategoryLabel(slug),

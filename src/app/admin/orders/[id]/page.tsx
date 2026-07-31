@@ -31,6 +31,13 @@ import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
   User, FileText, ExternalLink, Settings, Printer,
 } from 'lucide-react';
+import { CustomDesignBriefCard } from '@/components/admin/CustomDesignBriefCard';
+import { OrderCustomDesignPriceEditor } from '@/components/admin/OrderCustomDesignPriceEditor';
+import {
+  isCustomDesignPricingPending,
+  orderHasCustomDesignPricingPending,
+} from '@/lib/utils/configuration-snapshot';
+import { paymentStatusLabelForOrder } from '@/lib/constants/order-status';
 
 const AVAILABILITY_STYLE: Record<string, string> = {
   reserved: 'bg-amber-100 text-amber-900',
@@ -496,9 +503,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
               {cap(o.status) ?? o.status}
             </span>
             <span
-              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                orderHasCustomDesignPricingPending(items)
+                  ? 'bg-amber-100 text-amber-900'
+                  : PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'
+              }`}
             >
-              {cap(o.payment_status) ?? o.payment_status}
+              {paymentStatusLabelForOrder({
+                payment_status: o.payment_status,
+                amount_due: o.amount_due,
+                items,
+              })}
             </span>
             {returnStatus && returnStatus !== 'none' ? (
               <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
@@ -834,7 +849,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 </ul>
                               ) : null}
 
-                              {(designName || selections?.custom_design_url) && (
+                              {(designName || selections?.custom_design_url || selections?.custom_design_brief) && (
                                 <div className="mb-3 flex items-start gap-3">
                                   {designImage ? (
                                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white">
@@ -847,23 +862,39 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                       />
                                     </div>
                                   ) : null}
-                                  <div className="min-w-0">
+                                  <div className="min-w-0 flex-1">
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
                                       Design
                                     </p>
                                     {designName ? (
                                       <p className="font-semibold text-stone-800">{designName}</p>
+                                    ) : selections?.custom_design_url || selections?.custom_design_brief ? (
+                                      <p className="font-semibold text-stone-800">Custom design</p>
+                                    ) : null}
+                                    {selections?.custom_design_brief || selections?.custom_design_url ? (
+                                      <CustomDesignBriefCard
+                                        className="mt-2"
+                                        brief={selections.custom_design_brief}
+                                        fileUrl={selections.custom_design_url}
+                                        ringSize={selections.ring_size}
+                                        settingType={selections.setting_type}
+                                        productName={item.name}
+                                        printId={`custom-design-brief-${idx}`}
+                                      />
                                     ) : null}
                                     {selections?.custom_design_url ? (
-                                      <a
-                                        href={selections.custom_design_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-stone-600 underline-offset-2 hover:underline"
-                                      >
-                                        Custom design file
-                                        <ExternalLink className="h-3 w-3" />
-                                      </a>
+                                      <OrderCustomDesignPriceEditor
+                                        orderId={o.id}
+                                        itemIndex={idx}
+                                        preferredMetal={
+                                          selections.custom_design_brief?.preferred_metal ??
+                                          selections.metal
+                                        }
+                                        pending={isCustomDesignPricingPending(
+                                          item.configuration_snapshot ?? cfg?.configuration_snapshot,
+                                        )}
+                                        itemName={item.name}
+                                      />
                                     ) : null}
                                   </div>
                                 </div>

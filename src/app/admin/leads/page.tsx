@@ -30,6 +30,7 @@ import {
   type LeadPipelineStage,
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
+import { formatDob } from '@/lib/utils/format';
 
 function readLeadQuery() {
   if (typeof window === 'undefined') {
@@ -110,7 +111,7 @@ function buildAstroPacket(lead: EnquiryLead) {
     `SR. No. ${lead.lead_number ?? '—'}`,
     `Enquiry Type: ${lead.enquiry_type || lead.subject || 'Enquiry'}`,
     `Name: ${lead.name}`,
-    `Date of Birth: ${lead.date_of_birth || '—'}`,
+    `Date of Birth: ${formatDob(lead.date_of_birth)}`,
     `Time of Birth: ${lead.birth_time || '—'}`,
     `Place of Birth: ${lead.birth_place || '—'}`,
     `Area of Concern: ${lead.area_of_concern || '—'}`,
@@ -699,7 +700,7 @@ export default function LeadsPage() {
                     <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-gray-500">
                       {isAstroDesk && isEnquiry ? (
                         <>
-                          <span>DOB: {lead.date_of_birth || '—'}</span>
+                          <span>DOB: {formatDob(lead.date_of_birth)}</span>
                           <span>Time: {(lead.birth_time || '—').slice(0, 5)}</span>
                           <span>Place: {lead.birth_place || '—'}</span>
                         </>

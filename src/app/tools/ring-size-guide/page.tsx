@@ -14,9 +14,9 @@ export const metadata: Metadata = buildMetadata({
 export default function RingSizeGuidePage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
-      <section className="px-4 pb-8 pt-10 sm:px-6 lg:pt-14" aria-labelledby="ring-size-heading">
+      <section className="px-4 pb-6 pt-0 sm:px-6" aria-labelledby="ring-size-heading">
         <div className="mx-auto max-w-4xl text-center">
-          <nav className="pvg-tools-breadcrumb mb-6" aria-label="Breadcrumb">
+          <nav className="pvg-tools-breadcrumb mb-3" aria-label="Breadcrumb">
             <Link href="/">Home</Link>
             <span aria-hidden="true">/</span>
             <Link href="/tools/recommendation">Tools</Link>

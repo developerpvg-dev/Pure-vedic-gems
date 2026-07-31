@@ -265,6 +265,7 @@ function recalcPricing(
     certification_fee: certificationFee,
     energization_fee: energizationFee,
     custom_design_fee: customDesignFee,
+    custom_design_pricing_pending: Boolean(state.custom_design_url),
     total,
   };
 }
