@@ -203,6 +203,7 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/orders')) return 'orders.read';
   if (pathname.startsWith('/admin/customers')) return 'leads.read';
   if (pathname.startsWith('/admin/leads')) return 'leads.read';
+  if (pathname.startsWith('/admin/recommendations')) return 'leads.read';
   if (
     pathname.startsWith('/admin/consultation-plans') ||
     pathname.startsWith('/admin/notifications') ||

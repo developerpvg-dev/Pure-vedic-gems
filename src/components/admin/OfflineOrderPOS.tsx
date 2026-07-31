@@ -24,6 +24,13 @@ import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 import type { ProductCard } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { getApiErrorMessage } from '@/lib/utils/api-validation';
+import {
+  isValidGstin,
+  isValidIndianPincode,
+  isValidOfflinePhone,
+  normalizeOfflinePhone,
+} from '@/lib/validators/order';
 
 type ProductHit = {
   id: string;
@@ -563,7 +570,7 @@ export function OfflineOrderPOS() {
     setQuoting(false);
     if (!res.ok) {
       setPricing(null);
-      setPricingError(data.error || 'Quote failed');
+      setPricingError(getApiErrorMessage(data, data.error || 'Quote failed'));
       return;
     }
     setPricing(data.pricing as Pricing);
@@ -598,34 +605,63 @@ export function OfflineOrderPOS() {
     });
   }, [step, pricing]);
 
-  function canNext() {
+  function stepBlockedReason(): string {
     if (step === 0) {
-      return (
-        fullName.trim().length >= 2 &&
-        phone.trim().length >= 10 &&
-        addr.line1.trim().length >= 5 &&
-        addr.city.trim().length >= 2 &&
-        addr.state.trim().length >= 2 &&
-        addr.pincode.trim().length >= 2
-      );
+      if (fullName.trim().length < 2) return 'Enter the customer full name (at least 2 characters).';
+      if (!isValidOfflinePhone(phone)) {
+        return 'Enter a valid phone number (10 digits; spaces/dashes ok). Optional +country code.';
+      }
+      if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return 'Enter a valid email address, or leave email blank.';
+      }
+      if (!isValidGstin(gstin)) return 'Enter a valid GSTIN, or leave GSTIN blank.';
+      if (addr.line1.trim().length < 5) return 'Billing address must be at least 5 characters.';
+      if (addr.city.trim().length < 2) return 'Enter city.';
+      if (addr.state.trim().length < 2) return 'Enter state.';
+      if (addr.country_code === 'IN' && !isValidIndianPincode(addr.pincode)) {
+        return 'Enter a valid 6-digit Indian pincode.';
+      }
+      if (addr.pincode.trim().length < 2) return 'Enter postal / pin code.';
+      return '';
     }
-    if (step === 1) return items.length > 0;
-    if (step === 2) return Boolean(pricing) && !pricingError;
+    if (step === 1) {
+      if (items.length === 0) return 'Add at least one product or manual design.';
+      return '';
+    }
+    if (step === 2) {
+      if (pricingError) return pricingError;
+      if (!pricing) return 'Wait for the price quote to finish, or fix quote errors above.';
+      return '';
+    }
     if (step === 3) {
       if (fulfillmentType === 'delivery') {
-        return Boolean(shippingMethod && addr.line1 && addr.city && addr.state && addr.pincode);
+        if (!shippingMethod) return 'Select a shipping method for delivery.';
+        if (!addr.line1.trim() || !addr.city.trim() || !addr.state.trim()) {
+          return 'Complete the delivery address.';
+        }
+        if (addr.country_code === 'IN' && !isValidIndianPincode(addr.pincode)) {
+          return 'Enter a valid 6-digit Indian pincode for delivery.';
+        }
       }
-      return true;
+      return '';
     }
     if (step === 4) {
-      if (!pricing) return false;
+      if (!pricing) return 'Order total is missing — go back to Charges and refresh the quote.';
       const amt = Number(payAmount);
-      return Number.isFinite(amt) && amt > 0 && amt <= pricing.total + 0.009 && Boolean(payMethod);
+      if (!Number.isFinite(amt) || amt <= 0) return 'Enter a payment amount greater than zero.';
+      if (amt > pricing.total + 0.009) return `Payment cannot exceed order total (${fmt(pricing.total)}).`;
+      if (!payMethod) return 'Select a payment method.';
+      return '';
     }
-    return true;
+    return '';
   }
 
   async function submit() {
+    const blocked = stepBlockedReason();
+    if (blocked) {
+      setError(blocked);
+      return;
+    }
     setBusy(true);
     setError('');
     const res = await fetch('/api/admin/orders', {
@@ -635,7 +671,7 @@ export function OfflineOrderPOS() {
         customer_id: customerId,
         contact: {
           full_name: fullName.trim(),
-          phone: phone.trim(),
+          phone: normalizeOfflinePhone(phone.trim()),
           email: email.trim(),
           billing_gstin: gstin.trim(),
         },
@@ -664,7 +700,7 @@ export function OfflineOrderPOS() {
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(data.error || 'Failed to create order');
+      setError(getApiErrorMessage(data, data.error || 'Failed to create order'));
       return;
     }
     router.push(`/admin/orders/${data.order_id}`);
@@ -767,6 +803,7 @@ export function OfflineOrderPOS() {
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  placeholder="9876543210 or +91 98765 43210"
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-amber-500"
                 />
               </label>
@@ -808,10 +845,15 @@ export function OfflineOrderPOS() {
                 </label>
                 {(['city', 'state', 'pincode'] as const).map((fieldName) => (
                   <label key={fieldName} className="text-sm">
-                    <span className="mb-1 block capitalize text-gray-600">{fieldName} *</span>
+                    <span className="mb-1 block capitalize text-gray-600">
+                      {fieldName === 'pincode' ? 'Pincode (6 digits) *' : `${fieldName} *`}
+                    </span>
                     <input
                       value={addr[fieldName]}
                       onChange={(e) => setAddr((a) => ({ ...a, [fieldName]: e.target.value }))}
+                      placeholder={fieldName === 'pincode' ? '302001' : undefined}
+                      inputMode={fieldName === 'pincode' ? 'numeric' : undefined}
+                      maxLength={fieldName === 'pincode' ? 6 : undefined}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2"
                     />
                   </label>
@@ -1349,7 +1391,10 @@ export function OfflineOrderPOS() {
         <button
           type="button"
           disabled={step === 0 || busy}
-          onClick={() => setStep((s) => Math.max(0, s - 1))}
+          onClick={() => {
+            setError('');
+            setStep((s) => Math.max(0, s - 1));
+          }}
           className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-40"
         >
           Back
@@ -1357,19 +1402,24 @@ export function OfflineOrderPOS() {
         {step < STEPS.length - 1 ? (
           <button
             type="button"
-            disabled={!canNext()}
             onClick={() => {
+              const blocked = stepBlockedReason();
+              if (blocked) {
+                setError(blocked);
+                return;
+              }
+              setError('');
               if (step === 1 || step === 2 || step === 3) void refreshQuote();
               setStep((s) => s + 1);
             }}
-            className="rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white"
           >
             Continue
           </button>
         ) : (
           <button
             type="button"
-            disabled={busy || !canNext()}
+            disabled={busy}
             onClick={() => void submit()}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           >

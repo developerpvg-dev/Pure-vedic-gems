@@ -6,7 +6,7 @@
  * and how to derive `quality_label` / `legacy_path` for audit.
  *
  * Decisions encoded here (see NAVRATNAS_MIGRATION_PLAN.md §10):
- *   1. White Sapphire is reclassified to navaratna as "White Sapphire (Shvet Pukhraj)".
+ *   1. White Sapphire is reclassified to navaratna as "White Sapphire (Safed Pukhraj)".
  *   2. Rudraksha rows misfiled under NAVRATAN are EXCLUDED from Phase 1 and
  *      deferred to the Rudraksha phase.
  *   3. "Exclusive Gems" is NOT a real subcategory. It is a quality bucket; the
@@ -70,7 +70,7 @@ const LEGACY_NAVRATNA_TERM_MAP: Record<string, NavratnaCategoryMap> = {
   'cats-eye': { subCategory: 'cats-eye', label: "Cat's Eye (Lehsunia)", planet: 'Ketu' },
   'cat-eye': { subCategory: 'cats-eye', label: "Cat's Eye (Lehsunia)", planet: 'Ketu' },
 
-  'white-sapphire': { subCategory: 'white-sapphire', label: 'White Sapphire (Shvet Pukhraj)', planet: 'Venus' },
+  'white-sapphire': { subCategory: 'white-sapphire', label: 'White Sapphire (Safed Pukhraj)', planet: 'Venus' },
 
   pitambari: { subCategory: 'pitambari', label: 'Pitambari', planet: 'Jupiter & Saturn' },
 };
@@ -82,7 +82,7 @@ const LEGACY_NAVRATNA_TERM_MAP: Record<string, NavratnaCategoryMap> = {
 const TITLE_FALLBACK_PATTERNS: Array<[RegExp, NavratnaSubcategory, string, string]> = [
   [/\byellow\s*sapphire\b|\bpukhraj\b/i, 'yellow-sapphire', 'Yellow Sapphire (Pukhraj)', 'Jupiter'],
   [/\bblue\s*sapphire\b|\bneelam\b/i, 'blue-sapphire', 'Blue Sapphire (Neelam)', 'Saturn'],
-  [/\bwhite\s*sapphire\b|\bshvet\s*pukhraj\b|\bsafed\s*pukhraj\b/i, 'white-sapphire', 'White Sapphire (Shvet Pukhraj)', 'Venus'],
+  [/\bwhite\s*sapphire\b|\bshvet\s*pukhraj\b|\bsafed\s*pukhraj\b/i, 'white-sapphire', 'White Sapphire (Safed Pukhraj)', 'Venus'],
   [/\bpink\s*sapphire\b/i, 'white-sapphire', 'Pink Sapphire', 'Venus'],
   [/\bred\s*coral\b|\bmoonga\b|\bmunga\b/i, 'red-coral', 'Red Coral (Moonga)', 'Mars'],
   [/\bcat'?s?\s*eye\b|\blehsunia\b|\blasunia\b/i, 'cats-eye', "Cat's Eye (Lehsunia)", 'Ketu'],

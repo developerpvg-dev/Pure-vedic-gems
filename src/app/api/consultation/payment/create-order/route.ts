@@ -6,6 +6,7 @@ import { rateLimit } from '@/lib/utils/rate-limit';
 import { consultationBookingCreateOrderSchema } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { setBookingTokenCookie } from '@/lib/security/booking-token';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import type { ConsultationPlan } from '@/lib/types/database';
 
 interface RazorpayOrderResult {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       title: 'Gem Recommendation',
       slug: 'gem-recommendation',
       description: 'Personalized gemstone recommendation from our Vedic experts',
-      amount_inr: 101,
+      amount_inr: RS101_AMOUNT_INR,
       amount_usd: null,
       currency: 'INR',
       duration_minutes: null,
@@ -95,6 +96,9 @@ export async function POST(request: NextRequest) {
       date_of_birth: parsed.data.date_of_birth || null,
       birth_time: parsed.data.birth_time || null,
       birth_place: parsed.data.birth_place || null,
+      customer_city: parsed.data.customer_city || null,
+      customer_state: parsed.data.customer_state || null,
+      customer_country: parsed.data.customer_country || null,
       life_situation: parsed.data.life_situation || null,
       consultation_type: 'paid_plan',
       mode: null,

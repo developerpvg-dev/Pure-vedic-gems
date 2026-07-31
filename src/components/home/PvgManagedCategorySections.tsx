@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { RudrakshaFeatureCarousel } from '@/components/home/RudrakshaFeatureCarousel';
@@ -22,6 +23,8 @@ import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
 import { DirectorPickPrice } from '@/components/home/DirectorPickPrice';
+import { Money } from '@/components/currency/Money';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
@@ -110,7 +113,7 @@ const NAVARATNA_FALLBACK: HomeManagedCategory[] = [
   { id: 'red-coral', name: 'Red Coral', slug: 'red-coral', type: 'navaratna', sanskrit_name: 'Moonga', planet: 'Mars', image_url: null, hover_image_url: null, description: null, display_locations: 'Italy · Japan', color: '#EA580C', sort_order: 3 },
   { id: 'emerald', name: 'Emerald', slug: 'emerald', type: 'navaratna', sanskrit_name: 'Panna', planet: 'Mercury', image_url: null, hover_image_url: null, description: null, display_locations: 'Zambia · Colombia', color: '#16A34A', sort_order: 4 },
   { id: 'yellow-sapphire', name: 'Yellow Sapphire', slug: 'yellow-sapphire', type: 'navaratna', sanskrit_name: 'Pukhraj', planet: 'Jupiter', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Thailand', color: '#CA8A04', sort_order: 5 },
-  { id: 'white-sapphire', name: 'White Sapphire', slug: 'white-sapphire', type: 'navaratna', sanskrit_name: 'Shvet Pukhraj', planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lankan / Burma', color: '#E7E5E4', sort_order: 6 },
+  { id: 'white-sapphire', name: 'White Sapphire', slug: 'white-sapphire', type: 'navaratna', sanskrit_name: 'Safed Pukhraj', planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lankan / Burma', color: '#E7E5E4', sort_order: 6 },
   { id: 'diamond', name: 'Diamond', slug: 'diamond', type: 'navaratna', sanskrit_name: 'Heera', planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: 'South Africa · India', color: '#A8A29E', sort_order: 6 },
   { id: 'blue-sapphire', name: 'Blue Sapphire', slug: 'blue-sapphire', type: 'navaratna', sanskrit_name: 'Neelam', planet: 'Saturn', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Burma · Kashmir', color: '#2563EB', sort_order: 7 },
   { id: 'hessonite', name: 'Hessonite', slug: 'hessonite', type: 'navaratna', sanskrit_name: 'Gomed', planet: 'Rahu', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Africa', color: '#92400E', sort_order: 8 },
@@ -518,8 +521,8 @@ export function IntegratedCategoryCta({
   variant: 'navaratna' | 'rudraksha' | 'uparatna';
   title: string;
   copy: string;
-  primary: { label: string; href: string };
-  secondary: { label: string; href: string };
+  primary: { label: ReactNode; href: string };
+  secondary: { label: ReactNode; href: string };
   image: string;
   imageAlt: string;
   imageSide?: 'left' | 'right';
@@ -699,7 +702,10 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
         variant="navaratna"
         title="Not sure which gemstone is good for you?"
         copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
-        primary={{ label: 'Get Navaratna Recommendation — ₹101', href: '#gem-recommendation' }}
+        primary={{
+          label: <>Get Navaratna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+          href: '#gem-recommendation',
+        }}
         secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
         image="/home/ctas/cta1.webp?v=4"
         imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
@@ -770,7 +776,10 @@ export function RudrakshaHomeSection({
         variant="rudraksha"
         title="Not sure which Rudraksha is right for you?"
         copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
-        primary={{ label: 'Get Rudraksha Recommendation — ₹101', href: '#gem-recommendation' }}
+        primary={{
+          label: <>Get Rudraksha Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+          href: '#gem-recommendation',
+        }}
         secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
         image="/home/ctas/cta2.webp?v=2"
         imageAlt="Rudraksha expert offering personalised guidance"
@@ -1020,7 +1029,10 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
         variant="uparatna"
         title="Need a practical gemstone alternative?"
         copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
-        primary={{ label: 'Get Uparatna Recommendation — ₹101', href: '#gem-recommendation' }}
+        primary={{
+          label: <>Get Uparatna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+          href: '#gem-recommendation',
+        }}
         secondary={{ label: 'See Uparatna Collection', href: '/shop/upratna' }}
         image="/home/ctas/cta3.webp?v=2"
         imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"

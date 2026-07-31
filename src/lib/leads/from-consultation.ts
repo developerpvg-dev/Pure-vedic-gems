@@ -3,13 +3,14 @@ import type { Consultation } from '@/lib/types/database';
 import { logLeadActivity } from '@/lib/leads/assign';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 
 type Admin = ReturnType<typeof createAdminClient>;
 
 function isRs101Lead(consultation: Consultation) {
   const title = (consultation.plan_title_snapshot || '').toLowerCase();
   const amount = Number(consultation.amount_inr ?? 0);
-  return consultation.plan_id == null && (title.includes('gem recommendation') || amount === 101);
+  return consultation.plan_id == null && (title.includes('gem recommendation') || amount === RS101_AMOUNT_INR);
 }
 
 async function backfillEnquiryFromConsultation(
@@ -20,7 +21,7 @@ async function backfillEnquiryFromConsultation(
 ) {
   const { data: row } = await admin
     .from('enquiries')
-    .select('area_of_concern, date_of_birth, birth_time, birth_place, ip_location, phone')
+    .select('area_of_concern, date_of_birth, birth_time, birth_place, customer_city, customer_state, customer_country, ip_location, phone')
     .eq('id', enquiryId)
     .maybeSingle();
   if (!row) return;
@@ -30,6 +31,9 @@ async function backfillEnquiryFromConsultation(
   if (!row.date_of_birth && consultation.date_of_birth) patch.date_of_birth = consultation.date_of_birth;
   if (!row.birth_time && consultation.birth_time) patch.birth_time = consultation.birth_time;
   if (!row.birth_place && consultation.birth_place) patch.birth_place = consultation.birth_place;
+  if (!row.customer_city && consultation.customer_city) patch.customer_city = consultation.customer_city;
+  if (!row.customer_state && consultation.customer_state) patch.customer_state = consultation.customer_state;
+  if (!row.customer_country && consultation.customer_country) patch.customer_country = consultation.customer_country;
   if (!row.phone && consultation.phone) patch.phone = consultation.phone;
   if (!row.ip_location && ipLocation) patch.ip_location = ipLocation;
   if (Object.keys(patch).length === 0) return;
@@ -70,6 +74,9 @@ export async function ensureLeadFromConsultation(
     consultation.date_of_birth ? `Date of birth: ${consultation.date_of_birth}` : null,
     consultation.birth_time ? `Birth time: ${consultation.birth_time}` : null,
     consultation.birth_place ? `Birth place: ${consultation.birth_place}` : null,
+    consultation.customer_city ? `City / District: ${consultation.customer_city}` : null,
+    consultation.customer_state ? `State: ${consultation.customer_state}` : null,
+    consultation.customer_country ? `Country: ${consultation.customer_country}` : null,
     consultation.life_situation ? `Purpose: ${consultation.life_situation}` : null,
     consultation.preferred_date ? `Preferred date: ${consultation.preferred_date}` : null,
     consultation.preferred_time ? `Preferred time: ${consultation.preferred_time}` : null,
@@ -96,6 +103,9 @@ export async function ensureLeadFromConsultation(
       date_of_birth: consultation.date_of_birth,
       birth_time: consultation.birth_time,
       birth_place: consultation.birth_place,
+      customer_city: consultation.customer_city,
+      customer_state: consultation.customer_state,
+      customer_country: consultation.customer_country,
       area_of_concern: consultation.life_situation,
       ip_location: opts?.ipLocation || null,
       payment_received: consultation.payment_status === 'captured',

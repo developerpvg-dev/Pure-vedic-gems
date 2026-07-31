@@ -111,7 +111,7 @@ FROM (VALUES
   ('blue-sapphire',   'Blue Sapphire (Neelam)',        ARRAY['Blue Sapphire','NAVRATAN > Blue Sapphire'],         '/shop/blue-sapphire',   107),
   ('hessonite',       'Hessonite (Gomed)',             ARRAY['Hessonite','Gomed'],                                '/shop/hessonite',       108),
   ('cats-eye',        'Cat''s Eye (Lehsunia)',         ARRAY['Catseye','Cat''s Eye'],                             '/shop/cats-eye',        109),
-  ('white-sapphire',  'White Sapphire (Shvet Pukhraj)',ARRAY['White Sapphire'],                                   '/shop/white-sapphire',  111)
+  ('white-sapphire',  'White Sapphire (Safed Pukhraj)',ARRAY['White Sapphire', 'Shvet Pukhraj'],                  '/shop/white-sapphire',  111)
 ) AS v(slug, name, legacy_names, canonical_path, sort_order)
 JOIN public.product_categories p ON p.slug='navaratna'
 ON CONFLICT (slug) DO UPDATE SET name=EXCLUDED.name, parent_id=EXCLUDED.parent_id, legacy_names=EXCLUDED.legacy_names, canonical_path=EXCLUDED.canonical_path, sort_order=EXCLUDED.sort_order;

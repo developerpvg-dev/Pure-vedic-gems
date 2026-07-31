@@ -88,7 +88,8 @@ export default async function YagyaDetailPage({ params }: { params: Promise<{ sl
   return (
     <main className="bg-[#fbf7ef]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-32 sm:px-6 lg:px-8 lg:pt-36">
+      {/* ponytail: spacer already clears fixed header — only need small content gap */}
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-8">
 
         {/* breadcrumb */}
         <nav className="mb-8 text-sm text-slate-400">
@@ -194,20 +195,20 @@ export default async function YagyaDetailPage({ params }: { params: Promise<{ sl
           </p>
           <div className="flex flex-wrap gap-3">
             <a
-              href="tel:+911141001000"
+              href="tel:+919310172512"
               className="inline-flex items-center gap-2 rounded-md border border-[#7A1515]/30 bg-white px-5 py-2.5 text-sm font-semibold text-[#7A1515] transition hover:bg-[#fff7eb]"
             >
               <Phone className="h-4 w-4" />
-              Call Us: +91-11-4100-1000
+              Call Us: +91-9310172512
             </a>
             <a
-              href="https://wa.me/919810190140?text=I%20want%20to%20enquire%20about%20the%20Yagya%20service"
+              href="https://wa.me/919871582404?text=I%20want%20to%20enquire%20about%20the%20Yagya%20service"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-md border border-[#7A1515] bg-[#7A1515] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5f1010]"
             >
               <MessageCircle className="h-4 w-4" />
-              WhatsApp: +91-98101-90140
+              WhatsApp: +91-9871582404
             </a>
           </div>
         </section>

@@ -155,6 +155,9 @@ export const consultationBookingCreateOrderSchema = z
     date_of_birth: optionalIsoDate.refine((value) => !value || new Date(`${value}T00:00:00`) <= new Date(), 'Date of birth cannot be in the future'),
     birth_time: optionalTime,
     birth_place: optionalTrimmedText(200),
+    customer_city: optionalTrimmedText(120),
+    customer_state: optionalTrimmedText(120),
+    customer_country: optionalTrimmedText(120),
     life_situation: optionalTrimmedText(5000),
     preferred_date: optionalIsoDate.refine((value) => {
       if (!value) return true;
@@ -173,6 +176,15 @@ export const consultationBookingCreateOrderSchema = z
     }
     if (!value.birth_place?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['birth_place'], message: 'Birth place is required' });
+    }
+    if (!value.customer_city?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['customer_city'], message: 'City / district is required' });
+    }
+    if (!value.customer_state?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['customer_state'], message: 'State is required' });
+    }
+    if (!value.customer_country?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['customer_country'], message: 'Country is required' });
     }
     if (!value.life_situation?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['life_situation'], message: 'Purpose / area of concern is required' });

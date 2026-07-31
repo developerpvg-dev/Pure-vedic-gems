@@ -1,4 +1,8 @@
 import { getApiErrorMessage, mapApiFieldErrors } from '@/lib/utils/api-validation';
+import { formatPrice } from '@/lib/utils/format';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+
+export { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 
 export interface RazorpayPaymentResponse {
   razorpay_order_id: string;
@@ -108,7 +112,7 @@ export async function startRs101Checkout(
     amount: payment.amount,
     currency: payment.currency,
     name: 'PureVedicGems',
-    description: 'Gem Recommendation - Rs 101',
+    description: `Gem Recommendation - ${formatPrice(RS101_AMOUNT_INR, 'INR')}`,
     order_id: payment.razorpay_order_id,
     prefill: {
       name: formBody.full_name ?? '',

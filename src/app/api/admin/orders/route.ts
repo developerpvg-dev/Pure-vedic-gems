@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { applyAdminOrderFilters, cleanOrderSearch } from '@/lib/admin/order-filters';
 import { OfflineOrderCreateSchema } from '@/lib/validators/order';
+import { formatZodValidationError } from '@/lib/utils/api-validation';
 import { recalculateOrderTotal } from '@/lib/utils/pricing';
 import type { Json } from '@/lib/types/database';
 import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
@@ -140,10 +141,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = OfflineOrderCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
-      { status: 400 },
-    );
+    return NextResponse.json(formatZodValidationError(parsed.error), { status: 400 });
   }
 
   const data = parsed.data;

@@ -3,8 +3,11 @@
 /* eslint-disable react/no-unescaped-entities */
 import type { CSSProperties, ReactNode } from 'react';
 import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
+import { RecoHeroPriceCopy } from '@/components/home/RecoHeroPriceCopy';
 import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
 import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySections';
+import { Money } from '@/components/currency/Money';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 import { TrustCardsSection } from '@/components/home/TrustCardsSection';
@@ -961,7 +964,10 @@ export function PvgReferenceSections({
     variant="rudraksha"
     title="Need a Vedic Yagya guided by trusted experts?"
     copy="Book a personalized Vedic Yagya service aligned to your birth chart, life goals, and current planetary periods with guidance from our in-house experts."
-    primary={{ label: 'Book a Yagya Consultation — ₹101', href: '#gem-recommendation' }}
+    primary={{
+      label: <>Book a Yagya Consultation — <Money amount={RS101_AMOUNT_INR} /></>,
+      href: '#gem-recommendation',
+    }}
     secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas-service' }}
     image="/home/ctas/cta4.webp?v=1"
     imageAlt="Vedic yagyas guidance from Pure Vedic Gems experts"
@@ -1043,11 +1049,7 @@ export function PvgReferenceSections({
       <div className="reco-copy-panel">
         <div className="reco-copy-surface">
           <h2 className="reco-img-heading" id="reco-heading">Get Your remedies<br />Recommendation</h2>
-          <p className="reco-img-sub">Share your birth details, pay just Rs 101, and our Vedic experts will recommend the perfect gemstone aligned with your planetary chart.</p>
-          <div className="reco-img-trust">
-            <span className="reco-img-trust-pill">Rs 101 Only</span>
-            <span className="reco-img-trust-pill">Expert Review</span>
-          </div>
+          <RecoHeroPriceCopy />
         </div>
       </div>
 

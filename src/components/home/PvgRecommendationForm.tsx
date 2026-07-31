@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCurrency } from '@/lib/hooks/useCurrency';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { startRs101Checkout } from '@/lib/consultation/rs101-checkout';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS } from '@/lib/constants/recommendation-purposes';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 
@@ -16,6 +18,9 @@ type Rs101FormState = {
   date_of_birth: string;
   birth_time: string;
   birth_place: string;
+  customer_city: string;
+  customer_state: string;
+  customer_country: string;
   life_situation: string;
   website: string;
 };
@@ -27,12 +32,17 @@ const INITIAL_FORM: Rs101FormState = {
   date_of_birth: '',
   birth_time: '',
   birth_place: '',
+  customer_city: '',
+  customer_state: '',
+  customer_country: '',
   life_situation: '',
   website: '',
 };
 
 export function PvgRecommendationForm() {
   const { user, profile, isAuthenticated } = useAuth();
+  const { format } = useCurrency();
+  const priceLabel = format(RS101_AMOUNT_INR);
   const [form, setForm] = useState<Rs101FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
@@ -89,6 +99,9 @@ export function PvgRecommendationForm() {
       nextErrors.birth_time = 'Please enter a valid birth time.';
     }
     if (!form.birth_place.trim()) nextErrors.birth_place = 'Please enter your birth place.';
+    if (!form.customer_city.trim()) nextErrors.customer_city = 'Please enter your city / district.';
+    if (!form.customer_state.trim()) nextErrors.customer_state = 'Please enter your state.';
+    if (!form.customer_country.trim()) nextErrors.customer_country = 'Please enter your country.';
     if (!form.life_situation.trim()) nextErrors.life_situation = 'Please enter your purpose / area of concern.';
     return nextErrors;
   }
@@ -161,7 +174,7 @@ export function PvgRecommendationForm() {
         </div>
         <h3 className="reco-form-success-title">Recommendation Booked</h3>
         <p className="reco-form-success-copy">
-          Your details and Rs 101 payment are confirmed. A confirmation email has been sent with your booking reference.
+          Your details and {priceLabel} payment are confirmed. A confirmation email has been sent with your booking reference.
           Our Vedic experts will review your birth chart and share your personalized gemstone recommendation.
         </p>
         <p className="reco-form-success-ref">Booking reference: {success.id.slice(0, 8).toUpperCase()}</p>
@@ -182,7 +195,7 @@ export function PvgRecommendationForm() {
 
   return (
     <form className="reco-form-panel" onSubmit={handlePayment} aria-busy={paying} noValidate>
-      <p className="reco-form-price">Expert gemstone recommendation — just Rs 101</p>
+      <p className="reco-form-price">Expert gemstone recommendation — just {priceLabel}</p>
 
       <input
         type="text"
@@ -275,7 +288,49 @@ export function PvgRecommendationForm() {
           />
           {errors.phone ? <p className="reco-form-field-error">{errors.phone}</p> : null}
         </div>
-        <div className="reco-form-group full">
+        <div className="reco-form-group">
+          <label className="reco-form-label" htmlFor="recoCity">City / District</label>
+          <input
+            className="reco-form-input"
+            id="recoCity"
+            type="text"
+            value={form.customer_city}
+            onChange={(event) => updateField('customer_city', event.target.value)}
+            placeholder="City or district"
+            autoComplete="address-level2"
+            required
+          />
+          {errors.customer_city ? <p className="reco-form-field-error">{errors.customer_city}</p> : null}
+        </div>
+        <div className="reco-form-group">
+          <label className="reco-form-label" htmlFor="recoState">State</label>
+          <input
+            className="reco-form-input"
+            id="recoState"
+            type="text"
+            value={form.customer_state}
+            onChange={(event) => updateField('customer_state', event.target.value)}
+            placeholder="State"
+            autoComplete="address-level1"
+            required
+          />
+          {errors.customer_state ? <p className="reco-form-field-error">{errors.customer_state}</p> : null}
+        </div>
+        <div className="reco-form-group">
+          <label className="reco-form-label" htmlFor="recoCountry">Country</label>
+          <input
+            className="reco-form-input"
+            id="recoCountry"
+            type="text"
+            value={form.customer_country}
+            onChange={(event) => updateField('customer_country', event.target.value)}
+            placeholder="Country"
+            autoComplete="country-name"
+            required
+          />
+          {errors.customer_country ? <p className="reco-form-field-error">{errors.customer_country}</p> : null}
+        </div>
+        <div className="reco-form-group">
           <label className="reco-form-label" htmlFor="recoPurpose">Purpose / Area of concern</label>
           <input
             className="reco-form-input"
@@ -337,7 +392,7 @@ export function PvgRecommendationForm() {
         </div>
       ) : (
         <button type="submit" className="reco-form-cta" disabled={paying}>
-          {paying ? 'Opening Payment...' : 'Proceed to Pay Rs 101'}
+          {paying ? 'Opening Payment...' : `Proceed to Pay ${priceLabel}`}
         </button>
       )}
 

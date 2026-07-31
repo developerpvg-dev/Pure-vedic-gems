@@ -964,6 +964,9 @@ export async function PUT(
     d.date_of_birth !== undefined ||
     d.birth_time !== undefined ||
     d.birth_place !== undefined ||
+    d.customer_city !== undefined ||
+    d.customer_state !== undefined ||
+    d.customer_country !== undefined ||
     d.area_of_concern !== undefined ||
     d.enquiry_type !== undefined ||
     d.ip_location !== undefined ||
@@ -977,6 +980,9 @@ export async function PUT(
     if (d.date_of_birth !== undefined) patch.date_of_birth = d.date_of_birth || null;
     if (d.birth_time !== undefined) patch.birth_time = d.birth_time;
     if (d.birth_place !== undefined) patch.birth_place = d.birth_place;
+    if (d.customer_city !== undefined) patch.customer_city = d.customer_city;
+    if (d.customer_state !== undefined) patch.customer_state = d.customer_state;
+    if (d.customer_country !== undefined) patch.customer_country = d.customer_country;
     if (d.area_of_concern !== undefined) patch.area_of_concern = d.area_of_concern;
     if (d.enquiry_type !== undefined) patch.enquiry_type = d.enquiry_type;
     if (d.ip_location !== undefined) patch.ip_location = d.ip_location;

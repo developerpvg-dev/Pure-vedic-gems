@@ -7,6 +7,24 @@ const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 // ─── Indian pincode (6-digit) ───────────────────────────────────────────────
 const PINCODE_REGEX = /^[1-9]\d{5}$/;
 
+/** Strip spaces/dashes and a leading trunk 0 so POS input matches PHONE_REGEX. */
+export function normalizeOfflinePhone(value: string) {
+  const stripped = value.replace(/[\s\-().]/g, '');
+  return stripped.replace(/^0(\d{10})$/, '$1');
+}
+
+export function isValidOfflinePhone(value: string) {
+  return PHONE_REGEX.test(normalizeOfflinePhone(value));
+}
+
+export function isValidIndianPincode(value: string) {
+  return PINCODE_REGEX.test(value.trim());
+}
+
+export function isValidGstin(value: string) {
+  return !value.trim() || GSTIN_REGEX.test(value.trim().toUpperCase());
+}
+
 // ─── Contact Information ────────────────────────────────────────────────────
 export const ContactInfoSchema = z.object({
   full_name: z
@@ -226,15 +244,26 @@ export const OfflineOrderCreateSchema = z
   .object({
     customer_id: z.string().uuid().nullable().optional(),
     contact: z.object({
-      full_name: z.string().min(2).max(200).trim(),
+      full_name: z.string().min(2, 'Name must be at least 2 characters').max(200).trim(),
       email: z
         .string()
         .trim()
         .toLowerCase()
         .optional()
         .default('')
-        .refine((value) => !value || z.string().email().safeParse(value).success, 'Invalid email'),
-      phone: z.string().regex(PHONE_REGEX, 'Please enter a valid phone number'),
+        .refine(
+          (value) => !value || z.string().email().safeParse(value).success,
+          'Please enter a valid email address',
+        ),
+      phone: z
+        .string()
+        .trim()
+        .transform(normalizeOfflinePhone)
+        .pipe(
+          z
+            .string()
+            .regex(PHONE_REGEX, 'Please enter a valid phone number (10 digits, optional +country code)'),
+        ),
       business_name: z.string().trim().max(220).optional().default(''),
       billing_gstin: z
         .string()

@@ -816,7 +816,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       h3('When Not to Wear'),
       p('Avoid if Venus is already exalted in Pisces with strong benefic influence without need. Confirm if Venus rules dusthana houses.'),
       h3('Consult an Astrologer'),
-      p(`${BRAND} advises whether Heera or white sapphire (Shvet Pukhraj) better suits your chart and budget.`),
+      p(`${BRAND} advises whether Heera or white sapphire (Safed Pukhraj) better suits your chart and budget.`),
     ].join('\n'),
     benefits_html: [
       h3('Love & Marriage'),
@@ -1185,11 +1185,11 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
   'white-sapphire': defineGem({
     slug: 'white-sapphire',
     name: 'White Sapphire',
-    hindi: 'Shvet Pukhraj',
+    hindi: 'Safed Pukhraj',
     planet: 'Venus',
-    extraKeywords: ['colorless sapphire', 'shvet pukhraj', 'shukra substitute', 'ceylon white sapphire', 'venus gemstone', 'diamond alternative vedic'],
+    extraKeywords: ['colorless sapphire', 'safed pukhraj', 'shukra substitute', 'ceylon white sapphire', 'venus gemstone', 'diamond alternative vedic'],
     intro:
-      'White Sapphire (Shvet Pukhraj) offers the Venus-aligned brilliance of Shukra in an accessible corundum form. Traditionally prescribed as the Uparatna substitute for diamond, a clean natural white sapphire carries Shukra\'s grace for marriage, arts, and refined living. PureVedicGems certifies colourless sapphires with full treatment disclosure.',
+      'White Sapphire (Safed Pukhraj) offers the Venus-aligned brilliance of Shukra in an accessible corundum form. Traditionally prescribed as the Uparatna substitute for diamond, a clean natural white sapphire carries Shukra\'s grace for marriage, arts, and refined living. PureVedicGems certifies colourless sapphires with full treatment disclosure.',
     hero_benefits: [
       { text: 'Traditional Vedic substitute for Heera when Shukra needs strengthening' },
       { text: 'Supports marriage harmony, beauty, and creative professions' },
@@ -1197,14 +1197,14 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       { text: 'Durable for daily wear (9 Mohs) in white gold or silver settings' },
     ],
     seo_description:
-      'Buy certified White Sapphire (Shvet Pukhraj) online for Venus. Ceylon colourless sapphires, Jyotish substitute for diamond from PureVedicGems.',
+      'Buy certified White Sapphire (Safed Pukhraj) online for Venus. Ceylon colourless sapphires, Jyotish substitute for diamond from PureVedicGems.',
     about_html: [
       p(
-        'White sapphire is colourless corundum—essentially sapphire without trace colour elements. Sanskrit: Shvet Pukhraj. It serves as the classical substitute (upratna) for diamond in Jyotish when Heera is unsuitable or beyond budget.',
+        'White sapphire is colourless corundum—essentially sapphire without trace colour elements. Hindi: Safed Pukhraj. It serves as the classical substitute (upratna) for diamond in Jyotish when Heera is unsuitable or beyond budget.',
         'Fine stones are transparent with minimal cloudiness, showing diamond-like brilliance at lower cost.',
       ),
       h3('Vedic Role'),
-      p('Shukra rules love, arts, vehicles, and luxury. When an astrologer prescribes Venus strengthening but diamond is impractical, Shvet Pukhraj is the first alternative in most North Indian traditions.'),
+      p('Shukra rules love, arts, vehicles, and luxury. When an astrologer prescribes Venus strengthening but diamond is impractical, Safed Pukhraj is the first alternative in most North Indian traditions.'),
       h3('vs Diamond'),
       p('Diamond remains the primary ratna; white sapphire replicates Venus energy through the same corundum family with white (sattvic) colour association.'),
     ].join('\n'),
@@ -1218,11 +1218,11 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       ['Purification', 'Rose water, raw milk, Gangajal, and white flowers'],
     ]),
     who_should_wear_html: [
-      p('Shvet Pukhraj suits weak Venus charts where diamond is not prescribed or affordable. Taurus and Libra ascendants, artists, and marriage seekers commonly wear it after consultation.'),
+      p('Safed Pukhraj suits weak Venus charts where diamond is not prescribed or affordable. Taurus and Libra ascendants, artists, and marriage seekers commonly wear it after consultation.'),
       h3('When Not to Wear'),
       p('If your astrologer specifically demands natural diamond, substituting without approval is incorrect. Avoid if Shukra is already strong and benefic.'),
       h3('Consult an Astrologer'),
-      p(`${BRAND} helps choose between Heera and Shvet Pukhraj based on chart and budget.`),
+      p(`${BRAND} helps choose between Heera and Safed Pukhraj based on chart and budget.`),
     ].join('\n'),
     benefits_html: [
       h3('Marital Harmony'),
@@ -1234,7 +1234,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       h3('Health & Beauty'),
       p('Traditionally linked to reproductive health and complexion—complementary to medical care.'),
       h3('Spiritual Devotion'),
-      p('Friday Lakshmi worship with Shvet Pukhraj is a gentle Shukra remedy.'),
+      p('Friday Lakshmi worship with Safed Pukhraj is a gentle Shukra remedy.'),
     ].join('\n'),
     types_html: [
       h3('Origins'),
@@ -1263,7 +1263,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       p('Friday Shukra mantra with rose water rinse.'),
     ].join('\n'),
     buyer_beware_html: [
-      p('White topaz, cubic zirconia, and synthetic corundum sold as Shvet Pukhraj.'),
+      p('White topaz, cubic zirconia, and synthetic corundum sold as Safed Pukhraj.'),
       h3('Red Flags'),
       ul(['Price like topaz but sold as sapphire', 'No corundum on certificate', 'Glass imitations']),
       h3('Verify'),
@@ -1273,7 +1273,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       { question: 'White sapphire vs diamond for Jyotish?', answer: 'Diamond is primary; white sapphire is the traditional Vedic substitute when prescribed or when Heera is impractical.' },
       { question: 'Which finger?', answer: 'Middle or little finger of right hand in white metal—same as diamond.' },
       { question: 'How many carats?', answer: 'Typically 3–7 carats—larger than diamond equivalent due to lower cost per carat.' },
-      { question: 'Can it replace engagement diamond?', answer: 'Only if astrologer approves Shvet Pukhraj for your chart. Not automatic substitute.' },
+      { question: 'Can it replace engagement diamond?', answer: 'Only if astrologer approves Safed Pukhraj for your chart. Not automatic substitute.' },
       { question: 'Friday rules?', answer: 'Same Shukra mantra and purification as diamond.' },
       { question: 'White sapphire vs zircon?', answer: 'White sapphire is corundum (preferred). Zircon is different mineral—occasional substitute only.' },
       { question: 'Heated white sapphire OK?', answer: 'Unheated preferred; disclosed heat-only may be acceptable to some Jyotish practitioners.' },

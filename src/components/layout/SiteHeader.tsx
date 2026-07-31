@@ -494,8 +494,38 @@ export function SiteHeader() {
           display: flex;
           align-items: center;
           gap: 6px;
+          flex-shrink: 1;
+          min-width: 0;
+        }
+        .pvg-ham {
+          flex-shrink: 0 !important;
+        }
+        .pvg-mob-brand-text {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          margin-left: 10px;
+          min-width: 0;
+        }
+        .pvg-consult-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 7px 13px;
+          background: #7A1515;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          border-radius: 2px;
+          text-decoration: none;
+          white-space: nowrap;
+          margin-left: 10px;
+          transition: background 0.18s;
           flex-shrink: 0;
         }
+        .pvg-consult-short { display: none; }
         .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn:hover {
           background: #f5f0e8 !important;
           color: #7a1515 !important;
@@ -573,10 +603,29 @@ export function SiteHeader() {
           min-height: 36px;
         }
 
-        /* Desktop nav at ≥1024px; phone + tablet use hamburger */
-        .pvg-desk-nav { display: none; }
-        .pvg-mob-nav  { display: flex; }
-        @media (min-width: 1024px) {
+        /* Desktop nav only when there is room for links + CTA; else hamburger */
+        .pvg-desk-nav {
+          display: none;
+          width: 100%;
+          max-width: 1400px;
+          box-sizing: border-box;
+          min-width: 0;
+        }
+        .pvg-desk-nav-center {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          min-width: 0;
+          overflow: hidden;
+        }
+        .pvg-mob-nav {
+          display: flex;
+          width: 100%;
+          box-sizing: border-box;
+          min-width: 0;
+          overflow: hidden;
+        }
+        @media (min-width: 1280px) {
           .pvg-desk-nav { display: flex; }
           .pvg-mob-nav  { display: none; }
         }
@@ -719,14 +768,19 @@ export function SiteHeader() {
             height: 13px !important;
           }
         }
-        @media (max-width: 1279px) {
-          .pvg-action-cluster { gap: 8px; }
-          .pvg-action-divider { height: 30px; }
-          .pvg-action-pill { height: 44px; }
-          .pvg-action-pill .relative > button { width: 38px !important; height: 38px !important; }
+        /* Mid desktop: keep CTA fully visible by shortening label + tightening gaps */
+        @media (max-width: 1439px) {
+          .pvg-action-cluster { gap: 6px; }
+          .pvg-action-divider { height: 28px; }
+          .pvg-action-pill { height: 42px; padding: 0 4px; }
+          .pvg-action-pill .relative > button { width: 36px !important; height: 36px !important; }
+          .pvg-consult-btn { margin-left: 6px; padding: 7px 10px; letter-spacing: 0.08em; }
+          .pvg-consult-full { display: none; }
+          .pvg-consult-short { display: inline; }
+          .pvg-nav-link { padding-left: 8px !important; padding-right: 8px !important; }
         }
         @media (max-width: 639px) {
-          .pvg-mob-action-cluster { gap: 5px; }
+          .pvg-mob-action-cluster { gap: 4px; }
           .pvg-mob-action-divider { height: 24px; }
           .pvg-mob-icon-btn { width: 34px; height: 34px; }
           .pvg-mob-action-pill { height: 38px; padding: 0 5px; }
@@ -746,7 +800,6 @@ export function SiteHeader() {
             display: none !important;
           }
           .pvg-ham {
-            flex-shrink: 0 !important;
             margin-left: 2px !important;
           }
           .pvg-mob-action-cluster {
@@ -758,6 +811,12 @@ export function SiteHeader() {
           .pvg-mob-nav {
             padding: 0 10px !important;
           }
+        }
+        /* Narrow phones: drop brand wordmark + currency so hamburger always fits */
+        @media (max-width: 420px) {
+          .pvg-mob-brand-text { display: none !important; }
+          .pvg-fx-root.pvg-fx-mobile { display: none !important; }
+          .pvg-mob-nav { padding: 0 8px !important; }
         }
         @media (max-width: 1180px) {
           .pvg-fx-root.pvg-fx-nav .pvg-fx-code {
@@ -859,10 +918,10 @@ export function SiteHeader() {
         {/* ── Navbar ── */}
         <nav aria-label="Main navigation" style={{ background: '#fff', borderBottom: '2px solid #7A1515' }}>
 
-          {/* Desktop — visible at ≥1024px */}
+          {/* Desktop — visible at ≥1280px */}
           <div
           className="pvg-desk-nav"
-            style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 28px', height: '74px', alignItems: 'center', gap: '16px' }}
+            style={{ margin: '0 auto', padding: '0 28px', height: '74px', alignItems: 'center', gap: '16px' }}
           >
             {/* Logo */}
             <Link href="/" aria-label="Pure Vedic Gems — Home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
@@ -878,7 +937,7 @@ export function SiteHeader() {
             </Link>
 
             {/* Primary nav */}
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <div className="pvg-desk-nav-center">
               <ul style={{ display: 'flex', alignItems: 'center', listStyle: 'none', height: '74px', margin: 0, padding: 0 }}>
                 {HEADER_NAV_ITEMS.map((item) => (
                   <DesktopNavLink key={item.label} item={item} categoryGroups={categoryGroups} />
@@ -915,44 +974,29 @@ export function SiteHeader() {
               </div>
               <Link
                 href="/#gem-recommendation"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '7px 13px',
-                  background: '#7A1515',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  borderRadius: '2px',
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                  marginLeft: '10px',
-                  transition: 'background 0.18s',
-                }}
+                className="pvg-consult-btn"
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#a01c1c'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '#7A1515'; }}
               >
                 <CalendarSvg />
-                Book Consultation
+                <span className="pvg-consult-full">Book Consultation</span>
+                <span className="pvg-consult-short">Consult</span>
               </Link>
             </div>
           </div>
 
-          {/* Mobile — visible below md (768 px) */}
+          {/* Mobile/tablet — visible below 1280px */}
           <div className="pvg-mob-nav" style={{ height: '62px', alignItems: 'center', padding: '0 16px' }}>
-            <Link href="/" aria-label="Pure Vedic Gems home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
+            <Link href="/" aria-label="Pure Vedic Gems home" style={{ display: 'flex', alignItems: 'center', flexShrink: 1, minWidth: 0, textDecoration: 'none' }}>
               <Image src="/PVG NEW LOGO DESIGN.webp" alt="Pure Vedic Gems" width={40} height={40} priority
                 style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
+              <div className="pvg-mob-brand-text">
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority
                   style={{ width: '120px', height: '24px', objectFit: 'contain', display: 'block' }} />
                 <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '3px', paddingLeft: '12px' }}>Since 1937</span>
               </div>
             </Link>
-            <div style={{ flex: 1 }} />
+            <div style={{ flex: 1, minWidth: 8 }} />
             <div className="pvg-mob-action-cluster">
               <CurrencySelector variant="mobile" />
               <button type="button" onClick={openSearch} aria-label="Search"
@@ -983,15 +1027,15 @@ export function SiteHeader() {
                   <UserAuthButton iconSize={18} className="pvg-nav-icon pvg-nav-action" />
                 </Suspense>
               </div>
-              {/* Custom 3-line hamburger matching static HTML */}
-              <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open menu" aria-expanded={mobileOpen} aria-controls="mobDrawer"
-                className="pvg-ham"
-                style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px', borderRadius: '2px', transition: 'background 0.2s', marginLeft: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                <span style={{ display: 'block', height: '1.5px', width: '20px', background: '#3A3A3A', borderRadius: '2px' }} />
-                <span style={{ display: 'block', height: '1.5px', width: '14px', background: '#3A3A3A', borderRadius: '2px', alignSelf: 'flex-start', marginLeft: '3px' }} />
-                <span style={{ display: 'block', height: '1.5px', width: '20px', background: '#3A3A3A', borderRadius: '2px' }} />
-              </button>
             </div>
+            {/* Outside action cluster so it never gets pushed off-screen */}
+            <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open menu" aria-expanded={mobileOpen} aria-controls="mobDrawer"
+              className="pvg-ham"
+              style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px', borderRadius: '2px', transition: 'background 0.2s', marginLeft: '6px', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+              <span style={{ display: 'block', height: '1.5px', width: '20px', background: '#3A3A3A', borderRadius: '2px' }} />
+              <span style={{ display: 'block', height: '1.5px', width: '14px', background: '#3A3A3A', borderRadius: '2px', alignSelf: 'flex-start', marginLeft: '3px' }} />
+              <span style={{ display: 'block', height: '1.5px', width: '20px', background: '#3A3A3A', borderRadius: '2px' }} />
+            </button>
           </div>
         </nav>
       </header>

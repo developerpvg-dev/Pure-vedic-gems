@@ -114,6 +114,9 @@ function buildAstroPacket(lead: EnquiryLead) {
     `Date of Birth: ${formatDob(lead.date_of_birth)}`,
     `Time of Birth: ${lead.birth_time || '—'}`,
     `Place of Birth: ${lead.birth_place || '—'}`,
+    `City / District: ${lead.customer_city || '—'}`,
+    `State: ${lead.customer_state || '—'}`,
+    `Country: ${lead.customer_country || '—'}`,
     `Area of Concern: ${lead.area_of_concern || '—'}`,
   ].join('\n');
 }

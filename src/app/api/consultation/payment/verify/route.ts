@@ -9,6 +9,7 @@ import { consultationPaymentVerifySchema } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { hasValidBookingToken } from '@/lib/security/booking-token';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import type { Consultation, Json } from '@/lib/types/database';
 
 function geoFromRequest(request: NextRequest) {
@@ -269,16 +270,22 @@ export async function POST(request: NextRequest) {
     console.error('[Consultation payment] CRM lead create failed:', error);
   }
 
+  const isRemedies =
+    Number(updated.amount_inr) === RS101_AMOUNT_INR ||
+    (updated.plan_title_snapshot || '').toLowerCase().includes('gem recommendation');
+
   await createInAppNotifications([
     ...(updated.customer_id
       ? [{
           audience: 'user' as const,
           recipientUserId: updated.customer_id,
           type: 'consultation_confirmed',
-          title: 'Consultation confirmed',
-          message: `${updated.plan_title_snapshot ?? 'Your consultation'} is confirmed. Our team will coordinate the next steps.`,
+          title: isRemedies ? 'Remedies recommendation confirmed' : 'Consultation confirmed',
+          message: isRemedies
+            ? `${updated.plan_title_snapshot ?? 'Your remedies recommendation'} is confirmed. Our experts will review your birth details shortly.`
+            : `${updated.plan_title_snapshot ?? 'Your consultation'} is confirmed. Our team will coordinate the next steps.`,
           href: '/account',
-          entityType: 'consultation',
+          entityType: 'consultation' as const,
           entityId: updated.id,
           metadata: { plan_title: updated.plan_title_snapshot, amount_inr: updated.amount_inr },
         }]

@@ -43,6 +43,9 @@ export type EnquiryLead = {
   date_of_birth?: string | null;
   birth_time?: string | null;
   birth_place?: string | null;
+  customer_city?: string | null;
+  customer_state?: string | null;
+  customer_country?: string | null;
   area_of_concern?: string | null;
   details_confirmed?: boolean;
   payment_received?: boolean;
@@ -435,6 +438,9 @@ export function EnquiryDetail({
     date_of_birth: lead.date_of_birth || '',
     birth_time: lead.birth_time || '',
     birth_place: lead.birth_place || '',
+    customer_city: lead.customer_city || '',
+    customer_state: lead.customer_state || '',
+    customer_country: lead.customer_country || '',
     area_of_concern: lead.area_of_concern || '',
     enquiry_type: lead.enquiry_type || '',
   });
@@ -452,6 +458,9 @@ export function EnquiryDetail({
       date_of_birth: lead.date_of_birth || '',
       birth_time: lead.birth_time || '',
       birth_place: lead.birth_place || '',
+      customer_city: lead.customer_city || '',
+      customer_state: lead.customer_state || '',
+      customer_country: lead.customer_country || '',
       area_of_concern: lead.area_of_concern || '',
       enquiry_type: lead.enquiry_type || '',
     });
@@ -464,6 +473,9 @@ export function EnquiryDetail({
     lead.date_of_birth,
     lead.birth_time,
     lead.birth_place,
+    lead.customer_city,
+    lead.customer_state,
+    lead.customer_country,
     lead.area_of_concern,
     lead.enquiry_type,
     lead.assigned_to,
@@ -555,6 +567,9 @@ export function EnquiryDetail({
                 <EditField label="DOB" type="date" value={details.date_of_birth} onChange={(date_of_birth) => setDetails((v) => ({ ...v, date_of_birth }))} />
                 <EditField label="Birth time" value={details.birth_time} onChange={(birth_time) => setDetails((v) => ({ ...v, birth_time }))} />
                 <EditField label="Birth place" value={details.birth_place} onChange={(birth_place) => setDetails((v) => ({ ...v, birth_place }))} />
+                <EditField label="City / District" value={details.customer_city} onChange={(customer_city) => setDetails((v) => ({ ...v, customer_city }))} />
+                <EditField label="State" value={details.customer_state} onChange={(customer_state) => setDetails((v) => ({ ...v, customer_state }))} />
+                <EditField label="Country" value={details.customer_country} onChange={(customer_country) => setDetails((v) => ({ ...v, customer_country }))} />
                 <EditField label="Purpose / area of concern" value={details.area_of_concern} onChange={(area_of_concern) => setDetails((v) => ({ ...v, area_of_concern }))} />
               </div>
               <div className="mt-3 flex justify-end gap-2">
@@ -572,6 +587,9 @@ export function EnquiryDetail({
                       date_of_birth: details.date_of_birth || null,
                       birth_time: details.birth_time.trim() || null,
                       birth_place: details.birth_place.trim() || null,
+                      customer_city: details.customer_city.trim() || null,
+                      customer_state: details.customer_state.trim() || null,
+                      customer_country: details.customer_country.trim() || null,
                       area_of_concern: details.area_of_concern.trim() || null,
                     });
                     setEditingDetails(false);
@@ -591,6 +609,9 @@ export function EnquiryDetail({
               <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
+              <ResponseField label="City / District" value={lead.customer_city || ''} />
+              <ResponseField label="State" value={lead.customer_state || ''} />
+              <ResponseField label="Country" value={lead.customer_country || ''} />
               <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} wide />
             </div>
           )}
@@ -853,6 +874,9 @@ export function EnquiryDetail({
               <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
+              <ResponseField label="City / District" value={lead.customer_city || ''} />
+              <ResponseField label="State" value={lead.customer_state || ''} />
+              <ResponseField label="Country" value={lead.customer_country || ''} />
               <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} wide />
             </div>
             <button
@@ -1016,6 +1040,9 @@ export function EnquiryDetail({
                 <EditField label="DOB" type="date" value={details.date_of_birth} onChange={(date_of_birth) => setDetails((v) => ({ ...v, date_of_birth }))} />
                 <EditField label="Birth time" value={details.birth_time} onChange={(birth_time) => setDetails((v) => ({ ...v, birth_time }))} />
                 <EditField label="Birth place" value={details.birth_place} onChange={(birth_place) => setDetails((v) => ({ ...v, birth_place }))} />
+                <EditField label="City / District" value={details.customer_city} onChange={(customer_city) => setDetails((v) => ({ ...v, customer_city }))} />
+                <EditField label="State" value={details.customer_state} onChange={(customer_state) => setDetails((v) => ({ ...v, customer_state }))} />
+                <EditField label="Country" value={details.customer_country} onChange={(customer_country) => setDetails((v) => ({ ...v, customer_country }))} />
                 <EditField label="Purpose / area of concern" value={details.area_of_concern} onChange={(area_of_concern) => setDetails((v) => ({ ...v, area_of_concern }))} />
               </div>
               <label className="mt-3 block text-xs font-medium text-gray-500">
@@ -1052,6 +1079,9 @@ export function EnquiryDetail({
                       date_of_birth: details.date_of_birth || null,
                       birth_time: details.birth_time.trim() || null,
                       birth_place: details.birth_place.trim() || null,
+                      customer_city: details.customer_city.trim() || null,
+                      customer_state: details.customer_state.trim() || null,
+                      customer_country: details.customer_country.trim() || null,
                       area_of_concern: details.area_of_concern.trim() || null,
                       enquiry_type: details.enquiry_type || null,
                     });
@@ -1073,6 +1103,9 @@ export function EnquiryDetail({
               <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
+              <ResponseField label="City / District" value={lead.customer_city || ''} />
+              <ResponseField label="State" value={lead.customer_state || ''} />
+              <ResponseField label="Country" value={lead.customer_country || ''} />
               <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} />
               <ResponseField label="Enquiry type" value={lead.enquiry_type || ''} wide />
               {lead.payment_received ? (

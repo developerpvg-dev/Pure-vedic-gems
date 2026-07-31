@@ -1820,6 +1820,54 @@ export interface Database {
         };
         Relationships: [];
       };
+      recommendation_reports: {
+        Row: {
+          id: string;
+          title: string;
+          status: string;
+          customer: Json;
+          enquiry_id: string | null;
+          blocks: Json;
+          chart_image_url: string | null;
+          pdf_path: string | null;
+          public_token: string;
+          sent_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title?: string;
+          status?: string;
+          customer?: Json;
+          enquiry_id?: string | null;
+          blocks?: Json;
+          chart_image_url?: string | null;
+          pdf_path?: string | null;
+          public_token?: string;
+          sent_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          status?: string;
+          customer?: Json;
+          enquiry_id?: string | null;
+          blocks?: Json;
+          chart_image_url?: string | null;
+          pdf_path?: string | null;
+          public_token?: string;
+          sent_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       product_configurations: {
         Row: {
           id: string;
@@ -2110,6 +2158,9 @@ export interface Database {
           date_of_birth: string | null;
           birth_time: string | null;
           birth_place: string | null;
+          customer_city: string | null;
+          customer_state: string | null;
+          customer_country: string | null;
           life_situation: string | null;
           consultation_type: string | null;
           mode: string | null;
@@ -2160,6 +2211,9 @@ export interface Database {
           date_of_birth?: string | null;
           birth_time?: string | null;
           birth_place?: string | null;
+          customer_city?: string | null;
+          customer_state?: string | null;
+          customer_country?: string | null;
           life_situation?: string | null;
           consultation_type?: string | null;
           mode?: string | null;
@@ -2210,6 +2264,9 @@ export interface Database {
           date_of_birth?: string | null;
           birth_time?: string | null;
           birth_place?: string | null;
+          customer_city?: string | null;
+          customer_state?: string | null;
+          customer_country?: string | null;
           life_situation?: string | null;
           consultation_type?: string | null;
           mode?: string | null;
@@ -2270,6 +2327,9 @@ export interface Database {
           date_of_birth: string | null;
           birth_time: string | null;
           birth_place: string | null;
+          customer_city: string | null;
+          customer_state: string | null;
+          customer_country: string | null;
           area_of_concern: string | null;
           details_confirmed: boolean;
           payment_received: boolean;
@@ -2326,6 +2386,9 @@ export interface Database {
           date_of_birth?: string | null;
           birth_time?: string | null;
           birth_place?: string | null;
+          customer_city?: string | null;
+          customer_state?: string | null;
+          customer_country?: string | null;
           area_of_concern?: string | null;
           details_confirmed?: boolean;
           payment_received?: boolean;
@@ -2382,6 +2445,9 @@ export interface Database {
           date_of_birth?: string | null;
           birth_time?: string | null;
           birth_place?: string | null;
+          customer_city?: string | null;
+          customer_state?: string | null;
+          customer_country?: string | null;
           area_of_concern?: string | null;
           details_confirmed?: boolean;
           payment_received?: boolean;

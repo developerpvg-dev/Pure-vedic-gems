@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
@@ -54,6 +54,7 @@ const NAV_GROUPS = [
     label: 'Operations',
     links: [
       { href: '/admin/leads', label: 'Leads', icon: MessageSquare, match: 'prefix' as const },
+      { href: '/admin/recommendations', label: 'Recommendations', icon: FileText, match: 'prefix' as const },
       { href: '/admin/agent-sessions', label: 'Ratna AI Sessions', icon: Bot, match: 'prefix' as const },
       { href: '/admin/consultation-plans', label: 'Consultation Plans', icon: CalendarClock, match: 'prefix' as const },
       { href: '/admin/reviews', label: 'Product Reviews', icon: Star, match: 'prefix' as const },
@@ -84,6 +85,7 @@ const CONTENT_HIDDEN_HREFS = new Set([
   '/admin/design-jobs',
   '/admin/rewards',
   '/admin/leads',
+  '/admin/recommendations',
   '/admin/agent-sessions',
   '/admin/finance',
   '/admin/compliance',

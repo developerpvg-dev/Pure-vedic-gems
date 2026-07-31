@@ -1,6 +1,7 @@
 import { sendBrandedEmail, sendBrandedEmailToAdmin } from '@/lib/resend/send-email';
 import { getEmailSiteUrl, VEDIC_DISCLAIMER } from '@/lib/resend/email-config';
 import { TransactionalEmail } from '@/lib/resend/templates/TransactionalEmail';
+import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import type { ConsultationCreateInput } from '@/lib/validators/consultation';
 
 export interface PaidConsultationEmailInput {
@@ -38,6 +39,11 @@ function money(amount: number | null, currency: string) {
   return `${currency} ${amount.toLocaleString('en-IN')}`;
 }
 
+function isRs101Booking(input: PaidConsultationEmailInput) {
+  const title = (input.plan_title || '').toLowerCase();
+  return Number(input.amount_inr) === RS101_AMOUNT_INR || title.includes('gem recommendation');
+}
+
 function consultationDetails(input: PaidConsultationEmailInput) {
   return [
     { label: 'Booking ID', value: input.id },
@@ -59,14 +65,23 @@ function consultationDetails(input: PaidConsultationEmailInput) {
 export async function sendConsultationBookingEmails(input: PaidConsultationEmailInput): Promise<ConsultationEmailResult> {
   const accountUrl = `${getEmailSiteUrl()}/account/consultations`;
   const adminUrl = `${getEmailSiteUrl()}/admin/leads?type=consultation`;
+  const remedies = isRs101Booking(input);
 
   const [adminId, customerId] = await Promise.all([
     sendBrandedEmailToAdmin(
-      `Paid consultation booked — ${input.full_name}`,
+      remedies
+        ? `Remedies recommendation booked — ${input.full_name}`
+        : `Paid consultation booked — ${input.full_name}`,
       TransactionalEmail({
-        preview: `Paid consultation from ${input.full_name}`,
-        heading: 'Paid Consultation Booked',
-        paragraphs: ['A consultation payment has been verified. Please review birth details and coordinate scheduling.'],
+        preview: remedies
+          ? `Remedies recommendation from ${input.full_name}`
+          : `Paid consultation from ${input.full_name}`,
+        heading: remedies ? 'Remedies Recommendation Booked' : 'Paid Consultation Booked',
+        paragraphs: [
+          remedies
+            ? 'A ₹101 remedies recommendation payment has been verified. Please assign a telecaller and review birth details.'
+            : 'A consultation payment has been verified. Please review birth details and coordinate scheduling.',
+        ],
         highlight: { label: 'Booking ID', value: input.id },
         details: [
           { label: 'Name', value: input.full_name },
@@ -74,25 +89,34 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
           { label: 'Phone', value: input.phone },
           ...consultationDetails(input).slice(1),
         ],
-        cta: { label: 'Open consultation lead', href: adminUrl },
+        cta: { label: remedies ? 'Open remedies lead' : 'Open consultation lead', href: adminUrl },
       }),
       'consultations'
     ),
     sendBrandedEmail({
       to: input.email,
-      subject: 'Consultation booking confirmed | PureVedicGems',
+      subject: remedies
+        ? 'Remedies recommendation confirmed | PureVedicGems'
+        : 'Consultation booking confirmed | PureVedicGems',
       channel: 'consultations',
       react: TransactionalEmail({
-        preview: 'Your Pure Vedic Gems consultation is booked',
-        heading: 'Consultation Confirmed',
+        preview: remedies
+          ? 'Your Pure Vedic Gems remedies recommendation is confirmed'
+          : 'Your Pure Vedic Gems consultation is booked',
+        heading: remedies ? 'Remedies Recommendation Confirmed' : 'Consultation Confirmed',
         greeting: `Namaste ${input.full_name},`,
-        paragraphs: [
-          'Thank you for booking a paid Vedic consultation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
-          'Our experts will review your birth details and contact you to confirm the final schedule.',
-        ],
+        paragraphs: remedies
+          ? [
+              'Thank you for requesting a remedies recommendation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
+              'Our Vedic experts will review your birth details and share your personalized gemstone recommendation.',
+            ]
+          : [
+              'Thank you for booking a paid Vedic consultation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
+              'Our experts will review your birth details and contact you to confirm the final schedule.',
+            ],
         highlight: { label: 'Booking ID', value: input.id },
         details: consultationDetails(input),
-        cta: { label: 'View my consultations', href: accountUrl },
+        cta: { label: remedies ? 'View my booking' : 'View my consultations', href: accountUrl },
         disclaimer: VEDIC_DISCLAIMER,
       }),
     }),

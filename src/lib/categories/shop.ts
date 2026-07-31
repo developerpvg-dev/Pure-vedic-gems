@@ -114,7 +114,7 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, KnownGemSubcategoryMeta> = 
   'blue-sapphire': { category: 'navaratna', label: 'Blue Sapphire (Neelam)', desc: 'Certified Blue Sapphire gemstones for Shani, with expert consultation recommended.' },
   hessonite: { category: 'navaratna', label: 'Hessonite (Gomed)', desc: 'Natural Hessonite gemstones for Rahu, with lab and origin disclosure where available.' },
   'cats-eye': { category: 'navaratna', label: "Cat's Eye (Lehsunia)", desc: 'Natural Cat Eye gemstones for Ketu, selected with careful Jyotish guidance.' },
-  'white-sapphire': { category: 'navaratna', label: 'White Sapphire (Shvet Pukhraj)', desc: 'Certified White Sapphire gemstones, the traditional Vedic substitute for Diamond aligned with Shukra (Venus).' },
+  'white-sapphire': { category: 'navaratna', label: 'White Sapphire (Safed Pukhraj)', desc: 'Certified White Sapphire gemstones, the traditional Vedic substitute for Diamond aligned with Shukra (Venus).' },
   'exclusive-gems': {
     category: 'navaratna',
     label: 'Exclusive Gems',

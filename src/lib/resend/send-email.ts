@@ -6,12 +6,19 @@ import type { ReactElement } from 'react';
 import { getResendClient } from '@/lib/resend/client';
 import { getFromAddress, hasResendConfigured, type EmailChannel } from '@/lib/resend/email-config';
 
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+};
+
 export type SendBrandedEmailInput = {
   to: string | string[];
   subject: string;
   react: ReactElement;
   channel?: EmailChannel;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 };
 
 export async function sendBrandedEmail({
@@ -20,6 +27,7 @@ export async function sendBrandedEmail({
   react,
   channel = 'general',
   replyTo,
+  attachments,
 }: SendBrandedEmailInput): Promise<string | null> {
   if (!hasResendConfigured()) {
     console.warn('[Resend] Skipping email — RESEND_API_KEY is not configured:', subject);
@@ -35,6 +43,15 @@ export async function sendBrandedEmail({
       subject,
       react,
       ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(attachments?.length
+        ? {
+            attachments: attachments.map((a) => ({
+              filename: a.filename,
+              content: a.content,
+              content_type: a.contentType,
+            })),
+          }
+        : {}),
     });
 
     if (error) {

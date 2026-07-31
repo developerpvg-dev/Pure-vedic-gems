@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { OfflineOrderItemSchema, FulfillmentTypeSchema, ShippingAddressSchema, ShippingMethodIdSchema } from '@/lib/validators/order';
+import { formatZodValidationError } from '@/lib/utils/api-validation';
 import { recalculateOrderTotal } from '@/lib/utils/pricing';
 
 const QuoteSchema = z.object({
@@ -32,10 +33,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = QuoteSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
-      { status: 400 },
-    );
+    return NextResponse.json(formatZodValidationError(parsed.error), { status: 400 });
   }
 
   const data = parsed.data;
