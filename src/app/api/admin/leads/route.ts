@@ -270,7 +270,7 @@ function applyEnquiryFilters(
   return q;
 }
 
-function normalizeEnquiryRow(row: Record<string, unknown>) {
+function normalizeEnquiryRow(row: Record<string, unknown>): Record<string, unknown> {
   let stage = (row.pipeline_stage as string | null) || 'new';
   // Display-only: explained without outcome shows on Conversion chip
   if (stage === 'remedies_explained' && !row.conversion_status) stage = 'conversion';

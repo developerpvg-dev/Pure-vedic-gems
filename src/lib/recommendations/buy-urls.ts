@@ -8,12 +8,6 @@ type ProductRow = {
   sub_category: string | null;
 };
 
-type ProductsQuery = {
-  select: (cols: string) => {
-    in: (col: string, values: string[]) => Promise<{ data: ProductRow[] | null; error: { message: string } | null }>;
-  };
-};
-
 function visitProducts(blocks: ReportBlock[], fn: (p: ProductRef) => ProductRef): ReportBlock[] {
   return blocks.map((block) => {
     if (block.type === 'primaryStone') {
@@ -48,10 +42,12 @@ export function applyShopBuyUrls(blocks: ReportBlock[], siteUrl: string, product
   });
 }
 
+// ponytail: loose db type — Supabase generics blow up TS2589 if threaded through here
 export async function withShopBuyUrls(
   blocks: ReportBlock[],
   siteUrl: string,
-  db: { from: (table: string) => ProductsQuery }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: { from: (table: string) => any }
 ): Promise<ReportBlock[]> {
   const ids = new Set<string>();
   const slugs = new Set<string>();
@@ -68,7 +64,7 @@ export async function withShopBuyUrls(
   if (ids.size) {
     const { data, error } = await db.from('products').select('id, slug, category, sub_category').in('id', [...ids]);
     if (error) console.warn('[recommendations] buy url by id', error.message);
-    for (const row of data ?? []) {
+    for (const row of (data ?? []) as ProductRow[]) {
       if (!seen.has(row.id)) {
         seen.add(row.id);
         rows.push(row);
@@ -79,7 +75,7 @@ export async function withShopBuyUrls(
   if (slugs.size) {
     const { data, error } = await db.from('products').select('id, slug, category, sub_category').in('slug', [...slugs]);
     if (error) console.warn('[recommendations] buy url by slug', error.message);
-    for (const row of data ?? []) {
+    for (const row of (data ?? []) as ProductRow[]) {
       if (!seen.has(row.id)) {
         seen.add(row.id);
         rows.push(row);
