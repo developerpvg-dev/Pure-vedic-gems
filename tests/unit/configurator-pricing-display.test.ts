@@ -39,7 +39,7 @@ describe('buildConfiguratorPriceTotals', () => {
 
     expect(totals.lines.map((l) => l.label)).toEqual([
       'Gemstone',
-      'Making charge (fixed)',
+      'Est. mounting',
       'Diamond add-on',
       'Certification',
     ]);
@@ -71,9 +71,11 @@ describe('buildConfiguratorPriceTotals', () => {
       productCategory: 'gemstone',
     });
 
-    const laborLine = totals.lines.find((l) => l.key === 'labor');
-    expect(laborLine?.label).toBe('Labor charge');
-    expect(laborLine?.amount).toBe(6000);
+    const mountingLine = totals.lines.find((l) => l.key === 'est-mounting');
+    expect(mountingLine?.label).toBe('Est. mounting');
+    expect(mountingLine?.amount).toBe(30000);
+    expect(mountingLine?.detail).toBe('5 g');
+    expect(totals.lines.some((l) => l.key === 'labor' || l.key === 'metal-value')).toBe(false);
     expect(totals.gst_metal).toBe(720);
     expect(totals.gst_making).toBe(300);
     expect(totals.gst_jewelry).toBe(1020);

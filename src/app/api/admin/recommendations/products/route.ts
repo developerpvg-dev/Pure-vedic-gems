@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { getSiteUrl } from '@/lib/resend/email-config';
+import { productHref } from '@/lib/categories/storefront';
 import type { ProductRef } from '@/lib/recommendations/blocks';
 
 function firstImage(images: unknown): string | null {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   let query = admin
     .from('products')
-    .select('id, name, slug, origin, price, price_per_carat, price_mode, images, is_active')
+    .select('id, name, slug, category, sub_category, origin, price, price_per_carat, price_mode, images, is_active')
     .eq('is_active', true)
     .order('name')
     .limit(24);
@@ -41,16 +42,21 @@ export async function GET(request: NextRequest) {
   }
 
   const site = getSiteUrl();
-  const products: (ProductRef & { id: string })[] = (data ?? []).map((p) => ({
-    id: p.id,
-    productId: p.id,
-    name: p.name,
-    imageUrl: firstImage(p.images),
-    slug: p.slug,
-    priceLabel: priceLabel(p.price, p.price_per_carat as number | null, p.price_mode),
-    origin: p.origin,
-    buyUrl: p.slug ? `${site}/products/${p.slug}` : null,
-  }));
+  const products: (ProductRef & { id: string })[] = (data ?? []).map((p) => {
+    const path = p.slug
+      ? productHref({ category: p.category, sub_category: p.sub_category, slug: p.slug })
+      : null;
+    return {
+      id: p.id,
+      productId: p.id,
+      name: p.name,
+      imageUrl: firstImage(p.images),
+      slug: p.slug,
+      priceLabel: priceLabel(p.price, p.price_per_carat as number | null, p.price_mode),
+      origin: p.origin,
+      buyUrl: path ? `${site}${path}` : null,
+    };
+  });
 
   return NextResponse.json({ products });
 }

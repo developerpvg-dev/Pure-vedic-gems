@@ -14,6 +14,7 @@ import {
   Filter,
   CheckCircle2,
   BarChart3,
+  Download,
 } from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminStatCard } from '@/components/admin/AdminPageShell';
@@ -371,6 +372,23 @@ export default function LeadsPage() {
     setPage(1);
   }
 
+  function exportQueryString() {
+    const params = new URLSearchParams({ type: 'enquiry', format: 'xlsx' });
+    params.set('enquiry_type', kind === 'remedies' ? 'remedies' : 'consultation');
+    if (pipeline) params.set('pipeline', pipeline);
+    else params.set('queue', queue);
+    if (assignedTo) params.set('assigned_to', assignedTo);
+    if (astrologerId) params.set('astrologer_id', astrologerId);
+    if (remarkFilter) params.set('remark', remarkFilter);
+    if (conversionFilter) params.set('conversion', conversionFilter);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    if (followUp) params.set('follow_up', followUp);
+    if (unassignedOnly) params.set('unassigned', '1');
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    return params.toString();
+  }
+
   const pastOutcomeBars = useMemo(() => {
     const entries = Object.entries(summary.pastOutcomes ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const max = Math.max(1, ...entries.map(([, n]) => n));
@@ -398,13 +416,22 @@ export default function LeadsPage() {
           </p>
         </div>
         {isManagerDesk ? (
-          <Link
-            href="/admin/leads/metrics"
-            className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-100"
-          >
-            <BarChart3 className="h-3.5 w-3.5" />
-            Lead metrics
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={`/api/admin/leads?${exportQueryString()}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export Excel
+            </a>
+            <Link
+              href="/admin/leads/metrics"
+              className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-900 hover:bg-indigo-100"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              Lead metrics
+            </Link>
+          </div>
         ) : null}
       </div>
 

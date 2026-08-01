@@ -95,7 +95,7 @@ export function ReportEditor({ initial }: { initial: RecommendationReport }) {
       const res = await fetch(`/api/admin/recommendations/${initial.id}/pdf`, { method: 'POST' });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'PDF failed');
+        throw new Error(data.detail || data.error || 'PDF failed');
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

@@ -14,7 +14,7 @@ import type { Order } from '@/lib/types/database';
 
 /**
  * POST /api/orders/[id]/cancel
- * Customer cancels their own order within 24h (early statuses only). Restores stock automatically.
+ * Customer cancels their own order within 12h (early statuses only). Restores stock automatically.
  */
 export async function POST(
   _request: NextRequest,
@@ -68,7 +68,7 @@ export async function POST(
     return NextResponse.json(
       {
         error: statusOk
-          ? 'Orders can only be cancelled within 24 hours of placing them. Please contact us for help.'
+          ? 'Orders can only be cancelled within 12 hours of placing them. Please contact us for help.'
           : 'This order can no longer be cancelled online. Please contact us and we will help with a return or refund.',
       },
       { status: 400 },

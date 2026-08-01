@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { getSiteUrl } from '@/lib/resend/email-config';
+import { withShopBuyUrls } from '@/lib/recommendations/buy-urls';
 import { mapReportRow } from '@/lib/recommendations/normalize';
 import { renderReportHtml } from '@/lib/recommendations/render-html';
 import { htmlToPdf } from '@/lib/recommendations/pdf';
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -35,12 +39,15 @@ export async function POST(_request: NextRequest, ctx: Ctx) {
   }
 
   const report = mapReportRow(data as Record<string, unknown>);
+  const siteUrl = getSiteUrl();
+  const blocks = await withShopBuyUrls(report.blocks, siteUrl, admin);
   const html = renderReportHtml({
     title: report.title,
     customer: report.customer,
-    blocks: report.blocks,
+    blocks,
     chartImageUrl: report.chart_image_url,
-    siteUrl: getSiteUrl(),
+    siteUrl,
+    embedLocalAssets: true,
   });
 
   let pdfBuffer: Buffer;

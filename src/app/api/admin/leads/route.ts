@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as XLSX from 'xlsx';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { sanitizeSearchTerm } from '@/lib/utils/search';
@@ -8,6 +9,43 @@ import { mergeBirthFields, needsBirthHydration } from '@/lib/leads/hydrate';
 import { attachDuplicateHints } from '@/lib/leads/duplicates';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
 import type { Consultation } from '@/lib/types/database';
+
+// ponytail: hard cap — raise or page if managers regularly export >5k filtered rows
+const LEADS_EXPORT_LIMIT = 5000;
+
+function toLeadExportRows(
+  rows: Record<string, unknown>[],
+  telecallerNames: Map<string, string>
+) {
+  return rows.map((r) => ({
+    Lead: r.lead_number ?? '',
+    Name: r.name ?? '',
+    Email: r.email ?? '',
+    Phone: r.phone ?? '',
+    Kind: r.enquiry_type ?? '',
+    Stage: r.pipeline_stage ?? '',
+    Status: r.status ?? '',
+    Source: r.source ?? '',
+    Telecaller: (r.assigned_to && telecallerNames.get(r.assigned_to as string)) || '',
+    Astrologer: r.astrologer_name ?? '',
+    'Last remark': r.last_remark_code ?? '',
+    Conversion: r.conversion_status ?? '',
+    'Conversion note': r.conversion_reason_note ?? '',
+    'Order #': r.order_number ?? '',
+    DOB: r.date_of_birth ?? '',
+    'Birth time': r.birth_time ?? '',
+    'Birth place': r.birth_place ?? '',
+    City: r.customer_city ?? '',
+    State: r.customer_state ?? '',
+    Country: r.customer_country ?? '',
+    Concern: r.area_of_concern ?? '',
+    'Follow-up': r.follow_up_date ?? '',
+    'Sale closed': r.sale_close ? 'yes' : '',
+    'Payment received': r.payment_received ? 'yes' : '',
+    'Closed reason': r.closed_reason ?? '',
+    Created: r.created_at ?? '',
+  }));
+}
 
 type CombinedLead = Record<string, unknown> & {
   id: string;
@@ -447,6 +485,43 @@ export async function GET(request: NextRequest) {
     conversionStatus: searchParams.get('conversion') || searchParams.get('conversion_status'),
     searchTerm,
   };
+
+  const format = searchParams.get('format');
+  if (format === 'xlsx' || format === 'excel') {
+    if (!isLeadManager(auth.member.normalizedRole)) {
+      return NextResponse.json({ error: 'Only leads managers can export' }, { status: 403 });
+    }
+
+    const { data, error } = await applyEnquiryFilters(
+      admin.from('enquiries').select('*').order('created_at', { ascending: false }).limit(LEADS_EXPORT_LIMIT),
+      filterOpts
+    );
+    if (error) {
+      return NextResponse.json({ error: 'Export failed', detail: error.message }, { status: 500 });
+    }
+
+    const rows = ((data ?? []) as Record<string, unknown>[]).map(normalizeEnquiryRow);
+    const teleIds = [
+      ...new Set(rows.map((r) => r.assigned_to as string | null).filter((id): id is string => Boolean(id))),
+    ];
+    const telecallerNames = new Map<string, string>();
+    if (teleIds.length) {
+      const { data: members } = await admin.from('team_members').select('id, name').in('id', teleIds);
+      for (const m of members ?? []) telecallerNames.set(m.id as string, (m.name as string) || '');
+    }
+
+    const sheet = XLSX.utils.json_to_sheet(toLeadExportRows(rows, telecallerNames));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, 'Leads');
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const stamp = new Date().toISOString().slice(0, 10);
+    return new NextResponse(new Uint8Array(buf), {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="leads-export-${stamp}.xlsx"`,
+      },
+    });
+  }
 
   const summary = await fetchLeadSummary(admin, scope, filterOpts.enquiryType);
   const capabilities = {

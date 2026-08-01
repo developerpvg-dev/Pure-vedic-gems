@@ -1,5 +1,11 @@
-import type { ReportBlock, ReportCustomer, StoneCard } from '@/lib/recommendations/blocks';
-import { STONE_ROLE_LABELS } from '@/lib/recommendations/blocks';
+import { existsSync, readFileSync } from 'node:fs';
+import { extname, join } from 'node:path';
+import {
+  STONE_ROLE_LABELS,
+  type ReportBlock,
+  type ReportCustomer,
+  type StoneCard,
+} from '@/lib/recommendations/blocks';
 import {
   DEFAULT_REPORT_LOGO,
   DEFAULT_REPORT_WORDMARK,
@@ -36,10 +42,47 @@ function benefitsRow(benefits: string[]): string {
     .join('')}</div></div>`;
 }
 
-function headerLogoHtml(logoUrl: string | null, siteUrl: string): string {
-  const emblem = resolveAssetUrl(logoUrl || DEFAULT_REPORT_LOGO, siteUrl) || DEFAULT_REPORT_LOGO;
+/** Read /public file → data URI so Puppeteer PDF needs no network for logos. */
+function publicAssetDataUri(publicPath: string): string | null {
+  if (!publicPath || /^https?:\/\//i.test(publicPath) || publicPath.startsWith('data:')) return null;
+  try {
+    const file = join(process.cwd(), 'public', publicPath.replace(/^\//, ''));
+    if (!existsSync(file)) return null;
+    const ext = extname(file).toLowerCase();
+    const mime =
+      ext === '.png'
+        ? 'image/png'
+        : ext === '.webp'
+          ? 'image/webp'
+          : ext === '.jpg' || ext === '.jpeg'
+            ? 'image/jpeg'
+            : 'application/octet-stream';
+    return `data:${mime};base64,${readFileSync(file).toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
+function logoSrc(path: string, siteUrl: string, embedLocalAssets: boolean): string {
+  if (embedLocalAssets) {
+    // ponytail: email PNGs are ~10× smaller than site webp; same brand, fine for A4 PDF
+    const embedPath =
+      path === DEFAULT_REPORT_LOGO
+        ? '/email/pvg-emblem.png'
+        : path === DEFAULT_REPORT_WORDMARK
+          ? '/email/pvg-wordmark.png'
+          : path;
+    const data = publicAssetDataUri(embedPath) || publicAssetDataUri(path);
+    if (data) return data;
+  }
+  return resolveAssetUrl(path, siteUrl) || path;
+}
+
+function headerLogoHtml(logoUrl: string | null, siteUrl: string, embedLocalAssets: boolean): string {
+  const emblemPath = logoUrl || DEFAULT_REPORT_LOGO;
+  const emblem = logoSrc(emblemPath, siteUrl, embedLocalAssets);
   const showWordmark = !logoUrl || logoUrl === DEFAULT_REPORT_LOGO;
-  const wordmark = resolveAssetUrl(DEFAULT_REPORT_WORDMARK, siteUrl) || DEFAULT_REPORT_WORDMARK;
+  const wordmark = logoSrc(DEFAULT_REPORT_WORDMARK, siteUrl, embedLocalAssets);
   return `<div class="pv-logo-row">
     <img class="pv-logo" src="${esc(emblem)}" alt="Pure Vedic Gems" />
     ${showWordmark ? `<img class="pv-wordmark" src="${esc(wordmark)}" alt="Pure Vedic Gems" />` : ''}
@@ -67,8 +110,10 @@ export function renderReportHtml(opts: {
   blocks: ReportBlock[];
   chartImageUrl?: string | null;
   siteUrl?: string;
+  /** Inline /public logos as data URIs (needed for Puppeteer PDF). */
+  embedLocalAssets?: boolean;
 }): string {
-  const { title, customer, blocks, chartImageUrl, siteUrl = '' } = opts;
+  const { title, customer, blocks, chartImageUrl, siteUrl = '', embedLocalAssets = false } = opts;
   const parts: string[] = [];
 
   for (let i = 0; i < blocks.length; i++) {
@@ -94,7 +139,7 @@ export function renderReportHtml(opts: {
         const nav = block.navLinks.length
           ? `<nav class="pv-nav">${block.navLinks.map((l) => `<span>${esc(l)}</span>`).join('<span class="pv-nav-sep">|</span>')}</nav>`
           : '';
-        parts.push(`<header class="pv-header">${headerLogoHtml(block.logoUrl, siteUrl)}${nav}</header>`);
+        parts.push(`<header class="pv-header">${headerLogoHtml(block.logoUrl, siteUrl, embedLocalAssets)}${nav}</header>`);
         break;
       }
       case 'greeting': {

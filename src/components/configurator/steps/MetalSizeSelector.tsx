@@ -107,41 +107,14 @@ function buildMetalPriceLines(
   estimate: MetalEstimate,
   stoneLabel?: string | null
 ): MetalPriceLine[] {
-  if (estimate.total <= 0) return [];
-
-  const lines: MetalPriceLine[] = [];
-  const stoneName = stoneLabel?.trim() || 'Diamond';
-
-  if (estimate.pricingKind === 'fixed') {
-    // Flat setting fee — only break out Making when another line (e.g. diamond) differs from total
-    if (estimate.makingCharge > 0 && estimate.diamondCharge > 0) {
-      lines.push({
-        label: 'Making',
-        amount: estimate.makingCharge,
-      });
-    }
-  } else if (estimate.weight > 0 && estimate.rate > 0) {
-    lines.push({
-      label: 'Metal',
-      detail: `${estimate.weight}g × ${formatPrice(estimate.rate)}/g`,
-      amount: estimate.metalPrice,
-    });
-    if (estimate.makingCharge > 0) {
-      lines.push({
-        label: 'Labor',
-        amount: estimate.makingCharge,
-      });
-    }
-  }
-
-  if (estimate.diamondCharge > 0) {
-    lines.push({
-      label: stoneName,
+  // ponytail: metal+labor folded into Est. mounting; only surface stone add-on if present
+  if (estimate.diamondCharge <= 0) return [];
+  return [
+    {
+      label: stoneLabel?.trim() || 'Diamond',
       amount: estimate.diamondCharge,
-    });
-  }
-
-  return lines;
+    },
+  ];
 }
 
 function apiToMetalOption(item: Record<string, unknown>): MetalOption {
@@ -237,8 +210,15 @@ function MetalOptionCard({
 
       {showTotal ? (
         <div className="border-t border-border/40 px-3.5 py-2.5">
+          {estimate.pricingKind === 'weight' && estimate.weight > 0 ? (
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              Metal weight{' '}
+              <span className="font-medium tabular-nums text-foreground/80">{estimate.weight}g</span>
+            </p>
+          ) : null}
+
           {showBreakdown ? (
-            <ul className="space-y-1.5">
+            <ul className="mb-2 space-y-1.5">
               {priceLines.map((line) => (
                 <li key={line.label} className="flex items-baseline justify-between gap-3">
                   <div className="min-w-0">
@@ -260,7 +240,8 @@ function MetalOptionCard({
           <div
             className={cn(
               'flex items-center justify-between gap-3',
-              showBreakdown && 'mt-2 border-t border-dashed border-border/50 pt-2'
+              (showBreakdown || (estimate.pricingKind === 'weight' && estimate.weight > 0)) &&
+                'border-t border-dashed border-border/50 pt-2'
             )}
           >
             <span className="text-[11px] font-medium text-foreground/80">Est. mounting</span>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as XLSX from 'xlsx';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { requireAdminAccess } from '@/lib/admin/api';
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({
+  const result = {
     summary: {
       pending_outcome: Number(payload.summary?.pending_outcome ?? 0),
       converted,
@@ -117,5 +118,82 @@ export async function GET(request: NextRequest) {
       astrologer_id: astrologerId,
       enquiry_type: enquiryType,
     },
-  });
+  };
+
+  const format = searchParams.get('format');
+  if (format === 'xlsx' || format === 'excel') {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet([
+        {
+          'In window': result.summary.explained_total,
+          Converted: result.summary.converted,
+          'Not converted': result.summary.not_converted,
+          'Pending outcome': result.summary.pending_outcome,
+          'Conversion rate %': result.summary.conversion_rate,
+          'Date from': dateFrom || '',
+          'Date to': dateTo || '',
+          Kind: enquiryType || 'all',
+        },
+      ]),
+      'Summary'
+    );
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(
+        result.by_telecaller.map((r) => ({
+          Telecaller: r.name,
+          Converted: r.converted,
+          'Not converted': r.not_converted,
+          Pending: r.pending,
+          Total: r.total,
+          'Rate %': r.rate,
+        }))
+      ),
+      'By telecaller'
+    );
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(
+        result.by_astrologer.map((r) => ({
+          Astrologer: r.name,
+          Converted: r.converted,
+          'Not converted': r.not_converted,
+          Pending: r.pending,
+          Total: r.total,
+          'Rate %': r.rate,
+        }))
+      ),
+      'By astrologer'
+    );
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(
+        result.not_converted_reasons.map((r) => ({ Reason: r.code, Count: r.count }))
+      ),
+      'Not converted reasons'
+    );
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(
+        result.trend.map((r) => ({
+          Month: r.month,
+          Converted: r.converted,
+          'Not converted': r.not_converted,
+        }))
+      ),
+      'Monthly trend'
+    );
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const stamp = new Date().toISOString().slice(0, 10);
+    return new NextResponse(new Uint8Array(buf), {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="lead-metrics-${stamp}.xlsx"`,
+      },
+    });
+  }
+
+  return NextResponse.json(result);
 }

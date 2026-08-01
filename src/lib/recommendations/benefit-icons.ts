@@ -165,10 +165,14 @@ export function benefitSvgMarkup(label: string, size = 22): string {
 export const DEFAULT_REPORT_LOGO = '/PVG NEW LOGO DESIGN.webp';
 export const DEFAULT_REPORT_WORDMARK = '/Algerian.webp';
 
+/** Encode each path segment so spaces in filenames (e.g. logo webp) don't break fetches. */
 export function resolveAssetUrl(path: string | null | undefined, siteUrl = ''): string | null {
   if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
+  if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
   const base = siteUrl.replace(/\/$/, '');
-  const rel = path.startsWith('/') ? path : `/${path}`;
+  const rel = (path.startsWith('/') ? path : `/${path}`)
+    .split('/')
+    .map((seg) => (seg ? encodeURIComponent(seg) : ''))
+    .join('/');
   return base ? `${base}${rel}` : rel;
 }

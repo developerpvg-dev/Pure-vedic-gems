@@ -117,7 +117,7 @@ export default function ReturnsPolicyPage() {
                     <a href="mailto:purevedicgems@gmail.com" className="font-medium text-accent hover:underline">
                       purevedicgems@gmail.com
                     </a>{' '}
-                    within <strong className="text-primary">24 hours</strong> of ordering. Otherwise, cancellation will be accepted depending on the order process status.
+                    within <strong className="text-primary">12 hours</strong> of ordering. Otherwise, cancellation will be accepted depending on the order process status.
                   </p>
                   <p>
                     Refunds will be initiated by the same payment mode and to the same source from which payment was made. It may take up to <strong className="text-primary">15 to 20 days</strong> for the payment to reflect back in your account.

@@ -1,6 +1,5 @@
 import type { ConfigPricingBreakdown } from '@/lib/types/configurator';
 import { gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
-import { formatPrice } from '@/lib/utils/format';
 
 export interface ConfiguratorPriceLine {
   key: string;
@@ -67,62 +66,23 @@ export function buildConfiguratorPriceTotals(
         display: 'TBD',
       });
     } else if (hasJewelryDetail) {
-      if (pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0) {
+      // ponytail: hide metal/labor split — one Est. mounting line (charges still in amount)
+      const mounting = pricing.metal_price + pricing.making_charge;
+      if (mounting > 0) {
         lines.push({
-          key: 'metal-weight',
-          label: 'Metal weight',
-          display: `${pricing.metal_weight_grams} g`,
-          amount: null,
-        });
-        if (pricing.gold_rate_per_gram > 0) {
-          lines.push({
-            key: 'metal-rate',
-            label: 'Live metal rate',
-            display: `${formatPrice(pricing.gold_rate_per_gram)}/g`,
-            amount: null,
-          });
-        }
-        if (pricing.metal_price > 0) {
-          lines.push({
-            key: 'metal-value',
-            label: 'Metal value',
-            detail:
-              pricing.gold_rate_per_gram > 0
-                ? `${pricing.metal_weight_grams} g × ${formatPrice(pricing.gold_rate_per_gram)}/g`
-                : undefined,
-            amount: pricing.metal_price,
-          });
-        }
-        if (pricing.labor_rate_percent > 0 && pricing.making_charge > 0) {
-          lines.push({
-            key: 'labor',
-            label: 'Labor charge',
-            amount: pricing.making_charge,
-          });
-        } else if (pricing.making_charge > 0) {
-          lines.push({
-            key: 'making',
-            label: 'Making charge',
-            amount: pricing.making_charge,
-          });
-        }
-      } else if (pricing.making_charge > 0) {
-        lines.push({
-          key: 'making-fixed',
-          label: 'Making charge (fixed)',
-          amount: pricing.making_charge,
+          key: 'est-mounting',
+          label: 'Est. mounting',
+          detail:
+            pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0
+              ? `${pricing.metal_weight_grams} g`
+              : undefined,
+          amount: mounting,
         });
       }
     } else {
       lines.push({
-        key: 'metal-value-pending',
-        label: 'Metal value',
-        amount: null,
-        display: '—',
-      });
-      lines.push({
-        key: 'making-pending',
-        label: 'Making charge',
+        key: 'est-mounting-pending',
+        label: 'Est. mounting',
         amount: null,
         display: '—',
       });

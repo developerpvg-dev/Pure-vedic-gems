@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, BarChart3, Loader2 } from 'lucide-react';
+import { ArrowLeft, BarChart3, Download, Loader2 } from 'lucide-react';
 import { AdminStatCard } from '@/components/admin/AdminPageShell';
 import { LEAD_NOT_CONVERTED_BY_CODE, type LeadNotConvertedReason } from '@/lib/leads/constants';
 
@@ -95,6 +95,16 @@ export default function LeadMetricsPage() {
     astrologer_id: astrologerId,
   };
 
+  function exportHref() {
+    const params = new URLSearchParams({ format: 'xlsx' });
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    if (assignedTo) params.set('assigned_to', assignedTo);
+    if (astrologerId) params.set('astrologer_id', astrologerId);
+    if (kind) params.set('enquiry_type', kind);
+    return `/api/admin/leads/analytics?${params}`;
+  }
+
   const reasonMax = Math.max(1, ...(data?.not_converted_reasons.map((r) => r.count) ?? [1]));
   const trendMax = Math.max(
     1,
@@ -114,10 +124,19 @@ export default function LeadMetricsPage() {
             Telecaller and astrologer conversion performance — aggregated in the database for large lead volume.
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600">
-          <BarChart3 className="h-3.5 w-3.5" />
-          Manager / parcel dispatch
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={exportHref()}
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export Excel
+          </a>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Manager / parcel dispatch
+          </span>
+        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">

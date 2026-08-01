@@ -44,6 +44,13 @@ const shadcnTailwindCssPath = path.resolve(projectNodeModules, 'shadcn', 'dist',
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
 
+  // Keep chromium.bin in the serverless trace — without this PDF gen fails on Vercel.
+  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  outputFileTracingIncludes: {
+    '/api/admin/recommendations/[id]/pdf': ['./node_modules/@sparticuz/chromium/bin/**'],
+    '/api/admin/recommendations/[id]/send': ['./node_modules/@sparticuz/chromium/bin/**'],
+  },
+
   experimental: {
     // Stops Turbopack from ballooning a multi-GB filesystem cache during local dev.
     turbopackFileSystemCacheForDev: false,

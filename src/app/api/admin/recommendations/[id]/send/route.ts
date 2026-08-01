@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { getSiteUrl } from '@/lib/resend/email-config';
+import { withShopBuyUrls } from '@/lib/recommendations/buy-urls';
 import { mapReportRow } from '@/lib/recommendations/normalize';
 import { renderReportHtml } from '@/lib/recommendations/render-html';
 import { htmlToPdf } from '@/lib/recommendations/pdf';
 import { sendRecommendationReportEmail } from '@/lib/resend/send-recommendation-report';
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -28,35 +32,30 @@ export async function POST(_request: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: 'Customer email is required to send' }, { status: 400 });
   }
 
+  const siteUrl = getSiteUrl();
+  const blocks = await withShopBuyUrls(report.blocks, siteUrl, admin);
+
   let pdfBuffer: Buffer | null = null;
-
-  if (report.pdf_path) {
-    const { data: file, error: dlError } = await admin.storage.from(BUCKET).download(report.pdf_path);
-    if (!dlError && file) {
-      pdfBuffer = Buffer.from(await file.arrayBuffer());
-    }
-  }
-
-  if (!pdfBuffer) {
-    try {
-      const html = renderReportHtml({
-        title: report.title,
-        customer: report.customer,
-        blocks: report.blocks,
-        chartImageUrl: report.chart_image_url,
-        siteUrl: getSiteUrl(),
-      });
-      pdfBuffer = await htmlToPdf(html);
-      const path = `${report.id}/${Date.now()}.pdf`;
-      await admin.storage.from(BUCKET).upload(path, pdfBuffer, {
-        contentType: 'application/pdf',
-        upsert: true,
-      });
-      await admin.from('recommendation_reports').update({ pdf_path: path }).eq('id', id);
-    } catch (e) {
-      console.warn('[recommendations/send] PDF skipped', e);
-      pdfBuffer = null;
-    }
+  try {
+    // Always rebuild so BUY links are /shop/... not legacy /products/...
+    const html = renderReportHtml({
+      title: report.title,
+      customer: report.customer,
+      blocks,
+      chartImageUrl: report.chart_image_url,
+      siteUrl,
+      embedLocalAssets: true,
+    });
+    pdfBuffer = await htmlToPdf(html);
+    const path = `${report.id}/${Date.now()}.pdf`;
+    await admin.storage.from(BUCKET).upload(path, pdfBuffer, {
+      contentType: 'application/pdf',
+      upsert: true,
+    });
+    await admin.from('recommendation_reports').update({ pdf_path: path }).eq('id', id);
+  } catch (e) {
+    console.warn('[recommendations/send] PDF skipped', e);
+    pdfBuffer = null;
   }
 
   const messageId = await sendRecommendationReportEmail({
