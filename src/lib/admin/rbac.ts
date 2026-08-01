@@ -104,6 +104,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'imports.write',
     'orders.read',
     'content.manage',
+    'settings.commerce',
   ],
   inventory: [
     'dashboard.read',
@@ -112,6 +113,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'imports.write',
     'orders.read',
     'content.manage',
+    'settings.commerce',
   ],
   stock_manager: [
     'dashboard.read',
@@ -189,7 +191,8 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/compliance')) return 'compliance.manage';
   if (pathname.startsWith('/admin/rewards')) return 'settings.commerce';
   if (pathname.startsWith('/admin/shipping')) return 'settings.commerce';
-  if (pathname.startsWith('/admin/settings')) return 'settings.team';
+  // Currency rates live on settings; team APIs still require settings.team
+  if (pathname.startsWith('/admin/settings')) return 'settings.commerce';
   if (pathname.startsWith('/admin/products/import')) return 'imports.write';
   if (pathname.startsWith('/admin/products/new')) return 'products.write';
   if (/^\/admin\/products\/[^/]+$/.test(pathname)) return 'products.write';

@@ -148,6 +148,7 @@ export interface Database {
           seo_keywords: string[];
           canonical_category_slug: string | null;
           last_import_batch_id: string | null;
+          deleted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -270,6 +271,7 @@ export interface Database {
           seo_keywords?: string[];
           canonical_category_slug?: string | null;
           last_import_batch_id?: string | null;
+          deleted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -392,6 +394,7 @@ export interface Database {
           seo_keywords?: string[];
           canonical_category_slug?: string | null;
           last_import_batch_id?: string | null;
+          deleted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

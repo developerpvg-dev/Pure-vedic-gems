@@ -321,6 +321,99 @@ export async function getHomeManagedCategories(): Promise<CategoryBucket> {
   }
 }
 
+/** Full active subcategory lists for /shop (not homepage-curated subsets). */
+export async function getShopBrowseCategories(): Promise<{
+  gems: CategoryBucket;
+  idols: HomeCatalogCategory[];
+  jewelry: HomeCatalogCategory[];
+}> {
+  const empty = {
+    gems: FALLBACK_BUCKETS,
+    idols: EXPLORE_IDOL_FALLBACK,
+    jewelry: EXPLORE_JEWELRY_FALLBACK,
+  };
+
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return empty;
+
+  try {
+    const client = supabase;
+    const db = supabase as unknown as UntypedDb;
+
+    async function runGemQuery(columns: string) {
+      return client
+        .from('gem_categories')
+        .select(columns)
+        .eq('is_active', true)
+        .order('type', { ascending: true })
+        .order('sort_order', { ascending: true });
+    }
+
+    let { data: gemData, error: gemError } = await runGemQuery(CATEGORY_COLUMNS_WITH_LOCATIONS);
+    if (gemError && 'code' in gemError && gemError.code === 'PGRST204') {
+      const retry = await runGemQuery(CATEGORY_COLUMNS_BASE);
+      gemData = retry.data;
+      gemError = retry.error;
+    }
+
+    const grouped: CategoryBucket = { navaratna: [], upratna: [], rudraksha: [] };
+    if (!gemError && gemData) {
+      for (const row of gemData as unknown as Record<string, unknown>[]) {
+        const category = normalizeCategory(row);
+        if (category) grouped[category.type].push(category);
+      }
+    }
+
+    const gems: CategoryBucket = {
+      navaratna: mergeWithFallback(grouped.navaratna, NAVARATNA_FALLBACK),
+      upratna: mergeWithFallback(grouped.upratna, UPRATNA_FALLBACK),
+      rudraksha: mergeWithFallback(
+        grouped.rudraksha.filter((category) => isRudrakshaStorefrontSlug(category.slug)),
+        RUDRAKSHA_FALLBACK,
+      ).map((item) => ({
+        ...item,
+        name: item.name || rudrakshaSubcategoryLabel(item.slug),
+      })),
+    };
+
+    const catalogColumns =
+      'id, parent_id, slug, name, family, description, image_url, hover_image_url, homepage_subtitle, homepage_badge, homepage_slot, cta_label, accent_color, canonical_path, sort_order, is_active';
+    const { data: catalogData, error: catalogError } = await db
+      .from('product_categories')
+      .select(catalogColumns)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    const catalogRows = catalogError
+      ? []
+      : ((catalogData ?? []) as Record<string, unknown>[])
+          .map((row) => {
+            const category = normalizeCatalogCategory(row);
+            if (!category) return null;
+            const parentId = row.parent_id ? String(row.parent_id) : null;
+            const parentSlug = catalogFamilyToStorefrontGroupSlug(category.family) ?? category.family;
+            const isSub =
+              Boolean(parentId) &&
+              category.slug !== category.family &&
+              category.slug !== parentSlug;
+            return isSub ? category : null;
+          })
+          .filter((item): item is HomeCatalogCategory => Boolean(item));
+
+    const idols = catalogRows.filter((c) => c.family === 'idol');
+    const jewelry = catalogRows.filter((c) => c.family === 'jewelry' || c.family === 'mala');
+
+    return {
+      gems,
+      idols: idols.length ? idols : EXPLORE_IDOL_FALLBACK,
+      jewelry: jewelry.length ? jewelry : EXPLORE_JEWELRY_FALLBACK,
+    };
+  } catch (error) {
+    console.warn('[shop] browse categories fetch failed:', error);
+    return empty;
+  }
+}
+
 function normalizeCatalogCategory(row: Record<string, unknown>): HomeCatalogCategory | null {
   const family = String(row.family ?? '');
   if (family !== 'idol' && family !== 'jewelry' && family !== 'mala' && family !== 'rudraksha') return null;
@@ -642,9 +735,18 @@ function configureHref(product: HomeDirectorPick) {
   return UUID_PATTERN.test(product.id) ? `/configure/${product.id}` : '/configure';
 }
 
-export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCategory[] }) {
-  const visibleCategories = categories.slice(0, NAVARATNA_HOME_GRID_LIMIT);
-  const rows = [visibleCategories.slice(0, 5), visibleCategories.slice(5, NAVARATNA_HOME_GRID_LIMIT)].filter((row) => row.length > 0);
+export function NavaratnaHomeSection({
+  categories,
+  showCta = true,
+}: {
+  categories: HomeManagedCategory[];
+  showCta?: boolean;
+}) {
+  const visibleCategories = showCta ? categories.slice(0, NAVARATNA_HOME_GRID_LIMIT) : categories;
+  const rows: HomeManagedCategory[][] = [];
+  for (let i = 0; i < visibleCategories.length; i += 5) {
+    rows.push(visibleCategories.slice(i, i + 5));
+  }
 
   return (
     <>
@@ -698,19 +800,21 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
           </div>
         </div>
       </section>
-      <IntegratedCategoryCta
-        variant="navaratna"
-        title="Not sure which gemstone is good for you?"
-        copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
-        primary={{
-          label: <>Get Navaratna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
-          href: '#gem-recommendation',
-        }}
-        secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
-        image="/home/ctas/cta1.webp?v=4"
-        imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
-        imageSide="right"
-      />
+      {showCta ? (
+        <IntegratedCategoryCta
+          variant="navaratna"
+          title="Not sure which gemstone is good for you?"
+          copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
+          primary={{
+            label: <>Get Navaratna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+            href: '#gem-recommendation',
+          }}
+          secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
+          image="/home/ctas/cta1.webp?v=4"
+          imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
+          imageSide="right"
+        />
+      ) : null}
     </>
   );
 }
@@ -718,11 +822,13 @@ export function NavaratnaHomeSection({ categories }: { categories: HomeManagedCa
 export function RudrakshaHomeSection({
   categories,
   featureCards = RUDRAKSHA_FEATURE_FALLBACK,
+  showCta = true,
 }: {
   categories: HomeManagedCategory[];
   featureCards?: HomeCatalogCategory[];
+  showCta?: boolean;
 }) {
-  const visibleCategories = categories.slice(0, 12);
+  const visibleCategories = showCta ? categories.slice(0, 12) : categories;
   const visibleFeatureCards = featureCards;
 
   return (
@@ -736,10 +842,12 @@ export function RudrakshaHomeSection({
             <div className="section-rule-center" />
           </div>
 
-          <div className="rudra-layout">
-            <div>
-              <RudrakshaFeatureCarousel cards={visibleFeatureCards} />
-            </div>
+          <div className={`rudra-layout${showCta ? '' : ' rudra-layout--shop'}`}>
+            {showCta ? (
+              <div>
+                <RudrakshaFeatureCarousel cards={visibleFeatureCards} />
+              </div>
+            ) : null}
 
             <div>
               <div className="rudra-grid-right">
@@ -765,26 +873,30 @@ export function RudrakshaHomeSection({
                   );
                 })}
               </div>
-              <div className="rudra-right-cta">
-                <Link href="/shop/rudraksha" className="btn-outline-maroon" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>Show All Rudrakshas</Link>
-              </div>
+              {showCta ? (
+                <div className="rudra-right-cta">
+                  <Link href="/shop/rudraksha" className="btn-outline-maroon" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>Show All Rudrakshas</Link>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
       </section>
-      <IntegratedCategoryCta
-        variant="rudraksha"
-        title="Not sure which Rudraksha is right for you?"
-        copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
-        primary={{
-          label: <>Get Rudraksha Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
-          href: '#gem-recommendation',
-        }}
-        secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
-        image="/home/ctas/cta2.webp?v=2"
-        imageAlt="Rudraksha expert offering personalised guidance"
-        imageSide="left"
-      />
+      {showCta ? (
+        <IntegratedCategoryCta
+          variant="rudraksha"
+          title="Not sure which Rudraksha is right for you?"
+          copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
+          primary={{
+            label: <>Get Rudraksha Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+            href: '#gem-recommendation',
+          }}
+          secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
+          image="/home/ctas/cta2.webp?v=2"
+          imageAlt="Rudraksha expert offering personalised guidance"
+          imageSide="left"
+        />
+      ) : null}
     </>
   );
 }
@@ -821,9 +933,11 @@ function ExploreCard({ category }: { category: HomeCatalogCategory }) {
 export function ExploreByCategorySection({
   idols,
   jewelry,
+  showCta = true,
 }: {
   idols: HomeCatalogCategory[];
   jewelry: HomeCatalogCategory[];
+  showCta?: boolean;
 }) {
   const idolCards = idols.length ? idols : EXPLORE_IDOL_FALLBACK;
   const jewelryCards = jewelry.length ? jewelry : EXPLORE_JEWELRY_FALLBACK;
@@ -864,9 +978,11 @@ export function ExploreByCategorySection({
             </div>
             <SliderButton target="exploreSpiritualScroll" direction="next" label="Next spiritual idols" />
           </div>
-          <div className="explore-cta">
-            <Link href="/shop/idols" className="btn-outline-maroon">View All Spiritual Idols →</Link>
-          </div>
+          {showCta ? (
+            <div className="explore-cta">
+              <Link href="/shop/idols" className="btn-outline-maroon">View All Spiritual Idols →</Link>
+            </div>
+          ) : null}
         </div>
 
         <div className="explore-panel" id="panel-jewellery">
@@ -891,9 +1007,11 @@ export function ExploreByCategorySection({
             </div>
             <SliderButton target="exploreJewelleryScroll" direction="next" label="Next vedic jewellery" />
           </div>
-          <div className="explore-cta">
-            <Link href="/shop/jewelry" className="btn-outline-maroon">View All Vedic Jewellery →</Link>
-          </div>
+          {showCta ? (
+            <div className="explore-cta">
+              <Link href="/shop/jewelry" className="btn-outline-maroon">View All Vedic Jewellery →</Link>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
@@ -990,7 +1108,13 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
   );
 }
 
-export function SemipreciousHomeSection({ categories }: { categories: HomeManagedCategory[] }) {
+export function SemipreciousHomeSection({
+  categories,
+  showCta = true,
+}: {
+  categories: HomeManagedCategory[];
+  showCta?: boolean;
+}) {
   return (
     <>
       <section className="semiprecious-section" id="semi-precious" aria-labelledby="semi-heading">
@@ -1025,19 +1149,21 @@ export function SemipreciousHomeSection({ categories }: { categories: HomeManage
           </div>
         </div>
       </section>
-      <IntegratedCategoryCta
-        variant="uparatna"
-        title="Need a practical gemstone alternative?"
-        copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
-        primary={{
-          label: <>Get Uparatna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
-          href: '#gem-recommendation',
-        }}
-        secondary={{ label: 'See Uparatna Collection', href: '/shop/upratna' }}
-        image="/home/ctas/cta3.webp?v=2"
-        imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"
-        imageSide="right"
-      />
+      {showCta ? (
+        <IntegratedCategoryCta
+          variant="uparatna"
+          title="Need a practical gemstone alternative?"
+          copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
+          primary={{
+            label: <>Get Uparatna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+            href: '#gem-recommendation',
+          }}
+          secondary={{ label: 'See Uparatna Collection', href: '/shop/upratna' }}
+          image="/home/ctas/cta3.webp?v=2"
+          imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"
+          imageSide="right"
+        />
+      ) : null}
     </>
   );
 }

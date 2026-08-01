@@ -7,7 +7,7 @@ import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopCategoryBrowse } from '@/components/shop/ShopCategoryBrowse';
 import { ShopPagination } from '@/components/shop/ShopPagination';
-import Link from 'next/link';
+import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import type { Metadata } from 'next';
 import type { ProductCard } from '@/lib/types/product';
 
@@ -82,33 +82,44 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
   const facets = await getShopFilterOptions({}, filters);
 
   return (
-    <>
-      <FilterBar total={total} facets={facets} showCategoryFilter={false} />
-      <div className="mt-6">
-        <ProductGrid products={products} />
+    <section className="px-4 pb-16 sm:px-6 lg:px-10" aria-labelledby="shop-catalog-heading">
+      <div className="mx-auto max-w-350">
+        <div className="section-head mb-8">
+          <h2 className="section-title" id="shop-catalog-heading">
+            All Products
+          </h2>
+          <p className="navratna-subtitle">Filter and browse our full certified catalog</p>
+          <div className="section-rule-center" />
+        </div>
+        <FilterBar total={total} facets={facets} showCategoryFilter={false} />
+        <div className="mt-6">
+          <ProductGrid products={products} />
+        </div>
+        <ShopPagination page={page} totalPages={totalPages} searchParams={searchParams} basePath="/shop" />
       </div>
-      <ShopPagination page={page} totalPages={totalPages} searchParams={searchParams} basePath="/shop" />
-    </>
+    </section>
   );
 }
 
 function ShopSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="h-14 w-full animate-pulse rounded-xl bg-brand-border" />
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-brand-border">
-            <div className="relative w-full animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />
-            <div className="space-y-2 p-3">
-              <div className="h-3 w-2/3 animate-pulse rounded bg-brand-border" />
-              <div className="h-4 w-full animate-pulse rounded bg-brand-border" />
-              <div className="h-5 w-1/3 animate-pulse rounded bg-brand-border" />
+    <section className="px-4 pb-16 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-350 space-y-6">
+        <div className="h-14 w-full animate-pulse rounded-xl bg-brand-border" />
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="overflow-hidden rounded-xl border border-brand-border">
+              <div className="relative w-full animate-pulse bg-brand-border" style={{ paddingBottom: '120%' }} />
+              <div className="space-y-2 p-3">
+                <div className="h-3 w-2/3 animate-pulse rounded bg-brand-border" />
+                <div className="h-4 w-full animate-pulse rounded bg-brand-border" />
+                <div className="h-5 w-1/3 animate-pulse rounded bg-brand-border" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -121,28 +132,21 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const searchQuery = params.q?.trim();
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf2_0%,#fbf7ef_42%,#fdf7ee_100%)] px-4 pb-24 pt-28 md:px-6 lg:px-10">
-      <div className="mx-auto max-w-350">
-        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-brand-muted" aria-label="Breadcrumb">
-          <Link href="/" className="transition hover:text-brand-accent">Home</Link>
-          <span>/</span>
-          <span className="text-brand-primary">
-            {searchQuery ? `Search: ${searchQuery}` : 'Shop'}
-          </span>
-        </nav>
+    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
+      <KnowledgePageHero
+        title={searchQuery ? `Search: ${searchQuery}` : 'Shop'}
+        subtitle="Browse certified Vedic gemstones, Rudraksha, idols, and jewellery — the same collections featured on our homepage, with full catalog filters below."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: searchQuery ? `Search: ${searchQuery}` : 'Shop' },
+        ]}
+      />
 
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl text-brand-primary md:text-3xl">Shop Certified Vedic Gemstones</h1>
-          <p className="mt-2 max-w-3xl text-[14px] leading-7 text-brand-muted">
-            Browse our complete catalog or explore dedicated category pages with expert guides, certification details, and Jyotish consultation support.
-          </p>
-        </div>
+      {!searchQuery ? <ShopCategoryBrowse /> : null}
 
-        <ShopCategoryBrowse />
-        <Suspense fallback={<ShopSkeleton />}>
-          <ProductResults searchParams={params} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<ShopSkeleton />}>
+        <ProductResults searchParams={params} />
+      </Suspense>
     </main>
   );
 }

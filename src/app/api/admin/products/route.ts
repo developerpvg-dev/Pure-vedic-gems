@@ -158,7 +158,13 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   let query = admin
     .from('products')
-    .select('id, sku, tag_number, legacy_woo_id, name, slug, category, sub_category, product_type, price, carat_weight, origin, planet, shape, quality_label, certificate_lab, treatment, price_mode, in_stock, stock_quantity, stock_status, availability_status, reserved_until, reservation_note, is_active, featured, is_directors_pick, display_order, configurator_enabled, images, created_at', { count: 'exact' });
+    .select('id, sku, tag_number, legacy_woo_id, name, slug, category, sub_category, product_type, price, carat_weight, origin, planet, shape, quality_label, certificate_lab, treatment, price_mode, in_stock, stock_quantity, stock_status, availability_status, reserved_until, reservation_note, is_active, featured, is_directors_pick, display_order, configurator_enabled, images, created_at, deleted_at', { count: 'exact' });
+
+  if (status === 'trash') {
+    query = query.not('deleted_at', 'is', null);
+  } else {
+    query = query.is('deleted_at', null);
+  }
 
   if (search) {
     const searchClauses = [

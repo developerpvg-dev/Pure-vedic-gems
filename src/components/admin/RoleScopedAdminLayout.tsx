@@ -84,10 +84,12 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
 function navActive(pathname: string | null, searchParams: URLSearchParams, link: RoleNavLink) {
   if (link.match === 'exact') return pathname === link.href;
   if (link.match === 'drafts') return pathname === '/admin/products' && searchParams.get('status') === 'inactive';
+  if (link.match === 'trash') return pathname === '/admin/products' && searchParams.get('status') === 'trash';
   if (link.match === 'products') {
     if (!pathname?.startsWith('/admin/products')) return false;
     if (pathname.startsWith('/admin/products/import')) return false;
-    return !(pathname === '/admin/products' && searchParams.get('status') === 'inactive');
+    const status = searchParams.get('status');
+    return !(pathname === '/admin/products' && (status === 'inactive' || status === 'trash'));
   }
   const pathOnly = link.href.split('?')[0];
   return pathname === pathOnly || Boolean(pathname?.startsWith(pathOnly));
@@ -157,7 +159,7 @@ export function RoleScopedAdminLayout({
                     href={link.href}
                     onClick={(e) => {
                       setSidebarOpen(false);
-                      if (link.match === 'drafts' || link.match === 'products') {
+                      if (link.match === 'drafts' || link.match === 'products' || link.match === 'trash') {
                         e.preventDefault();
                         window.location.assign(link.href);
                       }

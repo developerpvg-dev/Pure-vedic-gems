@@ -203,9 +203,9 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           className="flex items-center justify-center gap-1 rounded-md border border-[var(--pvg-border)] px-2 py-1.5 text-[10px] font-semibold text-[var(--pvg-muted)] transition hover:border-[var(--pvg-primary)] hover:text-[var(--pvg-primary)] sm:gap-1.5 sm:px-3 sm:py-2 sm:text-[11px]"
         >
           <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-          <span className="truncate">Book Consultation</span>
+          <span className="truncate">Remedies Recommendation</span>
         </Link>
-        {/* Desktop only — fills the empty slot beside WhatsApp / Book Consultation */}
+        {/* Desktop only — fills the empty slot beside WhatsApp / Remedies Recommendation */}
         <Link
           href="/consultation#detailed-consultation"
           className="hidden items-center justify-center gap-1.5 rounded-lg border border-[var(--pvg-primary)] px-3 py-2 text-[11px] font-semibold text-[var(--pvg-primary)] transition hover:bg-[var(--pvg-primary)] hover:text-white lg:flex"

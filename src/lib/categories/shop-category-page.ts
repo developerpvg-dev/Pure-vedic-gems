@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import { KNOWN_CATALOG_SUBCATEGORIES, KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
+import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import type { ShopCategoryBrowseCard, ShopCategoryPageContent } from '@/lib/types/shop-category-page';
 import type { ShopCategoryPageRow } from '@/lib/types/database';
 
@@ -111,6 +112,35 @@ export async function fetchAllShopCategoryPages(): Promise<ShopCategoryPageConte
   return pages.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name));
 }
 
+/** Images from /admin/categories (gem_categories + product_categories), keyed by slug. */
+async function fetchAdminCategoryImageMap(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return map;
+
+  const [gem, catalog] = await Promise.all([
+    supabase.from('gem_categories').select('slug, image_url').eq('is_active', true),
+    supabase.from('product_categories').select('slug, image_url').eq('is_active', true),
+  ]);
+
+  for (const row of catalog.data ?? []) {
+    if (row.slug && row.image_url) map.set(row.slug, row.image_url);
+  }
+  // Gem rows win on slug collision (navaratna/upratna/rudraksha)
+  for (const row of gem.data ?? []) {
+    if (row.slug && row.image_url) map.set(row.slug, row.image_url);
+  }
+  return map;
+}
+
+export async function fetchShopBrowseCards(): Promise<ShopCategoryBrowseCard[]> {
+  const [pages, adminImages] = await Promise.all([
+    fetchAllShopCategoryPages(),
+    fetchAdminCategoryImageMap(),
+  ]);
+  return pages.map((page) => toBrowseCard(page, adminImages));
+}
+
 export function shopCategoryHref(slug: string) {
   return `/shop/${slug}`;
 }
@@ -119,17 +149,22 @@ export function shopCategoryLabel(page: ShopCategoryPageContent): string {
   return page.sanskrit_name ? `${page.name} (${page.sanskrit_name})` : page.name;
 }
 
-export function toBrowseCard(page: ShopCategoryPageContent): ShopCategoryBrowseCard {
+export function toBrowseCard(
+  page: ShopCategoryPageContent,
+  adminImages?: Map<string, string>,
+): ShopCategoryBrowseCard {
   const gem = KNOWN_GEM_SUBCATEGORIES[page.slug];
   const catalog = KNOWN_CATALOG_SUBCATEGORIES[page.slug];
   const label = gem?.label ?? catalog?.label ?? shopCategoryLabel(page);
+  const adminImage = adminImages?.get(page.slug) ?? null;
 
   return {
     slug: page.slug,
     name: page.name,
     label,
     href: shopCategoryHref(page.slug),
-    image: page.hero_image_url ?? page.image_url,
+    // Prefer /admin/categories images over shop-category-pages hub heroes
+    image: resolveCategoryNavImage(page.slug, adminImage) ?? page.image_url ?? page.hero_image_url,
     planet: page.planet,
     product_category: page.product_category,
     intro: page.intro_text,

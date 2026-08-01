@@ -409,6 +409,10 @@ export default function SettingsPage() {
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
 
+  const canManageTeam = Boolean(currentUser);
+  const visibleTabs: Tab[] = canManageTeam ? ['commerce', 'team'] : ['commerce'];
+  const activeTab = canManageTeam ? tab : 'commerce';
+
   return (
     <div className="mx-auto min-w-0 max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -416,18 +420,20 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Admin Settings</h1>
           <p className="mt-1 text-sm text-gray-500">Commerce controls, team roles, and launch operations.</p>
         </div>
-        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-          {(['commerce', 'team'] as Tab[]).map((item) => (
-            <button key={item} onClick={() => setTab(item)} className={`rounded-md px-4 py-2 text-sm font-semibold capitalize ${tab === item ? 'bg-amber-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-              {item}
-            </button>
-          ))}
-        </div>
+        {visibleTabs.length > 1 ? (
+          <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+            {visibleTabs.map((item) => (
+              <button key={item} onClick={() => setTab(item)} className={`rounded-md px-4 py-2 text-sm font-semibold capitalize ${activeTab === item ? 'bg-amber-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                {item}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {(message || error) && <p className={`rounded-lg px-3 py-2 text-sm ${error ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'}`}>{error || message}</p>}
 
-      {tab === 'commerce' ? (
+      {activeTab === 'commerce' ? (
         <div className="grid gap-6 xl:grid-cols-2">
           <div className="xl:col-span-2">
             <AdminShippingPanel />

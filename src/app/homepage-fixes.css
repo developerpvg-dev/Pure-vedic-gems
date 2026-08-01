@@ -1824,3 +1824,8 @@
 .pvg-react-home-root .hero-dot.is-active:hover {
   background: #D4A843 !important;
 }
+
+/* Shop page: rudraksha grid without feature carousel */
+.pvg-react-home-root .rudra-layout.rudra-layout--shop {
+  grid-template-columns: 1fr !important;
+}

@@ -146,7 +146,7 @@ export async function proxy(request: NextRequest) {
       }
     }
     if (normalizedRole === 'content') {
-      // Dashboard + ops/finance/leads paths — keep catalog/content pages
+      // Dashboard + ops/finance/leads paths — keep catalog/content + currency settings
       const blocked =
         pathname === '/admin' ||
         pathname.startsWith('/admin/orders/new') ||
@@ -156,8 +156,7 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith('/admin/leads') ||
         pathname.startsWith('/admin/agent-sessions') ||
         pathname.startsWith('/admin/finance') ||
-        pathname.startsWith('/admin/compliance') ||
-        pathname.startsWith('/admin/settings');
+        pathname.startsWith('/admin/compliance');
       if (blocked) {
         return NextResponse.redirect(new URL('/admin/products', request.url));
       }

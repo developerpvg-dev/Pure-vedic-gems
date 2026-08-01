@@ -285,12 +285,16 @@
 }
 
 .pvg-blog-post-hero {
-  position: relative;
   margin-bottom: 1.75rem;
-  aspect-ratio: 2 / 1;
   overflow: hidden;
   border-radius: 14px;
   background: #ece5db;
+}
+
+.pvg-blog-post-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .pvg-blog-post-header {

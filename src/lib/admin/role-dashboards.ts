@@ -1,6 +1,6 @@
 import type { CanonicalAdminRole } from '@/lib/admin/rbac';
 
-export type RoleNavMatch = 'exact' | 'prefix' | 'products' | 'drafts';
+export type RoleNavMatch = 'exact' | 'prefix' | 'products' | 'drafts' | 'trash';
 
 export type RoleNavLink = {
   href: string;
@@ -64,10 +64,12 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       '/admin/designs',
       '/admin/certifications',
       '/admin/energizations',
+      '/admin/settings',
     ],
     nav: [
       { href: '/admin/products', label: 'Products', match: 'products' },
       { href: '/admin/products?status=inactive', label: 'Drafts', match: 'drafts' },
+      { href: '/admin/products?status=trash', label: 'Trash', match: 'trash' },
       { href: '/admin/orders', label: 'Orders', match: 'prefix' },
       { href: '/admin/catalog-order', label: 'Catalog order', match: 'prefix' },
       { href: '/admin/directors-pick', label: "Director's pick", match: 'prefix' },
@@ -85,6 +87,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/designs', label: 'Jewelry designs', match: 'prefix' },
       { href: '/admin/certifications', label: 'Certifications', match: 'prefix' },
       { href: '/admin/energizations', label: 'Energization / pooja', match: 'prefix' },
+      { href: '/admin/settings', label: 'Currency rates', match: 'prefix' },
     ],
   },
   fulfillment: {
@@ -147,6 +150,7 @@ export function assertRoleDashboardAllowlists() {
   if (isScopedRolePathAllowed('inventory', '/admin/leads')) throw new Error('inventory must not open leads');
   if (!isScopedRolePathAllowed('inventory', '/admin/hero')) throw new Error('inventory hero');
   if (!isScopedRolePathAllowed('inventory', '/admin/erp-sync')) throw new Error('inventory erp');
+  if (!isScopedRolePathAllowed('inventory', '/admin/settings')) throw new Error('inventory settings/currency');
   if (isScopedRolePathAllowed('inventory', '/admin/finance')) throw new Error('inventory must not open finance');
   if (isScopedRolePathAllowed('inventory', '/admin/commissions')) throw new Error('inventory must not open commissions');
   if (isScopedRolePathAllowed('inventory', '/admin/rewards')) throw new Error('inventory must not open rewards');

@@ -32,15 +32,15 @@ export function CurrencySelector({ variant = 'nav' }: { variant?: Variant }) {
     };
   }, [open]);
 
-  const btnSize = isMobile ? 32 : isTopbar ? 26 : 34;
-  const flagW = isMobile ? 16 : isTopbar ? 14 : 16;
-  const flagH = isMobile ? 11 : isTopbar ? 10 : 11;
+  const btnSize = isMobile ? 30 : isTopbar ? 26 : 34;
+  const flagW = isMobile ? 14 : isTopbar ? 14 : 16;
+  const flagH = isMobile ? 10 : isTopbar ? 10 : 11;
 
   return (
     <div
       ref={rootRef}
       className={`pvg-fx-root pvg-fx-${variant}`}
-      style={{ position: 'relative', flexShrink: 0 }}
+      style={{ position: 'relative', flexShrink: 0, display: 'block' }}
     >
       <button
         type="button"
@@ -55,24 +55,20 @@ export function CurrencySelector({ variant = 'nav' }: { variant?: Variant }) {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: isMobile ? 0 : 4,
-          width: isMobile ? btnSize : undefined,
+          gap: 4,
           height: btnSize,
-          minWidth: isMobile ? btnSize : undefined,
-          padding: isMobile ? 0 : isTopbar ? '0 7px' : '0 8px',
+          padding: isMobile ? '0 7px' : isTopbar ? '0 7px' : '0 8px',
           borderRadius: isMobile ? 999 : 4,
           border: isTopbar
             ? '1px solid rgba(255,255,255,0.22)'
             : isMobile
-              ? '0'
+              ? '1px solid #e5e5e5'
               : '1px solid #e5e5e5',
           background: isTopbar
             ? 'rgba(255,255,255,0.08)'
-            : isMobile
-              ? 'transparent'
-              : '#fff',
+            : '#fff',
           color: isTopbar ? 'rgba(255,255,255,0.95)' : '#1a1a1a',
-          fontSize: isTopbar ? 11 : 11,
+          fontSize: 11,
           fontWeight: 600,
           letterSpacing: '0.02em',
           cursor: 'pointer',
@@ -82,16 +78,12 @@ export function CurrencySelector({ variant = 'nav' }: { variant?: Variant }) {
         }}
       >
         <CurrencyFlag code={currency} width={flagW} height={flagH} />
-        {!isMobile ? (
-          <span className="pvg-fx-code" style={{ fontSize: 11, fontWeight: 700 }}>
-            {currency}
-          </span>
-        ) : null}
-        {!isMobile ? (
-          <span aria-hidden="true" style={{ fontSize: 8, opacity: 0.65, marginLeft: 1 }}>
-            {open ? '▲' : '▼'}
-          </span>
-        ) : null}
+        <span className="pvg-fx-code" style={{ fontSize: 11, fontWeight: 700 }}>
+          {currency}
+        </span>
+        <span aria-hidden="true" style={{ fontSize: 8, opacity: 0.65, marginLeft: 1 }}>
+          {open ? '▲' : '▼'}
+        </span>
       </button>
 
       {open ? (
@@ -104,7 +96,7 @@ export function CurrencySelector({ variant = 'nav' }: { variant?: Variant }) {
             position: 'absolute',
             top: 'calc(100% + 6px)',
             right: 0,
-            zIndex: 90,
+            zIndex: 1300,
             margin: 0,
             padding: '4px 0',
             listStyle: 'none',

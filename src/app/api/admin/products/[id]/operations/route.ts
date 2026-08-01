@@ -6,10 +6,13 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
+import { hardDeleteProduct } from '@/lib/products/trash';
 
 const operationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('archive'), note: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal('restore'), availability_status: z.enum(['in_stock', 'on_demand', 'out_of_stock']).default('in_stock') }),
+  z.object({ action: z.literal('restore_trash') }),
+  z.object({ action: z.literal('purge') }),
   z.object({ action: z.literal('reserve'), note: z.string().trim().max(500).optional(), reserved_until: z.string().trim().optional(), quantity: z.coerce.number().int().positive().default(1) }),
   z.object({ action: z.literal('release') }),
   z.object({ action: z.literal('directors_pick'), enabled: z.coerce.boolean(), display_order: z.coerce.number().int().default(0), curator_note: z.string().trim().max(500).optional() }),
@@ -21,18 +24,42 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminAccess('products.write');
-  if ('error' in auth) return auth.error;
-
-  const { id } = await params;
   const body = await request.json().catch(() => null);
   const parsed = operationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
+  const auth = await requireAdminAccess(
+    parsed.data.action === 'purge' ? 'products.delete' : 'products.write'
+  );
+  if ('error' in auth) return auth.error;
+
+  const { id } = await params;
   const db = asUntypedSupabase(createAdminClient());
   const now = new Date().toISOString();
+
+  if (parsed.data.action === 'purge') {
+    try {
+      await hardDeleteProduct(db, id);
+    } catch (err) {
+      console.error('Product purge error:', err);
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Failed to permanently delete' },
+        { status: 500 }
+      );
+    }
+    await logAdminAction({
+      userId: auth.user.id,
+      action: 'product_purge',
+      resourceType: 'product',
+      resourceId: id,
+      ipAddress: getRequestIp(request),
+    });
+    revalidateProductSurfaces();
+    return NextResponse.json({ success: true });
+  }
+
   const updates: Record<string, unknown> = { updated_at: now };
 
   if (parsed.data.action === 'archive') {
@@ -46,6 +73,12 @@ export async function POST(
     updates.in_stock = parsed.data.availability_status === 'in_stock';
     updates.stock_status = parsed.data.availability_status === 'out_of_stock' ? 'out_of_stock' : 'in_stock';
     updates.availability_status = parsed.data.availability_status;
+    updates.deleted_at = null;
+  } else if (parsed.data.action === 'restore_trash') {
+    // Back as draft — admin publishes when ready
+    updates.deleted_at = null;
+    updates.is_active = false;
+    updates.availability_status = 'out_of_stock';
   } else if (parsed.data.action === 'reserve') {
     updates.availability_status = 'reserved';
     updates.manual_reserve_enabled = true;

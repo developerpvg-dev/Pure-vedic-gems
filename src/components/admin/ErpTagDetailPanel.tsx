@@ -212,6 +212,8 @@ export function ErpTagDetailPanel({
                   </dl>
                   <Link
                     href={`/admin/products/${detail.website.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:underline"
                   >
                     Edit product <ExternalLink className="h-3.5 w-3.5" />

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, FileEdit, Loader2, Save, Trash2 } from 'lucide-react';
+import { TRASH_RETENTION_DAYS } from '@/lib/products/trash';
 
 import { createClient } from '@/lib/supabase/client';
 import { MediaUploader, type MediaFile } from '@/components/admin/MediaUploader';
@@ -810,9 +811,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
 
   async function handleDeactivate() {
     if (!productId) return;
-    if (!confirm('Deactivate this product? It will be hidden from the site.')) return;
+    if (!confirm(`Move this product to trash? It can be restored within ${TRASH_RETENTION_DAYS} days.`)) return;
     const res = await fetch(`/api/admin/products/${productId}`, { method: 'DELETE' });
-    if (res.ok) router.push('/admin/products');
+    if (res.ok) router.push('/admin/products?status=trash');
   }
 
   const currentSection = steps[step - 1];
@@ -1566,7 +1567,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
               className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />
-              Deactivate
+              Delete
             </button>
           )}
           <button

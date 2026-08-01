@@ -312,6 +312,8 @@ export default function ContentCompletenessPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/admin/products/${p.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-sm font-semibold text-amber-800 hover:underline"
                       >
                         Edit

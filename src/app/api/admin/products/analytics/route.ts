@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   let query = admin
     .from('products')
     .select('category, sub_category, availability_status, stock_quantity, price, is_active, created_at')
+    .is('deleted_at', null)
     .limit(5000);
 
   if (category) query = query.eq('category', category);

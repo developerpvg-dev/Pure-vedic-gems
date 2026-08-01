@@ -1,4 +1,10 @@
 {
   "framework": "nextjs",
-  "regions": ["bom1"]
+  "regions": ["bom1"],
+  "crons": [
+    {
+      "path": "/api/cron/purge-product-trash",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

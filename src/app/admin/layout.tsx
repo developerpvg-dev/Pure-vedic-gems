@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText, Trash2 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
@@ -27,6 +27,7 @@ const NAV_GROUPS = [
       { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
       { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
       { href: '/admin/products?status=inactive', label: 'Drafts', icon: FileEdit, match: 'drafts' as const },
+      { href: '/admin/products?status=trash', label: 'Trash', icon: Trash2, match: 'trash' as const },
       { href: '/admin/catalog-order', label: 'Catalog Order', icon: SlidersHorizontal, match: 'prefix' as const },
       { href: '/admin/directors-pick', label: "Director's Pick", icon: Star, match: 'prefix' as const },
       { href: '/admin/yagyas', label: 'Vedic Yagyas', icon: Flame, match: 'prefix' as const },
@@ -77,7 +78,7 @@ const NAV_GROUPS = [
   },
 ];
 
-/** Website Maintenance: hide ops/finance/leads; orders stay (read-only via RBAC). */
+/** Website Maintenance: hide ops/finance/leads; orders stay (read-only via RBAC). Settings kept for currency rates. */
 const CONTENT_HIDDEN_HREFS = new Set([
   '/admin',
   '/admin/orders/new',
@@ -89,21 +90,22 @@ const CONTENT_HIDDEN_HREFS = new Set([
   '/admin/agent-sessions',
   '/admin/finance',
   '/admin/compliance',
-  '/admin/settings',
 ]);
 
 function navLinkActive(
   pathname: string | null,
   searchParams: URLSearchParams,
   href: string,
-  match: 'exact' | 'prefix' | 'products' | 'drafts',
+  match: 'exact' | 'prefix' | 'products' | 'drafts' | 'trash',
 ) {
   if (match === 'exact') return pathname === href;
   if (match === 'drafts') return pathname === '/admin/products' && searchParams.get('status') === 'inactive';
+  if (match === 'trash') return pathname === '/admin/products' && searchParams.get('status') === 'trash';
   if (match === 'products') {
     if (!pathname?.startsWith('/admin/products')) return false;
     if (pathname.startsWith('/admin/products/import')) return false;
-    return !(pathname === '/admin/products' && searchParams.get('status') === 'inactive');
+    const status = searchParams.get('status');
+    return !(pathname === '/admin/products' && (status === 'inactive' || status === 'trash'));
   }
   // Avoid /admin/orders prefix lighting up on /admin/orders/new
   if (href === '/admin/orders' && pathname?.startsWith('/admin/orders/new')) return false;
@@ -171,7 +173,7 @@ function AdminNavContent({
                       onClick={(e) => {
                         setSidebarOpen(false);
                         // products page only reads ?status on mount
-                        if (link.match === 'drafts' || link.match === 'products') {
+                        if (link.match === 'drafts' || link.match === 'products' || link.match === 'trash') {
                           e.preventDefault();
                           window.location.assign(link.href);
                         }

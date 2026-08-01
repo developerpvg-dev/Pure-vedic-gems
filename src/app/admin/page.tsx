@@ -408,6 +408,8 @@ export default function AdminDashboard() {
               <Link
                 key={product.id}
                 href={`/admin/products/${product.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm transition hover:border-red-300"
               >
                 <p className="truncate font-semibold text-gray-900">{product.name}</p>

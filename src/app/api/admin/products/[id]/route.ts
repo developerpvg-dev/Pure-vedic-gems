@@ -219,7 +219,7 @@ export async function PUT(
   return NextResponse.json({ product });
 }
 
-// ── DELETE: soft-delete (deactivate) product ────────────────────────
+// ── DELETE: move product to trash (soft-delete via deleted_at) ───────
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -229,19 +229,28 @@ export async function DELETE(
 
   const { id } = await params;
   const admin = createAdminClient();
+  const now = new Date().toISOString();
 
   const { error } = await (admin
     .from('products') as ReturnType<typeof admin.from>)
-    .update({ is_active: false, availability_status: 'archived', stock_status: 'out_of_stock', updated_at: new Date().toISOString() } as Record<string, unknown>)
-    .eq('id', id);
+    .update({
+      deleted_at: now,
+      is_active: false,
+      availability_status: 'archived',
+      stock_status: 'out_of_stock',
+      in_stock: false,
+      updated_at: now,
+    } as Record<string, unknown>)
+    .eq('id', id)
+    .is('deleted_at', null);
 
   if (error) {
-    return NextResponse.json({ error: 'Failed to deactivate product' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to move product to trash' }, { status: 500 });
   }
 
   await logAdminAction({
     userId: auth.user.id,
-    action: 'product_archive',
+    action: 'product_trash',
     resourceType: 'product',
     resourceId: id,
   });

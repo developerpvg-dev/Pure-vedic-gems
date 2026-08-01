@@ -8,7 +8,7 @@ import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { BLOG_CATEGORY_LINKS } from '@/lib/constants/nav-items';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { CurrencySelector } from './CurrencySelector';
 
 interface MobileNavProps {
   open: boolean;
@@ -350,13 +350,14 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </Link>
           ))}
 
-          {/* Account + notifications (phone options moved here) */}
+          {/* Account + currency */}
           <div style={{ borderBottom: '1px solid #EDE6D5' }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 12,
                 padding: '14px 20px',
                 borderBottom: '1px solid #F5F0E8',
               }}
@@ -370,9 +371,22 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                   color: '#3A3A3A',
                 }}
               >
-                Account
+                Currency
               </span>
-              <NotificationBell />
+              <CurrencySelector variant="mobile" />
+            </div>
+
+            <div
+              style={{
+                padding: '14px 20px 6px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#3A3A3A',
+              }}
+            >
+              Account
             </div>
 
             <Link

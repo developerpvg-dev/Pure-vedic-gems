@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   HEADER_NAV_ITEMS,
   SERVICE_NAV_LINKS,
@@ -274,15 +275,31 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
 function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categoryGroups: StorefrontCategoryGroup[] }) {
   const hasDropdown = Boolean(item.dropdown);
   const isWide = item.dropdown === 'gemstones' || item.dropdown === 'collections';
+  const pathname = usePathname();
+  // CSS :hover/:focus-within keep the panel open after soft nav; lock until mouse leaves
+  const [lockedClosed, setLockedClosed] = useState(false);
+  const pathRef = React.useRef(pathname);
+
+  useEffect(() => {
+    if (pathRef.current === pathname) return;
+    pathRef.current = pathname;
+    setLockedClosed(true);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }, [pathname]);
+
   return (
     <li
-      className="pvg-nav-item"
+      className={`pvg-nav-item${lockedClosed ? ' pvg-nav-item--closed' : ''}`}
       style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
+      onMouseLeave={() => setLockedClosed(false)}
     >
       <Link
         href={item.href}
         aria-haspopup={hasDropdown ? 'menu' : undefined}
         className="pvg-nav-link"
+        onClick={() => {
+          if (hasDropdown) setLockedClosed(true);
+        }}
         style={{
           display: 'flex', alignItems: 'center', gap: '4px', padding: '0 13px', height: '100%',
           fontSize: '13px', fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase',
@@ -298,12 +315,14 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
         <div
           className="pvg-nav-drop"
           data-align={isWide ? 'left' : undefined}
+          onClick={() => setLockedClosed(true)}
           style={{
             position: 'absolute', top: '100%',
             left: isWide ? '-130px' : '50%',
             transform: isWide ? 'translateY(-8px)' : 'translateX(-50%) translateY(-8px)',
             opacity: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: 1200,
             transition: 'opacity 0.26s ease, transform 0.26s ease, visibility 0s linear 0.26s',
+            paddingTop: '4px',
           }}
         >
           <DropdownContent item={item} categoryGroups={categoryGroups} />
@@ -406,18 +425,36 @@ export function SiteHeader() {
     <>
       {/* Hover-state CSS matching static HTML exactly */}
       <style>{`
-        .pvg-nav-link:hover { color: #7A1515 !important; border-bottom-color: #B8861E !important; }
-        .pvg-nav-item:hover .pvg-nav-drop:not([data-align="left"]) {
+        .pvg-nav-link:hover,
+        .pvg-nav-item:focus-within .pvg-nav-link { color: #7A1515 !important; border-bottom-color: #B8861E !important; }
+        .pvg-nav-item:hover .pvg-nav-drop:not([data-align="left"]),
+        .pvg-nav-item:focus-within .pvg-nav-drop:not([data-align="left"]) {
           opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
           transform: translateX(-50%) translateY(0) !important; transition-delay: 0s !important;
         }
-        .pvg-nav-item:hover .pvg-nav-drop[data-align="left"] {
+        .pvg-nav-item:hover .pvg-nav-drop[data-align="left"],
+        .pvg-nav-item:focus-within .pvg-nav-drop[data-align="left"] {
           opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
           transform: translateY(0) !important; transition-delay: 0s !important;
         }
+        /* After click/nav, stay closed even if cursor still over the item */
+        .pvg-nav-item--closed .pvg-nav-drop,
+        .pvg-nav-item--closed:hover .pvg-nav-drop,
+        .pvg-nav-item--closed:focus-within .pvg-nav-drop {
+          opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+        }
+        .pvg-nav-item--closed:focus-within .pvg-nav-link {
+          color: #3A3A3A !important; border-bottom-color: transparent !important;
+        }
+        /* Bridge gap so mouse can move from link into dropdown without closing */
+        .pvg-nav-drop::before {
+          content: '';
+          position: absolute;
+          left: 0; right: 0; top: -12px; height: 12px;
+        }
         .pvg-dd-item:hover { background: #F5F0E8 !important; color: #7A1515 !important; padding-left: 24px !important; border-left-color: #7A1515 !important; }
         .pvg-mega-item:hover { background: #F5F0E8 !important; border-left-color: #7A1515 !important; }
-        .pvg-nav-action { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 0; background: transparent; padding: 0; color: #3A3A3A; cursor: pointer; transition: background 0.2s, color 0.2s; }
+        .pvg-nav-action { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 0; background: transparent; padding: 0; color: #3A3A3A; cursor: pointer; transition: background 0.2s, color 0.2s; }
         .pvg-nav-icon:hover { background: #F5F0E8 !important; color: #7A1515 !important; }
         .pvg-btn-consult:hover { background: #4D0A0A !important; box-shadow: 0 4px 16px rgba(122,21,21,0.35) !important; transform: translateY(-1px) !important; }
         .pvg-ham:hover { background: #F5F0E8 !important; }
@@ -425,17 +462,18 @@ export function SiteHeader() {
         .pvg-action-cluster {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 4px;
           flex-shrink: 0;
         }
         .pvg-action-divider {
           width: 1px;
-          height: 34px;
+          height: 22px;
           background: #ddd6ca;
+          margin: 0 2px;
         }
         .pvg-action-icon-btn {
-          width: 40px;
-          height: 40px;
+          width: 32px;
+          height: 32px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -450,12 +488,16 @@ export function SiteHeader() {
           background: #f5f0e8;
           color: #7a1515;
         }
+        .pvg-action-icon-btn svg {
+          width: 16px;
+          height: 16px;
+        }
         .pvg-action-pill {
           display: inline-flex;
           align-items: center;
           gap: 0;
-          padding: 0 8px;
-          height: 46px;
+          padding: 0 3px;
+          height: 34px;
           border: 1px solid #d9d4c9;
           border-radius: 999px;
           background: #f7f7f6;
@@ -463,13 +505,13 @@ export function SiteHeader() {
         }
         .pvg-action-pill-divider {
           width: 1px;
-          height: 26px;
+          height: 16px;
           background: #d2ccc0;
-          margin: 0 4px;
+          margin: 0 1px;
         }
         .pvg-action-pill .relative > button {
-          width: 40px !important;
-          height: 40px !important;
+          width: 30px !important;
+          height: 30px !important;
           border: 0 !important;
           background: transparent !important;
           color: #3a3a3a !important;
@@ -480,32 +522,65 @@ export function SiteHeader() {
           color: #7a1515 !important;
         }
         .pvg-action-pill .relative > button span {
-          right: 2px !important;
-          top: 1px !important;
+          right: 0 !important;
+          top: 0 !important;
         }
         .pvg-account-shell {
           display: inline-flex;
           align-items: center;
-          min-height: 42px;
-          padding: 0 2px;
+          min-height: 32px;
+          padding: 0;
+        }
+        .pvg-account-shell .pvg-nav-action {
+          width: 32px !important;
+          height: 32px !important;
         }
 
         .pvg-mob-action-cluster {
           display: flex;
           align-items: center;
-          gap: 6px;
-          flex-shrink: 1;
-          min-width: 0;
+          gap: 4px;
+          flex-shrink: 0;
         }
         .pvg-ham {
           flex-shrink: 0 !important;
+        }
+        .pvg-mob-brand {
+          display: flex;
+          align-items: center;
+          flex-shrink: 1;
+          min-width: 0;
+          text-decoration: none;
+        }
+        .pvg-mob-logo {
+          width: 40px;
+          height: 40px;
+          object-fit: contain;
+          flex-shrink: 0;
         }
         .pvg-mob-brand-text {
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          margin-left: 10px;
+          margin-left: 8px;
           min-width: 0;
+          flex-shrink: 1;
+        }
+        .pvg-mob-wordmark {
+          width: 120px;
+          height: 24px;
+          object-fit: contain;
+          display: block;
+        }
+        .pvg-mob-since {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: #6f4f00;
+          margin-top: 3px;
+          padding-left: 12px;
+          white-space: nowrap;
         }
         .pvg-consult-btn {
           display: inline-flex;
@@ -610,22 +685,28 @@ export function SiteHeader() {
           max-width: 1400px;
           box-sizing: border-box;
           min-width: 0;
+          overflow: visible;
         }
         .pvg-desk-nav-center {
           flex: 1;
           display: flex;
           justify-content: center;
           min-width: 0;
-          overflow: hidden;
+          /* visible so labels + hover menus are never clipped */
+          overflow: visible;
+        }
+        .pvg-desk-nav-center > ul {
+          flex-shrink: 0;
         }
         .pvg-mob-nav {
           display: flex;
           width: 100%;
           box-sizing: border-box;
           min-width: 0;
-          overflow: hidden;
+          overflow: visible;
         }
-        @media (min-width: 1280px) {
+        /* Desktop nav only when links fit without cropping */
+        @media (min-width: 1360px) {
           .pvg-desk-nav { display: flex; }
           .pvg-mob-nav  { display: none; }
         }
@@ -770,53 +851,159 @@ export function SiteHeader() {
         }
         /* Mid desktop: keep CTA fully visible by shortening label + tightening gaps */
         @media (max-width: 1439px) {
-          .pvg-action-cluster { gap: 6px; }
-          .pvg-action-divider { height: 28px; }
-          .pvg-action-pill { height: 42px; padding: 0 4px; }
-          .pvg-action-pill .relative > button { width: 36px !important; height: 36px !important; }
-          .pvg-consult-btn { margin-left: 6px; padding: 7px 10px; letter-spacing: 0.08em; }
+          .pvg-action-cluster { gap: 3px; }
+          .pvg-action-divider { height: 20px; }
+          .pvg-action-pill { height: 32px; padding: 0 2px; }
+          .pvg-action-pill .relative > button { width: 28px !important; height: 28px !important; }
+          .pvg-consult-btn { margin-left: 4px; padding: 6px 9px; letter-spacing: 0.08em; }
           .pvg-consult-full { display: none; }
           .pvg-consult-short { display: inline; }
-          .pvg-nav-link { padding-left: 8px !important; padding-right: 8px !important; }
+          .pvg-nav-link { padding-left: 6px !important; padding-right: 6px !important; font-size: 12px !important; }
         }
-        @media (max-width: 639px) {
-          .pvg-mob-action-cluster { gap: 4px; }
-          .pvg-mob-action-divider { height: 24px; }
-          .pvg-mob-icon-btn { width: 34px; height: 34px; }
-          .pvg-mob-action-pill { height: 38px; padding: 0 5px; }
-          .pvg-mob-action-pill .relative > button { width: 32px !important; height: 32px !important; }
-          .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn {
-            width: 30px !important;
-            height: 30px !important;
-            min-width: 30px !important;
-          }
+        @media (max-width: 1399px) {
+          .pvg-desk-nav { padding-left: 16px !important; padding-right: 16px !important; gap: 10px !important; }
+          .pvg-nav-link { padding-left: 5px !important; padding-right: 5px !important; letter-spacing: 0.02em !important; }
         }
         @media (max-width: 767px) {
-          .pvg-mob-action-divider,
-          .pvg-mob-action-pill-divider {
+          .pvg-mob-action-divider {
             display: none !important;
           }
           .pvg-mob-account-shell {
             display: none !important;
           }
-          .pvg-ham {
-            margin-left: 2px !important;
+          .pvg-mob-nav {
+            height: 56px !important;
+            padding: 0 10px !important;
           }
           .pvg-mob-action-cluster {
             gap: 2px;
           }
-          .pvg-mob-action-pill {
-            padding: 0 3px;
+          .pvg-mob-icon-btn {
+            width: 32px;
+            height: 32px;
           }
-          .pvg-mob-nav {
-            padding: 0 10px !important;
+          .pvg-mob-icon-btn svg {
+            width: 16px;
+            height: 16px;
+          }
+          .pvg-ham {
+            width: 32px !important;
+            height: 32px !important;
+            margin-left: 2px !important;
+          }
+          .pvg-ham span {
+            width: 16px !important;
+          }
+          .pvg-ham span:nth-child(2) {
+            width: 11px !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile {
+            display: block !important;
+            flex-shrink: 0 !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn {
+            height: 28px !important;
+            padding: 0 5px !important;
+            gap: 3px !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-code {
+            font-size: 10px !important;
+          }
+          .pvg-mob-logo {
+            width: 34px !important;
+            height: 34px !important;
+          }
+          .pvg-mob-wordmark {
+            width: 100px !important;
+            height: 20px !important;
+          }
+          .pvg-mob-brand-text {
+            margin-left: 6px !important;
+          }
+          .pvg-mob-since {
+            font-size: 8.5px !important;
+            letter-spacing: 0.16em !important;
+            padding-left: 8px !important;
+            margin-top: 2px !important;
           }
         }
-        /* Narrow phones: drop brand wordmark + currency so hamburger always fits */
-        @media (max-width: 420px) {
-          .pvg-mob-brand-text { display: none !important; }
-          .pvg-fx-root.pvg-fx-mobile { display: none !important; }
-          .pvg-mob-nav { padding: 0 8px !important; }
+        /* Narrow phones: shrink everything so full logo still fits */
+        @media (max-width: 430px) {
+          .pvg-mob-nav {
+            height: 52px !important;
+            padding: 0 8px !important;
+          }
+          .pvg-mob-logo {
+            width: 30px !important;
+            height: 30px !important;
+          }
+          .pvg-mob-wordmark {
+            width: 88px !important;
+            height: 18px !important;
+          }
+          .pvg-mob-brand-text {
+            display: flex !important;
+            margin-left: 5px !important;
+          }
+          .pvg-mob-since {
+            display: none !important;
+          }
+          .pvg-mob-icon-btn {
+            width: 28px;
+            height: 28px;
+          }
+          .pvg-mob-icon-btn svg {
+            width: 15px;
+            height: 15px;
+          }
+          .pvg-ham {
+            width: 28px !important;
+            height: 28px !important;
+            margin-left: 1px !important;
+            gap: 4px !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn {
+            height: 26px !important;
+            padding: 0 4px !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-code {
+            font-size: 9.5px !important;
+          }
+        }
+        @media (max-width: 360px) {
+          .pvg-mob-nav {
+            padding: 0 6px !important;
+          }
+          .pvg-mob-logo {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .pvg-mob-wordmark {
+            width: 76px !important;
+            height: 16px !important;
+          }
+          .pvg-mob-brand-text {
+            margin-left: 4px !important;
+          }
+          .pvg-mob-action-cluster {
+            gap: 1px;
+          }
+          .pvg-mob-icon-btn {
+            width: 26px;
+            height: 26px;
+          }
+          .pvg-ham {
+            width: 26px !important;
+            height: 26px !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-btn {
+            height: 24px !important;
+            padding: 0 3px !important;
+            gap: 2px !important;
+          }
+          .pvg-fx-root.pvg-fx-mobile .pvg-fx-code {
+            font-size: 9px !important;
+          }
         }
         @media (max-width: 1180px) {
           .pvg-fx-root.pvg-fx-nav .pvg-fx-code {
@@ -841,6 +1028,7 @@ export function SiteHeader() {
           background: '#fff',
           transition: 'box-shadow 0.3s',
           boxShadow: scrolled ? '0 4px 28px rgba(0,0,0,0.10)' : 'none',
+          overflow: 'visible',
         }}
       >
         {/* ── Topbar ── */}
@@ -916,12 +1104,12 @@ export function SiteHeader() {
         </div>
 
         {/* ── Navbar ── */}
-        <nav aria-label="Main navigation" style={{ background: '#fff', borderBottom: '2px solid #7A1515' }}>
+        <nav aria-label="Main navigation" style={{ background: '#fff', borderBottom: '2px solid #7A1515', overflow: 'visible' }}>
 
-          {/* Desktop — visible at ≥1280px */}
+          {/* Desktop — visible at ≥1360px */}
           <div
           className="pvg-desk-nav"
-            style={{ margin: '0 auto', padding: '0 28px', height: '74px', alignItems: 'center', gap: '16px' }}
+            style={{ margin: '0 auto', padding: '0 28px', height: '74px', alignItems: 'center', gap: '16px', overflow: 'visible' }}
           >
             {/* Logo */}
             <Link href="/" aria-label="Pure Vedic Gems — Home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
@@ -985,18 +1173,18 @@ export function SiteHeader() {
             </div>
           </div>
 
-          {/* Mobile/tablet — visible below 1280px */}
+          {/* Mobile/tablet — visible below 1360px */}
           <div className="pvg-mob-nav" style={{ height: '62px', alignItems: 'center', padding: '0 16px' }}>
-            <Link href="/" aria-label="Pure Vedic Gems home" style={{ display: 'flex', alignItems: 'center', flexShrink: 1, minWidth: 0, textDecoration: 'none' }}>
+            <Link href="/" aria-label="Pure Vedic Gems home" className="pvg-mob-brand">
               <Image src="/PVG NEW LOGO DESIGN.webp" alt="Pure Vedic Gems" width={40} height={40} priority
-                style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />
+                className="pvg-mob-logo" />
               <div className="pvg-mob-brand-text">
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority
-                  style={{ width: '120px', height: '24px', objectFit: 'contain', display: 'block' }} />
-                <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '3px', paddingLeft: '12px' }}>Since 1937</span>
+                  className="pvg-mob-wordmark" />
+                <span className="pvg-mob-since">Since 1937</span>
               </div>
             </Link>
-            <div style={{ flex: 1, minWidth: 8 }} />
+            <div style={{ flex: 1, minWidth: 4 }} />
             <div className="pvg-mob-action-cluster">
               <CurrencySelector variant="mobile" />
               <button type="button" onClick={openSearch} aria-label="Search"
@@ -1005,22 +1193,16 @@ export function SiteHeader() {
                 <SearchSvg />
               </button>
               <div aria-hidden="true" className="pvg-mob-action-divider" />
-              <div className="pvg-mob-action-pill" aria-label="Notifications and cart">
-                <div className="pvg-mob-notify-wrap">
-                  <NotificationBell />
-                </div>
-                <span aria-hidden="true" className="pvg-mob-action-pill-divider" />
-                <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
-                  className="pvg-mob-icon-btn"
-                  style={{ position: 'relative', textDecoration: 'none' }}>
-                  <CartSvg />
-                  {cartCount > 0 ? (
-                    <span aria-hidden="true" style={{ position: 'absolute', top: '3px', right: '3px', minWidth: '15px', height: '15px', padding: '0 4px', background: '#cf1f1f', color: '#fff', fontSize: '8.5px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                      {cartCount > 9 ? '9+' : cartCount}
-                    </span>
-                  ) : null}
-                </Link>
-              </div>
+              <Link href="/cart" aria-label={`Shopping cart, ${cartCount} items`}
+                className="pvg-mob-icon-btn"
+                style={{ position: 'relative', textDecoration: 'none', flexShrink: 0 }}>
+                <CartSvg />
+                {cartCount > 0 ? (
+                  <span aria-hidden="true" style={{ position: 'absolute', top: '2px', right: '2px', minWidth: '14px', height: '14px', padding: '0 3px', background: '#cf1f1f', color: '#fff', fontSize: '8px', fontWeight: 700, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                    {cartCount > 9 ? '9+' : cartCount}
+                  </span>
+                ) : null}
+              </Link>
               <div aria-hidden="true" className="pvg-mob-action-divider" />
               <div className="pvg-mob-account-shell">
                 <Suspense fallback={<span style={{ width: '38px', height: '38px' }} />}>

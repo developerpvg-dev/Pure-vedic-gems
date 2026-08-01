@@ -755,7 +755,7 @@ function ErpSyncAdminContent() {
                       <GhostBtn onClick={() => void viewTag(row.tgno)}>
                         <Eye className="h-4 w-4" /> View
                       </GhostBtn>
-                      <Link href={`/admin/products/${row.productId}`} className={ghostCls}>
+                      <Link href={`/admin/products/${row.productId}`} target="_blank" rel="noopener noreferrer" className={ghostCls}>
                         Edit
                       </Link>
                       <button
@@ -943,7 +943,7 @@ function ErpSyncAdminContent() {
                         <GhostBtn onClick={() => void viewTag(row.tgno)}>
                           <Eye className="h-4 w-4" /> View
                         </GhostBtn>
-                        <Link href={`/admin/products/${row.productId}`} className={ghostCls}>
+                        <Link href={`/admin/products/${row.productId}`} target="_blank" rel="noopener noreferrer" className={ghostCls}>
                           Edit
                         </Link>
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-700">
@@ -981,7 +981,7 @@ function ErpSyncAdminContent() {
                       <GhostBtn onClick={() => void viewTag(row.tagNumber)}>
                         <Eye className="h-4 w-4" /> View
                       </GhostBtn>
-                      <Link href={`/admin/products/${row.productId}`} className={ghostCls}>
+                      <Link href={`/admin/products/${row.productId}`} target="_blank" rel="noopener noreferrer" className={ghostCls}>
                         Edit
                       </Link>
                       {row.websitePurchasable && (
