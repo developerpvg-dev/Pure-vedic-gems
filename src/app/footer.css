@@ -196,13 +196,6 @@
 .pvg-social-icon svg {
   width: 15px;
   height: 15px;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  fill: none;
-}
-
-.pvg-social-icon[aria-label='WhatsApp'] svg,
-.pvg-social-icon[aria-label='YouTube'] svg {
   fill: currentColor;
   stroke: none;
 }

@@ -4,9 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2, UserPlus, LogIn } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, Lock, Package, Settings2, UserPlus, LogIn, Gem } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { RUDRAKSHA_CONFIGURATOR_ENABLED } from '@/lib/utils/rudraksha-configurator';
+import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { productHref } from '@/lib/categories/storefront';
@@ -73,14 +74,35 @@ function CartItemRow({
             </Link>
           </div>
         )}
-        {RUDRAKSHA_CONFIGURATOR_ENABLED && !item.configuration_id && item.category === 'rudraksha' && (
-          <Link
-            href={`/configure/${item.product_id}`}
-            className="mt-2 inline-flex items-center gap-1 rounded-lg border border-[var(--pvg-accent)]/30 bg-brand-gold-light px-2.5 py-1 text-[11px] font-semibold text-[var(--pvg-accent)] transition hover:bg-brand-gold-light/80"
-          >
-            <Settings2 className="h-3 w-3" />
-            Configure Pendant
-          </Link>
+        {isGemConfiguratorEnabled(item.category) && !item.configuration_id && (
+          <div className="mt-3 flex gap-3 rounded-xl bg-[var(--pvg-accent)]/[0.06] px-3.5 py-3">
+            <div
+              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+              style={{ background: 'color-mix(in srgb, var(--pvg-accent) 14%, transparent)' }}
+              aria-hidden
+            >
+              <Gem className="h-3.5 w-3.5 text-[var(--pvg-accent)]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-heading text-[13px] font-semibold leading-snug text-[var(--pvg-primary)]">
+                {item.category === 'rudraksha'
+                  ? 'Want this as a pendant?'
+                  : 'Want this set in jewellery?'}
+              </p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--pvg-muted)]">
+                {item.category === 'rudraksha'
+                  ? 'Pick metal, arrangement and finish — we will craft it for you.'
+                  : 'Pick metal, setting and size — we will craft it for you.'}
+              </p>
+              <Link
+                href={`/configure/${item.product_id}`}
+                className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--pvg-accent)] transition hover:gap-2.5"
+              >
+                Configure this piece
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
         )}
 
         <CartItemPriceBreakdown item={item} />
