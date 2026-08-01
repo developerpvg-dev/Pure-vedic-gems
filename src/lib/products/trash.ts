@@ -28,7 +28,7 @@ export async function hardDeleteProduct(db: UntypedSupabase, productId: string) 
 export async function purgeExpiredTrashedProducts(db: UntypedSupabase, now = new Date()) {
   const cutoff = trashPurgeCutoffIso(now);
   const { data, error } = await db
-    .from<{ id: string }>('products')
+    .from<{ id: string }[]>('products')
     .select('id')
     .not('deleted_at', 'is', null)
     .lt('deleted_at', cutoff);
