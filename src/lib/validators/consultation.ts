@@ -170,13 +170,7 @@ export const consultationBookingCreateOrderSchema = z
     website: z.string().max(0).optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.plan_id !== 'rs101') return;
-    if (!value.date_of_birth) {
-      ctx.addIssue({ code: 'custom', path: ['date_of_birth'], message: 'Date of birth is required' });
-    }
-    if (!value.birth_place?.trim()) {
-      ctx.addIssue({ code: 'custom', path: ['birth_place'], message: 'Birth place is required' });
-    }
+    // Location required for CRM lead cards (homepage ₹101 + detailed consultation).
     if (!value.customer_city?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['customer_city'], message: 'City / district is required' });
     }
@@ -185,6 +179,13 @@ export const consultationBookingCreateOrderSchema = z
     }
     if (!value.customer_country?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['customer_country'], message: 'Country is required' });
+    }
+    if (value.plan_id !== 'rs101') return;
+    if (!value.date_of_birth) {
+      ctx.addIssue({ code: 'custom', path: ['date_of_birth'], message: 'Date of birth is required' });
+    }
+    if (!value.birth_place?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['birth_place'], message: 'Birth place is required' });
     }
     if (!value.life_situation?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['life_situation'], message: 'Purpose / area of concern is required' });

@@ -15,6 +15,12 @@ import {
 } from '@/lib/inventory/order-availability';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { orderHasCustomDesignPricingPending } from '@/lib/utils/configuration-snapshot';
+import {
+  RING_SIZE_CONFIRM_COPY,
+  beginRingSizeConfirmation,
+  orderHasRingItem,
+} from '@/lib/orders/ring-size-confirmation';
+import { ringSizeConfirmPublicLink } from '@/lib/orders/ring-size-confirmation-token';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -308,6 +314,21 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
 
   if (recipient && !confirmationEmailSentAt) {
     const siteUrl = getEmailSiteUrl();
+    const needsRingConfirm = orderHasRingItem(order.items);
+    let ringSizeConfirmUrl: string | undefined;
+    let nextComplianceFlags: Record<string, unknown> | null = null;
+
+    if (needsRingConfirm) {
+      const { data: flagsRow } = await supabase
+        .from('orders')
+        .select('compliance_flags')
+        .eq('id', order.id)
+        .single();
+      const started = beginRingSizeConfirmation(flagsRow?.compliance_flags ?? order.compliance_flags);
+      nextComplianceFlags = started.flags;
+      ringSizeConfirmUrl = ringSizeConfirmPublicLink(order.id, siteUrl);
+    }
+
     const messageId = await sendOrderConfirmationEmail(recipient.email, {
       customerName: recipient.name,
       orderNumber: order.order_number,
@@ -346,12 +367,17 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
         country: string;
       },
       siteUrl,
+      ringSizeConfirmUrl,
+      ringSizeConfirmCopy: ringSizeConfirmUrl ? RING_SIZE_CONFIRM_COPY : undefined,
     });
 
     if (messageId) {
-      await supabase
+      await asUntypedSupabase(supabase)
         .from('orders')
-        .update({ confirmation_email_sent_at: new Date().toISOString() })
+        .update({
+          confirmation_email_sent_at: new Date().toISOString(),
+          ...(nextComplianceFlags ? { compliance_flags: nextComplianceFlags } : {}),
+        })
         .eq('id', order.id);
       await supabase.from('notification_log').insert({
         type: 'email',
@@ -361,6 +387,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
           order_id: order.id,
           order_number: order.order_number,
           resend_message_id: messageId,
+          ring_size_confirm: Boolean(ringSizeConfirmUrl),
         },
         status: 'sent',
       });

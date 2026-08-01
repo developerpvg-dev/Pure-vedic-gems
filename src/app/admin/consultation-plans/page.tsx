@@ -487,7 +487,7 @@ export default function ConsultationPlansPage() {
                   </div>
 
                   <TextInput label="Badge Label" value={form.badge_label} onChange={(value) => setForm((prev) => ({ ...prev, badge_label: value }))} placeholder="Most Popular" />
-                  <TextInput label="Mode Label" value={form.mode_label} onChange={(value) => setForm((prev) => ({ ...prev, mode_label: value }))} placeholder="Telephonic / Skype" />
+                  <TextInput label="Mode Label" value={form.mode_label} onChange={(value) => setForm((prev) => ({ ...prev, mode_label: value }))} placeholder="Telephonic" />
 
                   <label className="sm:col-span-2">
                     <span className="mb-1 block text-xs font-semibold text-gray-600">Highlights</span>

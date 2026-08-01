@@ -53,9 +53,9 @@ VALUES
     TRUE
   ),
   (
-    'For remedy related to particular problem (Only one question) (Telephonic/Skype chat)',
+    'For remedy related to particular problem (Only one question) (Telephonic chat)',
     'problem-remedy-one-question-telephonic-skype',
-    'Focused remedy consultation for one specific question through telephonic or Skype chat.',
+    'Focused remedy consultation for one specific question through telephonic chat.',
     1100,
     15,
     30,
@@ -73,9 +73,9 @@ VALUES
     TRUE
   ),
   (
-    'For Detail Consultation/Horoscope Study/Remedies (Telephonic/Skype Chat)',
+    'For Detail Consultation/Horoscope Study/Remedies (Telephonic Chat)',
     'detailed-horoscope-remedies-telephonic-skype',
-    'Detailed consultation, horoscope study, and remedy guidance through telephonic or Skype chat.',
+    'Detailed consultation, horoscope study, and remedy guidance through telephonic chat.',
     3100,
     42,
     60,

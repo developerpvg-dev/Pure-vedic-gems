@@ -23,13 +23,13 @@ import {
   User,
   UserRoundCheck,
   Users,
-  Video,
   X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import type { ConsultationPlan } from '@/lib/types/database';
 import '@/app/consultation/consultation-page.css';
 
@@ -60,6 +60,9 @@ interface FormState {
   date_of_birth: string;
   birth_time: string;
   birth_place: string;
+  customer_city: string;
+  customer_state: string;
+  customer_country: string;
   life_situation: string;
   preferred_date: string;
   preferred_time: string;
@@ -85,6 +88,9 @@ const INITIAL_FORM: FormState = {
   date_of_birth: '',
   birth_time: '',
   birth_place: '',
+  customer_city: '',
+  customer_state: '',
+  customer_country: '',
   life_situation: '',
   preferred_date: '',
   preferred_time: '',
@@ -112,14 +118,9 @@ const PLAN_THEMES: Record<PlanColor, typeof BRAND_PLAN_THEME> = {
   rose: BRAND_PLAN_THEME,
 };
 
-function formatInr(amount: number | null) {
+function formatPlanPrice(amount: number | null) {
   if (amount == null) return formatPrice(0);
   return formatPrice(Number(amount));
-}
-
-function formatUsd(amount: number | null) {
-  if (amount == null) return null;
-  return formatPrice(Number(amount), 'USD');
 }
 
 function readMetadata(plan: ConsultationPlan): PlanMetadata {
@@ -134,13 +135,12 @@ function getPlanTheme(plan: ConsultationPlan, index: number) {
 }
 
 function getConsultationMode(plan: ConsultationPlan): { label: string; icon: ComponentType<{ className?: string }> } {
-  const metadata = readMetadata(plan);
-  if (metadata.mode_label) return { label: metadata.mode_label, icon: MessageCircle };
-  const title = plan.title.toLowerCase();
-  if (title.includes('face') || title.includes('personal')) return { label: 'Personal / Face to Face', icon: Users };
-  if (title.includes('skype') || title.includes('telephonic')) return { label: 'Telephonic / Skype', icon: Video };
-  if (title.includes('softcopy') || title.includes('horoscope')) return { label: 'Horoscope Softcopy', icon: FileText };
-  return { label: 'Paid Consultation', icon: MessageCircle };
+  const label = consultationModeFromPlan({ title: plan.title, metadata: plan.metadata }) ?? 'Paid Consultation';
+  const lower = label.toLowerCase();
+  if (lower.includes('face') || lower.includes('personal')) return { label, icon: Users };
+  if (lower.includes('telephonic') || lower.includes('phone') || lower.includes('chat')) return { label, icon: Phone };
+  if (lower.includes('softcopy') || lower.includes('horoscope')) return { label, icon: FileText };
+  return { label, icon: MessageCircle };
 }
 
 function getPlanHighlights(plan: ConsultationPlan) {
@@ -156,7 +156,11 @@ function getPlanHighlights(plan: ConsultationPlan) {
 
 function getPlanDetails(plan: ConsultationPlan) {
   const metadata = readMetadata(plan);
-  return metadata.details || plan.description || 'Full guidance details will be shared by the PureVedicGems team after booking.';
+  return stripSkype(metadata.details || plan.description || 'Full guidance details will be shared by the PureVedicGems team after booking.');
+}
+
+function planDisplayTitle(plan: ConsultationPlan) {
+  return stripSkype(plan.title);
 }
 
 function loadRazorpayScript() {
@@ -254,6 +258,9 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
     if (!form.full_name.trim()) nextErrors.full_name = 'Name is required';
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Valid email required';
     if (!form.phone.trim() || !/^[0-9+\-\s()]{7,20}$/.test(form.phone)) nextErrors.phone = 'Valid phone required';
+    if (!form.customer_city.trim()) nextErrors.customer_city = 'City / district is required';
+    if (!form.customer_state.trim()) nextErrors.customer_state = 'State is required';
+    if (!form.customer_country.trim()) nextErrors.customer_country = 'Country is required';
     return nextErrors;
   }
 
@@ -415,11 +422,21 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                 const selected = selectedPlan?.id === plan.id;
                 const mode = getConsultationMode(plan);
                 const ModeIcon = mode.icon;
-                const usdPrice = formatUsd(plan.amount_usd);
+                const title = planDisplayTitle(plan);
                 return (
                   <article
                     key={plan.id}
-                    className={`relative flex flex-col rounded-xl border bg-white p-3 shadow-sm transition hover:shadow-md ${selected ? `${theme.border} ring-2 ${theme.ring}` : 'border-[#7A1515]/15'}`}
+                    tabIndex={0}
+                    aria-pressed={selected}
+                    aria-label={`Select plan: ${mode.label}`}
+                    onClick={() => selectPlan(plan.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        selectPlan(plan.id);
+                      }
+                    }}
+                    className={`relative flex cursor-pointer flex-col rounded-xl border bg-white p-3 shadow-sm transition hover:shadow-md ${selected ? `${theme.border} ring-2 ${theme.ring}` : 'border-[#7A1515]/15'}`}
                   >
                     {metadata.badge_label && (
                       <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#7A1515] px-2.5 py-0.5 text-[9px] font-medium text-white">
@@ -431,7 +448,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                     <div className={`aspect-square w-full overflow-hidden rounded-lg ${theme.soft}`}>
                       {metadata.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={metadata.image_url} alt={plan.title} className="h-full w-full object-contain p-2" />
+                        <img src={metadata.image_url} alt={title} className="h-full w-full object-contain p-2" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
                           <ModeIcon className={`h-8 w-8 ${theme.text}`} />
@@ -444,22 +461,20 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                       <span className={`truncate text-[10px] font-medium ${theme.text}`}>{mode.label}</span>
                     </div>
 
-                    <h2 className="mt-0.5 text-[12px] font-medium leading-4 text-slate-700">{plan.title}</h2>
+                    <h2 className="mt-0.5 text-[12px] font-medium leading-4 text-slate-700">{title}</h2>
 
-                    <p className={`mt-1 text-[13px] font-semibold ${theme.text}`}>{formatInr(plan.amount_inr)}</p>
-                    {usdPrice && <p className="text-[10px] text-slate-400">{usdPrice}</p>}
+                    <p className={`mt-1 text-[13px] font-semibold ${theme.text}`}>{formatPlanPrice(plan.amount_inr)}</p>
 
                     <div className="mt-2 flex flex-col gap-1">
-                      <button
-                        type="button"
-                        onClick={() => selectPlan(plan.id)}
-                        className={`w-full rounded-md px-2 py-1 text-[11px] font-medium transition ${theme.button}`}
-                      >
+                      <span className={`w-full rounded-md px-2 py-1 text-center text-[11px] font-medium ${theme.button}`}>
                         {selected ? '✓ Selected' : 'Select Plan'}
-                      </button>
+                      </span>
                       <button
                         type="button"
-                        onClick={() => setDetailsPlanId(plan.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDetailsPlanId(plan.id);
+                        }}
                         className={`w-full rounded-md border bg-white px-2 py-1 text-[11px] font-medium transition ${theme.outline}`}
                       >
                         See Details
@@ -499,6 +514,9 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                   <FieldInput icon={MapPin} label="Birth Place" value={form.birth_place} onChange={(value) => updateField('birth_place', value)} placeholder="City, State" />
                   <FieldInput icon={Calendar} label="Birth Date" type="date" value={form.date_of_birth} onChange={(value) => updateField('date_of_birth', value)} />
                   <FieldInput icon={Clock} label="Birth Time" type="time" value={form.birth_time} onChange={(value) => updateField('birth_time', value)} />
+                  <FieldInput icon={MapPin} label="City / District" value={form.customer_city} onChange={(value) => updateField('customer_city', value)} placeholder="Current city" error={errors.customer_city} />
+                  <FieldInput icon={MapPin} label="State" value={form.customer_state} onChange={(value) => updateField('customer_state', value)} placeholder="State" error={errors.customer_state} />
+                  <FieldInput icon={MapPin} label="Country" value={form.customer_country} onChange={(value) => updateField('customer_country', value)} placeholder="Country" error={errors.customer_country} />
                   <FieldInput icon={Calendar} label="Preferred Date" type="date" min={new Date().toISOString().split('T')[0]} value={form.preferred_date} onChange={(value) => updateField('preferred_date', value)} />
                   <FieldInput icon={Clock} label="Preferred Time" type="time" value={form.preferred_time} onChange={(value) => updateField('preferred_time', value)} />
                   <TextArea label="Life Situation / Concern" value={form.life_situation} onChange={(value) => updateField('life_situation', value)} rows={3} />
@@ -515,9 +533,9 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-[11px] font-medium text-slate-400">Plan</p>
-                  <h3 className="mt-0.5 text-sm font-semibold text-slate-800">{selectedPlan?.title ?? <span className="italic text-slate-400">No plan selected</span>}</h3>
+                  <h3 className="mt-0.5 text-sm font-semibold text-slate-800">{selectedPlan ? planDisplayTitle(selectedPlan) : <span className="italic text-slate-400">No plan selected</span>}</h3>
                   {selectedPlan && (
-                    <p className="mt-1 text-xl font-bold text-brand-primary">{formatInr(selectedPlan.amount_inr)}</p>
+                    <p className="mt-1 text-xl font-bold text-brand-primary">{formatPlanPrice(selectedPlan.amount_inr)}</p>
                   )}
                 </div>
 
@@ -600,6 +618,7 @@ function PlanDetailsDialog({ plan, index, onClose, onSelect }: { plan: Consultat
   const mode = getConsultationMode(plan);
   const ModeIcon = mode.icon;
   const { theme } = getPlanTheme(plan, Math.max(index, 0));
+  const title = planDisplayTitle(plan);
   const paragraphs = getPlanDetails(plan).split('\n').map((line) => line.trim()).filter(Boolean);
 
   useEffect(() => {
@@ -629,7 +648,7 @@ function PlanDetailsDialog({ plan, index, onClose, onSelect }: { plan: Consultat
           <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
             <div className="min-w-0 pr-3">
               <p className={`text-xs font-black uppercase tracking-[0.22em] ${theme.text}`}>Plan Details</p>
-              <h2 id="plan-details-title" className="mt-1 text-lg font-black text-slate-950 sm:text-xl">{plan.title}</h2>
+              <h2 id="plan-details-title" className="mt-1 text-lg font-black text-slate-950 sm:text-xl">{title}</h2>
             </div>
             <button type="button" onClick={onClose} className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close plan details">
               <X className="h-5 w-5" />
@@ -640,7 +659,7 @@ function PlanDetailsDialog({ plan, index, onClose, onSelect }: { plan: Consultat
               <div className={`grid min-h-44 place-items-center rounded-lg sm:min-h-56 ${theme.soft}`}>
                 {metadata.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={metadata.image_url} alt={plan.title} className="max-h-44 w-full object-contain p-3 sm:max-h-52" />
+                  <img src={metadata.image_url} alt={title} className="max-h-44 w-full object-contain p-3 sm:max-h-52" />
                 ) : (
                   <ModeIcon className={`h-16 w-16 ${theme.text}`} />
                 )}
@@ -653,7 +672,7 @@ function PlanDetailsDialog({ plan, index, onClose, onSelect }: { plan: Consultat
                   </span>
                   {plan.duration_minutes && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{plan.duration_minutes} min</span>}
                 </div>
-                <p className={`text-3xl font-black ${theme.text}`}>{formatInr(plan.amount_inr)}</p>
+                <p className={`text-3xl font-black ${theme.text}`}>{formatPlanPrice(plan.amount_inr)}</p>
                 <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
                   {paragraphs.map((paragraph) => (
                     <p key={paragraph}>{paragraph}</p>

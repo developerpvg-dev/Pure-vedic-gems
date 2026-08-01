@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { CalendarClock, ChevronRight, CreditCard, FileText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
+import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import type { Consultation } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,23 @@ function formatLabel(value: string | null) {
   return value.replace(/_/g, ' ');
 }
 
+function isRemediesBooking(consultation: Consultation) {
+  const title = (consultation.plan_title_snapshot || '').toLowerCase();
+  return !consultation.plan_id && (Number(consultation.amount_inr) === 101 || title.includes('gem recommendation'));
+}
+
+function bookingTitle(consultation: Consultation) {
+  return stripSkype(consultation.plan_title_snapshot || 'Vedic Consultation');
+}
+
+function bookingMode(consultation: Consultation) {
+  if (consultation.mode) return stripSkype(consultation.mode);
+  if (consultation.plan_title_snapshot) {
+    return consultationModeFromPlan({ title: consultation.plan_title_snapshot }) ?? '-';
+  }
+  return '-';
+}
+
 export default async function AccountConsultationsPage() {
   const supabase = await createClient();
   const {
@@ -100,84 +118,90 @@ export default async function AccountConsultationsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {consultations.map((consultation) => (
-            <article key={consultation.id} className="pvg-account-card pvg-account-card-pad">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="pvg-account-card-title text-lg">
-                    {consultation.plan_title_snapshot || 'Vedic Consultation'}
-                  </h2>
-                  <p className="pvg-account-row-meta">
-                    Booked on {formatDate(consultation.created_at)}
-                  </p>
+          {consultations.map((consultation) => {
+            const remedies = isRemediesBooking(consultation);
+            return (
+              <article key={consultation.id} className="pvg-account-card pvg-account-card-pad">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="pvg-account-stat-label">
+                      {remedies ? 'Remedies Recommendation' : 'Vedic Consultation'}
+                    </p>
+                    <h2 className="pvg-account-card-title text-lg">
+                      {bookingTitle(consultation)}
+                    </h2>
+                    <p className="pvg-account-row-meta">
+                      Booked on {formatDate(consultation.created_at)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge value={consultation.payment_status} map={PAYMENT_MAP} />
+                    <Badge value={consultation.status} map={STATUS_MAP} />
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge value={consultation.payment_status} map={PAYMENT_MAP} />
-                  <Badge value={consultation.status} map={STATUS_MAP} />
-                </div>
-              </div>
 
-              <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                <Info label="Amount" value={formatPrice(consultation.amount_inr)} icon={<CreditCard className="h-4 w-4" />} />
-                <Info label="Type" value={formatLabel(consultation.consultation_type)} />
-                <Info label="Mode" value={formatLabel(consultation.mode)} />
-                <Info label="Completed" value={formatDate(consultation.completed_at)} />
-              </div>
-
-              <div className="pvg-account-info-box mt-5 text-sm">
-                <p className="pvg-account-row-title">Your submitted details</p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <Info label="Full Name" value={consultation.full_name || '-'} />
-                  <Info label="Email" value={consultation.email || '-'} />
-                  <Info label="Phone" value={consultation.phone || '-'} />
-                  <Info label="Birth Date" value={formatDate(consultation.date_of_birth)} />
-                  <Info label="Birth Time" value={formatTime(consultation.birth_time)} />
-                  <Info label="Birth Place" value={consultation.birth_place || '-'} />
-                  <Info label="Preferred Date" value={formatDate(consultation.preferred_date)} />
-                  <Info label="Preferred Time" value={formatTime(consultation.preferred_time)} />
+                <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                  <Info label="Amount" value={formatPrice(consultation.amount_inr)} icon={<CreditCard className="h-4 w-4" />} />
+                  <Info label="Type" value={formatLabel(consultation.consultation_type)} />
+                  <Info label="Mode" value={bookingMode(consultation)} />
+                  <Info label="Completed" value={formatDate(consultation.completed_at)} />
                 </div>
-                {(consultation.life_situation || consultation.message || consultation.plan_description_snapshot) && (
-                  <div className="mt-4 space-y-3 text-sm">
-                    {consultation.life_situation && (
-                      <DetailBlock label="Life Situation / Concern" value={consultation.life_situation} />
-                    )}
-                    {consultation.message && (
-                      <DetailBlock label="Specific Question / Message" value={consultation.message} />
-                    )}
-                    {consultation.plan_description_snapshot && (
-                      <DetailBlock label="Plan" value={consultation.plan_description_snapshot} />
+
+                <div className="pvg-account-info-box mt-5 text-sm">
+                  <p className="pvg-account-row-title">Your submitted details</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <Info label="Full Name" value={consultation.full_name || '-'} />
+                    <Info label="Email" value={consultation.email || '-'} />
+                    <Info label="Phone" value={consultation.phone || '-'} />
+                    <Info label="Birth Date" value={formatDate(consultation.date_of_birth)} />
+                    <Info label="Birth Time" value={formatTime(consultation.birth_time)} />
+                    <Info label="Birth Place" value={consultation.birth_place || '-'} />
+                    <Info label="Preferred Date" value={formatDate(consultation.preferred_date)} />
+                    <Info label="Preferred Time" value={formatTime(consultation.preferred_time)} />
+                  </div>
+                  {(consultation.life_situation || consultation.message || consultation.plan_description_snapshot) && (
+                    <div className="mt-4 space-y-3 text-sm">
+                      {consultation.life_situation && (
+                        <DetailBlock label="Life Situation / Concern" value={consultation.life_situation} />
+                      )}
+                      {consultation.message && (
+                        <DetailBlock label="Specific Question / Message" value={consultation.message} />
+                      )}
+                      {consultation.plan_description_snapshot && (
+                        <DetailBlock label="Plan details" value={stripSkype(consultation.plan_description_snapshot)} />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {(consultation.scheduled_date || consultation.scheduled_time || consultation.meeting_link || consultation.admin_schedule_notes) && (
+                  <div className="pvg-account-info-box mt-5 text-sm">
+                    <p className="pvg-account-row-title">Scheduled Consultation</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <Info label="Date" value={formatDate(consultation.scheduled_date)} />
+                      <Info label="Time" value={formatTime(consultation.scheduled_time)} />
+                      <Info label="Mode" value={formatLabel(consultation.scheduled_mode)} />
+                      <Info label="Link / Venue" value={consultation.meeting_link || '-'} />
+                    </div>
+                    {consultation.admin_schedule_notes && (
+                      <p className="mt-3 text-xs leading-6" style={{ color: 'var(--pvg-muted)' }}>{consultation.admin_schedule_notes}</p>
                     )}
                   </div>
                 )}
-              </div>
 
-              {(consultation.scheduled_date || consultation.scheduled_time || consultation.meeting_link || consultation.admin_schedule_notes) && (
-                <div className="pvg-account-info-box mt-5 text-sm">
-                  <p className="pvg-account-row-title">Scheduled Consultation</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Info label="Date" value={formatDate(consultation.scheduled_date)} />
-                    <Info label="Time" value={formatTime(consultation.scheduled_time)} />
-                    <Info label="Mode" value={formatLabel(consultation.scheduled_mode)} />
-                    <Info label="Link / Venue" value={consultation.meeting_link || '-'} />
+                <div className="pvg-account-info-box mt-5 grid gap-3 text-xs sm:grid-cols-2">
+                  <div>
+                    <span className="font-semibold text-[#2c0404]">Razorpay Order:</span>{' '}
+                    <span className="text-[#6b5b4e]">{consultation.razorpay_order_id || '-'}</span>
                   </div>
-                  {consultation.admin_schedule_notes && (
-                    <p className="mt-3 text-xs leading-6" style={{ color: 'var(--pvg-muted)' }}>{consultation.admin_schedule_notes}</p>
-                  )}
+                  <div>
+                    <span className="font-semibold text-[#2c0404]">Razorpay Payment:</span>{' '}
+                    <span className="text-[#6b5b4e]">{consultation.razorpay_payment_id || '-'}</span>
+                  </div>
                 </div>
-              )}
-
-              <div className="pvg-account-info-box mt-5 grid gap-3 text-xs sm:grid-cols-2">
-                <div>
-                  <span className="font-semibold text-[#2c0404]">Razorpay Order:</span>{' '}
-                  <span className="text-[#6b5b4e]">{consultation.razorpay_order_id || '-'}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-[#2c0404]">Razorpay Payment:</span>{' '}
-                  <span className="text-[#6b5b4e]">{consultation.razorpay_payment_id || '-'}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

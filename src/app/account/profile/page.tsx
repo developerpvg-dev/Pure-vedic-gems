@@ -59,7 +59,7 @@ function Field({
   options,
   helpText,
 }: FieldProps) {
-  const baseInputClass = 'pvg-account-field pl-10';
+  const baseInputClass = 'pvg-account-field pvg-account-field--icon';
 
   return (
     <div className="space-y-1">

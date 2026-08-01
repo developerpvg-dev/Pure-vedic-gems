@@ -13,10 +13,21 @@ import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import type { Consultation, Json } from '@/lib/types/database';
 
 function geoFromRequest(request: NextRequest) {
-  const city = request.headers.get('x-vercel-ip-city');
-  const country = request.headers.get('x-vercel-ip-country');
-  if (city && country) return `${city}, ${country}`;
-  return null;
+  const decode = (value: string | null) => {
+    if (!value) return null;
+    try {
+      return decodeURIComponent(value.replace(/\+/g, ' '));
+    } catch {
+      return value;
+    }
+  };
+  const city = decode(request.headers.get('x-vercel-ip-city'));
+  const region = decode(request.headers.get('x-vercel-ip-country-region'));
+  const country =
+    decode(request.headers.get('x-vercel-ip-country')) ||
+    decode(request.headers.get('cf-ipcountry'));
+  const parts = [city, region, country].filter(Boolean);
+  return parts.length ? parts.join(', ') : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -237,11 +248,12 @@ export async function POST(request: NextRequest) {
       full_name: updated.full_name,
       email: updated.email,
       phone: updated.phone,
-      plan_title: updated.plan_title_snapshot ?? 'Paid consultation',
+      plan_title: updated.plan_title_snapshot ?? 'Vedic Consultation',
       plan_description: updated.plan_description_snapshot,
       amount_inr: updated.amount_inr,
       currency: updated.currency,
       razorpay_payment_id: updated.razorpay_payment_id,
+      mode: updated.mode,
       preferred_date: updated.preferred_date,
       preferred_time: updated.preferred_time,
       date_of_birth: updated.date_of_birth,

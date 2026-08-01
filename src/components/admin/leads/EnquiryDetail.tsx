@@ -1000,7 +1000,7 @@ export function EnquiryDetail({
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Customer response</h3>
               <p className="mt-0.5 text-[11px] text-gray-400">
                 {(lead.enquiry_type || '').toLowerCase().includes('consultation')
-                  ? 'Detailed consultation booking'
+                  ? 'Vedic Consultation booking'
                   : '₹101 remedies / recommendation form'}
                 {lead.payment_received ? ' · payment received' : ''}
               </p>

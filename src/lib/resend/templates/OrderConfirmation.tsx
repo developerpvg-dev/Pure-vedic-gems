@@ -62,6 +62,9 @@ export interface OrderConfirmationEmailProps {
   amountPaid?: number;
   amountDue?: number;
   siteUrl: string;
+  /** Sealed link to upload ring internal-diameter photo (ring orders only). */
+  ringSizeConfirmUrl?: string;
+  ringSizeConfirmCopy?: string;
 }
 
 function formatINR(amount: number): string {
@@ -81,6 +84,8 @@ export function OrderConfirmationEmail({
   amountPaid,
   amountDue,
   siteUrl,
+  ringSizeConfirmUrl,
+  ringSizeConfirmCopy,
 }: OrderConfirmationEmailProps) {
   const resolvedSiteUrl = siteUrl || getEmailSiteUrl();
   const trackUrl = `${resolvedSiteUrl}/account/orders`;
@@ -210,9 +215,24 @@ export function OrderConfirmationEmail({
               {shippingAddress.country}
             </Text>
 
+            {ringSizeConfirmUrl && ringSizeConfirmCopy ? (
+              <>
+                <Hr style={dividerStyle} />
+                <Text style={{ ...textStyle, marginTop: '24px' }}>
+                  <strong>Regarding your ring size,</strong>{' '}
+                  {ringSizeConfirmCopy.replace(/^\*?Regarding your ring size,?\*?/i, '').trim()}
+                </Text>
+                <Section style={{ textAlign: 'center' as const, marginTop: '20px' }}>
+                  <Link href={ringSizeConfirmUrl} style={primaryButtonStyle}>
+                    Submit ring diameter photo
+                  </Link>
+                </Section>
+              </>
+            ) : null}
+
             {/* CTA Buttons */}
             <Section style={{ textAlign: 'center' as const, marginTop: '32px' }}>
-              <Link href={trackUrl} style={primaryButtonStyle}>
+              <Link href={trackUrl} style={ringSizeConfirmUrl ? secondaryButtonStyle : primaryButtonStyle}>
                 Track Your Order
               </Link>
             </Section>

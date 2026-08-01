@@ -11,6 +11,7 @@ import { OrderPaymentLedger } from '@/components/admin/OrderPaymentLedger';
 import { BankTransferManagePanel } from '@/components/admin/BankTransferManagePanel';
 import { AdminOrderDetailShell } from '@/components/admin/AdminOrderDetailShell';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
+import { parseRingSizeConfirmation } from '@/lib/orders/ring-size-confirmation';
 import { hasAdminPermission, normalizeAdminRole } from '@/lib/admin/rbac';
 import type { Json } from '@/lib/types/database';
 import {
@@ -430,6 +431,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   const returnStatus = orderExtras.return_status;
   const bankProof = parseBankTransferProof(orderExtras.compliance_flags);
+  const ringSizeConfirmation = parseRingSizeConfirmation(orderExtras.compliance_flags);
   const needsPaymentReview =
     o.status === 'payment_review' ||
     o.payment_status === 'amount_mismatch' ||
@@ -580,6 +582,39 @@ export default async function OrderDetailPage({ params }: PageProps) {
         }}
         overview={
           <div className="space-y-5">
+            {ringSizeConfirmation ? (
+              <div
+                className={`rounded-2xl border px-5 py-4 ${
+                  ringSizeConfirmation.status === 'submitted'
+                    ? 'border-emerald-200 bg-emerald-50/80'
+                    : 'border-amber-200 bg-amber-50/80'
+                }`}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Ring size confirmation
+                </p>
+                <p className="mt-1 text-sm font-semibold text-stone-900">
+                  {ringSizeConfirmation.status === 'submitted'
+                    ? 'Customer uploaded internal-diameter photo'
+                    : 'Awaiting customer diameter photo (requested in confirmation email)'}
+                </p>
+                {ringSizeConfirmation.image_url ? (
+                  <a
+                    href={ringSizeConfirmation.image_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block overflow-hidden rounded-xl border border-stone-200 bg-white"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ringSizeConfirmation.image_url}
+                      alt="Customer ring diameter measurement"
+                      className="max-h-64 max-w-full object-contain sm:max-w-md"
+                    />
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2">
               <Panel title="Customer" icon={User}>
                 <dl className="space-y-3 px-5 py-4">

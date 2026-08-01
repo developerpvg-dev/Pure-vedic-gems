@@ -30,6 +30,7 @@ import {
   parseProductVideoReview,
   PRODUCT_VIDEO_REVIEW_STATUS_LABELS,
 } from '@/lib/orders/product-video-review';
+import { parseRingSizeConfirmation } from '@/lib/orders/ring-size-confirmation';
 import {
   LIFECYCLE_SECTIONS,
   CARRIER_DELIVERY_LABELS,
@@ -254,6 +255,7 @@ export function OrderActions({
 
   const returnMeta = parseComplianceFlags(flagsState);
   const productVideoReview = parseProductVideoReview(flagsState);
+  const ringSizeConfirmation = parseRingSizeConfirmation(flagsState);
   const paymentVerifiedStamp = isDispatchPaymentVerified(flagsState);
   // Legacy mid-pipeline orders without a stamp stay usable
   const paymentVerified =
@@ -741,6 +743,44 @@ export function OrderActions({
       </div>
 
       <div className="space-y-2.5">
+      {ringSizeConfirmation ? (
+        <div
+          className={`rounded-2xl border px-4 py-3 ${
+            ringSizeConfirmation.status === 'submitted'
+              ? 'border-emerald-200 bg-emerald-50'
+              : 'border-amber-200 bg-amber-50'
+          }`}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+            Ring size confirmation
+          </p>
+          <p className="mt-1 text-sm font-semibold text-stone-900">
+            {ringSizeConfirmation.status === 'submitted'
+              ? 'Customer uploaded diameter photo'
+              : 'Awaiting customer diameter photo'}
+          </p>
+          {ringSizeConfirmation.image_url ? (
+            <a
+              href={ringSizeConfirmation.image_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 block overflow-hidden rounded-xl border border-stone-200 bg-white"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ringSizeConfirmation.image_url}
+                alt="Customer ring diameter measurement"
+                className="max-h-56 w-full object-contain"
+              />
+            </a>
+          ) : (
+            <p className="mt-1 text-xs text-stone-600">
+              Requested in the order confirmation email. Customer has not uploaded yet.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       {/* Workshop — crafting & status */}
       <Section sectionId="workshop" open={openWorkshop} onToggle={() => setOpenWorkshop((v) => !v)}>
         {nextStatus && !isTerminal ? (

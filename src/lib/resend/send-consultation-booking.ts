@@ -14,6 +14,7 @@ export interface PaidConsultationEmailInput {
   amount_inr: number | null;
   currency: string;
   razorpay_payment_id: string | null;
+  mode?: string | null;
   preferred_date: string | null;
   preferred_time: string | null;
   date_of_birth?: string | null;
@@ -47,7 +48,9 @@ function isRs101Booking(input: PaidConsultationEmailInput) {
 function consultationDetails(input: PaidConsultationEmailInput) {
   return [
     { label: 'Booking ID', value: input.id },
+    { label: 'Service', value: 'Vedic Consultation' },
     { label: 'Plan', value: input.plan_title },
+    { label: 'Mode', value: input.mode },
     { label: 'Amount', value: money(input.amount_inr, input.currency) },
     { label: 'Payment ID', value: input.razorpay_payment_id },
     { label: 'Preferred date', value: input.preferred_date },
@@ -71,16 +74,16 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
     sendBrandedEmailToAdmin(
       remedies
         ? `Remedies recommendation booked — ${input.full_name}`
-        : `Paid consultation booked — ${input.full_name}`,
+        : `Vedic Consultation booked — ${input.full_name}`,
       TransactionalEmail({
         preview: remedies
           ? `Remedies recommendation from ${input.full_name}`
-          : `Paid consultation from ${input.full_name}`,
-        heading: remedies ? 'Remedies Recommendation Booked' : 'Paid Consultation Booked',
+          : `Vedic Consultation from ${input.full_name}`,
+        heading: remedies ? 'Remedies Recommendation Booked' : 'Vedic Consultation Booked',
         paragraphs: [
           remedies
             ? 'A ₹101 remedies recommendation payment has been verified. Please assign a telecaller and review birth details.'
-            : 'A consultation payment has been verified. Please review birth details and coordinate scheduling.',
+            : `A Vedic Consultation payment has been verified for plan: ${input.plan_title}. Please review birth details and coordinate scheduling.`,
         ],
         highlight: { label: 'Booking ID', value: input.id },
         details: [
@@ -97,13 +100,13 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
       to: input.email,
       subject: remedies
         ? 'Remedies recommendation confirmed | PureVedicGems'
-        : 'Consultation booking confirmed | PureVedicGems',
+        : 'Vedic Consultation confirmed | PureVedicGems',
       channel: 'consultations',
       react: TransactionalEmail({
         preview: remedies
           ? 'Your Pure Vedic Gems remedies recommendation is confirmed'
-          : 'Your Pure Vedic Gems consultation is booked',
-        heading: remedies ? 'Remedies Recommendation Confirmed' : 'Consultation Confirmed',
+          : 'Your Pure Vedic Gems Vedic Consultation is booked',
+        heading: remedies ? 'Remedies Recommendation Confirmed' : 'Vedic Consultation Confirmed',
         greeting: `Namaste ${input.full_name},`,
         paragraphs: remedies
           ? [
@@ -111,7 +114,8 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
               'Our Vedic experts will review your birth details and share your personalized gemstone recommendation.',
             ]
           : [
-              'Thank you for booking a paid Vedic consultation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
+              'Thank you for booking a Vedic Consultation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
+              `Plan booked: ${input.plan_title}${input.plan_description ? ` — ${input.plan_description}` : ''}`,
               'Our experts will review your birth details and contact you to confirm the final schedule.',
             ],
         highlight: { label: 'Booking ID', value: input.id },

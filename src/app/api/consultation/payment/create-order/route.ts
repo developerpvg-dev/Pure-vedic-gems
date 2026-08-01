@@ -7,6 +7,7 @@ import { consultationBookingCreateOrderSchema } from '@/lib/validators/consultat
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { setBookingTokenCookie } from '@/lib/security/booking-token';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import type { ConsultationPlan } from '@/lib/types/database';
 
 interface RazorpayOrderResult {
@@ -83,13 +84,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Plan amount is not eligible for payment' }, { status: 400 });
   }
 
+  const planTitle = stripSkype(plan.title);
+  const planDescription = plan.description ? stripSkype(plan.description) : null;
+  const planMode =
+    plan.id === 'rs101' ? null : consultationModeFromPlan({ title: plan.title, metadata: plan.metadata });
+
   const { data: consultation, error: insertError } = await admin
     .from('consultations')
     .insert({
       customer_id: user?.id ?? null,
       plan_id: plan.id === 'rs101' ? null : plan.id,
-      plan_title_snapshot: plan.title,
-      plan_description_snapshot: plan.description,
+      plan_title_snapshot: planTitle,
+      plan_description_snapshot: planDescription,
       full_name: parsed.data.full_name,
       email: parsed.data.email,
       phone: parsed.data.phone,
@@ -101,7 +107,7 @@ export async function POST(request: NextRequest) {
       customer_country: parsed.data.customer_country || null,
       life_situation: parsed.data.life_situation || null,
       consultation_type: 'paid_plan',
-      mode: null,
+      mode: planMode,
       preferred_date: parsed.data.preferred_date || null,
       preferred_time: parsed.data.preferred_time || null,
       message: parsed.data.message || null,
@@ -164,11 +170,11 @@ export async function POST(request: NextRequest) {
       recipientRole: 'sales',
       type: 'consultation_created',
       title: 'Consultation booking started',
-      message: `${parsed.data.full_name} started booking ${plan.title} for ₹${amountInr.toLocaleString('en-IN')}.`,
+      message: `${parsed.data.full_name} started booking ${planTitle} for ₹${amountInr.toLocaleString('en-IN')}.`,
       href: '/admin/leads',
       entityType: 'consultation',
       entityId: consultation.id,
-      metadata: { plan_id: plan.id, plan_title: plan.title, payment_status: 'pending' },
+      metadata: { plan_id: plan.id, plan_title: planTitle, payment_status: 'pending' },
     },
     ...(user
       ? [{
@@ -176,11 +182,11 @@ export async function POST(request: NextRequest) {
           recipientUserId: user.id,
           type: 'consultation_pending_payment',
           title: 'Consultation booking started',
-          message: `${plan.title} is waiting for payment confirmation.`,
+          message: `${planTitle} is waiting for payment confirmation.`,
           href: '/account',
           entityType: 'consultation',
           entityId: consultation.id,
-          metadata: { plan_id: plan.id, plan_title: plan.title },
+          metadata: { plan_id: plan.id, plan_title: planTitle },
         }]
       : []),
   ]);
@@ -191,7 +197,7 @@ export async function POST(request: NextRequest) {
     amount: amountInPaise,
     currency: 'INR',
     key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID,
-    plan_title: plan.title,
+    plan_title: planTitle,
     customer: {
       name: parsed.data.full_name,
       email: parsed.data.email,

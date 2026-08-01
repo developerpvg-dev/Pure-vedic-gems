@@ -384,6 +384,11 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+/* Clears absolute leading icons (Tailwind pl-* loses to the padding shorthand above). */
+.pvg-account-field--icon {
+  padding-left: 2.5rem;
+}
+
 .pvg-account-field:focus {
   border-color: #7a1515;
   box-shadow: 0 0 0 3px rgba(122, 21, 21, 0.1);

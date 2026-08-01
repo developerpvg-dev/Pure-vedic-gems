@@ -63,11 +63,13 @@ export async function ensureLeadFromConsultation(
   const source = rs101 ? 'homepage_recommendation' : 'consultation_page';
   const subject = rs101
     ? 'Gemstone Recommendation Request (₹101)'
-    : `${consultation.plan_title_snapshot || 'Consultation'} booking`;
+    : `Vedic Consultation — ${consultation.plan_title_snapshot || 'Paid plan'}`;
 
   const message = [
-    rs101 ? 'Paid homepage gemstone recommendation (₹101)' : 'Paid detailed consultation booking',
+    rs101 ? 'Paid homepage gemstone recommendation (₹101)' : 'Paid Vedic Consultation booking',
     `Plan: ${consultation.plan_title_snapshot || '—'}`,
+    consultation.plan_description_snapshot ? `Plan details: ${consultation.plan_description_snapshot}` : null,
+    consultation.mode ? `Mode: ${consultation.mode}` : null,
     `Name: ${consultation.full_name}`,
     `Email: ${consultation.email}`,
     consultation.phone ? `Phone: ${consultation.phone}` : null,
