@@ -32,13 +32,16 @@ export async function sendBankTransferRejectedEmail(input: {
       details: [
         { label: 'Why it was rejected', value: input.rejectReason },
         { label: 'What to do next', value: 'Edit transfer details + proof, then submit again for review.' },
+        { label: 'Track order', value: trackHref, linkLabel: 'Open tracking' },
       ],
       cta: { label: 'Update payment proof', href: resubmitHref },
       secondaryCta: {
-        label: 'Track order',
-        href: trackHref,
+        label: 'Chat on WhatsApp',
+        href: getWhatsAppUrl(
+          `Hi, I need help updating bank transfer proof for order ${input.orderNumber}`,
+        ),
       },
-      footerNote: `Need help? WhatsApp us: ${getWhatsAppUrl(`Hi, I need help updating bank transfer proof for order ${input.orderNumber}`)}`,
+      footerNote: 'If you did not submit this payment, please contact us immediately.',
     }),
   });
 }

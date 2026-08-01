@@ -14,7 +14,7 @@ export function getSiteUrl(): string {
 }
 
 /**
- * Base URL for links and hosted images inside transactional emails.
+ * Base URL for links inside transactional emails (CTAs, tracking).
  * Use EMAIL_SITE_URL during staging (e.g. Vercel preview) without changing NEXT_PUBLIC_SITE_URL.
  */
 export function getEmailSiteUrl(): string {
@@ -24,15 +24,33 @@ export function getEmailSiteUrl(): string {
   );
 }
 
-/** Emblem for email header (webp, no spaces in path). */
+/**
+ * Host for <img> assets in emails. Localhost is unreachable from Gmail etc.
+ * Prefer EMAIL_ASSET_BASE_URL, else EMAIL_SITE_URL / site URL (never localhost).
+ */
+export function getEmailAssetBaseUrl(): string {
+  if (process.env.EMAIL_ASSET_BASE_URL) {
+    return process.env.EMAIL_ASSET_BASE_URL.replace(/\/$/, '');
+  }
+  const site = getEmailSiteUrl();
+  if (/localhost|127\.0\.0\.1/i.test(site)) {
+    return (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.purevedicgems.com').replace(/\/$/, '');
+  }
+  return site;
+}
+
+/**
+ * Logo as a remote HTTPS image — never a CID attachment (Gmail shows those as paperclips).
+ * Override with EMAIL_LOGO_URL if you host the mark on a CDN.
+ */
 export function getEmailLogoUrl(): string {
   if (process.env.EMAIL_LOGO_URL) return process.env.EMAIL_LOGO_URL;
-  return `${getEmailSiteUrl()}/email/pvg-emblem.webp`;
+  return `${getEmailAssetBaseUrl()}/api/email/logo`;
 }
 
 export function getEmailWordmarkUrl(): string {
   if (process.env.EMAIL_WORDMARK_URL) return process.env.EMAIL_WORDMARK_URL;
-  return `${getEmailSiteUrl()}/email/pvg-wordmark.webp`;
+  return `${getEmailAssetBaseUrl()}/api/email/logo`;
 }
 
 export function getFromAddress(channel: EmailChannel = 'general'): string {

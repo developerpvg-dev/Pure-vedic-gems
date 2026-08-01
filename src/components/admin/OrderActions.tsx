@@ -27,6 +27,10 @@ import {
   deliveryProofProxyUrl,
 } from '@/lib/orders/dispatch-proof';
 import {
+  parseProductVideoReview,
+  PRODUCT_VIDEO_REVIEW_STATUS_LABELS,
+} from '@/lib/orders/product-video-review';
+import {
   LIFECYCLE_SECTIONS,
   CARRIER_DELIVERY_LABELS,
   CARRIER_DELIVERY_STATUSES,
@@ -249,6 +253,7 @@ export function OrderActions({
   const [podFiles, setPodFiles] = useState<FileList | null>(null);
 
   const returnMeta = parseComplianceFlags(flagsState);
+  const productVideoReview = parseProductVideoReview(flagsState);
   const paymentVerifiedStamp = isDispatchPaymentVerified(flagsState);
   // Legacy mid-pipeline orders without a stamp stay usable
   const paymentVerified =
@@ -331,7 +336,12 @@ export function OrderActions({
         if (updates.status === 'design_completed') {
           setDesignCompletedAt(new Date().toISOString());
         }
-        setSuccess('Saved');
+        if (data.order?.compliance_flags) setFlagsState(data.order.compliance_flags);
+        setSuccess(
+          updates.notify_product_video
+            ? 'Saved — customer emailed to approve design'
+            : 'Saved',
+        );
         setTimeout(() => setSuccess(''), 3000);
       } catch {
         setError('Network error');
@@ -805,7 +815,16 @@ export function OrderActions({
       </Section>
 
       {showMediaSection ? (
-        <Section sectionId="media" open={openMedia} onToggle={() => setOpenMedia((v) => !v)}>
+        <Section
+          sectionId="media"
+          open={openMedia}
+          onToggle={() => setOpenMedia((v) => !v)}
+          badge={
+            productVideoReview
+              ? PRODUCT_VIDEO_REVIEW_STATUS_LABELS[productVideoReview.status]
+              : null
+          }
+        >
           {fulfillmentContext.showProductVideo ? (
             <div>
               <label className={labelCls}>Product video URL</label>
@@ -815,6 +834,42 @@ export function OrderActions({
                 placeholder="Video link"
                 className={field}
               />
+            </div>
+          ) : null}
+          {productVideoReview ? (
+            <div
+              className={`rounded-xl px-3 py-2.5 text-sm ${
+                productVideoReview.status === 'approved'
+                  ? 'bg-emerald-50 text-emerald-900'
+                  : productVideoReview.status === 'changes_requested'
+                    ? 'bg-amber-50 text-amber-950'
+                    : 'bg-sky-50 text-sky-950'
+              }`}
+            >
+              <p className="font-semibold">
+                Design review · Round {productVideoReview.round} ·{' '}
+                {PRODUCT_VIDEO_REVIEW_STATUS_LABELS[productVideoReview.status]}
+              </p>
+              {productVideoReview.status === 'changes_requested' && productVideoReview.remarks ? (
+                <p className="mt-1 text-xs opacity-90">
+                  Customer note: {productVideoReview.remarks}
+                </p>
+              ) : null}
+              {productVideoReview.status === 'pending' ? (
+                <p className="mt-1 text-xs opacity-90">
+                  Waiting for customer to approve or request changes via email.
+                </p>
+              ) : null}
+              {productVideoReview.history.length > 0 ? (
+                <ul className="mt-2 space-y-1 border-t border-black/5 pt-2 text-xs opacity-80">
+                  {productVideoReview.history.map((past) => (
+                    <li key={`pvr-${past.round}`}>
+                      Round {past.round}: {PRODUCT_VIDEO_REVIEW_STATUS_LABELS[past.status]}
+                      {past.remarks ? ` — ${past.remarks}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
           {fulfillmentContext.showPujaVideo ? (
@@ -849,6 +904,19 @@ export function OrderActions({
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? 'Saving…' : 'Save media'}
           </button>
+          {fulfillmentContext.showProductVideo ? (
+            <button
+              type="button"
+              onClick={() =>
+                handleSave({ ...saveMediaPayload, notify_product_video: true })
+              }
+              disabled={saving || !productVideoUrl.trim()}
+              className={btnGhost}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Save &amp; notify customer
+            </button>
+          ) : null}
         </Section>
       ) : null}
 

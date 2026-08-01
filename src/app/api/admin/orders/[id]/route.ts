@@ -4,11 +4,13 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
 import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
+import { sendProductVideoReviewEmail } from '@/lib/resend/send-product-video-review';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
 import { cancelRewardRedemption } from '@/lib/rewards/service';
 import { mergeComplianceFlags, parseComplianceFlags } from '@/lib/orders/returns';
+import { beginProductVideoReviewNotify } from '@/lib/orders/product-video-review';
 import { requiresDispatchPaymentVerify } from '@/lib/orders/dispatch-proof';
 import { OrderCommissionSchema } from '@/lib/validators/order';
 import { ORDER_STATUSES } from '@/lib/constants/order-status';
@@ -70,6 +72,7 @@ export async function PUT(
     admin_notes,
     assigned_to,
     notify_customer,
+    notify_product_video,
     product_video_url,
     puja_video_url,
     energization_image_urls,
@@ -200,9 +203,45 @@ export async function PUT(
           .filter((u: string) => /^https?:\/\//i.test(u))
           .slice(0, 8)
       : [];
-    updates.compliance_flags = mergeComplianceFlags(current.compliance_flags, {
-      energization_image_urls: urls,
-    });
+    updates.compliance_flags = mergeComplianceFlags(
+      updates.compliance_flags ?? current.compliance_flags,
+      { energization_image_urls: urls },
+    );
+  }
+
+  let productVideoReviewRound: number | null = null;
+  let productVideoReviewUrl: string | null = null;
+  if (notify_product_video) {
+    const videoUrl = String(
+      product_video_url !== undefined ? product_video_url || '' : current.product_video_url || '',
+    ).trim();
+    if (!videoUrl || !/^https?:\/\//i.test(videoUrl)) {
+      return NextResponse.json(
+        { error: 'Add a product video URL before notifying the customer' },
+        { status: 400 },
+      );
+    }
+    if (!customerEmail) {
+      return NextResponse.json(
+        { error: 'No customer email on this order — cannot send review email' },
+        { status: 400 },
+      );
+    }
+    updates.product_video_url = videoUrl;
+    try {
+      const started = beginProductVideoReviewNotify(
+        updates.compliance_flags ?? current.compliance_flags,
+        videoUrl,
+      );
+      updates.compliance_flags = started.flags;
+      productVideoReviewRound = started.review.round;
+      productVideoReviewUrl = started.review.video_url;
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Could not start product video review' },
+        { status: 400 },
+      );
+    }
   }
   if (commission_source !== undefined) {
     updates.commission_source =
@@ -379,6 +418,23 @@ export async function PUT(
     }
   }
 
+  let productVideoReviewEmailId: string | null = null;
+  if (
+    notify_product_video &&
+    customerEmail &&
+    productVideoReviewRound != null &&
+    productVideoReviewUrl
+  ) {
+    productVideoReviewEmailId = await sendProductVideoReviewEmail({
+      to: customerEmail,
+      customerName,
+      orderNumber: current.order_number,
+      orderId: id,
+      round: productVideoReviewRound,
+      videoUrl: productVideoReviewUrl,
+    });
+  }
+
   if (trackingChanged || productVideoAdded || pujaVideoAdded || statusChanged) {
     const customerTitle =
       updatedStatus === 'shipped'
@@ -448,6 +504,8 @@ export async function PUT(
       previous: { status: current.status, tracking: current.tracking_number },
       updated: updates,
       trackingEmailId,
+      productVideoReviewEmailId,
+      productVideoReviewRound,
     },
     ipAddress: ip,
   });

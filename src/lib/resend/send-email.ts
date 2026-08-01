@@ -42,13 +42,13 @@ export async function sendBrandedEmail({
       to: recipients,
       subject,
       react,
-      ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(replyTo ? { replyTo } : {}),
       ...(attachments?.length
         ? {
             attachments: attachments.map((a) => ({
               filename: a.filename,
               content: a.content,
-              content_type: a.contentType,
+              contentType: a.contentType,
             })),
           }
         : {}),

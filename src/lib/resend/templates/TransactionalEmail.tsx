@@ -2,7 +2,7 @@
  * Flexible transactional email body used across most notification types.
  */
 
-import { Section, Text, Heading, Link, Hr } from '@react-email/components';
+import { Section, Text, Heading, Link, Hr, Row, Column } from '@react-email/components';
 import { EmailLayout } from '@/lib/resend/templates/EmailLayout';
 import {
   contentStyle,
@@ -15,6 +15,7 @@ import {
   detailTableStyle,
   detailLabelStyle,
   detailValueStyle,
+  detailLinkStyle,
   primaryButtonStyle,
   secondaryButtonStyle,
   disclaimerStyle,
@@ -24,6 +25,8 @@ import {
 export type EmailDetail = {
   label: string;
   value: string | number | null | undefined;
+  /** Override auto link text when value is a URL */
+  linkLabel?: string;
 };
 
 export type TransactionalEmailProps = {
@@ -42,6 +45,19 @@ export type TransactionalEmailProps = {
 
 function visibleDetails(details: EmailDetail[] | undefined) {
   return (details ?? []).filter((row) => row.value != null && String(row.value).trim() !== '');
+}
+
+function linkLabelFor(row: EmailDetail, href: string): string {
+  if (row.linkLabel?.trim()) return row.linkLabel.trim();
+  const label = row.label.toLowerCase();
+  if (label.includes('video')) return 'Watch video';
+  if (label.includes('photo') || label.includes('image') || label.includes('proof')) return 'View photo';
+  if (label.includes('track')) return 'Track shipment';
+  if (label.includes('whatsapp')) return 'Chat on WhatsApp';
+  if (/\.(mp4|webm|mov)(\?|$)/i.test(href) || /youtube|youtu\.be|vimeo|drive\.google/i.test(href)) {
+    return 'Watch video';
+  }
+  return 'Open link';
 }
 
 export function TransactionalEmail({
@@ -66,7 +82,9 @@ export function TransactionalEmail({
           {heading}
         </Heading>
 
-        {greeting ? <Text style={textStyle}>{greeting}</Text> : null}
+        {greeting ? (
+          <Text style={{ ...textStyle, fontWeight: 600, marginBottom: '10px' }}>{greeting}</Text>
+        ) : null}
 
         {paragraphs.map((paragraph) => (
           <Text key={paragraph.slice(0, 48)} style={textStyle}>
@@ -96,8 +114,8 @@ export function TransactionalEmail({
                       <td style={detailLabelStyle}>{row.label}</td>
                       <td style={detailValueStyle}>
                         {isHttp ? (
-                          <Link href={text} style={{ ...detailValueStyle, color: '#1c1917' }}>
-                            View photo
+                          <Link href={text} style={detailLinkStyle}>
+                            {linkLabelFor(row, text)}
                           </Link>
                         ) : (
                           text
@@ -114,20 +132,41 @@ export function TransactionalEmail({
         {cta || secondaryCta ? (
           <>
             <Hr style={dividerStyle} />
-            <Section style={{ textAlign: 'center' as const, marginTop: '8px' }}>
-              {cta ? (
-                <Link href={cta.href} style={primaryButtonStyle}>
-                  {cta.label}
-                </Link>
-              ) : null}
-            </Section>
-            {secondaryCta ? (
-              <Section style={{ textAlign: 'center' as const, marginTop: '14px' }}>
-                <Link href={secondaryCta.href} style={secondaryButtonStyle}>
-                  {secondaryCta.label}
-                </Link>
+            {cta && secondaryCta ? (
+              <Section style={{ textAlign: 'center' as const, marginTop: '4px' }}>
+                <Row>
+                  <Column align="center" style={{ padding: '0 6px 12px' }}>
+                    <Link href={cta.href} style={primaryButtonStyle}>
+                      {cta.label}
+                    </Link>
+                  </Column>
+                </Row>
+                <Row>
+                  <Column align="center" style={{ padding: '0 6px' }}>
+                    <Link href={secondaryCta.href} style={secondaryButtonStyle}>
+                      {secondaryCta.label}
+                    </Link>
+                  </Column>
+                </Row>
               </Section>
-            ) : null}
+            ) : (
+              <>
+                {cta ? (
+                  <Section style={{ textAlign: 'center' as const, marginTop: '4px' }}>
+                    <Link href={cta.href} style={primaryButtonStyle}>
+                      {cta.label}
+                    </Link>
+                  </Section>
+                ) : null}
+                {secondaryCta ? (
+                  <Section style={{ textAlign: 'center' as const, marginTop: '14px' }}>
+                    <Link href={secondaryCta.href} style={secondaryButtonStyle}>
+                      {secondaryCta.label}
+                    </Link>
+                  </Section>
+                ) : null}
+              </>
+            )}
           </>
         ) : null}
 
