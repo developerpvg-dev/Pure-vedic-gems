@@ -30,6 +30,14 @@ export function formatPrice(amount: number, currency?: string): string {
   }).format(value);
 }
 
+/** Rewrite hardcoded ₹ amounts in copy (e.g. shipping plan labels) into the active display currency. */
+export function localizeInrAmountsInText(text: string): string {
+  return text.replace(/₹\s*([\d,]+(?:\.\d+)?)/g, (match, raw: string) => {
+    const amount = Number(raw.replace(/,/g, ''));
+    return Number.isFinite(amount) ? formatPrice(amount) : match;
+  });
+}
+
 export type {
   ProductPricingInput as ProductPriceFields,
 } from '@/lib/shop/product-pricing';

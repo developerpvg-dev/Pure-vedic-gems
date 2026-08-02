@@ -42,4 +42,16 @@ function isRs101(planId: string | null, title: string, amount: number) {
 if (!isRs101(null, 'Gem Recommendation', 101)) throw new Error('rs101 classify');
 if (isRs101('uuid', 'Full Chart', 2100)) throw new Error('detailed must not be rs101');
 
+// Pending → paid flip on verify path
+function paymentFlags(status: string, amount: number) {
+  const paid = status === 'captured';
+  return {
+    payment_received: paid,
+    payment_note: paid ? `₹${amount} received via Razorpay` : `₹${amount} payment pending`,
+  };
+}
+if (paymentFlags('pending', 101).payment_received) throw new Error('pending must not be paid');
+if (paymentFlags('pending', 101).payment_note !== '₹101 payment pending') throw new Error('pending note');
+if (!paymentFlags('captured', 101).payment_received) throw new Error('captured must be paid');
+
 console.log('leads-crm self-check ok');

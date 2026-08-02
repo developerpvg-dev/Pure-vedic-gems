@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import type { ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { Coupon, ShippingMethod } from '@/lib/types/database';
 import { planAppliesToCountry, planAppliesToSubtotal } from '@/lib/shipping/plans';
-import { buildTaxBreakdown, calculateGstComponent, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
+import { buildTaxBreakdown, calculateGstComponent, GST_METAL_MOUNTED_PERCENT, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
 import { quoteRewardRedemption } from '@/lib/rewards/service';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
@@ -496,8 +496,8 @@ export async function recalculateOrderTotal(
   }));
   const taxBreakdown = buildTaxBreakdown(shippingAddress?.state, [
     ...productTaxComponents,
-    calculateGstComponent({ label: 'Metal value', component: 'metal', amount: metalCharges, ratePercent: 3, hsnCode: '7113', destinationState: shippingAddress?.state }),
-    calculateGstComponent({ label: 'Making and custom design charges', component: 'making_charge', amount: jewelryCharges, ratePercent: 5, hsnCode: null, destinationState: shippingAddress?.state }),
+    calculateGstComponent({ label: 'Metal value', component: 'metal', amount: metalCharges, ratePercent: GST_METAL_MOUNTED_PERCENT, hsnCode: '7113', destinationState: shippingAddress?.state }),
+    calculateGstComponent({ label: 'Making and custom design charges', component: 'making_charge', amount: jewelryCharges, ratePercent: GST_METAL_MOUNTED_PERCENT, hsnCode: null, destinationState: shippingAddress?.state }),
     // ponytail: cert + energization fees are GST-exempt (fee already final); shipping stays 18%
     calculateGstComponent({ label: 'Shipping, insurance, and handling', component: 'shipping', amount: shippingCost, ratePercent: 18, hsnCode: '9968', destinationState: shippingAddress?.state }),
   ]);

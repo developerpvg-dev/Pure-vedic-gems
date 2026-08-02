@@ -375,6 +375,8 @@ function DetailedPriceLines({
   productCategory?: string | null;
   showFooterTotal?: boolean;
 }) {
+  const gemLabel =
+    productCategory === 'rudraksha' ? 'Rudraksha' : 'gemstone';
   const gemRate = resolveProductTax({ category: productCategory ?? 'gemstone' }).rate_percent;
 
   return (
@@ -405,7 +407,7 @@ function DetailedPriceLines({
         <PriceLine
           line={{
             key: 'gst-making',
-            label: 'GST on making / stone add-on (5%)',
+            label: 'GST on making / stone add-on (3%)',
             amount: totals.gst_making,
           }}
         />
@@ -414,7 +416,7 @@ function DetailedPriceLines({
         <PriceLine
           line={{
             key: 'gst-gem',
-            label: `GST on gemstone (${gemRate}%)`,
+            label: `GST on ${gemLabel} (${gemRate}%)`,
             amount: totals.gst_gemstone,
           }}
         />

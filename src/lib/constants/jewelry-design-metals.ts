@@ -4,7 +4,7 @@ import {
   WEIGHT_BASED_JEWELRY_METALS,
 } from '@/lib/constants/jewelry-labor-rates';
 
-/** GST on jewellery metal (HSN 7113) — making/labor uses 5% separately at checkout. */
+/** GST on mounted jewellery metal + making (HSN 7113) — same 3% slab. */
 export const JEWELRY_GST_RATE_PERCENT = 3;
 
 export const JEWELRY_DESIGN_SETTING_TYPES = ['ring', 'pendant', 'bracelet'] as const;

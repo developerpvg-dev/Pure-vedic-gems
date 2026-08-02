@@ -85,6 +85,17 @@ function applyKindFilter(
       ].join(',')
     );
   }
+  if (enquiryType === 'contact' || enquiryType === 'Enquiry') {
+    // ponytail: do NOT use %Contact% — it matches "Consultation"
+    return q.or(
+      [
+        'source.eq.contact_form',
+        'enquiry_type.eq.Enquiry',
+        'enquiry_type.ilike.%Contact enquir%',
+        'subject.ilike.%Contact enquir%',
+      ].join(',')
+    );
+  }
   return q.ilike('enquiry_type', `%${sanitizeSearchTerm(enquiryType)}%`);
 }
 
@@ -434,6 +445,11 @@ export async function GET(request: NextRequest) {
       .from('enquiries')
       .update({ enquiry_type: 'Consultation' })
       .eq('source', 'consultation_page')
+      .is('enquiry_type', null),
+    admin
+      .from('enquiries')
+      .update({ enquiry_type: 'Enquiry' })
+      .eq('source', 'contact_form')
       .is('enquiry_type', null),
     admin
       .from('enquiries')

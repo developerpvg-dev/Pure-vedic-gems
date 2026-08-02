@@ -16,7 +16,7 @@ import {
 import { productFiltersSchema } from '@/lib/validators/product';
 import { emptyShopFilterOptions, getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
-import { applyQuoteOnlyListingFilter } from '@/lib/shop/catalog-scope';
+import { applyExclusiveGemsShelfFilter, applyQuoteOnlyListingFilter, isExclusiveGemsShelf } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopPagination } from '@/components/shop/ShopPagination';
@@ -106,7 +106,10 @@ async function CategoryProducts({
         .eq('is_active', true);
 
       if (meta?.category && !meta?.catalogSubcategories?.length) query = query.eq('category', meta.category);
-      if (meta?.sub_category) query = query.eq('sub_category', meta.sub_category);
+      if (meta?.sub_category && !isExclusiveGemsShelf(meta.sub_category)) {
+        query = query.eq('sub_category', meta.sub_category);
+      }
+      query = applyExclusiveGemsShelfFilter(query, meta?.sub_category);
       if (meta?.catalogSubcategories?.length) {
         query = query.in('sub_category', meta.catalogSubcategories);
       }

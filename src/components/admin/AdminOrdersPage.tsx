@@ -118,6 +118,18 @@ function label(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function orderMoney(order: Order, amount: number) {
+  const data = (order as Order & { legacy_data?: { legacy_currency?: string } }).legacy_data;
+  const code = String(data?.legacy_currency || 'INR').toUpperCase();
+  const currency = /^[A-Z]{3}$/.test(code) ? code : 'INR';
+  return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 function readInitialFilters(): AdminOrderFilterState {
   if (typeof window === 'undefined') return { ...EMPTY_ADMIN_ORDER_FILTERS };
   const params = new URLSearchParams(window.location.search);
@@ -129,7 +141,7 @@ function readInitialFilters(): AdminOrderFilterState {
     order_source: params.get('order_source') ?? '',
     date_from: params.get('date_from') ?? '',
     date_to: params.get('date_to') ?? '',
-    period: (params.get('period') as AdminOrderFilterState['period']) || '30d',
+    period: (params.get('period') as AdminOrderFilterState['period']) || 'all',
     min_total: params.get('min_total') ?? '',
     max_total: params.get('max_total') ?? '',
     payment_method: params.get('payment_method') ?? '',
@@ -501,7 +513,7 @@ export default function AdminOrdersPage() {
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        <p className="font-semibold tabular-nums text-gray-900">{fmtInr(order.total ?? 0)}</p>
+                        <p className="font-semibold tabular-nums text-gray-900">{orderMoney(order, order.total ?? 0)}</p>
                         {(order.reward_discount ?? 0) > 0 && (
                           <p className="text-xs font-medium text-green-700">
                             {order.reward_points_redeemed.toLocaleString('en-IN')} pts
@@ -524,9 +536,9 @@ export default function AdminOrdersPage() {
                         <span className={`text-xs font-semibold ${PAYMENT_STATUS_COLORS[order.payment_status] || 'text-gray-600'}`}>
                           {label(order.payment_status)}
                         </span>
-                        {(order.amount_due ?? 0) > 0.009 && order.payment_status !== 'pending' ? (
+                        {(order.amount_due ?? 0) > 0.009 && order.payment_status !== 'pending' && order.payment_status !== 'captured' ? (
                           <p className="text-xs font-medium tabular-nums text-amber-700">
-                            {fmtInr(order.amount_due ?? 0)} due
+                            {orderMoney(order, order.amount_due ?? 0)} due
                           </p>
                         ) : null}
                       </td>

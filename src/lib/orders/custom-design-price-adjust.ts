@@ -7,7 +7,7 @@ import {
   parseConfigurationSnapshot,
   type ConfigurationSnapshot,
 } from '@/lib/utils/configuration-snapshot';
-import { gstOnAmount } from '@/lib/utils/tax';
+import { GST_METAL_MOUNTED_PERCENT, gstOnAmount } from '@/lib/utils/tax';
 import {
   applyMetalDeltaToOrderMoney,
   type OrderMoneyAfterMetalAdjust,
@@ -99,10 +99,10 @@ export function applyCustomDesignPriceToPricing(
   const customFeeDelta = newFee - oldFee;
 
   const gstDelta =
-    gstOnAmount(newMetal, 3) -
-    gstOnAmount(oldMetal, 3) +
-    (gstOnAmount(newMaking + newDiamond + newFee, 5) -
-      gstOnAmount(oldMaking + oldDiamond + oldFee, 5));
+    gstOnAmount(newMetal, GST_METAL_MOUNTED_PERCENT) -
+    gstOnAmount(oldMetal, GST_METAL_MOUNTED_PERCENT) +
+    (gstOnAmount(newMaking + newDiamond + newFee, GST_METAL_MOUNTED_PERCENT) -
+      gstOnAmount(oldMaking + oldDiamond + oldFee, GST_METAL_MOUNTED_PERCENT));
 
   const totalDelta = roundMoney(
     metalDelta + makingDelta + diamondDelta + customFeeDelta + gstDelta,

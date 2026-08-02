@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyExclusiveGemsShelfFilter,
   applyQuoteOnlyListingFilter,
+  isExclusiveGemsShelf,
   shouldHideQuoteOnlyFromListing,
 } from '@/lib/shop/catalog-scope';
 
@@ -31,5 +33,18 @@ describe('catalog listing scope', () => {
     };
     applyQuoteOnlyListingFilter(query, 'navaratna', 'ruby');
     expect(calls).toEqual(['price_mode in (on_demand,quote_required)']);
+  });
+
+  it('exclusive shelf includes remapped quality_label Exclusive', () => {
+    expect(isExclusiveGemsShelf('exclusive-gems')).toBe(true);
+    const calls: string[] = [];
+    const query = {
+      or(filters: string) {
+        calls.push(filters);
+        return this;
+      },
+    };
+    applyExclusiveGemsShelfFilter(query, 'exclusive-gems');
+    expect(calls).toEqual(['sub_category.eq.exclusive-gems,quality_label.eq.Exclusive']);
   });
 });

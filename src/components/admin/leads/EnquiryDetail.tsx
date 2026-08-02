@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Loader2, Pencil, Save, X } from 'lucide-react';
 import {
+  CONTACT_STAGE_CHIPS,
   LEAD_ENQUIRY_TYPES,
   LEAD_NOT_CONVERTED_BY_CODE,
   LEAD_NOT_CONVERTED_REASONS,
@@ -15,6 +16,7 @@ import {
   REMEDIES_TEMPLATE,
   TELECOM_CALL_OUTCOMES,
   TELECOM_DELIVERY_OUTCOMES,
+  isContactEnquiryLead,
   type LeadNotConvertedReason,
   type LeadPipelineStage,
   type LeadRemarkCode,
@@ -357,13 +359,20 @@ function ConvertedPanel({
   );
 }
 
-function PipelineStepper({ stage }: { stage: string }) {
-  const active = (LEAD_PIPELINE_STAGES as readonly string[]).includes(stage) ? stage : 'new';
-  const idx = LEAD_PIPELINE_STAGES.indexOf(active as LeadPipelineStage);
+function PipelineStepper({
+  stage,
+  stages = LEAD_PIPELINE_STAGES,
+}: {
+  stage: string;
+  stages?: readonly LeadPipelineStage[];
+}) {
+  const list = stages.filter((s) => s !== 'closed');
+  const active = (stages as readonly string[]).includes(stage) ? stage : list[0] || 'new';
+  const idx = list.indexOf(active as LeadPipelineStage);
   return (
     <div className="overflow-x-auto pb-1">
       <div className="flex min-w-max items-center gap-1">
-        {LEAD_PIPELINE_STAGES.filter((s) => s !== 'closed').map((s, i) => {
+        {list.map((s, i) => {
           const done = i < idx || active === 'closed';
           const current = s === active;
           return (
@@ -421,6 +430,7 @@ export function EnquiryDetail({
   const isManager = caps.canAssign;
   const isTelecom = role === 'telecom';
   const isAstro = role === 'astrologer';
+  const isContact = isContactEnquiryLead(lead.source, lead.enquiry_type);
   const owner = LEAD_STAGE_OWNER[stage] ?? 'manager';
   const duplicateMatches = lead.duplicate_matches ?? [];
 
@@ -483,6 +493,120 @@ export function EnquiryDetail({
     lead.remedies_text,
     lead.duplicate_matches,
   ]);
+
+  // ── Contact form pipeline (no chart / remedies) ─────────────────────────
+  if (isTelecom && isContact) {
+    const active = stage === 'assigned' || stage === 'verifying';
+    const lastLabel = lead.last_remark_code
+      ? LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code
+      : null;
+
+    return (
+      <div className="border-t border-gray-100 p-4 space-y-4">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-sky-100 bg-sky-50/50 px-3 py-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100'}`}>
+            {LEAD_PIPELINE_LABELS[stage] || stage}
+          </span>
+          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-900">
+            Contact message
+          </span>
+          {lastLabel ? (
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200">
+              Status: {lastLabel}
+            </span>
+          ) : null}
+        </div>
+
+        <p className="text-sm text-gray-600">
+          {stage === 'closed'
+            ? 'This contact lead is closed.'
+            : 'Call or email this customer about their message. Log the call result, then mark handled when done.'}
+        </p>
+
+        <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <ResponseField label="Name" value={lead.name} />
+          <ResponseField label="Phone" value={lead.phone || ''} />
+          <ResponseField label="Email" value={lead.email} />
+          <ResponseField label="Source" value={lead.source || 'contact_form'} />
+        </div>
+
+        {lead.message ? (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Their message</p>
+            <p className="mt-1 whitespace-pre-wrap rounded-lg border border-sky-100 bg-sky-50/40 p-3 text-sm text-gray-800">
+              {lead.message}
+            </p>
+          </div>
+        ) : null}
+
+        {active ? (
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-indigo-900">Call result</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {TELECOM_CALL_OUTCOMES.map((o) => (
+                <button
+                  key={o.code}
+                  type="button"
+                  disabled={saving || (o.code === 'custom' && !remarkNote.trim())}
+                  title={o.hint}
+                  onClick={() => onAddRemark(o.code)}
+                  className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-50 ${
+                    lead.last_remark_code === o.code
+                      ? 'border-indigo-400 bg-indigo-50 text-indigo-900'
+                      : 'border-gray-200 bg-white text-gray-800 hover:border-indigo-200 hover:bg-indigo-50/40'
+                  }`}
+                >
+                  {o.short}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={remarkNote}
+              onChange={(e) => onRemarkNote(e.target.value)}
+              rows={2}
+              placeholder="Note (required for Custom remark)…"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
+              className="w-full rounded-lg bg-sky-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-sky-800 disabled:opacity-50"
+            >
+              Mark handled — close lead
+            </button>
+          </div>
+        ) : null}
+
+        {stage === 'closed' ? (
+          <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+            Lead closed
+            {lead.last_remark_code
+              ? ` (${LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code})`
+              : ''}
+            .
+          </p>
+        ) : null}
+
+        {remarks.length > 0 ? (
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Remarks</p>
+            <ul className="space-y-2">
+              {remarks.map((r) => (
+                <li key={r.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                  <span className="font-semibold">{r.remark_label}</span>
+                  {r.note ? ` — ${r.note}` : ''}
+                  <span className="mt-0.5 block text-[10px] text-gray-400">
+                    {r.created_by_name || 'Staff'} · {new Date(r.created_at).toLocaleString('en-IN')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   // ── Restricted telecaller desk ──────────────────────────────────────────
   if (isTelecom) {
@@ -956,8 +1080,13 @@ export function EnquiryDetail({
   const showOutcomes = isManager;
   const showRemediesRead = Boolean(lead.remedies_text) || isAstro || caps.canEditRemedies;
 
-  const nextHint =
-    owner === 'manager' && isManager
+  const nextHint = isContact
+    ? stage === 'new'
+      ? 'Forward this contact message to any telecaller so they can call the customer.'
+      : stage === 'closed'
+        ? 'Contact lead closed.'
+        : 'Telecaller is handling this contact message — they call and close when done.'
+    : owner === 'manager' && isManager
       ? LEAD_PIPELINE_HELP[stage]
       : owner === 'telecom' && isTelecom
         ? LEAD_PIPELINE_HELP[stage]
@@ -974,7 +1103,7 @@ export function EnquiryDetail({
             {LEAD_PIPELINE_LABELS[stage] || stage}
           </span>
         </div>
-        <PipelineStepper stage={stage} />
+        <PipelineStepper stage={stage} stages={isContact ? CONTACT_STAGE_CHIPS : LEAD_PIPELINE_STAGES} />
         <p className="text-xs text-amber-900/80">
           <span className="font-semibold">Your next step:</span> {nextHint}
         </p>
@@ -999,10 +1128,16 @@ export function EnquiryDetail({
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Customer response</h3>
               <p className="mt-0.5 text-[11px] text-gray-400">
-                {(lead.enquiry_type || '').toLowerCase().includes('consultation')
-                  ? 'Vedic Consultation booking'
-                  : '₹101 remedies / recommendation form'}
-                {lead.payment_received ? ' · payment received' : ''}
+                {isContact
+                  ? 'Website contact form message'
+                  : (lead.enquiry_type || '').toLowerCase().includes('consultation')
+                    ? 'Vedic Consultation booking'
+                    : '₹101 remedies / recommendation form'}
+                {lead.payment_received
+                  ? ' · payment received'
+                  : lead.consultation_id
+                    ? ' · payment pending'
+                    : ''}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1016,7 +1151,7 @@ export function EnquiryDetail({
                   Edit details
                 </button>
               ) : null}
-              {(isManager || isAstro) && !editingDetails ? (
+              {(isManager || isAstro) && !editingDetails && !isContact ? (
                 <button
                   type="button"
                   onClick={onCopy}
@@ -1110,6 +1245,8 @@ export function EnquiryDetail({
               <ResponseField label="Enquiry type" value={lead.enquiry_type || ''} wide />
               {lead.payment_received ? (
                 <ResponseField label="Payment" value={lead.payment_note || 'Received'} wide />
+              ) : lead.consultation_id ? (
+                <ResponseField label="Payment" value={lead.payment_note || 'Pending'} wide />
               ) : null}
             </div>
           )}
@@ -1179,8 +1316,19 @@ export function EnquiryDetail({
             </p>
           )}
 
-          {/* TELECOM: verify (managers also see when helping) */}
-          {(isTelecom || isManager) && (stage === 'assigned' || stage === 'verifying') && (
+          {isManager && isContact && lead.assigned_to && stage !== 'closed' && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
+              className="w-full rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
+            >
+              Close contact lead
+            </button>
+          )}
+
+          {/* TELECOM: verify (managers also see when helping) — skipped for contact messages */}
+          {!isContact && (isTelecom || isManager) && (stage === 'assigned' || stage === 'verifying') && (
             <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 space-y-2">
               <p className="text-xs font-semibold text-emerald-900">2. Telecaller verification</p>
               <p className="text-[11px] text-emerald-800">
@@ -1204,7 +1352,7 @@ export function EnquiryDetail({
           )}
 
           {/* MANAGER: forward to astrologer (once only) */}
-          {caps.canForwardAstrologer && stage === 'verified' && !lead.astrologer_id && (
+          {!isContact && caps.canForwardAstrologer && stage === 'verified' && !lead.astrologer_id && (
             <div className="rounded-lg border border-violet-100 bg-violet-50/40 p-3">
               <p className="mb-2 text-xs font-semibold text-violet-900">3. Forward to pandit / astrologer</p>
               <p className="mb-2 text-[11px] text-violet-800">Assignment is permanent — cannot be changed later.</p>
@@ -1231,7 +1379,7 @@ export function EnquiryDetail({
               </button>
             </div>
           )}
-          {isManager && lead.astrologer_id && (
+          {!isContact && isManager && lead.astrologer_id && (
             <p className="rounded-lg border border-violet-100 bg-violet-50/40 px-3 py-2 text-xs text-violet-900">
               Astrologer locked:{' '}
               <span className="font-semibold">
@@ -1242,7 +1390,7 @@ export function EnquiryDetail({
           )}
 
           {/* ASTROLOGER: write remedies */}
-          {(isAstro || (isManager && stage === 'with_astrologer')) && (stage === 'with_astrologer' || stage === 'remedies_ready') && (
+          {!isContact && (isAstro || (isManager && stage === 'with_astrologer')) && (stage === 'with_astrologer' || stage === 'remedies_ready') && (
             <div className="rounded-lg border border-fuchsia-100 bg-fuchsia-50/30 p-3">
               <p className="mb-2 text-xs font-semibold text-fuchsia-900">4. Write remedies</p>
               <textarea
@@ -1273,7 +1421,7 @@ export function EnquiryDetail({
           )}
 
           {/* MANAGER: edit + send to same telecaller */}
-          {caps.canSendToTelecaller && stage === 'remedies_ready' && (
+          {!isContact && caps.canSendToTelecaller && stage === 'remedies_ready' && (
             <div className="rounded-lg border border-teal-100 bg-teal-50/40 p-3">
               <p className="mb-2 text-xs font-semibold text-teal-900">6. Review remedies → send for delivery</p>
               <p className="mb-2 text-[11px] text-teal-800">
@@ -1300,7 +1448,7 @@ export function EnquiryDetail({
           )}
 
           {/* MANAGER / telecom: deliver + mark explained */}
-          {(isManager || isTelecom) && stage === 'sent_to_customer' && Boolean(lead.remedies_text) && (
+          {!isContact && (isManager || isTelecom) && stage === 'sent_to_customer' && Boolean(lead.remedies_text) && (
             <div className="rounded-lg border border-lime-200 bg-lime-50/40 p-3 space-y-3">
               <p className="text-xs font-semibold text-lime-900">7. Deliver remedies → mark explained</p>
               <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-lime-100 bg-white p-3 font-mono text-xs text-gray-800">
@@ -1324,7 +1472,7 @@ export function EnquiryDetail({
           )}
 
           {/* Conversion outcome — stage 9 */}
-          {(isManager || isTelecom) && (stage === 'conversion' || stage === 'remedies_explained') && (
+          {!isContact && (isManager || isTelecom) && (stage === 'conversion' || stage === 'remedies_explained') && (
             <div className="space-y-3">
               <p className="text-xs font-semibold text-orange-950">9. Conversion</p>
               <p className="text-[11px] text-orange-900/80">

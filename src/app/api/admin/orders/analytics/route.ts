@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const search = searchParams.get('search')?.trim();
-  const period = searchParams.get('period') ?? '30d';
+  const period = searchParams.get('period') ?? 'all';
 
   const supabase = createAdminClient();
   // ponytail: order_source not in generated Database types until types regen

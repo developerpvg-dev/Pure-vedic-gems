@@ -1,0 +1,135 @@
+{
+  "inserted": [
+    {
+      "legacy_woo_id": "48961",
+      "sku": "G511..",
+      "sub_category": "opal",
+      "title": "Opal 7.25ct.@1441per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48963",
+      "sku": "P798..",
+      "sub_category": "opal",
+      "title": "Opal 7.43ct.@1445per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48940",
+      "sku": "B096..",
+      "sub_category": "opal",
+      "title": "Opal 6.21ct.@1857per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48974",
+      "sku": "D1000",
+      "sub_category": "opal",
+      "title": "Opal 12.36ct.@1854per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48916",
+      "sku": "C440..",
+      "sub_category": "opal",
+      "title": "Opal 4.13ct.@1448per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48946",
+      "sku": "A239..",
+      "sub_category": "opal",
+      "title": "Opal 6.92ct.@1854per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48950",
+      "sku": "T946..",
+      "sub_category": "opal",
+      "title": "Opal 7.16ct.@1439per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48932",
+      "sku": "P310..",
+      "sub_category": "opal",
+      "title": "Opal 4.82ct.@1854per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48972",
+      "sku": "N805..",
+      "sub_category": "opal",
+      "title": "Opal 11.60ct.@1441per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48944",
+      "sku": "R311..",
+      "sub_category": "opal",
+      "title": "Opal 6.83ct.@1857per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48965",
+      "sku": "Q939..",
+      "sub_category": "opal",
+      "title": "Opal 8.85ct.@1441per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48970",
+      "sku": "U322..",
+      "sub_category": "opal",
+      "title": "Opal 9.73ct.@1852per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48930",
+      "sku": "E328..",
+      "sub_category": "opal",
+      "title": "Opal 4.78ct.@1855per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48968",
+      "sku": "A698..",
+      "sub_category": "opal",
+      "title": "Opal 9.58ct.@1851per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48976",
+      "sku": "B268..",
+      "sub_category": "opal",
+      "title": "Opal 7.03ct.@1446per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48942",
+      "sku": "S129..",
+      "sub_category": "opal",
+      "title": "Opal 6.58ct.@1851per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48938",
+      "sku": "S473..",
+      "sub_category": "opal",
+      "title": "Opal 5.82ct.@1858per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48948",
+      "sku": "V032..",
+      "sub_category": "opal",
+      "title": "Opal 7.01ct.@1851per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48934",
+      "sku": "U510..",
+      "sub_category": "opal",
+      "title": "Opal 5.65ct.@1850per. ct. (Luxury)"
+    },
+    {
+      "legacy_woo_id": "48936",
+      "sku": "E063..",
+      "sub_category": "opal",
+      "title": "Opal 5.67ct.@1436per. ct. (Luxury)"
+    }
+  ],
+  "remapped": [],
+  "restoredStock": [
+    {
+      "id": "2e58c2f1-86e4-4516-ac3d-12d92f26a0f6",
+      "sku": "F060",
+      "was": "out_of_stock",
+      "sub_category": "aquamarine",
+      "note": "",
+      "title": "Aquamarine 10.18ct.@750 per. ct."
+    }
+  ]
+}

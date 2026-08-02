@@ -157,6 +157,14 @@ export type WhyUsBlock = BlockBase & {
   items: WhyUsItem[];
 };
 
+/** Closing trust strip on every PDF / preview — always shown above footer. */
+export const REPORT_TRUST_MARKS = [
+  { title: 'Since 1937', detail: 'Heritage Vedic gem house' },
+  { title: '4 Generations', detail: 'Family expertise in Jyotish gems' },
+  { title: 'Lab Certified', detail: 'Authenticated natural gemstones' },
+  { title: 'Insured Shipping', detail: 'Secure worldwide delivery' },
+] as const;
+
 export type FooterBlock = BlockBase & {
   type: 'footer';
   contact: string;
@@ -312,12 +320,12 @@ export function createEmptyBlock(type: ReportBlockType): ReportBlock {
       return {
         id,
         type,
-        title: 'Why Us',
+        title: 'Our promise',
         items: [
-          { icon: 'gem', text: 'Pure, Natural Gemstones' },
-          { icon: 'lab', text: 'Laboratory Certified for Quality and Authenticity' },
-          { icon: 'ship', text: 'Worldwide Shipping' },
-          { icon: 'ring', text: 'Customized Jewelry Created Just for you' },
+          { icon: 'lab', text: 'Lab-certified natural gemstones — authenticated for quality and purity' },
+          { icon: 'ship', text: 'Secured & insured worldwide shipping' },
+          { icon: 'gem', text: 'Four generations of Vedic gem expertise — since 1937' },
+          { icon: 'ring', text: 'Custom jewellery crafted to your recommendation' },
         ],
       };
     case 'footer':
@@ -346,6 +354,7 @@ export function buildGempunditClassicBlocks(): ReportBlock[] {
     createEmptyBlock('primaryStone'),
     createEmptyBlock('additionalStones'),
     createEmptyBlock('consultationCta'),
+    createEmptyBlock('whyUs'),
     createEmptyBlock('footer'),
   ];
 }

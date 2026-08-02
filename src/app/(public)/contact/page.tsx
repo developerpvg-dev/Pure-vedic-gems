@@ -127,16 +127,25 @@ export default function ContactPage() {
     setStatus('sending');
 
     try {
+      const dial = COUNTRY_CODES.find((c) => c.id === formState.countryCode)?.dial ?? '+91';
+      const rawPhone = formState.phone.trim();
+      const phone = rawPhone
+        ? rawPhone.startsWith('+')
+          ? rawPhone
+          : `${dial}${rawPhone.replace(/^0+/, '')}`
+        : undefined;
+
       const response = await fetch('/api/enquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formState.name.trim(),
           email: formState.email.trim(),
-          phone: formState.phone.trim() || undefined,
+          phone,
           subject: 'Contact enquiry',
           message: formState.message.trim(),
           source: 'contact_form',
+          enquiry_type: 'Enquiry',
         }),
       });
 

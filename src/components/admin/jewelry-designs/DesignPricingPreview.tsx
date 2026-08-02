@@ -5,7 +5,7 @@ import type { MetalCatalogEntry, MetalPricingMode } from '@/lib/utils/metal-pric
 import type { DesignMetalRow } from '@/lib/utils/jewelry-design-fields';
 import { encodeMetalRowsToDesignFields } from '@/lib/utils/jewelry-design-fields';
 import { formatPrice } from '@/lib/utils/format';
-import { gstOnAmount } from '@/lib/utils/tax';
+import { GST_METAL_MOUNTED_PERCENT, gstOnAmount } from '@/lib/utils/tax';
 
 type MetalRates = Record<string, number>;
 
@@ -66,9 +66,9 @@ export default function DesignPricingPreview({
   const makingTaxable = pricing.makingCharge + pricing.diamondCharge;
   const subtotal =
     pricing.metalPrice + pricing.makingCharge + pricing.diamondCharge;
-  // Same as checkout / recalculateOrderTotal: metal 3%, making+diamond 5%.
-  const gstMetal = gstOnAmount(pricing.metalPrice, 3);
-  const gstMaking = gstOnAmount(makingTaxable, 5);
+  // Same as checkout / recalculateOrderTotal: metal + making/diamond @ 3%.
+  const gstMetal = gstOnAmount(pricing.metalPrice, GST_METAL_MOUNTED_PERCENT);
+  const gstMaking = gstOnAmount(makingTaxable, GST_METAL_MOUNTED_PERCENT);
   const gstEstimate = Math.round(gstMetal + gstMaking);
   const totalWithGst = subtotal + gstEstimate;
 
@@ -79,7 +79,7 @@ export default function DesignPricingPreview({
         {pricing.pricingKind === 'weight'
           ? `Weight-based: metal × grams + labor (${pricing.laborRatePercent}% of metal value).`
           : 'Fixed making charge from design sheet.'}{' '}
-        GST: metal 3% + making/stone 5% (matches checkout).
+        GST: metal + making/stone 3% (matches checkout).
       </p>
       <dl className="mt-3 space-y-1.5 text-xs">
         {pricing.metalWeightGrams > 0 && (
@@ -124,7 +124,7 @@ export default function DesignPricingPreview({
         )}
         {gstMaking > 0 && (
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-600">Est. GST on making / stone (5%)</dt>
+            <dt className="text-gray-600">Est. GST on making / stone (3%)</dt>
             <dd className="font-medium text-gray-900">{formatPrice(gstMaking)}</dd>
           </div>
         )}

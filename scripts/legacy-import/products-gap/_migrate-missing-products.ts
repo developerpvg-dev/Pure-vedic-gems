@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import { Client } from 'pg';
 import { streamWpTable, type SqlValue } from '../lib/wp-sql.js';
+import { ownMediaUrl } from '../lib/own-media-url.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -22,6 +23,7 @@ loadEnv({ path: resolve(repoRoot, '.env.local') });
 
 const WOO_DUMP = resolve(repoRoot, '..', 'pugemved_indb', 'pugemved_indb.sql');
 const SITE = 'https://www.purevedicgems.com';
+/** Fetch-only source; never persist — use ownMediaUrl on write. */
 const UPLOADS = `${SITE}/wp-content/uploads/`;
 
 type WooProduct = {
@@ -181,7 +183,8 @@ async function main() {
       usedSlugs.add(slug);
 
       const attachedFile = p.thumbId ? attachedFileById.get(p.thumbId) : '';
-      const imageUrl = attachedFile ? `${UPLOADS}${attachedFile}` : null;
+      const rawImage = attachedFile ? `${UPLOADS}${attachedFile}` : null;
+      const imageUrl = flags.write && rawImage ? await ownMediaUrl(rawImage) : rawImage;
       const images = imageUrl ? [imageUrl] : [];
 
       const { metaTitle, metaDescription } = seoMeta(p.title, prefix, carat);

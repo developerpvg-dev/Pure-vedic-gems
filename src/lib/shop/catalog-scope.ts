@@ -54,3 +54,24 @@ export function applyQuoteOnlyListingFilter<T extends FilterableQuery>(
   }
   return query.not('price_mode', 'in', '(on_demand,quote_required)') as T;
 }
+
+type OrFilterableQuery = {
+  or(filters: string): OrFilterableQuery;
+};
+
+/**
+ * Exclusive shelf = leftover `sub_category=exclusive-gems` OR remapped gems
+ * that still carry `quality_label=Exclusive` (on-demand SKUs move off the
+ * exclusive subcategory but must stay visible here).
+ */
+export function isExclusiveGemsShelf(subCategory?: string | null): boolean {
+  return subCategory?.toLowerCase().trim() === 'exclusive-gems';
+}
+
+export function applyExclusiveGemsShelfFilter<T extends OrFilterableQuery>(
+  query: T,
+  subCategory?: string | null,
+): T {
+  if (!isExclusiveGemsShelf(subCategory)) return query;
+  return query.or('sub_category.eq.exclusive-gems,quality_label.eq.Exclusive') as T;
+}

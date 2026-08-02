@@ -86,11 +86,44 @@ describe('tax helpers', () => {
     const expected = Math.round(
       gstOnAmount(15048, 0.25) +
         gstOnAmount(41300, 3) +
-        gstOnAmount(10325, 5) +
+        gstOnAmount(10325, 3) +
         gstOnAmount(1500, 18),
     );
     expect(gst).toBe(expected);
-    expect(gst).toBe(2063);
+    expect(gst).toBe(1856);
+  });
+
+  it('applies loose rudraksha 0% and metal-mounted 3%', () => {
+    expect(resolveProductTax({ category: 'rudraksha' }).rate_percent).toBe(0);
+    expect(resolveProductTax({ category: 'Ruby' }).rate_percent).toBe(0.25);
+
+    const gst = estimateClientTax(
+      [
+        {
+          price: 199.47,
+          quantity: 1,
+          category: 'rudraksha',
+          configuration_snapshot: {
+            product: { category: 'rudraksha' },
+            pricing: {
+              gem_price: 18.82,
+              metal_price: 150.45,
+              making_charge: 30.2,
+              diamond_charge: 0,
+              certification_fee: 0,
+              energization_fee: 0,
+              custom_design_fee: 0,
+              total: 199.47,
+            },
+          },
+        },
+      ],
+      0,
+    );
+
+    expect(gst).toBe(
+      Math.round(gstOnAmount(18.82, 0) + gstOnAmount(150.45, 3) + gstOnAmount(30.2, 3)),
+    );
   });
 });
 
@@ -137,7 +170,7 @@ describe('labor FIXED vs % end-to-end with GST', () => {
 
     expect(totals.pre_gst_subtotal).toBe(30500);
     expect(totals.gst_metal).toBe(0);
-    expect(totals.gst_making).toBe(gstOnAmount(8500 + 2000, 5)); // 525
+    expect(totals.gst_making).toBe(gstOnAmount(8500 + 2000, 3)); // 315
     expect(totals.gst_gemstone).toBe(gstOnAmount(20000, 0.25)); // 50
   });
 
@@ -247,12 +280,12 @@ describe('labor FIXED vs % end-to-end with GST', () => {
       0,
     );
 
-    // DB stores making+diamond together → jewelryCharges = 7500+17500 = 25000 @ 5%
+    // DB stores making+diamond together → jewelryCharges = 7500+17500 = 25000 @ 3%
     // Certification fee is GST-exempt
     const serverGst = Math.round(
       gstOnAmount(gem, 0.25) +
         gstOnAmount(jewelry.metalPrice, 3) +
-        gstOnAmount(jewelry.makingCharge + jewelry.diamondCharge, 5),
+        gstOnAmount(jewelry.makingCharge + jewelry.diamondCharge, 3),
     );
 
     expect(display.gst_total).toBe(serverGst);

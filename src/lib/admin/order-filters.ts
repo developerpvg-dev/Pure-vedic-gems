@@ -41,7 +41,7 @@ export const EMPTY_ADMIN_ORDER_FILTERS: AdminOrderFilterState = {
   order_source: '',
   date_from: '',
   date_to: '',
-  period: '30d',
+  period: 'all',
   min_total: '',
   max_total: '',
   payment_method: '',

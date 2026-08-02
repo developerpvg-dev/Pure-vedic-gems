@@ -143,6 +143,19 @@ export const LEAD_ENQUIRY_TYPES = [
   'Other',
 ] as const;
 
+/** Contact-page / website message leads — no chart / remedies path */
+export const CONTACT_STAGE_CHIPS: LeadPipelineStage[] = ['new', 'assigned', 'verifying', 'closed'];
+
+export const CONTACT_TELECOM_STAGE_CHIPS: LeadPipelineStage[] = ['assigned', 'verifying', 'closed'];
+
+/** Website “Send Us a Message” and plain Enquiry — telecaller contacts, then close */
+export function isContactEnquiryLead(source?: string | null, enquiryType?: string | null) {
+  if (source === 'contact_form') return true;
+  const t = (enquiryType || '').toLowerCase();
+  // ponytail: "consultation".includes("contact") is true — check enquiry / contact enquir only
+  return t === 'enquiry' || t.includes('contact enquir');
+}
+
 export const TELECOM_EDITABLE_STAGES: LeadPipelineStage[] = [
   'assigned',
   'verifying',
@@ -271,4 +284,12 @@ export function assertLeadConstants() {
   if (!isLeadNotConvertedReason('other')) throw new Error('other reason');
   if (LEAD_PIPELINE_LABELS.conversion !== '9. Conversion') throw new Error('conversion label');
   if (LEAD_PIPELINE_LABELS.closed !== '10. Closed') throw new Error('closed is step 10');
+  if (!isContactEnquiryLead('contact_form', null)) throw new Error('contact_form is contact lead');
+  if (!isContactEnquiryLead(null, 'Enquiry')) throw new Error('Enquiry type is contact lead');
+  if (!isContactEnquiryLead(null, 'Contact enquiry')) throw new Error('Contact enquiry type');
+  if (isContactEnquiryLead(null, 'Consultation')) throw new Error('Consultation must not be contact lead');
+  if (isContactEnquiryLead('homepage_recommendation', 'Remedies Recommendation')) {
+    throw new Error('remedies must not be contact lead');
+  }
+  if (!canTransitionPipeline('assigned', 'closed')) throw new Error('contact path assigned→closed');
 }

@@ -7,7 +7,17 @@ import { join } from 'node:path';
 const PDF_OPTS = {
   format: 'A4' as const,
   printBackground: true,
-  margin: { top: '12mm', bottom: '12mm', left: '10mm', right: '10mm' },
+  preferCSSPageSize: false,
+  displayHeaderFooter: true,
+  headerTemplate: `<div style="width:100%;padding:0 14mm;font-size:8px;font-family:Roboto,Helvetica,Arial,sans-serif;color:#7A6250;display:flex;justify-content:space-between;letter-spacing:0.14em;text-transform:uppercase;">
+    <span style="color:#8A6400;font-weight:500;">Pure Vedic Gems</span>
+    <span>Confidential</span>
+  </div>`,
+  footerTemplate: `<div style="width:100%;padding:0 14mm;font-size:8px;font-family:Roboto,Helvetica,Arial,sans-serif;color:#7A6250;display:flex;justify-content:space-between;align-items:center;">
+    <span style="letter-spacing:0.1em;">Private gem recommendation</span>
+    <span style="letter-spacing:0.14em;font-weight:500;"><span class="pageNumber"></span> · <span class="totalPages"></span></span>
+  </div>`,
+  margin: { top: '18mm', bottom: '18mm', left: '12mm', right: '12mm' },
 };
 
 /** Matches installed @sparticuz/chromium major; override with CHROMIUM_REMOTE_EXEC_PATH if needed. */
@@ -56,7 +66,11 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
   const browser = await (isServerless ? launchServerless() : launchLocal());
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
+    // networkidle0 so Roboto can load; fall back if fonts stall
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 45_000 }).catch(async () => {
+      await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
+    });
+    await page.evaluate(() => document.fonts.ready).catch(() => undefined);
     return Buffer.from(await page.pdf(PDF_OPTS));
   } finally {
     await browser.close();

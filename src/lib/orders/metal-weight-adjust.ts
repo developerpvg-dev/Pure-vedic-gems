@@ -4,7 +4,7 @@
  */
 
 import { parseConfigurationSnapshot, type ConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
-import { gstOnAmount } from '@/lib/utils/tax';
+import { GST_METAL_MOUNTED_PERCENT, gstOnAmount } from '@/lib/utils/tax';
 import { roundMoney } from '@/lib/orders/counter-payments';
 
 export type MetalWeightAdjustKind = 'extra_charge' | 'refund' | 'unchanged';
@@ -65,9 +65,9 @@ export function applyMetalWeightToPricing(
   const metalDelta = newMetal - oldMetal;
   const makingDelta = newMaking - oldMaking;
   const gstDelta =
-    gstOnAmount(newMetal, 3) -
-    gstOnAmount(oldMetal, 3) +
-    (gstOnAmount(newMaking, 5) - gstOnAmount(oldMaking, 5));
+    gstOnAmount(newMetal, GST_METAL_MOUNTED_PERCENT) -
+    gstOnAmount(oldMetal, GST_METAL_MOUNTED_PERCENT) +
+    (gstOnAmount(newMaking, GST_METAL_MOUNTED_PERCENT) - gstOnAmount(oldMaking, GST_METAL_MOUNTED_PERCENT));
   const totalDelta = roundMoney(metalDelta + makingDelta + gstDelta);
 
   const quotedWeight =

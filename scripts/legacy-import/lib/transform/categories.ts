@@ -9,9 +9,9 @@
  *   1. White Sapphire is reclassified to navaratna as "White Sapphire (Safed Pukhraj)".
  *   2. Rudraksha rows misfiled under NAVRATAN are EXCLUDED from Phase 1 and
  *      deferred to the Rudraksha phase.
- *   3. "Exclusive Gems" is NOT a real subcategory. It is a quality bucket; the
- *      transformer sets `quality_label = 'Exclusive'` and resolves the real
- *      gem subcategory from the product title.
+ *   3. "Exclusive Gems" is a quality bucket (`quality_label = Exclusive`). When
+ *      the title names a gem, `sub_category` is that gem; otherwise it stays
+ *      `exclusive-gems`.
  *   4. Slugs and product names are preserved verbatim from legacy for SEO
  *      continuity. Slug rewrites are not applied here.
  */
@@ -80,6 +80,7 @@ const LEGACY_NAVRATNA_TERM_MAP: Record<string, NavratnaCategoryMap> = {
  * category was `Exclusive Gems`. Order matters: more specific patterns first.
  */
 const TITLE_FALLBACK_PATTERNS: Array<[RegExp, NavratnaSubcategory, string, string]> = [
+  [/\bpitambari\b/i, 'pitambari', 'Pitambari', 'Jupiter & Saturn'],
   [/\byellow\s*sapphire\b|\bpukhraj\b/i, 'yellow-sapphire', 'Yellow Sapphire (Pukhraj)', 'Jupiter'],
   [/\bblue\s*sapphire\b|\bneelam\b/i, 'blue-sapphire', 'Blue Sapphire (Neelam)', 'Saturn'],
   [/\bwhite\s*sapphire\b|\bshvet\s*pukhraj\b|\bsafed\s*pukhraj\b/i, 'white-sapphire', 'White Sapphire (Safed Pukhraj)', 'Venus'],
@@ -89,7 +90,7 @@ const TITLE_FALLBACK_PATTERNS: Array<[RegExp, NavratnaSubcategory, string, strin
   [/\bemerald\b|\bpanna\b/i, 'emerald', 'Emerald (Panna)', 'Mercury'],
   [/\bhessonite\b|\bgomed\b/i, 'hessonite', 'Hessonite (Gomed)', 'Rahu'],
   [/\bdiamond\b|\bheera\b|\bhira\b/i, 'diamond', 'Diamond (Heera)', 'Venus'],
-  [/\bpearl\b|\bmoti\b/i, 'pearl', 'Pearl (Moti)', 'Moon'],
+  [/\bpearl\b|\bmoti\b|\bbasra\b/i, 'pearl', 'Pearl (Moti)', 'Moon'],
   [/\bruby\b|\bmanik\b|\bmanikya\b/i, 'ruby', 'Ruby (Manik)', 'Sun'],
 ];
 
@@ -161,10 +162,11 @@ export function classifyNavratna(args: {
 
   if (hasExclusive) {
     const fallback = TITLE_FALLBACK_PATTERNS.find(([re]) => re.test(args.productTitle));
+    // Title decides the gem shelf; Exclusive stays as quality_label.
     return {
       include: true,
-      subCategory: 'exclusive-gems',
-      label: 'Exclusive Gems',
+      subCategory: fallback?.[1] ?? 'exclusive-gems',
+      label: fallback?.[2] ?? 'Exclusive Gems',
       planet: fallback?.[3],
       qualityLabel: 'Exclusive',
       legacyPath,

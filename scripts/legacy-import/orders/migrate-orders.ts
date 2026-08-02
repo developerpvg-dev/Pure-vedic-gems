@@ -11,9 +11,10 @@
  *   - Adds orders.legacy_woo_id (BIGINT, unique) and upserts on it.
  *   - Relaxes the order-number trigger so an explicit order_number ('WC-<id>')
  *     is preserved for imports while live checkout keeps auto-numbering.
+ *   - Does not touch existing non-legacy (test) orders.
  *
  * Usage:
- *   npx tsx scripts/legacy-import/orders/migrate-orders.ts                       (dry-run)
+ *   npx tsx scripts/legacy-import/orders/migrate-orders.ts --prod
  *   npx tsx scripts/legacy-import/orders/migrate-orders.ts --write --write-prod
  */
 
@@ -29,7 +30,9 @@ pgTypes.types.setTypeParser(20, (val: string) => parseInt(val, 10));
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
-loadEnv({ path: resolve(repoRoot, '.env.local') });
+loadEnv({ path: resolve(repoRoot, '.env.local'), override: true });
+
+const DEFAULT_DUMP = resolve(repoRoot, '..', 'latestsqldump', 'pugemved_indb(1).sql');
 
 const ORDER_META_KEYS = new Set([
   '_order_total', '_order_tax', '_order_shipping', '_cart_discount', '_order_currency',
@@ -54,6 +57,25 @@ const STATUS_MAP: Record<string, { status: string; payment: string }> = {
   'wc-failed': { status: 'cancelled', payment: 'failed' },
 };
 
+/** Admin filter enums: razorpay|cash|upi|card|bank_transfer|cod */
+function canonicalPaymentMethod(slug: string | undefined, title: string | undefined): string | null {
+  const s = (slug || '').trim().toLowerCase();
+  const t = (title || '').trim().toLowerCase();
+  const blob = `${s} ${t}`;
+
+  if (/razorpay/.test(blob)) return 'razorpay';
+  if (/\bcod\b|cash on delivery|cash-on-delivery/.test(blob)) return 'cod';
+  if (/paypal/.test(blob)) return 'paypal';
+  if (/payubiz|payupaisa|payuindia|\bpayu\b/.test(blob)) return 'payubiz';
+  if (/\bupi\b|paytm|phonepe|gpay|google pay|bhim/.test(blob)) return 'upi';
+  if (/\bcard\b|credit|debit|ccavenue|stripe|visa|mastercard/.test(blob)) return 'card';
+  if (/bacs|bank.?transfer|direct bank|neft|imps|rtgs|wire/.test(blob)) return 'bank_transfer';
+  if (/\bcash\b|cheque|check|counter/.test(blob)) return 'cash';
+  if (s) return s;
+  if (t) return t.replace(/\s+/g, '_').slice(0, 50);
+  return null;
+}
+
 type LegacyOrder = {
   id: number;
   status: string;
@@ -70,8 +92,9 @@ type LegacyItem = {
 
 function parseFlags(argv: string[]) {
   const writeProd = argv.includes('--write-prod');
-  const { write } = parseRunMode(argv.filter((a) => a !== '--write-prod'));
-  return { write, writeProd };
+  const prod = argv.includes('--prod') || writeProd;
+  const { write } = parseRunMode(argv.filter((a) => a !== '--write-prod' && a !== '--prod'));
+  return { write, writeProd, prod };
 }
 
 function assertSafeTarget(dbUrl: string, write: boolean, writeProd: boolean) {
@@ -96,15 +119,23 @@ function toIso(value: string | null | undefined): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+function resolveDump(): string {
+  const fromEnv = process.env.LEGACY_SQL_DUMP_PATH?.trim();
+  // Prefer latest India dump when env still points at the older May dump.
+  if (fromEnv && /latestsqldump/i.test(fromEnv)) return fromEnv;
+  return DEFAULT_DUMP;
+}
+
 async function main() {
   const flags = parseFlags(process.argv.slice(2));
-  const dbUrl = process.env.LEGACY_IMPORT_DATABASE_URL;
-  const dump = process.env.LEGACY_SQL_DUMP_PATH;
-  if (!dbUrl) throw new Error('Missing LEGACY_IMPORT_DATABASE_URL.');
-  if (!dump) throw new Error('Missing LEGACY_SQL_DUMP_PATH.');
+  const dbUrl = flags.prod
+    ? (process.env.LEGACY_IMPORT_DATABASE_URL_PRODUCTION || process.env.DATABASE_URL || process.env.LEGACY_IMPORT_DATABASE_URL)
+    : (process.env.LEGACY_IMPORT_DATABASE_URL || process.env.DATABASE_URL);
+  const dump = resolveDump();
+  if (!dbUrl) throw new Error('Missing database URL.');
 
   const dbHost = assertSafeTarget(dbUrl, flags.write, flags.writeProd);
-  console.log(`Mode: ${flags.write ? 'WRITE' : 'DRY-RUN'}${flags.writeProd ? ' (prod override)' : ''}`);
+  console.log(`Mode: ${flags.write ? 'WRITE' : 'DRY-RUN'}${flags.prod ? ' (prod)' : ''}`);
   console.log(`Host: ${dbHost}`);
   console.log(`Dump: ${dump}\n`);
 
@@ -186,6 +217,11 @@ async function main() {
   let linked = 0;
   let guest = 0;
   let upserted = 0;
+  let unmatchedLines = 0;
+  let totalLines = 0;
+  const statusCounts = new Map<string, number>();
+  const payCounts = new Map<string, number>();
+  const rawPaySamples = new Map<string, number>();
 
   try {
     await client.query('BEGIN');
@@ -219,13 +255,23 @@ async function main() {
       const customerId = email && authIdByEmail.has(email) ? authIdByEmail.get(email)! : null;
       if (customerId) linked++; else guest++;
 
+      statusCounts.set(o.status, (statusCounts.get(o.status) ?? 0) + 1);
+
       const billingName = `${m._billing_first_name ?? ''} ${m._billing_last_name ?? ''}`.trim() || null;
+      const payTitle = m._payment_method_title || '';
+      const paySlug = m._payment_method || '';
+      const paymentMethod = canonicalPaymentMethod(paySlug, payTitle);
+      payCounts.set(paymentMethod || '(none)', (payCounts.get(paymentMethod || '(none)') ?? 0) + 1);
+      const rawKey = `${paySlug || '-'} | ${payTitle || '-'}`;
+      rawPaySamples.set(rawKey, (rawPaySamples.get(rawKey) ?? 0) + 1);
 
       const items = o.items.map((it) => {
         const legacyProductId = Number(it.meta._product_id || 0);
         const matched = productByLegacy.get(legacyProductId);
         const qty = num(it.meta._qty) || 1;
         const lineTotal = num(it.meta._line_total) || num(it.meta._line_subtotal);
+        totalLines++;
+        if (!matched) unmatchedLines++;
         return {
           product_id: matched?.id ?? null,
           legacy_product_id: legacyProductId || null,
@@ -258,10 +304,18 @@ async function main() {
         legacy_status: o.status,
         legacy_currency: m._order_currency || 'INR',
         legacy_order_key: m._order_key || null,
+        payment_method_slug: paySlug || null,
+        payment_method_title: payTitle || null,
         date_paid: toIso(m._date_paid ? new Date(Number(m._date_paid) * 1000).toISOString().replace('T', ' ').slice(0, 19) : null),
         date_completed: m._date_completed ? new Date(Number(m._date_completed) * 1000).toISOString() : null,
         source: 'woocommerce_legacy',
       };
+
+      // order_source CHECK only allows online|offline — Woo storefront = online;
+      // distinguish via legacy_woo_id + legacy_data.source.
+      const amountPaid =
+        map.payment === 'captured' || map.payment === 'refunded' ? total : 0;
+      const amountDue = Math.max(0, total - amountPaid);
 
       const params = [
         `WC-${o.id}`,
@@ -276,10 +330,13 @@ async function main() {
         num(m._cart_discount),
         num(m._order_tax),
         total,
+        amountPaid,
+        amountDue,
         JSON.stringify(shippingAddress),
-        m._payment_method_title || m._payment_method || null,
+        paymentMethod,
         map.payment,
         map.status,
+        'online',
         toIso(o.createdAt) ?? new Date().toISOString(),
         JSON.stringify(legacyData),
       ];
@@ -290,9 +347,13 @@ async function main() {
         `INSERT INTO orders (
             order_number, legacy_woo_id, customer_id, guest_email, guest_phone, guest_name,
             items, subtotal, shipping_cost, discount, gst_amount, total,
-            shipping_address, payment_method, payment_status, status, created_at, legacy_data
+            amount_paid, amount_due,
+            shipping_address, payment_method, payment_status, status, order_source,
+            created_at, legacy_data
          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14, $15, $16, $17, $18::jsonb
+            $1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12,
+            $13, $14,
+            $15::jsonb, $16, $17, $18, $19, $20, $21::jsonb
          )
          ON CONFLICT (legacy_woo_id) WHERE legacy_woo_id IS NOT NULL DO UPDATE SET
             customer_id = EXCLUDED.customer_id,
@@ -305,10 +366,13 @@ async function main() {
             discount = EXCLUDED.discount,
             gst_amount = EXCLUDED.gst_amount,
             total = EXCLUDED.total,
+            amount_paid = EXCLUDED.amount_paid,
+            amount_due = EXCLUDED.amount_due,
             shipping_address = EXCLUDED.shipping_address,
             payment_method = EXCLUDED.payment_method,
             payment_status = EXCLUDED.payment_status,
             status = EXCLUDED.status,
+            order_source = EXCLUDED.order_source,
             legacy_data = EXCLUDED.legacy_data,
             updated_at = NOW()`,
         params,
@@ -318,13 +382,27 @@ async function main() {
 
     console.log(`\nLinked to customers: ${linked}  |  Guest orders: ${guest}`);
     console.log(`Orders ${flags.write ? 'upserted' : 'prepared'}: ${upserted}`);
+    console.log(`Line items: ${totalLines}  unmatched product_id: ${unmatchedLines}`);
+
+    console.log('\nBy Woo status:');
+    for (const [k, v] of [...statusCounts.entries()].sort((a, b) => b[1] - a[1])) {
+      console.log(`  ${String(v).padStart(5)}  ${k}`);
+    }
+    console.log('\nBy canonical payment_method:');
+    for (const [k, v] of [...payCounts.entries()].sort((a, b) => b[1] - a[1])) {
+      console.log(`  ${String(v).padStart(5)}  ${k}`);
+    }
+    console.log('\nTop raw Woo payment slug|title:');
+    for (const [k, v] of [...rawPaySamples.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15)) {
+      console.log(`  ${String(v).padStart(5)}  ${k}`);
+    }
 
     if (flags.write) {
       await client.query('COMMIT');
-      console.log('COMMITTED.');
+      console.log('\nCOMMITTED.');
     } else {
       await client.query('ROLLBACK');
-      console.log('DRY-RUN: rolled back. Pass --write --write-prod to persist.');
+      console.log('\nDRY-RUN: rolled back. Pass --write --write-prod to persist.');
     }
   } catch (err) {
     await client.query('ROLLBACK');

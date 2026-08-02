@@ -34,7 +34,9 @@ pgTypes.types.setTypeParser(20, (val: string) => parseInt(val, 10));
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
-loadEnv({ path: resolve(repoRoot, '.env.local') });
+loadEnv({ path: resolve(repoRoot, '.env.local'), override: true });
+
+const DEFAULT_DUMP = resolve(repoRoot, '..', 'latestsqldump', 'pugemved_indb(1).sql');
 
 const USERMETA_KEYS = new Set([
   'first_name',
@@ -58,10 +60,20 @@ type LegacyUser = {
 
 function parseFlags(argv: string[]) {
   const writeProd = argv.includes('--write-prod');
+  const prod = argv.includes('--prod') || writeProd;
   const limitArg = argv.find((a) => a.startsWith('--limit'));
   const limit = limitArg ? Number(limitArg.split('=')[1] ?? argv[argv.indexOf(limitArg) + 1]) : null;
-  const { write } = parseRunMode(argv.filter((a) => a !== '--write-prod' && a !== '--limit' && !a.startsWith('--limit=') && a !== String(limit)));
-  return { write, writeProd, limit: Number.isFinite(limit) ? limit : null };
+  const { write } = parseRunMode(
+    argv.filter(
+      (a) =>
+        a !== '--write-prod' &&
+        a !== '--prod' &&
+        a !== '--limit' &&
+        !a.startsWith('--limit=') &&
+        a !== String(limit),
+    ),
+  );
+  return { write, writeProd, prod, limit: Number.isFinite(limit) ? limit : null };
 }
 
 function assertSafeTarget(dbUrl: string, write: boolean, writeProd: boolean) {
@@ -72,6 +84,12 @@ function assertSafeTarget(dbUrl: string, write: boolean, writeProd: boolean) {
     throw new Error(`Refusing to --write against production host "${dbHost}". Add --write-prod only after dry-run review.`);
   }
   return dbHost;
+}
+
+function resolveDump(): string {
+  const fromEnv = process.env.LEGACY_SQL_DUMP_PATH?.trim();
+  if (fromEnv && /latestsqldump/i.test(fromEnv)) return fromEnv;
+  return DEFAULT_DUMP;
 }
 
 function fullName(u: LegacyUser): string | null {
@@ -98,16 +116,17 @@ function sleep(ms: number): Promise<void> {
 
 async function main() {
   const flags = parseFlags(process.argv.slice(2));
-  const dbUrl = process.env.LEGACY_IMPORT_DATABASE_URL;
-  const dump = process.env.LEGACY_SQL_DUMP_PATH;
-  const supaUrl = process.env.LEGACY_IMPORT_SUPABASE_URL;
-  const supaKey = process.env.LEGACY_IMPORT_SUPABASE_SERVICE_ROLE_KEY;
-  if (!dbUrl) throw new Error('Missing LEGACY_IMPORT_DATABASE_URL.');
-  if (!dump) throw new Error('Missing LEGACY_SQL_DUMP_PATH.');
+  const dbUrl = flags.prod
+    ? (process.env.LEGACY_IMPORT_DATABASE_URL_PRODUCTION || process.env.DATABASE_URL || process.env.LEGACY_IMPORT_DATABASE_URL)
+    : (process.env.LEGACY_IMPORT_DATABASE_URL || process.env.DATABASE_URL);
+  const dump = resolveDump();
+  const supaUrl = process.env.LEGACY_IMPORT_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supaKey = process.env.LEGACY_IMPORT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!dbUrl) throw new Error('Missing database URL.');
   if (flags.write && (!supaUrl || !supaKey)) throw new Error('Missing LEGACY_IMPORT_SUPABASE_URL / SERVICE_ROLE_KEY.');
 
   const dbHost = assertSafeTarget(dbUrl, flags.write, flags.writeProd);
-  console.log(`Mode: ${flags.write ? 'WRITE' : 'DRY-RUN'}${flags.writeProd ? ' (prod override)' : ''}  limit=${flags.limit ?? 'none'}`);
+  console.log(`Mode: ${flags.write ? 'WRITE' : 'DRY-RUN'}${flags.prod ? ' (prod)' : ''}  limit=${flags.limit ?? 'none'}`);
   console.log(`Host: ${dbHost}`);
   console.log(`Dump: ${dump}\n`);
 

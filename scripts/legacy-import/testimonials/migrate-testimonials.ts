@@ -3,6 +3,7 @@ import path from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { Client } from 'pg';
 import { streamWpTable, type SqlValue } from '../lib/wp-sql.js';
+import { ownMediaUrl } from '../lib/own-media-url.js';
 
 loadEnv({ path: path.resolve(process.cwd(), '.env.local') });
 
@@ -169,7 +170,8 @@ async function main() {
   try {
     await client.query('BEGIN');
     for (const row of selected) {
-      const proof = proofUrlFor(row, proofIndex);
+      const rawProof = proofUrlFor(row, proofIndex);
+      const proof = flags.write && rawProof ? await ownMediaUrl(rawProof) : rawProof;
       const result = await client.query(
         `INSERT INTO testimonials (
           legacy_wp_id, slug, name, location, rating, title, message, proof_image_url, proof_alt,

@@ -162,7 +162,7 @@ function CategoryMenuSection({
           >
             <CategoryThumb link={link} />
             <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.3, fontFamily: "'Roboto', sans-serif", whiteSpace: 'normal', wordBreak: 'break-word' }}>{link.label}</span>
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1C1C1C', lineHeight: 1.3, fontFamily: "'Roboto', sans-serif" }}>{link.label}</span>
               {showMeta && link.meta ? <span style={{ fontSize: '11.5px', color: '#6B5B4E', fontWeight: 500, fontFamily: "'Roboto', sans-serif", marginTop: '2px' }}>{link.meta}</span> : null}
             </span>
           </Link>
@@ -205,8 +205,8 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
     const navaratna = findStorefrontGroup(categoryGroups, 'navaratna');
     const upratna = findStorefrontGroup(categoryGroups, 'upratna');
     return (
-      <div style={{ ...dropStyle, width: '1240px', maxWidth: 'calc(100vw - 160px)', padding: '24px 28px 20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '28px' }}>
+      <div style={{ ...dropStyle, width: '100%', padding: '24px 28px 20px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.6fr)', gap: '28px' }}>
           <CategoryMenuSection group={navaratna} columns={2} showMeta />
           <CategoryMenuSection group={upratna} columns={3} showMeta={false} maxItems={15} />
         </div>
@@ -216,7 +216,7 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
 
   if (item.dropdown === 'rudraksha') {
     return (
-      <div style={{ ...dropStyle, width: '720px', maxWidth: 'calc(100vw - 160px)', padding: '18px 20px 16px' }}>
+      <div style={{ ...dropStyle, width: 'min(720px, calc(100vw - 48px))', padding: '18px 20px 16px', boxSizing: 'border-box' }}>
         <CategoryMenuSection group={findStorefrontGroup(categoryGroups, 'rudraksha')} columns={4} maxItems={20} />
       </div>
     );
@@ -229,7 +229,7 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
       findStorefrontGroup(categoryGroups, 'malas'),
     ];
     return (
-      <div style={{ ...dropStyle, width: '680px', padding: '22px 24px 18px' }}>
+      <div style={{ ...dropStyle, width: '100%', padding: '22px 24px 18px', boxSizing: 'border-box' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px' }}>
           {collections.map((group) => <CategoryMenuSection key={group.slug} group={group} />)}
         </div>
@@ -280,6 +280,12 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
   const [lockedClosed, setLockedClosed] = useState(false);
   const pathRef = React.useRef(pathname);
 
+  const closeMenu = () => {
+    setLockedClosed(true);
+    // blur so :focus-within doesn't reopen the panel after click
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  };
+
   useEffect(() => {
     if (pathRef.current === pathname) return;
     pathRef.current = pathname;
@@ -290,7 +296,8 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
   return (
     <li
       className={`pvg-nav-item${lockedClosed ? ' pvg-nav-item--closed' : ''}`}
-      style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
+      // Wide mega-menus: static so the panel positions against .pvg-desk-nav (centered, no right crop)
+      style={{ position: isWide ? 'static' : 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
       onMouseLeave={() => setLockedClosed(false)}
     >
       <Link
@@ -298,7 +305,7 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
         aria-haspopup={hasDropdown ? 'menu' : undefined}
         className="pvg-nav-link"
         onClick={() => {
-          if (hasDropdown) setLockedClosed(true);
+          if (hasDropdown) closeMenu();
         }}
         style={{
           display: 'flex', alignItems: 'center', gap: '4px', padding: '0 13px', height: '100%',
@@ -314,15 +321,19 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
       {hasDropdown ? (
         <div
           className="pvg-nav-drop"
-          data-align={isWide ? 'left' : undefined}
-          onClick={() => setLockedClosed(true)}
+          onClick={closeMenu}
           style={{
             position: 'absolute', top: '100%',
-            left: isWide ? '-130px' : '50%',
-            transform: isWide ? 'translateY(-8px)' : 'translateX(-50%) translateY(-8px)',
+            left: '50%',
+            // ponytail: width on this wrapper — % on the child collapses when parent is shrink-wrapped
+            width: isWide
+              ? (item.dropdown === 'gemstones' ? 'min(1240px, calc(100vw - 48px))' : 'min(680px, calc(100vw - 48px))')
+              : undefined,
+            transform: 'translateX(-50%) translateY(-8px)',
             opacity: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: 1200,
             transition: 'opacity 0.26s ease, transform 0.26s ease, visibility 0s linear 0.26s',
             paddingTop: '4px',
+            boxSizing: 'border-box',
           }}
         >
           <DropdownContent item={item} categoryGroups={categoryGroups} />
@@ -427,15 +438,10 @@ export function SiteHeader() {
       <style>{`
         .pvg-nav-link:hover,
         .pvg-nav-item:focus-within .pvg-nav-link { color: #7A1515 !important; border-bottom-color: #B8861E !important; }
-        .pvg-nav-item:hover .pvg-nav-drop:not([data-align="left"]),
-        .pvg-nav-item:focus-within .pvg-nav-drop:not([data-align="left"]) {
+        .pvg-nav-item:hover .pvg-nav-drop,
+        .pvg-nav-item:focus-within .pvg-nav-drop {
           opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
           transform: translateX(-50%) translateY(0) !important; transition-delay: 0s !important;
-        }
-        .pvg-nav-item:hover .pvg-nav-drop[data-align="left"],
-        .pvg-nav-item:focus-within .pvg-nav-drop[data-align="left"] {
-          opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;
-          transform: translateY(0) !important; transition-delay: 0s !important;
         }
         /* After click/nav, stay closed even if cursor still over the item */
         .pvg-nav-item--closed .pvg-nav-drop,
@@ -681,6 +687,7 @@ export function SiteHeader() {
         /* Desktop nav only when there is room for links + CTA; else hamburger */
         .pvg-desk-nav {
           display: none;
+          position: relative;
           width: 100%;
           max-width: 1400px;
           box-sizing: border-box;

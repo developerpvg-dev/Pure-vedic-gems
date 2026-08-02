@@ -118,11 +118,20 @@ export async function POST(request: NextRequest) {
         audience: 'admin',
         recipientRole: 'sales',
         type: 'new_enquiry',
-        title: dupeNote ? `${dupeNote.split(' ·')[0]} — assign telecaller` : 'New enquiry — assign telecaller',
+        title: dupeNote
+          ? `${dupeNote.split(' ·')[0]} — assign telecaller`
+          : parsed.data.source === 'contact_form'
+            ? 'New contact message — assign telecaller'
+            : 'New enquiry — assign telecaller',
         message: dupeNote
           ? `${parsed.data.name} · ${dupeNote}`
-          : `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
-        href: `/admin/leads?type=enquiry&id=${data.id}`,
+          : parsed.data.source === 'contact_form'
+            ? `${parsed.data.name} sent a contact form message. Forward to any telecaller.`
+            : `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
+        href:
+          parsed.data.source === 'contact_form'
+            ? `/admin/leads?kind=contact&type=enquiry&id=${data.id}`
+            : `/admin/leads?type=enquiry&id=${data.id}`,
         entityType: 'enquiry',
         entityId: data.id,
         metadata: {

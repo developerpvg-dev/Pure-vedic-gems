@@ -565,7 +565,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
       },
       {
         "question": "How do I find Ruby gemstone dealers near me ?",
-        "answer": "Pure Vedic Gem is one of the leading gemstone dealers in Delhi, India. We are also available online, if you want to buy rubies or any other gemstone, explore us at www.purevedicgems.in"
+        "answer": "Pure Vedic Gem is one of the leading gemstone dealers in Delhi, India. We are also available online, if you want to buy rubies or any other gemstone, explore us at www.purevedicgems.com"
       },
       {
         "question": "Where to buy ruby gemstone ?",
@@ -1779,7 +1779,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
       },
       {
         "question": "Which is the best quality opal gemstone ?",
-        "answer": "The best quality opal gemstones have a good play of colour, clarity, carat weight, origin, and so on. In order to buy these types of opal gemstones, visit our website, www.purevedicgems.in."
+        "answer": "The best quality opal gemstones have a good play of colour, clarity, carat weight, origin, and so on. In order to buy these types of opal gemstones, visit our website, www.purevedicgems.com."
       },
       {
         "question": "What is white opal price per carat ?",

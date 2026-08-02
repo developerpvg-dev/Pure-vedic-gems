@@ -2,6 +2,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
+import { applyExclusiveGemsShelfFilter, isExclusiveGemsShelf } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopPagination } from '@/components/shop/ShopPagination';
@@ -50,7 +51,10 @@ export async function CategoryProductListing({
       .eq('is_active', true);
 
     if (meta.category && !meta.catalogSubcategories?.length) query = query.eq('category', meta.category);
-    if (meta.sub_category) query = query.eq('sub_category', meta.sub_category);
+    if (meta.sub_category && !isExclusiveGemsShelf(meta.sub_category)) {
+      query = query.eq('sub_category', meta.sub_category);
+    }
+    query = applyExclusiveGemsShelfFilter(query, meta.sub_category);
     if (meta.catalogSubcategories?.length) {
       query = query.in('sub_category', meta.catalogSubcategories);
     }

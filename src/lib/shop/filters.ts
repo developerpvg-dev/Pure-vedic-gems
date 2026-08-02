@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { applyProductTextSearch } from '@/lib/shop/product-search';
+import { applyExclusiveGemsShelfFilter, isExclusiveGemsShelf } from '@/lib/shop/catalog-scope';
 import {
   AVAILABILITY_STATUS_OPTIONS,
   CANONICAL_CATEGORY_OPTIONS,
@@ -180,9 +181,19 @@ function qualityTierOptions(rows: FacetRow[]) {
     if (!tier) continue;
     counts.set(tier, (counts.get(tier) ?? 0) + 1);
   }
-  return QUALITY_TIERS
+  const options = QUALITY_TIERS
     .filter((tier) => counts.has(tier))
     .map((tier) => ({ value: tier, label: tier, count: counts.get(tier) ?? 0 }));
+
+  // Exclusive is a quality bucket (not Economy→Collector). Surface it on the
+  // inline Quality Grade filter so Exclusive Opals / gems are findable.
+  const exclusiveCount = rows.filter(
+    (row) => row.quality_label?.trim().toLowerCase() === 'exclusive',
+  ).length;
+  if (exclusiveCount > 0) {
+    options.push({ value: 'Exclusive', label: 'Exclusive Gems', count: exclusiveCount });
+  }
+  return options;
 }
 
 function otherQualityLabelOptions(rows: FacetRow[]) {
@@ -190,6 +201,7 @@ function otherQualityLabelOptions(rows: FacetRow[]) {
   for (const row of rows) {
     const raw = row.quality_label?.trim();
     if (!raw) continue;
+    if (raw.toLowerCase() === 'exclusive') continue; // shown via qualityTierOptions as Exclusive Gems
     if (resolveQualityTier(raw, row.name)) continue;
     counts.set(raw, (counts.get(raw) ?? 0) + 1);
   }
@@ -216,7 +228,10 @@ async function loadFacetRows(
     .limit(1500);
 
   if (scope.category && !scope.subCategories?.length) query = query.eq('category', scope.category);
-  if (scope.subCategory) query = query.eq('sub_category', scope.subCategory);
+  if (scope.subCategory && !isExclusiveGemsShelf(scope.subCategory)) {
+    query = query.eq('sub_category', scope.subCategory);
+  }
+  query = applyExclusiveGemsShelfFilter(query, scope.subCategory);
   if (scope.subCategories?.length) query = query.in('sub_category', scope.subCategories);
   if (scope.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
   if (scope.primaryGemSlugs?.length) query = query.in('sub_category', scope.primaryGemSlugs);

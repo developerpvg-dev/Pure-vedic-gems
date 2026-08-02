@@ -325,14 +325,17 @@ export async function PUT(
       actorName,
     });
 
+    const isContact = current.source === 'contact_form';
     await createInAppNotifications([
       {
         audience: 'admin',
         recipientUserId: member.id,
         type: 'lead_assigned_telecom',
-        title: 'New lead to verify',
-        message: `${current.name} — call & confirm details (SR #${current.lead_number ?? ''})`,
-        href: `/admin/leads?id=${id}`,
+        title: isContact ? 'New contact lead to call' : 'New lead to verify',
+        message: isContact
+          ? `${current.name} — contact form message (SR #${current.lead_number ?? ''})`
+          : `${current.name} — call & confirm details (SR #${current.lead_number ?? ''})`,
+        href: isContact ? `/admin/leads?kind=contact&id=${id}` : `/admin/leads?id=${id}`,
         entityType: 'enquiry',
         entityId: id,
         metadata: { lead_number: current.lead_number },

@@ -44,16 +44,16 @@ describe('buildConfiguratorPriceTotals', () => {
       'Certification',
     ]);
     expect(totals.pre_gst_subtotal).toBe(42930);
-    // metal 0; making+diamond 24500 @ 5% = 1225; gem 18430 @ 0.25% = 46.075 → 46.08
+    // metal 0; making+diamond 24500 @ 3% = 735; gem 18430 @ 0.25% = 46.075 → 46.08
     expect(totals.gst_metal).toBe(0);
-    expect(totals.gst_making).toBe(1225);
-    expect(totals.gst_jewelry).toBe(1225);
+    expect(totals.gst_making).toBe(735);
+    expect(totals.gst_jewelry).toBe(735);
     expect(totals.gst_gemstone).toBe(gstOnAmount(18430, 0.25));
-    expect(totals.gst_total).toBe(Math.round(1225 + gstOnAmount(18430, 0.25)));
+    expect(totals.gst_total).toBe(Math.round(735 + gstOnAmount(18430, 0.25)));
     expect(totals.grand_total).toBe(42930 + totals.gst_total);
   });
 
-  it('breaks down weight-based gold with labor at metal 3% / making 5%', () => {
+  it('breaks down weight-based gold with labor at metal 3% / making 3%', () => {
     const pricing: ConfigPricingBreakdown = {
       ...basePricing,
       gem_price: 10000,
@@ -77,10 +77,10 @@ describe('buildConfiguratorPriceTotals', () => {
     expect(mountingLine?.detail).toBe('5 g');
     expect(totals.lines.some((l) => l.key === 'labor' || l.key === 'metal-value')).toBe(false);
     expect(totals.gst_metal).toBe(720);
-    expect(totals.gst_making).toBe(300);
-    expect(totals.gst_jewelry).toBe(1020);
+    expect(totals.gst_making).toBe(180);
+    expect(totals.gst_jewelry).toBe(900);
     expect(totals.gst_gemstone).toBe(25);
-    expect(totals.grand_total).toBe(41045);
+    expect(totals.grand_total).toBe(40925);
   });
 
   it('matches checkout component GST rates for configured ring', () => {
@@ -106,12 +106,12 @@ describe('buildConfiguratorPriceTotals', () => {
     expect(totals.pre_gst_subtotal).toBe(74173);
     expect(totals.gst_gemstone).toBe(gstOnAmount(15048, 0.25)); // 37.62
     expect(totals.gst_metal).toBe(1239);
-    expect(totals.gst_making).toBe(516.25);
+    expect(totals.gst_making).toBe(309.75);
     expect(totals.gst_certification).toBe(0);
     expect(totals.gst_energization).toBe(0);
     expect(totals.gst_total).toBe(
-      Math.round(37.62 + 1239 + 516.25),
-    ); // 1793
+      Math.round(37.62 + 1239 + 309.75),
+    ); // 1586
   });
 
   it('shows diamond add-on before metal is chosen and design note for remark-only designs', () => {

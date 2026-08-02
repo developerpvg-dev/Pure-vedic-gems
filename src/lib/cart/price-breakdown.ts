@@ -59,9 +59,10 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
       category: snap.product?.category ?? item.category,
     });
     if (totals.gst_gemstone > 0) {
+      const isRudraksha = (snap.product?.category ?? item.category) === 'rudraksha';
       gstLines.push({
         key: 'gst-gem',
-        label: `Est. GST on gemstone (${gemTax.rate_percent}%)`,
+        label: `Est. GST on ${isRudraksha ? 'Rudraksha' : 'gemstone'} (${gemTax.rate_percent}%)`,
         amount: totals.gst_gemstone,
       });
     }
@@ -71,7 +72,7 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
     if (totals.gst_making > 0) {
       gstLines.push({
         key: 'gst-making',
-        label: 'Est. GST on making / stone add-on (5%)',
+        label: 'Est. GST on making / stone add-on (3%)',
         amount: totals.gst_making,
       });
     }

@@ -1,5 +1,5 @@
 import type { ConfigPricingBreakdown } from '@/lib/types/configurator';
-import { gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
+import { GST_METAL_MOUNTED_PERCENT, gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
 
 export interface ConfiguratorPriceLine {
   key: string;
@@ -13,7 +13,7 @@ export interface ConfiguratorPriceTotals {
   lines: ConfiguratorPriceLine[];
   jewelry_subtotal: number;
   pre_gst_subtotal: number;
-  /** Metal @ 3% + making/diamond/custom @ 5% (matches server recalculateOrderTotal). */
+  /** Metal + making/diamond/custom @ 3% (matches server recalculateOrderTotal). */
   gst_jewelry: number;
   gst_metal: number;
   gst_making: number;
@@ -29,7 +29,7 @@ export function buildConfiguratorPriceTotals(
   options: {
     settingType: string | null;
     productCategory?: string | null;
-    /** @deprecated Ignored — server uses metal 3% / making 5%. Kept so old callers compile. */
+    /** @deprecated Ignored — server uses metal-mounted 3% for metal + making. Kept so old callers compile. */
     jewelryGstPercent?: number;
     designNote?: string | null;
   }
@@ -145,8 +145,8 @@ export function buildConfiguratorPriceTotals(
     pricing.custom_design_fee;
 
   // Mirror server calculateGstComponent rounding (2dp), then round total for display.
-  const gstMetal = gstOnAmount(pricing.metal_price, 3);
-  const gstMaking = gstOnAmount(makingTaxable, 5);
+  const gstMetal = gstOnAmount(pricing.metal_price, GST_METAL_MOUNTED_PERCENT);
+  const gstMaking = gstOnAmount(makingTaxable, GST_METAL_MOUNTED_PERCENT);
   const gstJewelry = gstMetal + gstMaking;
 
   const gemTax = resolveProductTax({ category: productCategory ?? 'gemstone' });

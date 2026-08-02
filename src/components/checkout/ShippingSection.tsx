@@ -5,7 +5,7 @@ import { Country, State, City } from 'country-state-city';
 import { Globe, MapPin, Pencil, ChevronDown, Truck, Loader2 } from 'lucide-react';
 import { ShippingAddressSchema, type ShippingAddress, type ShippingMethodId } from '@/lib/validators/order';
 import type { SelectedShippingPlan, ShippingPlan } from '@/lib/types/shipping';
-import { formatPrice } from '@/lib/utils/format';
+import { formatPrice, localizeInrAmountsInText } from '@/lib/utils/format';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { SearchableSelect } from '@/components/checkout/SearchableSelect';
 
@@ -215,7 +215,8 @@ export function ShippingSection({
             {savedData.city}, {savedData.state} {savedData.pincode}
           </p>
           <p className="text-[0.7rem] text-[#8a6400]">
-            {savedPlan?.label ?? savedMethod} · {savedData.country}
+            {savedPlan?.label ? localizeInrAmountsInText(savedPlan.label) : savedMethod} ·{' '}
+            {savedData.country}
           </p>
         </div>
       </div>
@@ -428,10 +429,12 @@ export function ShippingSection({
                     <Truck className="h-4.5 w-4.5 text-[var(--pvg-accent)] mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-[var(--pvg-text)] block">
-                        {plan.label}
+                        {localizeInrAmountsInText(plan.label)}
                       </span>
                       {plan.description ? (
-                        <span className="text-xs text-[var(--pvg-muted)] block mt-1">{plan.description}</span>
+                        <span className="text-xs text-[var(--pvg-muted)] block mt-1">
+                          {localizeInrAmountsInText(plan.description)}
+                        </span>
                       ) : null}
                       {eta ? <span className="text-xs text-[var(--pvg-muted)] block mt-1">ETA: {eta}</span> : null}
                     </div>

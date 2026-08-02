@@ -8,10 +8,29 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { setBookingTokenCookie } from '@/lib/security/booking-token';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
-import type { ConsultationPlan } from '@/lib/types/database';
+import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
+import type { Consultation, ConsultationPlan } from '@/lib/types/database';
 
 interface RazorpayOrderResult {
   id: string;
+}
+
+function geoFromRequest(request: NextRequest) {
+  const decode = (value: string | null) => {
+    if (!value) return null;
+    try {
+      return decodeURIComponent(value.replace(/\+/g, ' '));
+    } catch {
+      return value;
+    }
+  };
+  const city = decode(request.headers.get('x-vercel-ip-city'));
+  const region = decode(request.headers.get('x-vercel-ip-country-region'));
+  const country =
+    decode(request.headers.get('x-vercel-ip-country')) ||
+    decode(request.headers.get('cf-ipcountry'));
+  const parts = [city, region, country].filter(Boolean);
+  return parts.length ? parts.join(', ') : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -117,12 +136,22 @@ export async function POST(request: NextRequest) {
       payment_status: 'pending',
       status: 'pending_payment',
     })
-    .select('id')
+    .select('*')
     .single();
 
   if (insertError || !consultation) {
     console.error('[Consultation payment] Insert failed:', insertError);
     return NextResponse.json({ error: 'Failed to create consultation booking' }, { status: 500 });
+  }
+
+  // CRM lead immediately — abandoned Razorpay still shows as payment pending
+  let enquiryId: string | null = null;
+  try {
+    enquiryId = await ensureLeadFromConsultation(admin, consultation as Consultation, {
+      ipLocation: geoFromRequest(request),
+    });
+  } catch (leadErr) {
+    console.error('[Consultation payment] Pending lead create failed:', leadErr);
   }
 
   let razorpayOrder: RazorpayOrderResult;
@@ -165,17 +194,27 @@ export async function POST(request: NextRequest) {
     .eq('id', consultation.id);
 
   await createInAppNotifications([
-    {
-      audience: 'admin',
-      recipientRole: 'sales',
-      type: 'consultation_created',
-      title: 'Consultation booking started',
-      message: `${parsed.data.full_name} started booking ${planTitle} for ₹${amountInr.toLocaleString('en-IN')}.`,
-      href: '/admin/leads',
-      entityType: 'consultation',
-      entityId: consultation.id,
-      metadata: { plan_id: plan.id, plan_title: planTitle, payment_status: 'pending' },
-    },
+    // Lead notify already fired inside ensureLeadFromConsultation when enquiryId is set
+    ...(enquiryId
+      ? []
+      : [
+          {
+            audience: 'admin' as const,
+            recipientRole: 'sales' as const,
+            type: 'consultation_created',
+            title: 'Consultation booking started',
+            message: `${parsed.data.full_name} started booking ${planTitle} for ₹${amountInr.toLocaleString('en-IN')}.`,
+            href: '/admin/leads',
+            entityType: 'consultation' as const,
+            entityId: consultation.id,
+            metadata: {
+              plan_id: plan.id,
+              plan_title: planTitle,
+              payment_status: 'pending',
+              consultation_id: consultation.id,
+            },
+          },
+        ]),
     ...(user
       ? [{
           audience: 'user' as const,
@@ -184,7 +223,7 @@ export async function POST(request: NextRequest) {
           title: 'Consultation booking started',
           message: `${planTitle} is waiting for payment confirmation.`,
           href: '/account',
-          entityType: 'consultation',
+          entityType: 'consultation' as const,
           entityId: consultation.id,
           metadata: { plan_id: plan.id, plan_title: planTitle },
         }]
@@ -193,6 +232,7 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.json({
     consultation_id: consultation.id,
+    enquiry_id: enquiryId,
     razorpay_order_id: razorpayOrder.id,
     amount: amountInPaise,
     currency: 'INR',

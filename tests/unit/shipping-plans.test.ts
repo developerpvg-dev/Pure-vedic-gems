@@ -1,10 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setCurrencyDisplay } from '@/lib/currency/display-store';
 import {
   INTL_SHIPPING_ZONE,
   planAppliesToCountry,
   planAppliesToSubtotal,
   resolveShippingPlanCountry,
 } from '@/lib/shipping/plans';
+import { localizeInrAmountsInText } from '@/lib/utils/format';
 
 describe('shipping plan matching', () => {
   it('maps address country to plan zone', () => {
@@ -23,5 +25,20 @@ describe('shipping plan matching', () => {
     expect(planAppliesToSubtotal({ max_order_amount: 25000 }, 25001)).toBe(false);
     expect(planAppliesToSubtotal({ min_order_amount: 25001 }, 25000)).toBe(false);
     expect(planAppliesToSubtotal({ min_order_amount: 25001 }, 25001)).toBe(true);
+  });
+});
+
+describe('shipping plan copy currency', () => {
+  afterEach(() => {
+    setCurrencyDisplay({ enabled: false, currency: 'INR', rates: { INR: 1 } });
+  });
+
+  it('rewrites ₹ thresholds into the active display currency', () => {
+    setCurrencyDisplay({ enabled: true, currency: 'USD', rates: { INR: 1, USD: 83 } });
+    const out = localizeInrAmountsInText(
+      'International shipping (orders above ₹25,000)'
+    );
+    expect(out).not.toMatch(/₹/);
+    expect(out).toMatch(/\$/);
   });
 });

@@ -47,7 +47,7 @@ function fieldClassName() {
 
 function countActiveFilters(filters: AdminOrderFilterState) {
   return Object.entries(filters).filter(([key, value]) => {
-    if (key === 'period') return value !== '30d';
+    if (key === 'period') return value !== 'all';
     if (key === 'sort_by') return value !== 'created_at';
     if (key === 'sort_order') return value !== 'desc';
     return Boolean(value);
@@ -79,7 +79,7 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
     const badges: Array<{ key: keyof AdminOrderFilterState; label: string }> = [];
     for (const [key, value] of Object.entries(filters) as Array<[keyof AdminOrderFilterState, string]>) {
       if (!value) continue;
-      if (key === 'period' && value === '30d') continue;
+      if (key === 'period' && value === 'all') continue;
       if (key === 'sort_by' && value === 'created_at') continue;
       if (key === 'sort_order' && value === 'desc') continue;
 
@@ -102,7 +102,7 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
   }
 
   function clearBadge(key: keyof AdminOrderFilterState) {
-    if (key === 'period') onChange({ period: '30d', date_from: '', date_to: '' });
+    if (key === 'period') onChange({ period: 'all', date_from: '', date_to: '' });
     else if (key === 'sort_by' || key === 'sort_order') onChange({ sort_by: 'created_at', sort_order: 'desc' });
     else onChange({ [key]: '' });
   }
@@ -220,6 +220,8 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
                 <option value="card">Card</option>
                 <option value="bank_transfer">Bank transfer</option>
                 <option value="cod">Cash on delivery</option>
+                <option value="paypal">PayPal</option>
+                <option value="payubiz">PayUBiz</option>
               </select>
             </label>
             <label className="block">

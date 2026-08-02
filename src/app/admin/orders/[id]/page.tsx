@@ -48,9 +48,27 @@ const AVAILABILITY_STYLE: Record<string, string> = {
   archived: 'bg-stone-200 text-stone-600',
 };
 
-function fmt(amount: number | null | undefined) {
-  const n = amount ?? 0;
-  return '\u20B9' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function resolveOrderCurrency(order: { legacy_data?: unknown }): string {
+  const data = order.legacy_data;
+  if (data && typeof data === 'object' && 'legacy_currency' in data) {
+    const code = String((data as { legacy_currency?: string }).legacy_currency || '').toUpperCase();
+    if (/^[A-Z]{3}$/.test(code)) return code;
+  }
+  return 'INR';
+}
+
+function formatOrderMoney(amount: number, currency: string) {
+  const code = /^[A-Z]{3}$/.test(currency) ? currency : 'INR';
+  return new Intl.NumberFormat(code === 'INR' ? 'en-IN' : 'en-US', {
+    style: 'currency',
+    currency: code,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function makeMoneyFmt(currency: string) {
+  return (amount: number | null | undefined) => formatOrderMoney(Number(amount ?? 0), currency);
 }
 
 function cap(s: string | null | undefined) {
@@ -243,6 +261,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
   }));
 
   const o = raw as unknown as OrderRecord;
+  const orderCurrency = resolveOrderCurrency(raw as { legacy_data?: unknown });
+  const fmt = makeMoneyFmt(orderCurrency);
 
   let profile: CustomerProfile | null = null;
   if (o.customer_id && (!o.guest_name || !o.guest_email)) {
@@ -545,13 +565,26 @@ export default async function OrderDetailPage({ params }: PageProps) {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-4">
-          <Field label="Total">{fmt(o.total)}</Field>
+          <Field label="Total">
+            {fmt(o.total)}
+            {orderCurrency !== 'INR' ? (
+              <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wide text-stone-400">
+                Charged in {orderCurrency}
+              </span>
+            ) : null}
+          </Field>
           <Field label="Paid / Due">
-            {fmt(o.amount_paid ?? 0)}
+            {fmt(
+              o.payment_status === 'captured' && Number(o.amount_paid ?? 0) < 0.01
+                ? o.total
+                : (o.amount_paid ?? 0),
+            )}
             {' / '}
             {fmt(
-              o.amount_due ??
-                Math.max(0, Number(o.total ?? 0) - Number(o.amount_paid ?? 0)),
+              o.payment_status === 'captured' && Number(o.amount_paid ?? 0) < 0.01
+                ? 0
+                : (o.amount_due ??
+                    Math.max(0, Number(o.total ?? 0) - Number(o.amount_paid ?? 0))),
             )}
           </Field>
           <Field label="Payment">{cap(o.payment_method) ?? 'â€”'}</Field>
