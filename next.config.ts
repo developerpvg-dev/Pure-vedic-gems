@@ -26,7 +26,7 @@ const contentSecurityPolicy = [
   "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://*.api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://sanity-cdn.com https://*.api.sanity.io https://api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com",
   isProduction ? 'upgrade-insecure-requests' : '',
 ]
   .filter(Boolean)

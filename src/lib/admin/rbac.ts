@@ -7,6 +7,7 @@ export const ADMIN_ROLE_OPTIONS = [
   'telecom',
   'astrologer',
   'content',
+  'seo_cms',
   'inventory',
   'stock_manager',
   'finance',
@@ -44,6 +45,7 @@ export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
   telecom: 'Telecommunication',
   astrologer: 'Astrologer',
   content: 'Website Maintenance',
+  seo_cms: 'SEO & CMS',
   inventory: 'Products Uploading',
   stock_manager: 'Order / Stock Incharge',
   finance: 'Accountant',
@@ -51,6 +53,12 @@ export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
   support: 'Support',
   designer: 'Jewelry Designer',
 };
+
+/** Sanity Studio (/studio) — Super Admin, Admin, and SEO & CMS only. */
+export function canAccessStudio(role: string | null | undefined): boolean {
+  const normalized = normalizeAdminRole(role);
+  return normalized === 'owner' || normalized === 'admin' || normalized === 'seo_cms';
+}
 
 const LEGACY_ROLE_MAP: Record<string, CanonicalAdminRole> = {
   director: 'owner',
@@ -106,6 +114,8 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'content.manage',
     'settings.commerce',
   ],
+  // Studio-only role; admin panel redirects to /studio in proxy.
+  seo_cms: ['content.manage'],
   inventory: [
     'dashboard.read',
     'products.read',

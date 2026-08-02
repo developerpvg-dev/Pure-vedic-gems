@@ -144,10 +144,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create consultation booking' }, { status: 500 });
   }
 
+  // ponytail: supabase insert inference collapses to {}; Row shape is known
+  const booking = consultation as Consultation;
+
   // CRM lead immediately — abandoned Razorpay still shows as payment pending
   let enquiryId: string | null = null;
   try {
-    enquiryId = await ensureLeadFromConsultation(admin, consultation as Consultation, {
+    enquiryId = await ensureLeadFromConsultation(admin, booking, {
       ipLocation: geoFromRequest(request),
     });
   } catch (leadErr) {
@@ -160,7 +163,7 @@ export async function POST(request: NextRequest) {
     razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
-      receipt: `consult_${consultation.id.slice(0, 24)}`,
+      receipt: `consult_${booking.id.slice(0, 24)}`,
       payment: {
         capture: 'automatic',
         capture_options: {
@@ -170,7 +173,7 @@ export async function POST(request: NextRequest) {
         },
       },
       notes: {
-        consultation_id: consultation.id,
+        consultation_id: booking.id,
         plan_id: plan.id,
         customer_id: user?.id ?? 'guest',
       },
@@ -180,7 +183,7 @@ export async function POST(request: NextRequest) {
     await admin
       .from('consultations')
       .update({ payment_status: 'failed', payment_failure_reason: 'Razorpay order creation failed' })
-      .eq('id', consultation.id);
+      .eq('id', booking.id);
     return NextResponse.json({ error: 'Payment gateway error. Please try again.' }, { status: 502 });
   }
 
@@ -191,7 +194,7 @@ export async function POST(request: NextRequest) {
       payment_attempts: 1,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', consultation.id);
+    .eq('id', booking.id);
 
   await createInAppNotifications([
     // Lead notify already fired inside ensureLeadFromConsultation when enquiryId is set
@@ -206,12 +209,12 @@ export async function POST(request: NextRequest) {
             message: `${parsed.data.full_name} started booking ${planTitle} for ₹${amountInr.toLocaleString('en-IN')}.`,
             href: '/admin/leads',
             entityType: 'consultation' as const,
-            entityId: consultation.id,
+            entityId: booking.id,
             metadata: {
               plan_id: plan.id,
               plan_title: planTitle,
               payment_status: 'pending',
-              consultation_id: consultation.id,
+              consultation_id: booking.id,
             },
           },
         ]),
@@ -224,14 +227,14 @@ export async function POST(request: NextRequest) {
           message: `${planTitle} is waiting for payment confirmation.`,
           href: '/account',
           entityType: 'consultation' as const,
-          entityId: consultation.id,
+          entityId: booking.id,
           metadata: { plan_id: plan.id, plan_title: planTitle },
         }]
       : []),
   ]);
 
   const response = NextResponse.json({
-    consultation_id: consultation.id,
+    consultation_id: booking.id,
     enquiry_id: enquiryId,
     razorpay_order_id: razorpayOrder.id,
     amount: amountInPaise,
@@ -247,7 +250,7 @@ export async function POST(request: NextRequest) {
 
   // Bind this booking to the current browser so a guest can later prove
   // ownership when finalizing payment (no schema change required).
-  setBookingTokenCookie(response, 'consultation', consultation.id);
+  setBookingTokenCookie(response, 'consultation', booking.id);
 
   return response;
 }

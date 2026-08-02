@@ -181,7 +181,7 @@ function qualityTierOptions(rows: FacetRow[]) {
     if (!tier) continue;
     counts.set(tier, (counts.get(tier) ?? 0) + 1);
   }
-  const options = QUALITY_TIERS
+  const options: ShopFilterOption[] = QUALITY_TIERS
     .filter((tier) => counts.has(tier))
     .map((tier) => ({ value: tier, label: tier, count: counts.get(tier) ?? 0 }));
 

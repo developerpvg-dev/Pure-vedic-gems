@@ -368,7 +368,7 @@ function PipelineStepper({
 }) {
   const list = stages.filter((s) => s !== 'closed');
   const active = (stages as readonly string[]).includes(stage) ? stage : list[0] || 'new';
-  const idx = list.indexOf(active as LeadPipelineStage);
+  const idx = list.indexOf(active as (typeof list)[number]);
   return (
     <div className="overflow-x-auto pb-1">
       <div className="flex min-w-max items-center gap-1">

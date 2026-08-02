@@ -1,12 +1,18 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminRoutePermission, hasAdminPermission, normalizeAdminRole } from '@/lib/admin/rbac';
+import {
+  canAccessStudio,
+  getAdminRoutePermission,
+  hasAdminPermission,
+  normalizeAdminRole,
+} from '@/lib/admin/rbac';
 import { getScopedRoleDashboard, isScopedRolePathAllowed } from '@/lib/admin/role-dashboards';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 
 const PROTECTED_CUSTOMER_ROUTES = ['/account'];
 const PROTECTED_ADMIN_ROUTES = ['/admin'];
+const PROTECTED_STUDIO_ROUTES = ['/studio'];
 
 // Profile/team lookups are cached briefly so page navigations within the
 // admin panel or account area don't repeat the same DB query on every hop.
@@ -16,8 +22,28 @@ const AUTH_LOOKUP_TTL_MS = 60_000;
 function isProtectedRoute(pathname: string) {
   return (
     PROTECTED_CUSTOMER_ROUTES.some((prefix) => pathname.startsWith(prefix)) ||
-    PROTECTED_ADMIN_ROUTES.some((prefix) => pathname.startsWith(prefix))
+    PROTECTED_ADMIN_ROUTES.some((prefix) => pathname.startsWith(prefix)) ||
+    PROTECTED_STUDIO_ROUTES.some((prefix) => pathname.startsWith(prefix))
   );
+}
+
+function createServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+}
+
+async function getTeamMember(userId: string) {
+  return getShortLivedCache(`proxy-team:${userId}`, AUTH_LOOKUP_TTL_MS, async () => {
+    const { data } = await createServiceClient()
+      .from('team_members')
+      .select('role, is_active, permissions')
+      .eq('id', userId)
+      .single();
+    return data;
+  });
 }
 
 export async function proxy(request: NextRequest) {
@@ -75,12 +101,7 @@ export async function proxy(request: NextRequest) {
 
   if (isCustomerRoute && user) {
     const profile = await getShortLivedCache(`proxy-profile:${user.id}`, AUTH_LOOKUP_TTL_MS, async () => {
-      const adminClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } },
-      );
-      const { data } = await adminClient
+      const { data } = await createServiceClient()
         .from('customer_profiles')
         .select('account_status, requires_password_reset')
         .eq('id', user.id)
@@ -118,25 +139,16 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const teamMember = await getShortLivedCache(`proxy-team:${user.id}`, AUTH_LOOKUP_TTL_MS, async () => {
-      const adminClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } },
-      );
-      const { data } = await adminClient
-        .from('team_members')
-        .select('role, is_active, permissions')
-        .eq('id', user.id)
-        .single();
-      return data;
-    });
+    const teamMember = await getTeamMember(user.id);
 
     if (!teamMember?.is_active) {
       return NextResponse.redirect(new URL('/account', request.url));
     }
 
     const normalizedRole = normalizeAdminRole(teamMember.role);
+    if (normalizedRole === 'seo_cms') {
+      return NextResponse.redirect(new URL('/studio', request.url));
+    }
     if (normalizedRole === 'designer') {
       const allowed =
         pathname.startsWith('/admin/designer') ||
@@ -192,9 +204,24 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  const isStudioRoute = PROTECTED_STUDIO_ROUTES.some((prefix) => pathname.startsWith(prefix));
+  if (isStudioRoute) {
+    if (!user) {
+      const loginUrl = new URL('/', request.url);
+      loginUrl.searchParams.set('auth', 'login');
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const teamMember = await getTeamMember(user.id);
+    if (!teamMember?.is_active || !canAccessStudio(teamMember.role)) {
+      return NextResponse.redirect(new URL('/account', request.url));
+    }
+  }
+
   return response;
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/admin/:path*'],
+  matcher: ['/account/:path*', '/admin/:path*', '/studio', '/studio/:path*'],
 };

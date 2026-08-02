@@ -387,8 +387,8 @@ async function main() {
       if (woo.sub === 'exclusive-gems') continue; // only remap OUT of exclusive into gem cats
       if (hit.sub_category !== 'exclusive-gems' && hit.sub_category === woo.sub) continue;
 
-      // Remap when live is exclusive-gems (or wrong) and dump resolved a gem shelf
-      if (hit.sub_category === 'exclusive-gems' && woo.sub !== 'exclusive-gems') {
+      // Remap when live is exclusive-gems; woo.sub is already a gem shelf (exclusive skipped above)
+      if (hit.sub_category === 'exclusive-gems') {
         await client.query(
           `UPDATE products SET
              sub_category = $2,

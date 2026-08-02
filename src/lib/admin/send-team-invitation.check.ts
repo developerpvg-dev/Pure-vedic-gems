@@ -5,4 +5,5 @@ import { getInviteRoles } from './send-team-invitation';
 assert.ok(getInviteRoles('owner').includes('owner'));
 assert.ok(getInviteRoles('admin').includes('owner'));
 assert.ok(!getInviteRoles('sales').includes('owner'));
+assert.ok(getInviteRoles('owner').includes('seo_cms'));
 console.log('send-team-invitation.check: ok');

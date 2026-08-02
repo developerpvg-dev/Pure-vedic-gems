@@ -90,6 +90,11 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    redirectTo: acceptedRole === 'designer' ? '/admin/designer' : '/admin',
+    redirectTo:
+      acceptedRole === 'designer'
+        ? '/admin/designer'
+        : acceptedRole === 'seo_cms'
+          ? '/studio'
+          : '/admin',
   });
 }

@@ -67,9 +67,12 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
   try {
     const page = await browser.newPage();
     // networkidle0 so Roboto can load; fall back if fonts stall
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 45_000 }).catch(async () => {
-      await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
-    });
+    // ponytail: puppeteer-core types dropped networkidle0; Chromium still accepts it
+    await page
+      .setContent(html, { waitUntil: 'networkidle0' as 'load', timeout: 45_000 })
+      .catch(async () => {
+        await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
+      });
     await page.evaluate(() => document.fonts.ready).catch(() => undefined);
     return Buffer.from(await page.pdf(PDF_OPTS));
   } finally {
