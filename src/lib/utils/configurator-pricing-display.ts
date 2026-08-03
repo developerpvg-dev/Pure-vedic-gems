@@ -1,5 +1,10 @@
 import type { ConfigPricingBreakdown } from '@/lib/types/configurator';
-import { GST_METAL_MOUNTED_PERCENT, gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
+import {
+  gstOnAmount,
+  gstOnJewellery,
+  isMetalMounted,
+  resolveGemOrBeadTaxRate,
+} from '@/lib/utils/tax';
 
 export interface ConfiguratorPriceLine {
   key: string;
@@ -13,11 +18,16 @@ export interface ConfiguratorPriceTotals {
   lines: ConfiguratorPriceLine[];
   jewelry_subtotal: number;
   pre_gst_subtotal: number;
-  /** Metal + making/diamond/custom @ 3% (matches server recalculateOrderTotal). */
+  /** Single 3% on (gem + metal + labour + diamond) when mounted/fixed. */
   gst_jewelry: number;
+  /** @deprecated Prefer gst_jewelry — kept 0 when mounted for one-line GST. */
   gst_metal: number;
+  /** @deprecated Prefer gst_jewelry */
   gst_making: number;
+  /** Loose gem/bead GST only; 0 when mounted (folded into gst_jewelry). */
   gst_gemstone: number;
+  /** Rate shown on the gem/bead GST line (0.25 / 0 / 3). */
+  gst_gem_rate_percent: number;
   gst_certification: number;
   gst_energization: number;
   gst_total: number;
@@ -135,8 +145,6 @@ export function buildConfiguratorPriceTotals(
 
   const jewelrySubtotal =
     pricing.metal_price + pricing.making_charge + pricing.diamond_charge;
-  const makingTaxable =
-    pricing.making_charge + pricing.diamond_charge + pricing.custom_design_fee;
   const preGstSubtotal =
     pricing.gem_price +
     jewelrySubtotal +
@@ -144,14 +152,30 @@ export function buildConfiguratorPriceTotals(
     pricing.energization_fee +
     pricing.custom_design_fee;
 
-  // Mirror server calculateGstComponent rounding (2dp), then round total for display.
-  const gstMetal = gstOnAmount(pricing.metal_price, GST_METAL_MOUNTED_PERCENT);
-  const gstMaking = gstOnAmount(makingTaxable, GST_METAL_MOUNTED_PERCENT);
-  const gstJewelry = gstMetal + gstMaking;
+  const mounted = isMetalMounted({
+    metal: pricing.metal_price,
+    making: pricing.making_charge,
+    diamond: pricing.diamond_charge,
+    custom: pricing.custom_design_fee,
+  });
+  const gemRate = resolveGemOrBeadTaxRate(productCategory, mounted);
 
-  const gemTax = resolveProductTax({ category: productCategory ?? 'gemstone' });
-  const gstGemstone = gstOnAmount(pricing.gem_price, gemTax.rate_percent);
-  // ponytail: cert + energization fees are GST-exempt (fee already final)
+  // Jewellery (weight or fixed): one 3% on (gem + metal + labour + diamond + custom).
+  // Loose: gem/bead at category rate only. Cert/energ exempt.
+  let gstJewelry = 0;
+  let gstGemstone = 0;
+  if (mounted) {
+    gstJewelry = gstOnJewellery({
+      gem: pricing.gem_price,
+      metal: pricing.metal_price,
+      making: pricing.making_charge,
+      diamond: pricing.diamond_charge,
+      custom: pricing.custom_design_fee,
+    });
+  } else {
+    gstGemstone = gstOnAmount(pricing.gem_price, gemRate);
+  }
+
   const gstCertification = 0;
   const gstEnergization = 0;
 
@@ -165,9 +189,10 @@ export function buildConfiguratorPriceTotals(
     jewelry_subtotal: jewelrySubtotal,
     pre_gst_subtotal: preGstSubtotal,
     gst_jewelry: gstJewelry,
-    gst_metal: gstMetal,
-    gst_making: gstMaking,
+    gst_metal: 0,
+    gst_making: 0,
     gst_gemstone: gstGemstone,
+    gst_gem_rate_percent: gemRate,
     gst_certification: gstCertification,
     gst_energization: gstEnergization,
     gst_total: gstTotal,

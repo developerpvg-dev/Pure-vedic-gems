@@ -17,7 +17,6 @@ import {
   buildConfiguratorPriceTotals,
   type ConfiguratorPriceLine,
 } from '@/lib/utils/configurator-pricing-display';
-import { resolveProductTax } from '@/lib/utils/tax';
 import type { ConfiguratorState, GoldRateData } from '@/lib/types/configurator';
 import { isDesignCompatibleWithSetting } from '@/lib/hooks/useConfigurator';
 
@@ -82,12 +81,17 @@ export default function PriceSummary({
 }: PriceSummaryProps) {
   useCurrencySubscription();
   void goldRate;
-  const { addItem } = useCart();
+  const { addItem, getCartItem } = useCart();
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
   const p = state.pricing;
-  const ctaLabel = submitLabel ?? (onConfigured ? 'Add to order' : 'Add to Cart');
+  const alreadyConfigured = Boolean(
+    state.selected_product && getCartItem(state.selected_product.id)?.configuration_id
+  );
+  const ctaLabel =
+    submitLabel ??
+    (onConfigured ? 'Add to order' : alreadyConfigured ? 'Update Cart' : 'Add to Cart');
 
   const totals = useMemo(() => {
     const base = buildConfiguratorPriceTotals(p, {
@@ -222,7 +226,7 @@ export default function PriceSummary({
         delivery_eta_label: delivery_eta?.label,
       });
 
-      toast.success('Added to cart', {
+      toast.success(alreadyConfigured ? 'Cart updated' : 'Added to cart', {
         description:
           state.custom_design_url && state.custom_design_brief
             ? 'We will contact you soon with custom design mounting pricing. You can pay for the gem and selected services now.'
@@ -377,7 +381,7 @@ function DetailedPriceLines({
 }) {
   const gemLabel =
     productCategory === 'rudraksha' ? 'Rudraksha' : 'gemstone';
-  const gemRate = resolveProductTax({ category: productCategory ?? 'gemstone' }).rate_percent;
+  const gemRate = totals.gst_gem_rate_percent;
 
   return (
     <div className="space-y-2.5 text-xs text-foreground/90">
@@ -394,21 +398,12 @@ function DetailedPriceLines({
         </div>
       )}
 
-      {totals.gst_metal > 0 && (
+      {totals.gst_jewelry > 0 && (
         <PriceLine
           line={{
-            key: 'gst-metal',
-            label: 'GST on metal (3%)',
-            amount: totals.gst_metal,
-          }}
-        />
-      )}
-      {totals.gst_making > 0 && (
-        <PriceLine
-          line={{
-            key: 'gst-making',
-            label: 'GST on making / stone add-on (3%)',
-            amount: totals.gst_making,
+            key: 'gst-jewelry',
+            label: 'GST on jewellery (3%)',
+            amount: totals.gst_jewelry,
           }}
         />
       )}
@@ -418,24 +413,6 @@ function DetailedPriceLines({
             key: 'gst-gem',
             label: `GST on ${gemLabel} (${gemRate}%)`,
             amount: totals.gst_gemstone,
-          }}
-        />
-      )}
-      {totals.gst_certification > 0 && (
-        <PriceLine
-          line={{
-            key: 'gst-cert',
-            label: 'GST on certification (18%)',
-            amount: totals.gst_certification,
-          }}
-        />
-      )}
-      {totals.gst_energization > 0 && (
-        <PriceLine
-          line={{
-            key: 'gst-energ',
-            label: 'GST on energization (18%)',
-            amount: totals.gst_energization,
           }}
         />
       )}

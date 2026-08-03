@@ -189,6 +189,8 @@ export async function ensureLeadFromConsultation(
   const matches = await findPriorDuplicateMatches(admin, {
     id: enquiry.id,
     lead_number: enquiry.lead_number,
+    email: consultation.email,
+    phone: consultation.phone,
     date_of_birth: consultation.date_of_birth,
     birth_time: consultation.birth_time,
     birth_place: consultation.birth_place,

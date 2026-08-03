@@ -18,6 +18,7 @@ import {
   resolveLegacyAvailabilityStatus,
 } from '../lib/transform/pricing.js';
 import { ownMediaUrl } from '../lib/own-media-url.js';
+import { ensureRudrakshaConfiguratorOptionRules } from '../lib/ensure-option-rules.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -343,20 +344,20 @@ async function main() {
       const imageUrl = flags.write && rawImage ? await ownMediaUrl(rawImage) : rawImage;
       const weight = Number(woo.meta._weight || '') || null;
 
-      await client.query(
+      const insert = await client.query<{ id: string }>(
         `INSERT INTO products (
            legacy_woo_id, legacy_sku, legacy_slug, legacy_permalink, legacy_status, legacy_created_at,
            sku, name, slug, category, sub_category, product_type, mukhi_count, quality_label,
            price, compare_price, price_mode, currency, bead_weight,
            in_stock, stock_status, availability_status, stock_quantity, sold_individually,
-           thumbnail_url, images, is_active,
+           thumbnail_url, images, is_active, configurator_enabled,
            meta_title, meta_description, canonical_url, og_image, seo_data, legacy_data
          ) VALUES (
            $1,$2,$3,$4,'publish',$5,
            $6,$7,$8,$9,$10,'rudraksha',$11,$12,
            $13,$14,$15,'INR',$16,
            $17,$18,$19,$20,true,
-           $21,$22::jsonb,true,
+           $21,$22::jsonb,true,true,
            $23,$24,$25,$21,$26::jsonb,$27::jsonb
          )
          ON CONFLICT (legacy_woo_id) WHERE legacy_woo_id IS NOT NULL DO UPDATE SET
@@ -373,7 +374,9 @@ async function main() {
            thumbnail_url = COALESCE(products.thumbnail_url, EXCLUDED.thumbnail_url),
            images = CASE WHEN products.images = '[]'::jsonb THEN EXCLUDED.images ELSE products.images END,
            is_active = true,
-           updated_at = NOW()`,
+           configurator_enabled = TRUE,
+           updated_at = NOW()
+         RETURNING id`,
         [
           Number(woo.id),
           woo.meta._sku || null,
@@ -404,6 +407,10 @@ async function main() {
           JSON.stringify({ source: 'latestsqldump', legacy_woo_id: Number(woo.id), stock: woo.meta._stock_status || null }),
         ],
       );
+      const productId = insert.rows[0]?.id;
+      if (productId && woo.cls.category === 'rudraksha') {
+        await ensureRudrakshaConfiguratorOptionRules(client, productId);
+      }
       insertedLog.push({
         legacy_woo_id: woo.id,
         sku: woo.meta._sku || '',

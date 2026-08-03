@@ -80,7 +80,7 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     title: 'Delhi',
     region: 'India',
     flag: '/flags/india.svg',
-    photo: '/home/hero/pvgheropc2.webp',
+    photo: '/office/saket-showroom.jpg',
     mapUrl: DELHI_MAP_URL,
     mapEmbedUrl: DELHI_MAP_EMBED,
     addresses: [DELHI_REGISTERED_ADDRESS, DELHI_SHOWROOM_ADDRESS],
@@ -92,7 +92,8 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     title: 'United Kingdom',
     region: COMPANY_LEGAL_NAME,
     flag: '/flags/uk.svg',
-    photo: '/home/hero/pvgheropc1.webp',
+    // ponytail: no dedicated UK photo yet — reuse Sultanpur until one exists
+    photo: '/office/sultanpur-office.jpg',
     mapUrl: UK_OFFICE_MAP_URL,
     mapEmbedUrl: UK_OFFICE_MAP_EMBED,
     addresses: [UK_OFFICE_ADDRESS, UK_REGISTERED_ADDRESS],
@@ -103,7 +104,7 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     title: 'Sultanpur',
     region: 'Delhi, India',
     flag: '/flags/india.svg',
-    photo: '/home/ourservicesimg/retail-store.webp',
+    photo: '/office/sultanpur-office.jpg',
     mapUrl: SULTANPUR_MAP_URL,
     mapEmbedUrl: SULTANPUR_MAP_EMBED,
     addresses: [SULTANPUR_RESEARCH_ADDRESS],
@@ -136,7 +137,7 @@ export const ABOUT_LOCATION_CARDS = [
   {
     title: 'Delhi Retail Outlet (Showroom)',
     city: 'Saket, New Delhi',
-    image: '/home/hero/pvgheropc2.webp',
+    image: '/office/saket-showroom.jpg',
     mapUrl: DELHI_MAP_URL,
     embedUrl: DELHI_MAP_EMBED,
     copy: `${DELHI_SHOWROOM_ADDRESS.lines.join(', ')}. ${DELHI_SHOWROOM_LANDMARK}. Retail, wholesale, and export hub for ${COMPANY_LEGAL_NAME}`,
@@ -144,7 +145,7 @@ export const ABOUT_LOCATION_CARDS = [
   {
     title: 'Pure Vedic Science and Research Centre',
     city: 'Sultanpur, Delhi',
-    image: '/home/whoweare/puja-energization.jpeg',
+    image: '/office/sultanpur-office.jpg',
     mapUrl: SULTANPUR_MAP_URL,
     embedUrl: SULTANPUR_MAP_EMBED,
     copy: `${SULTANPUR_RESEARCH_ADDRESS.lines.slice(1).join(', ')}. ${SULTANPUR_RESEARCH_LANDMARK}. Gems, Rudraksha, yagya, healing therapy, Vedic astrology, research, and energizing centre.`,
@@ -152,7 +153,8 @@ export const ABOUT_LOCATION_CARDS = [
   {
     title: 'UK Office',
     city: 'Hounslow, London',
-    image: '/home/hero/pvgheropc1.webp',
+    // ponytail: no dedicated UK photo yet — reuse Sultanpur until one exists
+    image: '/office/sultanpur-office.jpg',
     mapUrl: UK_OFFICE_MAP_URL,
     embedUrl: UK_OFFICE_MAP_EMBED,
     copy: `${UK_OFFICE_ADDRESS.lines.join(', ')}. Appointment-based support for overseas clients through official Pure Vedic Gems UK channels.`,

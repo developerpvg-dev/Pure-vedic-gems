@@ -30,9 +30,13 @@ function getImageSrc(product: Product): string {
 }
 
 export function AddToCartBar({ product }: AddToCartBarProps) {
-  const { addItem, isInCart } = useCart();
+  const { addItem, isInCart, getCartItem } = useCart();
   const displayName = formatProductDisplayName(product.name);
   const inCart = isInCart(product.id);
+  const cartItem = getCartItem(product.id);
+  const configuredInCart = Boolean(cartItem?.configuration_id);
+  const configureHref =
+    cartItem?.configuration_edit_url ?? `/configure/${product.id}`;
   const isOnRequest = isProductPriceOnRequest(product);
   const isUnavailable = isProductStockUnavailable(product);
   const cartPrice = resolveProductCartPrice(product);
@@ -172,8 +176,13 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
 
       {configuratorEnabled && (
         <Link
-          href={`/configure/${product.id}`}
-          onClick={() => trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_detail' })}
+          href={configureHref}
+          onClick={() =>
+            trackStorefrontEvent(configuredInCart ? 'configurator_edit' : 'configurator_start', {
+              product_id: product.id,
+              source: 'product_detail',
+            })
+          }
           className="flex w-full items-center justify-center gap-1.5 rounded-md border-2 py-2 text-xs font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md lg:gap-2 lg:rounded-lg lg:py-3 lg:text-sm"
           style={{
             borderColor: '#7A1515',
@@ -181,7 +190,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
           }}
         >
           <Gem className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-          Configure in jewellery
+          {configuredInCart ? 'Edit Configuration' : 'Configure in jewellery'}
         </Link>
       )}
       </>

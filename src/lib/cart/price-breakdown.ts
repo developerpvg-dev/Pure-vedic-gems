@@ -5,7 +5,7 @@ import {
   buildConfiguratorPriceTotals,
   type ConfiguratorPriceLine,
 } from '@/lib/utils/configurator-pricing-display';
-import { resolveProductTax } from '@/lib/utils/tax';
+import { gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 function snapshotToPricing(pricing: NonNullable<ReturnType<typeof parseConfigurationSnapshot>>['pricing']): ConfigPricingBreakdown {
@@ -55,32 +55,22 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
     });
 
     const gstLines: ConfiguratorPriceLine[] = [];
-    const gemTax = resolveProductTax({
-      category: snap.product?.category ?? item.category,
-    });
+    // Jewellery: one 3% line on (gem + metal + labour + diamond).
+    if (totals.gst_jewelry > 0) {
+      gstLines.push({
+        key: 'gst-jewelry',
+        label: 'Est. GST on jewellery (3%)',
+        amount: totals.gst_jewelry,
+      });
+    }
+    // Loose stone/bead only (no mount).
     if (totals.gst_gemstone > 0) {
       const isRudraksha = (snap.product?.category ?? item.category) === 'rudraksha';
       gstLines.push({
         key: 'gst-gem',
-        label: `Est. GST on ${isRudraksha ? 'Rudraksha' : 'gemstone'} (${gemTax.rate_percent}%)`,
+        label: `Est. GST on ${isRudraksha ? 'Rudraksha' : 'gemstone'} (${totals.gst_gem_rate_percent}%)`,
         amount: totals.gst_gemstone,
       });
-    }
-    if (totals.gst_metal > 0) {
-      gstLines.push({ key: 'gst-metal', label: 'Est. GST on metal (3%)', amount: totals.gst_metal });
-    }
-    if (totals.gst_making > 0) {
-      gstLines.push({
-        key: 'gst-making',
-        label: 'Est. GST on making / stone add-on (3%)',
-        amount: totals.gst_making,
-      });
-    }
-    if (totals.gst_certification > 0) {
-      gstLines.push({ key: 'gst-cert', label: 'Est. GST on certification (18%)', amount: totals.gst_certification });
-    }
-    if (totals.gst_energization > 0) {
-      gstLines.push({ key: 'gst-energization', label: 'Est. GST on energization (18%)', amount: totals.gst_energization });
     }
 
     return {
@@ -93,10 +83,7 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
   }
 
   const tax = resolveProductTax({ category: item.category });
-  const estimatedGst =
-    unitPrice > 0 && tax.rate_percent > 0
-      ? Math.round((unitPrice * tax.rate_percent) / 100)
-      : 0;
+  const estimatedGst = gstOnAmount(Math.max(unitPrice, 0), tax.rate_percent);
 
   const lines: ConfiguratorPriceLine[] = [
     {
@@ -121,7 +108,7 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
   return {
     lines,
     preGstSubtotal: unitPrice,
-    estimatedGst,
+    estimatedGst: Math.round(estimatedGst),
     gstLines,
     unitPrice,
   };

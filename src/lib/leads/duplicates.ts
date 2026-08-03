@@ -8,7 +8,17 @@ export type BirthTriplet = {
   birth_place?: string | null;
 };
 
-export type MatchedBirthField = 'dob' | 'time' | 'place';
+export type ContactFields = {
+  email?: string | null;
+  phone?: string | null;
+};
+
+export type LeadIdentity = BirthTriplet & ContactFields;
+
+export type MatchedField = 'dob' | 'time' | 'place' | 'email' | 'phone';
+
+/** @deprecated use MatchedField */
+export type MatchedBirthField = MatchedField;
 
 export type DuplicateMatch = {
   id: string;
@@ -24,7 +34,7 @@ export type DuplicateMatch = {
   telecaller_name: string | null;
   created_at: string;
   status: 'duplicate' | 'potential';
-  matched_fields: MatchedBirthField[];
+  matched_fields: MatchedField[];
 };
 
 const CANDIDATE_COLS =
@@ -59,17 +69,35 @@ export function normalizePlace(raw: string | null | undefined): string | null {
     .replace(/\s+/g, ' ');
 }
 
+export function normalizeEmail(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  return raw.trim().toLowerCase();
+}
+
+/** Digits only; last 10 for IN mobiles with/without country code. */
+export function normalizePhone(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length < 7) return null;
+  // ponytail: last-10, upgrade to E.164 lib if multi-country volume grows
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 export function birthFieldCount(row: BirthTriplet): number {
   return [normalizeDob(row.date_of_birth), normalizeTime(row.birth_time), normalizePlace(row.birth_place)].filter(
     Boolean
   ).length;
 }
 
+export function hasContactIdentity(row: ContactFields): boolean {
+  return Boolean(normalizeEmail(row.email) || normalizePhone(row.phone));
+}
+
 export function scoreBirthMatch(
   a: BirthTriplet,
   b: BirthTriplet
-): { score: number; matched: MatchedBirthField[] } {
-  const matched: MatchedBirthField[] = [];
+): { score: number; matched: MatchedField[] } {
+  const matched: MatchedField[] = [];
   const dobA = normalizeDob(a.date_of_birth);
   const dobB = normalizeDob(b.date_of_birth);
   if (dobA && dobB && dobA === dobB) matched.push('dob');
@@ -82,9 +110,32 @@ export function scoreBirthMatch(
   return { score: matched.length, matched };
 }
 
-export function classifyMatch(score: number): 'duplicate' | 'potential' | null {
-  if (score >= 3) return 'duplicate';
-  if (score >= 2) return 'potential';
+export function scoreContactMatch(
+  a: ContactFields,
+  b: ContactFields
+): { email: boolean; phone: boolean; matched: MatchedField[] } {
+  const matched: MatchedField[] = [];
+  const emailA = normalizeEmail(a.email);
+  const emailB = normalizeEmail(b.email);
+  const email = Boolean(emailA && emailB && emailA === emailB);
+  if (email) matched.push('email');
+  const phoneA = normalizePhone(a.phone);
+  const phoneB = normalizePhone(b.phone);
+  const phone = Boolean(phoneA && phoneB && phoneA === phoneB);
+  if (phone) matched.push('phone');
+  return { email, phone, matched };
+}
+
+/**
+ * Contact: email+phone → duplicate; either alone → potential.
+ * Birth: 3 fields → duplicate; 2 fields → potential.
+ */
+export function classifyMatch(
+  birthScore: number,
+  contact?: { email: boolean; phone: boolean }
+): 'duplicate' | 'potential' | null {
+  if ((contact?.email && contact?.phone) || birthScore >= 3) return 'duplicate';
+  if (contact?.email || contact?.phone || birthScore >= 2) return 'potential';
   return null;
 }
 
@@ -117,12 +168,38 @@ type CandidateRow = {
   created_at: string;
 };
 
-async function loadCandidatePool(admin: Admin, leads: BirthTriplet[]): Promise<CandidateRow[]> {
-  const eligible = leads.filter((l) => birthFieldCount(l) >= 2);
+async function loadCandidatePool(admin: Admin, leads: LeadIdentity[]): Promise<CandidateRow[]> {
+  const eligible = leads.filter((l) => birthFieldCount(l) >= 2 || hasContactIdentity(l));
   if (!eligible.length) return [];
 
   const byId = new Map<string, CandidateRow>();
-  const dobs = uniqueStrings(eligible.map((l) => normalizeDob(l.date_of_birth)));
+
+  const emails = uniqueStrings(eligible.map((l) => normalizeEmail(l.email)));
+  if (emails.length) {
+    const orFilter = emails
+      .map((e) => `email.ilike."${e.replace(/"/g, '')}"`)
+      .join(',');
+    const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).or(orFilter).limit(500);
+    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+  }
+
+  // ponytail: exact phone string match first; normalized last-10 covers formatting in scoreContactMatch
+  const phones = uniqueStrings(eligible.map((l) => l.phone?.trim()));
+  if (phones.length) {
+    const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).in('phone', phones).limit(500);
+    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+  }
+
+  // Also pull by last-10 digit suffix via ilike when stored with +91 / spaces
+  const phoneTails = uniqueStrings(eligible.map((l) => normalizePhone(l.phone)).filter((p) => p && p.length >= 10));
+  if (phoneTails.length) {
+    const orFilter = phoneTails.map((p) => `phone.ilike.%${p}`).join(',');
+    const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).or(orFilter).limit(500);
+    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+  }
+
+  const birthEligible = eligible.filter((l) => birthFieldCount(l) >= 2);
+  const dobs = uniqueStrings(birthEligible.map((l) => normalizeDob(l.date_of_birth)));
   if (dobs.length) {
     const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).in('date_of_birth', dobs).limit(500);
     for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
@@ -130,7 +207,7 @@ async function loadCandidatePool(admin: Admin, leads: BirthTriplet[]): Promise<C
 
   // ponytail: also pull same place for time+place potentials when DOB differs. Ceiling: one .or() of page places.
   const rawPlaces = uniqueStrings(
-    eligible
+    birthEligible
       .filter((l) => normalizeTime(l.birth_time) && normalizePlace(l.birth_place))
       .map((l) => l.birth_place?.trim())
   );
@@ -168,17 +245,19 @@ async function telecallerNames(admin: Admin, assigneeIds: string[]): Promise<Map
 }
 
 function matchesForLead(
-  lead: BirthTriplet & { id: string; created_at?: string | null; lead_number?: number | null },
+  lead: LeadIdentity & { id: string; created_at?: string | null; lead_number?: number | null },
   pool: CandidateRow[],
   names: Map<string, string>
 ): DuplicateMatch[] {
-  if (birthFieldCount(lead) < 2) return [];
+  if (birthFieldCount(lead) < 2 && !hasContactIdentity(lead)) return [];
   const out: DuplicateMatch[] = [];
   for (const c of pool) {
     if (!isPriorLead(c, lead)) continue;
-    const { score, matched } = scoreBirthMatch(lead, c);
-    const status = classifyMatch(score);
+    const birth = scoreBirthMatch(lead, c);
+    const contact = scoreContactMatch(lead, c);
+    const status = classifyMatch(birth.score, contact);
     if (!status) continue;
+    const matched = [...contact.matched, ...birth.matched];
     out.push({
       id: c.id,
       lead_number: c.lead_number,
@@ -210,6 +289,8 @@ export async function attachDuplicateHints(
     id: string;
     created_at?: string | null;
     lead_number?: number | null;
+    email?: string | null;
+    phone?: string | null;
     date_of_birth?: string | null;
     birth_time?: string | null;
     birth_place?: string | null;
@@ -233,13 +314,15 @@ export async function attachDuplicateHints(
 
 export async function findPriorDuplicateMatches(
   admin: Admin,
-  lead: BirthTriplet & { id: string; created_at?: string | null; lead_number?: number | null }
+  lead: LeadIdentity & { id: string; created_at?: string | null; lead_number?: number | null }
 ): Promise<DuplicateMatch[]> {
   const [enriched] = await attachDuplicateHints(admin, [
     {
       id: lead.id,
       created_at: lead.created_at,
       lead_number: lead.lead_number,
+      email: lead.email,
+      phone: lead.phone,
       date_of_birth: lead.date_of_birth,
       birth_time: lead.birth_time,
       birth_place: lead.birth_place,
@@ -284,4 +367,28 @@ export function assertDuplicateScoring() {
   if (classifyMatch(none.score) !== null) throw new Error('unrelated birth data must not match');
   if (normalizeTime('10:30 PM') !== '22:30') throw new Error('normalizeTime pm');
   if (normalizePlace('  New   Delhi ') !== 'new delhi') throw new Error('normalizePlace');
+
+  const emailOnly = scoreContactMatch(
+    { email: 'A@X.com', phone: '9999999999' },
+    { email: 'a@x.com', phone: '8888888888' }
+  );
+  if (!emailOnly.email || emailOnly.phone || classifyMatch(0, emailOnly) !== 'potential') {
+    throw new Error('email-only must be potential');
+  }
+  const phoneOnly = scoreContactMatch(
+    { email: 'a@x.com', phone: '+91 98765-43210' },
+    { email: 'b@y.com', phone: '9876543210' }
+  );
+  if (phoneOnly.email || !phoneOnly.phone || classifyMatch(0, phoneOnly) !== 'potential') {
+    throw new Error('phone-only must be potential');
+  }
+  const both = scoreContactMatch(
+    { email: 'a@x.com', phone: '9876543210' },
+    { email: 'A@X.com', phone: '919876543210' }
+  );
+  if (!both.email || !both.phone || classifyMatch(0, both) !== 'duplicate') {
+    throw new Error('email+phone must be duplicate');
+  }
+  if (normalizeEmail('  Foo@Bar.COM ') !== 'foo@bar.com') throw new Error('normalizeEmail');
+  if (normalizePhone('+91 98765 43210') !== '9876543210') throw new Error('normalizePhone');
 }

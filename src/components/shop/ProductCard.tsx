@@ -44,10 +44,14 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   useCurrencySubscription();
-  const { addItem, isInCart } = useCart();
+  const { addItem, isInCart, getCartItem } = useCart();
   const gradeLabel = resolveProductGradeLabel(product.quality_label, product.name);
   const displayName = stripProductGradeFromName(formatProductDisplayName(product.name));
   const inCart = isInCart(product.id);
+  const cartItem = getCartItem(product.id);
+  const configuredInCart = Boolean(cartItem?.configuration_id);
+  const configureHref =
+    cartItem?.configuration_edit_url ?? `/configure/${product.id}`;
   const href = productHref(product);
   const imageSrc = getImageSrc(product);
   const isOnRequest = isProductPriceOnRequest(product);
@@ -161,12 +165,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </Link>
           {configuratorEnabled && (
             <Link
-              href={`/configure/${product.id}`}
+              href={configureHref}
               onClick={(e) => e.stopPropagation()}
               onClickCapture={() =>
-                trackStorefrontEvent('configurator_start', { product_id: product.id, source: 'product_card' })
+                trackStorefrontEvent(configuredInCart ? 'configurator_edit' : 'configurator_start', {
+                  product_id: product.id,
+                  source: 'product_card',
+                })
               }
-              title="Configure jewelry"
+              title={configuredInCart ? 'Edit configuration' : 'Configure jewelry'}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm hover:bg-white"
             >
               <Settings2 className="h-4 w-4 text-gray-700" />

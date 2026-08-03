@@ -1071,10 +1071,14 @@ export async function PUT(
     });
   }
 
-  const birthTouched =
-    d.date_of_birth !== undefined || d.birth_time !== undefined || d.birth_place !== undefined;
+  const identityTouched =
+    d.date_of_birth !== undefined ||
+    d.birth_time !== undefined ||
+    d.birth_place !== undefined ||
+    d.email !== undefined ||
+    d.phone !== undefined;
   let duplicate_matches = undefined as Awaited<ReturnType<typeof findPriorDuplicateMatches>> | undefined;
-  if (birthTouched && data) {
+  if (identityTouched && data) {
     duplicate_matches = await findPriorDuplicateMatches(admin, data as Enquiry);
     if (duplicate_matches[0]) {
       await logLeadActivity(admin, {

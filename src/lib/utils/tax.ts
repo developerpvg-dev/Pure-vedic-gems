@@ -1,14 +1,16 @@
 import type { Json } from '@/lib/types/database';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 
-export const TAX_POLICY_VERSION = '2026-08-02';
+export const TAX_POLICY_VERSION = '2026-08-03';
 export const SELLER_STATE = 'Delhi';
 
-/** Business GST rates (loose vs metal-mounted). */
+/** Business GST rates. */
 export const GST_LOOSE_STONE_PERCENT = 0.25;
 export const GST_LOOSE_RUDRAKSHA_PERCENT = 0;
-/** Metal / making / stone add-on when sold as mounted jewellery (stone or rudraksha). */
+/** Metal-mounted / fixed-price jewellery: 3% once on (gem/bead + metal + labour + diamond). */
 export const GST_METAL_MOUNTED_PERCENT = 3;
+/** Malas / idols / yantras — GST exempt. */
+export const GST_SPIRITUAL_GOODS_PERCENT = 0;
 
 export type TaxJurisdiction = 'intra_state' | 'inter_state';
 
@@ -51,16 +53,18 @@ export interface TaxBreakdown {
 const CATEGORY_DEFAULTS: Array<{ match: RegExp; rate: number; hsn: string | null; taxClass: string }> = [
   { match: /jewel|jewellery|jewelry|ring|pendant|gold|silver/i, rate: GST_METAL_MOUNTED_PERCENT, hsn: '7113', taxClass: 'jewellery' },
   { match: /service|consultation|puja|pooja|yagya|energ/i, rate: 18, hsn: null, taxClass: 'service' },
-  // Loose rudraksha is GST-exempt; metal+rudraksha uses GST_METAL_MOUNTED_PERCENT on metal/making.
+  // Loose rudraksha is GST-exempt; metal+rudraksha uses mounted 3% on bead+metal+making.
   { match: /rudraksha/i, rate: GST_LOOSE_RUDRAKSHA_PERCENT, hsn: null, taxClass: 'rudraksha' },
-  { match: /mala|idol|yantra/i, rate: 12, hsn: null, taxClass: 'spiritual_goods' },
-  { match: /gem|navratna|upratna|sapphire|ruby|emerald|coral|pearl|opal|diamond|hessonite|cat/i, rate: GST_LOOSE_STONE_PERCENT, hsn: '7103', taxClass: 'loose_gemstone' },
+  { match: /mala|idol|yantra/i, rate: GST_SPIRITUAL_GOODS_PERCENT, hsn: null, taxClass: 'spiritual_goods' },
+  { match: /gem|navaratna|navratna|upratna|sapphire|ruby|emerald|coral|pearl|opal|diamond|hessonite|cat/i, rate: GST_LOOSE_STONE_PERCENT, hsn: '7103', taxClass: 'loose_gemstone' },
 ];
 
 const TAX_CLASS_DEFAULTS: Record<string, { rate: number; hsn: string | null }> = {
   exempt: { rate: 0, hsn: null },
   loose_gemstone: { rate: GST_LOOSE_STONE_PERCENT, hsn: '7103' },
   gemstone: { rate: GST_LOOSE_STONE_PERCENT, hsn: '7103' },
+  navaratna: { rate: GST_LOOSE_STONE_PERCENT, hsn: '7103' },
+  upratna: { rate: GST_LOOSE_STONE_PERCENT, hsn: '7103' },
   rudraksha: { rate: GST_LOOSE_RUDRAKSHA_PERCENT, hsn: null },
   jewellery: { rate: GST_METAL_MOUNTED_PERCENT, hsn: '7113' },
   jewelry: { rate: GST_METAL_MOUNTED_PERCENT, hsn: '7113' },
@@ -71,7 +75,7 @@ const TAX_CLASS_DEFAULTS: Record<string, { rate: number; hsn: string | null }> =
   energization: { rate: 0, hsn: null },
   service: { rate: 18, hsn: null },
   shipping: { rate: 18, hsn: '9968' },
-  spiritual_goods: { rate: 12, hsn: null },
+  spiritual_goods: { rate: GST_SPIRITUAL_GOODS_PERCENT, hsn: null },
 };
 
 function roundCurrency(value: number) {
@@ -94,6 +98,63 @@ function parseRate(value: number | string | null | undefined) {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 28) return null;
   return parsed;
+}
+
+/** Stone/bead is jewellery (mounted or fixed making) when any jewellery charge is present. */
+export function isMetalMounted(parts: {
+  metal?: number | null;
+  making?: number | null;
+  diamond?: number | null;
+  custom?: number | null;
+}): boolean {
+  return (
+    Number(parts.metal ?? 0) > 0 ||
+    Number(parts.making ?? 0) > 0 ||
+    Number(parts.diamond ?? 0) > 0 ||
+    Number(parts.custom ?? 0) > 0
+  );
+}
+
+/** Taxable jewellery base: gem/bead + metal + labour/making + diamond + custom design fee. */
+export function jewelleryTaxableBase(parts: {
+  gem?: number | null;
+  metal?: number | null;
+  making?: number | null;
+  diamond?: number | null;
+  custom?: number | null;
+}): number {
+  return Math.max(
+    0,
+    Number(parts.gem ?? 0) +
+      Number(parts.metal ?? 0) +
+      Number(parts.making ?? 0) +
+      Number(parts.diamond ?? 0) +
+      Number(parts.custom ?? 0),
+  );
+}
+
+/** Single 3% GST on the full jewellery base (mounted / fixed-price). */
+export function gstOnJewellery(parts: {
+  gem?: number | null;
+  metal?: number | null;
+  making?: number | null;
+  diamond?: number | null;
+  custom?: number | null;
+}): number {
+  return gstOnAmount(jewelleryTaxableBase(parts), GST_METAL_MOUNTED_PERCENT);
+}
+
+/**
+ * Rate on the gem/bead line itself (display / loose only).
+ * Loose → category rate (stone 0.25% / rudraksha 0%).
+ * Mounted → folded into jewellery 3% (not taxed separately).
+ */
+export function resolveGemOrBeadTaxRate(
+  category: string | null | undefined,
+  mounted: boolean,
+): number {
+  if (mounted) return GST_METAL_MOUNTED_PERCENT;
+  return resolveProductTax({ category }).rate_percent;
 }
 
 export function getTaxJurisdiction(destinationState?: string | null): TaxJurisdiction {
@@ -129,7 +190,7 @@ export function resolveProductTax(input: ProductTaxInput) {
     };
   }
 
-  return { rate_percent: 3, hsn_code: input.hsn_code ?? null, tax_class: 'standard_goods' };
+  return { rate_percent: GST_METAL_MOUNTED_PERCENT, hsn_code: input.hsn_code ?? null, tax_class: 'standard_goods' };
 }
 
 export function calculateGstComponent({
@@ -188,8 +249,8 @@ export function buildTaxBreakdown(destinationState: string | null | undefined, c
     components: cleanComponents,
     totals,
     notes: [
-      'Tax calculation is server-authoritative and uses product-level HSN/GST overrides when present.',
-      'Rates should be verified with the business accountant before production invoicing.',
+      'Loose stone 0.25%; jewellery (gem/bead + metal + labour + diamond, incl. fixed price) 3% once on that total; loose rudraksha / malas / idols 0%; cert/energ exempt; shipping 18%.',
+      'Tax calculation is server-authoritative. Verify with the business accountant before production invoicing.',
     ],
   };
 }
@@ -200,8 +261,9 @@ export function taxBreakdownToJson(breakdown: TaxBreakdown): Json {
 
 /**
  * Client-side GST estimate matching `recalculateOrderTotal`:
- * loose stone 0.25% / loose rudraksha 0%; metal+making+diamond+custom 3%; shipping 18%.
- * Certification and energization fees are GST-exempt.
+ * loose stone 0.25% / loose rudraksha 0% / mala·idol 0%;
+ * jewellery (weight or fixed): one 3% on (gem + metal + labour + diamond + custom);
+ * cert/energ exempt; shipping 18%.
  */
 export function estimateClientTax(
   items: Array<{
@@ -220,17 +282,17 @@ export function estimateClientTax(
     if (pricing && (pricing.gem_price != null || pricing.total != null || pricing.making_charge != null)) {
       const gem = Number(pricing.gem_price ?? 0) * qty;
       const metal = Number(pricing.metal_price ?? 0) * qty;
-      const making =
-        (Number(pricing.making_charge ?? 0) +
-          Number(pricing.diamond_charge ?? 0) +
-          Number(pricing.custom_design_fee ?? 0)) *
-        qty;
-      const gemRate = resolveProductTax({
-        category: snap?.product?.category ?? item.category,
-      }).rate_percent;
-      gst += gstOnAmount(gem, gemRate);
-      gst += gstOnAmount(metal, GST_METAL_MOUNTED_PERCENT);
-      gst += gstOnAmount(making, GST_METAL_MOUNTED_PERCENT);
+      const making = Number(pricing.making_charge ?? 0) * qty;
+      const diamond = Number(pricing.diamond_charge ?? 0) * qty;
+      const custom = Number(pricing.custom_design_fee ?? 0) * qty;
+      const category = snap?.product?.category ?? item.category;
+      const mounted = isMetalMounted({ metal, making, diamond, custom });
+      if (mounted) {
+        // One 3% on full jewellery base (gem + metal + labour + diamond + custom).
+        gst += gstOnJewellery({ gem, metal, making, diamond, custom });
+      } else {
+        gst += gstOnAmount(gem, resolveGemOrBeadTaxRate(category, false));
+      }
       continue;
     }
     const tax = resolveProductTax({ category: item.category });

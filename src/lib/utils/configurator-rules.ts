@@ -255,6 +255,36 @@ export function isAllowedByList(value: string | null | undefined, allowedValues:
   return allowedValues.length === 0 || allowedValues.includes(value);
 }
 
+/**
+ * When cert/energization are enabled but allow-lists were never seeded (gap-fill,
+ * pre-seed upserts), fill storefront defaults so steps 6–7 still appear.
+ * Non-empty allow-lists and disabled flags are left alone.
+ */
+export function withDefaultConfiguratorAllowLists(
+  rules: ConfiguratorOptionRules,
+  defaults: {
+    certificationLabIds: readonly string[];
+    energizationOptionIds: readonly string[];
+  },
+): ConfiguratorOptionRules {
+  const next = { ...rules };
+  if (
+    next.certificate_enabled &&
+    next.allowed_certification_lab_ids.length === 0 &&
+    defaults.certificationLabIds.length > 0
+  ) {
+    next.allowed_certification_lab_ids = [...defaults.certificationLabIds];
+  }
+  if (
+    next.energization_enabled &&
+    next.allowed_energization_option_ids.length === 0 &&
+    defaults.energizationOptionIds.length > 0
+  ) {
+    next.allowed_energization_option_ids = [...defaults.energizationOptionIds];
+  }
+  return next;
+}
+
 export function isSettingTypeAllowed(rules: ConfiguratorOptionRules | null, settingType: SettingType) {
   return (rules ?? DEFAULT_CONFIGURATOR_RULES).allowed_setting_types.includes(settingType);
 }

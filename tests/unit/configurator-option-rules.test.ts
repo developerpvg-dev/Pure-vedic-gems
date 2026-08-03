@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeConfiguratorRules,
   resolveConfiguratorOptionRules,
+  withDefaultConfiguratorAllowLists,
 } from '@/lib/utils/configurator-rules';
 
 describe('resolveConfiguratorOptionRules', () => {
@@ -60,6 +61,24 @@ describe('resolveConfiguratorOptionRules', () => {
     expect(rules.jewelry_design_enabled).toBe(true);
     expect(rules.metal_enabled).toBe(true);
     expect(rules.allowed_setting_types).toEqual(['ring', 'pendant', 'bracelet', 'loose']);
+  });
+
+  it('fills empty allow-lists with storefront defaults when addons are enabled', () => {
+    const filled = withDefaultConfiguratorAllowLists(
+      normalizeConfiguratorRules({
+        product_id: 'prod-5',
+        certificate_enabled: true,
+        energization_enabled: true,
+        allowed_certification_lab_ids: [],
+        allowed_energization_option_ids: [],
+      }),
+      {
+        certificationLabIds: ['lab-1'],
+        energizationOptionIds: ['energ-1'],
+      }
+    );
+    expect(filled.allowed_certification_lab_ids).toEqual(['lab-1']);
+    expect(filled.allowed_energization_option_ids).toEqual(['energ-1']);
   });
 
   it('keeps certificate step from option rules, not storefront display flag', () => {

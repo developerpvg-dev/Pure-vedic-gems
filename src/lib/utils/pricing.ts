@@ -10,7 +10,14 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import type { ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { Coupon, ShippingMethod } from '@/lib/types/database';
 import { planAppliesToCountry, planAppliesToSubtotal } from '@/lib/shipping/plans';
-import { buildTaxBreakdown, calculateGstComponent, GST_METAL_MOUNTED_PERCENT, resolveProductTax, taxBreakdownToJson } from '@/lib/utils/tax';
+import {
+  buildTaxBreakdown,
+  calculateGstComponent,
+  GST_METAL_MOUNTED_PERCENT,
+  isMetalMounted,
+  resolveProductTax,
+  taxBreakdownToJson,
+} from '@/lib/utils/tax';
 import { quoteRewardRedemption } from '@/lib/rewards/service';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
@@ -207,21 +214,36 @@ export async function recalculateOrderTotal(
     )
   );
 
-  const configGemPriceMap = new Map<string, number>();
+  type ConfigForPricing = {
+    id: string;
+    product_id: string;
+    gem_price: number | null;
+    making_charge: number | null;
+    metal_price: number | null;
+    certification_fee: number | null;
+    energization_fee: number | null;
+    custom_design_fee: number | null;
+  };
+
+  const configMap = new Map<string, ConfigForPricing>();
   if (configIds.length > 0) {
-    const { data: gemConfigs, error: gemConfigError } = await supabase
+    const { data: configs, error: configError } = await supabase
       .from('product_configurations')
-      .select('id, gem_price')
+      .select('id, product_id, gem_price, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee')
       .in('id', configIds);
 
-    if (gemConfigError || !gemConfigs || gemConfigs.length !== configIds.length) {
+    // Fail closed: every requested configuration must resolve.
+    if (configError || !configs || configs.length !== configIds.length) {
       throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
     }
 
-    for (const cfg of gemConfigs as Array<{ id: string; gem_price: number | null }>) {
-      configGemPriceMap.set(cfg.id, Number(cfg.gem_price ?? 0));
+    for (const cfg of configs as ConfigForPricing[]) {
+      configMap.set(cfg.id, cfg);
     }
   }
+
+  /** Indexes in pricedItems whose gem/bead is metal-mounted → GST folds into 3% jewellery base. */
+  const mountedLineIndexes = new Set<number>();
 
   for (const item of items) {
     if (item.manual_design) {
@@ -245,8 +267,8 @@ export async function recalculateOrderTotal(
         tax_class: 'jewelry',
         tax_rate_percent: 3,
         unit_price: itemPrice + otherCharge,
-        quantity: 1,
         line_total: itemPrice + otherCharge,
+        quantity: 1,
         manual_design: manual,
       });
       continue;
@@ -276,15 +298,34 @@ export async function recalculateOrderTotal(
       throw new Error(`"${product.name}" is no longer available`);
     }
 
-    const productTax = resolveProductTax(product);
+    const cfg = item.configuration_id ? configMap.get(item.configuration_id) : undefined;
+    if (item.configuration_id) {
+      if (!cfg || cfg.product_id !== item.product_id) {
+        throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
+      }
+    }
 
-    const configuredGemPrice = item.configuration_id
-      ? configGemPriceMap.get(item.configuration_id)
-      : undefined;
+    const mounted = cfg
+      ? isMetalMounted({
+          metal: cfg.metal_price,
+          making: cfg.making_charge,
+          custom: cfg.custom_design_fee,
+        })
+      : false;
+
+    const productTax = resolveProductTax(product);
+    // Mounted stone/rudraksha: gem/bead joins 3% jewellery slab (not loose 0.25%/0%).
+    const taxRate = mounted ? GST_METAL_MOUNTED_PERCENT : productTax.rate_percent;
+    const taxClass = mounted ? 'jewellery' : productTax.tax_class;
+    const hsnCode = mounted ? (productTax.hsn_code ?? '7113') : productTax.hsn_code;
+
+    const configuredGemPrice = cfg ? Number(cfg.gem_price ?? 0) : undefined;
     const unitPrice =
       configuredGemPrice !== undefined && configuredGemPrice > 0
         ? configuredGemPrice
         : product.price;
+
+    if (mounted) mountedLineIndexes.add(pricedItems.length);
 
     pricedItems.push({
       line_id: item.line_id,
@@ -297,11 +338,11 @@ export async function recalculateOrderTotal(
       carat_weight: product.carat_weight,
       origin: product.origin,
       sold_individually: product.sold_individually,
-      hsn_code: productTax.hsn_code,
+      hsn_code: hsnCode,
       gst_rate: product.gst_rate,
       tax_status: product.tax_status,
-      tax_class: productTax.tax_class,
-      tax_rate_percent: productTax.rate_percent,
+      tax_class: taxClass,
+      tax_rate_percent: taxRate,
       unit_price: unitPrice,
       quantity: item.quantity,
       line_total: unitPrice * item.quantity,
@@ -322,36 +363,15 @@ export async function recalculateOrderTotal(
     jewelryCharges += Number(item.manual_design.labour_charge) || 0;
   }
 
-  const configIdsForCharges = configIds;
-
-  if (configIdsForCharges.length > 0) {
-    const configItemMap = new Map(
-      items
-        .filter((item) => item.configuration_id)
-        .map((item) => [item.configuration_id!, item])
-    );
-    const { data: configs, error: configError } = await supabase
-      .from('product_configurations')
-      .select('id, product_id, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee')
-      .in('id', configIdsForCharges);
-
-    // Fail closed: every requested configuration must resolve to an active row.
-    // A missing/invalid configuration_id must never silently skip its charges.
-    if (configError || !configs || configs.length !== configIdsForCharges.length) {
-      throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
-    }
-
-    for (const cfg of configs) {
-      const sourceItem = configItemMap.get(cfg.id);
-      if (!sourceItem || sourceItem.product_id !== cfg.product_id) {
-        throw new Error('A configured cart item could not be verified. Please rebuild it from the configurator.');
-      }
-      const quantity = sourceItem.quantity;
-      jewelryCharges += ((cfg.making_charge ?? 0) + (cfg.custom_design_fee ?? 0)) * quantity;
-      metalCharges += (cfg.metal_price ?? 0) * quantity;
-      certificationCharges += (cfg.certification_fee ?? 0) * quantity;
-      energizationCharges += (cfg.energization_fee ?? 0) * quantity;
-    }
+  for (const item of items) {
+    if (!item.configuration_id) continue;
+    const cfg = configMap.get(item.configuration_id);
+    if (!cfg) continue;
+    const quantity = item.quantity;
+    jewelryCharges += ((cfg.making_charge ?? 0) + (cfg.custom_design_fee ?? 0)) * quantity;
+    metalCharges += (cfg.metal_price ?? 0) * quantity;
+    certificationCharges += (cfg.certification_fee ?? 0) * quantity;
+    energizationCharges += (cfg.energization_fee ?? 0) * quantity;
   }
 
   // ── 3. Energization charges ────────────────────────────────────────────
@@ -485,21 +505,46 @@ export async function recalculateOrderTotal(
   const discount = couponDiscount + rewardDiscount + manualDiscount;
 
   // ── 6. GST calculation ────────────────────────────────────────────────
+  // Loose products: category rate on the line.
+  // Jewellery (weight or fixed): one 3% on (gem + metal + labour + diamond/custom).
+  // Cert/energization exempt; shipping 18%.
   const itemDiscountRatio = subtotal > 0 ? Math.min(discount / subtotal, 1) : 0;
-  const productTaxComponents = pricedItems.map((item) => calculateGstComponent({
-    label: item.name,
-    component: 'product',
-    amount: item.line_total * (1 - itemDiscountRatio),
-    ratePercent: item.tax_rate_percent,
-    hsnCode: item.hsn_code,
-    destinationState: shippingAddress?.state,
-  }));
+  let mountedGemTaxable = 0;
+  const productTaxComponents = pricedItems.map((item, index) => {
+    const taxable = item.line_total * (1 - itemDiscountRatio);
+    if (mountedLineIndexes.has(index)) {
+      mountedGemTaxable += taxable;
+      return null;
+    }
+    return calculateGstComponent({
+      label: item.name,
+      component: 'product',
+      amount: taxable,
+      ratePercent: item.tax_rate_percent,
+      hsnCode: item.hsn_code,
+      destinationState: shippingAddress?.state,
+    });
+  });
+  const jewelleryTaxable = mountedGemTaxable + metalCharges + jewelryCharges;
   const taxBreakdown = buildTaxBreakdown(shippingAddress?.state, [
     ...productTaxComponents,
-    calculateGstComponent({ label: 'Metal value', component: 'metal', amount: metalCharges, ratePercent: GST_METAL_MOUNTED_PERCENT, hsnCode: '7113', destinationState: shippingAddress?.state }),
-    calculateGstComponent({ label: 'Making and custom design charges', component: 'making_charge', amount: jewelryCharges, ratePercent: GST_METAL_MOUNTED_PERCENT, hsnCode: null, destinationState: shippingAddress?.state }),
+    calculateGstComponent({
+      label: 'Jewellery (gem/bead + metal + labour + stone add-on)',
+      component: 'metal',
+      amount: jewelleryTaxable,
+      ratePercent: GST_METAL_MOUNTED_PERCENT,
+      hsnCode: '7113',
+      destinationState: shippingAddress?.state,
+    }),
     // ponytail: cert + energization fees are GST-exempt (fee already final); shipping stays 18%
-    calculateGstComponent({ label: 'Shipping, insurance, and handling', component: 'shipping', amount: shippingCost, ratePercent: 18, hsnCode: '9968', destinationState: shippingAddress?.state }),
+    calculateGstComponent({
+      label: 'Shipping, insurance, and handling',
+      component: 'shipping',
+      amount: shippingCost,
+      ratePercent: 18,
+      hsnCode: '9968',
+      destinationState: shippingAddress?.state,
+    }),
   ]);
   const gstAmount = Math.round(taxBreakdown.totals.gst_amount);
 

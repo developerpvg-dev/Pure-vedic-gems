@@ -18,6 +18,26 @@ export function deriveCartLineKey(item: {
     : item.product_id;
 }
 
+/** One line per unique piece. Configured beats loose; later line wins if both configured. */
+export function dedupeCartByProductId(items: CartItem[]): CartItem[] {
+  const winnerByProduct = new Map<string, CartItem>();
+  for (const item of items) {
+    const prev = winnerByProduct.get(item.product_id);
+    if (!prev) {
+      winnerByProduct.set(item.product_id, item);
+      continue;
+    }
+    if (item.configuration_id && !prev.configuration_id) {
+      winnerByProduct.set(item.product_id, item);
+    } else if (Boolean(item.configuration_id) === Boolean(prev.configuration_id)) {
+      winnerByProduct.set(item.product_id, item);
+    }
+    // else keep prev (configured already beats incoming loose)
+  }
+  const winners = new Set(winnerByProduct.values());
+  return items.filter((item) => winners.has(item));
+}
+
 export function getMaxAvailableQuantity(
   item: Pick<CartItem, 'stock_quantity' | 'in_stock' | 'stock_status' | 'availability_status' | 'sold_individually'>
 ) {
@@ -52,14 +72,16 @@ export function readStoredCartItems(): CartItem[] {
     const saved: CartItem[] = JSON.parse(raw);
     if (!Array.isArray(saved)) return [];
     // Clamp legacy carts that allowed qty > 1 before unique-piece rule
-    return saved
-      .map((row) => {
-        const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
-        return quantity > 0
-          ? { ...row, quantity, name: formatProductDisplayName(row.name) }
-          : null;
-      })
-      .filter((row): row is CartItem => row != null);
+    return dedupeCartByProductId(
+      saved
+        .map((row) => {
+          const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
+          return quantity > 0
+            ? { ...row, quantity, name: formatProductDisplayName(row.name) }
+            : null;
+        })
+        .filter((row): row is CartItem => row != null)
+    );
   } catch {
     return [];
   }

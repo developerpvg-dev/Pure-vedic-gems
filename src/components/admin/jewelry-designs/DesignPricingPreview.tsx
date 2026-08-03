@@ -63,13 +63,12 @@ export default function DesignPricingPreview({
   const stoneLabel =
     stoneAddonLabel.trim() ||
     (pricing.diamondCharge > 0 ? 'Diamond' : '');
-  const makingTaxable = pricing.makingCharge + pricing.diamondCharge;
   const subtotal =
     pricing.metalPrice + pricing.makingCharge + pricing.diamondCharge;
-  // Same as checkout / recalculateOrderTotal: metal + making/diamond @ 3%.
-  const gstMetal = gstOnAmount(pricing.metalPrice, GST_METAL_MOUNTED_PERCENT);
-  const gstMaking = gstOnAmount(makingTaxable, GST_METAL_MOUNTED_PERCENT);
-  const gstEstimate = Math.round(gstMetal + gstMaking);
+  // Jewellery GST: one 3% on (metal + labour + diamond), matches checkout.
+  const gstEstimate = Math.round(
+    gstOnAmount(subtotal, GST_METAL_MOUNTED_PERCENT),
+  );
   const totalWithGst = subtotal + gstEstimate;
 
   return (
@@ -79,7 +78,7 @@ export default function DesignPricingPreview({
         {pricing.pricingKind === 'weight'
           ? `Weight-based: metal × grams + labor (${pricing.laborRatePercent}% of metal value).`
           : 'Fixed making charge from design sheet.'}{' '}
-        GST: metal + making/stone 3% (matches checkout).
+        GST: 3% once on (metal + labour + stone add-on).
       </p>
       <dl className="mt-3 space-y-1.5 text-xs">
         {pricing.metalWeightGrams > 0 && (
@@ -116,16 +115,10 @@ export default function DesignPricingPreview({
           <dt className="text-gray-600">Jewellery subtotal (ex-GST)</dt>
           <dd className="font-semibold text-gray-900">{formatPrice(subtotal)}</dd>
         </div>
-        {gstMetal > 0 && (
+        {gstEstimate > 0 && (
           <div className="flex justify-between gap-4">
-            <dt className="text-gray-600">Est. GST on metal (3%)</dt>
-            <dd className="font-medium text-gray-900">{formatPrice(gstMetal)}</dd>
-          </div>
-        )}
-        {gstMaking > 0 && (
-          <div className="flex justify-between gap-4">
-            <dt className="text-gray-600">Est. GST on making / stone (3%)</dt>
-            <dd className="font-medium text-gray-900">{formatPrice(gstMaking)}</dd>
+            <dt className="text-gray-600">Est. GST on jewellery (3%)</dt>
+            <dd className="font-medium text-gray-900">{formatPrice(gstEstimate)}</dd>
           </div>
         )}
         <div className="flex justify-between gap-4">

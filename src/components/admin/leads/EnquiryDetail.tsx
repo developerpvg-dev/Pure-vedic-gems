@@ -91,7 +91,7 @@ export type DuplicateMatchSummary = {
   telecaller_name: string | null;
   created_at: string;
   status: 'duplicate' | 'potential';
-  matched_fields: ('dob' | 'time' | 'place')[];
+  matched_fields: ('dob' | 'time' | 'place' | 'email' | 'phone')[];
 };
 
 type Remark = {
@@ -125,10 +125,12 @@ const STAGE_COLORS: Record<string, string> = {
   closed: 'bg-gray-100 text-gray-600',
 };
 
-const MATCH_FIELD_LABEL: Record<'dob' | 'time' | 'place', string> = {
+const MATCH_FIELD_LABEL: Record<'dob' | 'time' | 'place' | 'email' | 'phone', string> = {
   dob: 'DOB',
   time: 'Time of birth',
   place: 'Place of birth',
+  email: 'Email',
+  phone: 'Phone',
 };
 
 function DuplicateBanner({
@@ -168,7 +170,9 @@ function DuplicateBanner({
         </span>
       </div>
       <p className={`text-xs ${exact ? 'text-rose-900' : 'text-amber-950'}`}>
-        Same birth details as earlier lead{' '}
+        {best.matched_fields.some((f) => f === 'email' || f === 'phone')
+          ? 'Same contact details as earlier lead '
+          : 'Same birth details as earlier lead '}
         <button
           type="button"
           onClick={() => onOpenPrior(best.id)}

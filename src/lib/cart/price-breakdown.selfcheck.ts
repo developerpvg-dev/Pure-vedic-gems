@@ -47,5 +47,8 @@ const cfgBreak = buildCartItemPriceBreakdown(configured);
 assert.ok(cfgBreak.lines.some((l) => l.key === 'gem'));
 assert.ok(cfgBreak.lines.some((l) => l.key === 'energization' || l.label.includes('Energization')));
 assert.equal(cfgBreak.preGstSubtotal, 10800);
+assert.equal(cfgBreak.gstLines.length, 1);
+assert.equal(cfgBreak.gstLines[0]?.key, 'gst-jewelry');
+assert.ok(cfgBreak.estimatedGst > 0);
 
 console.log('cart price-breakdown self-check ok');

@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
   const matches = await findPriorDuplicateMatches(admin, {
     id: data.id,
     lead_number: data.lead_number,
+    email: parsed.data.email,
+    phone: parsed.data.phone || null,
     date_of_birth: parsed.data.date_of_birth || null,
     birth_time: parsed.data.birth_time || null,
     birth_place: parsed.data.birth_place || null,

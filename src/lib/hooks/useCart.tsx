@@ -19,6 +19,7 @@ import {
   clampCartQuantity,
   clearStoredCart,
   consumeGuestCartDirtyFlag,
+  dedupeCartByProductId,
   deriveCartLineKey,
   markGuestCartDirty,
   readStoredCartItems,
@@ -27,26 +28,34 @@ import {
 function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
   switch (action.type) {
     case 'HYDRATE':
-      return action.payload
-        .map((row) => {
-          const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
-          return quantity > 0 ? { ...row, quantity } : null;
-        })
-        .filter((row): row is CartItem => row != null);
+      return dedupeCartByProductId(
+        action.payload
+          .map((row) => {
+            const quantity = clampCartQuantity(row, Number(row.quantity) || 0);
+            return quantity > 0 ? { ...row, quantity } : null;
+          })
+          .filter((row): row is CartItem => row != null)
+      );
 
     case 'ADD_ITEM': {
-      const existing = state.find((i) => i.key === action.payload.key);
+      // Unique pieces: drop any other line for the same product_id (loose → configured upgrade).
+      const withoutSiblings = state.filter(
+        (i) => i.product_id !== action.payload.product_id || i.key === action.payload.key
+      );
+      const existing = withoutSiblings.find((i) => i.key === action.payload.key);
       if (existing) {
         const mergedItem = { ...existing, ...action.payload };
         const quantity = clampCartQuantity(mergedItem, existing.quantity + action.payload.quantity);
-        if (quantity <= existing.quantity) return state;
-        return state.map((i) =>
+        if (quantity <= existing.quantity) {
+          return withoutSiblings.length === state.length ? state : withoutSiblings;
+        }
+        return withoutSiblings.map((i) =>
           i.key === action.payload.key ? { ...mergedItem, quantity } : i
         );
       }
       const quantity = clampCartQuantity(action.payload, action.payload.quantity);
-      if (quantity <= 0) return state;
-      return [...state, { ...action.payload, quantity }];
+      if (quantity <= 0) return withoutSiblings;
+      return [...withoutSiblings, { ...action.payload, quantity }];
     }
 
     case 'REMOVE_ITEM':
@@ -123,6 +132,7 @@ interface CartContextValue {
   updateQty: (key: string, quantity: number) => void;
   clearCart: () => void;
   isInCart: (productId: string, configurationId?: string) => boolean;
+  getCartItem: (productId: string) => CartItem | null;
   getItemQty: (productId: string, configurationId?: string) => number;
   getItemKey: (productId: string, configurationId?: string) => string | null;
 }
@@ -418,8 +428,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items.some(
         (item) =>
           item.product_id === productId &&
-          (configurationId ? item.configuration_id === configurationId : !item.configuration_id)
+          (configurationId ? item.configuration_id === configurationId : true)
       ),
+    [items]
+  );
+
+  const getCartItem = useCallback(
+    (productId: string) => items.find((item) => item.product_id === productId) ?? null,
     [items]
   );
 
@@ -429,7 +444,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .filter(
           (item) =>
             item.product_id === productId &&
-            (configurationId ? item.configuration_id === configurationId : !item.configuration_id)
+            (configurationId ? item.configuration_id === configurationId : true)
         )
         .reduce((sum, item) => sum + item.quantity, 0),
     [items]
@@ -440,7 +455,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const match = items.find(
         (item) =>
           item.product_id === productId &&
-          (configurationId ? item.configuration_id === configurationId : !item.configuration_id)
+          (configurationId ? item.configuration_id === configurationId : true)
       );
       return match?.key ?? null;
     },
@@ -451,7 +466,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ cart, addItem, removeItem, updateQty, clearCart, isInCart, getItemQty, getItemKey }}
+      value={{ cart, addItem, removeItem, updateQty, clearCart, isInCart, getCartItem, getItemQty, getItemKey }}
     >
       {children}
     </CartContext.Provider>

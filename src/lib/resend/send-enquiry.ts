@@ -1,5 +1,5 @@
 import { sendBrandedEmail, sendBrandedEmailToAdmin } from '@/lib/resend/send-email';
-import { getEmailSiteUrl } from '@/lib/resend/email-config';
+import { getEmailSiteUrl, getWhatsAppUrl } from '@/lib/resend/email-config';
 import { TransactionalEmail } from '@/lib/resend/templates/TransactionalEmail';
 
 export type EnquiryEmailInput = {
@@ -58,6 +58,10 @@ export async function sendEnquiryEmails(input: EnquiryEmailInput): Promise<{ cus
           { label: 'Your message', value: input.message },
         ],
         cta: { label: 'Continue browsing', href: getEmailSiteUrl() },
+        secondaryCta: {
+          label: 'Chat on WhatsApp',
+          href: getWhatsAppUrl(`Hi, I submitted an enquiry (ref: ${input.id})`),
+        },
         footerNote: 'You received this email because you submitted an enquiry on PureVedicGems.',
       }),
     }),

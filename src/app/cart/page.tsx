@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,8 @@ import { formatPrice } from '@/lib/utils/format';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { CartItemPriceBreakdown } from '@/components/cart/CartItemPriceBreakdown';
+import { buildCartItemPriceBreakdown } from '@/lib/cart/price-breakdown';
+import { estimateClientTax } from '@/lib/utils/tax';
 
 // ─── Cart item row ────────────────────────────────────────────────────────────
 
@@ -26,6 +28,8 @@ function CartItemRow({
   onRemove: (key: string) => void;
 }) {
   const itemHref = productHref({ category: item.category, slug: item.slug ?? item.product_id });
+  const breakdown = useMemo(() => buildCartItemPriceBreakdown(item), [item]);
+  const pieceTotal = breakdown.preGstSubtotal + breakdown.estimatedGst;
 
   return (
     <div className="flex items-start gap-4 border-b border-[var(--pvg-border)] py-6 last:border-0">
@@ -109,10 +113,10 @@ function CartItemRow({
 
         {/* Price + remove — each piece is unique (qty always 1) */}
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-[12px] text-[var(--pvg-muted)]">Unique piece</p>
+          <p className="text-[12px] text-[var(--pvg-muted)]">Unique piece total</p>
           <div className="flex items-center gap-4">
             <p className="text-[16px] font-bold text-[var(--pvg-primary)]">
-              {formatPrice(item.price)}
+              {formatPrice(pieceTotal)}
             </p>
             <button
               onClick={() => onRemove(item.key)}
@@ -130,11 +134,18 @@ function CartItemRow({
 
 // ─── Order Summary ────────────────────────────────────────────────────────────
 
-function OrderSummary({ subtotal }: { subtotal: number }) {
+function OrderSummary({
+  subtotal,
+  estimatedGst,
+}: {
+  subtotal: number;
+  estimatedGst: number;
+}) {
   const router = useRouter();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'register'>('register');
+  const itemsTotal = subtotal + estimatedGst;
 
   return (
     <div className="sticky pvg-sticky-below-header rounded-2xl border border-[var(--pvg-border)] bg-brand-surface p-6">
@@ -144,9 +155,15 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
 
       <div className="space-y-3 text-[14px]">
         <div className="flex justify-between text-[var(--pvg-text)]">
-          <span>Subtotal</span>
+          <span>Subtotal (ex-GST)</span>
           <span className="font-semibold">{formatPrice(subtotal)}</span>
         </div>
+        {estimatedGst > 0 && (
+          <div className="flex justify-between text-[var(--pvg-text)]">
+            <span>Est. GST</span>
+            <span className="font-semibold">{formatPrice(estimatedGst)}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-[var(--pvg-muted)]">Shipping</span>
           <span className="text-[13px] font-medium text-[var(--pvg-muted)]">
@@ -157,7 +174,7 @@ function OrderSummary({ subtotal }: { subtotal: number }) {
         <div className="flex justify-between">
           <span className="font-bold text-[var(--pvg-primary)]">Items Total</span>
           <span className="text-xl font-bold text-[var(--pvg-primary)]">
-            {formatPrice(subtotal)}
+            {formatPrice(itemsTotal)}
           </span>
         </div>
       </div>
@@ -288,6 +305,19 @@ export default function CartPage() {
   useCurrencySubscription();
   const { cart, removeItem } = useCart();
   const { items, subtotal, item_count } = cart;
+  const estimatedGst = useMemo(
+    () =>
+      estimateClientTax(
+        items.map((item) => ({
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category,
+          configuration_snapshot: item.configuration_snapshot,
+        })),
+        0,
+      ),
+    [items],
+  );
   const rudrakshaWithoutConfig = RUDRAKSHA_CONFIGURATOR_ENABLED
     ? items.filter((item) => item.category === 'rudraksha' && !item.configuration_id)
     : [];
@@ -359,7 +389,7 @@ export default function CartPage() {
 
             {/* ── Order Summary ── */}
             <div>
-              <OrderSummary subtotal={subtotal} />
+              <OrderSummary subtotal={subtotal} estimatedGst={estimatedGst} />
             </div>
           </div>
         )}

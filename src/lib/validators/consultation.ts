@@ -180,15 +180,28 @@ export const consultationBookingCreateOrderSchema = z
     if (!value.customer_country?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['customer_country'], message: 'Country is required' });
     }
-    if (value.plan_id !== 'rs101') return;
     if (!value.date_of_birth) {
       ctx.addIssue({ code: 'custom', path: ['date_of_birth'], message: 'Date of birth is required' });
+    }
+    if (!value.birth_time?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['birth_time'], message: 'Birth time is required' });
     }
     if (!value.birth_place?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['birth_place'], message: 'Birth place is required' });
     }
     if (!value.life_situation?.trim()) {
-      ctx.addIssue({ code: 'custom', path: ['life_situation'], message: 'Purpose / area of concern is required' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['life_situation'],
+        message: value.plan_id === 'rs101' ? 'Purpose / area of concern is required' : 'Life situation / concern is required',
+      });
+    }
+    if (value.plan_id === 'rs101') return;
+    if (!value.preferred_date) {
+      ctx.addIssue({ code: 'custom', path: ['preferred_date'], message: 'Preferred date is required' });
+    }
+    if (!value.preferred_time?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['preferred_time'], message: 'Preferred time is required' });
     }
   });
 

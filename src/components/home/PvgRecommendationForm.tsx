@@ -18,7 +18,6 @@ type Rs101FormState = {
   date_of_birth: string;
   birth_time: string;
   birth_place: string;
-  customer_city: string;
   customer_state: string;
   customer_country: string;
   life_situation: string;
@@ -32,7 +31,6 @@ const INITIAL_FORM: Rs101FormState = {
   date_of_birth: '',
   birth_time: '',
   birth_place: '',
-  customer_city: '',
   customer_state: '',
   customer_country: '',
   life_situation: '',
@@ -76,15 +74,8 @@ export function PvgRecommendationForm() {
 
   function validate() {
     const nextErrors: Record<string, string> = {};
-    if (!form.full_name.trim()) nextErrors.full_name = 'Please enter your full name.';
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      nextErrors.email = 'Please enter a valid email address.';
-    }
-    if (!form.phone.trim() || !/^[0-9+\-\s()]{7,20}$/.test(form.phone)) {
-      nextErrors.phone = 'Please enter a valid phone number.';
-    }
     if (!form.date_of_birth) {
-      nextErrors.date_of_birth = 'Please enter your date of birth.';
+      nextErrors.date_of_birth = 'Date of birth is required.';
     } else {
       const dob = new Date(`${form.date_of_birth}T00:00:00`);
       const today = new Date();
@@ -95,14 +86,23 @@ export function PvgRecommendationForm() {
         nextErrors.date_of_birth = 'Date of birth cannot be in the future.';
       }
     }
-    if (form.birth_time && !/^\d{2}:\d{2}$/.test(form.birth_time)) {
+    if (!form.birth_time.trim()) nextErrors.birth_time = 'Birth time is required.';
+    else if (!/^\d{2}:\d{2}$/.test(form.birth_time)) {
       nextErrors.birth_time = 'Please enter a valid birth time.';
     }
-    if (!form.birth_place.trim()) nextErrors.birth_place = 'Please enter your birth place.';
-    if (!form.customer_city.trim()) nextErrors.customer_city = 'Please enter your city / district.';
-    if (!form.customer_state.trim()) nextErrors.customer_state = 'Please enter your state.';
-    if (!form.customer_country.trim()) nextErrors.customer_country = 'Please enter your country.';
-    if (!form.life_situation.trim()) nextErrors.life_situation = 'Please enter your purpose / area of concern.';
+    if (!form.birth_place.trim()) nextErrors.birth_place = 'Birth place is required.';
+    if (!form.full_name.trim()) nextErrors.full_name = 'Your name is required.';
+    if (!form.email.trim()) nextErrors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      nextErrors.email = 'Please enter a valid email address.';
+    }
+    if (!form.phone.trim()) nextErrors.phone = 'Phone is required.';
+    else if (!/^[0-9+\-\s()]{7,20}$/.test(form.phone)) {
+      nextErrors.phone = 'Please enter a valid phone number.';
+    }
+    if (!form.customer_state.trim()) nextErrors.customer_state = 'State is required.';
+    if (!form.customer_country.trim()) nextErrors.customer_country = 'Country is required.';
+    if (!form.life_situation.trim()) nextErrors.life_situation = 'Purpose / area of concern is required.';
     return nextErrors;
   }
 
@@ -119,6 +119,20 @@ export function PvgRecommendationForm() {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      const firstId = (
+        {
+          date_of_birth: 'recoDob',
+          birth_time: 'recoTob',
+          birth_place: 'recoBirthPlace',
+          full_name: 'recoName',
+          email: 'recoEmail',
+          phone: 'recoPhone',
+          customer_state: 'recoState',
+          customer_country: 'recoCountry',
+          life_situation: 'recoPurpose',
+        } as Record<string, string>
+      )[Object.keys(validationErrors)[0]!];
+      if (firstId) document.getElementById(firstId)?.focus();
       return;
     }
 
@@ -141,6 +155,8 @@ export function PvgRecommendationForm() {
       const trimmed = value.trim();
       if (trimmed) body[key] = trimmed;
     }
+    // ponytail: City/District UI removed; CRM still expects customer_city — reuse birth place.
+    body.customer_city = form.birth_place.trim();
 
     try {
       await startRs101Checkout(body, {
@@ -195,7 +211,7 @@ export function PvgRecommendationForm() {
 
   return (
     <form className="reco-form-panel" onSubmit={handlePayment} aria-busy={paying} noValidate>
-      <p className="reco-form-price">Expert gemstone recommendation — just {priceLabel}</p>
+      <p className="reco-form-price">Expert remedies recommendation — just {priceLabel}</p>
 
       <input
         type="text"
@@ -218,6 +234,8 @@ export function PvgRecommendationForm() {
             max={new Date().toISOString().split('T')[0]}
             onChange={(event) => updateField('date_of_birth', event.target.value)}
             autoComplete="bday"
+            required
+            aria-invalid={Boolean(errors.date_of_birth)}
           />
           {errors.date_of_birth ? <p className="reco-form-field-error">{errors.date_of_birth}</p> : null}
         </div>
@@ -229,6 +247,8 @@ export function PvgRecommendationForm() {
             type="time"
             value={form.birth_time}
             onChange={(event) => updateField('birth_time', event.target.value)}
+            required
+            aria-invalid={Boolean(errors.birth_time)}
           />
           {errors.birth_time ? <p className="reco-form-field-error">{errors.birth_time}</p> : null}
         </div>
@@ -240,9 +260,10 @@ export function PvgRecommendationForm() {
             type="text"
             value={form.birth_place}
             onChange={(event) => updateField('birth_place', event.target.value)}
-            placeholder="City"
+            placeholder="City or district"
             autoComplete="address-level2"
             required
+            aria-invalid={Boolean(errors.birth_place)}
           />
           {errors.birth_place ? <p className="reco-form-field-error">{errors.birth_place}</p> : null}
         </div>
@@ -257,6 +278,7 @@ export function PvgRecommendationForm() {
             placeholder="Full Name"
             autoComplete="name"
             required
+            aria-invalid={Boolean(errors.full_name)}
           />
           {errors.full_name ? <p className="reco-form-field-error">{errors.full_name}</p> : null}
         </div>
@@ -271,6 +293,7 @@ export function PvgRecommendationForm() {
             placeholder="you@example.com"
             autoComplete="email"
             required
+            aria-invalid={Boolean(errors.email)}
           />
           {errors.email ? <p className="reco-form-field-error">{errors.email}</p> : null}
         </div>
@@ -285,22 +308,9 @@ export function PvgRecommendationForm() {
             placeholder="+91 XXXXX XXXXX"
             autoComplete="tel"
             required
+            aria-invalid={Boolean(errors.phone)}
           />
           {errors.phone ? <p className="reco-form-field-error">{errors.phone}</p> : null}
-        </div>
-        <div className="reco-form-group">
-          <label className="reco-form-label" htmlFor="recoCity">City / District</label>
-          <input
-            className="reco-form-input"
-            id="recoCity"
-            type="text"
-            value={form.customer_city}
-            onChange={(event) => updateField('customer_city', event.target.value)}
-            placeholder="City or district"
-            autoComplete="address-level2"
-            required
-          />
-          {errors.customer_city ? <p className="reco-form-field-error">{errors.customer_city}</p> : null}
         </div>
         <div className="reco-form-group">
           <label className="reco-form-label" htmlFor="recoState">State</label>
@@ -313,6 +323,7 @@ export function PvgRecommendationForm() {
             placeholder="State"
             autoComplete="address-level1"
             required
+            aria-invalid={Boolean(errors.customer_state)}
           />
           {errors.customer_state ? <p className="reco-form-field-error">{errors.customer_state}</p> : null}
         </div>
@@ -327,10 +338,11 @@ export function PvgRecommendationForm() {
             placeholder="Country"
             autoComplete="country-name"
             required
+            aria-invalid={Boolean(errors.customer_country)}
           />
           {errors.customer_country ? <p className="reco-form-field-error">{errors.customer_country}</p> : null}
         </div>
-        <div className="reco-form-group">
+        <div className="reco-form-group full">
           <label className="reco-form-label" htmlFor="recoPurpose">Purpose / Area of concern</label>
           <input
             className="reco-form-input"
@@ -342,6 +354,7 @@ export function PvgRecommendationForm() {
             placeholder="Select a suggestion or type your purpose"
             maxLength={200}
             required
+            aria-invalid={Boolean(errors.life_situation)}
           />
           <datalist id="reco-purpose-suggestions">
             {GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS.map((purpose) => (

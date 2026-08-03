@@ -254,13 +254,39 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
 
   function validate() {
     const nextErrors: Record<string, string> = {};
-    if (!selectedPlan) nextErrors.plan = 'Select a consultation plan';
-    if (!form.full_name.trim()) nextErrors.full_name = 'Name is required';
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Valid email required';
-    if (!form.phone.trim() || !/^[0-9+\-\s()]{7,20}$/.test(form.phone)) nextErrors.phone = 'Valid phone required';
-    if (!form.customer_city.trim()) nextErrors.customer_city = 'City / district is required';
-    if (!form.customer_state.trim()) nextErrors.customer_state = 'State is required';
-    if (!form.customer_country.trim()) nextErrors.customer_country = 'Country is required';
+    if (!selectedPlan) nextErrors.plan = 'Please select a consultation plan.';
+    if (!form.full_name.trim()) nextErrors.full_name = 'Full name is required.';
+    if (!form.email.trim()) nextErrors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Please enter a valid email address.';
+    if (!form.phone.trim()) nextErrors.phone = 'Phone is required.';
+    else if (!/^[0-9+\-\s()]{7,20}$/.test(form.phone)) nextErrors.phone = 'Please enter a valid phone number.';
+    if (!form.birth_place.trim()) nextErrors.birth_place = 'Birth place is required.';
+    if (!form.date_of_birth) {
+      nextErrors.date_of_birth = 'Birth date is required.';
+    } else {
+      const dob = new Date(`${form.date_of_birth}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (Number.isNaN(dob.getTime())) nextErrors.date_of_birth = 'Please enter a valid birth date.';
+      else if (dob > today) nextErrors.date_of_birth = 'Birth date cannot be in the future.';
+    }
+    if (!form.birth_time.trim()) nextErrors.birth_time = 'Birth time is required.';
+    else if (!/^\d{2}:\d{2}$/.test(form.birth_time)) nextErrors.birth_time = 'Please enter a valid birth time.';
+    if (!form.customer_city.trim()) nextErrors.customer_city = 'City / district is required.';
+    if (!form.customer_state.trim()) nextErrors.customer_state = 'State is required.';
+    if (!form.customer_country.trim()) nextErrors.customer_country = 'Country is required.';
+    if (!form.preferred_date) {
+      nextErrors.preferred_date = 'Preferred date is required.';
+    } else {
+      const preferred = new Date(`${form.preferred_date}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (Number.isNaN(preferred.getTime())) nextErrors.preferred_date = 'Please enter a valid preferred date.';
+      else if (preferred < today) nextErrors.preferred_date = 'Preferred date cannot be in the past.';
+    }
+    if (!form.preferred_time.trim()) nextErrors.preferred_time = 'Preferred time is required.';
+    else if (!/^\d{2}:\d{2}$/.test(form.preferred_time)) nextErrors.preferred_time = 'Please enter a valid preferred time.';
+    if (!form.life_situation.trim()) nextErrors.life_situation = 'Life situation / concern is required.';
     return nextErrors;
   }
 
@@ -296,6 +322,22 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
     const validationErrors = validate();
     if (Object.keys(validationErrors).length) {
       setErrors(validationErrors);
+      const order = [
+        'full_name',
+        'email',
+        'phone',
+        'birth_place',
+        'date_of_birth',
+        'birth_time',
+        'customer_city',
+        'customer_state',
+        'customer_country',
+        'preferred_date',
+        'preferred_time',
+        'life_situation',
+      ] as const;
+      const first = order.find((key) => validationErrors[key]);
+      if (first) document.getElementById(`consult-${first}`)?.focus();
       return;
     }
 
@@ -508,19 +550,19 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <FieldInput icon={User} label="Full Name" value={form.full_name} onChange={(value) => updateField('full_name', value)} error={errors.full_name} />
-                  <FieldInput icon={Mail} label="Email" type="email" value={form.email} onChange={(value) => updateField('email', value)} error={errors.email} />
-                  <FieldInput icon={Phone} label="Phone" value={form.phone} onChange={(value) => updateField('phone', value)} error={errors.phone} />
-                  <FieldInput icon={MapPin} label="Birth Place" value={form.birth_place} onChange={(value) => updateField('birth_place', value)} placeholder="City, State" />
-                  <FieldInput icon={Calendar} label="Birth Date" type="date" value={form.date_of_birth} onChange={(value) => updateField('date_of_birth', value)} />
-                  <FieldInput icon={Clock} label="Birth Time" type="time" value={form.birth_time} onChange={(value) => updateField('birth_time', value)} />
-                  <FieldInput icon={MapPin} label="City / District" value={form.customer_city} onChange={(value) => updateField('customer_city', value)} placeholder="Current city" error={errors.customer_city} />
-                  <FieldInput icon={MapPin} label="State" value={form.customer_state} onChange={(value) => updateField('customer_state', value)} placeholder="State" error={errors.customer_state} />
-                  <FieldInput icon={MapPin} label="Country" value={form.customer_country} onChange={(value) => updateField('customer_country', value)} placeholder="Country" error={errors.customer_country} />
-                  <FieldInput icon={Calendar} label="Preferred Date" type="date" min={new Date().toISOString().split('T')[0]} value={form.preferred_date} onChange={(value) => updateField('preferred_date', value)} />
-                  <FieldInput icon={Clock} label="Preferred Time" type="time" value={form.preferred_time} onChange={(value) => updateField('preferred_time', value)} />
-                  <TextArea label="Life Situation / Concern" value={form.life_situation} onChange={(value) => updateField('life_situation', value)} rows={3} />
-                  <TextArea label="Specific Question / Message" value={form.message} onChange={(value) => updateField('message', value)} rows={3} />
+                  <FieldInput id="consult-full_name" icon={User} label="Full Name" value={form.full_name} onChange={(value) => updateField('full_name', value)} error={errors.full_name} />
+                  <FieldInput id="consult-email" icon={Mail} label="Email" type="email" value={form.email} onChange={(value) => updateField('email', value)} error={errors.email} />
+                  <FieldInput id="consult-phone" icon={Phone} label="Phone" value={form.phone} onChange={(value) => updateField('phone', value)} error={errors.phone} />
+                  <FieldInput id="consult-birth_place" icon={MapPin} label="Birth Place" value={form.birth_place} onChange={(value) => updateField('birth_place', value)} placeholder="City or district" error={errors.birth_place} />
+                  <FieldInput id="consult-date_of_birth" icon={Calendar} label="Birth Date" type="date" max={new Date().toISOString().split('T')[0]} value={form.date_of_birth} onChange={(value) => updateField('date_of_birth', value)} error={errors.date_of_birth} />
+                  <FieldInput id="consult-birth_time" icon={Clock} label="Birth Time" type="time" value={form.birth_time} onChange={(value) => updateField('birth_time', value)} error={errors.birth_time} />
+                  <FieldInput id="consult-customer_city" icon={MapPin} label="City / District" value={form.customer_city} onChange={(value) => updateField('customer_city', value)} placeholder="Current city" error={errors.customer_city} />
+                  <FieldInput id="consult-customer_state" icon={MapPin} label="State" value={form.customer_state} onChange={(value) => updateField('customer_state', value)} placeholder="State" error={errors.customer_state} />
+                  <FieldInput id="consult-customer_country" icon={MapPin} label="Country" value={form.customer_country} onChange={(value) => updateField('customer_country', value)} placeholder="Country" error={errors.customer_country} />
+                  <FieldInput id="consult-preferred_date" icon={Calendar} label="Preferred Date" type="date" min={new Date().toISOString().split('T')[0]} value={form.preferred_date} onChange={(value) => updateField('preferred_date', value)} error={errors.preferred_date} />
+                  <FieldInput id="consult-preferred_time" icon={Clock} label="Preferred Time" type="time" value={form.preferred_time} onChange={(value) => updateField('preferred_time', value)} error={errors.preferred_time} />
+                  <TextArea id="consult-life_situation" label="Life Situation / Concern" value={form.life_situation} onChange={(value) => updateField('life_situation', value)} rows={3} error={errors.life_situation} className="sm:col-span-2" />
+                  <TextArea id="consult-message" label="Specific Question / Message" value={form.message} onChange={(value) => updateField('message', value)} rows={3} optional className="sm:col-span-2" />
                 </div>
               </div>
 
@@ -700,6 +742,7 @@ function PlanDetailsDialog({ plan, index, onClose, onSelect }: { plan: Consultat
 }
 
 function FieldInput({
+  id,
   icon: Icon,
   label,
   value,
@@ -710,6 +753,7 @@ function FieldInput({
   min,
   max,
 }: {
+  id?: string;
   icon: ComponentType<{ className?: string }>;
   label: string;
   value: string;
@@ -722,16 +766,19 @@ function FieldInput({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
+      <label htmlFor={id} className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
       <div className="relative">
         <Icon className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
         <input
+          id={id}
           type={type}
           min={min}
           max={max}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
+          required
+          aria-invalid={Boolean(error)}
           className={`w-full rounded-lg border bg-white py-2 pl-8 pr-3 text-sm outline-none transition focus:border-brand-accent ${
             error ? 'border-red-300' : 'border-slate-200'
           }`}
@@ -742,17 +789,44 @@ function FieldInput({
   );
 }
 
-function TextArea({ label, value, onChange, rows }: { label: string; value: string; onChange: (value: string) => void; rows: number }) {
+function TextArea({
+  id,
+  label,
+  value,
+  onChange,
+  rows,
+  error,
+  optional,
+  className,
+}: {
+  id?: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows: number;
+  error?: string;
+  optional?: boolean;
+  className?: string;
+}) {
   return (
-    <div>
-      <label className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
+    <div className={className}>
+      <label htmlFor={id} className="mb-1 block text-xs font-medium text-slate-500">
+        {label}
+        {optional ? <span className="font-normal text-slate-400"> (optional)</span> : null}
+      </label>
       <textarea
+        id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={rows}
         maxLength={5000}
-        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-accent"
+        required={!optional}
+        aria-invalid={Boolean(error)}
+        className={`w-full resize-y rounded-lg border bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-accent ${
+          error ? 'border-red-300' : 'border-slate-200'
+        }`}
       />
+      {error && <p className="mt-0.5 text-[11px] text-red-500">{error}</p>}
     </div>
   );
 }

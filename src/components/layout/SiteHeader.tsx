@@ -344,6 +344,24 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
 }
 
 /* ── Marquee content for mobile/tablet topbar ──────────────────── */
+function TopbarCountries({ className }: { className?: string }) {
+  return (
+    <span className={className} aria-label="Office countries">
+      <span className="pvg-topbar-country">
+        <FlagIN /> India
+      </span>
+      <span className="pvg-topbar-dot" aria-hidden="true">◆</span>
+      <span className="pvg-topbar-country">
+        <FlagGB /> UK
+      </span>
+      <span className="pvg-topbar-dot" aria-hidden="true">◆</span>
+      <span className="pvg-topbar-country pvg-topbar-country-last">
+        <FlagAE /> UAE
+      </span>
+    </span>
+  );
+}
+
 function TopbarMarqueeItems() {
   return (
     <>
@@ -372,12 +390,14 @@ function TopbarMarqueeItems() {
       <span className="pvg-topbar-dot">◆</span>
       <a
         href="tel:+971526686526"
-        className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-item-phone-last pvg-topbar-phone-link"
+        className="pvg-topbar-item pvg-topbar-item-phone pvg-topbar-phone-link"
         aria-label="Call Dubai +971-526686526"
       >
         <FlagAE />
         +971-526686526
       </a>
+      <span className="pvg-topbar-dot">◆</span>
+      <TopbarCountries className="pvg-topbar-item pvg-topbar-item-countries" />
     </>
   );
 }
@@ -780,6 +800,44 @@ export function SiteHeader() {
         .pvg-topbar-item-phone-last {
           padding-right: 64px;
         }
+        .pvg-topbar-country {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+        }
+        .pvg-topbar-item-countries {
+          gap: 0;
+          padding-right: 64px;
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.95);
+        }
+        .pvg-topbar-item-countries .pvg-topbar-dot {
+          padding-right: 14px;
+          padding-left: 14px;
+        }
+        .pvg-topbar-item-countries .pvg-topbar-country-last {
+          padding-right: 0;
+        }
+        .pvg-topbar-countries-desktop {
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          border-left: 1px solid rgba(255,255,255,0.14);
+          padding-left: 18px;
+          font-family: 'Roboto', sans-serif;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.95);
+          white-space: nowrap;
+        }
+        .pvg-topbar-countries-desktop .pvg-topbar-dot {
+          padding: 0 14px;
+          height: auto;
+          transform: none;
+          opacity: 0.28;
+          font-size: 9px;
+        }
         .pvg-topbar-dot {
           color: rgba(255,255,255,0.3);
           padding-right: 24px;
@@ -822,7 +880,14 @@ export function SiteHeader() {
             padding-right: 20px;
             font-size: 11px;
           }
-          .pvg-topbar-item-phone-last { padding-right: 40px; }
+          .pvg-topbar-item-countries {
+            padding-right: 40px;
+            font-size: 11px;
+          }
+          .pvg-topbar-item-countries .pvg-topbar-dot {
+            padding-right: 10px;
+            padding-left: 10px;
+          }
           .pvg-topbar-dot {
             padding-right: 14px;
             font-size: 9px;
@@ -842,7 +907,14 @@ export function SiteHeader() {
             padding-right: 14px;
             font-size: 9.8px;
           }
-          .pvg-topbar-item-phone-last { padding-right: 30px; }
+          .pvg-topbar-item-countries {
+            padding-right: 30px;
+            font-size: 9.8px;
+          }
+          .pvg-topbar-item-countries .pvg-topbar-dot {
+            padding-right: 8px;
+            padding-left: 8px;
+          }
           .pvg-topbar-dot {
             padding-right: 10px;
             font-size: 8px;
@@ -1092,13 +1164,8 @@ export function SiteHeader() {
                 +971-526686526
               </a>
             </div>
-            {/* Right: currency selector */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0,
-              borderLeft: '1px solid rgba(255,255,255,0.14)', paddingLeft: '18px',
-            }}>
-              <CurrencySelector variant="topbar" />
-            </div>
+            {/* Right: office countries (currency lives in the navbar) */}
+            <TopbarCountries className="pvg-topbar-countries-desktop" />
           </div>
 
           {/* Mobile/tablet marquee (visible <1024px) — content duplicated for seamless loop */}

@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { dedupeCartByProductId } from '@/lib/cart/client';
 import type { Cart, CartItem } from '@/lib/types/cart';
 import type { CartItemInput } from '@/lib/validators/cart';
 import type { Json, Product, ServerCart, ServerCartItem } from '@/lib/types/database';
@@ -179,7 +180,7 @@ export async function getCartResponse(cartId: string): Promise<Cart> {
     productMap = new Map((products as CartProduct[] | null ?? []).map((product) => [product.id, product]));
   }
 
-  const items = rows
+  const mappedItems = rows
     .map((row): CartItem | null => {
       const product = productMap.get(row.product_id);
       if (product && (!product.is_active || product.availability_status === 'archived')) {
@@ -212,6 +213,17 @@ export async function getCartResponse(cartId: string): Promise<Cart> {
       };
     })
     .filter((item): item is CartItem => item !== null);
+
+  const items = dedupeCartByProductId(mappedItems);
+  if (items.length < mappedItems.length) {
+    const keepKeys = new Set(items.map((item) => item.key));
+    const dropIds = rows
+      .filter((row) => !keepKeys.has(row.line_key))
+      .map((row) => row.id);
+    if (dropIds.length > 0) {
+      await supabase.from('cart_items').delete().in('id', dropIds);
+    }
+  }
 
   const cart = cartFromItems(items);
   await supabase
@@ -279,6 +291,14 @@ export async function upsertCustomerCartItem(
     .eq('line_key', lineKey)
     .maybeSingle();
   const existingItem = existing as ServerCartItem | null;
+
+  // Unique piece: drop loose/other-config lines for the same product before upsert.
+  await supabase
+    .from('cart_items')
+    .delete()
+    .eq('cart_id', cart.id)
+    .eq('product_id', input.product_id)
+    .neq('line_key', lineKey);
 
   const previousQuantity = existingItem?.quantity ?? 0;
   const requestedQuantity = previousQuantity + input.quantity;

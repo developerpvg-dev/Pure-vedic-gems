@@ -45,7 +45,7 @@ export function CartItemPriceBreakdown({
         </span>
         <span className="flex items-center gap-2">
           <span className="text-[12px] font-bold tabular-nums text-[var(--pvg-primary)]">
-            {formatPrice(item.price * item.quantity)}
+            {formatPrice((breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity)}
           </span>
           <ChevronDown
             className={`h-4 w-4 text-[var(--pvg-muted)] transition-transform ${open ? 'rotate-180' : ''}`}
@@ -82,6 +82,15 @@ export function CartItemPriceBreakdown({
               </span>
             </div>
           ))}
+
+          {breakdown.estimatedGst > 0 && (
+            <div className="flex items-center justify-between gap-3 border-t border-[var(--pvg-border)]/70 pt-2 text-[12px] font-semibold text-[var(--pvg-primary)]">
+              <span>Item total (incl. est. GST)</span>
+              <span className="tabular-nums">
+                {formatPrice((breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity)}
+              </span>
+            </div>
+          )}
 
           <p className="text-[10px] leading-relaxed text-[var(--pvg-muted)]">{footnote}</p>
         </div>

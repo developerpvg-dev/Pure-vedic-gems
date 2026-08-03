@@ -394,6 +394,8 @@ async function presentEnquiryLeads(
     id: string;
     created_at?: string | null;
     lead_number?: number | null;
+    email?: string | null;
+    phone?: string | null;
     date_of_birth?: string | null;
     birth_time?: string | null;
     birth_place?: string | null;

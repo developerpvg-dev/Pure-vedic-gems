@@ -1,0 +1,432 @@
+/* Energized Gems — same visual language as Contact */
+
+.pvg-energized-page {
+  --c-maroon: #7a1515;
+  --c-maroon-deep: #2c0404;
+  --c-gold: #b8861e;
+  --c-gold-light: #d4a843;
+  --c-cream: #faf8f4;
+  --c-surface: #ffffff;
+  --c-muted: #6b5b4e;
+  --c-line: #ede6d5;
+  --c-line-dark: #ddd0b4;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+}
+
+.pvg-energized-page,
+.pvg-energized-page * {
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif !important;
+}
+
+.pvg-energized-main {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-main {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.pvg-energized-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.pvg-energized-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(44, 4, 4, 0.07);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
+}
+
+.pvg-energized-card:hover {
+  box-shadow: 0 22px 56px rgba(44, 4, 4, 0.1);
+}
+
+.pvg-energized-card--maroon {
+  border-top: 3px solid var(--c-maroon);
+}
+
+.pvg-energized-card--gold {
+  border-top: 3px solid var(--c-gold);
+}
+
+.pvg-energized-card-body {
+  padding: 1.5rem 1.35rem;
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-card-body {
+    padding: 1.75rem 1.75rem;
+  }
+}
+
+.pvg-energized-kicker {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-maroon);
+}
+
+.pvg-energized-title {
+  margin: 0.4rem 0 0;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 700;
+  color: var(--c-maroon-deep);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.pvg-energized-lead {
+  margin: 0.85rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #5a5043;
+}
+
+.pvg-energized-lead + .pvg-energized-lead {
+  margin-top: 0.75rem;
+}
+
+.pvg-energized-split {
+  display: grid;
+  gap: 0;
+}
+
+@media (min-width: 1024px) {
+  .pvg-energized-split {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+
+  .pvg-energized-split--flip {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  }
+}
+
+.pvg-energized-media {
+  position: relative;
+  min-height: 260px;
+  background: #12181a;
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-media {
+    min-height: 320px;
+  }
+}
+
+.pvg-energized-media--tall {
+  min-height: 340px;
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-media--tall {
+    min-height: 420px;
+  }
+}
+
+.pvg-energized-media-caption {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c9e8e4;
+}
+
+.pvg-energized-pillars {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .pvg-energized-pillars {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pvg-energized-pillar-photo {
+  position: relative;
+  height: 10rem;
+  background: #12181a;
+}
+
+.pvg-energized-pillar-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--c-maroon-deep);
+  line-height: 1.25;
+}
+
+.pvg-energized-pillar-copy {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--c-muted);
+}
+
+.pvg-energized-steps {
+  display: grid;
+  gap: 0.85rem;
+  margin: 1.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Inside a split card the column is narrow — keep 1–2 cols */
+.pvg-energized-split .pvg-energized-steps {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-split .pvg-energized-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pvg-energized-step {
+  border: 1px solid var(--c-line-dark);
+  border-radius: 10px;
+  background: var(--c-cream);
+  padding: 1.1rem 1rem;
+}
+
+.pvg-energized-step-num {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--c-gold);
+  line-height: 1;
+}
+
+.pvg-energized-step-title {
+  margin: 0.55rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-maroon-deep);
+}
+
+.pvg-energized-step-copy {
+  margin: 0.45rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--c-muted);
+}
+
+.pvg-energized-aside {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-top: 1.35rem;
+}
+
+.pvg-energized-aside-thumb {
+  position: relative;
+  width: 5.5rem;
+  height: 6.75rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--c-line);
+  background: #0c0c0c;
+}
+
+.pvg-energized-aside-note {
+  margin: 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--c-muted);
+}
+
+.pvg-energized-mantra-list {
+  margin: 1.15rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--c-line);
+}
+
+.pvg-energized-mantra-item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--c-line);
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-mantra-item {
+    grid-template-columns: minmax(9.5rem, 11rem) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+  }
+}
+
+.pvg-energized-mantra-gem {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #261a10;
+}
+
+.pvg-energized-mantra-gem span {
+  font-weight: 400;
+  color: var(--c-muted);
+}
+
+.pvg-energized-mantra-planet {
+  margin: 0.15rem 0 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-gold);
+}
+
+.pvg-energized-mantra-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #5a5043;
+}
+
+.pvg-energized-video {
+  margin-top: 1.15rem;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--c-line);
+  background: var(--c-cream);
+  aspect-ratio: 16 / 9;
+}
+
+.pvg-energized-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.pvg-energized-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem 1.35rem;
+  background: var(--c-cream);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(44, 4, 4, 0.06);
+}
+
+@media (min-width: 640px) {
+  .pvg-energized-cta {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+.pvg-energized-cta-copy {
+  margin: 0.35rem 0 0;
+  max-width: 36rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #5a5043;
+}
+
+.pvg-energized-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.pvg-energized-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 3rem;
+  padding: 0 1.35rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.pvg-energized-btn--primary {
+  background: var(--c-maroon);
+  color: #fff;
+  border: 0;
+  box-shadow: 0 4px 16px rgba(122, 21, 21, 0.25);
+}
+
+.pvg-energized-btn--primary:hover {
+  background: #4d0a0a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(122, 21, 21, 0.32);
+}
+
+.pvg-energized-btn--ghost {
+  background: #fff;
+  color: var(--c-maroon);
+  border: 1px solid var(--c-line-dark);
+}
+
+.pvg-energized-btn--ghost:hover {
+  border-color: var(--c-maroon);
+}
+
+.pvg-energized-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  color: var(--c-muted);
+}
+
+.pvg-energized-crumbs a {
+  color: var(--c-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pvg-energized-crumbs a:hover {
+  color: var(--c-maroon);
+}
+
+.pvg-energized-crumbs span[aria-current='page'] {
+  color: var(--c-maroon-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvg-energized-card,
+  .pvg-energized-btn--primary {
+    transition: none;
+  }
+
+  .pvg-energized-btn--primary:hover {
+    transform: none;
+  }
+}

@@ -12,12 +12,25 @@ import {
   createConfiguratorState,
   useConfigurator,
 } from '@/lib/hooks/useConfigurator';
+import { useCart } from '@/lib/hooks/useCart';
+import {
+  buildConfiguratorStateFromCartItem,
+  productConfiguratorStorageKey,
+  writeConfiguratorDraft,
+} from '@/lib/configurator/seed-from-cart';
 import ConfiguratorWrapper from '@/components/configurator/ConfiguratorWrapper';
 import type { ConfiguredOrderResult } from '@/components/configurator/PriceSummary';
 import type { ProductCard } from '@/lib/types/product';
 import type { ConfiguratorState, GemCategory } from '@/lib/types/configurator';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
+import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import type { JewelrySettingMetalProfiles } from '@/lib/utils/jewelry-setting-metal-profiles';
+import { createClient } from '@/lib/supabase/client';
+import type {
+  CertificationLab,
+  EnergizationOption,
+  JewelryDesign,
+} from '@/lib/types/database';
 
 interface ConfiguratorClientProps {
   /** Pre-selected product (routed from PDP "Configure" button) */
@@ -93,6 +106,60 @@ function ConfiguratorSession({
     };
   }, [comboProductIds, dispatch, initialState.selected_product]);
 
+  // Upgrade cart-seeded stubs (id+name) to full rows so pricing is correct.
+  useEffect(() => {
+    const designId = initialState.selected_design?.id;
+    const labId = initialState.selected_lab?.id;
+    const energizationId = initialState.selected_energization?.id;
+    if (!designId && !labId && !energizationId) return;
+
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function enrich() {
+      if (designId) {
+        const { data } = await supabase
+          .from('jewelry_designs')
+          .select('*')
+          .eq('id', designId)
+          .maybeSingle();
+        if (!cancelled && data) {
+          dispatch({ type: 'SET_DESIGN', payload: data as JewelryDesign });
+        }
+      }
+      if (labId) {
+        const { data } = await supabase
+          .from('certification_labs')
+          .select('*')
+          .eq('id', labId)
+          .maybeSingle();
+        if (!cancelled && data) {
+          dispatch({ type: 'SET_LAB', payload: data as CertificationLab });
+        }
+      }
+      if (energizationId) {
+        const { data } = await supabase
+          .from('energization_options')
+          .select('*')
+          .eq('id', energizationId)
+          .maybeSingle();
+        if (!cancelled && data) {
+          dispatch({ type: 'SET_ENERGIZATION', payload: data as EnergizationOption });
+        }
+      }
+    }
+
+    void enrich();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    dispatch,
+    initialState.selected_design?.id,
+    initialState.selected_energization?.id,
+    initialState.selected_lab?.id,
+  ]);
+
   return (
     <ConfiguratorWrapper
       state={state}
@@ -119,6 +186,10 @@ export default function ConfiguratorClient({
   onConfigured,
   submitLabel,
 }: ConfiguratorClientProps) {
+  const { getCartItem } = useCart();
+  const cartItem = preselectedProduct ? getCartItem(preselectedProduct.id) : null;
+  const cartConfigured = Boolean(cartItem?.configuration_id);
+
   const session = useMemo(() => {
     if (!preselectedProduct) {
       return {
@@ -126,6 +197,7 @@ export default function ConfiguratorClient({
         initialState: createConfiguratorState(),
         startStep: 1,
         storageKey: 'pvg_configurator:full',
+        comboIds: comboProductIds,
       };
     }
 
@@ -134,20 +206,38 @@ export default function ConfiguratorClient({
       ? 'rudraksha'
       : preselectedProduct.sub_category || preselectedProduct.category || 'other';
 
-    return {
-      key: `product:${preselectedProduct.id}`,
-      initialState: createConfiguratorState({
+    const storageKey = productConfiguratorStorageKey(preselectedProduct.id, Boolean(onConfigured));
+    const fromCart =
+      cartConfigured && cartItem && !onConfigured
+        ? buildConfiguratorStateFromCartItem(preselectedProduct, cartItem)
+        : null;
+
+    const initialState =
+      fromCart ??
+      createConfiguratorState({
         current_step: rudraksha ? 4 : 3,
         gem_category: category,
         selected_product: preselectedProduct,
         ...(rudraksha ? { setting_type: 'pendant' as const } : {}),
-      }),
+      });
+
+    // Cart is source of truth when editing — overwrite any stale draft before hydrate.
+    if (fromCart) {
+      writeConfiguratorDraft(storageKey, fromCart);
+    }
+
+    const comboFromCart =
+      parseConfigurationSnapshot(cartItem?.configuration_snapshot)?.selections
+        ?.rudraksha_combo_product_ids ?? [];
+
+    return {
+      key: `product:${preselectedProduct.id}:${cartItem?.configuration_id ?? 'new'}`,
+      initialState,
       startStep: 3,
-      storageKey: onConfigured
-        ? `pvg_configurator:admin-pos:${preselectedProduct.id}`
-        : `pvg_configurator:product:${preselectedProduct.id}`,
+      storageKey,
+      comboIds: [...new Set([...comboProductIds, ...comboFromCart])],
     };
-  }, [preselectedProduct, onConfigured]);
+  }, [preselectedProduct, onConfigured, cartConfigured, cartItem, comboProductIds]);
 
   return (
     <ConfiguratorSession
@@ -155,7 +245,7 @@ export default function ConfiguratorClient({
       initialState={session.initialState}
       startStep={session.startStep}
       storageKey={session.storageKey}
-      comboProductIds={comboProductIds}
+      comboProductIds={session.comboIds}
       onConfigured={onConfigured}
       submitLabel={submitLabel}
     />

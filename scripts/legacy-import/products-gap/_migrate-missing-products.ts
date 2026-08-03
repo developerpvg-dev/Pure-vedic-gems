@@ -16,6 +16,7 @@ import { config as loadEnv } from 'dotenv';
 import { Client } from 'pg';
 import { streamWpTable, type SqlValue } from '../lib/wp-sql.js';
 import { ownMediaUrl } from '../lib/own-media-url.js';
+import { ensureGemConfiguratorOptionRules } from '../lib/ensure-option-rules.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -232,7 +233,13 @@ async function main() {
           JSON.stringify({ source: 'pugemved_indb.sql', legacy_woo_id: Number(p.id), stock: p.stock || null }),
         ],
       );
-      if (result.rows.length) upserted++;
+      if (result.rows.length) {
+        const productId = result.rows[0].id as string;
+        if (['navaratna', 'upratna', 'uparatna'].includes(cls.category)) {
+          await ensureGemConfiguratorOptionRules(client, productId);
+        }
+        upserted++;
+      }
       console.log(`  + #${p.id} ${cls.category}/${cls.sub_category} (${cls.product_type}) price=${price} stock=${stockStatus} :: ${slug}`);
     }
 
