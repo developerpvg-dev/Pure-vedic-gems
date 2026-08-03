@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils/rudraksha-order-display';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
+import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 
 export const dynamic = 'force-dynamic';
 
@@ -485,6 +486,11 @@ export default async function OrderReceiptPage({
                 value={`${line.sign < 0 ? '−' : ''}${fmt(line.amount)}`}
               />
             ))}
+            <OrderTaxBreakdownBlock
+              taxBreakdown={order.tax_breakdown}
+              formatMoney={fmt}
+              variant="print"
+            />
             <div className="flex justify-between gap-4 border-t border-stone-300 pt-2 text-base font-bold">
               <dt>Grand total</dt>
               <dd className="tabular-nums">{fmt(order.total)}</dd>

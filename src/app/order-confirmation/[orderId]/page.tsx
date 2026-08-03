@@ -57,7 +57,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
   const { data: order, error } = await adminDb
     .from('orders')
     .select(
-      'id, order_number, items, subtotal, jewelry_charges, metal_charges, certification_charges, energization_charges, shipping_cost, discount, coupon_discount, coupon_code, reward_discount, reward_points_redeemed, gst_amount, total, amount_paid, amount_due, shipping_address, payment_status, payment_method, payment_review_reason, compliance_flags, status, guest_name, guest_email, customer_id, guest_access_token, created_at',
+      'id, order_number, items, subtotal, jewelry_charges, metal_charges, certification_charges, energization_charges, shipping_cost, discount, coupon_discount, coupon_code, reward_discount, reward_points_redeemed, gst_amount, tax_breakdown, total, amount_paid, amount_due, shipping_address, payment_status, payment_method, payment_review_reason, compliance_flags, status, guest_name, guest_email, customer_id, guest_access_token, created_at',
     )
     .eq('id', orderId)
     .single();
@@ -122,6 +122,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
         reward_discount: order.reward_discount ?? 0,
         reward_points_redeemed: order.reward_points_redeemed ?? 0,
         gst_amount: order.gst_amount,
+        tax_breakdown: order.tax_breakdown ?? null,
         total: order.total,
         amount_paid: order.amount_paid ?? null,
         amount_due: order.amount_due ?? null,

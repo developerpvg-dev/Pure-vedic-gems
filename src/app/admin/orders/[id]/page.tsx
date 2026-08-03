@@ -28,6 +28,7 @@ import { resolveOrderFulfillmentContext } from '@/lib/orders/fulfillment-profile
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 import { collectOrderProductIds } from '@/lib/inventory/order-availability';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
   User, FileText, ExternalLink, Settings, Printer,
@@ -420,6 +421,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     reward_discount: rewardDiscount,
     reward_points_redeemed: o.reward_points_redeemed,
     gst_amount: o.gst_amount,
+    tax_breakdown: o.tax_breakdown,
   }).map((line) => ({ label: line.label, value: line.amount, sign: line.sign }));
 
   const slipItems = items.map((item) => {
@@ -1190,11 +1192,16 @@ export default async function OrderDetailPage({ params }: PageProps) {
                       <span
                         className={`font-medium tabular-nums ${line.sign < 0 ? 'text-emerald-700' : ''}`}
                       >
-                        {line.sign < 0 ? 'âˆ’' : ''}
+                        {line.sign < 0 ? '−' : ''}
                         {fmt(line.value)}
                       </span>
                     </div>
                   ))}
+                  <OrderTaxBreakdownBlock
+                    taxBreakdown={o.tax_breakdown}
+                    formatMoney={fmt}
+                    variant="admin"
+                  />
                   <div className="flex items-center justify-between border-t border-stone-200 pt-3">
                     <span className="text-sm font-semibold text-stone-900">Grand total</span>
                     <span className="text-lg font-bold tabular-nums text-stone-900">{fmt(o.total)}</span>

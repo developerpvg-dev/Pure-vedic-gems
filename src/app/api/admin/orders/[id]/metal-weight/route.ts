@@ -12,6 +12,7 @@ import {
   applyMetalWeightToPricing,
   buildMetalWeightNotifyCopy,
 } from '@/lib/orders/metal-weight-adjust';
+import { applyJewelleryGstDeltaToTaxBreakdown } from '@/lib/orders/tax-breakdown-display';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import type { Order } from '@/lib/types/database';
 import type { OrderItemRecord } from '@/lib/types/order';
@@ -258,6 +259,13 @@ export async function POST(
     totalDelta: adjust.totalDelta,
   });
 
+  const qty = Math.max(1, Math.round(item.quantity ?? 1));
+  const nextTaxBreakdown = applyJewelleryGstDeltaToTaxBreakdown(orderRow.tax_breakdown, {
+    gstDelta: adjust.gstDelta * qty,
+    jewelleryTaxableDelta: (adjust.metalDelta + adjust.makingDelta) * qty,
+    nextGstAmount: money.gst_amount,
+  });
+
   const { error: updateError } = await db
     .from('orders')
     .update({
@@ -265,6 +273,7 @@ export async function POST(
       metal_charges: money.metal_charges,
       jewelry_charges: money.jewelry_charges,
       gst_amount: money.gst_amount,
+      tax_breakdown: (nextTaxBreakdown ?? orderRow.tax_breakdown) as Json,
       total: money.total,
       amount_due: money.amount_due,
       payment_status: money.payment_status,

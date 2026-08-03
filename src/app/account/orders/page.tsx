@@ -156,6 +156,7 @@ export default async function OrdersPage() {
         reward_discount: order.reward_discount ?? 0,
         reward_points_redeemed: order.reward_points_redeemed ?? 0,
         gst_amount: order.gst_amount ?? 0,
+        tax_breakdown: order.tax_breakdown ?? null,
         shipping_method: order.shipping_method,
         shipping_address: shippingAddress,
         special_instructions: order.special_instructions,

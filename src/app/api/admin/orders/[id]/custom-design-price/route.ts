@@ -12,6 +12,7 @@ import {
   applyCustomDesignPriceToPricing,
   buildCustomDesignPriceNotifyCopy,
 } from '@/lib/orders/custom-design-price-adjust';
+import { applyJewelleryGstDeltaToTaxBreakdown } from '@/lib/orders/tax-breakdown-display';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import type { Order } from '@/lib/types/database';
 import type { OrderItemRecord } from '@/lib/types/order';
@@ -102,6 +103,15 @@ export async function POST(
     totalDelta: adjust.totalDelta,
   });
 
+  const qty = Math.max(1, Math.round(item.quantity ?? 1));
+  const jewelleryTaxableDelta =
+    (adjust.metalDelta + adjust.makingDelta + adjust.diamondDelta + adjust.customFeeDelta) * qty;
+  const nextTaxBreakdown = applyJewelleryGstDeltaToTaxBreakdown(orderRow.tax_breakdown, {
+    gstDelta: adjust.gstDelta * qty,
+    jewelleryTaxableDelta,
+    nextGstAmount: money.gst_amount,
+  });
+
   const { error: updateError } = await db
     .from('orders')
     .update({
@@ -109,6 +119,7 @@ export async function POST(
       metal_charges: money.metal_charges,
       jewelry_charges: money.jewelry_charges,
       gst_amount: money.gst_amount,
+      tax_breakdown: (nextTaxBreakdown ?? orderRow.tax_breakdown) as Json,
       total: money.total,
       amount_due: money.amount_due,
       payment_status: money.payment_status,

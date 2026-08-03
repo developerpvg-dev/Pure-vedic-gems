@@ -3,6 +3,8 @@
  * Amounts come from orders.* columns written by recalculateOrderTotal.
  */
 
+import { gstSummaryLabel, parseOrderTaxBreakdown } from '@/lib/orders/tax-breakdown-display';
+
 export type OrderChargeFields = {
   subtotal: number;
   jewelry_charges?: number | null;
@@ -16,6 +18,7 @@ export type OrderChargeFields = {
   reward_discount?: number | null;
   reward_points_redeemed?: number | null;
   gst_amount?: number | null;
+  tax_breakdown?: unknown;
   total?: number | null;
 };
 
@@ -67,7 +70,13 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
     lines.push({ key: 'discount', label: 'Discount', amount: combinedDiscount, sign: -1 });
   }
 
-  lines.push({ key: 'gst', label: 'GST', amount: n(order.gst_amount), sign: 1 });
+  const taxView = parseOrderTaxBreakdown(order.tax_breakdown);
+  lines.push({
+    key: 'gst',
+    label: gstSummaryLabel(taxView),
+    amount: n(order.gst_amount),
+    sign: 1,
+  });
 
   return lines.filter((line) => line.amount > 0);
 }

@@ -48,6 +48,7 @@ const ORDER_SELECT = [
   'reward_discount',
   'reward_points_redeemed',
   'gst_amount',
+  'tax_breakdown',
   'shipping_method',
   'shipping_address',
   'special_instructions',
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
     reward_discount: number | null;
     reward_points_redeemed: number | null;
     gst_amount: number | null;
+    tax_breakdown: unknown;
     shipping_method: string | null;
     shipping_address: Record<string, string> | null;
     special_instructions: string | null;
@@ -201,6 +203,7 @@ export async function POST(request: NextRequest) {
       reward_discount: Number(order.reward_discount ?? 0),
       reward_points_redeemed: Number(order.reward_points_redeemed ?? 0),
       gst_amount: Number(order.gst_amount ?? 0),
+      tax_breakdown: order.tax_breakdown ?? null,
       shipping_method: order.shipping_method,
       shipping_address: order.shipping_address,
       special_instructions: order.special_instructions,

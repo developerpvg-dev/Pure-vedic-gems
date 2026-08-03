@@ -354,6 +354,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
         reward_discount: order.reward_discount,
         reward_points_redeemed: order.reward_points_redeemed,
         gst_amount: order.gst_amount,
+        tax_breakdown: order.tax_breakdown,
         total: order.total,
       },
       amountPaid: balances.amount_paid,

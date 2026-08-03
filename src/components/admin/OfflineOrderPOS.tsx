@@ -22,6 +22,7 @@ import { OfflinePosCatalogPicker } from '@/components/admin/OfflinePosCatalogPic
 import type { ConfiguredOrderResult } from '@/components/configurator/PriceSummary';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
+import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 import type { ProductCard } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { getApiErrorMessage } from '@/lib/utils/api-validation';
@@ -161,6 +162,7 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
     coupon_code: couponCode || null,
     reward_discount: pricing.reward_discount ?? 0,
     gst_amount: pricing.gst_amount,
+    tax_breakdown: pricing.tax_breakdown,
     total: pricing.total,
   });
 
@@ -172,9 +174,6 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
     manualOnly > 0.009 &&
     !lines.some((l) => l.key === 'discount') &&
     couponReward + 0.009 < (Number(pricing.discount) || 0);
-
-  const tax = pricing.tax_breakdown;
-  const taxTotals = tax?.totals;
 
   return (
     <div className="space-y-3 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm">
@@ -197,54 +196,11 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
             <dd className="tabular-nums text-emerald-800">-{fmt(manualOnly)}</dd>
           </div>
         ) : null}
-        {taxTotals && (Number(taxTotals.cgst) > 0 || Number(taxTotals.sgst) > 0 || Number(taxTotals.igst) > 0) ? (
-          <div className="border-t border-stone-200 pt-2 text-xs text-stone-500">
-            <p className="mb-1 font-medium text-stone-600">
-              GST split
-              {tax?.jurisdiction ? ` (${tax.jurisdiction}` : ''}
-              {tax?.destination_state ? ` · ${tax.destination_state}` : ''}
-              {tax?.jurisdiction ? ')' : ''}
-            </p>
-            {Number(taxTotals.cgst) > 0 ? (
-              <div className="flex justify-between gap-4">
-                <span>CGST</span>
-                <span className="tabular-nums">{fmt(Number(taxTotals.cgst))}</span>
-              </div>
-            ) : null}
-            {Number(taxTotals.sgst) > 0 ? (
-              <div className="flex justify-between gap-4">
-                <span>SGST</span>
-                <span className="tabular-nums">{fmt(Number(taxTotals.sgst))}</span>
-              </div>
-            ) : null}
-            {Number(taxTotals.igst) > 0 ? (
-              <div className="flex justify-between gap-4">
-                <span>IGST</span>
-                <span className="tabular-nums">{fmt(Number(taxTotals.igst))}</span>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        {Array.isArray(tax?.components) && tax!.components!.length > 0 ? (
-          <details className="border-t border-stone-200 pt-2">
-            <summary className="cursor-pointer text-xs font-medium text-stone-600">
-              Taxable components
-            </summary>
-            <ul className="mt-2 space-y-1 text-xs text-stone-500">
-              {tax!.components!.map((c, i) => (
-                <li key={i} className="flex justify-between gap-3">
-                  <span>
-                    {c.label || 'Component'}
-                    {c.rate_percent != null ? ` @ ${c.rate_percent}%` : ''}
-                  </span>
-                  <span className="tabular-nums">
-                    tax {fmt(Number(c.total_tax) || 0)} on {fmt(Number(c.taxable_amount) || 0)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        ) : null}
+        <OrderTaxBreakdownBlock
+          taxBreakdown={pricing.tax_breakdown}
+          formatMoney={fmt}
+          variant="pos"
+        />
         <div className="flex justify-between gap-4 border-t border-stone-300 pt-2 text-base font-bold text-stone-900">
           <dt>Order total</dt>
           <dd className="tabular-nums">{fmt(pricing.total)}</dd>

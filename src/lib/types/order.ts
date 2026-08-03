@@ -70,6 +70,7 @@ export interface OrderRecord {
   reward_points_earned?: number;
   manual_discount?: number;
   gst_amount: number;
+  tax_breakdown?: unknown;
   total: number;
   amount_paid?: number;
   amount_due?: number;

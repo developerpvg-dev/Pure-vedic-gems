@@ -245,7 +245,7 @@ export function OrderCustomDesignPriceEditor({
           Preview mounting: metal {fmt(preview.metalAmt)} + making {fmt(preview.makingAmt)}
           {preview.diamondAmt > 0 ? ` + stones ${fmt(preview.diamondAmt)}` : ''} ={' '}
           <span className="font-semibold">{fmt(preview.total)}</span>
-          <span className="text-indigo-600"> (+ GST on metal/making when saved)</span>
+          <span className="text-indigo-600"> (+ 3% GST on jewellery mounting when saved)</span>
         </p>
       ) : null}
 
