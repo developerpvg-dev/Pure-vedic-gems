@@ -1234,6 +1234,7 @@ export interface Database {
           includes_video: boolean;
           sort_order: number;
           is_active: boolean;
+          legacy_slug: string | null;
           created_at: string;
         };
         Insert: {
@@ -1246,6 +1247,7 @@ export interface Database {
           includes_video?: boolean;
           sort_order?: number;
           is_active?: boolean;
+          legacy_slug?: string | null;
           created_at?: string;
         };
         Update: {
@@ -1258,6 +1260,7 @@ export interface Database {
           includes_video?: boolean;
           sort_order?: number;
           is_active?: boolean;
+          legacy_slug?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -1274,6 +1277,7 @@ export interface Database {
           is_default: boolean;
           sort_order: number;
           is_active: boolean;
+          legacy_slug: string | null;
           created_at: string;
         };
         Insert: {
@@ -1287,6 +1291,7 @@ export interface Database {
           is_default?: boolean;
           sort_order?: number;
           is_active?: boolean;
+          legacy_slug?: string | null;
           created_at?: string;
         };
         Update: {
@@ -1300,6 +1305,7 @@ export interface Database {
           is_default?: boolean;
           sort_order?: number;
           is_active?: boolean;
+          legacy_slug?: string | null;
           created_at?: string;
         };
         Relationships: [];

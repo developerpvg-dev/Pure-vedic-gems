@@ -9,6 +9,7 @@ export type StorefrontEventName =
   | 'search_open'
   | 'search_submit'
   | 'configurator_start'
+  | 'configurator_edit'
   | 'wishlist_toggle'
   | 'blog_share'
   | 'consultation_booking_submitted'
