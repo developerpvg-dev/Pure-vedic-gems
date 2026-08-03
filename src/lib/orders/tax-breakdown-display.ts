@@ -103,7 +103,7 @@ export function applyJewelleryGstDeltaToTaxBreakdown(
 
   if ((!raw || typeof raw !== 'object') && nextGst <= 0 && gstDelta === 0) return null;
 
-  const base =
+  const base: Record<string, unknown> =
     raw && typeof raw === 'object' && !Array.isArray(raw)
       ? { ...(raw as Record<string, unknown>) }
       : {
@@ -111,12 +111,12 @@ export function applyJewelleryGstDeltaToTaxBreakdown(
           seller_state: 'Delhi',
           destination_state: 'Unknown',
           jurisdiction: 'inter_state',
-          components: [],
-          totals: {},
-          notes: [],
+          components: [] as Record<string, unknown>[],
+          totals: {} as Record<string, unknown>,
+          notes: [] as string[],
         };
 
-  const components = Array.isArray(base.components)
+  const components: Record<string, unknown>[] = Array.isArray(base.components)
     ? (base.components as Record<string, unknown>[]).map((c) => ({ ...c }))
     : [];
 
