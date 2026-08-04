@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clampCartQuantity, dedupeCartByProductId, getMaxAvailableQuantity } from '@/lib/cart/client';
+import {
+  CART_UNIQUE_PIECE_MESSAGE,
+  clampCartQuantity,
+  collectCartItemProductIds,
+  dedupeCartByProductId,
+  getMaxAvailableQuantity,
+  getUniquePieceAddConflict,
+  isProductOccupiedInCart,
+  stripOverlappingCartLines,
+} from '@/lib/cart/client';
 import type { CartItem } from '@/lib/types/cart';
 
 function item(overrides: Partial<CartItem> = {}): CartItem {
@@ -21,6 +30,30 @@ function item(overrides: Partial<CartItem> = {}): CartItem {
     origin: null,
     ...overrides,
   };
+}
+
+const primaryId = '00000000-0000-4000-8000-0000000000a1';
+const comboId = '00000000-0000-4000-8000-0000000000b2';
+
+function multiBeadConfig(overrides: Partial<CartItem> = {}): CartItem {
+  return item({
+    key: `${primaryId}:cfg:cfg-1`,
+    product_id: primaryId,
+    price: 175597,
+    configuration_id: 'cfg-1',
+    configuration_snapshot: {
+      selections: {
+        is_rudraksha: true,
+        rudraksha_beads: [
+          { role: 'primary', id: primaryId, price: 50000 },
+          { role: 'combo', id: comboId, price: 45000 },
+        ],
+        rudraksha_combo_product_ids: [comboId],
+      },
+      pricing: { gem_price: 95000, total: 175597 },
+    },
+    ...overrides,
+  });
 }
 
 describe('unique piece cart quantity', () => {
@@ -57,5 +90,35 @@ describe('dedupeCartByProductId', () => {
     const a = item({ key: 'a', product_id: 'a' });
     const b = item({ key: 'b', product_id: 'b' });
     expect(dedupeCartByProductId([a, b])).toHaveLength(2);
+  });
+
+  it('drops standalone combo bead when already inside a configured jewellery line', () => {
+    const configured = multiBeadConfig();
+    const looseCombo = item({
+      key: comboId,
+      product_id: comboId,
+      price: 45000,
+      name: '2 Mukhi duplicate',
+    });
+    const result = dedupeCartByProductId([configured, looseCombo]);
+    expect(result).toHaveLength(1);
+    expect(result[0].configuration_id).toBe('cfg-1');
+    expect(collectCartItemProductIds(result[0]!)).toEqual([primaryId, comboId]);
+  });
+});
+
+describe('unique rudraksha combo occupancy', () => {
+  it('blocks adding a loose bead already used in jewellery', () => {
+    const configured = multiBeadConfig();
+    const looseCombo = item({ key: comboId, product_id: comboId, price: 45000 });
+    expect(getUniquePieceAddConflict([configured], looseCombo)).toBe(CART_UNIQUE_PIECE_MESSAGE);
+    expect(isProductOccupiedInCart([configured], comboId)).toBe(true);
+  });
+
+  it('absorbs orphan loose beads when adding jewellery that includes them', () => {
+    const looseCombo = item({ key: comboId, product_id: comboId, price: 45000 });
+    const configured = multiBeadConfig();
+    expect(getUniquePieceAddConflict([looseCombo], configured)).toBeNull();
+    expect(stripOverlappingCartLines([looseCombo], configured)).toEqual([]);
   });
 });

@@ -20,7 +20,6 @@ describe('buildOrderPriceLines', () => {
     expect(lines.map((l) => l.key)).toEqual([
       'subtotal',
       'jewelry',
-      'metal',
       'cert',
       'energization',
       'shipping',
@@ -29,6 +28,21 @@ describe('buildOrderPriceLines', () => {
     expect(lines.find((l) => l.key === 'gst')?.label).toBe('GST');
     const sum = lines.reduce((s, l) => s + l.sign * l.amount, 0);
     expect(sum).toBe(15048 + 10325 + 41300 + 4000 + 3500 + 1500 + 3413);
+    expect(lines.find((l) => l.key === 'jewelry')?.amount).toBe(10325 + 41300);
+    expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery (metal + making)');
+  });
+
+  it('labels jewellery as incl. GST when GST is folded into the amount', () => {
+    const lines = buildOrderPriceLines({
+      subtotal: 10000,
+      jewelry_charges: 2000,
+      metal_charges: 8000,
+      shipping_cost: 0,
+      gst_amount: 300,
+      total: 20300,
+    });
+    expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery (incl. GST)');
+    expect(lines.find((l) => l.key === 'gst')).toBeUndefined();
   });
 
   it('does not double-count discount when coupon and rewards are present', () => {

@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
-import { dedupeCartByProductId } from '@/lib/cart/client';
+import { dedupeCartByProductId, getUniquePieceAddConflict, stripOverlappingCartLines } from '@/lib/cart/client';
 import type { Cart, CartItem } from '@/lib/types/cart';
 import type { CartItemInput } from '@/lib/validators/cart';
 import type { Json, Product, ServerCart, ServerCartItem } from '@/lib/types/database';
@@ -292,7 +292,60 @@ export async function upsertCustomerCartItem(
     .maybeSingle();
   const existingItem = existing as ServerCartItem | null;
 
-  // Unique piece: drop loose/other-config lines for the same product before upsert.
+  // Unique piece across primary + combo beads in configured rudraksha lines.
+  const { data: siblingRows } = await supabase
+    .from('cart_items')
+    .select('line_key, product_id, configuration_id, metadata')
+    .eq('cart_id', cart.id)
+    .neq('line_key', lineKey);
+
+  const siblingItems: CartItem[] = ((siblingRows ?? []) as Array<{
+    line_key: string;
+    product_id: string;
+    configuration_id: string | null;
+    metadata: Json;
+  }>).map((row) => ({
+    key: row.line_key,
+    product_id: row.product_id,
+    sku: '',
+    name: '',
+    category: '',
+    image_url: '',
+    price: 0,
+    quantity: 1,
+    carat_weight: null,
+    origin: null,
+    configuration_id: row.configuration_id ?? undefined,
+    configuration_snapshot: metadataValue(row.metadata, 'configuration_snapshot'),
+  }));
+
+  const incomingProbe: CartItem = {
+    key: lineKey,
+    product_id: input.product_id,
+    sku: product.sku ?? '',
+    name: product.name,
+    category: product.category ?? '',
+    image_url: '',
+    price: verifiedUnitPrice,
+    quantity: 1,
+    carat_weight: null,
+    origin: null,
+    configuration_id: input.configuration_id ?? undefined,
+    configuration_snapshot: configurationSnapshot ?? null,
+  };
+
+  const conflict = getUniquePieceAddConflict(siblingItems, incomingProbe);
+  if (conflict) {
+    throw new Error(conflict);
+  }
+
+  const keptKeys = new Set(stripOverlappingCartLines(siblingItems, incomingProbe).map((item) => item.key));
+  const orphanKeys = siblingItems.filter((item) => !keptKeys.has(item.key)).map((item) => item.key);
+  if (orphanKeys.length > 0) {
+    await supabase.from('cart_items').delete().eq('cart_id', cart.id).in('line_key', orphanKeys);
+  }
+
+  // Also clear same-primary siblings (loose → configured upgrade).
   await supabase
     .from('cart_items')
     .delete()

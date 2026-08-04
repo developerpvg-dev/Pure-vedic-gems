@@ -2,8 +2,8 @@
  * Single source of order charge lines for confirmation, email, account, admin.
  * Amounts come from orders.* columns written by recalculateOrderTotal.
  *
- * Customer-facing display bakes jewellery GST into metal + making lines
- * (no separate GST row) when all tax is jewellery 3%.
+ * Customer-facing display bakes jewellery GST into metal + making amounts
+ * (no separate GST row, no GST callout in labels) when all tax is jewellery 3%.
  */
 
 import { jewelleryPriceInclGst, GST_METAL_MOUNTED_PERCENT, gstOnAmount } from '@/lib/utils/tax';
@@ -56,20 +56,16 @@ function isJewelleryOnlyGst(order: OrderChargeFields): boolean {
 export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[] {
   const metalEx = n(order.metal_charges);
   const jewelryEx = n(order.jewelry_charges);
+  const jewelleryEx = metalEx + jewelryEx;
   const foldGst = isJewelleryOnlyGst(order);
 
   const lines: OrderPriceLine[] = [
     { key: 'subtotal', label: 'Gemstone / product subtotal', amount: n(order.subtotal), sign: 1 },
     {
       key: 'jewelry',
-      label: foldGst && jewelryEx > 0 ? 'Making / labor / stone add-on (incl. GST)' : 'Making / labor / stone add-on',
-      amount: foldGst && jewelryEx > 0 ? jewelleryPriceInclGst(jewelryEx) : jewelryEx,
-      sign: 1,
-    },
-    {
-      key: 'metal',
-      label: foldGst && metalEx > 0 ? 'Metal value (incl. GST)' : 'Metal value',
-      amount: foldGst && metalEx > 0 ? jewelleryPriceInclGst(metalEx) : metalEx,
+      // ponytail: one jewellery line — metal/making split stays in orders.* columns
+      label: foldGst && jewelleryEx > 0 ? 'Jewellery (incl. GST)' : 'Jewellery (metal + making)',
+      amount: foldGst && jewelleryEx > 0 ? jewelleryPriceInclGst(jewelleryEx) : jewelleryEx,
       sign: 1,
     },
     { key: 'cert', label: 'Certification', amount: n(order.certification_charges), sign: 1 },

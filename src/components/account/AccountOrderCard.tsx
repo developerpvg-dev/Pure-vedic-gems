@@ -21,7 +21,6 @@ import { formatPrice } from '@/lib/utils/format';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { RETURN_STATUS_LABELS, type ReturnStatus } from '@/lib/orders/returns';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
-import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 import {
   canCustomerResubmitBankTransfer,
   type BankTransferProof,
@@ -542,9 +541,7 @@ export function AccountOrderCard({
                         className={
                           line.sign < 0
                             ? 'text-green-700'
-                            : line.key === 'gst'
-                              ? 'font-medium text-[var(--pvg-text)]'
-                              : 'text-[var(--pvg-text)]'
+                            : 'text-[var(--pvg-text)]'
                         }
                       >
                         {line.sign < 0 ? '−' : ''}
@@ -552,11 +549,6 @@ export function AccountOrderCard({
                       </span>
                     </div>
                   ))}
-                  <OrderTaxBreakdownBlock
-                    taxBreakdown={order.tax_breakdown}
-                    formatMoney={formatPrice}
-                    variant="admin"
-                  />
                   <div className="border-t border-[var(--pvg-border)] pt-2">
                     <PriceRow
                       label={(order.amount_due ?? 0) > 0.009 ? 'Order total' : 'Total paid'}

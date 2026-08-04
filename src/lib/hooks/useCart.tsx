@@ -21,8 +21,11 @@ import {
   consumeGuestCartDirtyFlag,
   dedupeCartByProductId,
   deriveCartLineKey,
+  getUniquePieceAddConflict,
+  isProductOccupiedInCart,
   markGuestCartDirty,
   readStoredCartItems,
+  stripOverlappingCartLines,
 } from '@/lib/cart/client';
 
 function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
@@ -38,10 +41,8 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
       );
 
     case 'ADD_ITEM': {
-      // Unique pieces: drop any other line for the same product_id (loose → configured upgrade).
-      const withoutSiblings = state.filter(
-        (i) => i.product_id !== action.payload.product_id || i.key === action.payload.key
-      );
+      // Unique pieces: claim primary + combo bead IDs; drop overlapping loose lines.
+      const withoutSiblings = stripOverlappingCartLines(state, action.payload);
       const existing = withoutSiblings.find((i) => i.key === action.payload.key);
       if (existing) {
         const mergedItem = { ...existing, ...action.payload };
@@ -315,6 +316,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const conflict = getUniquePieceAddConflict(items, { ...mergedItem, key });
+      if (conflict) {
+        toast.error(conflict);
+        return;
+      }
+
       const rollbackItems = items;
       const item = { ...mergedItem, quantity: quantityToAdd };
       dispatch({ type: 'ADD_ITEM', payload: item });
@@ -424,13 +431,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, sendGuestEvent, syncAuthenticatedCart, user]);
 
   const isInCart = useCallback(
-    (productId: string, configurationId?: string) =>
-      items.some(
-        (item) =>
-          item.product_id === productId &&
-          (configurationId ? item.configuration_id === configurationId : true)
-      ),
-    [items]
+    (productId: string, configurationId?: string) => {
+      if (configurationId) {
+        return items.some(
+          (item) =>
+            item.product_id === productId && item.configuration_id === configurationId,
+        );
+      }
+      return isProductOccupiedInCart(items, productId);
+    },
+    [items],
   );
 
   const getCartItem = useCallback(

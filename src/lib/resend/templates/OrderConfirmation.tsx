@@ -33,7 +33,6 @@ import {
   orderItemMerchandiseTotal,
   type OrderChargeFields,
 } from '@/lib/orders/price-breakdown-lines';
-import { taxBreakdownEmailRows } from '@/lib/orders/tax-breakdown-display';
 
 interface OrderItem {
   name: string;
@@ -91,8 +90,7 @@ export function OrderConfirmationEmail({
   const resolvedSiteUrl = siteUrl || getEmailSiteUrl();
   const trackUrl = `${resolvedSiteUrl}/account/orders`;
   const whatsappUrl = getWhatsAppUrl(`Hi, I just placed order ${orderNumber}`);
-  const priceLines = buildOrderPriceLines(charges);
-  const taxRows = taxBreakdownEmailRows(charges.tax_breakdown);
+  const priceLines = buildOrderPriceLines(charges).filter((line) => line.key !== 'gst');
   const total = Number(charges.total ?? 0);
   const due = Number(amountDue ?? 0);
   // Never invent "paid = total" when amountPaid was omitted — that made partial
@@ -172,28 +170,6 @@ export function OrderConfirmationEmail({
                 </Column>
               </Row>
             ))}
-
-            {taxRows.length > 0 ? (
-              <>
-                <Text style={{ ...textStyle, fontSize: '12px', color: '#6b5b4e', marginTop: '8px', marginBottom: '4px' }}>
-                  Tax detail
-                </Text>
-                {taxRows.map((row, i) => (
-                  <Row key={`tax-${i}`} style={totalRowStyle}>
-                    <Column>
-                      <Text style={{ ...totalLabelStyle, fontSize: '12px', color: '#6b5b4e' }}>
-                        {row.label}
-                      </Text>
-                    </Column>
-                    <Column style={{ textAlign: 'right' as const }}>
-                      <Text style={{ ...totalValueStyle, fontSize: '12px', color: '#6b5b4e' }}>
-                        {formatINR(row.amount)}
-                      </Text>
-                    </Column>
-                  </Row>
-                ))}
-              </>
-            ) : null}
 
             <Hr style={dividerStyle} />
 

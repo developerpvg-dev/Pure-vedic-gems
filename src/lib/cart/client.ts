@@ -1,11 +1,15 @@
 import type { CartItem } from '@/lib/types/cart';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 
 export const CART_STORAGE_KEY = 'pvg_cart';
 export const GUEST_SESSION_KEY = 'pvg_guest_session_id';
 export const GUEST_CART_DIRTY_KEY = 'pvg_guest_cart_dirty';
 // ponytail: each catalog piece is unique — never more than 1 in cart
 export const DEFAULT_MAX_CART_QUANTITY = 1;
+
+export const CART_UNIQUE_PIECE_MESSAGE =
+  'This rudraksha is already in your cart as part of a jewellery piece.';
 
 export function deriveCartLineKey(item: {
   product_id: string;
@@ -18,24 +22,92 @@ export function deriveCartLineKey(item: {
     : item.product_id;
 }
 
-/** One line per unique piece. Configured beats loose; later line wins if both configured. */
-export function dedupeCartByProductId(items: CartItem[]): CartItem[] {
-  const winnerByProduct = new Map<string, CartItem>();
+/** Primary + combo bead IDs from a configured line; else the line product_id. */
+export function collectCartItemProductIds(
+  item: Pick<CartItem, 'product_id'> & { configuration_snapshot?: unknown },
+): string[] {
+  const fromSnap = getRudrakshaProductIdsFromSnapshot(item.configuration_snapshot);
+  if (fromSnap.length > 0) return fromSnap;
+  return item.product_id ? [item.product_id] : [];
+}
+
+export function isProductOccupiedInCart(
+  items: Array<
+    Pick<CartItem, 'product_id' | 'key'> & {
+      configuration_snapshot?: unknown;
+    }
+  >,
+  productId: string,
+  options?: { excludeLineKey?: string },
+): boolean {
   for (const item of items) {
-    const prev = winnerByProduct.get(item.product_id);
-    if (!prev) {
-      winnerByProduct.set(item.product_id, item);
-      continue;
-    }
-    if (item.configuration_id && !prev.configuration_id) {
-      winnerByProduct.set(item.product_id, item);
-    } else if (Boolean(item.configuration_id) === Boolean(prev.configuration_id)) {
-      winnerByProduct.set(item.product_id, item);
-    }
-    // else keep prev (configured already beats incoming loose)
+    if (options?.excludeLineKey && item.key === options.excludeLineKey) continue;
+    if (collectCartItemProductIds(item).includes(productId)) return true;
   }
-  const winners = new Set(winnerByProduct.values());
-  return items.filter((item) => winners.has(item));
+  return false;
+}
+
+/**
+ * Block loose add when the piece is already inside a configured jewellery line
+ * (or another config that already claims the same bead).
+ */
+export function getUniquePieceAddConflict(
+  state: Array<
+    Pick<CartItem, 'product_id' | 'key' | 'configuration_id'> & {
+      configuration_snapshot?: unknown;
+    }
+  >,
+  incoming: Pick<CartItem, 'product_id' | 'key' | 'configuration_id'> & {
+    configuration_snapshot?: unknown;
+  },
+): string | null {
+  const incomingIds = new Set(collectCartItemProductIds(incoming));
+  const incomingConfigured = Boolean(incoming.configuration_id);
+
+  for (const item of state) {
+    if (item.key === incoming.key) continue;
+    const overlap = collectCartItemProductIds(item).some((id) => incomingIds.has(id));
+    if (!overlap) continue;
+    if (!incomingConfigured && item.configuration_id) return CART_UNIQUE_PIECE_MESSAGE;
+    if (incomingConfigured && item.configuration_id) return CART_UNIQUE_PIECE_MESSAGE;
+  }
+  return null;
+}
+
+/** Drop lines that share any piece ID with incoming (siblings + absorbed loose combos). */
+export function stripOverlappingCartLines<
+  T extends Pick<CartItem, 'product_id' | 'key'> & { configuration_snapshot?: unknown },
+>(state: T[], incoming: Pick<CartItem, 'product_id' | 'key'> & { configuration_snapshot?: unknown }): T[] {
+  const incomingIds = new Set(collectCartItemProductIds(incoming));
+  return state.filter((item) => {
+    if (item.key === incoming.key) return false;
+    if (item.product_id === incoming.product_id) return false;
+    return !collectCartItemProductIds(item).some((id) => incomingIds.has(id));
+  });
+}
+
+/**
+ * One physical piece ⇒ one cart line. Configured lines claim combo bead IDs so a
+ * standalone bead cannot sit beside the jewellery that already includes it.
+ */
+export function dedupeCartByProductId(items: CartItem[]): CartItem[] {
+  // Configured first so multi-bead jewellery absorbs combo SKUs; later wins within class.
+  const indices = items.map((_, index) => index).sort((ai, bi) => {
+    const aCfg = Number(Boolean(items[ai]?.configuration_id));
+    const bCfg = Number(Boolean(items[bi]?.configuration_id));
+    if (bCfg !== aCfg) return bCfg - aCfg;
+    return bi - ai;
+  });
+
+  const claimed = new Set<string>();
+  const keep = new Set<number>();
+  for (const index of indices) {
+    const ids = collectCartItemProductIds(items[index]!);
+    if (ids.some((id) => claimed.has(id))) continue;
+    for (const id of ids) claimed.add(id);
+    keep.add(index);
+  }
+  return items.filter((_, index) => keep.has(index));
 }
 
 export function getMaxAvailableQuantity(

@@ -20,7 +20,6 @@ import {
   buildOrderPriceLines,
   orderItemMerchandiseTotal,
 } from '@/lib/orders/price-breakdown-lines';
-import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 import {
   canCustomerResubmitBankTransfer,
   parseBankTransferProof,
@@ -360,11 +359,6 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
                 </span>
               </div>
             ))}
-            <OrderTaxBreakdownBlock
-              taxBreakdown={order.tax_breakdown}
-              formatMoney={formatPrice}
-              variant="admin"
-            />
             <div className="border-t border-[var(--pvg-border)] pt-2 flex justify-between font-semibold">
               <span className="text-[var(--pvg-primary)]">Total</span>
               <span className="text-[var(--pvg-accent)] text-lg">{formatPrice(order.total)}</span>

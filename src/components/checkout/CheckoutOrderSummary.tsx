@@ -33,6 +33,13 @@ function amountLabel(amount: number | null, display?: string) {
   return formatPrice(amount);
 }
 
+function lineTotalInclGst(
+  breakdown: ReturnType<typeof buildCartItemPriceBreakdown>,
+  quantity: number,
+) {
+  return (breakdown.preGstSubtotal + breakdown.estimatedGst) * quantity;
+}
+
 export function CheckoutOrderSummary({
   items,
   selectedShippingPlan,
@@ -72,7 +79,9 @@ export function CheckoutOrderSummary({
 
       <div className="pvg-checkout-summary-body">
         <div>
-          {items.map((item) => (
+          {itemBreakups.map(({ item, breakdown }) => {
+            const priceInclGst = lineTotalInclGst(breakdown, item.quantity);
+            return (
             <div key={item.key} className="pvg-checkout-item-block">
               <div className="pvg-checkout-item">
                 <div className="pvg-checkout-item-thumb">
@@ -109,10 +118,11 @@ export function CheckoutOrderSummary({
                     </div>
                   )}
                 </div>
-                <p className="pvg-checkout-item-price">{formatPrice(item.price * item.quantity)}</p>
+                <p className="pvg-checkout-item-price">{formatPrice(priceInclGst)}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {onApplyCoupon && onRemoveCoupon ? (
@@ -192,7 +202,9 @@ export function CheckoutOrderSummary({
                       {item.name}
                       {item.quantity > 1 ? ` × ${item.quantity}` : ''}
                     </span>
-                    <span>{formatPrice(item.price * item.quantity)}</span>
+                    <span>
+                      {formatPrice(lineTotalInclGst(breakdown, item.quantity))}
+                    </span>
                   </div>
                   {breakdown.lines.map((line) => (
                     <div key={`${item.key}-${line.key}`} className="pvg-checkout-line pvg-checkout-line--charge">
