@@ -208,8 +208,9 @@ export function resolveConfiguratorOptionRules(
       // Labs in rules mean the cert step is on — don't leave stale certificate_enabled:false
       certificate_enabled:
         rules.certificate_enabled || rules.allowed_certification_lab_ids.length > 0,
-      energization_enabled: false,
-      allowed_energization_option_ids: [],
+      // ponytail: was hard-forced off before energization shipped in rudraksha UI;
+      // empty allow-list is filled by withDefaultConfiguratorAllowLists
+      energization_enabled: true,
     };
   }
 

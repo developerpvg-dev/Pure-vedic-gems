@@ -65,7 +65,8 @@ export function CheckoutOrderSummary({
       <div className="pvg-checkout-summary-head">
         <h2 className="pvg-checkout-summary-title">Order summary</h2>
         <p className="pvg-checkout-summary-count">
-          {itemCount} item{itemCount !== 1 ? 's' : ''} · taxes estimated below
+          {itemCount} item{itemCount !== 1 ? 's' : ''}
+          {gst > 0 ? ' · jewellery prices incl. GST' : ''}
         </p>
       </div>
 
@@ -145,8 +146,15 @@ export function CheckoutOrderSummary({
 
           <div className="pvg-checkout-lines">
             <div className="pvg-checkout-line">
-              <span>Subtotal</span>
-              <span>{formatPrice(subtotal)}</span>
+              <span>
+                Subtotal
+                {gst > 0 ? (
+                  <span className="block text-[0.7rem] text-[var(--pvg-muted)]">
+                    incl. GST on jewellery
+                  </span>
+                ) : null}
+              </span>
+              <span>{formatPrice(subtotal + gst)}</span>
             </div>
             <div className="pvg-checkout-line">
               <span>
@@ -173,10 +181,6 @@ export function CheckoutOrderSummary({
                 <span>-{formatPrice(couponDiscount)}</span>
               </div>
             )}
-            <div className="pvg-checkout-line">
-              <span>Estimated GST/IGST</span>
-              <span>{formatPrice(gst)}</span>
-            </div>
           </div>
 
           {breakupOpen ? (
@@ -215,7 +219,8 @@ export function CheckoutOrderSummary({
         </div>
 
         <p className="pvg-checkout-footnote">
-          Final HSN, GST split, and invoice eligibility are recalculated securely before payment.
+          Jewellery prices include 3% GST. Gemstones, Rudraksha, and shipping are GST-free. Invoice tax
+          split is calculated securely before payment.
         </p>
       </div>
     </div>

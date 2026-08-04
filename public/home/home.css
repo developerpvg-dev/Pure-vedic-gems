@@ -1,6 +1,6 @@
 ﻿
     /* ============================================================
-       CSS CUSTOM PROPERTIES â€” JYOTISH ATELIER PALETTE
+       CSS CUSTOM PROPERTIES — JYOTISH ATELIER PALETTE
     ============================================================ */
     :root {
       --maroon-deepest:  #1A0202;
@@ -634,7 +634,7 @@
     .pvg-react-home-root img { display: block; max-width: 100%; }
 
     /* ============================================================
-       TOP INFORMATION BAR â€” SCROLLING MARQUEE
+       TOP INFORMATION BAR — SCROLLING MARQUEE
     ============================================================ */
     .topbar {
       background: linear-gradient(135deg, #5B2E2E 0%, #8B4545 100%);
@@ -1419,10 +1419,10 @@
       to { transform: rotate(360deg); }
     }
 
-    /* ---- Scroll hint â€” removed ---- */
+    /* ---- Scroll hint — removed ---- */
 
     /* ============================================================
-       TRUST SECTION â€” CHAKRA CARDS
+       TRUST SECTION — CHAKRA CARDS
     ============================================================ */
     .trust-section {
       position: relative;
@@ -1505,7 +1505,7 @@
     }
 
     /* ============================================================
-       WHO WE ARE â€” OUR STORY LAYOUT
+       WHO WE ARE — OUR STORY LAYOUT
     ============================================================ */
     .who-section {
       background: var(--white);
@@ -1529,7 +1529,7 @@
       align-items: stretch;
     }
 
-    /* ---- Image Column â€” Cycling Stack ---- */
+    /* ---- Image Column — Cycling Stack ---- */
     .about-img-wrap {
       position: relative;
       padding-bottom: 24px;
@@ -1931,7 +1931,7 @@
     .btn-outline-maroon:hover { background: var(--maroon); color: var(--white); }
 
     /* ============================================================
-       RUDRAKSHA BEADS SECTION â€” 2-COLUMN LAYOUT
+       RUDRAKSHA BEADS SECTION — 2-COLUMN LAYOUT
     ============================================================ */
     .rudraksha-section {
       background: #F2E8D4;
@@ -2297,7 +2297,7 @@
       line-height: 1; z-index: 0;
     }
 
-    /* Bento grid â€” 4 col Ã— 2 row with tall/wide spans */
+    /* Bento grid — 4 col × 2 row with tall/wide spans */
     .semi-bento {
       display: grid;
       grid-template-columns: 1.3fr 1fr 1fr 1.3fr;
@@ -2308,12 +2308,12 @@
     }
 
     /* Grid placement:
-       Col1 tall = Amethyst (rows 1â€“2)
-       Col2â€“3 wide row1 = Lapis Lazuli
+       Col1 tall = Amethyst (rows 1–2)
+       Col2–3 wide row1 = Lapis Lazuli
        Col4 row1 = Moonstone
        Col2 row2 = Peridot
        Col3 row2 = Rose Quartz
-       Col4 tall = Citrine (rows 1â€“2)  â† placed via grid-column/row explicitly
+       Col4 tall = Citrine (rows 1–2)  â† placed via grid-column/row explicitly
     */
     .semi-tile {
       position: relative;
@@ -3231,7 +3231,7 @@
     .cfg-step-check { flex-shrink: 0; opacity: 0; transition: opacity 0.38s ease; }
     .cfg-step-row.is-cfg-active .cfg-step-check { opacity: 1; }
 
-    /* Right circular visual â€” arc + image */
+    /* Right circular visual — arc + image */
     .cfg-visual-wrap {
       display: flex; align-items: center; justify-content: center; position: relative;
     }
@@ -3478,7 +3478,7 @@
     }
 
     /* ============================================================
-       15. OUR LEGACY â€” TIMELINE
+       15. OUR LEGACY — TIMELINE
     ============================================================ */
     .legacy-section {
       background: #FDFAF5; padding: 0; position: relative; overflow: hidden;
@@ -3633,7 +3633,7 @@
     .testi-arr-v2 svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
 
     /* ============================================================
-       17. NOT SURE WHICH GEM? â€” RECOMMENDATION
+       17. NOT SURE WHICH GEM? — RECOMMENDATION
     ============================================================ */
     .reco-section {
       position: relative;
@@ -3900,7 +3900,7 @@
       .scroll-hint { display: block; }
     }
 
-    /* Responsive â€” new sections */
+    /* Responsive — new sections */
     @media (max-width: 1024px) {
       .pvg-footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
       .legacy-split { grid-template-columns: 1fr 1fr; }

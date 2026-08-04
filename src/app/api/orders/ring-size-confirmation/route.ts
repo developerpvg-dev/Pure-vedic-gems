@@ -88,12 +88,24 @@ export async function POST(request: NextRequest) {
   if (!current) {
     return NextResponse.json({ error: 'Ring size confirmation was not requested for this order' }, { status: 400 });
   }
+  if (opened.round !== current.round) {
+    return NextResponse.json(
+      { error: 'This upload link is outdated. Please use the latest email link we sent you.' },
+      { status: 400 },
+    );
+  }
   if (current.status === 'submitted' && current.image_url) {
     return NextResponse.json({
       success: true,
       already_submitted: true,
       image_url: current.image_url,
     });
+  }
+  if (current.status !== 'pending') {
+    return NextResponse.json(
+      { error: 'This upload link is no longer active' },
+      { status: 400 },
+    );
   }
 
   await ensureBucket(admin);

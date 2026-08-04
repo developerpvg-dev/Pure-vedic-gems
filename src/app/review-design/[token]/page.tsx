@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { openProductVideoReviewToken } from '@/lib/orders/product-video-review-token';
 import { parseProductVideoReview } from '@/lib/orders/product-video-review';
+import { normalizeHttpsUrlList, parseComplianceFlags } from '@/lib/orders/returns';
 import { ProductVideoReviewForm } from '@/components/account/ProductVideoReviewForm';
 import { buildMetadata } from '@/lib/utils/seo';
 
@@ -43,8 +44,12 @@ export default async function ReviewDesignPage({ params, searchParams }: PagePro
   const review = parseProductVideoReview(order.compliance_flags);
   if (!review || review.round !== opened.round) notFound();
 
-  const videoUrl = review.video_url || order.product_video_url;
+  const flags = parseComplianceFlags(order.compliance_flags);
+  const videoUrls = normalizeHttpsUrlList(flags.product_video_urls);
+  const imageUrls = normalizeHttpsUrlList(flags.product_image_urls);
+  const videoUrl = review.video_url || videoUrls[0] || order.product_video_url;
   if (!videoUrl) notFound();
+  const videos = videoUrls.length ? videoUrls : [videoUrl];
 
   const prefill = d === 'approve' ? 'approve' : d === 'changes' ? 'changes' : null;
 
@@ -61,6 +66,8 @@ export default async function ReviewDesignPage({ params, searchParams }: PagePro
           token={token}
           orderNumber={order.order_number}
           videoUrl={videoUrl}
+          videoUrls={videos}
+          imageUrls={imageUrls}
           round={review.round}
           prefill={prefill}
           alreadyStatus={

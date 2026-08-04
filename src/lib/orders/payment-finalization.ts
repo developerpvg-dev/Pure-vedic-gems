@@ -249,7 +249,14 @@ export async function markOrderPaymentAuthorized(
 
 async function updateInventoryForCapturedOrder(order: Order) {
   // ponytail: stay Reserved on site until admin marks sold after billing — do not flip to Sold here
-  await keepProductsReservedAfterPayment(order);
+  const hold = await keepProductsReservedAfterPayment(order);
+  if (hold.failedIds.length > 0) {
+    console.error(
+      '[Payment] Could not reserve products after capture (may already be held/sold):',
+      order.order_number,
+      hold.failedIds,
+    );
+  }
 }
 
 async function markCouponRedeemed(order: Order) {
@@ -326,7 +333,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
         .single();
       const started = beginRingSizeConfirmation(flagsRow?.compliance_flags ?? order.compliance_flags);
       nextComplianceFlags = started.flags;
-      ringSizeConfirmUrl = ringSizeConfirmPublicLink(order.id, siteUrl);
+      ringSizeConfirmUrl = ringSizeConfirmPublicLink(order.id, started.confirmation.round, siteUrl);
     }
 
     const messageId = await sendOrderConfirmationEmail(recipient.email, {

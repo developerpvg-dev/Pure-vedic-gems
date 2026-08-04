@@ -340,9 +340,7 @@ export default function PriceSummary({
           {totals.grand_total > 0 ? formatPrice(totals.grand_total) : '—'}
         </p>
         {totals.gst_total > 0 ? (
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
-            Includes {formatPrice(totals.gst_total)} GST
-          </p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">incl. GST on jewellery</p>
         ) : (
           <p className="mt-0.5 text-[10px] text-muted-foreground">
             Updates as you complete each step
@@ -372,16 +370,14 @@ export default function PriceSummary({
 
 function DetailedPriceLines({
   totals,
-  productCategory,
+  productCategory: _productCategory,
   showFooterTotal = false,
 }: {
   totals: ReturnType<typeof buildConfiguratorPriceTotals>;
   productCategory?: string | null;
   showFooterTotal?: boolean;
 }) {
-  const gemLabel =
-    productCategory === 'rudraksha' ? 'Rudraksha' : 'gemstone';
-  const gemRate = totals.gst_gem_rate_percent;
+  void _productCategory;
 
   return (
     <div className="space-y-2.5 text-xs text-foreground/90">
@@ -391,42 +387,14 @@ function DetailedPriceLines({
         ))}
       </div>
 
-      {totals.pre_gst_subtotal > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-dashed border-border/70 pt-2.5 text-[11px] font-medium text-foreground">
-          <span>Subtotal (ex-GST)</span>
-          <span className="tabular-nums">{formatPrice(totals.pre_gst_subtotal)}</span>
-        </div>
-      )}
-
-      {totals.gst_jewelry > 0 && (
-        <PriceLine
-          line={{
-            key: 'gst-jewelry',
-            label: 'GST on jewellery (3%)',
-            amount: totals.gst_jewelry,
-          }}
-        />
-      )}
-      {totals.gst_gemstone > 0 && (
-        <PriceLine
-          line={{
-            key: 'gst-gem',
-            label: `GST on ${gemLabel} (${gemRate}%)`,
-            amount: totals.gst_gemstone,
-          }}
-        />
-      )}
-
-      {totals.gst_total > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-2.5 text-[11px] font-medium text-foreground">
-          <span>Total GST</span>
-          <span className="tabular-nums">{formatPrice(totals.gst_total)}</span>
-        </div>
-      )}
-
       {showFooterTotal && (
         <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-2.5">
-          <span className="text-xs font-medium text-foreground">Grand total</span>
+          <div>
+            <span className="text-xs font-medium text-foreground">Grand total</span>
+            {totals.gst_total > 0 ? (
+              <p className="mt-0.5 text-[10px] text-muted-foreground">incl. GST on jewellery</p>
+            ) : null}
+          </div>
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {totals.grand_total > 0 ? formatPrice(totals.grand_total) : '—'}
           </span>

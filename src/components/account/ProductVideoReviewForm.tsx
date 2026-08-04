@@ -9,6 +9,8 @@ export function ProductVideoReviewForm({
   token,
   orderNumber,
   videoUrl,
+  videoUrls,
+  imageUrls = [],
   round,
   prefill,
   alreadyStatus,
@@ -17,11 +19,14 @@ export function ProductVideoReviewForm({
   token: string;
   orderNumber: string;
   videoUrl: string;
+  videoUrls?: string[];
+  imageUrls?: string[];
   round: number;
   prefill: Prefill;
   alreadyStatus?: 'approved' | 'changes_requested' | null;
   alreadyRemarks?: string | null;
 }) {
+  const videos = videoUrls?.length ? videoUrls : [videoUrl];
   const [decision, setDecision] = useState<'approved' | 'changes_requested' | null>(() => {
     if (alreadyStatus) return alreadyStatus;
     if (prefill === 'approve') return 'approved';
@@ -105,17 +110,39 @@ export function ProductVideoReviewForm({
       </p>
       <h2 className="mt-2 font-heading text-2xl text-stone-900">Review your product design</h2>
       <p className="mt-2 text-sm text-stone-600">
-        Watch the video, then approve the design or request changes with a short note.
+        Review the media below, then approve the design or request changes with a short note.
       </p>
 
-      <a
-        href={videoUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-stone-800"
-      >
-        Watch product video
-      </a>
+      <div className="mt-5 space-y-2">
+        {videos.map((url, index) => (
+          <a
+            key={`${url}-${index}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-stone-800"
+          >
+            {videos.length > 1 ? `Watch product video ${index + 1}` : 'Watch product video'}
+          </a>
+        ))}
+      </div>
+
+      {imageUrls.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {imageUrls.map((url, index) => (
+            <a
+              key={`${url}-${index}`}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative block h-20 w-20 overflow-hidden rounded-xl border border-stone-200 bg-stone-50"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={`Product image ${index + 1}`} className="h-full w-full object-cover" />
+            </a>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         <button

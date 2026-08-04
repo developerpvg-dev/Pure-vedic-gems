@@ -58,6 +58,9 @@ export type ReservePaidHoldResult = {
 /**
  * Keep unique pieces reserved after payment is captured / offline POS create.
  * Storefront shows "Reserved" until admin marks sold after billing.
+ *
+ * Claims only when the piece is still in stock, or already held for this order
+ * (payment hold → paid hold upgrade). Won't steal another order's reservation.
  */
 export async function keepProductsReservedAfterPayment(
   order: OrderInventorySource,
@@ -65,6 +68,7 @@ export async function keepProductsReservedAfterPayment(
   const supabase = createAdminClient();
   const db = asUntypedSupabase(supabase);
   const note = paidHoldNote(order.order_number);
+  const priorHold = paymentHoldNote(order.order_number);
   // Far-future expiry so soft-expiry helpers don't clear a paid hold
   const reservedUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
   const reservedIds: string[] = [];
@@ -83,9 +87,12 @@ export async function keepProductsReservedAfterPayment(
         reservation_note: note,
       })
       .eq('id', productId)
-      // Don't steal a piece already sold or held for another order
       .neq('availability_status', 'sold')
       .neq('availability_status', 'archived')
+      // in_stock (Razorpay after successful pay) OR already this order's hold
+      .or(
+        `availability_status.eq.in_stock,reservation_note.eq."${priorHold}",reservation_note.eq."${note}"`,
+      )
       .select('id')
       .maybeSingle();
 

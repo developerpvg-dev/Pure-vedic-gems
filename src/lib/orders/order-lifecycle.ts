@@ -40,7 +40,7 @@ export const LIFECYCLE_SECTIONS: Record<
   },
   media: {
     title: '3 · Media',
-    hint: 'Product video + energization video / pictures — visible on customer tracking.',
+    hint: 'Product videos / images + energization media — visible on customer tracking & review email.',
     tone: 'bg-violet-50/80',
     border: 'border-violet-200',
     header: 'text-violet-950',

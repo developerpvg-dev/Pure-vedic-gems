@@ -103,9 +103,9 @@ export async function ensureGemConfiguratorOptionRules(
   );
 }
 
-/** Rudraksha pendant flow: cert labs yes, energization off, pendant + metal, no ring size. */
+/** Rudraksha pendant flow: cert + energization defaults, pendant + metal, no ring size. */
 export async function ensureRudrakshaConfiguratorOptionRules(client: Client, productId: string) {
-  const { certIds } = await defaultAllowListIds(client);
+  const { certIds, energIds } = await defaultAllowListIds(client);
 
   await client.query(
     `INSERT INTO public.product_option_rules (
@@ -114,11 +114,11 @@ export async function ensureRudrakshaConfiguratorOptionRules(client: Client, pro
        allowed_setting_types, allowed_ring_size_systems,
        allowed_certification_lab_ids, allowed_energization_option_ids
      ) VALUES (
-       $1, TRUE, FALSE, TRUE, TRUE, FALSE, ARRAY['pendant']::text[], ARRAY[]::text[], $2::uuid[], ARRAY[]::uuid[]
+       $1, TRUE, TRUE, TRUE, TRUE, FALSE, ARRAY['pendant']::text[], ARRAY[]::text[], $2::uuid[], $3::uuid[]
      )
      ON CONFLICT (product_id) DO UPDATE SET
        certificate_enabled = TRUE,
-       energization_enabled = FALSE,
+       energization_enabled = TRUE,
        jewelry_design_enabled = TRUE,
        metal_enabled = TRUE,
        ring_size_enabled = FALSE,
@@ -133,8 +133,13 @@ export async function ensureRudrakshaConfiguratorOptionRules(client: Client, pro
          THEN EXCLUDED.allowed_certification_lab_ids
          ELSE product_option_rules.allowed_certification_lab_ids
        END,
+       allowed_energization_option_ids = CASE
+         WHEN cardinality(product_option_rules.allowed_energization_option_ids) = 0
+         THEN EXCLUDED.allowed_energization_option_ids
+         ELSE product_option_rules.allowed_energization_option_ids
+       END,
        updated_at = NOW()`,
-    [productId, certIds],
+    [productId, certIds, energIds],
   );
 
   await client.query(

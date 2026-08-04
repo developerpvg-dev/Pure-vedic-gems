@@ -30,7 +30,10 @@ import {
   parseProductVideoReview,
   PRODUCT_VIDEO_REVIEW_STATUS_LABELS,
 } from '@/lib/orders/product-video-review';
-import { parseRingSizeConfirmation } from '@/lib/orders/ring-size-confirmation';
+import {
+  parseRingSizeConfirmation,
+  RING_SIZE_CONFIRM_STATUS_LABELS,
+} from '@/lib/orders/ring-size-confirmation';
 import {
   LIFECYCLE_SECTIONS,
   CARRIER_DELIVERY_LABELS,
@@ -43,10 +46,18 @@ import type { TrackingEventRow } from '@/lib/orders/admin-timeline';
 const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
 const CARRIER_ORDER_STATUSES = new Set(['shipped', 'out_for_delivery', 'delivered', 'feedback']);
 
-function energizationUrlsFromFlags(value: unknown): string[] {
-  const flags = parseComplianceFlags(value) as { energization_image_urls?: unknown };
-  if (!Array.isArray(flags.energization_image_urls)) return [];
-  return flags.energization_image_urls.filter((u): u is string => typeof u === 'string');
+function flagUrlList(value: unknown, key: 'energization_image_urls' | 'product_video_urls' | 'product_image_urls'): string[] {
+  const flags = parseComplianceFlags(value) as Record<string, unknown>;
+  const raw = flags[key];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((u): u is string => typeof u === 'string');
+}
+
+function linesToUrls(text: string): string[] {
+  return text
+    .split('\n')
+    .map((url) => url.trim())
+    .filter(Boolean);
 }
 
 const field =
@@ -199,11 +210,19 @@ export function OrderActions({
   const [carrier, setCarrier] = useState(currentCarrier ?? '');
   const [shippedAt, setShippedAt] = useState(currentShippedAt?.slice(0, 10) ?? '');
   const [deliveryStatus, setDeliveryStatus] = useState(currentDeliveryStatus ?? 'pending');
-  const [productVideoUrl, setProductVideoUrl] = useState(currentProductVideoUrl ?? '');
+  const [productVideoUrls, setProductVideoUrls] = useState(() => {
+    const fromFlags = flagUrlList(complianceFlags, 'product_video_urls');
+    if (fromFlags.length) return fromFlags.join('\n');
+    return currentProductVideoUrl ?? '';
+  });
+  const [productImageUrls, setProductImageUrls] = useState(() =>
+    flagUrlList(complianceFlags, 'product_image_urls').join('\n'),
+  );
   const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
   const [energizationImageUrls, setEnergizationImageUrls] = useState(() =>
-    energizationUrlsFromFlags(complianceFlags).join('\n'),
+    flagUrlList(complianceFlags, 'energization_image_urls').join('\n'),
   );
+  const [ringSizeAdminRemarks, setRingSizeAdminRemarks] = useState('');
   const [designCompletedAt, setDesignCompletedAt] = useState(currentDesignCompletedAt ?? '');
   const [markedSoldAt, setMarkedSoldAt] = useState(productsMarkedSoldAt);
   const [returnStatus, setReturnStatus] = useState(currentReturnStatus || 'none');
@@ -339,10 +358,13 @@ export function OrderActions({
           setDesignCompletedAt(new Date().toISOString());
         }
         if (data.order?.compliance_flags) setFlagsState(data.order.compliance_flags);
+        if (updates.notify_ring_size) setRingSizeAdminRemarks('');
         setSuccess(
           updates.notify_product_video
             ? 'Saved — customer emailed to approve design'
-            : 'Saved',
+            : updates.notify_ring_size
+              ? 'Saved — customer emailed to re-upload ring diameter photo'
+              : 'Saved',
         );
         setTimeout(() => setSuccess(''), 3000);
       } catch {
@@ -569,13 +591,14 @@ export function OrderActions({
     estimated_delivery: estimatedDelivery || null,
   };
 
+  const productVideoUrlList = linesToUrls(productVideoUrls);
   const saveMediaPayload = {
-    product_video_url: productVideoUrl || null,
+    // ponytail: first URL kept on column for review-notify / legacy readers
+    product_video_url: productVideoUrlList[0] ?? null,
+    product_video_urls: productVideoUrlList,
+    product_image_urls: linesToUrls(productImageUrls),
     puja_video_url: pujaVideoUrl || null,
-    energization_image_urls: energizationImageUrls
-      .split('\n')
-      .map((url) => url.trim())
-      .filter(Boolean),
+    energization_image_urls: linesToUrls(energizationImageUrls),
   };
 
   const commissionPayload = {
@@ -755,10 +778,14 @@ export function OrderActions({
             Ring size confirmation
           </p>
           <p className="mt-1 text-sm font-semibold text-stone-900">
-            {ringSizeConfirmation.status === 'submitted'
-              ? 'Customer uploaded diameter photo'
-              : 'Awaiting customer diameter photo'}
+            Round {ringSizeConfirmation.round} ·{' '}
+            {RING_SIZE_CONFIRM_STATUS_LABELS[ringSizeConfirmation.status]}
           </p>
+          {ringSizeConfirmation.status === 'pending' && ringSizeConfirmation.admin_remarks ? (
+            <p className="mt-1 text-xs text-amber-950">
+              Last guidance to customer: {ringSizeConfirmation.admin_remarks}
+            </p>
+          ) : null}
           {ringSizeConfirmation.image_url ? (
             <a
               href={ringSizeConfirmation.image_url}
@@ -775,9 +802,63 @@ export function OrderActions({
             </a>
           ) : (
             <p className="mt-1 text-xs text-stone-600">
-              Requested in the order confirmation email. Customer has not uploaded yet.
+              {ringSizeConfirmation.history.length > 0
+                ? 'Waiting for a corrected diameter photo.'
+                : 'Requested in the order confirmation email. Customer has not uploaded yet.'}
             </p>
           )}
+          {ringSizeConfirmation.history.length > 0 ? (
+            <ul className="mt-2 space-y-1 border-t border-black/5 pt-2 text-xs opacity-80">
+              {ringSizeConfirmation.history.map((past) => (
+                <li key={`rsc-${past.round}`}>
+                  Round {past.round}: {RING_SIZE_CONFIRM_STATUS_LABELS[past.status]}
+                  {past.admin_remarks ? ` — ${past.admin_remarks}` : ''}
+                  {past.image_url ? (
+                    <>
+                      {' · '}
+                      <a
+                        href={past.image_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        view photo
+                      </a>
+                    </>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {ringSizeConfirmation.status === 'submitted' ||
+          (ringSizeConfirmation.status === 'pending' &&
+            (ringSizeConfirmation.image_url || ringSizeConfirmation.history.length > 0)) ? (
+            <div className="mt-3 space-y-2 border-t border-black/5 pt-3">
+              <label className={labelCls}>What is wrong with the photo?</label>
+              <textarea
+                value={ringSizeAdminRemarks}
+                onChange={(e) => setRingSizeAdminRemarks(e.target.value)}
+                rows={3}
+                placeholder="e.g. Scale is angled / number not readable / not internal diameter"
+                className={field}
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  void handleSave({
+                    notify_ring_size: true,
+                    ring_size_admin_remarks: ringSizeAdminRemarks.trim(),
+                  })
+                }
+                disabled={saving || !ringSizeAdminRemarks.trim()}
+                className={btnGhost}
+              >
+                <MessageCircle className="h-4 w-4" />
+                {saving ? 'Sending…' : 'Request new photo & notify customer'}
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -866,15 +947,28 @@ export function OrderActions({
           }
         >
           {fulfillmentContext.showProductVideo ? (
-            <div>
-              <label className={labelCls}>Product video URL</label>
-              <input
-                value={productVideoUrl}
-                onChange={(e) => setProductVideoUrl(e.target.value)}
-                placeholder="Video link"
-                className={field}
-              />
-            </div>
+            <>
+              <div>
+                <label className={labelCls}>Product video URLs</label>
+                <textarea
+                  value={productVideoUrls}
+                  onChange={(e) => setProductVideoUrls(e.target.value)}
+                  rows={3}
+                  placeholder="One video URL per line"
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Product image URLs</label>
+                <textarea
+                  value={productImageUrls}
+                  onChange={(e) => setProductImageUrls(e.target.value)}
+                  rows={3}
+                  placeholder="One image URL per line"
+                  className={field}
+                />
+              </div>
+            </>
           ) : null}
           {productVideoReview ? (
             <div
@@ -950,7 +1044,7 @@ export function OrderActions({
               onClick={() =>
                 handleSave({ ...saveMediaPayload, notify_product_video: true })
               }
-              disabled={saving || !productVideoUrl.trim()}
+              disabled={saving || productVideoUrlList.length === 0}
               className={btnGhost}
             >
               <MessageCircle className="h-4 w-4" />

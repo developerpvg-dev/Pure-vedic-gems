@@ -48,7 +48,20 @@ export type ReturnComplianceFlags = {
   return_images_verified_at?: string;
   /** Energization / puja picture plan — shown on customer tracking */
   energization_image_urls?: string[];
+  /** Design media — multiple product videos / images, shown on tracking + review email */
+  product_video_urls?: string[];
+  product_image_urls?: string[];
 };
+
+/** Trim https URL lists stored on compliance_flags (media, energization, returns). */
+export function normalizeHttpsUrlList(value: unknown, max = 8): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((url): url is string => typeof url === 'string')
+    .map((url) => url.trim())
+    .filter((url) => /^https?:\/\//i.test(url))
+    .slice(0, max);
+}
 
 export function parseComplianceFlags(value: unknown): ReturnComplianceFlags {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};

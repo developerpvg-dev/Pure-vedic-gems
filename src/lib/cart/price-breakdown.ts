@@ -5,7 +5,7 @@ import {
   buildConfiguratorPriceTotals,
   type ConfiguratorPriceLine,
 } from '@/lib/utils/configurator-pricing-display';
-import { gstOnAmount, resolveProductTax } from '@/lib/utils/tax';
+import { gstOnAmount, jewelleryPriceInclGst, resolveProductTax } from '@/lib/utils/tax';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
 function snapshotToPricing(pricing: NonNullable<ReturnType<typeof parseConfigurationSnapshot>>['pricing']): ConfigPricingBreakdown {
@@ -35,6 +35,7 @@ export type CartPriceBreakdown = {
   lines: ConfiguratorPriceLine[];
   preGstSubtotal: number;
   estimatedGst: number;
+  /** Always empty under inclusive jewellery display — GST is baked into jewellery lines. */
   gstLines: ConfiguratorPriceLine[];
   /** Unit price stored on the cart line (ex-GST components for configured items). */
   unitPrice: number;
@@ -54,62 +55,37 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
       designNote: pricing.design_note,
     });
 
-    const gstLines: ConfiguratorPriceLine[] = [];
-    // Jewellery: one 3% line on (gem + metal + labour + diamond).
-    if (totals.gst_jewelry > 0) {
-      gstLines.push({
-        key: 'gst-jewelry',
-        label: 'Est. GST on jewellery (3%)',
-        amount: totals.gst_jewelry,
-      });
-    }
-    // Loose stone/bead only (no mount).
-    if (totals.gst_gemstone > 0) {
-      const isRudraksha = (snap.product?.category ?? item.category) === 'rudraksha';
-      gstLines.push({
-        key: 'gst-gem',
-        label: `Est. GST on ${isRudraksha ? 'Rudraksha' : 'gemstone'} (${totals.gst_gem_rate_percent}%)`,
-        amount: totals.gst_gemstone,
-      });
-    }
-
+    // Jewellery lines already include 3% GST; never surface a separate GST row.
     return {
       lines: totals.lines,
       preGstSubtotal: totals.pre_gst_subtotal > 0 ? totals.pre_gst_subtotal : unitPrice,
       estimatedGst: totals.gst_total,
-      gstLines,
+      gstLines: [],
       unitPrice,
     };
   }
 
   const tax = resolveProductTax({ category: item.category });
-  const estimatedGst = gstOnAmount(Math.max(unitPrice, 0), tax.rate_percent);
+  const estimatedGst = Math.round(gstOnAmount(Math.max(unitPrice, 0), tax.rate_percent));
 
+  // Ready jewellery: bake 3% into the displayed product price (no GST line).
+  const showIncl = tax.rate_percent > 0 && estimatedGst > 0;
   const lines: ConfiguratorPriceLine[] = [
     {
       key: 'product',
       label: item.category === 'rudraksha' ? 'Rudraksha' : 'Product price',
-      detail: formatProductDisplayName(item.name),
-      amount: unitPrice,
+      detail: showIncl
+        ? `${formatProductDisplayName(item.name)} · incl. GST`
+        : formatProductDisplayName(item.name),
+      amount: showIncl ? jewelleryPriceInclGst(unitPrice) : unitPrice,
     },
   ];
-
-  const gstLines: ConfiguratorPriceLine[] =
-    estimatedGst > 0
-      ? [
-          {
-            key: 'gst-product',
-            label: `Est. GST (${tax.rate_percent}%)`,
-            amount: estimatedGst,
-          },
-        ]
-      : [];
 
   return {
     lines,
     preGstSubtotal: unitPrice,
-    estimatedGst: Math.round(estimatedGst),
-    gstLines,
+    estimatedGst,
+    gstLines: [],
     unitPrice,
   };
 }

@@ -39,6 +39,11 @@ export default async function ConfirmRingSizePage({ params }: PageProps) {
 
   const confirmation = parseRingSizeConfirmation(order.compliance_flags);
   if (!confirmation) notFound();
+  // Stale revision link from an earlier round
+  if (opened.round !== confirmation.round) notFound();
+
+  const alreadySubmitted =
+    confirmation.status === 'submitted' ? confirmation.image_url ?? null : null;
 
   return (
     <main className="min-h-screen bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
@@ -52,7 +57,11 @@ export default async function ConfirmRingSizePage({ params }: PageProps) {
         <RingSizeConfirmForm
           token={token}
           orderNumber={order.order_number}
-          alreadyImageUrl={confirmation.image_url ?? null}
+          alreadyImageUrl={alreadySubmitted}
+          adminRemarks={
+            confirmation.status === 'pending' ? confirmation.admin_remarks ?? null : null
+          }
+          round={confirmation.round}
         />
       </section>
     </main>

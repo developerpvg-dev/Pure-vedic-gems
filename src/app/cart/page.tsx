@@ -155,15 +155,16 @@ function OrderSummary({
 
       <div className="space-y-3 text-[14px]">
         <div className="flex justify-between text-[var(--pvg-text)]">
-          <span>Subtotal (ex-GST)</span>
-          <span className="font-semibold">{formatPrice(subtotal)}</span>
+          <span>
+            Subtotal
+            {estimatedGst > 0 ? (
+              <span className="mt-0.5 block text-[11px] font-normal text-[var(--pvg-muted)]">
+                incl. GST on jewellery
+              </span>
+            ) : null}
+          </span>
+          <span className="font-semibold">{formatPrice(itemsTotal)}</span>
         </div>
-        {estimatedGst > 0 && (
-          <div className="flex justify-between text-[var(--pvg-text)]">
-            <span>Est. GST</span>
-            <span className="font-semibold">{formatPrice(estimatedGst)}</span>
-          </div>
-        )}
         <div className="flex justify-between">
           <span className="text-[var(--pvg-muted)]">Shipping</span>
           <span className="text-[13px] font-medium text-[var(--pvg-muted)]">

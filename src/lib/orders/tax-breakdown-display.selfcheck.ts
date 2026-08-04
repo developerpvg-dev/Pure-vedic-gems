@@ -7,88 +7,69 @@ import {
   taxBreakdownEmailRows,
 } from './tax-breakdown-display';
 import { buildOrderPriceLines } from './price-breakdown-lines';
+import { jewelleryPriceInclGst } from '@/lib/utils/tax';
 
 assert.equal(formatGstRatePercent(0.25), '0.25%');
 assert.equal(formatGstRatePercent(3), '3%');
 
 const sample = {
-  policy_version: '2026-08-03',
+  policy_version: '2026-08-04',
   seller_state: 'Delhi',
   destination_state: 'Maharashtra',
   jurisdiction: 'inter_state',
   components: [
     {
-      label: 'African Ruby',
-      component: 'product',
-      taxable_amount: 99930,
-      hsn_code: '7103',
-      rate_percent: 0.25,
-      cgst: 0,
-      sgst: 0,
-      igst: 249.83,
-      total_tax: 249.83,
-    },
-    {
-      label: 'Jewellery (gem/bead + metal + labour + stone add-on)',
+      label: 'Jewellery (metal + labour + stone add-on)',
       component: 'metal',
-      taxable_amount: 140645,
+      taxable_amount: 10000,
       hsn_code: '7113',
       rate_percent: 3,
       cgst: 0,
       sgst: 0,
-      igst: 4219.35,
-      total_tax: 4219.35,
+      igst: 300,
+      total_tax: 300,
     },
   ],
   totals: {
-    taxable_amount: 240575,
+    taxable_amount: 10000,
     cgst: 0,
     sgst: 0,
-    igst: 4469.18,
-    gst_amount: 4469.18,
+    igst: 300,
+    gst_amount: 300,
   },
   notes: [],
 };
 
 const view = parseOrderTaxBreakdown(sample);
 assert.ok(view);
-assert.equal(view!.components.length, 2);
-assert.equal(view!.components[0]!.ratePercent, 0.25);
-assert.equal(view!.igst, 4469.18);
-assert.equal(gstSummaryLabel(view), 'GST (0.25% + 3%)');
+assert.equal(view!.components.length, 1);
+assert.equal(view!.components[0]!.ratePercent, 3);
+assert.equal(view!.igst, 300);
+assert.equal(gstSummaryLabel(view), 'GST (3%)');
 
+// Inclusive display: jewellery GST folded into metal/making — no GST line.
 const lines = buildOrderPriceLines({
   subtotal: 99930,
-  gst_amount: 250,
-  tax_breakdown: {
-    components: [
-      {
-        label: 'Loose stone',
-        taxable_amount: 99930,
-        rate_percent: 0.25,
-        total_tax: 249.83,
-      },
-    ],
-    totals: { gst_amount: 249.83, cgst: 0, sgst: 0, igst: 249.83, taxable_amount: 99930 },
-  },
+  jewelry_charges: 10000,
+  metal_charges: 0,
+  gst_amount: 300,
+  tax_breakdown: sample,
 });
-const gstLine = lines.find((l) => l.key === 'gst');
-assert.equal(gstLine?.label, 'GST (0.25%)');
+assert.equal(lines.find((l) => l.key === 'gst'), undefined);
+assert.equal(lines.find((l) => l.key === 'jewelry')?.amount, jewelleryPriceInclGst(10000));
 
 const patched = applyJewelleryGstDeltaToTaxBreakdown(sample, {
   gstDelta: 30,
   jewelleryTaxableDelta: 1000,
-  nextGstAmount: 4499,
+  nextGstAmount: 330,
 });
 assert.ok(patched);
 const patchedView = parseOrderTaxBreakdown(patched);
 assert.ok(patchedView);
-assert.equal(patchedView!.gstAmount, 4499);
+assert.equal(patchedView!.gstAmount, 330);
 
 const emailRows = taxBreakdownEmailRows(sample);
-assert.ok(emailRows.some((r) => r.label.includes('0.25%')));
 assert.ok(emailRows.some((r) => r.label.includes('3%')));
 
 assert.equal(parseOrderTaxBreakdown(null), null);
 console.log('tax-breakdown-display self-check ok');
-

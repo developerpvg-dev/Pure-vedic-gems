@@ -112,22 +112,12 @@ export default function DesignPricingPreview({
           </div>
         )}
         <div className="flex justify-between gap-4 border-t border-amber-200/80 pt-2">
-          <dt className="text-gray-600">Jewellery subtotal (ex-GST)</dt>
-          <dd className="font-semibold text-gray-900">{formatPrice(subtotal)}</dd>
-        </div>
-        {gstEstimate > 0 && (
-          <div className="flex justify-between gap-4">
-            <dt className="text-gray-600">Est. GST on jewellery (3%)</dt>
-            <dd className="font-medium text-gray-900">{formatPrice(gstEstimate)}</dd>
-          </div>
-        )}
-        <div className="flex justify-between gap-4">
-          <dt className="font-semibold text-gray-900">Est. jewellery total</dt>
+          <dt className="text-gray-600">Jewellery (incl. 3% GST)</dt>
           <dd className="font-bold text-amber-800">{formatPrice(totalWithGst)}</dd>
         </div>
       </dl>
       <p className="mt-2 text-[11px] text-gray-500">
-        Gemstone price, certification, energization, and shipping are added separately in the configurator.
+        Customer-facing metal / mounting prices include 3% GST. Gemstone, certification, energization, and shipping are added separately (no GST on those).
       </p>
     </div>
   );

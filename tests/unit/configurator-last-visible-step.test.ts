@@ -47,4 +47,29 @@ describe('getConfiguratorLastVisibleStep', () => {
     });
     expect(getConfiguratorLastVisibleStep(3, baseState(), rules)).toBe(5);
   });
+
+  it('keeps energization for rudraksha pendant flow', () => {
+    const rules = normalizeConfiguratorRules({
+      certificate_enabled: true,
+      allowed_certification_lab_ids: ['lab-1'],
+      energization_enabled: true,
+      allowed_energization_option_ids: ['e1'],
+    });
+    expect(
+      getConfiguratorLastVisibleStep(
+        2,
+        baseState({
+          gem_category: 'rudraksha',
+          selected_product: {
+            id: 'p-r',
+            name: '5 Mukhi',
+            category: 'rudraksha',
+            sub_category: '5-mukhi',
+          } as ConfiguratorState['selected_product'],
+          setting_type: 'pendant',
+        }),
+        rules
+      )
+    ).toBe(7);
+  });
 });

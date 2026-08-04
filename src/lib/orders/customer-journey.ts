@@ -16,6 +16,8 @@ export type CustomerJourneyInput = {
   assigned_designer_id?: string | null;
   design_completed_at?: string | null;
   product_video_url?: string | null;
+  product_video_urls?: string[] | null;
+  product_image_urls?: string[] | null;
   puja_video_url?: string | null;
   energization_image_urls?: string[] | null;
   tracking_number?: string | null;
@@ -40,6 +42,7 @@ export type JourneyMilestone = {
   done: boolean;
   current: boolean;
   videoUrl?: string | null;
+  videoUrls?: string[];
   imageUrls?: string[];
   detail?: string | null;
 };
@@ -52,7 +55,7 @@ const STEP_DESCRIPTIONS: Record<JourneyStepKey, string> = {
   preparation: 'Items are being prepared, checked, and packed for dispatch.',
   certification: 'Lab certification documents are being prepared for your gem.',
   energization: 'Puja ritual is performed as requested. Video or pictures appear here when ready.',
-  product_video: 'A product video of your finished piece will appear here when ready.',
+  product_video: 'Product videos and images of your finished piece will appear here when ready.',
   puja_video: 'Puja ritual is performed as requested. Ceremony video appears here when ready.',
   packed: 'Order packed and ready for courier handoff.',
   shipped: 'Package handed to the courier with tracking details.',
@@ -77,6 +80,8 @@ function craftingComplete(order: CustomerJourneyInput) {
     !!order.design_completed_at ||
     order.status === 'design_completed' ||
     !!order.product_video_url ||
+    (order.product_video_urls?.length ?? 0) > 0 ||
+    (order.product_image_urls?.length ?? 0) > 0 ||
     !!order.puja_video_url ||
     !!order.tracking_number ||
     statusAtLeast(order.status, 'shipped')
@@ -144,6 +149,8 @@ function isStepDone(
     case 'product_video':
       return (
         !!order.product_video_url ||
+        (order.product_video_urls?.length ?? 0) > 0 ||
+        (order.product_image_urls?.length ?? 0) > 0 ||
         statusAtLeast(order.status, 'quality_check') ||
         !!order.tracking_number ||
         statusAtLeast(order.status, 'shipped')
@@ -211,6 +218,12 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
   const firstOpen = doneFlags.findIndex((done) => !done);
   const activeIndex = firstOpen === -1 ? stepTemplates.length - 1 : firstOpen;
   const pod = parseProofOfDelivery(order.compliance_flags);
+  const productVideos =
+    order.product_video_urls?.length
+      ? order.product_video_urls
+      : order.product_video_url
+        ? [order.product_video_url]
+        : [];
 
   const milestones: JourneyMilestone[] = stepTemplates.map((step, index) => ({
     key: step.key,
@@ -221,16 +234,19 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
     current: index === activeIndex,
     videoUrl:
       step.key === 'product_video'
-        ? order.product_video_url
+        ? productVideos[0] ?? null
         : step.key === 'energization' || step.key === 'puja_video'
           ? order.puja_video_url
           : null,
+    videoUrls: step.key === 'product_video' ? productVideos : undefined,
     imageUrls:
-      step.key === 'energization'
-        ? order.energization_image_urls ?? []
-        : step.key === 'delivered' && pod?.image_urls?.length
-          ? pod.image_urls
-          : [],
+      step.key === 'product_video'
+        ? order.product_image_urls ?? []
+        : step.key === 'energization'
+          ? order.energization_image_urls ?? []
+          : step.key === 'delivered' && pod?.image_urls?.length
+            ? pod.image_urls
+            : [],
     detail: stepDetail(step.key, order),
   }));
 

@@ -6,6 +6,7 @@ import {
   getTaxJurisdiction,
   gstOnAmount,
   gstOnJewellery,
+  jewelleryPriceInclGst,
   isMetalMounted,
   resolveGemOrBeadTaxRate,
   resolveProductTax,
@@ -40,52 +41,50 @@ describe('tax helpers', () => {
 
   it('uses IGST for inter-state deliveries and totals all components', () => {
     const product = calculateGstComponent({
-      label: 'Gemstone',
-      component: 'product',
+      label: 'Jewellery making',
+      component: 'metal',
       amount: 20000,
-      ratePercent: 0.25,
-      destinationState: 'Maharashtra',
-    });
-    const shipping = calculateGstComponent({
-      label: 'Shipping',
-      component: 'shipping',
-      amount: 250,
-      ratePercent: 18,
+      ratePercent: 3,
       destinationState: 'Maharashtra',
     });
 
-    const breakdown = buildTaxBreakdown('Maharashtra', [product, shipping]);
+    const breakdown = buildTaxBreakdown('Maharashtra', [product]);
 
     expect(breakdown.jurisdiction).toBe('inter_state');
-    expect(breakdown.totals).toMatchObject({ taxable_amount: 20250, cgst: 0, sgst: 0, igst: 95, gst_amount: 95 });
+    expect(breakdown.totals).toMatchObject({
+      taxable_amount: 20000,
+      cgst: 0,
+      sgst: 0,
+      igst: 600,
+      gst_amount: 600,
+    });
   });
 
-  it('applies business GST rate table', () => {
-    expect(resolveProductTax({ category: 'Ruby' }).rate_percent).toBe(0.25);
-    expect(resolveProductTax({ category: 'navaratna' }).rate_percent).toBe(0.25);
-    expect(resolveProductTax({ category: 'gemstone' }).rate_percent).toBe(0.25);
+  it('applies business GST rate table (loose 0%, jewellery 3%)', () => {
+    expect(resolveProductTax({ category: 'Ruby' }).rate_percent).toBe(0);
+    expect(resolveProductTax({ category: 'navaratna' }).rate_percent).toBe(0);
+    expect(resolveProductTax({ category: 'gemstone' }).rate_percent).toBe(0);
     expect(resolveProductTax({ category: 'rudraksha' }).rate_percent).toBe(0);
     expect(resolveProductTax({ category: 'mala' }).rate_percent).toBe(0);
     expect(resolveProductTax({ category: 'idol' }).rate_percent).toBe(0);
     expect(resolveProductTax({ category: 'jewelry' }).rate_percent).toBe(3);
-    expect(resolveGemOrBeadTaxRate('Ruby', false)).toBe(0.25);
-    expect(resolveGemOrBeadTaxRate('Ruby', true)).toBe(3);
+    expect(resolveGemOrBeadTaxRate('Ruby', false)).toBe(0);
+    expect(resolveGemOrBeadTaxRate('Ruby', true)).toBe(0);
     expect(isMetalMounted({ metal: 100 })).toBe(true);
     expect(isMetalMounted({ making: 50 })).toBe(true);
     expect(isMetalMounted({})).toBe(false);
+    expect(jewelleryPriceInclGst(1000)).toBe(1030);
   });
 
-  it('charges 0.25% on plain loose navaratna stone (no jewellery config)', () => {
+  it('charges 0% on plain loose navaratna stone (no jewellery config)', () => {
     const gst = estimateClientTax(
       [{ price: 99930, quantity: 1, category: 'navaratna' }],
       0,
     );
-    expect(gst).toBe(Math.round(gstOnAmount(99930, 0.25)));
-    expect(gst).toBe(250);
+    expect(gst).toBe(0);
   });
 
-  it('charges one 3% GST on (gem + metal + labour) for jewellery — including fixed making', () => {
-    // Cart screenshot case: gem 130645 + fixed mounting 10000; puja exempt
+  it('charges 3% GST on jewellery only — not on the gem — for configured pieces', () => {
     const gst = estimateClientTax(
       [
         {
@@ -111,11 +110,11 @@ describe('tax helpers', () => {
       0,
     );
 
-    expect(gst).toBe(Math.round(gstOnJewellery({ gem: 130645, making: 10000 })));
-    expect(gst).toBe(4219);
+    expect(gst).toBe(Math.round(gstOnJewellery({ making: 10000 })));
+    expect(gst).toBe(300);
   });
 
-  it('charges one 3% on gem+metal+labour+diamond together', () => {
+  it('charges 3% on metal+labour only and 0% on shipping', () => {
     const gst = estimateClientTax(
       [
         {
@@ -140,13 +139,11 @@ describe('tax helpers', () => {
       1500,
     );
 
-    const expected = Math.round(
-      gstOnAmount(15048 + 41300 + 10325, 3) + gstOnAmount(1500, 18),
-    );
+    const expected = Math.round(gstOnAmount(41300 + 10325, 3));
     expect(gst).toBe(expected);
   });
 
-  it('applies loose rudraksha 0% and metal-mounted rudraksha 3% once on bead+metal+labour', () => {
+  it('applies loose rudraksha 0% and metal-mounted rudraksha 3% on metal+labour only', () => {
     expect(estimateClientTax([{ price: 500, quantity: 1, category: 'rudraksha' }], 0)).toBe(0);
 
     const gst = estimateClientTax(
@@ -173,10 +170,10 @@ describe('tax helpers', () => {
       0,
     );
 
-    expect(gst).toBe(Math.round(gstOnJewellery({ gem: 18.82, metal: 150.45, making: 30.2 })));
+    expect(gst).toBe(Math.round(gstOnJewellery({ metal: 150.45, making: 30.2 })));
   });
 
-  it('keeps loose stone at 0.25% when no metal/making', () => {
+  it('keeps loose stone at 0% when no metal/making', () => {
     const gst = estimateClientTax(
       [
         {
@@ -200,7 +197,7 @@ describe('tax helpers', () => {
       ],
       0,
     );
-    expect(gst).toBe(Math.round(gstOnAmount(20000, 0.25)));
+    expect(gst).toBe(0);
   });
 
   it('applies 3% on ready diamond/jewellery products', () => {
@@ -211,7 +208,7 @@ describe('tax helpers', () => {
 });
 
 describe('labor FIXED vs % end-to-end with GST', () => {
-  it('fixed making from design sheet (silver) — one 3% on gem+making+diamond', () => {
+  it('fixed making from design sheet (silver) — 3% on making+diamond only', () => {
     const jewelry = calculateJewelryDesignPricing({
       metal: 'silver_925',
       makingCharges: { silver_925: 8500 },
@@ -244,7 +241,7 @@ describe('labor FIXED vs % end-to-end with GST', () => {
     });
 
     expect(totals.pre_gst_subtotal).toBe(30500);
-    expect(totals.gst_jewelry).toBe(gstOnJewellery({ gem: 20000, making: 8500, diamond: 2000 }));
+    expect(totals.gst_jewelry).toBe(gstOnJewellery({ making: 8500, diamond: 2000 }));
     expect(totals.gst_gemstone).toBe(0);
     expect(totals.gst_metal).toBe(0);
     expect(totals.gst_making).toBe(0);
@@ -303,7 +300,7 @@ describe('labor FIXED vs % end-to-end with GST', () => {
     expect(rates.gold_22k).toBe(20);
   });
 
-  it('client GST estimate matches one jewellery 3% for weight + diamond', () => {
+  it('client GST estimate matches jewellery 3% (metal+labour+diamond only)', () => {
     const jewelry = calculateJewelryDesignPricing({
       metal: 'gold_18k',
       makingCharges: {},
@@ -353,7 +350,6 @@ describe('labor FIXED vs % end-to-end with GST', () => {
 
     const serverGst = Math.round(
       gstOnJewellery({
-        gem,
         metal: jewelry.metalPrice,
         making: jewelry.makingCharge,
         diamond: jewelry.diamondCharge,

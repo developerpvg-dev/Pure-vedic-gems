@@ -10,6 +10,7 @@ import {
   parseBankTransferProof,
   publicBankTransferSummary,
 } from '@/lib/orders/bank-transfer-proof';
+import { normalizeHttpsUrlList, parseComplianceFlags } from '@/lib/orders/returns';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -179,6 +180,7 @@ export async function POST(request: NextRequest) {
     .order('event_time', { ascending: false });
 
   const items = await enrichOrderItemsWithImages(parseOrderItems(order.items as never), admin);
+  const mediaFlags = parseComplianceFlags(order.compliance_flags);
 
   return NextResponse.json({
     order: {
@@ -216,7 +218,11 @@ export async function POST(request: NextRequest) {
       tracking_url: order.tracking_url,
       carrier: order.carrier,
       product_video_url: order.product_video_url,
+      product_video_urls: normalizeHttpsUrlList(mediaFlags.product_video_urls),
+      product_image_urls: normalizeHttpsUrlList(mediaFlags.product_image_urls),
       puja_video_url: order.puja_video_url,
+      energization_image_urls: normalizeHttpsUrlList(mediaFlags.energization_image_urls),
+      compliance_flags: order.compliance_flags,
       estimated_delivery: order.estimated_delivery,
       items,
       can_cancel:

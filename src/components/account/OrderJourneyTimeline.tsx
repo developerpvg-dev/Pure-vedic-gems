@@ -164,18 +164,24 @@ export function OrderJourneyTimeline({
                   </p>
                 ) : null}
 
-                {milestone.videoUrl ? (
+                {(milestone.videoUrls?.length
+                  ? milestone.videoUrls
+                  : milestone.videoUrl
+                    ? [milestone.videoUrl]
+                    : []
+                ).map((url, index, list) => (
                   <a
-                    href={milestone.videoUrl}
+                    key={`${url}-${index}`}
+                    href={url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#8a6400] underline-offset-2 hover:underline"
                   >
                     <PlayCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                    Watch video
+                    {list.length > 1 ? `Watch video ${index + 1}` : 'Watch video'}
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
-                ) : null}
+                ))}
 
                 {milestone.imageUrls && milestone.imageUrls.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-2">

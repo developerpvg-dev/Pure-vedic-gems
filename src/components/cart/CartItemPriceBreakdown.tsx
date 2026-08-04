@@ -25,12 +25,13 @@ export function CartItemPriceBreakdown({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const breakdown = useMemo(() => buildCartItemPriceBreakdown(item), [item]);
+  const itemTotal = (breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity;
 
   const footnote =
     gstNote ??
     (breakdown.estimatedGst > 0
-      ? 'GST shown is an estimate. Final tax is calculated at checkout based on your shipping address.'
-      : 'Shipping and final GST/IGST are calculated at checkout.');
+      ? 'Jewellery prices include 3% GST. Gemstones / Rudraksha are GST-free. Final totals are confirmed at checkout.'
+      : 'Shipping is calculated at checkout. Loose stones and Rudraksha are GST-free.');
 
   return (
     <div className="mt-2 rounded-lg border border-[var(--pvg-border)]/80 bg-brand-bg-alt/60">
@@ -45,7 +46,7 @@ export function CartItemPriceBreakdown({
         </span>
         <span className="flex items-center gap-2">
           <span className="text-[12px] font-bold tabular-nums text-[var(--pvg-primary)]">
-            {formatPrice((breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity)}
+            {formatPrice(itemTotal)}
           </span>
           <ChevronDown
             className={`h-4 w-4 text-[var(--pvg-muted)] transition-transform ${open ? 'rotate-180' : ''}`}
@@ -69,28 +70,17 @@ export function CartItemPriceBreakdown({
             </div>
           ))}
 
-          <div className="flex items-center justify-between gap-3 border-t border-dashed border-[var(--pvg-border)] pt-2 text-[12px] font-semibold text-[var(--pvg-primary)]">
-            <span>Item subtotal (ex-GST)</span>
-            <span className="tabular-nums">{formatPrice(breakdown.preGstSubtotal * item.quantity)}</span>
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--pvg-border)]/70 pt-2 text-[12px] font-semibold text-[var(--pvg-primary)]">
+            <span>
+              Item total
+              {breakdown.estimatedGst > 0 ? (
+                <span className="block text-[10px] font-normal text-[var(--pvg-muted)]">
+                  incl. GST on jewellery
+                </span>
+              ) : null}
+            </span>
+            <span className="tabular-nums">{formatPrice(itemTotal)}</span>
           </div>
-
-          {breakdown.gstLines.map((line) => (
-            <div key={line.key} className="flex items-start justify-between gap-3 text-[12px]">
-              <p className="text-[var(--pvg-muted)]">{line.label}</p>
-              <span className="shrink-0 tabular-nums text-[var(--pvg-muted)]">
-                {amountLabel(line.amount, line.display)}
-              </span>
-            </div>
-          ))}
-
-          {breakdown.estimatedGst > 0 && (
-            <div className="flex items-center justify-between gap-3 border-t border-[var(--pvg-border)]/70 pt-2 text-[12px] font-semibold text-[var(--pvg-primary)]">
-              <span>Item total (incl. est. GST)</span>
-              <span className="tabular-nums">
-                {formatPrice((breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity)}
-              </span>
-            </div>
-          )}
 
           <p className="text-[10px] leading-relaxed text-[var(--pvg-muted)]">{footnote}</p>
         </div>

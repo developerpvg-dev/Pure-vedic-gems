@@ -28,8 +28,7 @@ describe('resolveConfiguratorOptionRules', () => {
     expect(rules.jewelry_design_enabled).toBe(true);
     expect(rules.metal_enabled).toBe(true);
     expect(rules.allowed_setting_types).toEqual(['pendant']);
-    expect(rules.energization_enabled).toBe(false);
-    expect(rules.allowed_energization_option_ids).toEqual([]);
+    expect(rules.energization_enabled).toBe(true);
   });
 
   it('keeps loose-only rules for non-configurator products with stored rules', () => {

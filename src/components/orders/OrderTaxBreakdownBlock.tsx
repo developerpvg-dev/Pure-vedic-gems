@@ -101,7 +101,7 @@ export function OrderTaxBreakdownBlock({
               Taxable components
               <span className="font-normal text-stone-400">
                 {' '}
-                (loose stone 0.25% · jewellery 3% · shipping 18%)
+                (gem/bead 0% · jewellery 3% · shipping 0%)
               </span>
             </p>
             {componentsList}

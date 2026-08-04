@@ -42,6 +42,7 @@ describe('fulfillment-profile', () => {
       'payment',
       'confirmed',
       'processing',
+      'product_video',
       'packed',
       'shipped',
       'in_transit',
@@ -50,6 +51,16 @@ describe('fulfillment-profile', () => {
       'feedback',
     ]);
     expect(context.needsCrafting).toBe(false);
+    expect(context.showProductVideo).toBe(true);
+  });
+
+  it('includes product video for loose rudraksha', () => {
+    const context = resolveOrderFulfillmentContext({
+      items: [{ category: 'rudraksha', configuration_snapshot: { selections: { setting_type: 'loose' } } }],
+    });
+    expect(context.profile).toBe('rudraksha_loose');
+    expect(context.showProductVideo).toBe(true);
+    expect(getJourneyStepsForContext(context).map((s) => s.key)).toContain('product_video');
   });
 
   it('includes mounting steps for rudraksha pendants', () => {
@@ -110,7 +121,7 @@ describe('fulfillment-profile', () => {
 });
 
 describe('customer-journey', () => {
-  it('hides crafting milestones for loose gemstone orders', () => {
+  it('shows product video milestone for loose gemstone orders', () => {
     const journey = getCustomerJourney({
       status: 'processing',
       payment_status: 'captured',
@@ -118,6 +129,7 @@ describe('customer-journey', () => {
     });
     expect(journey?.milestones.map((m) => m.key)).not.toContain('crafting');
     expect(journey?.milestones.map((m) => m.label)).toContain('Gem Preparation');
+    expect(journey?.milestones.map((m) => m.key)).toContain('product_video');
   });
 
   it('shows pendant mounting for rudraksha configured orders', () => {

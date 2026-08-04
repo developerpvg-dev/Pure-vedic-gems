@@ -5,12 +5,18 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
 import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
 import { sendProductVideoReviewEmail } from '@/lib/resend/send-product-video-review';
+import { sendRingSizeReuploadEmail } from '@/lib/resend/send-ring-size-reupload';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
 import { cancelRewardRedemption } from '@/lib/rewards/service';
-import { mergeComplianceFlags, parseComplianceFlags } from '@/lib/orders/returns';
+import {
+  mergeComplianceFlags,
+  normalizeHttpsUrlList,
+  parseComplianceFlags,
+} from '@/lib/orders/returns';
 import { beginProductVideoReviewNotify } from '@/lib/orders/product-video-review';
+import { beginRingSizeConfirmationNotify } from '@/lib/orders/ring-size-confirmation';
 import { requiresDispatchPaymentVerify } from '@/lib/orders/dispatch-proof';
 import { OrderCommissionSchema } from '@/lib/validators/order';
 import { ORDER_STATUSES } from '@/lib/constants/order-status';
@@ -73,7 +79,11 @@ export async function PUT(
     assigned_to,
     notify_customer,
     notify_product_video,
+    notify_ring_size,
+    ring_size_admin_remarks,
     product_video_url,
+    product_video_urls,
+    product_image_urls,
     puja_video_url,
     energization_image_urls,
     commission_source,
@@ -195,26 +205,48 @@ export async function PUT(
   if (assigned_to !== undefined) updates.assigned_to = assigned_to;
   if (product_video_url !== undefined) updates.product_video_url = product_video_url || null;
   if (puja_video_url !== undefined) updates.puja_video_url = puja_video_url || null;
+
+  const mediaFlagPatch: {
+    energization_image_urls?: string[];
+    product_video_urls?: string[];
+    product_image_urls?: string[];
+  } = {};
   if (energization_image_urls !== undefined) {
-    const urls = Array.isArray(energization_image_urls)
-      ? energization_image_urls
-          .filter((u: unknown): u is string => typeof u === 'string')
-          .map((u: string) => u.trim())
-          .filter((u: string) => /^https?:\/\//i.test(u))
-          .slice(0, 8)
-      : [];
+    mediaFlagPatch.energization_image_urls = normalizeHttpsUrlList(energization_image_urls);
+  }
+  if (product_video_urls !== undefined) {
+    const urls = normalizeHttpsUrlList(product_video_urls);
+    mediaFlagPatch.product_video_urls = urls;
+    updates.product_video_url = urls[0] ?? null;
+  }
+  if (product_image_urls !== undefined) {
+    mediaFlagPatch.product_image_urls = normalizeHttpsUrlList(product_image_urls);
+  }
+  if (Object.keys(mediaFlagPatch).length > 0) {
     updates.compliance_flags = mergeComplianceFlags(
       updates.compliance_flags ?? current.compliance_flags,
-      { energization_image_urls: urls },
+      mediaFlagPatch,
     );
   }
 
   let productVideoReviewRound: number | null = null;
   let productVideoReviewUrl: string | null = null;
+  let productVideoReviewVideos: string[] = [];
+  let productVideoReviewImages: string[] = [];
   if (notify_product_video) {
-    const videoUrl = String(
-      product_video_url !== undefined ? product_video_url || '' : current.product_video_url || '',
-    ).trim();
+    const flagsForNotify = parseComplianceFlags(
+      updates.compliance_flags ?? current.compliance_flags,
+    );
+    const videoUrls =
+      product_video_urls !== undefined
+        ? normalizeHttpsUrlList(product_video_urls)
+        : normalizeHttpsUrlList(flagsForNotify.product_video_urls);
+    const videoUrl = (
+      videoUrls[0] ||
+      (product_video_url !== undefined ? product_video_url || '' : current.product_video_url || '')
+    )
+      .toString()
+      .trim();
     if (!videoUrl || !/^https?:\/\//i.test(videoUrl)) {
       return NextResponse.json(
         { error: 'Add a product video URL before notifying the customer' },
@@ -228,6 +260,11 @@ export async function PUT(
       );
     }
     updates.product_video_url = videoUrl;
+    productVideoReviewVideos = videoUrls.length ? videoUrls : [videoUrl];
+    productVideoReviewImages =
+      product_image_urls !== undefined
+        ? normalizeHttpsUrlList(product_image_urls)
+        : normalizeHttpsUrlList(flagsForNotify.product_image_urls);
     try {
       const started = beginProductVideoReviewNotify(
         updates.compliance_flags ?? current.compliance_flags,
@@ -243,6 +280,39 @@ export async function PUT(
       );
     }
   }
+
+  let ringSizeNotifyRound: number | null = null;
+  let ringSizeNotifyRemarks: string | null = null;
+  if (notify_ring_size) {
+    const remarks = String(ring_size_admin_remarks ?? '').trim();
+    if (!remarks) {
+      return NextResponse.json(
+        { error: 'Write what is wrong with the diameter photo before notifying the customer' },
+        { status: 400 },
+      );
+    }
+    if (!customerEmail) {
+      return NextResponse.json(
+        { error: 'No customer email on this order — cannot send ring size email' },
+        { status: 400 },
+      );
+    }
+    try {
+      const started = beginRingSizeConfirmationNotify(
+        updates.compliance_flags ?? current.compliance_flags,
+        remarks,
+      );
+      updates.compliance_flags = started.flags;
+      ringSizeNotifyRound = started.confirmation.round;
+      ringSizeNotifyRemarks = started.confirmation.admin_remarks ?? remarks;
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Could not request ring size re-upload' },
+        { status: 400 },
+      );
+    }
+  }
+
   if (commission_source !== undefined) {
     updates.commission_source =
       commission_source === '' || commission_source === null ? null : commission_source;
@@ -432,7 +502,53 @@ export async function PUT(
       orderId: id,
       round: productVideoReviewRound,
       videoUrl: productVideoReviewUrl,
+      videoUrls: productVideoReviewVideos,
+      imageUrls: productVideoReviewImages,
     });
+  }
+
+  let ringSizeReuploadEmailId: string | null = null;
+  if (
+    notify_ring_size &&
+    customerEmail &&
+    ringSizeNotifyRound != null &&
+    ringSizeNotifyRemarks
+  ) {
+    ringSizeReuploadEmailId = await sendRingSizeReuploadEmail({
+      to: customerEmail,
+      customerName,
+      orderNumber: current.order_number,
+      orderId: id,
+      round: ringSizeNotifyRound,
+      adminRemarks: ringSizeNotifyRemarks,
+    });
+
+    await db.from('order_tracking_events').insert({
+      order_id: id,
+      status: 'ring_size_photo_revision',
+      event_time: new Date().toISOString(),
+      note: `Admin requested ring diameter photo revision (round ${ringSizeNotifyRound}): ${ringSizeNotifyRemarks}`,
+      is_customer_visible: true,
+    });
+
+    if (current.customer_id) {
+      await createInAppNotifications([
+        {
+          audience: 'user',
+          recipientUserId: current.customer_id,
+          type: 'ring_size_confirmation',
+          title: 'Ring diameter photo needs an update',
+          message: `Please re-upload your ring diameter photo for order ${current.order_number}.`,
+          href: '/account/orders',
+          entityType: 'order',
+          entityId: id,
+          metadata: {
+            order_number: current.order_number,
+            round: ringSizeNotifyRound,
+          },
+        },
+      ]);
+    }
   }
 
   if (trackingChanged || productVideoAdded || pujaVideoAdded || statusChanged) {
@@ -506,6 +622,8 @@ export async function PUT(
       trackingEmailId,
       productVideoReviewEmailId,
       productVideoReviewRound,
+      ringSizeReuploadEmailId,
+      ringSizeNotifyRound,
     },
     ipAddress: ip,
   });

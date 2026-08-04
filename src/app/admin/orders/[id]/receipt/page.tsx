@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils/rudraksha-order-display';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
+import { parseComplianceFlags } from '@/lib/orders/returns';
 import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 
 export const dynamic = 'force-dynamic';
@@ -594,6 +595,18 @@ export default async function OrderReceiptPage({
             />
             <Row label="Design notes" value={order.design_notes} />
             <Row label="Product video" value={order.product_video_url} />
+            <Row
+              label="Product videos"
+              value={
+                parseComplianceFlags(order.compliance_flags).product_video_urls?.join('\n') || null
+              }
+            />
+            <Row
+              label="Product images"
+              value={
+                parseComplianceFlags(order.compliance_flags).product_image_urls?.join('\n') || null
+              }
+            />
             <Row label="Puja video" value={order.puja_video_url} />
           </dl>
         </Section>

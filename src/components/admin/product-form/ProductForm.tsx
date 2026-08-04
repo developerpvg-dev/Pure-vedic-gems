@@ -449,6 +449,12 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     setAllowedEnergizationOptionIds(energizationOptions.map((option) => option.id));
   }, [allowedEnergizationOptionIds.length, energizationOptions, mode]);
 
+  // Configurable rudraksha: energization addon stays on by default when the configurator is on.
+  useEffect(() => {
+    if (mode !== 'create' || config.kind !== 'rudraksha' || !configuratorEnabled) return;
+    setEnergizationAddonEnabled(true);
+  }, [config.kind, configuratorEnabled, mode]);
+
   function toggleEnergizationOption(optionId: string) {
     setAllowedEnergizationOptionIds((current) =>
       current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId]
@@ -725,9 +731,21 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     };
 
     if (supportsCertAddons) {
+      // Rudraksha: only configurable products get energization addons; gems keep prior behavior.
+      const energizationActive =
+        energizationAddonEnabled &&
+        (config.kind !== 'rudraksha' || effectiveConfiguratorEnabled);
+      // ponytail: fall back to all loaded options if create raced before checkboxes hydrated
+      const energIds = energizationActive
+        ? allowedEnergizationOptionIds.length > 0
+          ? allowedEnergizationOptionIds
+          : energizationOptions.map((option) => option.id)
+        : [];
+
       body.option_rules = {
         certificate_enabled: certificationAddonEnabled && allowedCertificationLabIds.length > 0,
-        energization_enabled: energizationAddonEnabled && allowedEnergizationOptionIds.length > 0,
+        // keep enabled even if ids still empty — withDefaultConfiguratorAllowLists fills later
+        energization_enabled: energizationActive,
         jewelry_design_enabled: effectiveConfiguratorEnabled,
         metal_enabled: effectiveConfiguratorEnabled,
         ring_size_enabled: effectiveConfiguratorEnabled,
@@ -736,7 +754,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         allowed_ring_size_systems:
           effectiveConfiguratorEnabled || ringSizeSystem ? ['india', 'us', 'uk_au', 'eu'] : [],
         allowed_certification_lab_ids: certificationAddonEnabled ? allowedCertificationLabIds : [],
-        allowed_energization_option_ids: energizationAddonEnabled ? allowedEnergizationOptionIds : [],
+        allowed_energization_option_ids: energIds,
       };
     }
 

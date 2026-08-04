@@ -13,6 +13,7 @@ const RUDRAKSHA_STEP_LABELS: Record<number, { title: string; short: string }> = 
   4: { title: 'Pendant Design', short: 'Mounting' },
   5: { title: 'Metal & Chain', short: 'Metal & Chain' },
   6: { title: 'Certification', short: 'Certification' },
+  7: { title: 'Energization', short: 'Energization' },
 };
 
 export function getConfiguratorStepMeta(
@@ -47,12 +48,6 @@ export function isConfiguratorStepSkipped(
     return true;
   }
   if (step === 7 && !isEnergizationStepAvailable(optionRules ?? null)) {
-    return true;
-  }
-  if (
-    step === 7 &&
-    isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)
-  ) {
     return true;
   }
   return false;

@@ -8,6 +8,8 @@ import { LOW_STOCK_THRESHOLD, notifyLowStockProduct } from '@/lib/inventory/stoc
 import { PRICE_MODES, PRODUCT_TYPES } from '@/lib/constants/product-taxonomy';
 import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 import { applyNoCertificationFields } from '@/lib/utils/format';
+import { DEFAULT_GEMSTONE_ENERGIZATION_SLUGS } from '@/lib/utils/legacy-energization-options';
+import { withConfigurableRudrakshaEnergizationDefaults } from '@/lib/utils/rudraksha-configurator';
 
 type RelatedProductPayload = Pick<
   ProductCreateInput,
@@ -29,6 +31,24 @@ type UntypedTable = {
 type UntypedDb = { from: (table: string) => UntypedTable };
 const AVAILABILITY_FILTERS = ['in_stock', 'out_of_stock', 'sold', 'reserved', 'on_demand', 'archived'] as const;
 const ADMIN_SORT_COLUMNS = ['newest', 'price', 'carat', 'name', 'stock'] as const;
+
+async function loadDefaultEnergizationOptionIds(
+  admin: ReturnType<typeof createAdminClient>,
+): Promise<string[]> {
+  const { data } = await admin
+    .from('energization_options')
+    .select('id, legacy_slug')
+    .eq('is_active', true);
+  const bySlug = new Map<string, string>();
+  for (const row of data ?? []) {
+    if (row.legacy_slug) bySlug.set(String(row.legacy_slug), String(row.id));
+  }
+  const fromSlugs = DEFAULT_GEMSTONE_ENERGIZATION_SLUGS.map((slug) => bySlug.get(slug)).filter(
+    (id): id is string => Boolean(id),
+  );
+  if (fromSlugs.length > 0) return fromSlugs;
+  return (data ?? []).map((row) => String(row.id));
+}
 
 function parseOptionalNumber(value: string | null) {
   if (!value?.trim()) return undefined;
@@ -259,6 +279,16 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const { productPayload, relatedPayload } = splitProductPayload(parsed.data);
   applyNoCertificationFields(productPayload as Record<string, unknown>);
+
+  // Configurable rudraksha: energization on by default when creating.
+  if (productPayload.category === 'rudraksha' && productPayload.configurator_enabled) {
+    const defaultEnergIds = await loadDefaultEnergizationOptionIds(admin);
+    relatedPayload.option_rules = withConfigurableRudrakshaEnergizationDefaults(
+      relatedPayload.option_rules,
+      defaultEnergIds,
+    ) as RelatedProductPayload['option_rules'];
+  }
+
   const { data: product, error } = await (admin
     .from('products') as ReturnType<typeof admin.from>)
     .insert(productPayload as Record<string, unknown>)

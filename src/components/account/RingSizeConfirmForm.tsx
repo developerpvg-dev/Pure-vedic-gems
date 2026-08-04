@@ -9,13 +9,17 @@ export function RingSizeConfirmForm({
   token,
   orderNumber,
   alreadyImageUrl,
+  adminRemarks,
+  round = 1,
 }: {
   token: string;
   orderNumber: string;
   alreadyImageUrl?: string | null;
+  adminRemarks?: string | null;
+  round?: number;
 }) {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(alreadyImageUrl ?? null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [doneUrl, setDoneUrl] = useState<string | null>(alreadyImageUrl ?? null);
@@ -24,7 +28,7 @@ export function RingSizeConfirmForm({
     setFile(next);
     setError('');
     if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
-    setPreview(next ? URL.createObjectURL(next) : alreadyImageUrl ?? null);
+    setPreview(next ? URL.createObjectURL(next) : null);
   };
 
   const submit = async () => {
@@ -77,8 +81,17 @@ export function RingSizeConfirmForm({
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
           Order {orderNumber}
+          {round > 1 ? ` · Revision ${round}` : ''}
         </p>
-        <h2 className="mt-2 font-heading text-2xl text-stone-900">Confirm your ring size</h2>
+        <h2 className="mt-2 font-heading text-2xl text-stone-900">
+          {adminRemarks ? 'Please re-upload your ring diameter photo' : 'Confirm your ring size'}
+        </h2>
+        {adminRemarks ? (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p className="font-semibold">What to fix</p>
+            <p className="mt-1 whitespace-pre-wrap">{adminRemarks}</p>
+          </div>
+        ) : null}
         <p className="mt-3 text-sm leading-relaxed text-stone-600">{RING_SIZE_CONFIRM_COPY}</p>
 
         <div className="mt-5 overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
@@ -127,7 +140,7 @@ export function RingSizeConfirmForm({
           className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {saving ? 'Uploading…' : 'Submit photo'}
+          {saving ? 'Uploading…' : adminRemarks ? 'Submit new photo' : 'Submit photo'}
         </button>
       </div>
     </div>

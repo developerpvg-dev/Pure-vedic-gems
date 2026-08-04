@@ -242,7 +242,7 @@ export async function recalculateOrderTotal(
     }
   }
 
-  /** Indexes in pricedItems whose gem/bead is metal-mounted → GST folds into 3% jewellery base. */
+  /** Indexes in pricedItems whose gem/bead is metal-mounted → gem line is GST-exempt. */
   const mountedLineIndexes = new Set<number>();
 
   for (const item of items) {
@@ -314,10 +314,10 @@ export async function recalculateOrderTotal(
       : false;
 
     const productTax = resolveProductTax(product);
-    // Mounted stone/rudraksha: gem/bead joins 3% jewellery slab (not loose 0.25%/0%).
-    const taxRate = mounted ? GST_METAL_MOUNTED_PERCENT : productTax.rate_percent;
-    const taxClass = mounted ? 'jewellery' : productTax.tax_class;
-    const hsnCode = mounted ? (productTax.hsn_code ?? '7113') : productTax.hsn_code;
+    // Mounted stone/rudraksha: gem/bead is GST-exempt; jewellery GST is on metal/making only.
+    const taxRate = mounted ? 0 : productTax.rate_percent;
+    const taxClass = mounted ? 'jewellery_mounted_gem' : productTax.tax_class;
+    const hsnCode = productTax.hsn_code;
 
     const configuredGemPrice = cfg ? Number(cfg.gem_price ?? 0) : undefined;
     const unitPrice =
@@ -505,48 +505,46 @@ export async function recalculateOrderTotal(
   const discount = couponDiscount + rewardDiscount + manualDiscount;
 
   // ── 6. GST calculation ────────────────────────────────────────────────
-  // Loose products: category rate on the line.
-  // Jewellery (weight or fixed): one 3% on (gem + metal + labour + diamond/custom).
-  // Cert/energization exempt; shipping 18%.
+  // Gem/bead never taxed. Jewellery (metal + making/diamond/custom) @ 3%.
+  // Shipping / cert / energization: 0%.
   const itemDiscountRatio = subtotal > 0 ? Math.min(discount / subtotal, 1) : 0;
-  let mountedGemTaxable = 0;
   const productTaxComponents = pricedItems.map((item, index) => {
-    const taxable = item.line_total * (1 - itemDiscountRatio);
-    if (mountedLineIndexes.has(index)) {
-      mountedGemTaxable += taxable;
-      return null;
-    }
+    // Mounted configs: gem/bead line is GST-exempt (jewellery GST is on metal/making only).
+    if (mountedLineIndexes.has(index)) return null;
     return calculateGstComponent({
       label: item.name,
       component: 'product',
-      amount: taxable,
+      amount: item.line_total * (1 - itemDiscountRatio),
       ratePercent: item.tax_rate_percent,
       hsnCode: item.hsn_code,
       destinationState: shippingAddress?.state,
     });
   });
-  const jewelleryTaxable = mountedGemTaxable + metalCharges + jewelryCharges;
+  const jewelleryTaxable = metalCharges + jewelryCharges;
   const taxBreakdown = buildTaxBreakdown(shippingAddress?.state, [
     ...productTaxComponents,
     calculateGstComponent({
-      label: 'Jewellery (gem/bead + metal + labour + stone add-on)',
+      label: 'Jewellery (metal + labour + stone add-on)',
       component: 'metal',
       amount: jewelleryTaxable,
       ratePercent: GST_METAL_MOUNTED_PERCENT,
       hsnCode: '7113',
       destinationState: shippingAddress?.state,
     }),
-    // ponytail: cert + energization fees are GST-exempt (fee already final); shipping stays 18%
-    calculateGstComponent({
-      label: 'Shipping, insurance, and handling',
-      component: 'shipping',
-      amount: shippingCost,
-      ratePercent: 18,
-      hsnCode: '9968',
-      destinationState: shippingAddress?.state,
-    }),
   ]);
   const gstAmount = Math.round(taxBreakdown.totals.gst_amount);
+  // Keep stored split totals aligned with the rupee GST actually charged on the order.
+  taxBreakdown.totals.gst_amount = gstAmount;
+  if (taxBreakdown.jurisdiction === 'intra_state') {
+    const half = Math.round((gstAmount / 2) * 100) / 100;
+    taxBreakdown.totals.cgst = half;
+    taxBreakdown.totals.sgst = Math.round((gstAmount - half) * 100) / 100;
+    taxBreakdown.totals.igst = 0;
+  } else {
+    taxBreakdown.totals.igst = gstAmount;
+    taxBreakdown.totals.cgst = 0;
+    taxBreakdown.totals.sgst = 0;
+  }
 
   const taxableAmount =
     subtotal + jewelryCharges + metalCharges + certificationCharges + energizationCharges - discount;

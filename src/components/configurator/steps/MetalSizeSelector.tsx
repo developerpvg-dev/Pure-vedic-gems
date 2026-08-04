@@ -26,6 +26,7 @@ import {
 import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
 import { resolveMetalRatePerGram } from '@/lib/hooks/useManualMetalPrices';
 import type { MetalPricingMode } from '@/lib/utils/metal-pricing-config';
+import { jewelleryPriceInclGst } from '@/lib/utils/tax';
 import MetalTrustMarquee from '@/components/configurator/MetalTrustMarquee';
 
 interface MetalSizeSelectorProps {
@@ -108,11 +109,13 @@ function buildMetalPriceLines(
   stoneLabel?: string | null
 ): MetalPriceLine[] {
   // ponytail: metal+labor folded into Est. mounting; only surface stone add-on if present
+  // Amounts are tax-inclusive (jewellery 3%); gem never taxed.
   if (estimate.diamondCharge <= 0) return [];
   return [
     {
       label: stoneLabel?.trim() || 'Diamond',
-      amount: estimate.diamondCharge,
+      amount: jewelleryPriceInclGst(estimate.diamondCharge),
+      detail: 'incl. GST',
     },
   ];
 }
@@ -161,10 +164,16 @@ function MetalOptionCard({
 }) {
   const priceLines = hasRates ? buildMetalPriceLines(estimate, stoneLabel) : [];
   const showTotal = hasRates && estimate.total > 0;
+  // Tax-inclusive jewellery display (3% baked in); gem never taxed.
+  const mountingIncl = jewelleryPriceInclGst(
+    estimate.metalPrice + estimate.makingCharge,
+  );
+  const totalIncl = jewelleryPriceInclGst(estimate.total);
   // When the only line equals the total (flat fee), skip the duplicate footer
   const showBreakdown =
     priceLines.length > 0 &&
-    !(priceLines.length === 1 && priceLines[0].amount === estimate.total);
+    !(priceLines.length === 1 && priceLines[0].amount === totalIncl);
+  const mountingDisplay = showBreakdown ? mountingIncl : totalIncl;
 
   return (
     <button
@@ -244,9 +253,14 @@ function MetalOptionCard({
                 'border-t border-dashed border-border/50 pt-2'
             )}
           >
-            <span className="text-[11px] font-medium text-foreground/80">Est. mounting</span>
+            <span className="text-[11px] font-medium text-foreground/80">
+              Est. mounting
+              <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground/80">
+                incl. GST
+              </span>
+            </span>
             <span className="text-[12px] font-semibold tabular-nums text-foreground">
-              {formatPrice(estimate.total)}
+              {formatPrice(mountingDisplay)}
             </span>
           </div>
         </div>

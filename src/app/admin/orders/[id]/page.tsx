@@ -497,13 +497,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 <span>{placedOn}</span>
                 {displayName ? (
                   <>
-                    <span className="text-stone-300">Â·</span>
+                    <span className="text-stone-300">{'\u00b7'}</span>
                     <span className="font-medium text-stone-700">{displayName}</span>
                   </>
                 ) : null}
                 {displayPhone ? (
                   <>
-                    <span className="text-stone-300">Â·</span>
+                    <span className="text-stone-300">{'\u00b7'}</span>
                     <span>{displayPhone}</span>
                   </>
                 ) : null}
@@ -589,7 +589,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                     Math.max(0, Number(o.total ?? 0) - Number(o.amount_paid ?? 0))),
             )}
           </Field>
-          <Field label="Payment">{cap(o.payment_method) ?? 'â€”'}</Field>
+          <Field label="Payment">{cap(o.payment_method) ?? '—'}</Field>
           <Field label="Fulfillment">
             {cap(o.fulfillment_type) ?? cap(o.shipping_method) ?? 'Standard'}
           </Field>
@@ -629,10 +629,18 @@ export default async function OrderDetailPage({ params }: PageProps) {
                   Ring size confirmation
                 </p>
                 <p className="mt-1 text-sm font-semibold text-stone-900">
+                  Round {ringSizeConfirmation.round} ·{' '}
                   {ringSizeConfirmation.status === 'submitted'
                     ? 'Customer uploaded internal-diameter photo'
-                    : 'Awaiting customer diameter photo (requested in confirmation email)'}
+                    : ringSizeConfirmation.admin_remarks
+                      ? 'Waiting for corrected diameter photo'
+                      : 'Awaiting customer diameter photo (requested in confirmation email)'}
                 </p>
+                {ringSizeConfirmation.status === 'pending' && ringSizeConfirmation.admin_remarks ? (
+                  <p className="mt-1 text-xs text-amber-950">
+                    Guidance sent: {ringSizeConfirmation.admin_remarks}
+                  </p>
+                ) : null}
                 {ringSizeConfirmation.image_url ? (
                   <a
                     href={ringSizeConfirmation.image_url}
@@ -741,7 +749,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                     </Field>
                   ) : null}
                   {!o.tracking_number && !o.estimated_delivery && !orderExtras.carrier ? (
-                    <p className="text-xs italic text-stone-400">No tracking yet â€” update in Manage</p>
+                    <p className="text-xs italic text-stone-400">No tracking yet — update in Manage</p>
                   ) : null}
                 </dl>
               </Panel>
@@ -858,7 +866,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 {fmt(item.line_total)}
                               </p>
                               <p className="text-xs text-stone-400">
-                                {fmt(item.unit_price)} Ã— {item.quantity}
+                                {fmt(item.unit_price)} {'\u00d7'} {item.quantity}
                               </p>
                             </div>
                           </div>
@@ -896,9 +904,10 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                       <div>
                                         <p className="font-semibold text-stone-800">
                                           <span className="text-stone-400">
-                                            {bead.role === 'primary' ? 'Primary' : 'Combo'} Â·{' '}
+                                            {bead.role === 'primary' ? 'Primary' : 'Combo'}
+                                            {' \u00b7 '}
                                           </span>
-                                          {bead.mukhi_label} â€” {bead.name}
+                                          {bead.mukhi_label} — {bead.name}
                                         </p>
                                         <p className="mt-0.5 text-[10px] text-stone-400">
                                           {[
@@ -906,7 +915,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                             bead.tag_number ? `Tag ${bead.tag_number}` : null,
                                           ]
                                             .filter(Boolean)
-                                            .join(' Â· ')}
+                                            .join(' \u00b7 ')}
                                         </p>
                                       </div>
                                       {bead.price > 0 ? (
@@ -1029,31 +1038,31 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                   <div>
                                     <p className="text-stone-400">DOB</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.dob || 'â€”'}
+                                      {selections.energization_form.dob || '—'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Birth time</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.birth_time || 'â€”'}
+                                      {selections.energization_form.birth_time || '—'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Birth place</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.birth_place || 'â€”'}
+                                      {selections.energization_form.birth_place || '—'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Gotra</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.gotra || 'â€”'}
+                                      {selections.energization_form.gotra || '—'}
                                     </p>
                                   </div>
                                   <div>
                                     <p className="text-stone-400">Rashi</p>
                                     <p className="font-medium text-stone-800">
-                                      {selections.energization_form.rashi || 'â€”'}
+                                      {selections.energization_form.rashi || '—'}
                                     </p>
                                   </div>
                                   <div>
@@ -1212,7 +1221,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               <Panel title="Payment references" icon={CreditCard}>
                 <dl className="space-y-3 px-5 py-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Method">{cap(o.payment_method) ?? 'â€”'}</Field>
+                    <Field label="Method">{cap(o.payment_method) ?? '—'}</Field>
                     <Field label="Status">
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${PAYMENT_STATUS_STYLE[o.payment_status] ?? 'bg-stone-100 text-stone-700'}`}

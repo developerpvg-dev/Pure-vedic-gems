@@ -251,9 +251,11 @@ export async function POST(req: NextRequest) {
   // ── Insert order into database ───────────────────────────────────────
   const supabaseAdmin = createAdminClient();
   const guestAccess = customerId ? null : createGuestOrderToken();
-  // ponytail: Razorpay keeps 20m hold; bank transfer needs days for NEFT/IMPS + proof review
-  const holdMs = payment_method === 'bank_transfer' ? BANK_TRANSFER_HOLD_MS : 20 * 60 * 1000;
-  const reservationHoldUntil = new Date(Date.now() + holdMs).toISOString();
+  // ponytail: bank transfer holds stock for NEFT review; Razorpay only after capture
+  const reservationHoldUntil =
+    payment_method === 'bank_transfer'
+      ? new Date(Date.now() + BANK_TRANSFER_HOLD_MS).toISOString()
+      : null;
 
   const ceremony = deriveCeremonyFromCartItems(items, energization);
 
@@ -343,21 +345,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  try {
-    await reserveUniquePhysicalProducts({
-      orderId: order.id,
-      orderNumber: order.order_number,
-      customerId,
-      holdUntil: reservationHoldUntil,
-      items: pricing.items,
-      configuredSnapshots: items
-        .map((item) => item.configuration_snapshot)
-        .filter(Boolean),
-    });
-  } catch (error) {
-    await cancelRewardRedemption(order.id);
-    const message = error instanceof Error ? error.message : 'Unable to reserve products.';
-    return NextResponse.json({ error: message }, { status: 409 });
+  // Razorpay: do NOT reserve stock until payment succeeds (cancel leaves piece available).
+  // Bank transfer: reserve immediately — customer has committed offline payment.
+  if (payment_method === 'bank_transfer' && reservationHoldUntil) {
+    try {
+      await reserveUniquePhysicalProducts({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        customerId,
+        holdUntil: reservationHoldUntil,
+        items: pricing.items,
+        configuredSnapshots: items
+          .map((item) => item.configuration_snapshot)
+          .filter(Boolean),
+      });
+    } catch (error) {
+      await cancelRewardRedemption(order.id);
+      const message = error instanceof Error ? error.message : 'Unable to reserve products.';
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
   }
 
   await createInAppNotifications([

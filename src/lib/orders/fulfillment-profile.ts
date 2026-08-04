@@ -116,7 +116,14 @@ export function resolveOrderFulfillmentContext(args: {
 
   const needsDesigner = needsCrafting;
 
-  const showProductVideo = needsCrafting;
+  // ponytail: loose stones also get product video/image media for customer tracking
+  const showProductVideo =
+    needsCrafting ||
+    profile === 'loose_gemstone' ||
+    profile === 'rudraksha_loose' ||
+    (mixed &&
+      unique.some((p) => p === 'loose_gemstone' || p === 'rudraksha_loose'));
+
   const showPujaVideo =
     hasEnergization &&
     profile !== 'rudraksha_configured' &&

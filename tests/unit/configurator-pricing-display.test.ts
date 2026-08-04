@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildConfiguratorPriceTotals } from '@/lib/utils/configurator-pricing-display';
 import type { ConfigPricingBreakdown } from '@/lib/types/configurator';
-import { gstOnJewellery } from '@/lib/utils/tax';
+import { gstOnJewellery, jewelleryPriceInclGst } from '@/lib/utils/tax';
 
 const basePricing: ConfigPricingBreakdown = {
   gem_price: 0,
@@ -21,7 +21,7 @@ const basePricing: ConfigPricingBreakdown = {
 };
 
 describe('buildConfiguratorPriceTotals', () => {
-  it('uses one 3% jewellery GST for fixed silver ring with diamond', () => {
+  it('uses 3% jewellery GST on making+diamond only and shows incl. GST amounts', () => {
     const pricing: ConfigPricingBreakdown = {
       ...basePricing,
       gem_price: 18430,
@@ -43,8 +43,14 @@ describe('buildConfiguratorPriceTotals', () => {
       'Diamond add-on',
       'Certification',
     ]);
+    expect(totals.lines.find((l) => l.key === 'est-mounting')?.amount).toBe(
+      jewelleryPriceInclGst(7000),
+    );
+    expect(totals.lines.find((l) => l.key === 'stone-addon')?.amount).toBe(
+      jewelleryPriceInclGst(17500),
+    );
     expect(totals.pre_gst_subtotal).toBe(42930);
-    const expected = gstOnJewellery({ gem: 18430, making: 7000, diamond: 17500 });
+    const expected = gstOnJewellery({ making: 7000, diamond: 17500 });
     expect(totals.gst_jewelry).toBe(expected);
     expect(totals.gst_gemstone).toBe(0);
     expect(totals.gst_metal).toBe(0);
@@ -53,7 +59,7 @@ describe('buildConfiguratorPriceTotals', () => {
     expect(totals.grand_total).toBe(42930 + totals.gst_total);
   });
 
-  it('uses one 3% on gem+metal+labour for weight-based gold', () => {
+  it('uses 3% on metal+labour only (not gem) for weight-based gold', () => {
     const pricing: ConfigPricingBreakdown = {
       ...basePricing,
       gem_price: 10000,
@@ -71,14 +77,17 @@ describe('buildConfiguratorPriceTotals', () => {
       productCategory: 'gemstone',
     });
 
-    const expected = gstOnJewellery({ gem: 10000, metal: 24000, making: 6000 });
+    const expected = gstOnJewellery({ metal: 24000, making: 6000 });
     expect(totals.gst_jewelry).toBe(expected);
     expect(totals.gst_gemstone).toBe(0);
     expect(totals.gst_total).toBe(Math.round(expected));
     expect(totals.grand_total).toBe(40000 + totals.gst_total);
+    expect(totals.lines.find((l) => l.key === 'est-mounting')?.amount).toBe(
+      jewelleryPriceInclGst(30000),
+    );
   });
 
-  it('matches checkout one-line jewellery GST for configured ring', () => {
+  it('matches checkout jewellery-only GST for configured ring', () => {
     const pricing: ConfigPricingBreakdown = {
       ...basePricing,
       gem_price: 15048,
@@ -99,7 +108,7 @@ describe('buildConfiguratorPriceTotals', () => {
     });
 
     expect(totals.pre_gst_subtotal).toBe(74173);
-    const expected = gstOnJewellery({ gem: 15048, metal: 41300, making: 10325 });
+    const expected = gstOnJewellery({ metal: 41300, making: 10325 });
     expect(totals.gst_jewelry).toBe(expected);
     expect(totals.gst_certification).toBe(0);
     expect(totals.gst_energization).toBe(0);
@@ -124,8 +133,8 @@ describe('buildConfiguratorPriceTotals', () => {
 
     expect(totals.lines.map((l) => l.key)).toContain('stone-addon');
     expect(totals.lines.map((l) => l.key)).toContain('design-note');
-    // Diamond alone mounts the piece → jewellery 3% on gem+diamond
-    expect(totals.gst_jewelry).toBe(gstOnJewellery({ gem: 50000, diamond: 17500 }));
+    // Diamond alone mounts the piece → jewellery 3% on diamond only (not gem)
+    expect(totals.gst_jewelry).toBe(gstOnJewellery({ diamond: 17500 }));
   });
 
   it('shows TBD mounting line when custom design pricing is pending', () => {
@@ -141,8 +150,8 @@ describe('buildConfiguratorPriceTotals', () => {
     });
     expect(totals.lines.some((l) => l.key === 'custom-design-pending')).toBe(true);
     expect(totals.lines.find((l) => l.key === 'custom-design-pending')?.display).toBe('TBD');
-    // No metal/making yet → still loose gem rate
+    // No metal/making yet → gem never taxed
     expect(totals.gst_jewelry).toBe(0);
-    expect(totals.gst_gemstone).toBeGreaterThan(0);
+    expect(totals.gst_gemstone).toBe(0);
   });
 });
