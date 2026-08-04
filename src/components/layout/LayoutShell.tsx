@@ -41,8 +41,9 @@ function pageHasBuiltInHeaderOffset(pathname: string): boolean {
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
+  const isStudio = pathname.startsWith('/studio');
   const isHome = pathname === '/';
-  const showHeaderSpacer = !isAdmin && !isHome && !pageHasBuiltInHeaderOffset(pathname);
+  const showHeaderSpacer = !isAdmin && !isStudio && !isHome && !pageHasBuiltInHeaderOffset(pathname);
   const usesReferenceTheme = [
     '/policies',
     '/account',
@@ -67,7 +68,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     .filter(Boolean)
     .join(' ');
 
-  if (isAdmin) {
+  // Studio needs the full viewport — site header cropped its Publish/Delete menu
+  if (isAdmin || isStudio) {
     return <main className="flex-1">{children}</main>;
   }
 
