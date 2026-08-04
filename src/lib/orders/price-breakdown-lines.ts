@@ -48,12 +48,8 @@ function isJewelleryOnlyGst(order: OrderChargeFields): boolean {
 
   const taxView = parseOrderTaxBreakdown(order.tax_breakdown);
   if (!taxView || taxView.components.length === 0) return gst === expected;
-  return taxView.components.every(
-    (c) =>
-      c.component === 'metal' ||
-      c.component === 'making_charge' ||
-      (c.rate_percent === GST_METAL_MOUNTED_PERCENT && c.component !== 'shipping' && c.component !== 'product'),
-  );
+  // All taxable comps at jewellery 3% → safe to bake into metal/making display.
+  return taxView.components.every((c) => c.ratePercent === GST_METAL_MOUNTED_PERCENT);
 }
 
 /** Build display rows that sum to order.total when applied with signs. */
