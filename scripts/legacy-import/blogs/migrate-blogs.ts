@@ -10,7 +10,8 @@
  *
  * Usage:
  *   npx tsx scripts/legacy-import/blogs/migrate-blogs.ts --dry      (no writes)
- *   npx tsx scripts/legacy-import/blogs/migrate-blogs.ts            (live)
+ *   npx tsx scripts/legacy-import/blogs/migrate-blogs.ts            (live full upsert)
+ *   npx tsx scripts/legacy-import/blogs/migrate-blogs.ts --gap-only (missing posts only)
  *   npx tsx scripts/legacy-import/blogs/migrate-blogs.ts --limit 5  (first N posts)
  */
 import path from 'node:path';
@@ -28,10 +29,14 @@ import {
 loadEnv({ path: path.resolve(process.cwd(), '.env.local'), override: true });
 
 const DRY = process.argv.includes('--dry');
+const GAP_ONLY = process.argv.includes('--gap-only');
 const limitArg = process.argv.indexOf('--limit');
 const LIMIT = limitArg !== -1 ? parseInt(process.argv[limitArg + 1], 10) : Infinity;
 
-const DUMP = path.resolve('..', 'purevedi_comnewlive', 'purevedi_comnewlive.sql');
+const DUMP = path.resolve(
+  process.env.LEGACY_BLOG_SQL_DUMP_PATH ||
+    path.join('..', 'latestsqldump', 'purevedi_comnewlive(1).sql'),
+);
 const IMAGE_CACHE_FILE = path.resolve(
   'scripts/legacy-import/blogs/.image-cache.json',
 );
@@ -124,27 +129,42 @@ async function uploadImage(
   cache: ImageCache,
 ): Promise<string | null> {
   if (cache[url]) return cache[url];
+  const candidates = new Set<string>([url]);
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
-    if (!res.ok) {
-      console.warn(`    ⚠ image ${res.status}: ${url}`);
-      return null;
+    const u = new URL(url);
+    const pathAndQuery = `${u.pathname}${u.search}`;
+    for (const host of ['www.purevedicgems.com', 'purevedicgems.com', 'www.purevedicgems.in', 'purevedicgems.in']) {
+      candidates.add(`https://${host}${pathAndQuery}`);
     }
-    const contentType = res.headers.get('content-type') || 'image/jpeg';
-    if (!contentType.startsWith('image/')) {
-      console.warn(`    ⚠ not an image (${contentType}): ${url}`);
-      return null;
-    }
-    const buffer = Buffer.from(await res.arrayBuffer());
-    const filename = decodeURIComponent(url.split('/').pop() || 'image.jpg').split('?')[0];
-    const asset = await client.assets.upload('image', buffer, { filename, contentType });
-    cache[url] = asset._id;
-    saveImageCache(cache);
-    return asset._id;
-  } catch (err) {
-    console.warn(`    ⚠ image failed: ${url} — ${(err as Error).message}`);
-    return null;
+  } catch {
+    /* keep original */
   }
+
+  for (const candidate of candidates) {
+    if (cache[candidate]) {
+      cache[url] = cache[candidate];
+      saveImageCache(cache);
+      return cache[candidate];
+    }
+    try {
+      const res = await fetch(candidate, { signal: AbortSignal.timeout(30000), redirect: 'follow' });
+      if (!res.ok) continue;
+      const contentType = res.headers.get('content-type') || 'image/jpeg';
+      if (!contentType.startsWith('image/')) continue;
+      const buffer = Buffer.from(await res.arrayBuffer());
+      if (buffer.byteLength < 200) continue;
+      const filename = decodeURIComponent(candidate.split('/').pop() || 'image.jpg').split('?')[0];
+      const asset = await client.assets.upload('image', buffer, { filename, contentType });
+      cache[url] = asset._id;
+      cache[candidate] = asset._id;
+      saveImageCache(cache);
+      return asset._id;
+    } catch {
+      /* try next host */
+    }
+  }
+  console.warn(`    ⚠ image failed: ${url}`);
+  return null;
 }
 
 // ── Build category assignment map from the dump ─────────────────────────
@@ -254,8 +274,18 @@ async function main() {
 
   const client = createClient({ projectId, dataset, apiVersion: '2024-01-01', useCdn: false, token });
 
-  console.log(`\n=== Blog migration ${DRY ? '(DRY RUN)' : '(LIVE)'} ===`);
+  console.log(`\n=== Blog migration ${DRY ? '(DRY RUN)' : '(LIVE)'}${GAP_ONLY ? ' gap-only' : ''} ===`);
   console.log(`Project: ${projectId}/${dataset}`);
+  console.log(`Dump: ${DUMP}`);
+
+  const existingIds = new Set<string>();
+  if (GAP_ONLY) {
+    const existing = await client.fetch<string[]>(`*[_type == "blogPost" && _id match "blog-*"]._id`);
+    for (const id of existing) {
+      if (id.startsWith('blog-')) existingIds.add(id.slice(5));
+    }
+    console.log(`Sanity already has ${existingIds.size} blog-* docs`);
+  }
 
   console.log('\nBuilding category map from dump…');
   const categoryMap = await buildCategoryMap();
@@ -265,6 +295,7 @@ async function main() {
 
   const imageCache = loadImageCache();
   let processed = 0;
+  let skippedExisting = 0;
   let withImage = 0;
   let imagesUploaded = 0;
   const catCounts: Record<string, number> = {};
@@ -277,10 +308,15 @@ async function main() {
     tableName: 'pvg_posts',
     filter: (r) => r.post_type === 'blog' && r.post_status === 'publish',
   })) {
+    const legacyId = String(row.ID);
+    if (GAP_ONLY && existingIds.has(legacyId)) {
+      skippedExisting++;
+      continue;
+    }
     if (processed >= LIMIT) break;
     processed++;
 
-    const categoryId = categoryMap.get(row.ID as string) ?? 'blog-cat-astrology';
+    const categoryId = categoryMap.get(legacyId) ?? 'blog-cat-astrology';
     catCounts[categoryId] = (catCounts[categoryId] ?? 0) + 1;
 
     const { built } = buildPostDoc(row, categoryId);
@@ -295,7 +331,7 @@ async function main() {
 
     if (DRY) {
       pending.push(built);
-      if (processed <= 3) {
+      if (processed <= 5) {
         console.log(`\n  [${built.legacyId}] ${built.doc.title}`);
         console.log(`    slug=${slug} cat=${categoryId} images=${built.imageUrls.length} blocks=${(built.doc.body as unknown[]).length}`);
         console.log(`    excerpt="${(built.doc.excerpt as string).slice(0, 80)}…"`);
@@ -335,14 +371,12 @@ async function main() {
     built.doc.body = resolvedBody;
 
     await client.createOrReplace(built.doc as never);
-    if ((built.doc as { mainImage?: unknown }).mainImage) {
-      // counted in withImage already
-    }
     if (processed % 25 === 0) console.log(`  …${processed} posts migrated`);
   }
 
   console.log(`\n=== Summary ===`);
   console.log(`Processed posts : ${processed}`);
+  if (GAP_ONLY) console.log(`Skipped existing: ${skippedExisting}`);
   console.log(`Posts w/ image  : ${withImage}`);
   if (!DRY) console.log(`Images uploaded : ${imagesUploaded} (cache size ${Object.keys(imageCache).length})`);
   console.log(`Category split  :`, catCounts);

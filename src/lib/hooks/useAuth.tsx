@@ -29,6 +29,7 @@ interface AuthContextValue {
     full_name: string;
     phone?: string;
   }) => Promise<{ error?: string; requiresEmailVerification?: boolean }>;
+  signInWithGoogle: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   sendOTP: (phone: string) => Promise<{ error?: string }>;
   verifyOTP: (phone: string, token: string) => Promise<{ error?: string }>;
@@ -166,6 +167,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [supabase]
   );
 
+  const signInWithGoogle = useCallback(async (): Promise<{ error?: string }> => {
+    if (!supabase) return { error: missingSupabaseConfigMessage };
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+
+    if (error) return { error: error.message || 'Google sign-in failed.' };
+    return {};
+  }, [supabase]);
+
   const signOut = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     await supabase?.auth.signOut();
@@ -233,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
         sendOTP,
         verifyOTP,

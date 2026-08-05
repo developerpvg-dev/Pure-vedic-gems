@@ -21,7 +21,10 @@ import { streamWpTable } from '../lib/wp-sql.js';
 loadEnv({ path: path.resolve(process.cwd(), '.env.local'), override: true });
 
 const DRY = process.argv.includes('--dry');
-const DUMP = path.resolve('..', 'purevedi_comnewlive', 'purevedi_comnewlive.sql');
+const DUMP = path.resolve(
+  process.env.LEGACY_BLOG_SQL_DUMP_PATH ||
+    path.join('..', 'latestsqldump', 'purevedi_comnewlive(1).sql'),
+);
 const IMAGE_CACHE_FILE = path.resolve('scripts/legacy-import/blogs/.image-cache.json');
 const UPLOADS_BASE = 'https://www.purevedicgems.com/wp-content/uploads/';
 

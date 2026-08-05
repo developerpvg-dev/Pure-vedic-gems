@@ -8,7 +8,10 @@ import { streamWpTable, type SqlValue } from '../lib/wp-sql.js';
 const here = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(here, '..', '..', '..');
 const workspaceRoot = resolve(appRoot, '..');
-const dump = resolve(workspaceRoot, 'purevedi_comnewlive', 'purevedi_comnewlive.sql');
+const dump = resolve(
+  process.env.LEGACY_BLOG_SQL_DUMP_PATH ||
+    resolve(workspaceRoot, 'latestsqldump', 'purevedi_comnewlive(1).sql'),
+);
 
 loadEnv({ path: resolve(appRoot, '.env.local'), override: true });
 

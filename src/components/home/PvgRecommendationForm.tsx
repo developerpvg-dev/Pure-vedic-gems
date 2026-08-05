@@ -169,7 +169,7 @@ export function PvgRecommendationForm() {
           });
           setSuccess({ id: consultationId });
           setPaying(false);
-          document.getElementById('gem-recommendation')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('gem-recommendation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         },
         onError: ({ message, fieldErrors }) => {
           applyApiErrors(fieldErrors, message);
@@ -210,7 +210,7 @@ export function PvgRecommendationForm() {
   }
 
   return (
-    <form className="reco-form-panel" onSubmit={handlePayment} aria-busy={paying} noValidate>
+    <form id="gem-recommendation-form" className="reco-form-panel" onSubmit={handlePayment} aria-busy={paying} noValidate>
       <p className="reco-form-price">Expert remedies recommendation — just {priceLabel}</p>
 
       <input

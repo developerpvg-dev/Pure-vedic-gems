@@ -700,6 +700,29 @@ function setupScrollTopButton() {
   };
 }
 
+/** CTAs use #gem-recommendation; land on the form panel, not the hero above it. */
+function scrollToGemRecommendationForm() {
+  const target =
+    document.getElementById('gem-recommendation-form') ??
+    document.querySelector('#gem-recommendation .reco-form-panel') ??
+    document.getElementById('gem-recommendation');
+  target?.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  });
+}
+
+function isGemRecommendationHash(href: string) {
+  if (!href) return false;
+  try {
+    if (href.startsWith('#')) return href === '#gem-recommendation';
+    const url = new URL(href, window.location.origin);
+    return url.pathname === '/' && url.hash === '#gem-recommendation';
+  } catch {
+    return href === '#gem-recommendation' || href.endsWith('/#gem-recommendation');
+  }
+}
+
 function setupLegacyHashLinks(router: ReturnType<typeof useRouter>) {
   const root = document.querySelector<HTMLElement>('.pvg-react-home-root');
   if (!root) return undefined;
@@ -713,7 +736,10 @@ function setupLegacyHashLinks(router: ReturnType<typeof useRouter>) {
     if (!href) return;
 
     event.preventDefault();
-    if (href.startsWith('#')) {
+    if (isGemRecommendationHash(href) || href === '#gem-recommendation') {
+      history.replaceState(null, '', '#gem-recommendation');
+      scrollToGemRecommendationForm();
+    } else if (href.startsWith('#')) {
       document.querySelector(href)?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     } else {
       router.push(href);
@@ -726,16 +752,34 @@ function setupLegacyHashLinks(router: ReturnType<typeof useRouter>) {
 
 function setupGemRecommendationHashScroll() {
   if (typeof window === 'undefined') return undefined;
-  if (window.location.hash !== '#gem-recommendation') return undefined;
 
-  const timer = window.setTimeout(() => {
-    document.getElementById('gem-recommendation')?.scrollIntoView({
-      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-      block: 'start',
-    });
-  }, 120);
+  const onClick = (event: MouseEvent) => {
+    const anchor = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href]');
+    if (!anchor) return;
+    const href = anchor.getAttribute('href') || '';
+    if (!isGemRecommendationHash(href)) return;
 
-  return () => window.clearTimeout(timer);
+    // Already on the homepage — skip a full navigation and land on the form.
+    if (window.location.pathname === '/') {
+      event.preventDefault();
+      history.replaceState(null, '', '#gem-recommendation');
+      scrollToGemRecommendationForm();
+    }
+  };
+
+  document.addEventListener('click', onClick);
+
+  let timer: number | undefined;
+  if (window.location.hash === '#gem-recommendation') {
+    timer = window.setTimeout(() => {
+      scrollToGemRecommendationForm();
+    }, 120);
+  }
+
+  return () => {
+    document.removeEventListener('click', onClick);
+    if (timer) window.clearTimeout(timer);
+  };
 }
 
 export function PvgHomeInteractions() {

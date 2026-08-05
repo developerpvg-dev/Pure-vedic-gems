@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Loader2, User, Mail, Lock, Phone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, User, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { RegisterSchema } from '@/lib/validators/auth';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface RegisterFormProps {
   onSuccess?: (requiresVerification: boolean) => void;
@@ -17,7 +18,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     full_name: '',
     email: '',
     password: '',
-    phone: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,19 +35,15 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     setError('');
     setFieldErrors({});
 
-    // Client-side validation
     const parsed = RegisterSchema.safeParse({
       full_name: form.full_name,
       email: form.email,
       password: form.password,
-      phone: form.phone || undefined,
     });
 
     if (!parsed.success) {
       const errs: Record<string, string> = {};
-      for (const [field, msgs] of Object.entries(
-        parsed.error.flatten().fieldErrors
-      )) {
+      for (const [field, msgs] of Object.entries(parsed.error.flatten().fieldErrors)) {
         errs[field] = (msgs as string[])[0] ?? '';
       }
       setFieldErrors(errs);
@@ -73,7 +69,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
   return (
     <div className="space-y-5">
-      {/* ── Header ── */}
       <div className="text-center">
         <div
           className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
@@ -81,10 +76,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         >
           <User className="h-6 w-6" style={{ color: 'var(--pvg-accent)' }} />
         </div>
-        <h2
-          className="font-heading text-2xl"
-          style={{ color: 'var(--pvg-primary)' }}
-        >
+        <h2 className="font-heading text-2xl" style={{ color: 'var(--pvg-primary)' }}>
           Create Account
         </h2>
         <p className="mt-1 text-sm" style={{ color: 'var(--pvg-muted)' }}>
@@ -93,7 +85,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        {/* Full Name */}
         <div className="space-y-1">
           <label
             htmlFor="reg-name"
@@ -117,15 +108,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               required
               className="w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
               style={{
-                borderColor: fieldErrors.full_name
-                  ? '#ef4444'
-                  : 'var(--pvg-border)',
+                borderColor: fieldErrors.full_name ? '#ef4444' : 'var(--pvg-border)',
                 background: 'var(--pvg-surface)',
                 color: 'var(--pvg-text)',
               }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--pvg-accent)')
-              }
+              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--pvg-accent)')}
               onBlur={(e) =>
                 (e.currentTarget.style.borderColor = fieldErrors.full_name
                   ? '#ef4444'
@@ -138,7 +125,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           )}
         </div>
 
-        {/* Email */}
         <div className="space-y-1">
           <label
             htmlFor="reg-email"
@@ -162,15 +148,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               required
               className="w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
               style={{
-                borderColor: fieldErrors.email
-                  ? '#ef4444'
-                  : 'var(--pvg-border)',
+                borderColor: fieldErrors.email ? '#ef4444' : 'var(--pvg-border)',
                 background: 'var(--pvg-surface)',
                 color: 'var(--pvg-text)',
               }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--pvg-accent)')
-              }
+              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--pvg-accent)')}
               onBlur={(e) =>
                 (e.currentTarget.style.borderColor = fieldErrors.email
                   ? '#ef4444'
@@ -178,12 +160,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               }
             />
           </div>
-          {fieldErrors.email && (
-            <p className="text-xs text-red-500">{fieldErrors.email}</p>
-          )}
+          {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
         </div>
 
-        {/* Password */}
         <div className="space-y-1">
           <label
             htmlFor="reg-password"
@@ -207,15 +186,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               required
               className="w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm outline-none transition-all"
               style={{
-                borderColor: fieldErrors.password
-                  ? '#ef4444'
-                  : 'var(--pvg-border)',
+                borderColor: fieldErrors.password ? '#ef4444' : 'var(--pvg-border)',
                 background: 'var(--pvg-surface)',
                 color: 'var(--pvg-text)',
               }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--pvg-accent)')
-              }
+              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--pvg-accent)')}
               onBlur={(e) =>
                 (e.currentTarget.style.borderColor = fieldErrors.password
                   ? '#ef4444'
@@ -229,22 +204,14 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               style={{ color: 'var(--pvg-muted)' }}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {/* Password strength hint */}
           {form.password.length > 0 && (
             <p
               className="text-xs"
               style={{
-                color:
-                  form.password.length >= 8
-                    ? '#16a34a'
-                    : 'var(--pvg-muted)',
+                color: form.password.length >= 8 ? '#16a34a' : 'var(--pvg-muted)',
               }}
             >
               {form.password.length >= 8
@@ -257,54 +224,17 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           )}
         </div>
 
-        {/* Phone (optional) */}
+        {/* Same slot as former optional phone — Google instead, no extra height */}
         <div className="space-y-1">
-          <label
-            htmlFor="reg-phone"
+          <p
             className="block text-[13px] font-semibold uppercase tracking-wider"
             style={{ color: 'var(--pvg-primary)' }}
           >
-            Phone{' '}
-            <span className="font-normal normal-case tracking-normal" style={{ color: 'var(--pvg-muted)' }}>
-              (optional)
-            </span>
-          </label>
-          <div className="relative">
-            <Phone
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
-              style={{ color: 'var(--pvg-muted)' }}
-            />
-            <input
-              id="reg-phone"
-              type="tel"
-              value={form.phone}
-              onChange={set('phone')}
-              placeholder="+91 98765 43210"
-              autoComplete="tel"
-              className="w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
-              style={{
-                borderColor: fieldErrors.phone
-                  ? '#ef4444'
-                  : 'var(--pvg-border)',
-                background: 'var(--pvg-surface)',
-                color: 'var(--pvg-text)',
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = 'var(--pvg-accent)')
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = fieldErrors.phone
-                  ? '#ef4444'
-                  : 'var(--pvg-border)')
-              }
-            />
-          </div>
-          {fieldErrors.phone && (
-            <p className="text-xs text-red-500">{fieldErrors.phone}</p>
-          )}
+            Or sign up with Google
+          </p>
+          <GoogleAuthButton label="Continue with Google" onError={setError} />
         </div>
 
-        {/* Global error */}
         {error && (
           <div
             className="rounded-lg border px-4 py-3 text-sm"
@@ -318,7 +248,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           </div>
         )}
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={isLoading}
@@ -332,7 +261,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           {isLoading ? 'Creating Account…' : 'Create Account'}
         </button>
 
-        {/* Terms note */}
         <p className="text-center text-xs" style={{ color: 'var(--pvg-muted)' }}>
           By registering you agree to our{' '}
           <a
@@ -351,7 +279,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         </p>
       </form>
 
-      {/* Switch to login */}
       {onSwitchToLogin && (
         <div
           className="border-t pt-4 text-center text-sm"

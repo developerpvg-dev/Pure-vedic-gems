@@ -4037,6 +4037,9 @@
       padding: 28px 34px;
       border-left: 1px solid rgba(255,255,255,0.24);
     }
+    #gem-recommendation-form {
+      scroll-margin-top: var(--pvg-site-header-offset);
+    }
     .reco-form-title {
       font-family: var(--font-display); font-size: clamp(18px, 1.8vw, 26px); font-weight: 700;
       color: var(--charcoal); margin-bottom: 28px; line-height: 1.3;
