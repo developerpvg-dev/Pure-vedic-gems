@@ -37,7 +37,12 @@ const INITIAL_FORM: Rs101FormState = {
   website: '',
 };
 
-export function PvgRecommendationForm() {
+type PvgRecommendationFormProps = {
+  /** Analytics source for consultation_payment_success (homepage default). */
+  analyticsSource?: string;
+};
+
+export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecommendationFormProps = {}) {
   const { user, profile, isAuthenticated } = useAuth();
   const { format } = useCurrency();
   const priceLabel = format(RS101_AMOUNT_INR);
@@ -165,7 +170,7 @@ export function PvgRecommendationForm() {
           trackStorefrontEvent('consultation_payment_success', {
             consultation_id: consultationId,
             plan_id: 'rs101',
-            source: 'homepage',
+            source: analyticsSource,
           });
           setSuccess({ id: consultationId });
           setPaying(false);

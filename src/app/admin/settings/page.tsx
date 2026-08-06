@@ -721,7 +721,7 @@ export default function SettingsPage() {
                   <BadgeIndianRupee className="h-4 w-4" /> Currency Rates
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Set how many INR each foreign currency equals. “Update rates from API” overwrites all currencies (including old manual/legacy rows) from live FX.
+                  Storefront uses these DB rates until you change them here. “Update rates from API” overwrites all currencies from live FX. Edit any row manually anytime.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -756,6 +756,8 @@ export default function SettingsPage() {
                     ...currencyForm,
                     id: currencyForm.id || undefined,
                     base_currency: 'INR',
+                    source: 'manual',
+                    manual_override: true,
                   },
                   resetCurrencyForm
                 );

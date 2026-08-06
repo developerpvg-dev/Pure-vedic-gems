@@ -1,5 +1,5 @@
 /**
- * Self-check: INR → FX conversion math (1 FX = N INR).
+ * Self-check: INR → FX conversion math (1 FX = N INR) + language→currency.
  * Run: npx tsx src/lib/currency/convert.check.ts
  */
 
@@ -8,6 +8,7 @@ import {
   convertFromInr,
   setCurrencyDisplay,
 } from './display-store';
+import { suggestCurrencyFromLanguage } from './geo';
 
 setCurrencyDisplay({
   enabled: true,
@@ -21,5 +22,10 @@ assert.equal(convertFromInr(500, 'INR'), 500);
 
 setCurrencyDisplay({ enabled: false, currency: 'USD' });
 assert.equal(convertFromInr(8300, 'USD'), 8300); // conversion off → passthrough
+
+assert.equal(suggestCurrencyFromLanguage('en-US'), 'USD');
+assert.equal(suggestCurrencyFromLanguage('en-GB'), 'GBP');
+assert.equal(suggestCurrencyFromLanguage('hi-IN'), 'INR');
+assert.equal(suggestCurrencyFromLanguage('de-DE'), 'EUR');
 
 console.log('currency convert check ok');

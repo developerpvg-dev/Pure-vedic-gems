@@ -20,6 +20,7 @@ import {
   setCurrencyDisplay,
   subscribeCurrencyDisplay,
 } from '@/lib/currency/display-store';
+import { suggestCurrencyFromLanguage } from '@/lib/currency/geo';
 import { formatPrice } from '@/lib/utils/format';
 
 const STORAGE_KEY = 'pvg_currency';
@@ -72,20 +73,17 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
     async function boot() {
       const saved = localStorage.getItem(STORAGE_KEY)?.toUpperCase() ?? null;
-      let suggested = 'INR';
+      const suggested = suggestCurrencyFromLanguage(navigator.language || 'en-IN');
       let rates: Record<string, number> = { INR: 1 };
 
       try {
+        // Cached until admin updates rates (Data Cache + short CDN stale-while-revalidate).
         const res = await fetch('/api/currency/rates');
         if (res.ok) {
           const data = (await res.json()) as {
             rates?: Array<{ currency: string; rate: number; is_active?: boolean }>;
-            suggestedCurrency?: string;
           };
           rates = ratesFromPayload(data.rates ?? []);
-          if (data.suggestedCurrency && isStorefrontCurrency(data.suggestedCurrency)) {
-            suggested = data.suggestedCurrency.toUpperCase();
-          }
         }
       } catch {
         // keep INR defaults

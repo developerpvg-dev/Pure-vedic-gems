@@ -361,10 +361,12 @@ export function OrderActions({
         if (updates.notify_ring_size) setRingSizeAdminRemarks('');
         setSuccess(
           updates.notify_product_video
-            ? 'Saved — customer emailed to approve design'
-            : updates.notify_ring_size
-              ? 'Saved — customer emailed to re-upload ring diameter photo'
-              : 'Saved',
+            ? 'Saved — customer emailed product media / design review'
+            : updates.notify_puja_energization
+              ? 'Saved — customer emailed puja / energization media'
+              : updates.notify_ring_size
+                ? 'Saved — customer emailed to re-upload ring diameter photo'
+                : 'Saved',
         );
         setTimeout(() => setSuccess(''), 3000);
       } catch {
@@ -592,13 +594,14 @@ export function OrderActions({
   };
 
   const productVideoUrlList = linesToUrls(productVideoUrls);
+  const energizationImageUrlList = linesToUrls(energizationImageUrls);
   const saveMediaPayload = {
     // ponytail: first URL kept on column for review-notify / legacy readers
     product_video_url: productVideoUrlList[0] ?? null,
     product_video_urls: productVideoUrlList,
     product_image_urls: linesToUrls(productImageUrls),
     puja_video_url: pujaVideoUrl || null,
-    energization_image_urls: linesToUrls(energizationImageUrls),
+    energization_image_urls: energizationImageUrlList,
   };
 
   const commissionPayload = {
@@ -1048,7 +1051,23 @@ export function OrderActions({
               className={btnGhost}
             >
               <MessageCircle className="h-4 w-4" />
-              Save &amp; notify customer
+              Notify product media
+            </button>
+          ) : null}
+          {fulfillmentContext.showPujaVideo || fulfillmentContext.showEnergization ? (
+            <button
+              type="button"
+              onClick={() =>
+                handleSave({ ...saveMediaPayload, notify_puja_energization: true })
+              }
+              disabled={
+                saving ||
+                (!(pujaVideoUrl || '').trim() && energizationImageUrlList.length === 0)
+              }
+              className={btnGhost}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Notify puja / energization
             </button>
           ) : null}
         </Section>

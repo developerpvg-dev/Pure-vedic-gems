@@ -1,0 +1,688 @@
+/* Remedies Recommendation — light cream / maroon / gold only (no dark sections) */
+
+.pvg-remedy-page {
+  --ink: #2c0404;
+  --maroon: #7a1515;
+  --maroon-deep: #2c0404;
+  --gold: #b8861e;
+  --gold-soft: rgba(184, 134, 30, 0.16);
+  --cream: #faf8f4;
+  --paper: #ffffff;
+  --muted: #6b5b4e;
+  --line: #ede6d5;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+}
+
+.pvg-remedy-form-bleed {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.pvg-remedy-form-bleed .reco-section {
+  display: flex;
+  flex-direction: column;
+  min-height: min(72vh, 640px);
+}
+
+.pvg-remedy-form-bleed .reco-split {
+  flex: 1 1 auto;
+  min-height: 100%;
+  align-items: stretch;
+}
+
+.pvg-remedy-form-bleed .reco-form-panel {
+  height: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .pvg-remedy-form-bleed .reco-section {
+    min-height: 0;
+  }
+
+  .pvg-remedy-form-bleed .reco-form-panel {
+    height: auto;
+    min-height: 0;
+  }
+}
+
+.pvg-remedy-section {
+  position: relative;
+  padding: 4.5rem 1.15rem;
+  background: var(--cream);
+}
+
+.pvg-remedy-section--soft {
+  background: linear-gradient(180deg, #fff 0%, var(--cream) 100%);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.pvg-remedy-section--constellation {
+  background:
+    radial-gradient(circle at 12% 20%, rgba(184, 134, 30, 0.1), transparent 28%),
+    radial-gradient(circle at 88% 70%, rgba(122, 21, 21, 0.05), transparent 32%),
+    #fff;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.pvg-remedy-inner {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+}
+
+.pvg-remedy-head {
+  text-align: center;
+  margin-bottom: 2.75rem;
+}
+
+.pvg-remedy-head--left {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Process path ───────────────────────────────────────────── */
+
+.pvg-remedy-path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  position: relative;
+}
+
+.pvg-remedy-path-item {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .pvg-remedy-path-item {
+    grid-template-columns: 4.5rem 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.pvg-remedy-path-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.pvg-remedy-path-rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--gold), rgba(122, 21, 21, 0.25));
+}
+
+.pvg-remedy-path-item:last-child .pvg-remedy-path-rail::before {
+  bottom: 50%;
+}
+
+.pvg-remedy-path-orb {
+  position: relative;
+  z-index: 1;
+  width: 2.6rem;
+  height: 2.6rem;
+  margin-top: 1.35rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--maroon);
+  border: 1.5px solid var(--gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 0 6px var(--cream);
+}
+
+.pvg-remedy-path-card {
+  margin-bottom: 1.15rem;
+  padding: 1.35rem 1.4rem 1.45rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--maroon);
+  border-radius: 0 18px 18px 0;
+  box-shadow: 0 14px 36px rgba(44, 4, 4, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pvg-remedy-path-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 18px 44px rgba(44, 4, 4, 0.08);
+}
+
+.pvg-remedy-path-card h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  font-weight: 700;
+  color: var(--maroon-deep);
+  letter-spacing: -0.02em;
+}
+
+.pvg-remedy-path-card p {
+  margin: 0.55rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* ── Concern cinema bands (light) ───────────────────────────── */
+
+.pvg-remedy-bands {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.pvg-remedy-band {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 40px rgba(44, 4, 4, 0.05);
+}
+
+@media (min-width: 900px) {
+  .pvg-remedy-band {
+    grid-template-columns: 1.05fr 0.95fr;
+    min-height: 280px;
+  }
+
+  .pvg-remedy-band--flip {
+    direction: rtl;
+  }
+
+  .pvg-remedy-band--flip > * {
+    direction: ltr;
+  }
+}
+
+.pvg-remedy-band-media {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  background: #f3ebe0;
+}
+
+@media (min-width: 900px) {
+  .pvg-remedy-band-media {
+    min-height: 320px;
+  }
+}
+
+.pvg-remedy-band-copy {
+  padding: 1.6rem 1.5rem 1.7rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pvg-remedy-band-index {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 0.65rem;
+}
+
+.pvg-remedy-band-copy h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(1.35rem, 2.3vw, 1.75rem);
+  font-weight: 700;
+  color: var(--maroon-deep);
+  letter-spacing: -0.02em;
+}
+
+.pvg-remedy-band-copy p {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.pvg-remedy-inline-cta {
+  margin-top: 1.15rem;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  background: var(--maroon);
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.pvg-remedy-inline-cta:hover {
+  transform: translateY(-1px);
+  background: #4d0a0a;
+}
+
+/* ── Services triptych ──────────────────────────────────────── */
+
+.pvg-remedy-triptych {
+  display: grid;
+  gap: 1.15rem;
+}
+
+@media (min-width: 900px) {
+  .pvg-remedy-triptych {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+}
+
+.pvg-remedy-shrine {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(44, 4, 4, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pvg-remedy-shrine:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 52px rgba(44, 4, 4, 0.09);
+}
+
+.pvg-remedy-shrine-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f3ebe0;
+}
+
+.pvg-remedy-shrine-body {
+  padding: 1.25rem 1.2rem 1.4rem;
+  flex: 1;
+  border-top: 3px solid var(--maroon);
+}
+
+.pvg-remedy-shrine-body h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--maroon-deep);
+}
+
+.pvg-remedy-shrine-body p {
+  margin: 0.65rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* ── Constellation why grid ─────────────────────────────────── */
+
+.pvg-remedy-constellation {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .pvg-remedy-constellation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+}
+
+.pvg-remedy-star {
+  position: relative;
+  padding: 1.6rem 1.4rem 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(44, 4, 4, 0.04);
+}
+
+.pvg-remedy-star::before,
+.pvg-remedy-star::after {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(184, 134, 30, 0.55);
+}
+
+.pvg-remedy-star::before {
+  top: 12px;
+  left: 12px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.pvg-remedy-star::after {
+  right: 12px;
+  bottom: 12px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.pvg-remedy-star-mark {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin-bottom: 0.9rem;
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 0 5px var(--gold-soft);
+}
+
+.pvg-remedy-star h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--maroon-deep);
+}
+
+.pvg-remedy-star-hi {
+  margin: 0.3rem 0 0 !important;
+  font-size: 0.92rem !important;
+  font-style: italic;
+  color: var(--maroon) !important;
+}
+
+.pvg-remedy-star > p:last-child {
+  margin: 0.75rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* ── Manuscript guidance ────────────────────────────────────── */
+
+.pvg-remedy-manuscript {
+  width: min(48rem, 100%);
+  margin: 0 auto;
+}
+
+.pvg-remedy-manuscript-body {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 1.75rem 1.5rem 1.85rem;
+  box-shadow: 0 16px 40px rgba(44, 4, 4, 0.05);
+}
+
+.pvg-remedy-manuscript-copy p {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+.pvg-remedy-manuscript-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.pvg-remedy-manuscript-copy strong {
+  color: var(--maroon-deep);
+}
+
+/* ── Life areas (success page SEO) ──────────────────────────── */
+
+.pvg-remedy-life-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@media (min-width: 700px) {
+  .pvg-remedy-life-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .pvg-remedy-life-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pvg-remedy-life-card {
+  height: 100%;
+  padding: 1.25rem 1.2rem 1.35rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--maroon);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(44, 4, 4, 0.04);
+}
+
+.pvg-remedy-life-card h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--maroon-deep);
+}
+
+.pvg-remedy-life-card p {
+  margin: 0.55rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* ── SEO keyword blocks ─────────────────────────────────────── */
+
+.pvg-remedy-seo-blocks {
+  display: grid;
+  gap: 1rem;
+}
+
+.pvg-remedy-seo-block {
+  padding: 1.35rem 1.35rem 1.45rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 16px 16px 0;
+}
+
+.pvg-remedy-seo-block h3 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--maroon-deep);
+}
+
+.pvg-remedy-seo-block p {
+  margin: 0.65rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* ── Navratna table ─────────────────────────────────────────── */
+
+.pvg-remedy-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 12px 32px rgba(44, 4, 4, 0.04);
+}
+
+.pvg-remedy-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 32rem;
+  font-size: 0.92rem;
+}
+
+.pvg-remedy-table th,
+.pvg-remedy-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.pvg-remedy-table th {
+  background: #f3ebe0;
+  color: var(--maroon-deep);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pvg-remedy-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.pvg-remedy-table td:first-child {
+  color: var(--maroon-deep);
+  font-weight: 600;
+}
+
+/* ── FAQ ────────────────────────────────────────────────────── */
+
+.pvg-remedy-faq {
+  display: grid;
+  gap: 0.7rem;
+  max-width: 50rem;
+  margin: 0 auto;
+}
+
+.pvg-remedy-faq details {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--maroon);
+  border-radius: 0 14px 14px 0;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.pvg-remedy-faq details[open] {
+  box-shadow: 0 12px 32px rgba(44, 4, 4, 0.06);
+}
+
+.pvg-remedy-faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 1.05rem 1.2rem;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--maroon-deep);
+  line-height: 1.35;
+}
+
+.pvg-remedy-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.pvg-remedy-faq summary::after {
+  content: '+';
+  float: right;
+  color: var(--maroon);
+  font-weight: 500;
+}
+
+.pvg-remedy-faq details[open] summary::after {
+  content: '−';
+}
+
+.pvg-remedy-faq details p {
+  margin: 0;
+  padding: 0 1.2rem 1.15rem;
+  font-size: 0.93rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* ── Finale CTA (light) ─────────────────────────────────────── */
+
+.pvg-remedy-finale {
+  position: relative;
+  padding: 4.5rem 1.15rem;
+  text-align: center;
+  color: var(--maroon-deep);
+  background: linear-gradient(180deg, #fff 0%, #f3ebe0 100%);
+  border-top: 1px solid var(--line);
+}
+
+.pvg-remedy-finale-inner {
+  width: min(40rem, 100%);
+  margin: 0 auto;
+}
+
+.pvg-remedy-finale h2 {
+  margin: 0;
+  font-family: var(--font-roboto), 'Roboto', Arial, sans-serif;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--maroon-deep);
+}
+
+.pvg-remedy-finale p {
+  margin: 0.85rem auto 1.4rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.pvg-remedy-finale a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.5rem;
+  border-radius: 999px;
+  background: var(--maroon);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.pvg-remedy-finale a:hover {
+  transform: translateY(-2px);
+  background: #4d0a0a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvg-remedy-path-card,
+  .pvg-remedy-shrine,
+  .pvg-remedy-inline-cta,
+  .pvg-remedy-finale a {
+    transition: none;
+  }
+
+  .pvg-remedy-path-card:hover,
+  .pvg-remedy-shrine:hover,
+  .pvg-remedy-inline-cta:hover,
+  .pvg-remedy-finale a:hover {
+    transform: none;
+  }
+}

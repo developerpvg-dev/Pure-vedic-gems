@@ -5,6 +5,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
 import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
 import { sendProductVideoReviewEmail } from '@/lib/resend/send-product-video-review';
+import { sendPujaEnergizationMediaEmail } from '@/lib/resend/send-puja-energization-media';
 import { sendRingSizeReuploadEmail } from '@/lib/resend/send-ring-size-reupload';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
@@ -79,6 +80,7 @@ export async function PUT(
     assigned_to,
     notify_customer,
     notify_product_video,
+    notify_puja_energization,
     notify_ring_size,
     ring_size_admin_remarks,
     product_video_url,
@@ -279,6 +281,41 @@ export async function PUT(
         { status: 400 },
       );
     }
+  }
+
+  let pujaNotifyVideo: string | null = null;
+  let pujaNotifyImages: string[] = [];
+  if (notify_puja_energization) {
+    const flagsForNotify = parseComplianceFlags(
+      updates.compliance_flags ?? current.compliance_flags,
+    );
+    const videoUrl = (
+      puja_video_url !== undefined ? puja_video_url || '' : current.puja_video_url || ''
+    )
+      .toString()
+      .trim();
+    const imageUrls =
+      energization_image_urls !== undefined
+        ? normalizeHttpsUrlList(energization_image_urls)
+        : normalizeHttpsUrlList(flagsForNotify.energization_image_urls);
+    const hasVideo = Boolean(videoUrl && /^https?:\/\//i.test(videoUrl));
+    if (!hasVideo && imageUrls.length === 0) {
+      return NextResponse.json(
+        { error: 'Add a puja video URL or energization images before notifying the customer' },
+        { status: 400 },
+      );
+    }
+    if (!customerEmail) {
+      return NextResponse.json(
+        { error: 'No customer email on this order — cannot send puja media email' },
+        { status: 400 },
+      );
+    }
+    if (hasVideo) {
+      updates.puja_video_url = videoUrl;
+      pujaNotifyVideo = videoUrl;
+    }
+    pujaNotifyImages = imageUrls;
   }
 
   let ringSizeNotifyRound: number | null = null;
@@ -507,6 +544,45 @@ export async function PUT(
     });
   }
 
+  let pujaEnergizationEmailId: string | null = null;
+  if (notify_puja_energization && customerEmail && (pujaNotifyVideo || pujaNotifyImages.length)) {
+    pujaEnergizationEmailId = await sendPujaEnergizationMediaEmail({
+      to: customerEmail,
+      customerName,
+      orderNumber: current.order_number,
+      videoUrl: pujaNotifyVideo,
+      imageUrls: pujaNotifyImages,
+    });
+
+    await db.from('order_tracking_events').insert({
+      order_id: id,
+      status: 'puja_video',
+      event_time: new Date().toISOString(),
+      note: 'Your puja / energization media is ready to view.',
+      created_by: auth.user.id,
+      is_customer_visible: true,
+    });
+
+    if (current.customer_id) {
+      await createInAppNotifications([
+        {
+          audience: 'user',
+          recipientUserId: current.customer_id,
+          type: 'order_video_ready',
+          title: 'Puja / energization media ready',
+          message: `Your puja / energization media for order ${current.order_number} is ready.`,
+          href: '/account/orders',
+          entityType: 'order',
+          entityId: id,
+          metadata: {
+            order_number: current.order_number,
+            kind: 'puja_energization',
+          },
+        },
+      ]);
+    }
+  }
+
   let ringSizeReuploadEmailId: string | null = null;
   if (
     notify_ring_size &&
@@ -622,6 +698,7 @@ export async function PUT(
       trackingEmailId,
       productVideoReviewEmailId,
       productVideoReviewRound,
+      pujaEnergizationEmailId,
       ringSizeReuploadEmailId,
       ringSizeNotifyRound,
     },

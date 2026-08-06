@@ -67,7 +67,6 @@ export function ZoomableAstrologyImage({
               fill
               className="object-contain"
               sizes="100vw"
-              quality={95}
             />
           </div>
         </DialogContent>

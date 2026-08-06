@@ -6,6 +6,7 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import type { Json } from '@/lib/types/database';
 import { asUntypedSupabase, type UntypedSupabase } from '@/lib/supabase/untyped';
 import { normalizeCurrencyRates } from '@/lib/admin/commerce-currency';
+import { bustCurrencyRatesCache } from '@/lib/currency/cached-rates';
 
 const nullableNumber = z.preprocess(
   (value) => (value === '' || value === null || value === undefined ? null : Number(value)),
@@ -247,8 +248,17 @@ export async function POST(request: NextRequest) {
   } else if (body.resource === 'currency') {
     const parsed = currencySchema.safeParse(body.payload);
     if (!parsed.success) return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }, { status: 400 });
-    const { data, error } = await saveCurrencyRate(db, parsed.data, now);
+    const { data, error } = await saveCurrencyRate(
+      db,
+      {
+        ...parsed.data,
+        // Form edits are always stored as admin-owned until the next API refresh.
+        source: parsed.data.source === 'manual' || parsed.data.manual_override ? 'manual' : parsed.data.source,
+      },
+      now
+    );
     if (error) return NextResponse.json({ error: 'Failed to save currency rate' }, { status: 500 });
+    bustCurrencyRatesCache();
     result = data;
     action = 'currency_rate_change';
   } else if (body.resource === 'currency_refresh') {
@@ -317,6 +327,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      bustCurrencyRatesCache();
       result = {
         updated: updated.map((row) => row.currency),
         rates: Object.fromEntries(updated.map((row) => [row.currency, row.rate])),
@@ -382,6 +393,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   if (error) return NextResponse.json({ error: 'Failed to update resource' }, { status: 500 });
+  if (resource === 'currency') bustCurrencyRatesCache();
   await logAdminAction({
     userId: auth.user.id,
     action: `${resource}_disable`,

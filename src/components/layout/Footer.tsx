@@ -43,7 +43,7 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
     links: [
       { label: 'Consultation', href: '/consultation' },
       { label: 'Gem-to-Jewellery Configurator', href: '/configure' },
-      { label: 'Gem Recommendation Tool', href: '/tools/recommendation' },
+      { label: 'Remedies Recommendation', href: '/gems-recommendations' },
       { label: 'Carat to Ratti Converter', href: '/tools/carat-to-ratti' },
       { label: 'Ring Size Guide', href: '/tools/ring-size-guide' },
     ],

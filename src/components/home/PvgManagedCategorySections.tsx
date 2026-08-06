@@ -22,6 +22,7 @@ import {
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
+import { LayeredCategoryImage } from '@/components/home/LayeredCategoryImage';
 import { DirectorPickPrice } from '@/components/home/DirectorPickPrice';
 import { Money } from '@/components/currency/Money';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
@@ -546,33 +547,15 @@ function layeredImage(
   className = '',
   fallbackImageUrl: string | null = null,
 ) {
-  const mainClassName = ['pvg-main-img', hoverUrl ? 'has-hover-image' : '', className].filter(Boolean).join(' ');
-  const hoverClassName = ['pvg-hover-img', className].filter(Boolean).join(' ');
-  const localFallback = fallbackImageUrl ?? '';
   return (
-    <>
-      {mainUrl ? (
-        localFallback ? (
-          <CategoryGemImage
-            src={mainUrl}
-            fallbackSrc={localFallback}
-            alt={alt}
-            width={400}
-            height={400}
-            className={mainClassName}
-            loading="lazy"
-            sizes="(max-width: 768px) 120px, 180px"
-          />
-        ) : (
-          <Image src={mainUrl} alt={alt} width={400} height={400} className={mainClassName} loading="lazy" sizes="(max-width: 768px) 120px, 180px" />
-        )
-      ) : (
-        <span className={mainClassName} role="img" aria-label={alt} style={{ background: fallbackBackground }} />
-      )}
-      {hoverUrl ? (
-        <Image src={hoverUrl} alt="" aria-hidden="true" width={400} height={400} className={hoverClassName} loading="lazy" sizes="(max-width: 768px) 120px, 180px" />
-      ) : null}
-    </>
+    <LayeredCategoryImage
+      mainUrl={mainUrl}
+      hoverUrl={hoverUrl}
+      alt={alt}
+      fallbackBackground={fallbackBackground}
+      className={className}
+      fallbackImageUrl={fallbackImageUrl}
+    />
   );
 }
 
@@ -1136,8 +1119,13 @@ export function SemipreciousHomeSection({
                       className="semi-circ-img"
                       style={!category.image_url ? { background: fallbackGemBackground(category) } : undefined}
                     >
-                      {category.image_url ? <span className="semi-circ-layer pvg-main-bg" style={{ backgroundImage: `url('${category.image_url}')` }} /> : null}
-                      {category.hover_image_url ? <span className="semi-circ-layer pvg-hover-bg" style={{ backgroundImage: `url('${category.hover_image_url}')` }} /> : null}
+                      <LayeredCategoryImage
+                        variant="background"
+                        mainUrl={category.image_url}
+                        hoverUrl={category.hover_image_url}
+                        alt={category.name}
+                        fallbackBackground={fallbackGemBackground(category)}
+                      />
                     </div>
                     <span className="semi-circ-name">{category.name}</span>
                     {locationLabel(category) ? <span className="semi-circ-origin">{locationLabel(category)}</span> : null}

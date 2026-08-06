@@ -162,6 +162,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/about/stores', { changeFrequency: 'monthly', priority: 0.6 }),
     entry('/contact', { changeFrequency: 'monthly', priority: 0.55 }),
     entry('/consultation', { changeFrequency: 'monthly', priority: 0.65 }),
+    entry('/gems-recommendations', { changeFrequency: 'monthly', priority: 0.88 }),
     entry('/policies/shipping', { changeFrequency: 'yearly', priority: 0.35 }),
     entry('/policies/returns', { changeFrequency: 'yearly', priority: 0.35 }),
     entry('/policies/privacy', { changeFrequency: 'yearly', priority: 0.35 }),

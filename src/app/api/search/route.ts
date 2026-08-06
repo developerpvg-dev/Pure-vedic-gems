@@ -22,6 +22,13 @@ function matchesQuery(values: Array<string | null | undefined>, query: string) {
 function getToolResults(query: string): SearchResult[] {
   const tools = [
     {
+      id: 'gems-recommendations',
+      name: 'Remedies Recommendation',
+      href: '/gems-recommendations',
+      category: 'tool',
+      description: 'Book expert Vedic remedies recommendation — gemstone, Rudraksha, and Yagya — by Kundli for ₹101.',
+    },
+    {
       id: 'tool-recommendation',
       name: 'Gemstone Recommendation Tool',
       href: '/tools/recommendation',

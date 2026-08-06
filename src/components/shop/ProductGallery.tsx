@@ -388,7 +388,6 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
                 fill
                 className="object-contain select-none"
                 sizes="100vw"
-                quality={95}
                 draggable={false}
               />
             </div>

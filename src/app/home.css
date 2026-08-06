@@ -2157,13 +2157,18 @@
     }
 
     .gem-card-new:hover .pvg-hover-img,
+    .gem-card-new:focus-within .pvg-hover-img,
     .rudra-item-card:hover .pvg-hover-img,
-    .explore-card:hover .pvg-hover-img {
+    .rudra-item-card:focus-within .pvg-hover-img,
+    .explore-card:hover .pvg-hover-img,
+    .explore-card:focus-within .pvg-hover-img {
       opacity: 1;
     }
 
-    .gem-card-new:hover .pvg-main-img.has-hover-image { opacity: 0; }
-    .rudra-item-card:hover .pvg-main-img.has-hover-image { opacity: 0; }
+    .gem-card-new:hover .pvg-main-img.has-hover-image,
+    .gem-card-new:focus-within .pvg-main-img.has-hover-image { opacity: 0; }
+    .rudra-item-card:hover .pvg-main-img.has-hover-image,
+    .rudra-item-card:focus-within .pvg-main-img.has-hover-image { opacity: 0; }
 
     .gem-card-new:hover .gem-img-wrap { transform: scale(1.08); }
     .gem-card-new:hover .gem-img-wrap img {
@@ -2746,7 +2751,8 @@
       transition: opacity 0.35s var(--ease-out-expo), transform 0.35s var(--ease-out-expo);
     }
     .semi-circ-layer.pvg-hover-bg { opacity: 0; }
-    .semi-circ-card:hover .semi-circ-layer.pvg-hover-bg { opacity: 1; transform: scale(1.04); }
+    .semi-circ-card:hover .semi-circ-layer.pvg-hover-bg,
+    .semi-circ-card:focus-within .semi-circ-layer.pvg-hover-bg { opacity: 1; transform: scale(1.04); }
     .semi-circ-card:hover .semi-circ-img {
       border-color: rgba(184,134,30,0.5); box-shadow: 0 14px 36px rgba(0,0,0,0.18);
     }
