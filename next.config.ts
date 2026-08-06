@@ -47,9 +47,10 @@ const shadcnTailwindCssPath = path.resolve(projectNodeModules, 'shadcn', 'dist',
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
 
-  // Keep chromium.bin in the serverless trace — without this PDF gen fails on Vercel.
+  // Chromium binary is ~70MB compressed / way over Vercel’s 250MB function limit if traced in.
+  // pdf.ts downloads the pack from GitHub on cold start instead (CHROMIUM_REMOTE_EXEC_PATH).
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
-  outputFileTracingIncludes: {
+  outputFileTracingExcludes: {
     '/api/admin/recommendations/[id]/pdf': ['./node_modules/@sparticuz/chromium/bin/**'],
     '/api/admin/recommendations/[id]/send': ['./node_modules/@sparticuz/chromium/bin/**'],
   },

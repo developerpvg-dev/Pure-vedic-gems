@@ -1,9 +1,6 @@
 /**
  * HTML → PDF via Chromium. Serverless uses @sparticuz/chromium; local uses system Chrome.
  */
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-
 const PDF_OPTS = {
   format: 'A4' as const,
   printBackground: true,
@@ -32,13 +29,11 @@ async function launchServerless() {
   // ponytail: graphics off = smaller /tmp extract, no WebGL needed for PDF
   chromium.setGraphicsMode = false;
 
-  const binDir = join(process.cwd(), 'node_modules', '@sparticuz', 'chromium', 'bin');
-  const input = existsSync(join(binDir, 'chromium.br')) ? binDir : CHROMIUM_PACK_URL;
-
+  // Always remote on serverless — bundling bin/ exceeds Vercel’s 250MB function limit.
   return puppeteer.default.launch({
     args: await puppeteer.default.defaultArgs({ args: chromium.args, headless: 'shell' }),
     defaultViewport: { width: 900, height: 1200 },
-    executablePath: await chromium.executablePath(input),
+    executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
     headless: 'shell',
   });
 }
