@@ -3,6 +3,8 @@
  * (~1–2k). Lookup lives in proxy instead.
  */
 import p2p11Pairs from '../../redirects/p2-p11-redirects.json';
+import { GEO_GEM_LANDING_PATHS } from '@/lib/constants/geo-gem-landings';
+import { LIVE_APP_EXACT_PATHS } from '@/lib/live-app-paths.generated';
 
 const FLAT_PARENTS = new Set([
   'navaratna',
@@ -30,8 +32,19 @@ const FLAT_CATEGORY_SLUGS = new Set([
   'exclusive-rudraksha-malas', 'ready-rudraksha-jewelry-stock', 'astro-gems-stock',
 ]);
 
+function barePath(pathname: string) {
+  return pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+}
+
+function isProtectedLivePath(pathname: string) {
+  const bare = barePath(pathname);
+  return GEO_GEM_LANDING_PATHS.has(bare) || LIVE_APP_EXACT_PATHS.has(bare);
+}
+
 const EXACT = new Map<string, string>();
 for (const [from, to] of p2p11Pairs as [string, string][]) {
+  // Live app pages + rebuilt geo SEO URLs — never redirect away from the same URL.
+  if (isProtectedLivePath(from)) continue;
   EXACT.set(from, to);
   if (!from.endsWith('/')) EXACT.set(`${from}/`, to);
 }
@@ -39,7 +52,10 @@ for (const [from, to] of p2p11Pairs as [string, string][]) {
 const NESTED_SHOP = /^\/shop\/([^/]+)\/([^/]+)\/?$/;
 
 export function lookupLegacyRedirect(pathname: string): string | null {
-  const hit = EXACT.get(pathname);
+  const bare = barePath(pathname);
+  if (isProtectedLivePath(bare)) return null;
+
+  const hit = EXACT.get(pathname) ?? EXACT.get(bare);
   if (hit) return hit;
 
   // /shop/upratna|navaratna/pitambari → /shop/pitambari

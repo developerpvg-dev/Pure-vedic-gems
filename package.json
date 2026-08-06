@@ -34,7 +34,9 @@
     "seed:catalog-reviews": "tsx scripts/seed/generate-catalog-category-reviews.ts",
     "seed:legacy-users": "tsx scripts/seed/seed-legacy-users.ts --write",
     "security:audit": "npm audit --audit-level=high",
-    "ci": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "redirects:generate-live": "node scripts/generate-live-app-paths.mjs",
+    "redirects:selfcheck": "npm run redirects:generate-live && tsx src/lib/legacy-redirects.selfcheck.ts",
+    "ci": "npm run lint && npm run typecheck && npm run redirects:selfcheck && npm run test && npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -407,97 +407,12 @@ const nextConfig: NextConfig = {
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
 
-      // Legacy Pearl (Moti) SEO landing pages -> newly rebuilt Pearl quality guide.
-      ...[
-        '/astrological-pearls-gemstone-in-the-philippines',
-        '/authenticity-well-being-and-lunar-charm-of-pearl-gemstone-in-switzerland',
-        '/buy-100-authentic-pearls-online-in-canada',
-        '/buy-100-authentic-pearls-online-in-uk',
-        '/buy-100-natural-pearls-online-in-london',
-        '/pearl-gemstone-complete-guide-for-people-in-australia',
-        '/why-wear-pearl-moon-gemstone-astrological-benefits-healing-and-prosperity',
-      ].flatMap((source) => [
-        { source, destination: '/knowledge/gem-qualities/pearl', statusCode: 301 },
-        { source: `${source}/`, destination: '/knowledge/gem-qualities/pearl', statusCode: 301 },
-      ]),
+      // Pearl geo landings rebuilt as live pages at the same URLs (see app/[slug]).
+      // (was: 301 → /knowledge/gem-qualities/pearl)
 
-      // Legacy geo-targeted / duplicate gemstone SEO landing pages and editorial
-      // gem articles -> the single canonical quality guide for that gem.
-      // (301 consolidation preserves link equity without thin doorway duplicates.)
-      ...[
-        // Blue Sapphire (Neelam)
-        ['/astrological-blue-sapphire-gemstone-in-philippines', 'blue-sapphire'],
-        ['/blue-sapphire-gemstone-a-complete-guide-for-people-in-australia', 'blue-sapphire'],
-        ['/blue-sapphire-gemstone-in-dubai-significance-strength-and-fortune', 'blue-sapphire'],
-        ['/blue-sapphire-gemstone-in-switzerland-a-gemstone-of-wisdom-grace-and-strength', 'blue-sapphire'],
-        ['/blue-sapphire-gemstone-in-usa', 'blue-sapphire'],
-        ['/buy-100-authentic-blue-sapphire-online-in-london', 'blue-sapphire'],
-        ['/buy-authentic-blue-sapphire-online-in-canada', 'blue-sapphire'],
-        ['/discover-the-irresistible-and-incredible-magic-of-authentic-astrological-blue-sapphire-gemstone-in-uk', 'blue-sapphire'],
-        // Yellow Sapphire (Pukhraj)
-        ['/astrological-yellow-sapphire-gemstone-in-switzerland', 'yellow-sapphire'],
-        ['/authentic-yellow-sapphire-online-in-canada', 'yellow-sapphire'],
-        ['/buy-100-authentic-yellow-sapphire-online-in-london', 'yellow-sapphire'],
-        ['/buy-authentic-yellow-sapphire-online-in-uk', 'yellow-sapphire'],
-        ['/harness-the-celestial-power-of-yellow-sapphire-gemstone-in-the-usa', 'yellow-sapphire'],
-        ['/unlocking-prosperity-and-wisdom-the-significance-of-the-yellow-sapphire-gemstone-in-dubai', 'yellow-sapphire'],
-        ['/yellow-sapphire-gemstone-guide-in-australia', 'yellow-sapphire'],
-        ['/yellow-sapphire-gemstone-in-the-philippines', 'yellow-sapphire'],
-        // White Sapphire (Safed Pukhraj) — also legacy diamond page
-        ['/buy-100-authentic-white-sapphire-in-canada', 'white-sapphire'],
-        ['/buy-100-authentic-white-sapphire-online-in-london', 'white-sapphire'],
-        ['/buy-100-authentic-white-sapphire-online-in-uk', 'white-sapphire'],
-        ['/diamond', 'white-sapphire'],
-        ['/harness-the-celestial-power-of-white-sapphire-gemstone-in-the-usa', 'white-sapphire'],
-        ['/white-sapphire-gemstone-benefits-astrology-healing-and-complete-buying-guide-in-philippines', 'white-sapphire'],
-        ['/white-sapphire-gemstone-guide-for-beginners-in-australia', 'white-sapphire'],
-        ['/why-wear-white-sapphire-gemstone-venus-gemstone-astrological-benefits-healing-and-prosperity', 'white-sapphire'],
-        // Emerald (Panna)
-        ['/astrological-emerald-gemstone-in-philippines', 'emerald'],
-        ['/buy-100-authentic-emerald-online-in-canada', 'emerald'],
-        ['/buy-100-authentic-emerald-online-in-london', 'emerald'],
-        ['/buy-100-authentic-emerald-online-in-uk', 'emerald'],
-        ['/emerald-gemstone-guide-for-beginners-in-australia', 'emerald'],
-        ['/emerald-gemstone-panna-the-astrological-gem-of-mercury-and-its-profound-benefits', 'emerald'],
-        ['/the-emerald-gemstone-panna-switzerlands-green-portal-to-wisdom-calm-and-expression', 'emerald'],
-        // Ruby (Manik)
-        ['/astrological-ruby-gemstone-in-philippines', 'ruby'],
-        ['/buy-100-authentic-ruby-gemstone-online-in-london', 'ruby'],
-        ['/buy-100-authentic-ruby-online-in-canada', 'ruby'],
-        ['/buy-authentic-ruby-online-in-uk', 'ruby'],
-        ['/ruby-gemstone-for-australian-gemstone-lovers', 'ruby'],
-        ['/ruby-manikya-gemstone-wearing-solar-gemstone', 'ruby'],
-        ['/solar-brilliance-swiss-ruby-gemstones-certification-and-well-being', 'ruby'],
-        // Red Coral (Moonga)
-        ['/buy-100-authentic-red-coral-online-in-canada', 'red-coral'],
-        ['/buy-100-authentic-red-coral-online-in-london', 'red-coral'],
-        ['/buy-100-authentic-red-coral-online-in-uk', 'red-coral'],
-        ['/red-coral-gemstone-in-the-philippines', 'red-coral'],
-        ['/red-coral-moonga-gemstone-of-mars', 'red-coral'],
-        ['/red-coral-stone-moonga-the-comprehensive-benefits-of-wearing-the-gem-of-mars', 'red-coral'],
-        // Hessonite (Gomed / Rahu)
-        ['/astrological-hessonite-gemstone-in-philippines-benefits-healing-and-buying-guide', 'hessonite'],
-        ['/buy-100-authentic-hessonite-online-in-canada', 'hessonite'],
-        ['/buy-100-authentic-hessonite-online-in-london', 'hessonite'],
-        ['/buy-100-authentic-hessonite-online-in-uk', 'hessonite'],
-        ['/hessonite-gemstone-complete-and-simple-guide-for-people-in-australia', 'hessonite'],
-        ['/hessonite-gemstone-switzerlands-astrological-treasure', 'hessonite'],
-        ['/hessonite-in-the-usa-an-overview', 'hessonite'],
-        ['/unveiling-mystical-energy-signification-of-the-hessonite-gemstone-in-dubai', 'hessonite'],
-        // Cat's Eye (Lehsunia / Ketu)
-        ['/astrological-catseye-gemstone-in-switzerland', 'catseye'],
-        ['/buy-100-authentic-cats-eye-in-london', 'catseye'],
-        ['/buy-100-authentic-cats-eye-online-in-uk', 'catseye'],
-        ['/cats-eye-gemstone-lehsunia-in-canada', 'catseye'],
-        ['/catseye-gemstone-complete-guide-for-people-in-australia', 'catseye'],
-        ['/harness-the-celestial-power-of-catseye-gemstone-in-the-usa', 'catseye'],
-        ['/the-gemstone-of-ketu-protection-intuition-spiritual-power-in-dubai', 'catseye'],
-        // Opal (Upala / Venus)
-        ['/astrological-opal-gemstone-in-philippines', 'opal'],
-        ['/opal-gemstone-complete-guide-for-people-in-australia', 'opal'],
-        ['/opal-gemstone-in-switzerland-a-gemstone-of-love-light-and-creative-energy', 'opal'],
-        ['/opal-upal-gemstone-venus-gemstone-ring', 'opal'],
-      ].flatMap(([source, gem]) => [
+      // Geo gem landings rebuilt as live SEO/AEO pages at same URLs (69 pages).
+      // Only keep /diamond → white-sapphire quality (thin legacy shop stub, not rebuilt).
+      ...[['/diamond', 'white-sapphire']].flatMap(([source, gem]) => [
         { source, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
         { source: `${source}/`, destination: `/knowledge/gem-qualities/${gem}`, statusCode: 301 },
       ]),
