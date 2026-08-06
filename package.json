@@ -102,7 +102,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "jsdom": "^29.1.1",
     "pg": "^8.21.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5",
