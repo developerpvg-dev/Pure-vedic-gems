@@ -21,7 +21,6 @@ const QUALITY = 82; // good balance of quality vs file size
 
 let converted = 0;
 let skipped = 0;
-let errors = 0;
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -61,11 +60,18 @@ async function convertToWebP(inputPath) {
     console.log(`  converted: ${basename(inputPath)} → ${basename(webpPath)}  (${savings}% smaller)`);
     converted++;
   } catch (err) {
-    console.error(`  ERROR converting ${inputPath}: ${err.message}`);
-    errors++;
+    // ponytail: never fail builds on one bad file; originals stay as fallback
+    console.warn(`  skip (bad file): ${basename(inputPath)} — ${err.message}`);
+    skipped++;
   }
 }
 
+// Always exit 0 — WebP is best-effort; a corrupt asset must not fail Vercel.
 console.log('Converting images to WebP...\n');
-await walk(PUBLIC_DIR);
-console.log(`\nDone. Converted: ${converted}  Skipped: ${skipped}  Errors: ${errors}`);
+try {
+  await walk(PUBLIC_DIR);
+} catch (err) {
+  console.warn(`WebP convert aborted: ${err.message}`);
+}
+console.log(`\nDone. Converted: ${converted}  Skipped: ${skipped}`);
+process.exit(0);
