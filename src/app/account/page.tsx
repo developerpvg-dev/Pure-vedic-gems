@@ -63,21 +63,22 @@ export default async function AccountPage() {
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Valued Customer';
 
   const orderIds = recentOrders.map((o) => o.id);
+  type PaymentRow = { order_id: string; amount?: number | null; reference?: string | null };
   const { data: recentPaymentRows } =
     orderIds.length > 0
       ? await asUntypedSupabase(supabase)
-          .from('order_payments')
+          .from<PaymentRow[]>('order_payments')
           .select('order_id, amount, reference')
           .in('order_id', orderIds)
           .eq('status', 'paid')
-      : { data: [] as Array<{ order_id: string; amount: number; reference: string | null }> };
+      : { data: [] as PaymentRow[] };
 
-  const paymentsByOrder = new Map<string, Array<{ amount?: number | null; reference?: string | null }>>();
+  const paymentsByOrder = new Map<string, PaymentRow[]>();
   for (const row of recentPaymentRows ?? []) {
-    const orderId = String((row as { order_id?: string }).order_id ?? '');
+    const orderId = String(row.order_id ?? '');
     if (!orderId) continue;
     const list = paymentsByOrder.get(orderId) ?? [];
-    list.push(row as { amount?: number | null; reference?: string | null });
+    list.push(row);
     paymentsByOrder.set(orderId, list);
   }
 
