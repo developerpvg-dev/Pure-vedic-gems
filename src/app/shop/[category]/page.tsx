@@ -406,9 +406,9 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const displayLabel = hubPage ? shopCategoryLabel(hubPage) : meta.label;
 
   return (
-    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-28 md:px-6 md:pt-32 lg:px-10">
+    <main className="min-h-screen bg-brand-bg px-4 pb-24 pt-[calc(var(--pvg-site-header-offset)+0.25rem)] md:px-6 md:pt-[calc(var(--pvg-site-header-offset)+0.5rem)] lg:px-10">
       <div className="mx-auto max-w-350">
-        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-brand-muted" aria-label="Breadcrumb">
+        <nav className="mb-1.5 flex items-center gap-1.5 text-[12px] text-brand-muted md:mb-3" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-brand-accent">
             Home
           </Link>

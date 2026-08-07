@@ -24,6 +24,18 @@ export function applyPaymentToBalances(total: number, amountPaid: number, paymen
   return { amount_paid: nextPaid, amount_due: nextDue, payment_status: paymentStatus };
 }
 
+/**
+ * What the order still owes, derived from total − paid.
+ *
+ * Prefer this over a stored `orders.amount_due`: a Razorpay advance that was
+ * captured but never finalized (failed client verify + missed webhook) leaves
+ * that column at 0 while the money is genuinely still due.
+ */
+export function outstandingBalance(total: number, amountPaid: number, storedDue?: number | null) {
+  const derived = Math.max(0, roundMoney(roundMoney(total) - roundMoney(amountPaid)));
+  return Math.max(derived, roundMoney(Number(storedDue ?? 0)));
+}
+
 export function inferPaymentKind(amount: number, total: number, priorPaid: number): CounterPaymentKind {
   const a = roundMoney(amount);
   const t = roundMoney(total);
@@ -84,6 +96,12 @@ export function __orderPaymentsSelfCheck() {
     threw = true;
   }
   console.assert(threw, 'overpay must throw');
+  // Stuck online advance: gateway captured, order row never updated → still due.
+  console.assert(outstandingBalance(6, 0, 0) === 6, 'stale amount_due=0 must not hide the balance');
+  console.assert(outstandingBalance(6, 3, 0) === 3, 'half paid leaves half due');
+  console.assert(outstandingBalance(6, 6, 0) === 0, 'fully paid owes nothing');
+  console.assert(outstandingBalance(6, 6, 2) === 2, 'trust a larger stored due (post-price change)');
+
   console.assert(inferPaymentKind(10000, 10000, 0) === 'full');
   console.assert(inferPaymentKind(3000, 10000, 0) === 'advance');
   console.assert(inferPaymentKind(7000, 10000, 3000) === 'balance');

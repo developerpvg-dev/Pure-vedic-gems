@@ -7,6 +7,7 @@ import {
   formatPaymentCharge,
   resolveOrderChargeContext,
 } from '@/lib/currency/format-charged';
+import { outstandingBalance } from '@/lib/orders/counter-payments';
 
 type PaymentRow = {
   id: string;
@@ -61,7 +62,7 @@ export function OrderPaymentLedger({
   const [reference, setReference] = useState('');
   const [saving, setSaving] = useState(false);
   const [paid, setPaid] = useState(amountPaid);
-  const [due, setDue] = useState(amountDue);
+  const [due, setDue] = useState(() => outstandingBalance(total, amountPaid, amountDue));
   const [status, setStatus] = useState(paymentStatus);
   const [requesting, setRequesting] = useState(false);
   const [requestedAt, setRequestedAt] = useState(balanceRequestedAt);
@@ -92,11 +93,12 @@ export function OrderPaymentLedger({
   }, [load]);
 
   useEffect(() => {
+    const outstanding = outstandingBalance(total, amountPaid, amountDue);
     setPaid(amountPaid);
-    setDue(amountDue);
+    setDue(outstanding);
     setStatus(paymentStatus);
-    if (amountDue > 0.009) setAmount(String(amountDue));
-  }, [amountPaid, amountDue, paymentStatus]);
+    if (outstanding > 0.009) setAmount(String(outstanding));
+  }, [amountPaid, amountDue, paymentStatus, total]);
 
   async function recordPayment() {
     setSaving(true);

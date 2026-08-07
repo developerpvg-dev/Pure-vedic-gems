@@ -45,6 +45,7 @@ import {
   orderHasCustomDesignPricingPending,
 } from '@/lib/utils/configuration-snapshot';
 import { paymentStatusLabelForOrder } from '@/lib/constants/order-status';
+import { outstandingBalance } from '@/lib/orders/counter-payments';
 
 const AVAILABILITY_STYLE: Record<string, string> = {
   reserved: 'bg-amber-100 text-amber-900',
@@ -603,8 +604,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             {fmt(
               o.payment_status === 'captured' && Number(o.amount_paid ?? 0) < 0.01
                 ? 0
-                : (o.amount_due ??
-                    Math.max(0, Number(o.total ?? 0) - Number(o.amount_paid ?? 0))),
+                : outstandingBalance(Number(o.total ?? 0), Number(o.amount_paid ?? 0), o.amount_due),
             )}
           </Field>
           <Field label="Payment">{cap(o.payment_method) ?? '—'}</Field>

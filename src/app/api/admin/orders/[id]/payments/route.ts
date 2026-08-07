@@ -143,6 +143,15 @@ export async function POST(
     return NextResponse.json({ error: 'Payment saved but order balances failed to update.' }, { status: 500 });
   }
 
+  // Manual entry usually reconciles money Razorpay took but never finalized.
+  // Close the stale in-flight attempt so a late webhook can't bank it twice.
+  await db
+    .from('order_payments')
+    .update({ status: 'failed', notes: 'Reconciled by a manually recorded payment' })
+    .eq('order_id', id)
+    .eq('status', 'pending')
+    .neq('id', (payment as { id: string }).id);
+
   await db.from('order_tracking_events').insert({
     order_id: id,
     status: row.status,

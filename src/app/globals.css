@@ -132,24 +132,33 @@
   --pvg-scrollbar-thumb-hover: #9A6B1A;
 
   /* Fixed SiteHeader clearance — topbar + navbar + nav border (keep in sync with SiteHeader.tsx) */
-  /* Mobile: 28px topbar + 62px nav + 2px border = 92px */
-  --pvg-site-header-offset: calc(92px + env(safe-area-inset-top, 0px));
-  --pvg-site-header-sticky-top: calc(84px + env(safe-area-inset-top, 0px));
+  /* Mobile: 28px topbar + 56px nav (≤767) + 2px border = 86px */
+  --pvg-site-header-offset: calc(86px + env(safe-area-inset-top, 0px));
+  --pvg-site-header-sticky-top: calc(78px + env(safe-area-inset-top, 0px));
+}
+
+@media (max-width: 430px) {
+  :root,
+  [data-palette='1'] {
+    /* 28px topbar + 52px nav + 2px border = 82px */
+    --pvg-site-header-offset: calc(82px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: calc(74px + env(safe-area-inset-top, 0px));
+  }
 }
 
 @media (min-width: 480px) {
   :root,
   [data-palette='1'] {
-    /* 32px topbar + 62px nav + 2px border = 96px */
-    --pvg-site-header-offset: calc(96px + env(safe-area-inset-top, 0px));
-    --pvg-site-header-sticky-top: calc(88px + env(safe-area-inset-top, 0px));
+    /* 32px topbar + 56px nav + 2px border = 90px */
+    --pvg-site-header-offset: calc(90px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: calc(82px + env(safe-area-inset-top, 0px));
   }
 }
 
 @media (min-width: 768px) {
   :root,
   [data-palette='1'] {
-    /* Tablet still uses mobile nav through 1023px */
+    /* Tablet: 32px topbar + 62px nav + 2px border = 96px */
     --pvg-site-header-offset: calc(96px + env(safe-area-inset-top, 0px));
     --pvg-site-header-sticky-top: calc(88px + env(safe-area-inset-top, 0px));
   }
