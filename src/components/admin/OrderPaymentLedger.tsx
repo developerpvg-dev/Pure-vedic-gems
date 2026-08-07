@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, Plus, Send } from 'lucide-react';
-import { formatPaymentCharge } from '@/lib/currency/format-charged';
+import {
+  formatOrderMoney,
+  formatPaymentCharge,
+  resolveOrderChargeContext,
+} from '@/lib/currency/format-charged';
 
 type PaymentRow = {
   id: string;
@@ -16,10 +20,6 @@ type PaymentRow = {
   notes: string | null;
   paid_at: string;
 };
-
-function fmt(n: number) {
-  return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString('en-IN', {
@@ -39,6 +39,7 @@ export function OrderPaymentLedger({
   paymentStatus,
   hasCustomerAccount = false,
   balanceRequestedAt = null,
+  complianceFlags = null,
 }: {
   orderId: string;
   total: number;
@@ -48,6 +49,7 @@ export function OrderPaymentLedger({
   /** Guest orders have no account to send a balance request to. */
   hasCustomerAccount?: boolean;
   balanceRequestedAt?: string | null;
+  complianceFlags?: unknown;
 }) {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,12 @@ export function OrderPaymentLedger({
   const [requestedAt, setRequestedAt] = useState(balanceRequestedAt);
   const [requestNote, setRequestNote] = useState('');
   const [requestOpen, setRequestOpen] = useState(false);
+
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags,
+    payments,
+  });
+  const money = (n: number) => formatOrderMoney(n, chargeContext);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -141,11 +149,11 @@ export function OrderPaymentLedger({
         <div>
           <h2 className="text-sm font-bold text-gray-900">Payment ledger</h2>
           <p className="mt-1 text-sm text-gray-600">
-            Paid <strong className="tabular-nums text-emerald-700">{fmt(paid)}</strong>
+            Paid <strong className="tabular-nums text-emerald-700">{money(paid)}</strong>
             {' · '}
-            Due <strong className={`tabular-nums ${due > 0.009 ? 'text-amber-700' : 'text-gray-700'}`}>{fmt(due)}</strong>
+            Due <strong className={`tabular-nums ${due > 0.009 ? 'text-amber-700' : 'text-gray-700'}`}>{money(due)}</strong>
             {' · '}
-            Total {fmt(total)}
+            Total {money(total)}
             <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-700">
               {status.replace(/_/g, ' ')}
             </span>
@@ -185,7 +193,7 @@ export function OrderPaymentLedger({
         <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50/60 p-4">
           <p className="text-sm text-sky-950">
             Emails the customer and posts an in-app notification asking them to pay the remaining{' '}
-            <strong>{fmt(due)}</strong>. They pay from their account; the order stays visible here
+            <strong>{money(due)}</strong>. They pay from their account; the order stays visible here
             until settled.
           </p>
           <label className="mt-3 block text-sm">
@@ -303,7 +311,9 @@ export function OrderPaymentLedger({
                     </td>
                     <td className="py-2 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
                     <td className="py-2 pr-3 font-semibold tabular-nums">
-                      {formatPaymentCharge(Number(p.amount), p.reference)}
+                      {p.reference
+                        ? formatPaymentCharge(Number(p.amount), p.reference)
+                        : money(Number(p.amount))}
                     </td>
                     <td className="py-2 font-mono text-xs text-gray-500">
                       {p.razorpay_payment_id || p.reference || '—'}

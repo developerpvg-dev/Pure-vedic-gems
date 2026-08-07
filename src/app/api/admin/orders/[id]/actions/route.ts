@@ -38,6 +38,10 @@ import { recomputeOrderBalances } from '@/lib/orders/online-payments';
 import { resolveOrderCustomerEmail } from '@/lib/orders/resolve-order-email';
 import { sendBalanceDueEmail } from '@/lib/resend/send-balance-due';
 import { sendBankTransferRejectedEmail } from '@/lib/resend/send-bank-transfer-rejected';
+import {
+  formatOrderMoney,
+  resolveOrderChargeContext,
+} from '@/lib/currency/format-charged';
 import { sendDeliveryProofEmail } from '@/lib/resend/send-delivery-proof';
 import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
 import { BANK_TRANSFER_HOLD_MS } from '@/lib/constants/bank-accounts';
@@ -590,13 +594,18 @@ export async function POST(
 
       if (orderRow.customer_id) {
         const isPartial = ledgerBalances.payment_status === 'partial';
+        const chargeCtx = resolveOrderChargeContext({
+          complianceFlags: orderRow.compliance_flags,
+        });
+        const claimedLabel = formatOrderMoney(claimed, chargeCtx);
+        const dueLabel = formatOrderMoney(ledgerBalances.amount_due, chargeCtx);
         await notifyUser({
           recipientUserId: orderRow.customer_id,
           type: 'order_status_update',
           title: isPartial ? 'Advance payment verified' : 'Payment verified',
           message: isPartial
-            ? `We verified your bank transfer of ₹${claimed.toLocaleString('en-IN')} for order ${orderRow.order_number}. Your order is confirmed — balance ₹${ledgerBalances.amount_due.toLocaleString('en-IN')} is due when ready.`
-            : `Bank transfer for order ${orderRow.order_number} was verified. Your order is confirmed.`,
+            ? `We verified your bank transfer of ${claimedLabel} for order ${orderRow.order_number}. Your order is confirmed — balance ${dueLabel} is due when ready.`
+            : `Bank transfer for order ${orderRow.order_number} was verified (${claimedLabel}). Your order is confirmed.`,
           href: '/account/orders',
           entityType: 'order',
           entityId: id,
@@ -989,6 +998,16 @@ export async function POST(
 
       const note = parsed.data.note?.trim() || null;
       const recipient = await resolveOrderCustomerEmail(order as Order);
+      const { data: paidForFx } = await db
+        .from('order_payments')
+        .select('amount, reference')
+        .eq('order_id', id)
+        .eq('status', 'paid');
+      const chargeContext = resolveOrderChargeContext({
+        complianceFlags: orderRow.compliance_flags,
+        payments: (paidForFx ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+      });
+      const dueLabel = formatOrderMoney(amountDue, chargeContext);
       let emailId: string | null = null;
       if (recipient) {
         try {
@@ -1000,6 +1019,7 @@ export async function POST(
             amountPaid,
             amountDue,
             note,
+            chargeContext,
           });
         } catch (emailErr) {
           console.error('[admin/orders/actions] balance due email failed', emailErr);
@@ -1010,7 +1030,7 @@ export async function POST(
         recipientUserId: orderRow.customer_id,
         type: 'order_balance_due',
         title: 'Your order is ready — balance due',
-        message: `Order ${orderRow.order_number} is ready. Pay the remaining ₹${amountDue.toLocaleString('en-IN')} to schedule dispatch.${note ? ` ${note}` : ''}`,
+        message: `Order ${orderRow.order_number} is ready. Pay the remaining ${dueLabel} to schedule dispatch.${note ? ` ${note}` : ''}`,
         href: '/account/orders',
         entityType: 'order',
         entityId: id,
@@ -1028,7 +1048,7 @@ export async function POST(
         order_id: id,
         status: orderRow.status,
         event_time: now,
-        note: `Balance payment requested: ₹${amountDue.toLocaleString('en-IN')} due.${note ? ` ${note}` : ''}`,
+        note: `Balance payment requested: ${dueLabel} due.${note ? ` ${note}` : ''}`,
         is_customer_visible: true,
         created_by: auth.user.id,
       });

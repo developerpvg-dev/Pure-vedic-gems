@@ -89,19 +89,20 @@ export async function ensureLeadFromConsultation(
     return existing.id as string;
   }
 
+  const amountLabel = formatChargedMoney(consultation);
   const rs101 = isRs101Lead(consultation);
   const paid = isPaymentCaptured(consultation);
   const enquiryType = rs101 ? 'Remedies Recommendation' : 'Consultation';
   const source = rs101 ? 'homepage_recommendation' : 'consultation_page';
   const subject = rs101
-    ? 'Gemstone Recommendation Request (₹101)'
+    ? `Gemstone Recommendation Request (${amountLabel})`
     : `Vedic Consultation — ${consultation.plan_title_snapshot || 'Paid plan'}`;
 
   const message = [
     rs101
       ? paid
-        ? 'Paid homepage gemstone recommendation (₹101)'
-        : 'Homepage gemstone recommendation (₹101) — payment pending'
+        ? `Paid homepage gemstone recommendation (${amountLabel})`
+        : `Homepage gemstone recommendation (${amountLabel}) — payment pending`
       : paid
         ? 'Paid Vedic Consultation booking'
         : 'Vedic Consultation booking — payment pending',

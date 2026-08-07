@@ -8,6 +8,7 @@ import { rateLimit } from '@/lib/utils/rate-limit';
 import { yagyaBookingCreateOrderSchema } from '@/lib/validators/yagya';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { setBookingTokenCookie } from '@/lib/security/booking-token';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 interface RazorpayOrderResult {
   id: string;
@@ -186,7 +187,11 @@ export async function POST(request: NextRequest) {
       recipientRole: 'sales',
       type: 'yagya_booking_created',
       title: 'Yagya booking started',
-      message: `${parsed.data.full_name} started booking ${yagya.name} for ₹${amountInr.toLocaleString('en-IN')}.`,
+      message: `${parsed.data.full_name} started booking ${yagya.name} for ${formatChargedMoney({
+        amount_inr: amountInr,
+        amount_paise: amountMinor,
+        currency: gateway.currency,
+      })}.`,
       href: '/admin/yagya-bookings',
       entityType: 'yagya_booking',
       entityId: booking.id,

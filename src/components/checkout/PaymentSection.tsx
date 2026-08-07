@@ -225,6 +225,7 @@ export function PaymentSection({
       form.set('bank_id', bankId);
       form.set('reference', transferRef.trim());
       form.set('amount_claimed', String(payAmount));
+      form.set('currency', currency);
       if (transferNotes.trim()) form.set('notes', transferNotes.trim());
       Array.from(proofFiles).forEach((file) => form.append('proofs', file));
 
@@ -256,6 +257,7 @@ export function PaymentSection({
     payingPartial,
     advanceAmount,
     estimate.totalInr,
+    currency,
   ]);
 
   const handlePayNow = useCallback(async () => {

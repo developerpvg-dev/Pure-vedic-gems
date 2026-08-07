@@ -17,8 +17,10 @@ import {
   isCustomerCancellable,
   type OrderStatus,
 } from '@/lib/constants/order-status';
-import { formatPrice } from '@/lib/utils/format';
-import { chargedLabelFromPayments } from '@/lib/currency/format-charged';
+import {
+  formatOrderMoney,
+  resolveOrderChargeContext,
+} from '@/lib/currency/format-charged';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { RETURN_STATUS_LABELS, type ReturnStatus } from '@/lib/orders/returns';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
@@ -128,7 +130,15 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   payment_review: { label: 'Payment Review', bg: '#fef3c7', text: '#92400e' },
 };
 
-function OrderItemRow({ item, showConfig = false }: { item: OrderLineItem; showConfig?: boolean }) {
+function OrderItemRow({
+  item,
+  showConfig = false,
+  money,
+}: {
+  item: OrderLineItem;
+  showConfig?: boolean;
+  money: (n: number) => string;
+}) {
   const imageUrl = getItemImageUrl(item);
   const lineTotal = getItemLineTotal(item);
 
@@ -168,19 +178,29 @@ function OrderItemRow({ item, showConfig = false }: { item: OrderLineItem; showC
         ) : null}
       </div>
       <p className="shrink-0 text-sm font-semibold text-[var(--pvg-primary)]">
-        {formatPrice(lineTotal)}
+        {money(lineTotal)}
       </p>
     </div>
   );
 }
 
-function PriceRow({ label, amount, highlight }: { label: string; amount: number; highlight?: boolean }) {
+function PriceRow({
+  label,
+  amount,
+  highlight,
+  money,
+}: {
+  label: string;
+  amount: number;
+  highlight?: boolean;
+  money: (n: number) => string;
+}) {
   if (!amount) return null;
   return (
     <div className={`flex justify-between text-sm ${highlight ? 'font-semibold' : ''}`}>
       <span className="text-[var(--pvg-muted)]">{label}</span>
       <span className={highlight ? 'text-[var(--pvg-accent)] text-base' : 'text-[var(--pvg-text)]'}>
-        {formatPrice(amount)}
+        {money(amount)}
       </span>
     </div>
   );
@@ -237,6 +257,11 @@ export function AccountOrderCard({
   const fulfillmentLabel =
     ORDER_STATUS_LABELS[status as OrderStatus] ?? status.replace(/_/g, ' ');
   const address = order.shipping_address;
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags: order.compliance_flags,
+    payments: order.payments,
+  });
+  const money = (n: number) => formatOrderMoney(n, chargeContext);
   const expertWhatsApp = `https://wa.me/919871582404?text=${encodeURIComponent(
     `Hi, I need help with my order ${order.order_number} before cancelling.`,
   )}`;
@@ -378,16 +403,8 @@ export function AccountOrderCard({
           ) : null}
           <span className="text-right">
             <span className="block text-xl font-bold text-[var(--pvg-primary)]">
-              {formatPrice(order.total, 'INR')}
+              {money(order.total)}
             </span>
-            {(() => {
-              const charged = chargedLabelFromPayments(order.payments ?? []);
-              return charged ? (
-                <span className="mt-0.5 block text-xs font-semibold text-stone-500">
-                  Charged {charged}
-                </span>
-              ) : null;
-            })()}
           </span>
         </div>
       </div>
@@ -409,12 +426,15 @@ export function AccountOrderCard({
           canPay={!['cancelled', 'refunded'].includes(status)}
           payments={order.payments ?? []}
           prefill={order.payer}
+          chargeContext={chargeContext}
         />
       ) : null}
 
       {order.payment_method === 'bank_transfer' || order.bank_transfer ? (
         <BankTransferAccountBlock
           order={order}
+          money={money}
+          chargeCurrency={chargeContext?.currency}
           requireContactConfirm={requireBankContactConfirm}
           onUpdated={() => setDetailsOpen(true)}
         />
@@ -487,7 +507,7 @@ export function AccountOrderCard({
       {order.items.length > 0 ? (
         <div className="divide-y divide-[var(--pvg-border)] border-t border-[var(--pvg-border)] px-5 md:px-6">
           {order.items.slice(0, detailsOpen ? order.items.length : 2).map((item, index) => (
-            <OrderItemRow key={`${item.product_id ?? item.name}-${index}`} item={item} />
+            <OrderItemRow key={`${item.product_id ?? item.name}-${index}`} item={item} money={money} />
           ))}
           {!detailsOpen && order.items.length > 2 ? (
             <p className="py-2 text-xs text-[var(--pvg-muted)]">
@@ -510,6 +530,7 @@ export function AccountOrderCard({
                     key={`detail-${item.product_id ?? item.name}-${index}`}
                     item={item}
                     showConfig
+                    money={money}
                   />
                 ))}
               </div>
@@ -556,7 +577,7 @@ export function AccountOrderCard({
                         }
                       >
                         {line.sign < 0 ? '−' : ''}
-                        {formatPrice(line.amount)}
+                        {money(line.amount)}
                       </span>
                     </div>
                   ))}
@@ -565,6 +586,7 @@ export function AccountOrderCard({
                       label={(order.amount_due ?? 0) > 0.009 ? 'Order total' : 'Total paid'}
                       amount={order.total}
                       highlight
+                      money={money}
                     />
                   </div>
                 </div>
@@ -911,10 +933,14 @@ function toProof(order: AccountOrderCardData): BankTransferProof | null {
 
 function BankTransferAccountBlock({
   order,
+  money,
+  chargeCurrency,
   requireContactConfirm = false,
   onUpdated,
 }: {
   order: AccountOrderCardData;
+  money: (n: number) => string;
+  chargeCurrency?: string;
   requireContactConfirm?: boolean;
   onUpdated: () => void;
 }) {
@@ -934,13 +960,18 @@ function BankTransferAccountBlock({
         Bank transfer verified · {proof.bank_label} · {proof.reference}
         {paid > 0.009 ? (
           <span className="mt-0.5 block text-xs text-emerald-800/90">
-            Recorded ₹{paid.toLocaleString('en-IN')}
-            {due > 0.009 ? ` · balance ₹${due.toLocaleString('en-IN')} still due` : ' · fully paid'}
+            Recorded {money(paid)}
+            {due > 0.009 ? ` · balance ${money(due)} still due` : ' · fully paid'}
           </span>
         ) : null}
       </div>
     );
   }
+
+  const transferLabel =
+    order.payment_status === 'partial' && Number(order.amount_due) > 0
+      ? money(Number(order.amount_due))
+      : money(Number(proof?.amount_claimed ?? order.total));
 
   return (
     <div className="border-b border-[var(--pvg-border)] bg-amber-50/60 px-5 py-4 md:px-6">
@@ -966,7 +997,8 @@ function BankTransferAccountBlock({
         <div className="mt-3">
           <BankTransferResubmitForm
             orderId={order.id}
-            orderTotalLabel={formatPrice(order.total, 'INR')}
+            orderTotalLabel={money(order.total)}
+            amountLabel={transferLabel}
             amountDue={
               order.payment_status === 'partial' && Number(order.amount_due) > 0
                 ? Number(order.amount_due)
@@ -977,6 +1009,7 @@ function BankTransferAccountBlock({
                 ? Number(proof.amount_claimed)
                 : undefined
             }
+            currency={chargeCurrency && chargeCurrency !== 'INR' ? chargeCurrency : undefined}
             existing={proof}
             requireContactConfirm={requireContactConfirm}
             onSubmitted={(result) => {

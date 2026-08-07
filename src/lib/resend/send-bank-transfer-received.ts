@@ -9,6 +9,8 @@ export async function sendBankTransferReceivedEmail(input: {
   orderId: string;
   bankLabel: string;
   reference: string;
+  /** Locked FX label e.g. "$30.00 (₹2,870)" when available. */
+  amountLabel?: string | null;
   isLoggedInCustomer?: boolean;
   isResubmit?: boolean;
 }) {
@@ -36,6 +38,7 @@ export async function sendBankTransferReceivedEmail(input: {
       details: [
         { label: 'Bank', value: input.bankLabel },
         { label: 'UTR / reference', value: input.reference },
+        ...(input.amountLabel ? [{ label: 'Amount claimed', value: input.amountLabel }] : []),
         { label: 'What happens next', value: 'Review & confirmation within 24 hours' },
       ],
       cta: { label: 'View your order', href: viewHref },

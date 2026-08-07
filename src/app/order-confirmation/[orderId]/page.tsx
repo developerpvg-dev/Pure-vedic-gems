@@ -7,7 +7,7 @@ import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import type { Metadata } from 'next';
 import { OrderConfirmationClient } from './OrderConfirmationClient';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
-import { chargedLabelFromPayments } from '@/lib/currency/format-charged';
+import { resolveOrderChargeContext } from '@/lib/currency/format-charged';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,9 +74,10 @@ export default async function OrderConfirmationPage({ params }: Props) {
     .eq('order_id', orderId)
     .eq('status', 'paid');
 
-  const chargedAmountLabel = chargedLabelFromPayments(
-    (paymentRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
-  );
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags: (order as { compliance_flags?: unknown }).compliance_flags,
+    payments: (paymentRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+  });
 
   // Security: only show if user is the owner, or it's a guest order accessed in the same session
   if (order.customer_id && user?.id !== order.customer_id) {
@@ -156,7 +157,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
         guest_email: order.guest_email,
         customer_id: order.customer_id,
         created_at: order.created_at,
-        chargedAmountLabel,
+        chargeContext,
       }}
       isLoggedIn={!!user}
     />

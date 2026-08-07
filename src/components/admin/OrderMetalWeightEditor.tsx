@@ -16,6 +16,7 @@ export function OrderMetalWeightEditor({
   goldRatePerGram,
   metalPrice,
   itemName,
+  formatMoney,
 }: {
   orderId: string;
   itemIndex: number;
@@ -24,8 +25,11 @@ export function OrderMetalWeightEditor({
   goldRatePerGram: number;
   metalPrice: number;
   itemName?: string | null;
+  /** Locked payment currency formatter; defaults to INR ledger. */
+  formatMoney?: (n: number) => string;
 }) {
   const router = useRouter();
+  const money = formatMoney ?? ((n: number) => fmt(n));
   const [weight, setWeight] = useState(String(currentWeightGrams || ''));
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -62,17 +66,17 @@ export function OrderMetalWeightEditor({
       setError(data.error || 'Failed to update metal weight');
       return;
     }
-    const money = data.money as
+    const moneyRow = data.money as
       | { total?: number; amount_due?: number; refund_due?: number }
       | undefined;
     const bits = [
       `Weight saved: ${data.adjust?.oldWeightGrams} g → ${data.adjust?.newWeightGrams} g`,
-      money?.total != null ? `New total ${fmt(money.total)}` : null,
-      money && money.amount_due != null && money.amount_due > 0.009
-        ? `Due ${fmt(money.amount_due)}`
+      moneyRow?.total != null ? `New total ${money(moneyRow.total)}` : null,
+      moneyRow && moneyRow.amount_due != null && moneyRow.amount_due > 0.009
+        ? `Due ${money(moneyRow.amount_due)}`
         : null,
-      money && money.refund_due != null && money.refund_due > 0.009
-        ? `Refund ${fmt(money.refund_due)}`
+      moneyRow && moneyRow.refund_due != null && moneyRow.refund_due > 0.009
+        ? `Refund ${money(moneyRow.refund_due)}`
         : null,
       notify
         ? data.email_sent || data.in_app_sent

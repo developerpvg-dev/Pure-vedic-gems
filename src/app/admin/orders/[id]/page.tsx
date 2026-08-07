@@ -8,6 +8,11 @@ import { OrderActions } from '@/components/admin/OrderActions';
 import { OrderAssignDesigner } from '@/components/admin/OrderAssignDesigner';
 import { OrderMetalWeightEditor } from '@/components/admin/OrderMetalWeightEditor';
 import { OrderPaymentLedger } from '@/components/admin/OrderPaymentLedger';
+import {
+  formatOrderMoney as formatLockedOrderMoney,
+  resolveOrderChargeContext,
+} from '@/lib/currency/format-charged';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { BankTransferManagePanel } from '@/components/admin/BankTransferManagePanel';
 import { AdminOrderDetailShell } from '@/components/admin/AdminOrderDetailShell';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
@@ -263,7 +268,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
   const o = raw as unknown as OrderRecord;
   const orderCurrency = resolveOrderCurrency(raw as { legacy_data?: unknown });
-  const fmt = makeMoneyFmt(orderCurrency);
 
   let profile: CustomerProfile | null = null;
   if (o.customer_id && (!o.guest_name || !o.guest_email)) {
@@ -309,6 +313,20 @@ export default async function OrderDetailPage({ params }: PageProps) {
       amount: number;
     }>;
   };
+
+  const { data: paidFxRows } = await asUntypedSupabase(supabase)
+    .from('order_payments')
+    .select('amount, reference')
+    .eq('order_id', id)
+    .eq('status', 'paid');
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags: orderExtras.compliance_flags,
+    payments: (paidFxRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+  });
+  const fmt = chargeContext
+    ? (amount: number | null | undefined) => formatLockedOrderMoney(Number(amount ?? 0), chargeContext)
+    : makeMoneyFmt(orderCurrency);
+  const displayChargeCurrency = chargeContext?.currency ?? orderCurrency;
 
   let assignedDesignerName: string | null = orderExtras.designer_name ?? null;
   if (!assignedDesignerName && orderExtras.assigned_designer_id) {
@@ -569,9 +587,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stone-100 pt-4 sm:grid-cols-4">
           <Field label="Total">
             {fmt(o.total)}
-            {orderCurrency !== 'INR' ? (
+            {displayChargeCurrency !== 'INR' ? (
               <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wide text-stone-400">
-                Charged in {orderCurrency}
+                Charged in {displayChargeCurrency}
               </span>
             ) : null}
           </Field>
@@ -973,6 +991,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                           item.configuration_snapshot ?? cfg?.configuration_snapshot,
                                         )}
                                         itemName={item.name}
+                                        formatMoney={fmt}
                                       />
                                     ) : null}
                                   </div>
@@ -1141,6 +1160,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                   goldRatePerGram={Number(pricing?.gold_rate_per_gram ?? 0)}
                                   metalPrice={Number(pricing?.metal_price ?? 0)}
                                   itemName={designName ?? item.name}
+                                  formatMoney={fmt}
                                 />
                               ) : null}
                             </div>
@@ -1188,6 +1208,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               paymentStatus={o.payment_status}
               hasCustomerAccount={Boolean(o.customer_id)}
               balanceRequestedAt={orderExtras.balance_due_notified_at ?? null}
+              complianceFlags={orderExtras.compliance_flags ?? null}
             />
 
             <div className="grid gap-5 lg:grid-cols-2">

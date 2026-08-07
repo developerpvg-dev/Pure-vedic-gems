@@ -12,6 +12,10 @@ import {
   applyMetalDeltaToOrderMoney,
   type OrderMoneyAfterMetalAdjust,
 } from '@/lib/orders/metal-weight-adjust';
+import {
+  formatOrderMoney,
+  type OrderChargeContext,
+} from '@/lib/currency/format-charged';
 import { roundMoney } from '@/lib/orders/counter-payments';
 
 export type CustomDesignPriceMode = 'weight' | 'fixed';
@@ -181,12 +185,13 @@ export function buildCustomDesignPriceNotifyCopy(args: {
   amountDue: number;
   totalDelta: number;
   itemName?: string | null;
+  chargeContext?: OrderChargeContext | null;
 }): { title: string; message: string } {
   const itemBit = args.itemName ? ` (${args.itemName})` : '';
   if (args.amountDue > 0.009) {
     return {
       title: 'Custom design mounting priced — balance due',
-      message: `Order ${args.orderNumber}${itemBit}: your custom design mounting has been priced. Please pay the remaining ₹${args.amountDue.toLocaleString('en-IN')}.`,
+      message: `Order ${args.orderNumber}${itemBit}: your custom design mounting has been priced. Please pay the remaining ${formatOrderMoney(args.amountDue, args.chargeContext)}.`,
     };
   }
   return {

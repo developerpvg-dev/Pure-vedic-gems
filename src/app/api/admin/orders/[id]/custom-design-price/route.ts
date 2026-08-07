@@ -13,6 +13,9 @@ import {
   buildCustomDesignPriceNotifyCopy,
 } from '@/lib/orders/custom-design-price-adjust';
 import { applyJewelleryGstDeltaToTaxBreakdown } from '@/lib/orders/tax-breakdown-display';
+import {
+  resolveOrderChargeContext,
+} from '@/lib/currency/format-charged';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import type { Order } from '@/lib/types/database';
 import type { OrderItemRecord } from '@/lib/types/order';
@@ -153,11 +156,22 @@ export async function POST(
       .eq('id', item.configuration_id);
   }
 
+  const { data: paidFxRows } = await db
+    .from('order_payments')
+    .select('amount, reference')
+    .eq('order_id', id)
+    .eq('status', 'paid');
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags: orderRow.compliance_flags,
+    payments: (paidFxRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+  });
+
   const copy = buildCustomDesignPriceNotifyCopy({
     orderNumber: orderRow.order_number,
     amountDue: money.amount_due,
     totalDelta: adjust.totalDelta * Math.max(1, item.quantity ?? 1),
     itemName: item.name,
+    chargeContext,
   });
 
   let emailSent = false;
@@ -174,6 +188,7 @@ export async function POST(
           total: money.total,
           amountPaid: Number(orderRow.amount_paid ?? 0),
           amountDue: money.amount_due,
+          chargeContext,
           note: note
             ? `${copy.message} ${note}`
             : `${copy.message} Your custom design mounting has been added to the order total.`,

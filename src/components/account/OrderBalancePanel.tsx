@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CreditCard, Loader2, ShieldCheck, Wallet } from 'lucide-react';
-import { formatPrice } from '@/lib/utils/format';
-import { formatPaymentCharge } from '@/lib/currency/format-charged';
-import { useCurrency } from '@/lib/hooks/useCurrency';
+import {
+  formatOrderMoney,
+  formatPaymentCharge,
+  type OrderChargeContext,
+} from '@/lib/currency/format-charged';
 import { runRazorpayCheckout, type CheckoutStage } from '@/lib/razorpay/checkout-client';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
@@ -57,6 +59,7 @@ export function OrderBalancePanel({
   canPay,
   payments,
   prefill,
+  chargeContext = null,
 }: {
   orderId: string;
   orderNumber: string;
@@ -69,9 +72,12 @@ export function OrderBalancePanel({
   canPay: boolean;
   payments: CustomerPaymentRow[];
   prefill: { name: string; email: string; contact: string };
+  /** Locked at first charge — balance online uses same currency. */
+  chargeContext?: OrderChargeContext | null;
 }) {
   const router = useRouter();
-  const { currency } = useCurrency();
+  const money = (n: number) => formatOrderMoney(n, chargeContext);
+  const payCurrency = chargeContext?.currency ?? 'INR';
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<CheckoutStage | null>(null);
   const [error, setError] = useState('');
@@ -87,7 +93,8 @@ export function OrderBalancePanel({
       orderNumber,
       // Balance leg always settles the full remainder — the server enforces it.
       payAmount: null,
-      currency,
+      // Server ignores picker and reuses locked currency when set.
+      currency: payCurrency,
       prefill,
       onStage: setStage,
       onSuccess: () => {
@@ -124,12 +131,11 @@ export function OrderBalancePanel({
             {owing ? 'Part-paid order' : 'Fully paid'}
           </p>
           <p className="mt-1 text-sm text-[var(--pvg-muted)]">
-            Paid <strong className="text-emerald-800">{formatPrice(amountPaid, 'INR')}</strong> of{' '}
-            {formatPrice(total, 'INR')}
+            Paid <strong className="text-emerald-800">{money(amountPaid)}</strong> of {money(total)}
             {owing ? (
               <>
                 {' · '}
-                Balance due <strong className="text-amber-800">{formatPrice(amountDue, 'INR')}</strong>
+                Balance due <strong className="text-amber-800">{money(amountDue)}</strong>
               </>
             ) : null}
           </p>
@@ -138,6 +144,9 @@ export function OrderBalancePanel({
               {balanceRequested
                 ? 'Your order is ready. Pay the balance to schedule dispatch.'
                 : 'We will notify you by email and here when your order is ready for the balance payment. You can also pay it early.'}
+              {payCurrency !== 'INR' ? (
+                <> Card payments stay in {payCurrency}. Bank transfers use the ₹ amount to our INR accounts.</>
+              ) : null}
             </p>
           ) : null}
         </div>
@@ -156,12 +165,7 @@ export function OrderBalancePanel({
               ) : (
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
               )}
-              Pay online {formatPrice(amountDue, 'INR')}
-              {currency !== 'INR' ? (
-                <span className="ml-1 font-normal opacity-80">
-                  (≈ {formatPrice(amountDue)})
-                </span>
-              ) : null}
+              Pay online {money(amountDue)}
             </button>
             <button
               type="button"
@@ -188,6 +192,8 @@ export function OrderBalancePanel({
           <BankTransferResubmitForm
             orderId={orderId}
             amountDue={amountDue}
+            amountLabel={money(amountDue)}
+            currency={payCurrency !== 'INR' ? payCurrency : undefined}
             onSubmitted={() => {
               setPayMethod(null);
               router.refresh();
@@ -222,7 +228,9 @@ export function OrderBalancePanel({
                 <td className="py-1.5 pr-3">{KIND_LABELS[p.kind] ?? p.kind}</td>
                 <td className="py-1.5 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
                 <td className="py-1.5 font-semibold tabular-nums">
-                  {formatPaymentCharge(Number(p.amount), p.reference)}
+                  {p.reference
+                    ? formatPaymentCharge(Number(p.amount), p.reference)
+                    : money(Number(p.amount))}
                 </td>
               </tr>
             ))}

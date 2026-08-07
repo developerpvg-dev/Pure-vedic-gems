@@ -2,14 +2,10 @@ import { sendBrandedEmail } from '@/lib/resend/send-email';
 import { getEmailSiteUrl, getWhatsAppUrl } from '@/lib/resend/email-config';
 import { TransactionalEmail } from '@/lib/resend/templates/TransactionalEmail';
 import type { MetalWeightAdjustKind } from '@/lib/orders/metal-weight-adjust';
-
-function formatINR(amount: number) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+import {
+  formatOrderMoney,
+  type OrderChargeContext,
+} from '@/lib/currency/format-charged';
 
 /** Notify customer that actual metal weight changed the order total. */
 export async function sendMetalWeightAdjustmentEmail(input: {
@@ -26,7 +22,9 @@ export async function sendMetalWeightAdjustmentEmail(input: {
   amountDue: number;
   refundDue: number;
   note?: string | null;
+  chargeContext?: OrderChargeContext | null;
 }) {
+  const money = (n: number) => formatOrderMoney(n, input.chargeContext ?? null);
   const accountUrl = `${getEmailSiteUrl()}/account/orders`;
   const weightLine = `${input.oldWeightGrams} g → ${input.newWeightGrams} g`;
   const itemBit = input.itemName ? ` for ${input.itemName}` : '';
@@ -48,14 +46,14 @@ export async function sendMetalWeightAdjustmentEmail(input: {
     const refund = input.refundDue > 0.009 ? input.refundDue : Math.abs(input.totalDelta);
     paragraphs.push(
       input.refundDue > 0.009
-        ? `Because less metal was used than quoted, ${formatINR(refund)} will be refunded to you. Our team will process the refund shortly.`
-        : `Because less metal was used than quoted, your order total has been reduced by ${formatINR(refund)}. Your remaining balance is now ${formatINR(input.amountDue)}.`,
+        ? `Because less metal was used than quoted, ${money(refund)} will be refunded to you. Our team will process the refund shortly.`
+        : `Because less metal was used than quoted, your order total has been reduced by ${money(refund)}. Your remaining balance is now ${money(input.amountDue)}.`,
     );
   } else if (isExtra) {
     paragraphs.push(
-      `Because more metal was used than quoted, the order total increased by ${formatINR(Math.abs(input.totalDelta))}.`,
+      `Because more metal was used than quoted, the order total increased by ${money(Math.abs(input.totalDelta))}.`,
       input.amountDue > 0.009
-        ? `Please pay the remaining balance of ${formatINR(input.amountDue)} from your account to continue fulfillment.`
+        ? `Please pay the remaining balance of ${money(input.amountDue)} from your account to continue fulfillment.`
         : 'Your payment already covers the updated total.',
     );
   } else {
@@ -76,19 +74,19 @@ export async function sendMetalWeightAdjustmentEmail(input: {
       highlight: isRefund
         ? {
             label: input.refundDue > 0.009 ? 'Refund due' : 'Amount reduced',
-            value: formatINR(input.refundDue > 0.009 ? input.refundDue : Math.abs(input.totalDelta)),
+            value: money(input.refundDue > 0.009 ? input.refundDue : Math.abs(input.totalDelta)),
           }
         : isExtra && input.amountDue > 0.009
-          ? { label: 'Balance due', value: formatINR(input.amountDue) }
+          ? { label: 'Balance due', value: money(input.amountDue) }
           : { label: 'Metal weight', value: `${input.newWeightGrams} g` },
       details: [
         { label: 'Order number', value: input.orderNumber },
         { label: 'Metal weight', value: weightLine },
-        { label: 'Updated order total', value: formatINR(input.orderTotal) },
-        { label: 'Amount paid', value: formatINR(input.amountPaid) },
-        { label: 'Balance due', value: formatINR(input.amountDue) },
+        { label: 'Updated order total', value: money(input.orderTotal) },
+        { label: 'Amount paid', value: money(input.amountPaid) },
+        { label: 'Balance due', value: money(input.amountDue) },
         ...(input.refundDue > 0.009
-          ? [{ label: 'Refund due', value: formatINR(input.refundDue) }]
+          ? [{ label: 'Refund due', value: money(input.refundDue) }]
           : []),
       ],
       cta:

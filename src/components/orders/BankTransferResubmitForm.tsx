@@ -10,8 +10,12 @@ type Props = {
   orderTotalLabel?: string;
   /** When set, customer must transfer exactly this amount (balance leg). */
   amountDue?: number;
+  /** Pre-formatted amount (FX primary) for instructions — prefer over raw ₹. */
+  amountLabel?: string;
   /** Prior claim to preserve on resubmit (advance leg). */
   amountClaimed?: number;
+  /** Locks FX on first bank proof when order has no payment_charge yet. */
+  currency?: string;
   existing?: BankTransferProof | null;
   /** Guest recovery when cookie expired */
   requireContactConfirm?: boolean;
@@ -22,7 +26,9 @@ export function BankTransferResubmitForm({
   orderId,
   orderTotalLabel,
   amountDue,
+  amountLabel,
   amountClaimed,
+  currency,
   existing = null,
   requireContactConfirm = false,
   onSubmitted,
@@ -84,6 +90,7 @@ export function BankTransferResubmitForm({
         const claim = amountClaimed ?? existing?.amount_claimed;
         if (claim != null && claim > 0) form.set('amount_claimed', String(claim));
       }
+      if (currency) form.set('currency', currency);
       if (proofFiles) {
         Array.from(proofFiles).forEach((f) => form.append('proofs', f));
       }
@@ -119,13 +126,15 @@ export function BankTransferResubmitForm({
         <div>
           <p className="text-sm font-semibold text-[var(--pvg-text)]">Update bank transfer proof</p>
           <p className="mt-0.5 text-xs text-[var(--pvg-muted)]">
-            {amountDue != null && amountDue > 0
-              ? `Transfer exactly ₹${amountDue.toLocaleString('en-IN')} as your balance payment, then update UTR and screenshot below.`
-              : (amountClaimed ?? existing?.amount_claimed) != null
-                ? `Transfer exactly ₹${Number(amountClaimed ?? existing?.amount_claimed).toLocaleString('en-IN')} (your advance), then update UTR and screenshot below.`
-                : orderTotalLabel
-                  ? `Transfer exactly ${orderTotalLabel}, then update UTR and screenshot below.`
-                  : 'Update UTR / bank details and screenshot, then resubmit for verification.'}
+            {amountLabel
+              ? `Transfer exactly ${amountLabel} to the INR bank account below (use the ₹ amount), then update UTR and screenshot.`
+              : amountDue != null && amountDue > 0
+                ? `Transfer exactly ₹${amountDue.toLocaleString('en-IN')} as your balance payment, then update UTR and screenshot below.`
+                : (amountClaimed ?? existing?.amount_claimed) != null
+                  ? `Transfer exactly ₹${Number(amountClaimed ?? existing?.amount_claimed).toLocaleString('en-IN')} (your advance), then update UTR and screenshot below.`
+                  : orderTotalLabel
+                    ? `Transfer exactly ${orderTotalLabel}, then update UTR and screenshot below.`
+                    : 'Update UTR / bank details and screenshot, then resubmit for verification.'}
           </p>
         </div>
       </div>

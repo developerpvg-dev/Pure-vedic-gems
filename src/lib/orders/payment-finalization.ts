@@ -21,7 +21,10 @@ import {
   orderHasRingItem,
 } from '@/lib/orders/ring-size-confirmation';
 import { ringSizeConfirmPublicLink } from '@/lib/orders/ring-size-confirmation-token';
-import { chargedLabelFromPayments } from '@/lib/currency/format-charged';
+import {
+  formatOrderMoney,
+  resolveOrderChargeContext,
+} from '@/lib/currency/format-charged';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -309,8 +312,21 @@ async function resolveOrderEmail(order: Order) {
 async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalances) {
   const supabase = createAdminClient();
   const partial = balances.amount_due > 0.009;
-  const dueLabel = `₹${balances.amount_due.toLocaleString('en-IN')}`;
-  const paidLabel = `₹${balances.amount_paid.toLocaleString('en-IN')}`;
+
+  const { data: paidRows } = await asUntypedSupabase(supabase)
+    .from('order_payments')
+    .select('amount, reference')
+    .eq('order_id', order.id)
+    .eq('status', 'paid');
+  const payments = (paidRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>;
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags: order.compliance_flags,
+    payments,
+  });
+  const dueLabel = formatOrderMoney(balances.amount_due, chargeContext);
+  const paidLabel = formatOrderMoney(balances.amount_paid, chargeContext);
+  const totalLabel = formatOrderMoney(Number(order.total ?? 0), chargeContext);
+
   const { data: latestOrder } = await supabase
     .from('orders')
     .select('confirmation_email_sent_at, admin_notification_sent_at')
@@ -336,15 +352,6 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
       nextComplianceFlags = started.flags;
       ringSizeConfirmUrl = ringSizeConfirmPublicLink(order.id, started.confirmation.round, siteUrl);
     }
-
-    const { data: paidRows } = await asUntypedSupabase(supabase)
-      .from('order_payments')
-      .select('amount, reference')
-      .eq('order_id', order.id)
-      .eq('status', 'paid');
-    const chargedAmountLabel = chargedLabelFromPayments(
-      (paidRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
-    );
 
     const messageId = await sendOrderConfirmationEmail(recipient.email, {
       customerName: recipient.name,
@@ -376,7 +383,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
       },
       amountPaid: balances.amount_paid,
       amountDue: balances.amount_due,
-      chargedAmountLabel,
+      chargeContext,
       shippingAddress: order.shipping_address as {
         line1: string;
         line2?: string;
@@ -416,22 +423,14 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
   if (!adminNotificationSentAt) {
     let adminMessageId: string | null = null;
     if (recipient) {
-      const { data: paidRows } = await asUntypedSupabase(supabase)
-        .from('order_payments')
-        .select('amount, reference')
-        .eq('order_id', order.id)
-        .eq('status', 'paid');
-      const chargedAmountLabel = chargedLabelFromPayments(
-        (paidRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
-      );
       adminMessageId = await sendAdminOrderAlertEmail({
         orderId: order.id,
         orderNumber: order.order_number,
         total: Number(order.total ?? 0),
+        totalLabel,
         customerName: recipient.name,
         customerEmail: recipient.email,
         itemCount: orderItems(order).length,
-        chargedAmountLabel,
         paymentMethod: partial
           ? `${order.payment_method ?? 'razorpay'} — advance ${paidLabel}, ${dueLabel} due`
           : order.payment_method,
@@ -487,7 +486,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
       title: partial ? 'Order advance paid' : 'Order paid',
       message: partial
         ? `Order ${order.order_number}: advance ${paidLabel} received, ${dueLabel} still due.`
-        : `Order ${order.order_number} was paid for ₹${Number(order.total ?? 0).toLocaleString('en-IN')}.`,
+        : `Order ${order.order_number} was paid for ${totalLabel}.`,
       href: `/admin/orders/${order.id}`,
       entityType: 'order',
       entityId: order.id,
@@ -503,13 +502,25 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
 
 /** Customer settled the remaining balance — tell them and unblock fulfillment. */
 async function sendBalanceSettledNotifications(order: Order, balances: OrderBalances) {
+  const supabase = createAdminClient();
+  const { data: paidRows } = await asUntypedSupabase(supabase)
+    .from('order_payments')
+    .select('amount, reference')
+    .eq('order_id', order.id)
+    .eq('status', 'paid');
+  const chargeContext = resolveOrderChargeContext({
+    complianceFlags: order.compliance_flags,
+    payments: (paidRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+  });
+  const paidLabel = formatOrderMoney(balances.amount_paid, chargeContext);
+
   await createInAppNotifications([
     ...(order.customer_id ? [{
       audience: 'user' as const,
       recipientUserId: order.customer_id,
       type: 'order_paid',
       title: 'Balance payment received',
-      message: `Order ${order.order_number} is now fully paid (₹${balances.amount_paid.toLocaleString('en-IN')}). We are preparing it for dispatch.`,
+      message: `Order ${order.order_number} is now fully paid (${paidLabel}). We are preparing it for dispatch.`,
       href: '/account/orders',
       entityType: 'order',
       entityId: order.id,
@@ -519,7 +530,7 @@ async function sendBalanceSettledNotifications(order: Order, balances: OrderBala
       audience: 'admin' as const,
       type: 'order_paid',
       title: 'Balance paid — ready to ship',
-      message: `Order ${order.order_number} is fully paid. Remaining balance settled online.`,
+      message: `Order ${order.order_number} is fully paid (${paidLabel}). Remaining balance settled online.`,
       href: `/admin/orders/${order.id}`,
       entityType: 'order',
       entityId: order.id,

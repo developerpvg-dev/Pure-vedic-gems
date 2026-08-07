@@ -8,6 +8,7 @@ import { yagyaPaymentVerifySchema } from '@/lib/validators/yagya';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { sendYagyaBookingEmails } from '@/lib/resend/send-yagya-booking';
 import { hasValidBookingToken } from '@/lib/security/booking-token';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { YagyaBooking, Json } from '@/lib/types/database';
 
 export async function POST(request: NextRequest) {
@@ -233,7 +234,11 @@ export async function POST(request: NextRequest) {
           recipientUserId: updated.customer_id,
           type: 'yagya_confirmed',
           title: 'Yagya booking confirmed',
-          message: `${updated.yagya_title_snapshot} is confirmed. Our priests will coordinate the next steps.`,
+          message: `${updated.yagya_title_snapshot} is confirmed (${formatChargedMoney({
+            amount_inr: updated.amount_inr,
+            amount_paise: updated.amount_paise,
+            currency: updated.currency,
+          })}). Our priests will coordinate the next steps.`,
           href: '/account/yagyas',
           entityType: 'yagya_booking',
           entityId: updated.id,
@@ -245,7 +250,11 @@ export async function POST(request: NextRequest) {
       recipientRole: 'sales',
       type: 'yagya_confirmed',
       title: 'Yagya paid',
-      message: `${updated.full_name} paid for ${updated.yagya_title_snapshot}.`,
+      message: `${updated.full_name} paid ${formatChargedMoney({
+        amount_inr: updated.amount_inr,
+        amount_paise: updated.amount_paise,
+        currency: updated.currency,
+      })} for ${updated.yagya_title_snapshot}.`,
       href: '/admin/yagya-bookings',
       entityType: 'yagya_booking',
       entityId: updated.id,

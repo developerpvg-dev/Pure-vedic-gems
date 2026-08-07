@@ -7,6 +7,10 @@ import {
   parseGatewayReference,
 } from '@/lib/razorpay/charge-currency';
 import { convertInrToGatewayCharge } from '@/lib/razorpay/convert-inr-charge';
+import {
+  resolveOrderChargeContext,
+  withPaymentChargeFlags,
+} from '@/lib/currency/format-charged';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { rateLimit } from '@/lib/utils/rate-limit';
@@ -50,12 +54,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { order_id, pay_amount } = parsed.data;
-  const currency = normalizeChargeCurrency(parsed.data.currency);
 
   const supabase = createAdminClient();
   const { data: order, error: fetchError } = await supabase
     .from('orders')
-    .select('id, order_number, total, amount_paid, payment_status, status, razorpay_order_id, payment_attempts, customer_id, guest_access_token')
+    .select(
+      'id, order_number, total, amount_paid, payment_status, status, razorpay_order_id, payment_attempts, customer_id, guest_access_token, compliance_flags',
+    )
     .eq('id', order_id)
     .single();
 
@@ -113,9 +118,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Reuse the currency+rate from the first charge so advance and balance match.
+  const { data: paidForLock } = await asUntypedSupabase(supabase)
+    .from('order_payments')
+    .select('amount, reference')
+    .eq('order_id', order_id)
+    .in('status', ['paid', 'pending']);
+  const locked = resolveOrderChargeContext({
+    complianceFlags: order.compliance_flags,
+    payments: (paidForLock ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+  });
+  const currency = locked?.currency ?? normalizeChargeCurrency(parsed.data.currency);
+
   let gateway;
   try {
-    gateway = await convertInrToGatewayCharge(charge.amount, currency);
+    gateway = await convertInrToGatewayCharge(charge.amount, currency, {
+      lockedRate: locked?.rate,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Currency conversion failed' },
@@ -213,11 +232,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const nextFlags =
+    gateway.currency !== 'INR'
+      ? withPaymentChargeFlags(order.compliance_flags, {
+          currency: gateway.currency,
+          rate: gateway.rate,
+        })
+      : null;
+
   const { error: updateError } = await asUntypedSupabase(supabase)
     .from('orders')
     .update({
       razorpay_order_id: razorpayOrder.id,
       payment_attempts: (order.payment_attempts ?? 0) + 1,
+      ...(nextFlags ? { compliance_flags: nextFlags } : {}),
       ...(charge.kind === 'balance'
         ? {}
         : { payment_status: 'pending', status: 'pending_payment' }),

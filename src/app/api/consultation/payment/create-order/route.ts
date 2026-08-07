@@ -11,6 +11,7 @@ import { setBookingTokenCookie } from '@/lib/security/booking-token';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { Consultation, ConsultationPlan } from '@/lib/types/database';
 
 interface RazorpayOrderResult {
@@ -235,7 +236,11 @@ export async function POST(request: NextRequest) {
             recipientRole: 'sales' as const,
             type: 'consultation_created',
             title: 'Consultation booking started',
-            message: `${parsed.data.full_name} started booking ${planTitle} for ₹${amountInr.toLocaleString('en-IN')}.`,
+            message: `${parsed.data.full_name} started booking ${planTitle} for ${formatChargedMoney({
+              amount_inr: amountInr,
+              amount_paise: amountMinor,
+              currency: gateway.currency,
+            })}.`,
             href: '/admin/leads',
             entityType: 'consultation' as const,
             entityId: booking.id,

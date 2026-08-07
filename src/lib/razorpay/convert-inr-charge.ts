@@ -16,11 +16,13 @@ export type { ChargeConversion };
 
 /**
  * INR → charge-currency using admin storefront rates (1 FX = N INR).
+ * Pass `lockedRate` on balance legs so advance + balance share one FX lock.
  * Throws when the rate is missing so we never guess an amount.
  */
 export async function convertInrToGatewayCharge(
   amountInr: number,
   currency: string,
+  opts?: { lockedRate?: number },
 ): Promise<ChargeConversion> {
   const code = normalizeChargeCurrency(currency);
   if (code === 'INR') {
@@ -28,8 +30,11 @@ export async function convertInrToGatewayCharge(
     return { currency: 'INR', major, minor: toRazorpayMinor(major, 'INR'), rate: 1 };
   }
 
-  const { rates } = await getCachedStorefrontRates();
-  const rate = Number(rates.find((r) => r.currency === code)?.rate ?? 0);
+  let rate = Number(opts?.lockedRate ?? 0);
+  if (!(rate > 0)) {
+    const { rates } = await getCachedStorefrontRates();
+    rate = Number(rates.find((r) => r.currency === code)?.rate ?? 0);
+  }
   if (!rate || rate <= 0) {
     throw new Error(`No exchange rate configured for ${code}. Choose INR or update currency rates.`);
   }

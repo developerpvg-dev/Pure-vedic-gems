@@ -33,6 +33,10 @@ import {
   orderItemMerchandiseTotal,
   type OrderChargeFields,
 } from '@/lib/orders/price-breakdown-lines';
+import {
+  formatOrderMoney,
+  type OrderChargeContext,
+} from '@/lib/currency/format-charged';
 
 interface OrderItem {
   name: string;
@@ -61,20 +65,12 @@ export interface OrderConfirmationEmailProps {
   /** Advance payments: what landed now and what is still owed. */
   amountPaid?: number;
   amountDue?: number;
-  /** What Razorpay charged when non-INR, e.g. "$66.50 (₹5,525)". */
-  chargedAmountLabel?: string | null;
+  /** Locked storefront FX for this order — amounts render as $X (₹Y). */
+  chargeContext?: OrderChargeContext | null;
   siteUrl: string;
   /** Sealed link to upload ring internal-diameter photo (ring orders only). */
   ringSizeConfirmUrl?: string;
   ringSizeConfirmCopy?: string;
-}
-
-function formatINR(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
 }
 
 export function OrderConfirmationEmail({
@@ -85,11 +81,12 @@ export function OrderConfirmationEmail({
   shippingAddress,
   amountPaid,
   amountDue,
-  chargedAmountLabel,
+  chargeContext = null,
   siteUrl,
   ringSizeConfirmUrl,
   ringSizeConfirmCopy,
 }: OrderConfirmationEmailProps) {
+  const money = (n: number) => formatOrderMoney(n, chargeContext);
   const resolvedSiteUrl = siteUrl || getEmailSiteUrl();
   const trackUrl = `${resolvedSiteUrl}/account/orders`;
   const whatsappUrl = getWhatsAppUrl(`Hi, I just placed order ${orderNumber}`);
@@ -115,12 +112,12 @@ export function OrderConfirmationEmail({
             </Text>
             <Text style={textStyle}>
               {isAdvance
-                ? `Thank you for your order! We have received your advance payment of ${formatINR(paid)} and your order is confirmed. Our gemologists will now prepare your order with utmost care.`
+                ? `Thank you for your order! We have received your advance payment of ${money(paid)} and your order is confirmed. Our gemologists will now prepare your order with utmost care.`
                 : 'Thank you for your order! We have received your payment and your order is being processed. Our gemologists will carefully prepare your order with utmost care.'}
             </Text>
             {isAdvance ? (
               <Text style={textStyle}>
-                The remaining balance of <strong>{formatINR(due)}</strong> becomes payable once your
+                The remaining balance of <strong>{money(due)}</strong> becomes payable once your
                 order is ready. We will email you with a secure payment link at that point — your
                 order ships after the balance is settled.
               </Text>
@@ -153,7 +150,7 @@ export function OrderConfirmationEmail({
                   ) : null}
                 </Column>
                 <Column style={{ width: '40%', textAlign: 'right' as const }}>
-                  <Text style={itemPriceStyle}>{formatINR(orderItemMerchandiseTotal(item))}</Text>
+                  <Text style={itemPriceStyle}>{money(orderItemMerchandiseTotal(item))}</Text>
                 </Column>
               </Row>
             );
@@ -168,7 +165,7 @@ export function OrderConfirmationEmail({
                 <Column style={{ textAlign: 'right' as const }}>
                   <Text style={totalValueStyle}>
                     {line.sign < 0 ? '−' : ''}
-                    {formatINR(line.amount)}
+                    {money(line.amount)}
                   </Text>
                 </Column>
               </Row>
@@ -178,7 +175,7 @@ export function OrderConfirmationEmail({
 
             <Row style={totalRowStyle}>
               <Column><Text style={grandTotalLabelStyle}>Order Total</Text></Column>
-              <Column style={{ textAlign: 'right' as const }}><Text style={grandTotalValueStyle}>{formatINR(total)}</Text></Column>
+              <Column style={{ textAlign: 'right' as const }}><Text style={grandTotalValueStyle}>{money(total)}</Text></Column>
             </Row>
 
             {isAdvance ? (
@@ -186,13 +183,13 @@ export function OrderConfirmationEmail({
                 <Row style={totalRowStyle}>
                   <Column><Text style={totalLabelStyle}>Advance paid now</Text></Column>
                   <Column style={{ textAlign: 'right' as const }}>
-                    <Text style={totalValueStyle}>{formatINR(paid)}</Text>
+                    <Text style={totalValueStyle}>{money(paid)}</Text>
                   </Column>
                 </Row>
                 <Row style={totalRowStyle}>
                   <Column><Text style={grandTotalLabelStyle}>Balance due later</Text></Column>
                   <Column style={{ textAlign: 'right' as const }}>
-                    <Text style={grandTotalValueStyle}>{formatINR(due)}</Text>
+                    <Text style={grandTotalValueStyle}>{money(due)}</Text>
                   </Column>
                 </Row>
               </>
@@ -200,19 +197,10 @@ export function OrderConfirmationEmail({
               <Row style={totalRowStyle}>
                 <Column><Text style={totalLabelStyle}>Amount paid</Text></Column>
                 <Column style={{ textAlign: 'right' as const }}>
-                  <Text style={totalValueStyle}>{formatINR(paid)}</Text>
+                  <Text style={totalValueStyle}>{money(paid)}</Text>
                 </Column>
               </Row>
             )}
-
-            {chargedAmountLabel ? (
-              <Row style={totalRowStyle}>
-                <Column><Text style={totalLabelStyle}>Card / gateway charge</Text></Column>
-                <Column style={{ textAlign: 'right' as const }}>
-                  <Text style={totalValueStyle}>{chargedAmountLabel}</Text>
-                </Column>
-              </Row>
-            ) : null}
 
             {/* Shipping Address */}
             <Heading as="h2" style={h2Style}>

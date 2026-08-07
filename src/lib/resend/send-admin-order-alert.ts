@@ -14,13 +14,15 @@ export async function sendAdminOrderAlertEmail(input: {
   orderId: string;
   orderNumber: string;
   total: number;
+  /** Prefers locked FX label when present. */
+  totalLabel?: string;
   customerName: string;
   customerEmail: string;
   itemCount: number;
   paymentMethod?: string | null;
-  chargedAmountLabel?: string | null;
 }): Promise<string | null> {
   const adminUrl = `${getEmailSiteUrl()}/admin/orders/${input.orderId}`;
+  const totalDisplay = input.totalLabel ?? formatINR(input.total);
 
   return sendBrandedEmailToAdmin(
     `New paid order — ${input.orderNumber}`,
@@ -33,10 +35,7 @@ export async function sendAdminOrderAlertEmail(input: {
         { label: 'Customer', value: input.customerName },
         { label: 'Email', value: input.customerEmail },
         { label: 'Items', value: String(input.itemCount) },
-        { label: 'Order total (INR)', value: formatINR(input.total) },
-        ...(input.chargedAmountLabel
-          ? [{ label: 'Gateway charge', value: input.chargedAmountLabel }]
-          : []),
+        { label: 'Order total', value: totalDisplay },
         { label: 'Payment method', value: input.paymentMethod?.replace(/_/g, ' ') ?? 'Razorpay' },
       ],
       cta: { label: 'Open order in admin', href: adminUrl },

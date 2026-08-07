@@ -13,6 +13,7 @@ import {
   UserRoundCheck,
   X,
 } from 'lucide-react';
+import { formatPrice } from '@/lib/utils/format';
 
 export interface YagyaListItem {
   id: string;
@@ -24,11 +25,6 @@ export interface YagyaListItem {
   price: number;
   image_url: string | null;
   planet: string | null;
-}
-
-function formatInr(amount: number) {
-  if (!amount) return 'Rs 0';
-  return `Rs ${Number(amount).toLocaleString('en-IN')}`;
 }
 
 export function YagyaServiceListing({ yagyas }: { yagyas: YagyaListItem[] }) {
@@ -91,7 +87,7 @@ export function YagyaServiceListing({ yagyas }: { yagyas: YagyaListItem[] }) {
                   )}
 
                   <h2 className="mt-0.5 text-[12px] font-medium leading-4 text-slate-700">{yagya.name}</h2>
-                  <p className="mt-1 text-[13px] font-semibold text-[#7A1515]">{formatInr(yagya.price)}</p>
+                  <p className="mt-1 text-[13px] font-semibold text-[#7A1515]">{formatPrice(yagya.price)}</p>
 
                   <div className="mt-2 flex flex-col gap-1">
                     <Link
@@ -206,7 +202,7 @@ function YagyaDetailsDialog({ yagya, onClose }: { yagya: YagyaListItem; onClose:
   
             </div>
 
-            <p className="text-3xl font-black text-[#7A1515]">{formatInr(yagya.price)}</p>
+            <p className="text-3xl font-black text-[#7A1515]">{formatPrice(yagya.price)}</p>
 
             {paragraphs.length > 0 && (
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-700">

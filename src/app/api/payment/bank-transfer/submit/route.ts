@@ -22,6 +22,13 @@ import {
   resolveOnlinePaymentAmount,
   roundMoney,
 } from '@/lib/orders/counter-payments';
+import {
+  formatOrderMoney,
+  resolveOrderChargeContext,
+  withPaymentChargeFlags,
+} from '@/lib/currency/format-charged';
+import { normalizeChargeCurrency } from '@/lib/razorpay/charge-currency';
+import { convertInrToGatewayCharge } from '@/lib/razorpay/convert-inr-charge';
 import type { Order } from '@/lib/types/database';
 
 const BUCKET = 'custom-uploads';
@@ -35,6 +42,8 @@ const fieldsSchema = z.object({
   amount_claimed: z.coerce.number().positive().optional(),
   confirm_email: z.string().trim().email().optional(),
   confirm_phone: z.string().trim().min(8).max(20).optional(),
+  /** Storefront currency at submit — locks FX display for this order. */
+  currency: z.string().trim().length(3).optional(),
 });
 
 async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
@@ -99,6 +108,7 @@ export async function POST(request: NextRequest) {
     amount_claimed: form.get('amount_claimed') || undefined,
     confirm_email: form.get('confirm_email') || undefined,
     confirm_phone: form.get('confirm_phone') || undefined,
+    currency: form.get('currency') || undefined,
   });
   if (!parsed.success) {
     return NextResponse.json(
@@ -158,6 +168,7 @@ export async function POST(request: NextRequest) {
   }
 
   const existing = parseBankTransferProof(order.compliance_flags);
+  const chargeCtx = resolveOrderChargeContext({ complianceFlags: order.compliance_flags });
 
   const orderTotal = roundMoney(Number(order.total ?? 0));
   const amountPaid = roundMoney(Number(order.amount_paid ?? 0));
@@ -171,7 +182,9 @@ export async function POST(request: NextRequest) {
         : due;
       if (Math.abs(amountClaimed - due) > 0.009) {
         return NextResponse.json(
-          { error: `Balance payment must be exactly ₹${due.toLocaleString('en-IN')}.` },
+          {
+            error: `Balance payment must be exactly ${formatOrderMoney(due, chargeCtx)}.`,
+          },
           { status: 400 },
         );
       }
@@ -193,6 +206,26 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Invalid payment amount';
     return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  // Lock storefront FX on first bank proof so confirmation / balance emails match.
+  let complianceFlags = order.compliance_flags as unknown;
+  if (!chargeCtx) {
+    const code = normalizeChargeCurrency(parsed.data.currency);
+    if (code !== 'INR') {
+      try {
+        const gateway = await convertInrToGatewayCharge(amountClaimed, code);
+        complianceFlags = withPaymentChargeFlags(complianceFlags, {
+          currency: gateway.currency,
+          rate: gateway.rate,
+        });
+      } catch (err) {
+        return NextResponse.json(
+          { error: err instanceof Error ? err.message : 'Currency conversion failed' },
+          { status: 400 },
+        );
+      }
+    }
   }
 
   try {
@@ -255,9 +288,13 @@ export async function POST(request: NextRequest) {
 
     const holdUntil = new Date(Date.now() + BANK_TRANSFER_HOLD_MS).toISOString();
     const db = asUntypedSupabase(supabase);
+    const displayClaimed = formatOrderMoney(
+      amountClaimed,
+      resolveOrderChargeContext({ complianceFlags }),
+    );
     const reviewNote = isBalanceLeg
-      ? `Balance bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference}, ₹${amountClaimed})`
-      : `Bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference}, ₹${amountClaimed})`;
+      ? `Balance bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference}, ${displayClaimed})`
+      : `Bank transfer proof submitted (${bank.label}, ref ${parsed.data.reference}, ${displayClaimed})`;
     const { error: updateError } = await db
       .from('orders')
       .update({
@@ -266,7 +303,7 @@ export async function POST(request: NextRequest) {
         status: isBalanceLeg ? order.status : 'payment_review',
         payment_review_reason: reviewNote,
         reservation_expires_at: holdUntil,
-        compliance_flags: mergeBankTransferProof(order.compliance_flags, proof),
+        compliance_flags: mergeBankTransferProof(complianceFlags, proof),
       })
       .eq('id', order.id);
 
@@ -299,6 +336,10 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           bankLabel: bank.label,
           reference: parsed.data.reference,
+          amountLabel: formatOrderMoney(
+            amountClaimed,
+            resolveOrderChargeContext({ complianceFlags }),
+          ),
           isLoggedInCustomer: Boolean(order.customer_id),
           isResubmit: Boolean(existing),
         });

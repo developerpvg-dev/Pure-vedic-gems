@@ -10,6 +10,7 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { hasValidBookingToken } from '@/lib/security/booking-token';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { Consultation, Json } from '@/lib/types/database';
 
 function geoFromRequest(request: NextRequest) {
@@ -296,8 +297,16 @@ export async function POST(request: NextRequest) {
           type: 'consultation_confirmed',
           title: isRemedies ? 'Remedies recommendation confirmed' : 'Consultation confirmed',
           message: isRemedies
-            ? `${updated.plan_title_snapshot ?? 'Your remedies recommendation'} is confirmed. Our experts will review your birth details shortly.`
-            : `${updated.plan_title_snapshot ?? 'Your consultation'} is confirmed. Our team will coordinate the next steps.`,
+            ? `${updated.plan_title_snapshot ?? 'Your remedies recommendation'} is confirmed (${formatChargedMoney({
+                amount_inr: updated.amount_inr,
+                amount_paise: updated.amount_paise,
+                currency: updated.currency,
+              })}). Our experts will review your birth details shortly.`
+            : `${updated.plan_title_snapshot ?? 'Your consultation'} is confirmed (${formatChargedMoney({
+                amount_inr: updated.amount_inr,
+                amount_paise: updated.amount_paise,
+                currency: updated.currency,
+              })}). Our team will coordinate the next steps.`,
           href: '/account',
           entityType: 'consultation' as const,
           entityId: updated.id,

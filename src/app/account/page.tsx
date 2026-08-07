@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
-import { formatChargedMoney } from '@/lib/currency/format-charged';
+import { formatChargedMoney, formatOrderMoney, resolveOrderChargeContext } from '@/lib/currency/format-charged';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import type { Consultation, CustomerProfile, Order } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -60,6 +61,25 @@ export default async function AccountPage() {
   const recentOrders = (ordersResult.data ?? []) as Order[];
   const recentConsultations = (consultationsResult.data ?? []) as Consultation[];
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Valued Customer';
+
+  const orderIds = recentOrders.map((o) => o.id);
+  const { data: recentPaymentRows } =
+    orderIds.length > 0
+      ? await asUntypedSupabase(supabase)
+          .from('order_payments')
+          .select('order_id, amount, reference')
+          .in('order_id', orderIds)
+          .eq('status', 'paid')
+      : { data: [] as Array<{ order_id: string; amount: number; reference: string | null }> };
+
+  const paymentsByOrder = new Map<string, Array<{ amount?: number | null; reference?: string | null }>>();
+  for (const row of recentPaymentRows ?? []) {
+    const orderId = String((row as { order_id?: string }).order_id ?? '');
+    if (!orderId) continue;
+    const list = paymentsByOrder.get(orderId) ?? [];
+    list.push(row as { amount?: number | null; reference?: string | null });
+    paymentsByOrder.set(orderId, list);
+  }
 
   return (
     <div className="pvg-account-stack">
@@ -149,7 +169,12 @@ export default async function AccountPage() {
           </div>
         ) : (
           <div className="pvg-account-divider">
-            {recentOrders.map((order) => (
+            {recentOrders.map((order) => {
+              const chargeContext = resolveOrderChargeContext({
+                complianceFlags: (order as { compliance_flags?: unknown }).compliance_flags,
+                payments: paymentsByOrder.get(order.id) ?? [],
+              });
+              return (
               <div key={order.id} className="pvg-account-row">
                 <div>
                   <p className="pvg-account-row-title">{order.order_number}</p>
@@ -159,13 +184,16 @@ export default async function AccountPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <OrderStatusBadge status={order.status} />
-                  <span className="text-sm font-bold text-[#2c0404]">₹{order.total.toLocaleString('en-IN')}</span>
+                  <span className="text-sm font-bold text-[#2c0404]">
+                    {formatOrderMoney(Number(order.total ?? 0), chargeContext)}
+                  </span>
                   <Link href="/account/orders" className="pvg-account-card-link text-xs">
                     Track
                   </Link>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

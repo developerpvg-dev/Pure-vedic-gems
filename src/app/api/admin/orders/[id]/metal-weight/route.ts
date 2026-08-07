@@ -13,6 +13,7 @@ import {
   buildMetalWeightNotifyCopy,
 } from '@/lib/orders/metal-weight-adjust';
 import { applyJewelleryGstDeltaToTaxBreakdown } from '@/lib/orders/tax-breakdown-display';
+import { resolveOrderChargeContext, type OrderChargeContext } from '@/lib/currency/format-charged';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import type { Order } from '@/lib/types/database';
 import type { OrderItemRecord } from '@/lib/types/order';
@@ -33,6 +34,22 @@ const bodySchema = z.discriminatedUnion('action', [
   }),
 ]);
 
+async function loadChargeContext(
+  orderId: string,
+  complianceFlags: unknown,
+): Promise<OrderChargeContext | null> {
+  const db = asUntypedSupabase(createAdminClient());
+  const { data } = await db
+    .from('order_payments')
+    .select('amount, reference')
+    .eq('order_id', orderId)
+    .eq('status', 'paid');
+  return resolveOrderChargeContext({
+    complianceFlags,
+    payments: (data ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+  });
+}
+
 async function sendMetalWeightNotifications(args: {
   order: Order;
   orderId: string;
@@ -47,6 +64,7 @@ async function sendMetalWeightNotifications(args: {
   itemName?: string | null;
   note?: string | null;
   adminUserId: string;
+  chargeContext?: OrderChargeContext | null;
 }) {
   const recipient = await resolveOrderCustomerEmail(args.order);
   let emailId: string | null = null;
@@ -67,6 +85,7 @@ async function sendMetalWeightNotifications(args: {
         amountDue: args.amountDue,
         refundDue: args.refundDue,
         note: args.note,
+        chargeContext: args.chargeContext,
       });
     } catch (err) {
       console.error('[metal-weight] email failed', err);
@@ -151,6 +170,7 @@ export async function POST(
 
   const orderRow = order as Order;
   const items = (Array.isArray(orderRow.items) ? orderRow.items : []) as unknown as OrderItemRecord[];
+  const chargeContext = await loadChargeContext(id, orderRow.compliance_flags);
 
   if (parsed.data.action === 'notify') {
     const idx =
@@ -184,6 +204,7 @@ export async function POST(
       amountDue,
       refundDue,
       itemName: item.name,
+      chargeContext,
     });
 
     const notifyResult = await sendMetalWeightNotifications({
@@ -200,6 +221,7 @@ export async function POST(
       itemName: item.name,
       note: parsed.data.note ?? null,
       adminUserId: auth.user.id,
+      chargeContext,
     });
 
     await logAdminAction({
@@ -311,6 +333,7 @@ export async function POST(
     amountDue: money.amount_due,
     refundDue: money.refund_due,
     itemName: item.name,
+    chargeContext,
   });
 
   let notifyResult = { email_sent: false, in_app_sent: false };
@@ -329,6 +352,7 @@ export async function POST(
       itemName: item.name,
       note: note ?? null,
       adminUserId: auth.user.id,
+      chargeContext,
     });
   } else {
     // Still leave an internal trail when notify is off.

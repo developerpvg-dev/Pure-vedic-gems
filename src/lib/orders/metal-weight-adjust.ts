@@ -6,6 +6,10 @@
 import { parseConfigurationSnapshot, type ConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import { GST_METAL_MOUNTED_PERCENT, gstOnAmount } from '@/lib/utils/tax';
 import { roundMoney } from '@/lib/orders/counter-payments';
+import {
+  formatOrderMoney,
+  type OrderChargeContext,
+} from '@/lib/currency/format-charged';
 
 export type MetalWeightAdjustKind = 'extra_charge' | 'refund' | 'unchanged';
 
@@ -163,7 +167,9 @@ export function buildMetalWeightNotifyCopy(args: {
   amountDue: number;
   refundDue: number;
   itemName?: string | null;
+  chargeContext?: OrderChargeContext | null;
 }): { title: string; message: string; kind: MetalWeightAdjustKind } {
+  const money = (n: number) => formatOrderMoney(n, args.chargeContext);
   const itemBit = args.itemName ? ` (${args.itemName})` : '';
   const weightBit = `${args.oldWeightGrams} g → ${args.newWeightGrams} g`;
   if (args.refundDue > 0.009 || args.totalDelta < -0.009) {
@@ -171,28 +177,28 @@ export function buildMetalWeightNotifyCopy(args: {
     return {
       kind: 'refund',
       title: 'Metal weight updated — refund due',
-      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. ₹${refund.toLocaleString('en-IN')} will be refunded / credited.`,
+      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. ${money(refund)} will be refunded / credited.`,
     };
   }
   if (args.amountDue > 0.009 && args.totalDelta > 0.009) {
     return {
       kind: 'extra_charge',
       title: 'Metal weight updated — extra amount due',
-      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. Please pay the remaining ₹${args.amountDue.toLocaleString('en-IN')}.`,
+      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. Please pay the remaining ${money(args.amountDue)}.`,
     };
   }
   if (args.totalDelta > 0.009) {
     return {
       kind: 'extra_charge',
       title: 'Metal weight updated — order total increased',
-      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. Order total increased by ₹${args.totalDelta.toLocaleString('en-IN')}; remaining due is ₹${args.amountDue.toLocaleString('en-IN')}.`,
+      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. Order total increased by ${money(args.totalDelta)}; remaining due is ${money(args.amountDue)}.`,
     };
   }
   if (args.totalDelta < -0.009) {
     return {
       kind: 'refund',
       title: 'Metal weight updated — order total reduced',
-      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. Order total reduced by ₹${Math.abs(args.totalDelta).toLocaleString('en-IN')}; remaining due is now ₹${args.amountDue.toLocaleString('en-IN')}.`,
+      message: `Order ${args.orderNumber}${itemBit}: actual metal weight ${weightBit}. Order total reduced by ${money(Math.abs(args.totalDelta))}; remaining due is now ${money(args.amountDue)}.`,
     };
   }
   return {
@@ -273,6 +279,17 @@ export function __metalWeightAdjustSelfCheck() {
   });
   console.assert(partial.amount_due < 15160 - 5000, 'partial: due shrinks');
   console.assert(partial.refund_due === 0);
+
+  const fxCopy = buildMetalWeightNotifyCopy({
+    orderNumber: 'PVG-TEST',
+    oldWeightGrams: 4.5,
+    newWeightGrams: 5,
+    totalDelta: 550,
+    amountDue: 550,
+    refundDue: 0,
+    chargeContext: { currency: 'USD', rate: 95 },
+  });
+  console.assert(/\$/.test(fxCopy.message), 'notify copy uses locked FX');
 
   console.log('metal-weight-adjust self-check ok');
 }
