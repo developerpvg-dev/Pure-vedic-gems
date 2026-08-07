@@ -11,15 +11,19 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { roundMoney } from '@/lib/orders/counter-payments';
+import { parseGatewayReference } from '@/lib/razorpay/charge-currency';
 import type { Order } from '@/lib/types/database';
 
 export type PaymentAttempt = {
   id: string;
   order_id: string;
+  /** Ledger amount in INR (books stay INR). */
   amount: number;
   kind: string;
   method: string;
   status: 'pending' | 'paid' | 'failed';
+  /** Gateway charge as `CURRENCY:minor` (e.g. USD:1234). Null = legacy INR paise. */
+  reference: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   paid_at: string | null;
@@ -65,9 +69,16 @@ export async function findAttemptByRazorpayOrderId(
   return { attempt: (attempt as PaymentAttempt | null) ?? null, order: order as Order };
 }
 
-/** Expected charge in paise for this attempt; legacy attempts expect the full total. */
+/** Expected Razorpay amount in minor units; legacy rows without reference are INR paise. */
 export function expectedPaiseFor(order: Order, attempt: PaymentAttempt | null) {
+  const gateway = parseGatewayReference(attempt?.reference);
+  if (gateway) return gateway.minor;
   return Math.round(Number(attempt?.amount ?? order.total) * 100);
+}
+
+/** Expected Razorpay currency for this attempt. */
+export function expectedCurrencyFor(attempt: PaymentAttempt | null) {
+  return parseGatewayReference(attempt?.reference)?.currency ?? 'INR';
 }
 
 /**
@@ -77,9 +88,12 @@ export function expectedPaiseFor(order: Order, attempt: PaymentAttempt | null) {
  */
 export async function openPaymentAttempt(input: {
   orderId: string;
+  /** INR ledger amount. */
   amount: number;
   kind: 'advance' | 'balance' | 'full';
   razorpayOrderId: string;
+  /** `CURRENCY:minor` from encodeGatewayReference. */
+  reference: string;
 }) {
   const client = db();
   await client
@@ -98,6 +112,7 @@ export async function openPaymentAttempt(input: {
       provider: 'razorpay',
       status: 'pending',
       razorpay_order_id: input.razorpayOrderId,
+      reference: input.reference,
     })
     .select('*')
     .single();

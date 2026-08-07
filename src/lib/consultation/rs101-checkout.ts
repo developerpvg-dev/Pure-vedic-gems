@@ -74,6 +74,7 @@ export interface CreateOrderErrorResponse {
 export async function startRs101Checkout(
   formBody: Record<string, string>,
   options: {
+    currency?: string;
     onDismiss: () => void;
     onSuccess: (consultationId: string) => void;
     onError: (error: { message: string; fieldErrors?: Record<string, string> }) => void;
@@ -82,7 +83,11 @@ export async function startRs101Checkout(
   const createRes = await fetch('/api/consultation/payment/create-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plan_id: 'rs101', ...formBody }),
+    body: JSON.stringify({
+      plan_id: 'rs101',
+      ...formBody,
+      ...(options.currency ? { currency: options.currency } : {}),
+    }),
   });
 
   const createData = (await createRes.json().catch(() => ({}))) as CreateOrderErrorResponse & CreateOrderResponse;
@@ -112,7 +117,7 @@ export async function startRs101Checkout(
     amount: payment.amount,
     currency: payment.currency,
     name: 'PureVedicGems',
-    description: `Gem Recommendation - ${formatPrice(RS101_AMOUNT_INR, 'INR')}`,
+    description: `Gem Recommendation - ${formatPrice(RS101_AMOUNT_INR)}`,
     order_id: payment.razorpay_order_id,
     prefill: {
       name: formBody.full_name ?? '',

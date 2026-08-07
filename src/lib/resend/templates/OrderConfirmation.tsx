@@ -61,6 +61,8 @@ export interface OrderConfirmationEmailProps {
   /** Advance payments: what landed now and what is still owed. */
   amountPaid?: number;
   amountDue?: number;
+  /** What Razorpay charged when non-INR, e.g. "$66.50 (₹5,525)". */
+  chargedAmountLabel?: string | null;
   siteUrl: string;
   /** Sealed link to upload ring internal-diameter photo (ring orders only). */
   ringSizeConfirmUrl?: string;
@@ -83,6 +85,7 @@ export function OrderConfirmationEmail({
   shippingAddress,
   amountPaid,
   amountDue,
+  chargedAmountLabel,
   siteUrl,
   ringSizeConfirmUrl,
   ringSizeConfirmCopy,
@@ -201,6 +204,15 @@ export function OrderConfirmationEmail({
                 </Column>
               </Row>
             )}
+
+            {chargedAmountLabel ? (
+              <Row style={totalRowStyle}>
+                <Column><Text style={totalLabelStyle}>Card / gateway charge</Text></Column>
+                <Column style={{ textAlign: 'right' as const }}>
+                  <Text style={totalValueStyle}>{chargedAmountLabel}</Text>
+                </Column>
+              </Row>
+            ) : null}
 
             {/* Shipping Address */}
             <Heading as="h2" style={h2Style}>

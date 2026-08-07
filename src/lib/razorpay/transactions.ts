@@ -64,7 +64,7 @@ export async function fetchRazorpayPaymentFacts(
     razorpayPaymentId: razorpayPayment.id,
     razorpayOrderAmountPaise: toPaise(razorpayOrder.amount),
     razorpayPaymentAmountPaise: toPaise(razorpayPayment.amount),
-    currency: razorpayPayment.currency || razorpayOrder.currency,
+    currency: String(razorpayPayment.currency || razorpayOrder.currency || 'INR').toUpperCase(),
     paymentStatus: razorpayPayment.status ?? 'unknown',
     orderStatus: razorpayOrder.status,
     captured: razorpayPayment.captured === true || razorpayPayment.status === 'captured',

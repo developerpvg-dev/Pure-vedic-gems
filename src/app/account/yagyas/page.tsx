@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Flame, ChevronRight, CreditCard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { YagyaBooking } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -35,11 +36,6 @@ const PAYMENT_MAP: Record<string, { label: string; className: string }> = {
 function Badge({ value, map }: { value: string; map: typeof STATUS_MAP }) {
   const item = map[value] ?? { label: value.replace(/_/g, ' '), className: 'bg-gray-100 text-gray-600' };
   return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${item.className}`}>{item.label}</span>;
-}
-
-function formatPrice(value: number | null) {
-  if (value == null) return 'Rs 0';
-  return `Rs ${value.toLocaleString('en-IN')}`;
 }
 
 function formatDate(value: string | null) {
@@ -110,7 +106,7 @@ export default async function AccountYagyasPage() {
               </div>
 
               <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                <Info label="Amount" value={formatPrice(booking.amount_inr)} icon={<CreditCard className="h-4 w-4" />} />
+                <Info label="Amount" value={formatChargedMoney(booking)} icon={<CreditCard className="h-4 w-4" />} />
                 <Info label="Sankalp For" value={booking.sankalp_name || booking.full_name} />
                 <Info label="Preferred Date" value={booking.preferred_date || '-'} />
                 <Info label="Completed" value={formatDate(booking.completed_at)} />

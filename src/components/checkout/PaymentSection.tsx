@@ -10,6 +10,7 @@ import type {
 } from '@/lib/validators/order';
 import { TAX_POLICY_VERSION, estimateClientTax } from '@/lib/utils/tax';
 import { formatPrice } from '@/lib/utils/format';
+import { convertFromInr, convertToInr } from '@/lib/currency/display-store';
 import { useCurrency, useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import type { CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
@@ -71,6 +72,13 @@ export function PaymentSection({
   }, [cartItems, selectedShippingPlan, rewardPointsToRedeem, rewards, couponDiscount]);
 
   const showFxNote = currency !== 'INR';
+  // ponytail: display FX for UI only; charge/claim amounts stay INR
+  const displayDecimals = currency === 'INR' || currency === 'JPY' ? 0 : 2;
+  const toDisplay = (inr: number) => {
+    const v = convertFromInr(inr);
+    const f = 10 ** displayDecimals;
+    return Math.round(v * f) / f;
+  };
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<
     'idle' | 'creating_order' | 'creating_payment' | 'paying' | 'verifying' | 'submitting_proof'
@@ -110,6 +118,10 @@ export function PaymentSection({
   function clampAdvanceRupees(value: number) {
     if (!Number.isFinite(value)) return;
     setAdvanceRupees(Math.min(estimate.totalInr, Math.max(advanceFloor, Math.round(value))));
+  }
+
+  function clampAdvanceFromDisplay(displayValue: number) {
+    clampAdvanceRupees(convertToInr(displayValue));
   }
 
   const copyField = useCallback(async (key: string, value: string) => {
@@ -289,6 +301,7 @@ export function PaymentSection({
         orderId: order_id,
         orderNumber: order_number,
         payAmount,
+        currency,
         prefill: {
           name: contact.full_name,
           email: contact.email,
@@ -326,6 +339,7 @@ export function PaymentSection({
     payingPartial,
     advanceAmount,
     estimate.totalInr,
+    currency,
   ]);
 
   const stepLabels: Record<string, string> = {
@@ -405,7 +419,7 @@ export function PaymentSection({
               <span>
                 <span className="block font-semibold text-[#3d2b1f]">Pay in full</span>
                 <span className="block text-xs text-stone-500">
-                  {formatPrice(estimate.totalInr, 'INR')} now
+                  {formatPrice(estimate.totalInr)} now
                 </span>
               </span>
             </label>
@@ -438,28 +452,32 @@ export function PaymentSection({
                   htmlFor="pvg-advance-amount"
                   className="flex items-center justify-between text-sm font-semibold text-[#3d2b1f]"
                 >
-                  <span>Advance amount (₹)</span>
+                  <span>Advance amount ({currency})</span>
                   <span className="font-medium text-stone-500">{advancePercent}% of total</span>
                 </label>
                 <div className="mt-1.5 flex items-center gap-2">
-                  <span className="text-sm font-semibold text-stone-500">₹</span>
+                  <span className="text-sm font-semibold text-stone-500">
+                    {currency === 'INR' ? '₹' : currency}
+                  </span>
                   <input
                     id="pvg-advance-amount"
                     type="number"
-                    inputMode="numeric"
-                    min={advanceFloor}
-                    max={estimate.totalInr}
-                    step={1}
-                    value={advanceAmount}
+                    inputMode="decimal"
+                    min={toDisplay(advanceFloor)}
+                    max={toDisplay(estimate.totalInr)}
+                    step={displayDecimals === 0 ? 1 : 0.01}
+                    value={toDisplay(advanceAmount)}
                     disabled={isProcessing}
-                    onChange={(e) => clampAdvanceRupees(Number(e.target.value))}
-                    onBlur={(e) => clampAdvanceRupees(Number(e.target.value) || advanceFloor)}
+                    onChange={(e) => clampAdvanceFromDisplay(Number(e.target.value))}
+                    onBlur={(e) =>
+                      clampAdvanceFromDisplay(Number(e.target.value) || toDisplay(advanceFloor))
+                    }
                     className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-semibold tabular-nums text-[#3d2b1f] outline-none focus:border-[#C9A84C]"
                   />
                 </div>
                 <p className="mt-1 text-[10px] text-stone-400">
-                  Min ₹{advanceFloor.toLocaleString('en-IN')} ({ADVANCE_MIN_PERCENT}%) · Max{' '}
-                  ₹{estimate.totalInr.toLocaleString('en-IN')}
+                  Min {formatPrice(advanceFloor)} ({ADVANCE_MIN_PERCENT}%) · Max{' '}
+                  {formatPrice(estimate.totalInr)}
                 </p>
               </div>
 
@@ -469,7 +487,7 @@ export function PaymentSection({
                   className="flex items-center justify-between text-xs font-semibold text-stone-600"
                 >
                   <span>Or use slider</span>
-                  <span>{formatPrice(advanceAmount, 'INR')}</span>
+                  <span>{formatPrice(advanceAmount)}</span>
                 </label>
                 <input
                   id="pvg-advance-percent"
@@ -492,7 +510,7 @@ export function PaymentSection({
 
               <p className="text-xs leading-relaxed text-stone-600">
                 Your order is confirmed once we verify this payment. The remaining{' '}
-                <strong>{formatPrice(Math.max(0, estimate.totalInr - advanceAmount), 'INR')}</strong>{' '}
+                <strong>{formatPrice(Math.max(0, estimate.totalInr - advanceAmount))}</strong>{' '}
                 becomes payable when we tell you the order is ready — we ship after that.
               </p>
             </div>
@@ -518,9 +536,9 @@ export function PaymentSection({
             <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
               <p className="font-semibold">Order total: {formatPrice(estimate.totalInr)}</p>
               <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
-                Razorpay charges in Indian Rupees only: you will pay{' '}
-                <strong>{formatPrice(chargeNow, 'INR')}</strong>. International cards still
-                work; your bank converts at their rate.
+                Razorpay will charge{' '}
+                <strong>{formatPrice(chargeNow)}</strong> in {currency}. UPI and other India-only
+                methods appear only for INR.
               </p>
             </div>
           ) : (
@@ -544,7 +562,7 @@ export function PaymentSection({
               <span className="text-sm font-semibold text-[#3d2b1f]">Transfer to any account</span>
             </div>
             <p className="pvg-checkout-hint">
-              Transfer {formatPrice(chargeNow, 'INR')}
+              Transfer {formatPrice(chargeNow)}
               {payingPartial ? ' as your advance' : ''} to one of the accounts below, then
               upload your UTR and screenshot. We confirm the order after our team verifies the
               transfer.
@@ -748,12 +766,12 @@ export function PaymentSection({
       <p className="pvg-checkout-footnote mt-3">
         {payMethod === 'bank_transfer'
           ? payingPartial
-            ? `Transfer exactly ${formatPrice(chargeNow, 'INR')} now. We verify the amount against your proof before confirming the order.`
+            ? `Transfer exactly ${formatPrice(chargeNow)} now. We verify the amount against your proof before confirming the order.`
             : 'Order stays on hold until we verify your transfer (usually within 1 business day).'
           : payingPartial
-            ? `Razorpay will charge ${formatPrice(chargeNow, 'INR')} now. The advance amount is re-verified on our server against the final order total before the payment window opens.`
+            ? `Razorpay will charge ${formatPrice(chargeNow)} now. The advance amount is re-verified on our server against the final order total before the payment window opens.`
             : showFxNote
-              ? `Payment window shows ${formatPrice(chargeNow, 'INR')}. Tax totals are verified on our server before Razorpay opens.`
+              ? `Payment window shows ${formatPrice(chargeNow)}. Tax totals are verified on our server before Razorpay opens.`
               : 'Payment and tax totals are verified on our server before Razorpay opens.'}
       </p>
     </div>

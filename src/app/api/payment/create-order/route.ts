@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentCreateOrderSchema } from '@/lib/validators/order';
 import { getRazorpayClient } from '@/lib/razorpay/client';
+import {
+  convertInrToGatewayCharge,
+  encodeGatewayReference,
+  normalizeChargeCurrency,
+  parseGatewayReference,
+} from '@/lib/razorpay/charge-currency';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { rateLimit } from '@/lib/utils/rate-limit';
@@ -13,19 +19,9 @@ import { findPendingAttempt, openPaymentAttempt } from '@/lib/orders/online-paym
  * POST /api/payment/create-order
  *
  * Creates a Razorpay order for a pending order.
- * The amount is read from the database (server-side truth) — never from the client.
- * The client may only *request* an advance amount; the 20% floor, the order
- * total ceiling, and the remaining balance are all enforced here.
- *
- * Flow:
- * 1. Validate the order exists and still owes money
- * 2. Resolve the charge from the DB total and what is already paid
- * 3. Create a Razorpay order with that exact amount
- * 4. Open a pending ledger row holding the expected amount for verification
- * 5. Return Razorpay order details to the client
+ * Ledger amounts stay INR; the gateway charge uses the storefront currency.
  */
 export async function POST(req: NextRequest) {
-  // ── Rate limiting ────────────────────────────────────────────────────
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   if (!rateLimit(`pay:${ip}`, 10, 60 * 1000)) {
@@ -35,7 +31,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Parse & validate ─────────────────────────────────────────────────
   let body: unknown;
   try {
     body = await req.json();
@@ -55,8 +50,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { order_id, pay_amount } = parsed.data;
+  const currency = normalizeChargeCurrency(parsed.data.currency);
 
-  // ── Fetch order from DB ──────────────────────────────────────────────
   const supabase = createAdminClient();
   const { data: order, error: fetchError } = await supabase
     .from('orders')
@@ -71,10 +66,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Ownership check: only the order's owner may initiate payment ──────
-  // Prevents IDOR — without this, any caller with an order_id could create a
-  // Razorpay order against someone else's pending order. Generic 404 avoids
-  // confirming the order exists to a non-owner.
   const isAuthorized = await canPayOrder(order);
   if (!isAuthorized) {
     return NextResponse.json(
@@ -83,7 +74,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Verify order state ───────────────────────────────────────────────
   if (isPaidPaymentStatus(order.payment_status)) {
     return NextResponse.json(
       { error: 'This order has already been paid' },
@@ -91,7 +81,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 'partial' = advance paid, customer is back to settle the balance.
   if (!['pending', 'authorized', 'failed', 'partial'].includes(order.payment_status)) {
     return NextResponse.json(
       { error: 'This order is not eligible for payment at the moment' },
@@ -106,7 +95,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Resolve what to charge (server-side truth) ───────────────────────
   const amountPaid = Number(order.amount_paid ?? 0);
   let charge;
   try {
@@ -118,9 +106,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Part-payment creates an outstanding balance we must be able to chase later,
-  // so it is account-holders only — a guest cookie is not an identity we can
-  // email, notify, or hold accountable for the remainder.
   if (charge.kind !== 'full' && !order.customer_id) {
     return NextResponse.json(
       { error: 'Please sign in to your account to pay in advance. Guest checkout must be paid in full.' },
@@ -128,25 +113,37 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let gateway;
+  try {
+    gateway = await convertInrToGatewayCharge(charge.amount, currency);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Currency conversion failed' },
+      { status: 400 }
+    );
+  }
+
+  const amountMinor = gateway.minor;
+  const gatewayRef = encodeGatewayReference(gateway.currency, amountMinor);
   const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID;
 
-  // Amount must be in paise (1 INR = 100 paise)
-  const amountInPaise = Math.round(charge.amount * 100);
-
-  if (amountInPaise < 100) {
-    // Razorpay minimum is ₹1
+  if (amountMinor < 100) {
     return NextResponse.json(
       { error: 'Order amount too low for payment processing' },
       { status: 400 }
     );
   }
 
-  // ── Reuse the in-flight attempt when the customer retries the same amount ──
-  // Reuse is keyed on the pending ledger row, not orders.razorpay_order_id:
-  // after an advance, that column still holds the *settled* advance order, and
-  // reopening it would charge against an already-paid Razorpay order.
   const pending = await findPendingAttempt(order.id);
-  if (pending?.razorpay_order_id && Math.round(Number(pending.amount) * 100) === amountInPaise) {
+  const pendingGateway = parseGatewayReference(pending?.reference);
+  const samePending =
+    !!pending?.razorpay_order_id &&
+    Number(pending.amount) === Number(charge.amount) &&
+    (pendingGateway
+      ? pendingGateway.currency === gateway.currency && pendingGateway.minor === amountMinor
+      : gateway.currency === 'INR' && Math.round(Number(pending.amount) * 100) === amountMinor);
+
+  if (samePending && pending.razorpay_order_id) {
     await asUntypedSupabase(supabase)
       .from('orders')
       .update({ payment_attempts: (order.payment_attempts ?? 0) + 1 })
@@ -154,8 +151,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       razorpay_order_id: pending.razorpay_order_id,
-      amount: amountInPaise,
-      currency: 'INR',
+      amount: amountMinor,
+      currency: gateway.currency,
       key_id: razorpayKeyId,
       order_number: order.order_number,
       pay_amount: charge.amount,
@@ -167,8 +164,8 @@ export async function POST(req: NextRequest) {
   try {
     const razorpay = getRazorpayClient();
     razorpayOrder = await razorpay.orders.create({
-      amount: amountInPaise,
-      currency: 'INR',
+      amount: amountMinor,
+      currency: gateway.currency,
       receipt: order.order_number,
       payment: {
         capture: 'automatic',
@@ -182,25 +179,31 @@ export async function POST(req: NextRequest) {
         order_id: order.id,
         order_number: order.order_number,
         payment_kind: charge.kind,
+        ledger_inr: String(charge.amount),
+        charge_currency: gateway.currency,
+        fx_rate: String(gateway.rate),
       },
     });
   } catch (err) {
     console.error('[Payment] Razorpay order creation failed:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    const currencyHint =
+      gateway.currency !== 'INR' && /currency|international/i.test(msg)
+        ? ` Razorpay may not have multi-currency enabled for ${gateway.currency}.`
+        : '';
     return NextResponse.json(
-      { error: 'Payment gateway error. Please try again.' },
+      { error: `Payment gateway error.${currencyHint} Please try again or switch to INR.` },
       { status: 502 }
     );
   }
 
-  // ── Record the expected amount before the customer can pay ───────────
-  // This row is what /api/payment/verify and the webhook check the captured
-  // amount against, so it must exist before the Razorpay modal opens.
   try {
     await openPaymentAttempt({
       orderId: order.id,
       amount: charge.amount,
       kind: charge.kind,
       razorpayOrderId: razorpayOrder.id,
+      reference: gatewayRef,
     });
   } catch (err) {
     console.error('[Payment] Failed to open payment attempt:', err);
@@ -210,8 +213,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Mirror onto the order for the legacy webhook lookup and admin display.
-  // A balance payment keeps payment_status 'partial' — the advance is still paid.
   const { error: updateError } = await asUntypedSupabase(supabase)
     .from('orders')
     .update({
@@ -225,13 +226,12 @@ export async function POST(req: NextRequest) {
 
   if (updateError) {
     console.error('[Payment] Failed to store razorpay_order_id:', updateError);
-    // Non-critical — the ledger attempt already holds the expected amount.
   }
 
   return NextResponse.json({
     razorpay_order_id: razorpayOrder.id,
-    amount: amountInPaise,
-    currency: 'INR',
+    amount: amountMinor,
+    currency: gateway.currency,
     key_id: razorpayKeyId,
     order_number: order.order_number,
     pay_amount: charge.amount,

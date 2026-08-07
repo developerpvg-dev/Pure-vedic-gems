@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CreditCard, Loader2, ShieldCheck, Wallet } from 'lucide-react';
 import { formatPrice } from '@/lib/utils/format';
+import { formatPaymentCharge } from '@/lib/currency/format-charged';
+import { useCurrency } from '@/lib/hooks/useCurrency';
 import { runRazorpayCheckout, type CheckoutStage } from '@/lib/razorpay/checkout-client';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
@@ -69,6 +71,7 @@ export function OrderBalancePanel({
   prefill: { name: string; email: string; contact: string };
 }) {
   const router = useRouter();
+  const { currency } = useCurrency();
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<CheckoutStage | null>(null);
   const [error, setError] = useState('');
@@ -84,6 +87,7 @@ export function OrderBalancePanel({
       orderNumber,
       // Balance leg always settles the full remainder — the server enforces it.
       payAmount: null,
+      currency,
       prefill,
       onStage: setStage,
       onSuccess: () => {
@@ -120,12 +124,12 @@ export function OrderBalancePanel({
             {owing ? 'Part-paid order' : 'Fully paid'}
           </p>
           <p className="mt-1 text-sm text-[var(--pvg-muted)]">
-            Paid <strong className="text-emerald-800">{formatPrice(amountPaid)}</strong> of{' '}
-            {formatPrice(total)}
+            Paid <strong className="text-emerald-800">{formatPrice(amountPaid, 'INR')}</strong> of{' '}
+            {formatPrice(total, 'INR')}
             {owing ? (
               <>
                 {' · '}
-                Balance due <strong className="text-amber-800">{formatPrice(amountDue)}</strong>
+                Balance due <strong className="text-amber-800">{formatPrice(amountDue, 'INR')}</strong>
               </>
             ) : null}
           </p>
@@ -152,7 +156,12 @@ export function OrderBalancePanel({
               ) : (
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
               )}
-              Pay online {formatPrice(amountDue)}
+              Pay online {formatPrice(amountDue, 'INR')}
+              {currency !== 'INR' ? (
+                <span className="ml-1 font-normal opacity-80">
+                  (≈ {formatPrice(amountDue)})
+                </span>
+              ) : null}
             </button>
             <button
               type="button"
@@ -212,7 +221,9 @@ export function OrderBalancePanel({
                 <td className="py-1.5 pr-3 text-[var(--pvg-muted)]">{fmtDate(p.paid_at)}</td>
                 <td className="py-1.5 pr-3">{KIND_LABELS[p.kind] ?? p.kind}</td>
                 <td className="py-1.5 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
-                <td className="py-1.5 font-semibold tabular-nums">{formatPrice(Number(p.amount))}</td>
+                <td className="py-1.5 font-semibold tabular-nums">
+                  {formatPaymentCharge(Number(p.amount), p.reference)}
+                </td>
               </tr>
             ))}
           </tbody>

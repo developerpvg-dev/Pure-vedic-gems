@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, Plus, Send } from 'lucide-react';
+import { formatPaymentCharge } from '@/lib/currency/format-charged';
 
 type PaymentRow = {
   id: string;
@@ -301,7 +302,9 @@ export function OrderPaymentLedger({
                       {p.provider === 'razorpay' ? 'Online' : 'Counter'}
                     </td>
                     <td className="py-2 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
-                    <td className="py-2 pr-3 font-semibold tabular-nums">{fmt(Number(p.amount))}</td>
+                    <td className="py-2 pr-3 font-semibold tabular-nums">
+                      {formatPaymentCharge(Number(p.amount), p.reference)}
+                    </td>
                     <td className="py-2 font-mono text-xs text-gray-500">
                       {p.razorpay_payment_id || p.reference || '—'}
                     </td>

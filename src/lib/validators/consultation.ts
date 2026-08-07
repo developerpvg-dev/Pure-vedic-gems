@@ -168,6 +168,13 @@ export const consultationBookingCreateOrderSchema = z
     preferred_time: optionalTime,
     message: optionalTrimmedText(5000),
     website: z.string().max(0).optional(),
+    /** Storefront currency for the Razorpay charge (ledger amount_inr stays INR). */
+    currency: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/)
+      .optional(),
   })
   .superRefine((value, ctx) => {
     // Location required for CRM lead cards (homepage ₹101 + detailed consultation).

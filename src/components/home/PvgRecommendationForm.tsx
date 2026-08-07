@@ -44,7 +44,7 @@ type PvgRecommendationFormProps = {
 
 export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecommendationFormProps = {}) {
   const { user, profile, isAuthenticated } = useAuth();
-  const { format } = useCurrency();
+  const { format, currency } = useCurrency();
   const priceLabel = format(RS101_AMOUNT_INR);
   const [form, setForm] = useState<Rs101FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -165,6 +165,7 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
 
     try {
       await startRs101Checkout(body, {
+        currency,
         onDismiss: () => setPaying(false),
         onSuccess: (consultationId) => {
           trackStorefrontEvent('consultation_payment_success', {

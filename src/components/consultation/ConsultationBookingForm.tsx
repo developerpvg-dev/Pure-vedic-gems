@@ -26,7 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
+import { useCurrency, useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
@@ -188,6 +188,7 @@ function loadRazorpayScript() {
 
 export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }) {
   useCurrencySubscription();
+  const { currency } = useCurrency();
   const { user, profile, isAuthenticated } = useAuth();
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? '');
   const [detailsPlanId, setDetailsPlanId] = useState<string | null>(null);
@@ -291,7 +292,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   }
 
   function buildBookingBody() {
-    const body: Record<string, string> = { plan_id: selectedPlan?.id ?? '' };
+    const body: Record<string, string> = { plan_id: selectedPlan?.id ?? '', currency };
     for (const [key, value] of Object.entries(form)) {
       const trimmed = value.trim();
       if (trimmed) body[key] = trimmed;

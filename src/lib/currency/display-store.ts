@@ -51,6 +51,16 @@ export function convertFromInr(amountInr: number, currency?: string): number {
   return amountInr / rate;
 }
 
+/** Convert a display-currency amount back to INR (inverse of convertFromInr). */
+export function convertToInr(amount: number, currency?: string): number {
+  const code = (currency ?? state.currency).toUpperCase();
+  if (!Number.isFinite(amount)) return 0;
+  if (!state.enabled || code === 'INR') return amount;
+  const rate = state.rates[code];
+  if (!rate || rate <= 0) return amount;
+  return amount * rate;
+}
+
 export function localeForCurrency(code: string): string {
   switch (code.toUpperCase()) {
     case 'INR':

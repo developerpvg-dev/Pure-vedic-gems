@@ -4,6 +4,7 @@ import { logLeadActivity } from '@/lib/leads/assign';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -47,7 +48,7 @@ async function backfillEnquiryFromConsultation(
   // Proceed-to-pay creates the lead early; verify flips pending → paid here
   if (isPaymentCaptured(consultation) && !row.payment_received) {
     patch.payment_received = true;
-    patch.payment_note = `₹${consultation.amount_inr ?? 0} received via Razorpay`;
+    patch.payment_note = `${formatChargedMoney(consultation)} received via Razorpay`;
     patch.payment_received_at = now;
   }
 
@@ -120,7 +121,7 @@ export async function ensureLeadFromConsultation(
     consultation.preferred_date ? `Preferred date: ${consultation.preferred_date}` : null,
     consultation.preferred_time ? `Preferred time: ${consultation.preferred_time}` : null,
     consultation.message ? `Message: ${consultation.message}` : null,
-    `Payment: ₹${consultation.amount_inr ?? 0} (${consultation.payment_status})`,
+    `Payment: ${formatChargedMoney(consultation)} (${consultation.payment_status})`,
     consultation.razorpay_payment_id ? `Razorpay payment: ${consultation.razorpay_payment_id}` : null,
   ]
     .filter(Boolean)
@@ -149,8 +150,8 @@ export async function ensureLeadFromConsultation(
       ip_location: opts?.ipLocation || null,
       payment_received: paid,
       payment_note: paid
-        ? `₹${consultation.amount_inr ?? 0} received via Razorpay`
-        : `₹${consultation.amount_inr ?? 0} payment pending`,
+        ? `${formatChargedMoney(consultation)} received via Razorpay`
+        : `${formatChargedMoney(consultation)} payment pending`,
       payment_received_at: paid ? now : null,
       consultation_id: consultation.id,
     })

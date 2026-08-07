@@ -18,6 +18,7 @@ import {
   type OrderStatus,
 } from '@/lib/constants/order-status';
 import { formatPrice } from '@/lib/utils/format';
+import { chargedLabelFromPayments } from '@/lib/currency/format-charged';
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { RETURN_STATUS_LABELS, type ReturnStatus } from '@/lib/orders/returns';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
@@ -375,8 +376,18 @@ export function AccountOrderCard({
               {returnLabel}
             </span>
           ) : null}
-          <span className="text-xl font-bold text-[var(--pvg-primary)]">
-            {formatPrice(order.total)}
+          <span className="text-right">
+            <span className="block text-xl font-bold text-[var(--pvg-primary)]">
+              {formatPrice(order.total, 'INR')}
+            </span>
+            {(() => {
+              const charged = chargedLabelFromPayments(order.payments ?? []);
+              return charged ? (
+                <span className="mt-0.5 block text-xs font-semibold text-stone-500">
+                  Charged {charged}
+                </span>
+              ) : null;
+            })()}
           </span>
         </div>
       </div>

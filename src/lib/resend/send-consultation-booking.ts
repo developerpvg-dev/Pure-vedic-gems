@@ -2,6 +2,7 @@ import { sendBrandedEmail, sendBrandedEmailToAdmin } from '@/lib/resend/send-ema
 import { getEmailSiteUrl, VEDIC_DISCLAIMER } from '@/lib/resend/email-config';
 import { TransactionalEmail } from '@/lib/resend/templates/TransactionalEmail';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { ConsultationCreateInput } from '@/lib/validators/consultation';
 
 export interface PaidConsultationEmailInput {
@@ -12,6 +13,8 @@ export interface PaidConsultationEmailInput {
   plan_title: string;
   plan_description: string | null;
   amount_inr: number | null;
+  /** Gateway minor units when charged in a non-INR currency. */
+  amount_paise?: number | null;
   currency: string;
   razorpay_payment_id: string | null;
   mode?: string | null;
@@ -35,11 +38,6 @@ export interface ConsultationEmailResult {
   admin: boolean;
 }
 
-function money(amount: number | null, currency: string) {
-  if (amount == null) return currency;
-  return `${currency} ${amount.toLocaleString('en-IN')}`;
-}
-
 function isRs101Booking(input: PaidConsultationEmailInput) {
   const title = (input.plan_title || '').toLowerCase();
   return Number(input.amount_inr) === RS101_AMOUNT_INR || title.includes('gem recommendation');
@@ -51,7 +49,7 @@ function consultationDetails(input: PaidConsultationEmailInput) {
     { label: 'Service', value: 'Vedic Consultation' },
     { label: 'Plan', value: input.plan_title },
     { label: 'Mode', value: input.mode },
-    { label: 'Amount', value: money(input.amount_inr, input.currency) },
+    { label: 'Amount', value: formatChargedMoney(input) },
     { label: 'Payment ID', value: input.razorpay_payment_id },
     { label: 'Preferred date', value: input.preferred_date },
     { label: 'Preferred time', value: input.preferred_time },
@@ -82,8 +80,8 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
         heading: remedies ? 'Remedies Recommendation Booked' : 'Vedic Consultation Booked',
         paragraphs: [
           remedies
-            ? 'A ₹101 remedies recommendation payment has been verified. Please assign a telecaller and review birth details.'
-            : `A Vedic Consultation payment has been verified for plan: ${input.plan_title}. Please review birth details and coordinate scheduling.`,
+            ? `A remedies recommendation payment (${formatChargedMoney(input)}) has been verified. Please assign a telecaller and review birth details.`
+            : `A Vedic Consultation payment (${formatChargedMoney(input)}) has been verified for plan: ${input.plan_title}. Please review birth details and coordinate scheduling.`,
         ],
         highlight: { label: 'Booking ID', value: input.id },
         details: [

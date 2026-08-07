@@ -18,6 +18,7 @@ export async function sendAdminOrderAlertEmail(input: {
   customerEmail: string;
   itemCount: number;
   paymentMethod?: string | null;
+  chargedAmountLabel?: string | null;
 }): Promise<string | null> {
   const adminUrl = `${getEmailSiteUrl()}/admin/orders/${input.orderId}`;
 
@@ -32,7 +33,10 @@ export async function sendAdminOrderAlertEmail(input: {
         { label: 'Customer', value: input.customerName },
         { label: 'Email', value: input.customerEmail },
         { label: 'Items', value: String(input.itemCount) },
-        { label: 'Total paid', value: formatINR(input.total) },
+        { label: 'Order total (INR)', value: formatINR(input.total) },
+        ...(input.chargedAmountLabel
+          ? [{ label: 'Gateway charge', value: input.chargedAmountLabel }]
+          : []),
         { label: 'Payment method', value: input.paymentMethod?.replace(/_/g, ' ') ?? 'Razorpay' },
       ],
       cta: { label: 'Open order in admin', href: adminUrl },

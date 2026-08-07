@@ -83,6 +83,7 @@ interface OrderData {
   guest_email: string | null;
   customer_id: string | null;
   created_at: string;
+  chargedAmountLabel?: string | null;
 }
 
 interface Props {
@@ -342,7 +343,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
                   )}
                 </div>
                 <p className="text-sm font-semibold text-[var(--pvg-primary)]">
-                  {formatPrice(orderItemMerchandiseTotal(item))}
+                  {formatPrice(orderItemMerchandiseTotal(item), 'INR')}
                 </p>
               </div>
             ))}
@@ -355,14 +356,20 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
                 <span className="text-[var(--pvg-muted)]">{line.label}</span>
                 <span className={line.sign < 0 ? 'text-green-700' : undefined}>
                   {line.sign < 0 ? '−' : ''}
-                  {formatPrice(line.amount)}
+                  {formatPrice(line.amount, 'INR')}
                 </span>
               </div>
             ))}
             <div className="border-t border-[var(--pvg-border)] pt-2 flex justify-between font-semibold">
               <span className="text-[var(--pvg-primary)]">Total</span>
-              <span className="text-[var(--pvg-accent)] text-lg">{formatPrice(order.total)}</span>
+              <span className="text-[var(--pvg-accent)] text-lg">{formatPrice(order.total, 'INR')}</span>
             </div>
+            {order.chargedAmountLabel ? (
+              <div className="flex justify-between gap-3 pt-1 text-xs font-semibold text-stone-600">
+                <span>Card / gateway charge</span>
+                <span>{order.chargedAmountLabel}</span>
+              </div>
+            ) : null}
           </div>
         </div>
 

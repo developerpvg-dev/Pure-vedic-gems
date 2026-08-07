@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { Consultation, CustomerProfile, Order } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -118,7 +119,7 @@ export default async function AccountPage() {
                   <ConsultationStatusBadge status={consultation.payment_status} kind="payment" />
                   <ConsultationStatusBadge status={consultation.status} kind="booking" />
                   <span className="text-sm font-bold text-[#2c0404]">
-                    ₹{(consultation.amount_inr ?? 0).toLocaleString('en-IN')}
+                    {formatChargedMoney(consultation)}
                   </span>
                 </div>
               </div>

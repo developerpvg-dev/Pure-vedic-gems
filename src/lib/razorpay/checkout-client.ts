@@ -71,6 +71,8 @@ export interface RazorpayCheckoutInput {
   orderNumber: string;
   /** Advance amount in INR. Omit to pay the full outstanding balance. */
   payAmount?: number | null;
+  /** Storefront currency for the Razorpay charge (default INR). */
+  currency?: string;
   prefill: { name: string; email: string; contact: string };
   onStage?: (stage: CheckoutStage) => void;
   /** Modal closed without paying — the order is still saved. */
@@ -84,7 +86,7 @@ export interface RazorpayCheckoutInput {
  * failed early); the outcome arrives through onSuccess / onError / onDismiss.
  */
 export async function runRazorpayCheckout(input: RazorpayCheckoutInput): Promise<void> {
-  const { orderId, orderNumber, payAmount, prefill } = input;
+  const { orderId, orderNumber, payAmount, currency, prefill } = input;
 
   try {
     input.onStage?.('creating_payment');
@@ -94,6 +96,7 @@ export async function runRazorpayCheckout(input: RazorpayCheckoutInput): Promise
       body: JSON.stringify({
         order_id: orderId,
         ...(payAmount == null ? {} : { pay_amount: payAmount }),
+        ...(currency ? { currency } : {}),
       }),
     });
     const paymentData = await paymentRes.json();

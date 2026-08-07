@@ -74,6 +74,13 @@ export const yagyaBookingCreateOrderSchema = z.object({
   }, 'Preferred date cannot be in the past'),
   message: optionalTrimmedText(5000),
   website: z.string().max(0).optional(),
+  /** Storefront currency for the Razorpay charge (ledger amount_inr stays INR). */
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/)
+    .optional(),
 });
 
 export type YagyaBookingCreateOrderInput = z.infer<typeof yagyaBookingCreateOrderSchema>;

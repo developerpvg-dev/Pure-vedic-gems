@@ -18,6 +18,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCurrency } from '@/lib/hooks/useCurrency';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { formatPrice } from '@/lib/utils/format';
 
@@ -101,6 +102,7 @@ function loadRazorpayScript() {
 
 export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
   const { user, profile, isAuthenticated } = useAuth();
+  const { currency } = useCurrency();
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
@@ -139,7 +141,7 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
   }
 
   function buildBody() {
-    const body: Record<string, string> = { yagya_id: yagya.id };
+    const body: Record<string, string> = { yagya_id: yagya.id, currency };
     for (const [key, value] of Object.entries(form)) {
       const trimmed = value.trim();
       if (trimmed) body[key] = trimmed;

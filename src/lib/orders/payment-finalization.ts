@@ -21,6 +21,7 @@ import {
   orderHasRingItem,
 } from '@/lib/orders/ring-size-confirmation';
 import { ringSizeConfirmPublicLink } from '@/lib/orders/ring-size-confirmation-token';
+import { chargedLabelFromPayments } from '@/lib/currency/format-charged';
 
 interface OrderItemSnapshot {
   product_id?: string;
@@ -336,6 +337,15 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
       ringSizeConfirmUrl = ringSizeConfirmPublicLink(order.id, started.confirmation.round, siteUrl);
     }
 
+    const { data: paidRows } = await asUntypedSupabase(supabase)
+      .from('order_payments')
+      .select('amount, reference')
+      .eq('order_id', order.id)
+      .eq('status', 'paid');
+    const chargedAmountLabel = chargedLabelFromPayments(
+      (paidRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+    );
+
     const messageId = await sendOrderConfirmationEmail(recipient.email, {
       customerName: recipient.name,
       orderNumber: order.order_number,
@@ -366,6 +376,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
       },
       amountPaid: balances.amount_paid,
       amountDue: balances.amount_due,
+      chargedAmountLabel,
       shippingAddress: order.shipping_address as {
         line1: string;
         line2?: string;
@@ -405,6 +416,14 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
   if (!adminNotificationSentAt) {
     let adminMessageId: string | null = null;
     if (recipient) {
+      const { data: paidRows } = await asUntypedSupabase(supabase)
+        .from('order_payments')
+        .select('amount, reference')
+        .eq('order_id', order.id)
+        .eq('status', 'paid');
+      const chargedAmountLabel = chargedLabelFromPayments(
+        (paidRows ?? []) as Array<{ amount?: number | null; reference?: string | null }>,
+      );
       adminMessageId = await sendAdminOrderAlertEmail({
         orderId: order.id,
         orderNumber: order.order_number,
@@ -412,6 +431,7 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
         customerName: recipient.name,
         customerEmail: recipient.email,
         itemCount: orderItems(order).length,
+        chargedAmountLabel,
         paymentMethod: partial
           ? `${order.payment_method ?? 'razorpay'} — advance ${paidLabel}, ${dueLabel} due`
           : order.payment_method,

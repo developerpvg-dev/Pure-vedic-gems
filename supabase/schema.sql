@@ -363,7 +363,7 @@ CREATE TABLE consultations (
     birth_place     VARCHAR(200),
     life_situation  TEXT,
     consultation_type VARCHAR(50),
-    mode            VARCHAR(20),
+    mode            VARCHAR(80),
     preferred_date  DATE,
     preferred_time  TIME,
     message         TEXT,

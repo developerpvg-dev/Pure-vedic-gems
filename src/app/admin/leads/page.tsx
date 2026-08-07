@@ -34,6 +34,7 @@ import {
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
 import { formatDob } from '@/lib/utils/format';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 type LeadKind = 'remedies' | 'consultation' | 'contact';
 
@@ -65,6 +66,7 @@ type ConsultationLead = {
   phone: string | null;
   status: string;
   amount_inr: number | null;
+  amount_paise?: number | null;
   currency: string;
   payment_status: string;
   plan_title_snapshot: string | null;
@@ -836,7 +838,7 @@ export default function LeadsPage() {
                 {expanded && !isEnquiry && (
                   <div className="border-t border-gray-100 p-4 text-sm text-gray-600">
                     <p className="font-medium text-gray-800">{lead.plan_title_snapshot || 'Consultation'}</p>
-                    <p className="mt-1">Payment: {lead.payment_status} · {lead.amount_inr != null ? `₹${lead.amount_inr}` : '—'}</p>
+                    <p className="mt-1">Payment: {lead.payment_status} · {lead.amount_inr != null ? formatChargedMoney(lead) : '—'}</p>
                     <label className="mt-3 block text-xs font-medium text-gray-500">
                       Status
                       <select

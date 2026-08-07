@@ -11,6 +11,7 @@ import {
   upsertPaymentEvent,
 } from '@/lib/orders/payment-finalization';
 import {
+  expectedCurrencyFor,
   expectedPaiseFor,
   failPaymentAttempt,
   findAttemptByRazorpayOrderId,
@@ -131,6 +132,7 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
   // Expected amount comes from the attempt, so a 20% advance verifies against
   // the 20%, not the order total.
   const expectedPaise = order ? expectedPaiseFor(order, attempt) : null;
+  const expectedCurrency = expectedCurrencyFor(attempt);
   const { event, alreadyProcessed } = await upsertPaymentEvent({
     eventId: webhookEventId(payload, eventType, razorpayPaymentId),
     eventType,
@@ -159,12 +161,13 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
   }
 
   const amountMatches =
+    expectedPaise != null &&
     facts.razorpayOrderAmountPaise === expectedPaise &&
     facts.razorpayPaymentAmountPaise === expectedPaise &&
-    facts.currency === 'INR';
+    facts.currency === expectedCurrency;
 
   if (!amountMatches) {
-    const reason = `Expected ${expectedPaise} paise INR, got order ${facts.razorpayOrderAmountPaise}, payment ${facts.razorpayPaymentAmountPaise}, currency ${facts.currency}.`;
+    const reason = `Expected ${expectedPaise} minor ${expectedCurrency}, got order ${facts.razorpayOrderAmountPaise}, payment ${facts.razorpayPaymentAmountPaise}, currency ${facts.currency}.`;
     await markOrderPaymentReview({
       order,
       eventId: event.id,
@@ -179,7 +182,12 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
 
   if (!facts.captured && facts.paymentStatus === 'authorized') {
     try {
-      facts = await captureAuthorizedRazorpayPayment(facts, razorpayPaymentId, expectedPaise, 'INR');
+      facts = await captureAuthorizedRazorpayPayment(
+        facts,
+        razorpayPaymentId,
+        expectedPaise!,
+        expectedCurrency,
+      );
     } catch (error) {
       console.error('[Webhook] Razorpay capture failed after authorization:', error);
       await markOrderPaymentAuthorized(order, {

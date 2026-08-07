@@ -5,6 +5,7 @@ import { BarChart3, CreditCard, Flame, IndianRupee, Loader2, Search, X } from 'l
 import { toast } from 'sonner';
 import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
 import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 interface YagyaBooking {
   id: string;
@@ -24,6 +25,7 @@ interface YagyaBooking {
   preferred_date: string | null;
   message: string | null;
   amount_inr: number | string | null;
+  amount_paise?: number | string | null;
   currency: string;
   payment_status: string;
   payment_method: string | null;
@@ -67,9 +69,12 @@ const PAYMENT_STYLE: Record<string, string> = {
   amount_mismatch: 'bg-purple-100 text-purple-700',
 };
 
-function formatPrice(value: number | string | null) {
-  if (value == null) return 'Rs 0';
-  return `Rs ${Number(value).toLocaleString('en-IN')}`;
+function formatBookingAmount(b: Pick<YagyaBooking, 'amount_inr' | 'amount_paise' | 'currency'>) {
+  return formatChargedMoney({
+    amount_inr: b.amount_inr == null ? null : Number(b.amount_inr),
+    amount_paise: b.amount_paise == null ? null : Number(b.amount_paise),
+    currency: b.currency,
+  });
 }
 
 function formatDate(value: string | null) {
@@ -241,7 +246,7 @@ export default function AdminYagyaBookingsPage() {
                     <p className="font-medium text-gray-800">{b.full_name}</p>
                     <p className="text-xs text-gray-400">{b.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{formatPrice(b.amount_inr)}</td>
+                  <td className="px-4 py-3 text-gray-700">{formatBookingAmount(b)}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${PAYMENT_STYLE[b.payment_status] ?? 'bg-gray-100 text-gray-600'}`}>
                       {b.payment_status}
@@ -346,7 +351,7 @@ function ManageDialog({
             <Detail label="Customer" value={booking.full_name} />
             <Detail label="Email" value={booking.email} />
             <Detail label="Phone" value={booking.phone || '-'} />
-            <Detail label="Amount" value={formatPrice(booking.amount_inr)} />
+            <Detail label="Amount" value={formatBookingAmount(booking)} />
             <Detail label="Sankalp Name" value={booking.sankalp_name || '-'} />
             <Detail label="Gotra" value={booking.gotra || '-'} />
             <Detail label="Rashi" value={booking.rashi || '-'} />

@@ -134,10 +134,11 @@ export async function POST(request: NextRequest) {
   }
 
   const expectedPaise = consultation.amount_paise ?? Math.round(Number(consultation.amount_inr ?? 0) * 100);
+  const expectedCurrency = String(consultation.currency || 'INR').toUpperCase();
   const amountMatches =
     facts.razorpayOrderAmountPaise === expectedPaise &&
     facts.razorpayPaymentAmountPaise === expectedPaise &&
-    facts.currency === consultation.currency;
+    facts.currency === expectedCurrency;
 
   if (!amountMatches) {
     await admin
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
           facts,
           parsed.data.razorpay_payment_id,
           expectedPaise,
-          consultation.currency
+          expectedCurrency
         );
       } catch (error) {
         console.error('[Consultation payment] Razorpay capture failed:', error);
@@ -251,6 +252,7 @@ export async function POST(request: NextRequest) {
       plan_title: updated.plan_title_snapshot ?? 'Vedic Consultation',
       plan_description: updated.plan_description_snapshot,
       amount_inr: updated.amount_inr,
+      amount_paise: updated.amount_paise,
       currency: updated.currency,
       razorpay_payment_id: updated.razorpay_payment_id,
       mode: updated.mode,

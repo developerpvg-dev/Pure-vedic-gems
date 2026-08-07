@@ -1,6 +1,7 @@
 import { sendBrandedEmail, sendBrandedEmailToAdmin } from '@/lib/resend/send-email';
 import { getEmailSiteUrl, VEDIC_DISCLAIMER } from '@/lib/resend/email-config';
 import { TransactionalEmail } from '@/lib/resend/templates/TransactionalEmail';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 export type YagyaBookingEmailInput = {
   id: string;
@@ -10,6 +11,7 @@ export type YagyaBookingEmailInput = {
   phone: string | null;
   yagyaTitle: string;
   amountInr: number | null;
+  amountPaise?: number | null;
   currency: string;
   razorpayPaymentId: string | null;
   preferredDate: string | null;
@@ -20,20 +22,20 @@ export type YagyaBookingEmailInput = {
   message: string | null;
 };
 
-function money(amount: number | null, currency: string) {
-  if (amount == null) return currency;
-  return `${currency} ${amount.toLocaleString('en-IN')}`;
-}
-
 export async function sendYagyaBookingEmails(input: YagyaBookingEmailInput): Promise<{ customer: boolean; admin: boolean }> {
   const accountUrl = `${getEmailSiteUrl()}/account/yagyas`;
   const adminUrl = `${getEmailSiteUrl()}/admin/yagya-bookings`;
+  const amountLabel = formatChargedMoney({
+    amount_inr: input.amountInr,
+    amount_paise: input.amountPaise,
+    currency: input.currency,
+  });
 
   const sharedDetails = [
     { label: 'Booking ID', value: input.id },
     { label: 'Booking number', value: input.bookingNumber },
     { label: 'Yagya', value: input.yagyaTitle },
-    { label: 'Amount paid', value: money(input.amountInr, input.currency) },
+    { label: 'Amount paid', value: amountLabel },
     { label: 'Payment ID', value: input.razorpayPaymentId },
     { label: 'Preferred date', value: input.preferredDate },
     { label: 'Sankalp name', value: input.sankalpName },

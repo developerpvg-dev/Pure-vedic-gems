@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { productHref } from '@/lib/categories/storefront';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 type SavedItemWithProduct = {
   id: string;
@@ -119,11 +120,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       ? admin.from('orders').select('id, order_number, status, total, created_at, customer_id').or(orderOr).order('created_at', { ascending: false }).limit(TIMELINE_LIMIT)
       : Promise.resolve({ data: [] as Array<{ id: string; order_number: string; status: string; total: number; created_at: string; customer_id: string | null }> }),
     consultationOr
-      ? admin.from('consultations').select('id, consultation_type, status, preferred_date, created_at, customer_id').or(consultationOr).order('created_at', { ascending: false }).limit(TIMELINE_LIMIT)
-      : Promise.resolve({ data: [] as Array<{ id: string; consultation_type: string | null; status: string; preferred_date: string | null; created_at: string; customer_id: string | null }> }),
+      ? admin.from('consultations').select('id, consultation_type, status, preferred_date, created_at, customer_id, amount_inr, amount_paise, currency').or(consultationOr).order('created_at', { ascending: false }).limit(TIMELINE_LIMIT)
+      : Promise.resolve({ data: [] as Array<{ id: string; consultation_type: string | null; status: string; preferred_date: string | null; created_at: string; customer_id: string | null; amount_inr: number | null; amount_paise: number | null; currency: string | null }> }),
     yagyaOr
-      ? admin.from('yagya_bookings').select('id, booking_number, yagya_title_snapshot, status, payment_status, amount_inr, created_at, customer_id').or(yagyaOr).order('created_at', { ascending: false }).limit(TIMELINE_LIMIT)
-      : Promise.resolve({ data: [] as Array<{ id: string; booking_number: string; yagya_title_snapshot: string; status: string; payment_status: string; amount_inr: number | null; created_at: string; customer_id: string | null }> }),
+      ? admin.from('yagya_bookings').select('id, booking_number, yagya_title_snapshot, status, payment_status, amount_inr, amount_paise, currency, created_at, customer_id').or(yagyaOr).order('created_at', { ascending: false }).limit(TIMELINE_LIMIT)
+      : Promise.resolve({ data: [] as Array<{ id: string; booking_number: string; yagya_title_snapshot: string; status: string; payment_status: string; amount_inr: number | null; amount_paise: number | null; currency: string | null; created_at: string; customer_id: string | null }> }),
     enquiryOr
       ? admin.from('enquiries').select('id, subject, source, status, created_at').or(enquiryOr).order('created_at', { ascending: false }).limit(TIMELINE_LIMIT)
       : Promise.resolve({ data: [] as Array<{ id: string; subject: string | null; source: string | null; status: string; created_at: string }> }),
@@ -163,9 +164,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       id: consultation.id,
       type: 'consultation' as const,
       title: consultation.consultation_type ?? 'Consultation booking',
-      subtitle: consultation.preferred_date
-        ? `Preferred date: ${consultation.preferred_date}${consultation.customer_id ? '' : ' · Pre-account booking'}`
-        : consultation.customer_id ? 'Consultation request' : 'Pre-account consultation request',
+      subtitle: [
+        formatChargedMoney(consultation),
+        consultation.preferred_date ? `Preferred: ${consultation.preferred_date}` : null,
+        consultation.customer_id ? null : 'Pre-account booking',
+      ]
+        .filter(Boolean)
+        .join(' · '),
       status: consultation.status,
       created_at: consultation.created_at,
       href: '/admin/leads',
@@ -174,7 +179,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       id: booking.id,
       type: 'yagya' as const,
       title: booking.yagya_title_snapshot,
-      subtitle: `${booking.booking_number} · ₹${Number(booking.amount_inr ?? 0).toLocaleString('en-IN')}${booking.customer_id ? '' : ' · Pre-account booking'}`,
+      subtitle: `${booking.booking_number} · ${formatChargedMoney(booking)}${booking.customer_id ? '' : ' · Pre-account booking'}`,
       status: booking.status ?? booking.payment_status,
       created_at: booking.created_at,
       href: '/admin/yagya-bookings',

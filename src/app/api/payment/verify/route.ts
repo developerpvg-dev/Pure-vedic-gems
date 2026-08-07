@@ -12,6 +12,7 @@ import {
   upsertPaymentEvent,
 } from '@/lib/orders/payment-finalization';
 import {
+  expectedCurrencyFor,
   expectedPaiseFor,
   failPaymentAttempt,
   findAttemptByRazorpayOrderId,
@@ -148,6 +149,7 @@ export async function POST(req: NextRequest) {
   }
 
   const expectedPaise = expectedPaiseFor(order, attemptRow);
+  const expectedCurrency = expectedCurrencyFor(attemptRow);
   const eventId = `client:${razorpay_payment_id}`;
   const { event, alreadyProcessed } = await upsertPaymentEvent({
     eventId,
@@ -202,10 +204,10 @@ export async function POST(req: NextRequest) {
   const amountMatches =
     facts.razorpayOrderAmountPaise === expectedPaise &&
     facts.razorpayPaymentAmountPaise === expectedPaise &&
-    facts.currency === 'INR';
+    facts.currency === expectedCurrency;
 
   if (!amountMatches) {
-    const reason = `Expected ${expectedPaise} paise INR, got order ${facts.razorpayOrderAmountPaise}, payment ${facts.razorpayPaymentAmountPaise}, currency ${facts.currency}.`;
+    const reason = `Expected ${expectedPaise} minor ${expectedCurrency}, got order ${facts.razorpayOrderAmountPaise}, payment ${facts.razorpayPaymentAmountPaise}, currency ${facts.currency}.`;
     await markOrderPaymentReview({
       order,
       eventId: event.id,
@@ -224,7 +226,12 @@ export async function POST(req: NextRequest) {
   if (!facts.captured) {
     if (facts.paymentStatus === 'authorized') {
       try {
-        facts = await captureAuthorizedRazorpayPayment(facts, razorpay_payment_id, expectedPaise, 'INR');
+        facts = await captureAuthorizedRazorpayPayment(
+          facts,
+          razorpay_payment_id,
+          expectedPaise,
+          expectedCurrency,
+        );
       } catch (error) {
         console.error('[Payment] Razorpay capture failed after authorization:', error);
         await markOrderPaymentAuthorized(order, {

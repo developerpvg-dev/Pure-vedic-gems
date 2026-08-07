@@ -101,10 +101,11 @@ export async function POST(request: NextRequest) {
   }
 
   const expectedPaise = booking.amount_paise ?? Math.round(Number(booking.amount_inr ?? 0) * 100);
+  const expectedCurrency = String(booking.currency || 'INR').toUpperCase();
   const amountMatches =
     facts.razorpayOrderAmountPaise === expectedPaise &&
     facts.razorpayPaymentAmountPaise === expectedPaise &&
-    facts.currency === booking.currency;
+    facts.currency === expectedCurrency;
 
   if (!amountMatches) {
     await admin
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
         facts,
         parsed.data.razorpay_payment_id,
         expectedPaise,
-        booking.currency
+        expectedCurrency
       );
     } catch (error) {
       console.error('[Yagya payment] Razorpay capture failed:', error);
@@ -214,6 +215,7 @@ export async function POST(request: NextRequest) {
     phone: updated.phone,
     yagyaTitle: updated.yagya_title_snapshot,
     amountInr: updated.amount_inr,
+    amountPaise: updated.amount_paise,
     currency: updated.currency,
     razorpayPaymentId: updated.razorpay_payment_id,
     preferredDate: updated.preferred_date,

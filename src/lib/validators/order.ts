@@ -182,6 +182,13 @@ export const PaymentCreateOrderSchema = z.object({
   order_id: z.string().uuid('Invalid order ID'),
   /** Advance payment (20-100% of total). Omit to charge the full amount due. */
   pay_amount: z.coerce.number().positive().max(100_000_000).optional(),
+  /** Storefront display currency for the Razorpay charge (ledger stays INR). */
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/)
+    .optional(),
 });
 
 // ─── Type exports ───────────────────────────────────────────────────────────

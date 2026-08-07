@@ -5,6 +5,7 @@ import { CalendarClock, ChevronRight, CreditCard, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
+import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { Consultation } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -34,11 +35,6 @@ const PAYMENT_MAP: Record<string, { label: string; className: string }> = {
 function Badge({ value, map }: { value: string; map: typeof STATUS_MAP }) {
   const item = map[value] ?? { label: value.replace(/_/g, ' '), className: 'bg-gray-100 text-gray-600' };
   return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${item.className}`}>{item.label}</span>;
-}
-
-function formatPrice(value: number | null) {
-  if (value == null) return 'Rs 0';
-  return `Rs ${value.toLocaleString('en-IN')}`;
 }
 
 function formatDate(value: string | null) {
@@ -141,7 +137,7 @@ export default async function AccountConsultationsPage() {
                 </div>
 
                 <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                  <Info label="Amount" value={formatPrice(consultation.amount_inr)} icon={<CreditCard className="h-4 w-4" />} />
+                  <Info label="Amount" value={formatChargedMoney(consultation)} icon={<CreditCard className="h-4 w-4" />} />
                   <Info label="Type" value={formatLabel(consultation.consultation_type)} />
                   <Info label="Mode" value={bookingMode(consultation)} />
                   <Info label="Completed" value={formatDate(consultation.completed_at)} />

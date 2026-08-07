@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getRazorpayClient } from '@/lib/razorpay/client';
+import {
+  convertInrToGatewayCharge,
+  normalizeChargeCurrency,
+} from '@/lib/razorpay/charge-currency';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { consultationBookingCreateOrderSchema } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
@@ -63,6 +67,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid submission' }, { status: 400 });
   }
 
+  const currency = normalizeChargeCurrency(parsed.data.currency);
   const admin = createAdminClient();
 
   // Handle special "Gem Recommendation Rs 101" (no DB plan required)
@@ -98,8 +103,22 @@ export async function POST(request: NextRequest) {
   }
 
   const amountInr = Number(plan.amount_inr);
-  const amountInPaise = Math.round(amountInr * 100);
-  if (!Number.isFinite(amountInPaise) || amountInPaise < 100) {
+  if (!Number.isFinite(amountInr) || amountInr <= 0) {
+    return NextResponse.json({ error: 'Plan amount is not eligible for payment' }, { status: 400 });
+  }
+
+  let gateway;
+  try {
+    gateway = await convertInrToGatewayCharge(amountInr, currency);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Currency conversion failed' },
+      { status: 400 }
+    );
+  }
+
+  const amountMinor = gateway.minor;
+  if (amountMinor < 100) {
     return NextResponse.json({ error: 'Plan amount is not eligible for payment' }, { status: 400 });
   }
 
@@ -131,8 +150,9 @@ export async function POST(request: NextRequest) {
       preferred_time: parsed.data.preferred_time || null,
       message: parsed.data.message || null,
       amount_inr: amountInr,
-      amount_paise: amountInPaise,
-      currency: 'INR',
+      // Gateway minor units in `currency` (verify compares against this).
+      amount_paise: amountMinor,
+      currency: gateway.currency,
       payment_status: 'pending',
       status: 'pending_payment',
     })
@@ -161,8 +181,8 @@ export async function POST(request: NextRequest) {
   try {
     const razorpay = getRazorpayClient();
     razorpayOrder = await razorpay.orders.create({
-      amount: amountInPaise,
-      currency: 'INR',
+      amount: amountMinor,
+      currency: gateway.currency,
       receipt: `consult_${booking.id.slice(0, 24)}`,
       payment: {
         capture: 'automatic',
@@ -176,6 +196,9 @@ export async function POST(request: NextRequest) {
         consultation_id: booking.id,
         plan_id: plan.id,
         customer_id: user?.id ?? 'guest',
+        ledger_inr: String(amountInr),
+        charge_currency: gateway.currency,
+        fx_rate: String(gateway.rate),
       },
     }) as RazorpayOrderResult;
   } catch (error) {
@@ -184,7 +207,15 @@ export async function POST(request: NextRequest) {
       .from('consultations')
       .update({ payment_status: 'failed', payment_failure_reason: 'Razorpay order creation failed' })
       .eq('id', booking.id);
-    return NextResponse.json({ error: 'Payment gateway error. Please try again.' }, { status: 502 });
+    const msg = error instanceof Error ? error.message : String(error);
+    const currencyHint =
+      gateway.currency !== 'INR' && /currency|international/i.test(msg)
+        ? ` Razorpay may not have multi-currency enabled for ${gateway.currency}.`
+        : '';
+    return NextResponse.json(
+      { error: `Payment gateway error.${currencyHint} Please try again or switch to INR.` },
+      { status: 502 }
+    );
   }
 
   await admin
@@ -237,8 +268,8 @@ export async function POST(request: NextRequest) {
     consultation_id: booking.id,
     enquiry_id: enquiryId,
     razorpay_order_id: razorpayOrder.id,
-    amount: amountInPaise,
-    currency: 'INR',
+    amount: amountMinor,
+    currency: gateway.currency,
     key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID,
     plan_title: planTitle,
     customer: {
