@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PaymentCreateOrderSchema } from '@/lib/validators/order';
 import { getRazorpayClient } from '@/lib/razorpay/client';
 import {
-  convertInrToGatewayCharge,
   encodeGatewayReference,
   normalizeChargeCurrency,
   parseGatewayReference,
 } from '@/lib/razorpay/charge-currency';
+import { convertInrToGatewayCharge } from '@/lib/razorpay/convert-inr-charge';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { rateLimit } from '@/lib/utils/rate-limit';

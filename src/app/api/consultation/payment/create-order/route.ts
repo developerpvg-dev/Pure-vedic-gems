@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getRazorpayClient } from '@/lib/razorpay/client';
-import {
-  convertInrToGatewayCharge,
-  normalizeChargeCurrency,
-} from '@/lib/razorpay/charge-currency';
+import { normalizeChargeCurrency } from '@/lib/razorpay/charge-currency';
+import { convertInrToGatewayCharge } from '@/lib/razorpay/convert-inr-charge';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { consultationBookingCreateOrderSchema } from '@/lib/validators/consultation';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
