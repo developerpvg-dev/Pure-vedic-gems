@@ -92,10 +92,9 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    // Single quality → one transform per width (avoids ×4 billing variants).
-    qualities: [75],
-    minimumCacheTTL: 86400, // 1 day for Next.js optimized images
-    formats: ['image/webp'],
+    // ponytail: skip Vercel Image Optimization bill; serve Supabase/Sanity URLs as-is.
+    // Re-enable (remove unoptimized) or add a CDN loader if LCP from images gets bad.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
