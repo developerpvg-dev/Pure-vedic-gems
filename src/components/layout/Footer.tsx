@@ -59,6 +59,10 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
       { label: 'Energized Gems', href: '/knowledge/energized-gems' },
       { label: 'Gems Care', href: '/knowledge/gems-care' },
       { label: 'Blog', href: '/blog' },
+      {
+        label: 'Nava Durga, Gems & Rudraksha',
+        href: '/unveiling-the-mystical-connection-between-gemstones-rudrakshas-and-the-nine-forms-of-goddess-durga',
+      },
       { label: 'Account', href: '/account' },
     ],
   },

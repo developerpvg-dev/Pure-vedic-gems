@@ -46,6 +46,11 @@ export async function sendProductVideoReviewEmail(input: {
       paragraphs: [
         `Your Pure Vedic Gems order ${input.orderNumber}${roundNote} has product media ready. Please review it and tell us if you are satisfied with the design.`,
         'Approve if everything looks good, or request changes and share a short note about what to adjust.',
+        ...(images.length
+          ? [
+              'Please download or save any product images you need — shared product images are deleted after 7 days.',
+            ]
+          : []),
       ],
       highlight: { label: 'Order number', value: input.orderNumber },
       details: [
@@ -61,8 +66,9 @@ export async function sendProductVideoReviewEmail(input: {
       ],
       cta: { label: 'Approve design', href: approveUrl },
       secondaryCta: { label: 'Request changes', href: changesUrl },
-      footerNote:
-        'These review links expire after 30 days. If you did not expect this email, you can ignore it.',
+      footerNote: images.length
+        ? 'Product images are deleted after 7 days. Review links expire after 30 days. If you did not expect this email, you can ignore it.'
+        : 'These review links expire after 30 days. If you did not expect this email, you can ignore it.',
     }),
   });
 }

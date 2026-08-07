@@ -571,9 +571,8 @@ export async function logCartEvent({
   quantity?: number | null;
   value?: number | null;
   metadata?: Record<string, unknown>;
-  // Internal callers (server-verified cart mutations) may raise admin/sales
-  // alerts. Untrusted public callers must pass false so they cannot spoof
-  // notifications or high-value alerts with a client-controlled value.
+  // Internal callers may create in-app notifications. Untrusted public
+  // callers must pass false so they cannot spoof alerts with a client value.
   allowNotifications?: boolean;
 }) {
   if (!customerId && !guestSessionId) return;
@@ -595,44 +594,7 @@ export async function logCartEvent({
 
   if (!allowNotifications) return;
 
-  if ((value ?? 0) >= HIGH_VALUE_CART_THRESHOLD) {
-    const adminRecipient = process.env.SALES_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || 'admin';
-    void import('@/lib/resend/send-admin-alert').then(({ sendAdminOperationalAlertEmail }) =>
-      sendAdminOperationalAlertEmail({
-        subject: 'High-value cart activity',
-        preview: 'A high-value cart event was recorded',
-        heading: 'High-Value Cart Activity',
-        paragraphs: ['A cart event crossed the high-value threshold and may need sales follow-up.'],
-        details: [
-          { label: 'Event', value: eventType },
-          { label: 'Cart value (INR)', value: value ?? null },
-          { label: 'Customer ID', value: customerId ?? null },
-          { label: 'Guest session', value: guestSessionId ?? null },
-          { label: 'Cart ID', value: cartId ?? null },
-        ],
-        cta: customerId ? { label: 'Open customers', href: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com'}/admin/customers` } : undefined,
-      }).then((messageId) =>
-        createAdminClient()
-          .from('notification_log')
-          .insert({
-            type: 'cart_high_value',
-            recipient: adminRecipient,
-            template: 'high_value_cart_activity',
-            context: {
-              customer_id: customerId ?? null,
-              guest_session_id: guestSessionId ?? null,
-              cart_id: cartId ?? null,
-              event_type: eventType,
-              value,
-              resend_message_id: messageId,
-            },
-            status: messageId ? 'sent' : adminRecipient === 'admin' ? 'skipped' : 'failed',
-          })
-          .then(null, () => undefined)
-      )
-    );
-  }
-
+  // ponytail: no admin email on high-value cart — in-app admin notify is enough
   if (eventType === 'cart_item_added' && metadata.notify !== false) {
     const { data: product } = productId
       ? await supabase.from('products').select('name').eq('id', productId).single()

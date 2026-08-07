@@ -72,7 +72,7 @@ export const LIFECYCLE_SECTIONS: Record<
   },
   inventory: {
     title: 'Inventory',
-    hint: 'Mark sold after billing; cancel restores stock.',
+    hint: 'Mark sold after billing; restore individual items or cancel the whole order.',
     tone: 'bg-stone-50',
     border: 'border-stone-200',
     header: 'text-stone-800',

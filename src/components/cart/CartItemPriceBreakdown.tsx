@@ -20,18 +20,14 @@ export function CartItemPriceBreakdown({
 }: {
   item: CartItem;
   defaultOpen?: boolean;
-  /** Override the default GST / shipping footnote */
+  /** Optional footnote under the breakdown */
   gstNote?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const breakdown = useMemo(() => buildCartItemPriceBreakdown(item), [item]);
   const itemTotal = (breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity;
 
-  const footnote =
-    gstNote ??
-    (breakdown.estimatedGst > 0
-      ? 'Jewellery prices include 3% GST. Gemstones / Rudraksha are GST-free. Final totals are confirmed at checkout.'
-      : 'Shipping is calculated at checkout. Loose stones and Rudraksha are GST-free.');
+  const footnote = gstNote ?? 'Shipping is calculated at checkout.';
 
   return (
     <div className="mt-2 rounded-lg border border-[var(--pvg-border)]/80 bg-brand-bg-alt/60">
@@ -71,14 +67,7 @@ export function CartItemPriceBreakdown({
           ))}
 
           <div className="flex items-center justify-between gap-3 border-t border-[var(--pvg-border)]/70 pt-2 text-[12px] font-semibold text-[var(--pvg-primary)]">
-            <span>
-              Item total
-              {breakdown.estimatedGst > 0 ? (
-                <span className="block text-[10px] font-normal text-[var(--pvg-muted)]">
-                  incl. GST on jewellery
-                </span>
-              ) : null}
-            </span>
+            <span>Item total</span>
             <span className="tabular-nums">{formatPrice(itemTotal)}</span>
           </div>
 

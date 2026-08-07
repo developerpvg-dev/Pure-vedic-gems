@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { hasAdminPermission } from '@/lib/admin/rbac';
+import { storageObjectFromPublicUrl } from '@/lib/supabase/storage-public-url';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
@@ -21,8 +23,20 @@ async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
   }
 }
 
+async function requireUploadAccess() {
+  const auth = await requireAdminAccess();
+  if ('error' in auth) return auth;
+  const ok =
+    hasAdminPermission(auth.member.role, 'products.write', auth.member.permissions) ||
+    hasAdminPermission(auth.member.role, 'orders.write', auth.member.permissions);
+  if (!ok) {
+    return { error: NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }) };
+  }
+  return auth;
+}
+
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminAccess('products.write');
+  const auth = await requireUploadAccess();
   if ('error' in auth) return auth.error;
 
   const formData = await request.formData();
@@ -82,4 +96,44 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ urls, errors }, { status: urls.length > 0 ? 200 : 400 });
+}
+
+/**
+ * DELETE /api/admin/upload
+ * Body: { url } | { urls: string[] }
+ * Removes objects from products / custom-uploads when URL is ours; external URLs are ignored.
+ */
+export async function DELETE(request: NextRequest) {
+  const auth = await requireUploadAccess();
+  if ('error' in auth) return auth.error;
+
+  const body = await request.json().catch(() => null);
+  const raw = Array.isArray(body?.urls)
+    ? body.urls
+    : typeof body?.url === 'string'
+      ? [body.url]
+      : [];
+  const urls = raw.filter((u: unknown): u is string => typeof u === 'string' && u.trim().length > 0);
+  if (!urls.length) {
+    return NextResponse.json({ error: 'url or urls required' }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const removed: string[] = [];
+  const skipped: string[] = [];
+
+  for (const url of urls) {
+    const obj = storageObjectFromPublicUrl(url);
+    if (!obj) {
+      skipped.push(url);
+      continue;
+    }
+    const { error } = await admin.storage.from(obj.bucket).remove([obj.path]);
+    if (error) {
+      return NextResponse.json({ error: error.message, removed, skipped }, { status: 500 });
+    }
+    removed.push(url);
+  }
+
+  return NextResponse.json({ removed, skipped });
 }

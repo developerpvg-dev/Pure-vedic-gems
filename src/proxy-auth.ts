@@ -8,6 +8,7 @@ import {
   normalizeAdminRole,
 } from '@/lib/admin/rbac';
 import { getScopedRoleDashboard, isScopedRolePathAllowed } from '@/lib/admin/role-dashboards';
+import { hasValidAdminMfaCookie } from '@/lib/admin/mfa';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 
 const PROTECTED_CUSTOMER_ROUTES = ['/account'];
@@ -123,6 +124,13 @@ export async function handleAuthProxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/account', request.url));
     }
 
+    // Email OTP second factor — session alone is not enough for /admin
+    if (!hasValidAdminMfaCookie(request, user.id)) {
+      const challenge = new URL('/api/auth/admin-mfa/challenge', request.url);
+      challenge.searchParams.set('next', pathname);
+      return NextResponse.redirect(challenge);
+    }
+
     const normalizedRole = normalizeAdminRole(teamMember.role);
     if (normalizedRole === 'seo_cms') {
       return NextResponse.redirect(new URL('/studio', request.url));
@@ -191,6 +199,12 @@ export async function handleAuthProxy(request: NextRequest) {
     const teamMember = await getTeamMember(user.id);
     if (!teamMember?.is_active || !canAccessStudio(teamMember.role)) {
       return NextResponse.redirect(new URL('/account', request.url));
+    }
+
+    if (!hasValidAdminMfaCookie(request, user.id)) {
+      const challenge = new URL('/api/auth/admin-mfa/challenge', request.url);
+      challenge.searchParams.set('next', pathname);
+      return NextResponse.redirect(challenge);
     }
   }
 

@@ -41,7 +41,9 @@ import {
   type LifecycleSectionId,
 } from '@/lib/orders/order-lifecycle';
 import { AdminOrderTimeline } from '@/components/admin/AdminOrderTimeline';
+import { MediaUploader, type MediaFile } from '@/components/admin/MediaUploader';
 import type { TrackingEventRow } from '@/lib/orders/admin-timeline';
+import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 
 const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
 const CARRIER_ORDER_STATUSES = new Set(['shipped', 'out_for_delivery', 'delivered', 'feedback']);
@@ -58,6 +60,25 @@ function linesToUrls(text: string): string[] {
     .split('\n')
     .map((url) => url.trim())
     .filter(Boolean);
+}
+
+function urlsToImageFiles(urls: string[]): MediaFile[] {
+  return urls.map((url) => ({
+    url,
+    name: url.split('/').pop()?.split('?')[0] || 'image',
+    type: 'image' as const,
+    preview: url,
+  }));
+}
+
+/** Client twin of collectLineProductIds — do not import order-availability (server-only). */
+function lineProductIds(item: LineItemForFulfillment): string[] {
+  const ids = new Set<string>();
+  if (item.product_id) ids.add(item.product_id);
+  for (const beadId of getRudrakshaProductIdsFromSnapshot(item.configuration_snapshot)) {
+    ids.add(beadId);
+  }
+  return Array.from(ids);
 }
 
 const field =
@@ -215,12 +236,12 @@ export function OrderActions({
     if (fromFlags.length) return fromFlags.join('\n');
     return currentProductVideoUrl ?? '';
   });
-  const [productImageUrls, setProductImageUrls] = useState(() =>
-    flagUrlList(complianceFlags, 'product_image_urls').join('\n'),
+  const [productImageFiles, setProductImageFiles] = useState<MediaFile[]>(() =>
+    urlsToImageFiles(flagUrlList(complianceFlags, 'product_image_urls')),
   );
   const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
-  const [energizationImageUrls, setEnergizationImageUrls] = useState(() =>
-    flagUrlList(complianceFlags, 'energization_image_urls').join('\n'),
+  const [energizationImageFiles, setEnergizationImageFiles] = useState<MediaFile[]>(() =>
+    urlsToImageFiles(flagUrlList(complianceFlags, 'energization_image_urls')),
   );
   const [ringSizeAdminRemarks, setRingSizeAdminRemarks] = useState('');
   const [designCompletedAt, setDesignCompletedAt] = useState(currentDesignCompletedAt ?? '');
@@ -267,6 +288,7 @@ export function OrderActions({
   const [openRefund, setOpenRefund] = useState(currentStatus === 'cancelled');
   const [openCommission, setOpenCommission] = useState(false);
   const [openTimeline, setOpenTimeline] = useState(true);
+  const [restoredLineKeys, setRestoredLineKeys] = useState<string[]>([]);
   const [podDetails, setPodDetails] = useState(
     () => parseProofOfDelivery(complianceFlags)?.details ?? '',
   );
@@ -342,6 +364,8 @@ export function OrderActions({
       setSaving(true);
       setError('');
       setSuccess('');
+      const prevProductImages = flagUrlList(flagsState, 'product_image_urls');
+      const prevEnergizationImages = flagUrlList(flagsState, 'energization_image_urls');
       try {
         const res = await fetch(`/api/admin/orders/${orderId}`, {
           method: 'PUT',
@@ -359,6 +383,28 @@ export function OrderActions({
         }
         if (data.order?.compliance_flags) setFlagsState(data.order.compliance_flags);
         if (updates.notify_ring_size) setRingSizeAdminRemarks('');
+
+        // ponytail: delete storage after save succeeds so draft remove + cancel never orphans URLs
+        const nextProduct =
+          Array.isArray(updates.product_image_urls)
+            ? (updates.product_image_urls as string[])
+            : prevProductImages;
+        const nextEnergization =
+          Array.isArray(updates.energization_image_urls)
+            ? (updates.energization_image_urls as string[])
+            : prevEnergizationImages;
+        const removed = [
+          ...prevProductImages.filter((url) => !nextProduct.includes(url)),
+          ...prevEnergizationImages.filter((url) => !nextEnergization.includes(url)),
+        ];
+        if (removed.length) {
+          await fetch('/api/admin/upload', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls: removed }),
+          }).catch(() => null);
+        }
+
         setSuccess(
           updates.notify_product_video
             ? 'Saved — customer emailed product media / design review'
@@ -366,7 +412,9 @@ export function OrderActions({
               ? 'Saved — customer emailed puja / energization media'
               : updates.notify_ring_size
                 ? 'Saved — customer emailed to re-upload ring diameter photo'
-                : 'Saved',
+                : updates.delete_ring_size_image_url
+                  ? 'Ring size photo deleted'
+                  : 'Saved',
         );
         setTimeout(() => setSuccess(''), 3000);
       } catch {
@@ -375,7 +423,7 @@ export function OrderActions({
         setSaving(false);
       }
     },
-    [orderId],
+    [orderId, flagsState],
   );
 
   const runOrderAction = useCallback(
@@ -393,7 +441,7 @@ export function OrderActions({
         const data = await res.json();
         if (!res.ok) {
           setError(data.error || 'Action failed');
-          return;
+          return false;
         }
         if (data.status) setStatus(data.status);
         if (data.return_status) {
@@ -413,6 +461,9 @@ export function OrderActions({
           body instanceof FormData
             ? String(body.get('action') || '')
             : String((body as { action?: string }).action || '');
+        if (actionName === 'restore_stock' && Array.isArray(data.restored_ids)) {
+          setRestoredLineKeys((prev) => [...new Set([...prev, ...(data.restored_ids as string[])])]);
+        }
         setSuccess(
           data.status === 'cancelled'
             ? 'Order cancelled — stock restored'
@@ -428,11 +479,17 @@ export function OrderActions({
                     ? 'Delivery proof sent to customer'
                     : actionName === 'save_delivery_proof'
                       ? 'Delivery proof saved'
-                      : 'Marked sold',
+                      : actionName === 'restore_stock'
+                        ? data.restored_count
+                          ? `Restored ${data.restored_count} item(s) to stock`
+                          : 'Nothing to restore (already in stock or not tied to this order)'
+                        : 'Marked sold',
         );
         setTimeout(() => setSuccess(''), 4000);
+        return true;
       } catch {
         setError('Network error');
+        return false;
       } finally {
         setSaving(false);
       }
@@ -449,6 +506,24 @@ export function OrderActions({
   const markSoldAfterBilling = () => {
     if (!confirm('Mark all items as Sold on the website?')) return;
     void runOrderAction({ action: 'mark_sold' });
+  };
+
+  const restoreLineStock = (item: LineItemForFulfillment, lineKey: string) => {
+    const productIds = lineProductIds(item);
+    if (!productIds.length) {
+      setError('This line has no product to restore');
+      return;
+    }
+    const label = item.name || item.tag_number || item.sku || 'this item';
+    if (!confirm(`Restore "${label}" to stock? Other items on this order stay as they are.`)) return;
+    void runOrderAction({ action: 'restore_stock', product_ids: productIds }).then((ok) => {
+      if (ok) setRestoredLineKeys((prev) => (prev.includes(lineKey) ? prev : [...prev, lineKey]));
+    });
+  };
+
+  const restoreAllStock = () => {
+    if (!confirm('Restore ALL items on this order to stock? Order status will not change.')) return;
+    void runOrderAction({ action: 'restore_stock', product_ids: [] });
   };
 
   const cancelOrder = () => {
@@ -594,12 +669,13 @@ export function OrderActions({
   };
 
   const productVideoUrlList = linesToUrls(productVideoUrls);
-  const energizationImageUrlList = linesToUrls(energizationImageUrls);
+  const productImageUrlList = productImageFiles.map((f) => f.url);
+  const energizationImageUrlList = energizationImageFiles.map((f) => f.url);
   const saveMediaPayload = {
     // ponytail: first URL kept on column for review-notify / legacy readers
     product_video_url: productVideoUrlList[0] ?? null,
     product_video_urls: productVideoUrlList,
-    product_image_urls: linesToUrls(productImageUrls),
+    product_image_urls: productImageUrlList,
     puja_video_url: pujaVideoUrl || null,
     energization_image_urls: energizationImageUrlList,
   };
@@ -790,19 +866,35 @@ export function OrderActions({
             </p>
           ) : null}
           {ringSizeConfirmation.image_url ? (
-            <a
-              href={ringSizeConfirmation.image_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 block overflow-hidden rounded-xl border border-stone-200 bg-white"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={ringSizeConfirmation.image_url}
-                alt="Customer ring diameter measurement"
-                className="max-h-56 w-full object-contain"
-              />
-            </a>
+            <div className="mt-3 space-y-2">
+              <a
+                href={ringSizeConfirmation.image_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block overflow-hidden rounded-xl border border-stone-200 bg-white"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={ringSizeConfirmation.image_url}
+                  alt="Customer ring diameter measurement"
+                  className="max-h-56 w-full object-contain"
+                />
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!confirm('Delete this ring size photo?')) return;
+                  void handleSave({
+                    delete_ring_size_image_url: ringSizeConfirmation.image_url,
+                  });
+                }}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete photo
+              </button>
+            </div>
           ) : (
             <p className="mt-1 text-xs text-stone-600">
               {ringSizeConfirmation.history.length > 0
@@ -813,12 +905,13 @@ export function OrderActions({
           {ringSizeConfirmation.history.length > 0 ? (
             <ul className="mt-2 space-y-1 border-t border-black/5 pt-2 text-xs opacity-80">
               {ringSizeConfirmation.history.map((past) => (
-                <li key={`rsc-${past.round}`}>
-                  Round {past.round}: {RING_SIZE_CONFIRM_STATUS_LABELS[past.status]}
-                  {past.admin_remarks ? ` — ${past.admin_remarks}` : ''}
+                <li key={`rsc-${past.round}`} className="flex flex-wrap items-center gap-2">
+                  <span>
+                    Round {past.round}: {RING_SIZE_CONFIRM_STATUS_LABELS[past.status]}
+                    {past.admin_remarks ? ` — ${past.admin_remarks}` : ''}
+                  </span>
                   {past.image_url ? (
                     <>
-                      {' · '}
                       <a
                         href={past.image_url}
                         target="_blank"
@@ -827,6 +920,18 @@ export function OrderActions({
                       >
                         view photo
                       </a>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!confirm(`Delete round ${past.round} photo?`)) return;
+                          void handleSave({ delete_ring_size_image_url: past.image_url });
+                        }}
+                        disabled={saving}
+                        className="inline-flex items-center gap-1 text-rose-700 underline disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        delete
+                      </button>
                     </>
                   ) : null}
                 </li>
@@ -962,14 +1067,17 @@ export function OrderActions({
                 />
               </div>
               <div>
-                <label className={labelCls}>Product image URLs</label>
-                <textarea
-                  value={productImageUrls}
-                  onChange={(e) => setProductImageUrls(e.target.value)}
-                  rows={3}
-                  placeholder="One image URL per line"
-                  className={field}
+                <label className={labelCls}>Product images</label>
+                <MediaUploader
+                  mode="images"
+                  maxFiles={8}
+                  folder={`order-media/${orderId}/product`}
+                  value={productImageFiles}
+                  onChange={setProductImageFiles}
                 />
+                <p className="mt-1 text-[11px] text-stone-400">
+                  Upload or paste URLs. Click Save media after removing images. Notify emails warn images are deleted after 7 days.
+                </p>
               </div>
             </>
           ) : null}
@@ -1022,14 +1130,17 @@ export function OrderActions({
           ) : null}
           {fulfillmentContext.showEnergization ? (
             <div>
-              <label className={labelCls}>Energization picture URLs</label>
-              <textarea
-                value={energizationImageUrls}
-                onChange={(e) => setEnergizationImageUrls(e.target.value)}
-                rows={3}
-                placeholder="One image URL per line"
-                className={field}
+              <label className={labelCls}>Energization pictures</label>
+              <MediaUploader
+                mode="images"
+                maxFiles={8}
+                folder={`order-media/${orderId}/energization`}
+                value={energizationImageFiles}
+                onChange={setEnergizationImageFiles}
               />
+              <p className="mt-1 text-[11px] text-stone-400">
+                Upload or paste URLs. Click Save media after removing images. Notify emails warn images are deleted after 7 days.
+              </p>
             </div>
           ) : null}
           <button
@@ -1350,6 +1461,65 @@ export function OrderActions({
             </button>
           </>
         )}
+
+        {orderItems.some((item) => lineProductIds(item).length > 0) ? (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">
+              Restore returned item(s)
+            </p>
+            <p className="text-xs text-stone-500">
+              When a customer returns one product from a multi-item order, restore only that line.
+            </p>
+            <ul className="space-y-2">
+              {orderItems.map((item, index) => {
+                const ids = lineProductIds(item);
+                if (!ids.length) return null;
+                const lineKey = `${ids.join(',')}:${index}`;
+                const done =
+                  restoredLineKeys.includes(lineKey) ||
+                  ids.every((id) => restoredLineKeys.includes(id));
+                const label = item.name || item.tag_number || item.sku || `Item ${index + 1}`;
+                const meta = [item.tag_number, item.sku].filter(Boolean).join(' · ');
+                return (
+                  <li
+                    key={lineKey}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-100 bg-white px-3 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-stone-900">{label}</p>
+                      {meta ? <p className="truncate text-[11px] text-stone-400">{meta}</p> : null}
+                    </div>
+                    {done ? (
+                      <span className="shrink-0 text-xs font-semibold text-emerald-700">Restored</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => restoreLineStock(item, lineKey)}
+                        disabled={saving || status === 'pending_payment'}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-800 transition hover:bg-stone-50 disabled:opacity-50"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Restore stock
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            {orderItems.filter((item) => lineProductIds(item).length > 0).length > 1 ? (
+              <button
+                type="button"
+                onClick={restoreAllStock}
+                disabled={saving || status === 'pending_payment'}
+                className={btnGhost}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Restore all items to stock
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         {!isTerminal ? (
           <button type="button" onClick={cancelOrder} disabled={saving} className={btnGhost}>
             <Ban className="h-4 w-4 text-red-600" />

@@ -99,6 +99,11 @@ const actionSchema = z.discriminatedUnion('action', [
     method: z.enum(['manual', 'bank_transfer', 'upi', 'razorpay', 'other']).default('manual'),
     restore_stock: z.boolean().default(true),
   }),
+  z.object({
+    action: z.literal('restore_stock'),
+    /** Empty / omitted = restore every product on the order. */
+    product_ids: z.array(z.string().uuid()).max(50).default([]),
+  }),
 ]);
 
 const ALLOWED_PROOF_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -144,7 +149,7 @@ async function uploadProofFiles(orderId: string, files: File[], folder: 'refunds
 
 /**
  * POST /api/admin/orders/[id]/actions
- * mark_sold | cancel | record_refund (manual refund with proofs)
+ * mark_sold | cancel | restore_stock | record_refund | update_return | …
  */
 export async function POST(
   request: NextRequest,
@@ -252,12 +257,40 @@ export async function POST(
   if (
     ['cancelled', 'refunded'].includes(orderRow.status) &&
     parsed.data.action !== 'record_refund' &&
-    parsed.data.action !== 'update_return'
+    parsed.data.action !== 'update_return' &&
+    parsed.data.action !== 'restore_stock'
   ) {
     return NextResponse.json({ error: `Order is already ${orderRow.status}` }, { status: 400 });
   }
 
   try {
+    if (parsed.data.action === 'restore_stock') {
+      const productIds = parsed.data.product_ids;
+      const restored = await releaseProductsForOrder(
+        orderRow,
+        productIds.length ? productIds : undefined,
+      );
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: 'order_restore_stock',
+        resourceType: 'order',
+        resourceId: id,
+        details: {
+          order_number: orderRow.order_number,
+          product_ids: productIds.length ? productIds : 'all',
+          restored_ids: restored,
+        },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({
+        success: true,
+        restored_ids: restored,
+        restored_count: restored.length,
+      });
+    }
+
     if (parsed.data.action === 'mark_sold') {
       if (orderRow.products_marked_sold_at) {
         return NextResponse.json({ error: 'Products already marked sold for this order' }, { status: 400 });

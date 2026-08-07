@@ -12,7 +12,9 @@ import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 import { TrustCardsSection } from '@/components/home/TrustCardsSection';
 import { CredentialsMarqueeBanner } from '@/components/home/CredentialsMarqueeBanner';
+import { CertBisMarquee } from '@/components/home/CertBisMarquee';
 import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
+import { HeritageLegacyMedia } from '@/components/home/HeritageLegacyMedia';
 
 const WHO_WE_ARE_IMG_VERSION = '20260614';
 
@@ -136,11 +138,12 @@ const KHUB_GRADIENTS = [
 ] as const;
 
 function KhubBlogCard({ post, gradient }: { post: SanityBlogPost; gradient: string }) {
+  // ponytail: width-only so Sanity CDN does not crop title text at the image edge
   const imgUrl =
     post.mainImage && isSanityConfigured
       ? (() => {
           try {
-            return urlFor(post.mainImage).width(480).height(240).quality(80).auto('format').url();
+            return urlFor(post.mainImage).width(720).quality(80).auto('format').url();
           } catch {
             return null;
           }
@@ -149,9 +152,15 @@ function KhubBlogCard({ post, gradient }: { post: SanityBlogPost; gradient: stri
 
   return (
     <article className="khub-article">
-      <div className="khub-article-img" style={imgUrl ? { backgroundImage: `url(${imgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: gradient }}>
-        {!imgUrl && <div className="khub-article-cat">{post.category?.title ?? 'Article'}</div>}
-        {imgUrl && <div className="khub-article-cat">{post.category?.title ?? 'Article'}</div>}
+      <div
+        className={`khub-article-img${imgUrl ? ' has-photo' : ''}`}
+        style={imgUrl ? undefined : { background: gradient }}
+      >
+        {imgUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imgUrl} alt="" className="khub-article-photo" loading="lazy" decoding="async" />
+        ) : null}
+        <div className="khub-article-cat">{post.category?.title ?? 'Article'}</div>
       </div>
       <div className="khub-article-body">
         <div className="khub-article-title">{post.title}</div>
@@ -344,6 +353,8 @@ export function PvgReferenceSections({
         </div>
 
       </div>
+
+      <CertBisMarquee />
     </div>
   </section>
 
@@ -977,48 +988,30 @@ export function PvgReferenceSections({
   <section className="remedy-section" id="our-legacy" aria-labelledby="remedy-heading">
     <div className="container">
       <div className="remedy-shell">
-        <div className="remedy-showcase" aria-live="polite">
-          {[
-            { src: '/home/whoweare/1Heritage.webp', alt: 'Pure Vedic Gems heritage milestone' },
-            { src: '/home/whoweare/puja-energization.jpeg', alt: 'Vedic puja energization milestone' },
-            { src: '/home/whoweare/genuine-rudraksha-xray-certified.jpeg', alt: 'X-ray certified Rudraksha milestone' },
-            { src: '/home/whoweare/most-reasonable-genuine-prices.jpeg', alt: 'Direct sourcing and fair pricing milestone' },
-            { src: '/home/whoweare/powerful-vedic-talisman.jpeg', alt: 'Vedic talisman milestone' },
-            { src: '/stones_img/stone1.webp', alt: 'Global clientele milestone' },
-            { src: '/home/hero/pvgherobg3.webp', alt: 'Next generation platform milestone' },
-          ].map((item, index) => (
-            <div key={item.src} className={`remedy-image${index === 0 ? ' is-active' : ''}`} data-legacy-image={index}>
-              <img src={item.src} alt={item.alt} loading={index === 0 ? 'eager' : 'lazy'} />
-            </div>
-          ))}
-          <div className="remedy-showcase-copy">
-            <span className="remedy-eyebrow">Our Legacy</span>
-            <h2 id="remedy-heading">87 Years of<br />Vedic Remedies</h2>
-            <p>Four generations of expertise in sourcing, certifying, and energizing Vedic remedies for a global clientele.</p>
-            <div className="remedy-badges">
-              <span className="remedy-badge">Est. 1937</span>
-              <span className="remedy-badge">4 Generations</span>
-            </div>
-          </div>
-        </div>
+        <HeritageLegacyMedia />
 
-        <div className="remedy-timeline" role="tablist" aria-label="Pure Vedic Gems legacy milestones">
-          {[
-            ['1937', "Founded in Old Delhi's Gem Quarter"],
-            ['1960', '2nd Generation Expands Nationwide'],
-            ['1985', '3rd Gen - Pan-India Presence'],
-            ['2005', 'Digital & International Presence'],
-            ['2015', 'E-Commerce & Global Clientele'],
-            ['2026', '50K+ Customers - Next-Gen Platform'],
-          ].map(([year, title], index) => (
-            <button key={year} className={`remedy-step${index === 0 ? ' is-active' : ''}`} type="button" role="tab" aria-selected={index === 0 ? 'true' : 'false'} data-legacy-step={index}>
-              <span className="remedy-index">{String(index + 1).padStart(2, '0')}</span>
-              <span>
-                <span className="remedy-year">{year}</span>
-                <strong>{title}</strong>
-              </span>
-            </button>
-          ))}
+        <div className="remedy-content">
+          <h2 id="remedy-heading">87 Years of<br />Vedic Remedies</h2>
+          <p>Four generations of expertise in sourcing, certifying, and energizing Vedic remedies for a global clientele.</p>
+
+          <ol className="remedy-timeline" aria-label="Pure Vedic Gems milestones">
+            {[
+              ['1937', "Founded in Old Delhi's Gem Quarter"],
+              ['1960', '2nd Generation Expands Nationwide'],
+              ['1985', '3rd Gen — Pan-India Presence'],
+              ['2005', 'Digital & International Presence'],
+              ['2015', 'E-Commerce & Global Clientele'],
+              ['2026', '50K+ Customers — Next-Gen Platform'],
+            ].map(([year, title], index) => (
+              <li key={year} className="remedy-step">
+                <span className="remedy-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                <span>
+                  <span className="remedy-year">{year}</span>
+                  <strong>{title}</strong>
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </div>

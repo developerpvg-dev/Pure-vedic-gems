@@ -177,6 +177,51 @@ export function recordRingSizeConfirmationUpload(
   return { flags: mergeRingSizeConfirmation(complianceFlags, confirmation), confirmation };
 }
 
+/**
+ * Admin: remove a diameter photo URL from the current round or history.
+ * Current round with no photo left → pending so the customer can upload again.
+ */
+export function clearRingSizeConfirmationImage(
+  complianceFlags: unknown,
+  imageUrl: string,
+): { flags: Record<string, unknown>; confirmation: RingSizeConfirmation; clearedUrl: string } {
+  const url = imageUrl.trim();
+  if (!url) throw new Error('Image URL is required');
+
+  const current = parseRingSizeConfirmation(complianceFlags);
+  if (!current) throw new Error('Ring size confirmation was not started for this order');
+
+  if (current.image_url === url) {
+    const confirmation: RingSizeConfirmation = {
+      ...current,
+      status: 'pending',
+      image_url: undefined,
+      submitted_at: undefined,
+    };
+    return {
+      flags: mergeRingSizeConfirmation(complianceFlags, confirmation),
+      confirmation,
+      clearedUrl: url,
+    };
+  }
+
+  let found = false;
+  const history = current.history.map((past) => {
+    if (past.image_url !== url) return past;
+    found = true;
+    const { image_url: _drop, submitted_at: _s, ...rest } = past;
+    return rest;
+  });
+  if (!found) throw new Error('That ring size photo is not on this order');
+
+  const confirmation: RingSizeConfirmation = { ...current, history };
+  return {
+    flags: mergeRingSizeConfirmation(complianceFlags, confirmation),
+    confirmation,
+    clearedUrl: url,
+  };
+}
+
 export const RING_SIZE_CONFIRM_COPY =
   'Regarding your ring size, to re-confirm the accuracy, we request you to please provide us with the measurement of internal diameter in mm (millimetre) of the ring band that fits you perfectly. Since country to country sometimes the ring size measuring equipment\'s accuracy differ so, to be double sure of the ring size accuracy. We request for the internal diameter (measured by a normal/standard scale in mm) of the final ring size, by placing a scale in the centre of the ring size measuring band (as shown in the attachment picture).';
 
@@ -194,6 +239,14 @@ if (process.env.NODE_ENV !== 'production') {
   console.assert(rerequest.confirmation.round === 2 && rerequest.confirmation.status === 'pending');
   console.assert(rerequest.confirmation.history.length === 1);
   console.assert(rerequest.confirmation.admin_remarks?.includes('centred'));
+  const clearedHistory = clearRingSizeConfirmationImage(
+    rerequest.flags,
+    'https://example.com/ring.jpg',
+  );
+  console.assert(!clearedHistory.confirmation.history[0]?.image_url);
+  const uploaded2 = recordRingSizeConfirmationUpload(clearedHistory.flags, 'https://example.com/ring2.jpg');
+  const clearedCurrent = clearRingSizeConfirmationImage(uploaded2.flags, 'https://example.com/ring2.jpg');
+  console.assert(clearedCurrent.confirmation.status === 'pending' && !clearedCurrent.confirmation.image_url);
   // legacy shape (no round / history)
   const legacy = parseRingSizeConfirmation({
     ring_size_confirmation: {

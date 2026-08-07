@@ -1304,6 +1304,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
               orderNumber={o.order_number}
               orderItems={items.map((item) => ({
                 product_id: item.product_id,
+                name: item.name,
+                tag_number: item.tag_number,
+                sku: item.sku,
                 category: item.category,
                 configuration_id: item.configuration_id,
                 configuration_snapshot: item.configuration_snapshot,

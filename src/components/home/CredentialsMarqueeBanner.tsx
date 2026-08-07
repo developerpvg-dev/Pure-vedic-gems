@@ -6,14 +6,14 @@ import { LAB_LOGOS } from '@/lib/constants/trust-credentials';
 function MarqueeRow({ copyIndex }: { copyIndex: number }) {
   return (
     <div className="pvg-cred-marquee-row">
-      <div className="pvg-cred-marquee-badge">
-        <span className="pvg-cred-marquee-badge-icon" aria-hidden="true">
-          ✦
-        </span>
-        <span className="pvg-cred-marquee-badge-copy">
-          <strong>BIS Hallmarked</strong>
-          <span>Govt. Certified Purity · HUID Verifiable</span>
-        </span>
+      <div className="pvg-cred-marquee-logo pvg-cred-marquee-bis">
+        <Image
+          src="/home/heri/bis.jpg"
+          alt="BIS Hallmarked — Govt. Certified Purity, HUID Verifiable"
+          width={48}
+          height={48}
+          className="pvg-cred-marquee-logo-img pvg-cred-marquee-bis-img"
+        />
       </div>
 
       {LAB_LOGOS.map((lab) => (

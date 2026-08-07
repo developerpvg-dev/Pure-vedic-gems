@@ -3652,10 +3652,24 @@
     }
     .khub-article:hover { transform: translateY(-5px); box-shadow: 0 16px 44px rgba(0,0,0,0.08); border-color: var(--maroon); }
     .khub-article-img {
-      height: 200px; position: relative; overflow: hidden;
+      min-height: 180px; position: relative; overflow: hidden;
+      background: #f3ebe0;
       background-size: cover; background-position: center; transition: transform 0.5s ease;
     }
-    .khub-article:hover .khub-article-img { transform: scale(1.04); }
+    .khub-article-img.has-photo {
+      min-height: 0;
+      background: #111;
+      display: block;
+    }
+    .khub-article-photo {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: unset;
+      vertical-align: middle;
+    }
+    .khub-article:hover .khub-article-img { transform: scale(1.02); }
+    .khub-article:hover .khub-article-photo { transform: none; }
     .khub-article-cat {
       position: absolute; bottom: 14px; left: 14px;
       font-family: var(--font-ui); font-size: 8.5px; font-weight: 700;
@@ -6995,7 +7009,13 @@ main:has(> .pvg-react-home-root) {
   }
 
   .pvg-react-home-root .khub-article-img {
-    height: 130px;
+    min-height: 130px;
+    height: auto;
+  }
+
+  .pvg-react-home-root .khub-article-img.has-photo {
+    min-height: 0;
+    height: auto;
   }
 
   .pvg-react-home-root .khub-article-body {
@@ -7561,7 +7581,13 @@ main:has(> .pvg-react-home-root) {
   }
 
   .pvg-react-home-root .khub-article-img {
-    height: 158px !important;
+    min-height: 158px !important;
+    height: auto !important;
+  }
+
+  .pvg-react-home-root .khub-article-img.has-photo {
+    min-height: 0 !important;
+    height: auto !important;
   }
 
   .pvg-react-home-root .khub-article-body {
@@ -7614,12 +7640,12 @@ main:has(> .pvg-react-home-root) {
   }
 
   .pvg-react-home-root .remedy-section {
-    padding-top: 36px !important;
-    padding-bottom: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
   }
 
   .pvg-react-home-root .remedy-shell {
-    min-height: 460px !important;
+    min-height: 0 !important;
   }
 
   .pvg-react-home-root .testi-wrap-v2 {
@@ -9784,13 +9810,13 @@ main:has(> .pvg-react-home-root) {
    ============================================================ */
 
 #testimonials {
-  padding-top: 40px;
+  padding-top: 28px;
   padding-bottom: 30px;
 }
 @media (min-width: 768px) {
   #testimonials {
-    padding-top: 80px;
-    padding-bottom: 60px;
+    padding-top: 40px;
+    padding-bottom: 48px;
   }
 }
 

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { FALLBACK_KNOWLEDGE_ARTICLES } from '@/lib/constants/knowledge';
+import { GEM_QUALITIES } from '@/lib/constants/gem-qualities';
+import { getAllGeoGemLandingSlugs } from '@/lib/constants/geo-gem-landings';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
 import { getAllBlogCategorySlugs, getAllBlogPostSlugs, getAllKnowledgeArticleSlugs } from '@/lib/sanity/queries';
 import {
@@ -143,6 +145,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry('/shop', { changeFrequency: 'daily', priority: 0.9 }),
     entry('/knowledge', { priority: 0.82 }),
     ...['gemstones', 'treatments', 'energized-gems', 'gems-care', 'rudraksha', 'astrology'].map((category) => entry(`/knowledge/${category}`, { priority: 0.7 })),
+    entry('/knowledge/gem-qualities', { priority: 0.78 }),
+    entry('/knowledge/rudraksha-qualities', { priority: 0.78 }),
+    ...GEM_QUALITIES.map((gem) => entry(`/knowledge/gem-qualities/${gem.slug}`, { priority: 0.74 })),
     ...NAVARATNA_GUIDES.map((guide) => ({
       url: absoluteUrl(`/knowledge/gemstones/${guide.slug}`),
       lastModified: new Date(guide.updatedAt),
@@ -156,13 +161,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.66,
     })),
     ...FALLBACK_KNOWLEDGE_ARTICLES.map((article) => entry(`/knowledge/${article.slug.current}`, { priority: 0.62 })),
+    // Geo gem landings (live at /[slug]) — must be listed or crawlers miss ~69 URLs.
+    ...getAllGeoGemLandingSlugs().map((slug) => entry(`/${slug}`, { priority: 0.72 })),
     entry('/blog', { priority: 0.7 }),
+    entry(
+      '/unveiling-the-mystical-connection-between-gemstones-rudrakshas-and-the-nine-forms-of-goddess-durga',
+      { changeFrequency: 'monthly', priority: 0.72 },
+    ),
     entry('/about', { changeFrequency: 'monthly', priority: 0.6 }),
     entry('/about/experts', { changeFrequency: 'monthly', priority: 0.6 }),
     entry('/about/stores', { changeFrequency: 'monthly', priority: 0.6 }),
     entry('/contact', { changeFrequency: 'monthly', priority: 0.55 }),
     entry('/consultation', { changeFrequency: 'monthly', priority: 0.65 }),
     entry('/gems-recommendations', { changeFrequency: 'monthly', priority: 0.88 }),
+    entry('/vedic-yagyas-service', { changeFrequency: 'weekly', priority: 0.7 }),
+    entry('/lab-certificate', { changeFrequency: 'monthly', priority: 0.55 }),
+    entry('/testimonials', { changeFrequency: 'weekly', priority: 0.55 }),
+    entry('/feedback', { changeFrequency: 'yearly', priority: 0.3 }),
+    entry('/track-order', { changeFrequency: 'yearly', priority: 0.3 }),
     entry('/policies/shipping', { changeFrequency: 'yearly', priority: 0.35 }),
     entry('/policies/returns', { changeFrequency: 'yearly', priority: 0.35 }),
     entry('/policies/privacy', { changeFrequency: 'yearly', priority: 0.35 }),

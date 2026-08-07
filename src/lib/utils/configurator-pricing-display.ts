@@ -87,8 +87,8 @@ export function buildConfiguratorPriceTotals(
           label: 'Est. mounting',
           detail:
             pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0
-              ? `${pricing.metal_weight_grams} g · incl. GST`
-              : 'incl. GST',
+              ? `${pricing.metal_weight_grams} g`
+              : undefined,
           amount: jewelleryPriceInclGst(mountingEx),
         });
       }
@@ -107,7 +107,6 @@ export function buildConfiguratorPriceTotals(
         label: pricing.stone_addon_label
           ? `${pricing.stone_addon_label} add-on`
           : 'Stone / diamond add-on',
-        detail: 'incl. GST',
         amount: jewelleryPriceInclGst(pricing.diamond_charge),
       });
     }
@@ -141,7 +140,6 @@ export function buildConfiguratorPriceTotals(
     lines.push({
       key: 'custom-design',
       label: 'Custom design review',
-      detail: 'incl. GST',
       amount: jewelleryPriceInclGst(pricing.custom_design_fee),
     });
   } else if (pricing.custom_design_pricing_pending && showJewelry) {

@@ -125,7 +125,7 @@ export default function GemsRecommendationsPage() {
                       alt={`${item.title} — Vedic remedies recommendation`}
                       fill
                       sizes="(max-width: 900px) 100vw, 48vw"
-                      className="object-contain"
+                      className="object-contain object-center"
                     />
                   </div>
                   <div className="pvg-remedy-band-copy">
@@ -165,7 +165,7 @@ export default function GemsRecommendationsPage() {
                       alt={item.title}
                       fill
                       sizes="(max-width: 900px) 100vw, 33vw"
-                      className="object-contain"
+                      className="object-contain object-center"
                     />
                   </div>
                   <div className="pvg-remedy-shrine-body">

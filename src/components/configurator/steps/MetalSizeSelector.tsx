@@ -115,7 +115,6 @@ function buildMetalPriceLines(
     {
       label: stoneLabel?.trim() || 'Diamond',
       amount: jewelleryPriceInclGst(estimate.diamondCharge),
-      detail: 'incl. GST',
     },
   ];
 }
@@ -255,9 +254,6 @@ function MetalOptionCard({
           >
             <span className="text-[11px] font-medium text-foreground/80">
               Est. mounting
-              <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground/80">
-                incl. GST
-              </span>
             </span>
             <span className="text-[12px] font-semibold tabular-nums text-foreground">
               {formatPrice(mountingDisplay)}

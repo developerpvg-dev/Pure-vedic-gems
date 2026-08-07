@@ -21,7 +21,7 @@ const basePricing: ConfigPricingBreakdown = {
 };
 
 describe('buildConfiguratorPriceTotals', () => {
-  it('uses 3% jewellery GST on making+diamond only and shows incl. GST amounts', () => {
+  it('uses 3% jewellery GST on making+diamond only and shows tax-inclusive amounts', () => {
     const pricing: ConfigPricingBreakdown = {
       ...basePricing,
       gem_price: 18430,

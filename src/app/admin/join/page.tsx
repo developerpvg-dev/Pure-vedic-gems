@@ -3,13 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Lock, Palette, ShieldCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 type InviteInfo = {
   email: string;
   name: string;
   roleLabel: string;
   expiresAt: string;
+  accountExists: boolean;
 };
 
 function AdminJoinContent() {
@@ -44,6 +44,7 @@ function AdminJoinContent() {
         name: data.name,
         roleLabel: data.roleLabel,
         expiresAt: data.expiresAt,
+        accountExists: Boolean(data.accountExists),
       });
     })();
   }, [token]);
@@ -51,12 +52,18 @@ function AdminJoinContent() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!token || !invite) return;
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+
+    if (!invite.accountExists) {
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+    } else if (!password) {
+      setError('Enter your existing account password.');
       return;
     }
 
@@ -66,7 +73,11 @@ function AdminJoinContent() {
     const res = await fetch('/api/admin/team/invite/accept', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({
+        token,
+        // password only used when creating a new Auth user; ignored for existing accounts
+        password: invite.accountExists ? undefined : password,
+      }),
     });
     const data = await res.json().catch(() => ({}));
 
@@ -76,17 +87,29 @@ function AdminJoinContent() {
       return;
     }
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: invite.email,
-      password,
+    // Same path as site login: password check + team email OTP when needed
+    const loginRes = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'email', email: invite.email, password }),
     });
-
+    const loginJson = await loginRes.json().catch(() => ({}));
     setSubmitting(false);
 
-    if (signInError) {
-      setError('Account created. Please sign in from the homepage.');
+    if (!loginRes.ok) {
+      setError(
+        typeof loginJson.error === 'string'
+          ? loginJson.error
+          : invite.accountExists
+            ? 'Team access activated, but that password is wrong. Sign in from the homepage with your existing password.'
+            : 'Account created. Please sign in from the homepage.',
+      );
       router.push('/?auth=login');
+      return;
+    }
+
+    if (loginJson.requiresAdminOtp) {
+      router.push('/auth/admin-otp');
       return;
     }
 
@@ -134,32 +157,42 @@ function AdminJoinContent() {
               </p>
             </div>
 
+            {invite.accountExists ? (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                An account already exists for this email. Enter your current password — we will not reset it.
+              </p>
+            ) : null}
+
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">Create password</label>
+              <label className="mb-1 block text-xs font-medium text-gray-500">
+                {invite.accountExists ? 'Existing password' : 'Create password'}
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="password"
                   required
-                  minLength={8}
+                  minLength={invite.accountExists ? 1 : 8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-amber-500"
-                  placeholder="Min. 8 characters"
+                  placeholder={invite.accountExists ? 'Your current password' : 'Min. 8 characters'}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">Confirm password</label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500"
-              />
-            </div>
+            {!invite.accountExists ? (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">Confirm password</label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-amber-500"
+                />
+              </div>
+            ) : null}
 
             {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
 
@@ -169,7 +202,13 @@ function AdminJoinContent() {
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {submitting ? 'Creating account…' : 'Accept & sign in'}
+              {submitting
+                ? invite.accountExists
+                  ? 'Activating…'
+                  : 'Creating account…'
+                : invite.accountExists
+                  ? 'Accept & sign in'
+                  : 'Accept & sign in'}
             </button>
           </form>
         ) : null}

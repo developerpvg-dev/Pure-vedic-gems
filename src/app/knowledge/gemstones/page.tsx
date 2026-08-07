@@ -435,9 +435,10 @@ export default async function NavratnasKnowledgePage() {
                     </div>
                     <Link
                       href={guide.shopHref}
-                      className="inline-flex shrink-0 items-center gap-2 bg-[#6b1111] px-6 py-3 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-[#8b1a1a]"
+                      className="inline-flex shrink-0 items-center gap-2 bg-[#6b1111] px-6 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#8b1a1a] [word-spacing:0.35em]"
                     >
-                      View {guide.name} Collection &rarr;
+                      {`View ${guide.name} Collection`}
+                      <span aria-hidden="true">→</span>
                     </Link>
                   </div>
                 </article>

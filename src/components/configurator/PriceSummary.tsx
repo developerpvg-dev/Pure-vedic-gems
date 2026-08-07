@@ -285,9 +285,6 @@ export default function PriceSummary({
             <p className="text-base font-semibold tabular-nums text-foreground">
               {totals.grand_total > 0 ? formatPrice(totals.grand_total) : '—'}
             </p>
-            {totals.gst_total > 0 && (
-              <p className="text-[10px] text-muted-foreground">incl. GST</p>
-            )}
           </div>
 
           <Button
@@ -339,13 +336,9 @@ export default function PriceSummary({
         <p className="pvg-price-summary-total mt-1 text-lg font-semibold tabular-nums text-foreground">
           {totals.grand_total > 0 ? formatPrice(totals.grand_total) : '—'}
         </p>
-        {totals.gst_total > 0 ? (
-          <p className="mt-0.5 text-[10px] text-muted-foreground">incl. GST on jewellery</p>
-        ) : (
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
-            Updates as you complete each step
-          </p>
-        )}
+        <p className="mt-0.5 text-[10px] text-muted-foreground">
+          Updates as you complete each step
+        </p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
@@ -391,9 +384,6 @@ function DetailedPriceLines({
         <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-2.5">
           <div>
             <span className="text-xs font-medium text-foreground">Grand total</span>
-            {totals.gst_total > 0 ? (
-              <p className="mt-0.5 text-[10px] text-muted-foreground">incl. GST on jewellery</p>
-            ) : null}
           </div>
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {totals.grand_total > 0 ? formatPrice(totals.grand_total) : '—'}

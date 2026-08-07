@@ -20,6 +20,10 @@ interface MediaUploaderProps {
   mode?: MediaUploaderMode;
   /** Cap list length. Extra uploads replace when max is 1. */
   maxFiles?: number;
+  /** Storage folder prefix forwarded to /api/admin/upload */
+  folder?: string;
+  /** Also delete our storage object when removing a tile (best-effort). */
+  deleteStorageOnRemove?: boolean;
 }
 
 function isVideoUrl(url: string) {
@@ -53,7 +57,14 @@ const DROP_HINT: Record<MediaUploaderMode, { title: string; sub: string; url: st
   },
 };
 
-export function MediaUploader({ value, onChange, mode = 'all', maxFiles }: MediaUploaderProps) {
+export function MediaUploader({
+  value,
+  onChange,
+  mode = 'all',
+  maxFiles,
+  folder,
+  deleteStorageOnRemove = false,
+}: MediaUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
@@ -101,6 +112,7 @@ export function MediaUploader({ value, onChange, mode = 'all', maxFiles }: Media
       for (const file of files) {
         formData.append('files', file);
       }
+      if (folder) formData.append('folder', folder);
 
       try {
         const res = await fetch('/api/admin/upload', {
@@ -137,7 +149,7 @@ export function MediaUploader({ value, onChange, mode = 'all', maxFiles }: Media
         setUploading(false);
       }
     },
-    [mode, maxFiles, value.length, mergeFiles],
+    [mode, maxFiles, value.length, mergeFiles, folder],
   );
 
   const handleDrop = useCallback(
@@ -151,7 +163,16 @@ export function MediaUploader({ value, onChange, mode = 'all', maxFiles }: Media
     [uploadFiles],
   );
 
-  const removeFile = (index: number) => {
+  const removeFile = async (index: number) => {
+    const target = value[index];
+    if (deleteStorageOnRemove && target?.url) {
+      // ponytail: best-effort storage delete; list update always proceeds
+      await fetch('/api/admin/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: target.url }),
+      }).catch(() => null);
+    }
     onChange(value.filter((_, i) => i !== index));
   };
 
@@ -317,7 +338,7 @@ export function MediaUploader({ value, onChange, mode = 'all', maxFiles }: Media
                 )}
                 <button
                   type="button"
-                  onClick={() => removeFile(i)}
+                  onClick={() => void removeFile(i)}
                   className="rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
                 >
                   <X className="h-3.5 w-3.5" />

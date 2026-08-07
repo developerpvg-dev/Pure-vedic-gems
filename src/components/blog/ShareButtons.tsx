@@ -4,10 +4,20 @@ import { useState } from 'react';
 import { Check, Copy, Facebook, Share2, Twitter } from 'lucide-react';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 
-export function ShareButtons({ title, slug }: { title: string; slug: string }) {
+export function ShareButtons({
+  title,
+  slug,
+  pathPrefix = '/blog',
+}: {
+  title: string;
+  slug: string;
+  /** Use `""` for root-slug articles (legacy WP URLs). */
+  pathPrefix?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
-  const url = `${siteUrl}/blog/${slug}`;
+  const prefix = pathPrefix ? `${pathPrefix.replace(/\/$/, '')}/` : '/';
+  const url = `${siteUrl}${prefix}${slug}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
 

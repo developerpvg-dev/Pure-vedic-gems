@@ -44,6 +44,11 @@ export async function sendPujaEnergizationMediaEmail(input: {
       paragraphs: [
         `Your Pure Vedic Gems order ${input.orderNumber} has puja / energization media ready to view.`,
         'Open the link(s) below to watch the ceremony video and view photos.',
+        ...(images.length
+          ? [
+              'Please download or save any ceremony photos you need — shared images are deleted after 7 days.',
+            ]
+          : []),
       ],
       highlight: { label: 'Order number', value: input.orderNumber },
       details: [
@@ -58,7 +63,9 @@ export async function sendPujaEnergizationMediaEmail(input: {
       ],
       cta: { label: mediaDetails[0] ? 'Open media' : 'View orders', href: firstLink },
       secondaryCta: { label: 'View my orders', href: `${site}/account/orders` },
-      footerNote: 'If you did not expect this email, you can ignore it.',
+      footerNote: images.length
+        ? 'Shared ceremony images are deleted after 7 days. If you did not expect this email, you can ignore it.'
+        : 'If you did not expect this email, you can ignore it.',
     }),
   });
 }

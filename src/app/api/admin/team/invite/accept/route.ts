@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { hashInviteToken } from '@/lib/admin/team-invite';
+import { findAuthUserByEmail, hashInviteToken } from '@/lib/admin/team-invite';
 import { normalizeAdminRole } from '@/lib/admin/rbac';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { rateLimit } from '@/lib/utils/rate-limit';
+
+function redirectForRole(role: string) {
+  const acceptedRole = normalizeAdminRole(role);
+  if (acceptedRole === 'designer') return '/admin/designer';
+  if (acceptedRole === 'seo_cms') return '/studio';
+  return '/admin';
+}
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!rateLimit(`invite-accept:${ip}`, 8, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many attempts. Try again shortly.' }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => null) as {
     token?: string;
     password?: string;
@@ -13,8 +26,8 @@ export async function POST(request: NextRequest) {
   const token = body?.token?.trim();
   const password = body?.password;
 
-  if (!token || !password || password.length < 8) {
-    return NextResponse.json({ error: 'Valid token and password (min 8 characters) are required' }, { status: 400 });
+  if (!token) {
+    return NextResponse.json({ error: 'Valid token is required' }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -44,12 +57,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invitation expired' }, { status: 410 });
   }
 
-  const { data: authUsers } = await admin.auth.admin.listUsers();
-  const existingUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === invite.email.toLowerCase());
+  let existingUser;
+  try {
+    existingUser = await findAuthUserByEmail(admin, invite.email);
+  } catch {
+    return NextResponse.json({ error: 'Could not verify account status' }, { status: 500 });
+  }
 
-  let userId = existingUser?.id;
+  let userId = existingUser?.id ?? null;
+  const existingAccount = Boolean(userId);
 
   if (!userId) {
+    if (!password || password.length < 8) {
+      return NextResponse.json({ error: 'Password (min 8 characters) is required' }, { status: 400 });
+    }
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email: invite.email,
       password,
@@ -60,12 +81,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError?.message || 'Failed to create account' }, { status: 500 });
     }
     userId = created.user.id;
-  } else {
-    const { error: updateError } = await admin.auth.admin.updateUserById(userId, { password });
-    if (updateError) {
-      return NextResponse.json({ error: 'Account exists but password could not be set. Try logging in.' }, { status: 409 });
-    }
   }
+  // ponytail: never reset password for existing Auth users (invite-link takeover)
 
   const { data: existingMember } = await db.from('team_members').select('id').eq('id', userId).maybeSingle();
   if (!existingMember) {
@@ -79,6 +96,11 @@ export async function POST(request: NextRequest) {
     if (memberError) {
       return NextResponse.json({ error: 'Failed to activate team membership' }, { status: 500 });
     }
+  } else {
+    await db
+      .from('team_members')
+      .update({ is_active: true, role: invite.role, name: invite.name })
+      .eq('id', userId);
   }
 
   await db
@@ -86,15 +108,9 @@ export async function POST(request: NextRequest) {
     .update({ accepted_at: new Date().toISOString() })
     .eq('id', invite.id);
 
-  const acceptedRole = normalizeAdminRole(invite.role);
-
   return NextResponse.json({
     success: true,
-    redirectTo:
-      acceptedRole === 'designer'
-        ? '/admin/designer'
-        : acceptedRole === 'seo_cms'
-          ? '/studio'
-          : '/admin',
+    existingAccount,
+    redirectTo: redirectForRole(invite.role),
   });
 }

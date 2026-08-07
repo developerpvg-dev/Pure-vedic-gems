@@ -9,7 +9,7 @@ import { LayoutShell } from '@/components/layout/LayoutShell';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { CookieConsentBanner } from '@/components/privacy/CookieConsentBanner';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { organizationJsonLd } from '@/lib/utils/seo';
+import { organizationJsonLd, websiteJsonLd } from '@/lib/utils/seo';
 import './globals.css';
 
 const roboto = Roboto({
@@ -19,16 +19,22 @@ const roboto = Roboto({
   display: 'swap',
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.purevedicgems.com';
+const DEFAULT_TITLE = 'PureVedicGems — Heritage Vedic Gemstones Since 1937';
+const DEFAULT_DESCRIPTION =
+  'Certified natural Vedic gemstones, Rudraksha, and custom jewelry from a trusted heritage brand established in 1937. Expert astrological guidance with 87+ years of legacy.';
+
 export const metadata: Metadata = {
   title: {
-    default: 'PureVedicGems — Heritage Vedic Gemstones Since 1937',
+    default: DEFAULT_TITLE,
     template: '%s | PureVedicGems',
   },
-  description:
-    'Certified natural Vedic gemstones, Rudraksha, and custom jewelry from a trusted heritage brand established in 1937. Expert astrological guidance with 87+ years of legacy.',
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-  ),
+  description: DEFAULT_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'PureVedicGems',
+  authors: [{ name: 'PureVedicGems', url: SITE_URL }],
+  creator: 'PureVedicGems',
+  publisher: 'PURE VEDIC GEMS PVT. LTD.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -36,10 +42,21 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
+  manifest: '/site.webmanifest',
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     siteName: 'PureVedicGems',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PureVedicGems' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: ['/og-default.png'],
   },
   robots: {
     index: true,
@@ -65,7 +82,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-body bg-background text-foreground">
         <GoogleAnalytics />
-        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <ThemeProvider>
           <AuthProvider>
             <SavedItemsProvider>

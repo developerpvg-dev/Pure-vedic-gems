@@ -198,8 +198,8 @@
 
 @media (min-width: 900px) {
   .pvg-remedy-band {
-    grid-template-columns: 1.05fr 0.95fr;
-    min-height: 280px;
+    grid-template-columns: minmax(240px, 0.82fr) 1.18fr;
+    min-height: 0;
   }
 
   .pvg-remedy-band--flip {
@@ -213,14 +213,21 @@
 
 .pvg-remedy-band-media {
   position: relative;
-  min-height: 260px;
+  aspect-ratio: 1013 / 760;
+  width: 100%;
+  margin: 0;
   overflow: hidden;
-  background: #f3ebe0;
+  background: transparent;
 }
 
 @media (min-width: 900px) {
+  .pvg-remedy-band {
+    align-items: center;
+  }
+
   .pvg-remedy-band-media {
-    min-height: 320px;
+    width: min(100%, 340px);
+    margin: 1.25rem;
   }
 }
 
@@ -309,9 +316,11 @@
 
 .pvg-remedy-shrine-media {
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1013 / 760;
+  width: 100%;
+  margin: 0;
   overflow: hidden;
-  background: #f3ebe0;
+  background: transparent;
 }
 
 .pvg-remedy-shrine-body {

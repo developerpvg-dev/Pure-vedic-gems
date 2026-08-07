@@ -17,7 +17,8 @@ import {
   parseComplianceFlags,
 } from '@/lib/orders/returns';
 import { beginProductVideoReviewNotify } from '@/lib/orders/product-video-review';
-import { beginRingSizeConfirmationNotify } from '@/lib/orders/ring-size-confirmation';
+import { beginRingSizeConfirmationNotify, clearRingSizeConfirmationImage } from '@/lib/orders/ring-size-confirmation';
+import { storageObjectFromPublicUrl } from '@/lib/supabase/storage-public-url';
 import { requiresDispatchPaymentVerify } from '@/lib/orders/dispatch-proof';
 import { OrderCommissionSchema } from '@/lib/validators/order';
 import { ORDER_STATUSES } from '@/lib/constants/order-status';
@@ -83,6 +84,7 @@ export async function PUT(
     notify_puja_energization,
     notify_ring_size,
     ring_size_admin_remarks,
+    delete_ring_size_image_url,
     product_video_url,
     product_video_urls,
     product_image_urls,
@@ -316,6 +318,26 @@ export async function PUT(
       pujaNotifyVideo = videoUrl;
     }
     pujaNotifyImages = imageUrls;
+  }
+
+  if (typeof delete_ring_size_image_url === 'string' && delete_ring_size_image_url.trim()) {
+    try {
+      const cleared = clearRingSizeConfirmationImage(
+        updates.compliance_flags ?? current.compliance_flags,
+        delete_ring_size_image_url,
+      );
+      updates.compliance_flags = cleared.flags;
+      const obj = storageObjectFromPublicUrl(cleared.clearedUrl);
+      if (obj) {
+        // ponytail: best-effort; order flag clear still succeeds if storage remove fails
+        await supabase.storage.from(obj.bucket).remove([obj.path]);
+      }
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Could not delete ring size photo' },
+        { status: 400 },
+      );
+    }
   }
 
   let ringSizeNotifyRound: number | null = null;
@@ -570,7 +592,9 @@ export async function PUT(
           recipientUserId: current.customer_id,
           type: 'order_video_ready',
           title: 'Puja / energization media ready',
-          message: `Your puja / energization media for order ${current.order_number} is ready.`,
+          message: pujaNotifyImages.length
+            ? `Your puja / energization media for order ${current.order_number} is ready. Shared images are deleted after 7 days.`
+            : `Your puja / energization media for order ${current.order_number} is ready.`,
           href: '/account/orders',
           entityType: 'order',
           entityId: id,

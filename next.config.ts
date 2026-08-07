@@ -373,7 +373,7 @@ const nextConfig: NextConfig = {
         ['/tag/yagya-therapy-benefits', '/vedic-yagyas-service'],
         ['/tag/yagya-vs-gemstone', '/vedic-yagyas-service'],
         ['/tag/yagya-without-kundli', '/vedic-yagyas-service'],
-        ['/unveiling-the-mystical-connection-between-gemstones-rudrakshas-and-the-nine-forms-of-goddess-durga', '/vedic-yagyas/durga-saptashati-yagya'],
+        // Nava Durga article rebuilt at the same legacy URL (see app/unveiling-the-mystical-...).
         ['/vedic-guru-shanti-yagya', '/vedic-yagyas/vedic-guru-shanti-yagya'],
         ['/vedic-rudrabhishek', '/vedic-yagyas/vedic-rudrabhishek'],
         ['/vedic-rudrabhishek-paymentpage', '/vedic-yagyas/vedic-rudrabhishek'],
@@ -447,7 +447,7 @@ const nextConfig: NextConfig = {
         ['/best-astrologer', '/consultation'],
         ['/health-benefits-of-yoga', '/blog'],
         ['/mantra-for-confidence-and-inner-strength', '/blog'],
-        ['/pure-vedic-gems-vedic-sciences', '/about'],
+        ['/pure-vedic-gems-vedic-sciences', '/gems-recommendations'],
         ['/pure-vedic-science', '/about'],
         ['/pvg-rewards-points', '/'],
       ].flatMap(([source, destination]) => [
@@ -628,23 +628,23 @@ const nextConfig: NextConfig = {
       { source: '/testimonial/:slug([^/.]+)', destination: '/testimonials', statusCode: 301 },
       { source: '/testimonial/:slug([^/.]+)/', destination: '/testimonials', statusCode: 301 },
 
-      // Remaining legacy blog articles not in Sanity → astrology knowledge hub.
+      // Legacy short Jupiter-house WP slugs → matching Sanity blog posts (post→post).
       ...[
-        '/blog/benefits-jupiter-10th-house-horoscope',
-        '/blog/benefits-jupiter-11th-house-horoscope',
-        '/blog/benefits-jupiter-12th-house-horoscope',
-        '/blog/benefits-jupiter-2nd-house-horoscope-2',
-        '/blog/benefits-jupiter-3rd-house-horoscope',
-        '/blog/benefits-jupiter-4th-house-horoscope-2',
-        '/blog/benefits-jupiter-5th-house-horoscope',
-        '/blog/benefits-jupiter-6th-house-horoscope',
-        '/blog/benefits-jupiter-7th-house-horoscope',
-        '/blog/benefits-jupiter-8th-house-horoscope',
-        '/blog/benefits-jupiter-9th-house-horoscope',
-        '/blog/benefits-of-jupiter-in-1st-house-of-horoscope',
-      ].flatMap((source) => [
-        { source, destination: '/knowledge/astrology', statusCode: 301 },
-        { source: `${source}/`, destination: '/knowledge/astrology', statusCode: 301 },
+        ['/blog/benefits-jupiter-10th-house-horoscope', '/blog/jupiter-in-the-10th-house-horoscope-benefits-of-jupiter-in-the-10th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-11th-house-horoscope', '/blog/jupiter-in-the-11th-house-horoscope-benefits-of-jupiter-in-the-11th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-12th-house-horoscope', '/blog/jupiter-in-the-12th-house-horoscope-benefits-of-jupiter-in-the-12th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-2nd-house-horoscope-2', '/blog/jupiter-in-the-2nd-house-horoscope-benefits-of-jupiter-in-the-2nd-house-of-horoscope'],
+        ['/blog/benefits-jupiter-3rd-house-horoscope', '/blog/jupiter-in-the-3rd-house-horoscope-benefits-of-jupiter-in-the-3rd-house-of-horoscope'],
+        ['/blog/benefits-jupiter-4th-house-horoscope-2', '/blog/jupiter-in-the-4th-house-horoscope-benefits-of-jupiter-in-the-4th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-5th-house-horoscope', '/blog/jupiter-in-the-5th-house-horoscope-benefits-of-jupiter-in-the-5th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-6th-house-horoscope', '/blog/jupiter-in-the-6th-house-horoscope-benefits-of-jupiter-in-the-6th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-7th-house-horoscope', '/blog/jupiter-in-the-7th-house-horoscope-benefits-of-jupiter-in-the-7th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-8th-house-horoscope', '/blog/jupiter-in-the-8th-house-horoscope-benefits-of-jupiter-in-the-8th-house-of-horoscope'],
+        ['/blog/benefits-jupiter-9th-house-horoscope', '/blog/jupiter-in-the-9th-house-horoscope-benefits-of-jupiter-in-the-9th-house-of-horoscope'],
+        ['/blog/benefits-of-jupiter-in-1st-house-of-horoscope', '/blog/jupiter-in-the-1st-house-horoscope-benefits-of-jupiter-in-the-1st-house-of-horoscope'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
       ]),
 
       // P2–P11 leftover URLs: src/lib/legacy-redirects.ts (proxy Map) — keeps deploy under Vercel route caps.

@@ -813,15 +813,6 @@ export function PvgHomeInteractions() {
         stepKey: 'configStep',
         imageKey: 'configImage',
       }),
-      setupScrollSequence({
-        sectionSelector: '#our-legacy',
-        stepSelector: '[data-legacy-step]',
-        imageSelector: '[data-legacy-image]',
-        stepKey: 'legacyStep',
-        imageKey: 'legacyImage',
-        lockTargetSelector: '.remedy-shell',
-        scrollLockMode: 'fully-visible',
-      }),
     ].filter((sequence): sequence is ScrollSequence => Boolean(sequence));
 
     cleanups.push(setupLockedScrollSteppers(scrollSequences));

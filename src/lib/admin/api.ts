@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hasAdminPermission, normalizeAdminRole, type AdminPermission } from '@/lib/admin/rbac';
+import { hasValidAdminMfaForUser } from '@/lib/admin/mfa';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 import type { Json } from '@/lib/types/database';
 
@@ -46,6 +47,15 @@ export async function requireAdminAccess(permission?: AdminPermission) {
 
   if (!typedMember?.is_active || !normalizedRole) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+
+  if (!(await hasValidAdminMfaForUser(user.id))) {
+    return {
+      error: NextResponse.json(
+        { error: 'Admin email verification required', code: 'admin_mfa_required' },
+        { status: 403 },
+      ),
+    };
   }
 
   if (permission && !hasAdminPermission(typedMember.role, permission, typedMember.permissions)) {

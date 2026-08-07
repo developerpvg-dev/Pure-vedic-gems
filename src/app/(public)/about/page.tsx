@@ -72,10 +72,10 @@ const LOCATIONS = ABOUT_LOCATION_CARDS;
 
 export default function AboutPage() {
   return (
-    <main className="pvg-simple-page pvg-info-page font-body bg-[#fdf7ee] text-[#261a10]">
+    <main className="pvg-simple-page pvg-info-page pvg-about-page font-body bg-[#fdf7ee] text-[#261a10]">
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden bg-[#fdf7ee] px-4 pb-0 pt-4 sm:px-6 lg:pt-6">
+      <section className="relative isolate overflow-hidden bg-[#fdf7ee] px-4 pb-0 pt-1 sm:px-6 lg:pt-2">
         {/* Subtle gold radiating background */}
         <div className="pointer-events-none absolute inset-0 -z-10"
           style={{ background: 'radial-gradient(ellipse 70% 50% at 60% 0%, rgba(201,168,76,0.13) 0%, transparent 70%), radial-gradient(ellipse 40% 30% at 5% 20%, rgba(138,100,0,0.07) 0%, transparent 60%)' }} />

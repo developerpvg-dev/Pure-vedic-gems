@@ -13,6 +13,9 @@ export type FulfillmentProfile =
 
 export type LineItemForFulfillment = {
   product_id?: string | null;
+  name?: string | null;
+  tag_number?: string | null;
+  sku?: string | null;
   category?: string | null;
   configuration_id?: string | null;
   configuration_snapshot?: unknown;

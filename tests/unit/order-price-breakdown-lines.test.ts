@@ -29,10 +29,10 @@ describe('buildOrderPriceLines', () => {
     const sum = lines.reduce((s, l) => s + l.sign * l.amount, 0);
     expect(sum).toBe(15048 + 10325 + 41300 + 4000 + 3500 + 1500 + 3413);
     expect(lines.find((l) => l.key === 'jewelry')?.amount).toBe(10325 + 41300);
-    expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery (metal + making)');
+    expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery');
   });
 
-  it('labels jewellery as incl. GST when GST is folded into the amount', () => {
+  it('folds jewellery GST into the jewellery amount (no separate GST line)', () => {
     const lines = buildOrderPriceLines({
       subtotal: 10000,
       jewelry_charges: 2000,
@@ -41,7 +41,7 @@ describe('buildOrderPriceLines', () => {
       gst_amount: 300,
       total: 20300,
     });
-    expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery (incl. GST)');
+    expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery');
     expect(lines.find((l) => l.key === 'gst')).toBeUndefined();
   });
 

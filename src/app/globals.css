@@ -889,6 +889,11 @@ html::-webkit-scrollbar-thumb:hover {
   padding-top: 0 !important;
 }
 
+/* About only — nested page <main> was picking up the shell's ~10rem first-child offset. */
+.pvg-reference-theme > main.pvg-about-page {
+  padding-top: 3.25rem !important;
+}
+
 .pvg-info-page > section {
   background: #fbf3e8 !important;
 }
@@ -897,6 +902,10 @@ html::-webkit-scrollbar-thumb:hover {
   border-bottom: 1px solid rgba(31, 27, 22, 0.12);
   padding-top: clamp(0.75rem, 1.5vw, 1.25rem) !important;
   padding-bottom: clamp(1.75rem, 3.5vw, 2.75rem) !important;
+}
+
+.pvg-reference-theme .pvg-info-page.pvg-about-page > section:first-child {
+  padding-top: clamp(1rem, 1.8vw, 1.5rem) !important;
 }
 
 .pvg-info-page > section:first-child > .absolute {
@@ -1057,6 +1066,10 @@ html::-webkit-scrollbar-thumb:hover {
     padding-top: 9.25rem !important;
   }
 
+  .pvg-reference-theme > main.pvg-about-page {
+    padding-top: 2.75rem !important;
+  }
+
   .pvg-info-page > section {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
@@ -1064,5 +1077,9 @@ html::-webkit-scrollbar-thumb:hover {
 
   .pvg-reference-theme .pvg-info-page > section:first-child {
     padding-top: 0.75rem !important;
+  }
+
+  .pvg-reference-theme .pvg-info-page.pvg-about-page > section:first-child {
+    padding-top: 1.1rem !important;
   }
 }

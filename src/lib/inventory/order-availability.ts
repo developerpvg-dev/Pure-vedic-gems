@@ -173,16 +173,35 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
   }
 }
 
+/** Product IDs for one order line (main SKU + configured rudraksha beads). */
+export function collectLineProductIds(item: OrderInventoryItem): string[] {
+  const ids = new Set<string>();
+  if (item.product_id) ids.add(item.product_id);
+  for (const beadId of getRudrakshaProductIdsFromSnapshot(item.configuration_snapshot)) {
+    ids.add(beadId);
+  }
+  return Array.from(ids);
+}
+
 /**
  * Restore pieces to in-stock after cancel / return / refund.
  * Matches payment-hold or paid-hold notes, and also restores if currently reserved/sold for these IDs.
+ * Pass `productIds` to restore only those pieces (must belong to the order).
  */
-export async function releaseProductsForOrder(order: OrderInventorySource) {
+export async function releaseProductsForOrder(
+  order: OrderInventorySource,
+  productIds?: string[],
+): Promise<string[]> {
   const supabase = createAdminClient();
   const db = asUntypedSupabase(supabase);
   const notes = holdNotesForOrder(order.order_number);
+  const allowed = new Set(collectOrderProductIds(order));
+  const targets = productIds?.length
+    ? [...new Set(productIds)].filter((id) => allowed.has(id))
+    : [...allowed];
+  const restored: string[] = [];
 
-  for (const productId of collectOrderProductIds(order)) {
+  for (const productId of targets) {
     const { data: product } = await db
       .from('products')
       .select('id, availability_status, reservation_note')
@@ -196,7 +215,7 @@ export async function releaseProductsForOrder(order: OrderInventorySource) {
     const tiedToOrder = notes.includes(note) || status === 'reserved' || status === 'sold';
     if (!tiedToOrder) continue;
 
-    await db
+    const { error } = await db
       .from('products')
       .update({
         in_stock: true,
@@ -209,9 +228,11 @@ export async function releaseProductsForOrder(order: OrderInventorySource) {
         reserved_quantity: 0,
         reservation_note: null,
       })
-      .eq('id', productId)
-      .then(null, () => undefined);
+      .eq('id', productId);
+    if (!error) restored.push(productId);
   }
+
+  return restored;
 }
 
 export async function cancelOrderAndReleaseInventory(
@@ -247,5 +268,7 @@ export function __orderAvailabilitySelfCheck() {
     ],
   });
   console.assert(ids.length === 2 && ids.includes('a') && ids.includes('b'), 'dedupe product ids');
+  const lineIds = collectLineProductIds({ product_id: 'main' });
+  console.assert(lineIds.length === 1 && lineIds[0] === 'main', 'line product id');
   console.log('order-availability self-check ok');
 }

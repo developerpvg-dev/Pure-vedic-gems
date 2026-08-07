@@ -7,10 +7,11 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { RegisterForm } from './RegisterForm';
 import { GoogleAuthButton } from './GoogleAuthButton';
 import { GoogleIcon } from './GoogleIcon';
+import { AdminOtpForm } from './AdminOtpForm';
 import { cn } from '@/lib/utils';
 
 type Tab = 'email' | 'google' | 'magic';
-type View = 'login' | 'register' | 'check-email' | 'email-sent';
+type View = 'login' | 'register' | 'check-email' | 'email-sent' | 'admin-otp';
 
 interface LoginModalProps {
   open: boolean;
@@ -39,6 +40,7 @@ export function LoginModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showLegacyResetHint, setShowLegacyResetHint] = useState(false);
+  const [adminOtpEmail, setAdminOtpEmail] = useState('');
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -56,6 +58,7 @@ export function LoginModal({
       setPassword('');
       setMagicEmail('');
       setShowLegacyResetHint(false);
+      setAdminOtpEmail('');
     }, 300);
 
     return () => clearTimeout(timeoutId);
@@ -90,6 +93,11 @@ export function LoginModal({
     if (result.error) {
       setError(result.error);
       setShowLegacyResetHint(true);
+      return;
+    }
+    if (result.requiresAdminOtp) {
+      setAdminOtpEmail(result.adminOtpEmail || email);
+      setView('admin-otp');
       return;
     }
     if (result.requiresPasswordReset) {
@@ -256,6 +264,21 @@ export function LoginModal({
                     Got it
                   </button>
                 </div>
+              )}
+
+              {view === 'admin-otp' && (
+                <AdminOtpForm
+                  emailLabel={adminOtpEmail || 'your email'}
+                  onBack={() => {
+                    setView('login');
+                    setAdminOtpEmail('');
+                    clear();
+                  }}
+                  onVerified={(redirectTo) => {
+                    onClose();
+                    window.location.href = redirectTo;
+                  }}
+                />
               )}
 
               {view === 'login' && (

@@ -222,11 +222,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     void (async () => {
       const res = await fetch('/api/admin/session');
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if (data.code === 'admin_mfa_required') {
+          window.location.href = `/api/auth/admin-mfa/challenge?next=${encodeURIComponent(pathname || '/admin')}`;
+          return;
+        }
+      }
       if (!res.ok) return;
       const data = await res.json().catch(() => ({}));
       setSessionRole(data.role ?? null);
     })();
-  }, []);
+  }, [pathname]);
 
   if (isJoinPage) {
     return <div className="min-h-screen bg-gray-50">{children}</div>;

@@ -5,25 +5,11 @@ import { sendEnquiryEmails } from '@/lib/resend/send-enquiry';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
 import { logLeadActivity } from '@/lib/leads/assign';
-
-// Simple in-memory rate limiter (per IP, 3 requests per minute)
-const rateMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateMap.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= 3) return false;
-  entry.count++;
-  return true;
-}
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!rateLimit(`enquiry:${ip}`, 3, 60_000)) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again in a minute.' },
       { status: 429 }

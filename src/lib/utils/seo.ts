@@ -23,10 +23,21 @@ type MetadataInput = {
   noIndex?: boolean;
 };
 
-const DEFAULT_SITE_URL = 'https://purevedicgems.com';
+const DEFAULT_SITE_URL = 'https://www.purevedicgems.com';
 const BRAND_NAME = 'PureVedicGems';
 const DEFAULT_DESCRIPTION =
   'Certified natural Vedic gemstones, Rudraksha, and custom jewelry from a trusted heritage brand established in 1937.';
+/** URL-safe brand mark (Google Organization logo + share fallback). */
+const BRAND_LOGO_PATH = '/pvg-logo.png';
+/** 1200×630 default share card. */
+const DEFAULT_OG_IMAGE_PATH = '/og-default.png';
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'info@purevedicgems.com';
+const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-9871582404';
+const OFFICIAL_SAME_AS = [
+  'https://www.facebook.com/puregems.vm',
+  'https://www.instagram.com/purevedicgems',
+  'https://www.youtube.com/@purevedicgems',
+] as const;
 
 function productDescription(product: Product | ProductCard) {
   const detailedProduct = product as Product;
@@ -48,9 +59,17 @@ export function canonicalUrl(path = '/') {
   return absoluteUrl(path.split('?')[0] || '/');
 }
 
+export function brandLogoUrl() {
+  return absoluteUrl(BRAND_LOGO_PATH);
+}
+
+export function defaultOgImageUrl() {
+  return absoluteUrl(DEFAULT_OG_IMAGE_PATH);
+}
+
 export function buildMetadata({ title, description, path = '/', image, type = 'website', noIndex = false }: MetadataInput): Metadata {
   const canonical = canonicalUrl(path);
-  const ogImage = image ? absoluteUrl(image) : absoluteUrl('/PVG NEW LOGO DESIGN.PNG');
+  const ogImage = image ? absoluteUrl(image) : defaultOgImageUrl();
 
   return {
     title: { absolute: title },
@@ -102,28 +121,60 @@ export function knowledgeMetadata({ title, description, path, image }: MetadataI
 
 export function organizationJsonLd(): JsonLd {
   const siteUrl = getSiteUrl();
+  const logo = brandLogoUrl();
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${siteUrl}/#organization`,
     name: BRAND_NAME,
-    alternateName: 'Pure Vedic Gems',
+    alternateName: ['Pure Vedic Gems', 'PureVedic Gems'],
     legalName: 'PURE VEDIC GEMS PVT. LTD.',
     url: siteUrl,
-    logo: absoluteUrl('/PVG NEW LOGO DESIGN.PNG'),
+    logo: {
+      '@type': 'ImageObject',
+      url: logo,
+      width: 512,
+      height: 512,
+    },
+    image: [logo, defaultOgImageUrl()],
     foundingDate: '1937',
+    email: SUPPORT_EMAIL,
+    telephone: SUPPORT_PHONE,
     address: ORGANIZATION_ADDRESSES,
-    sameAs: [
-      'https://www.instagram.com/purevedicgems',
-      'https://www.facebook.com/purevedicgems',
-    ],
+    sameAs: [...OFFICIAL_SAME_AS],
     contactPoint: [
       {
         '@type': 'ContactPoint',
         contactType: 'customer support',
+        telephone: SUPPORT_PHONE,
+        email: SUPPORT_EMAIL,
         areaServed: ['IN', 'GB'],
         availableLanguage: ['en', 'hi'],
       },
     ],
+  };
+}
+
+/** Sitename + Google sitelinks search box (matches shop ?q= search). */
+export function websiteJsonLd(): JsonLd {
+  const siteUrl = getSiteUrl();
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    name: BRAND_NAME,
+    alternateName: 'Pure Vedic Gems',
+    url: siteUrl,
+    inLanguage: 'en-IN',
+    publisher: { '@id': `${siteUrl}/#organization` },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/shop?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
   };
 }
 
@@ -211,7 +262,12 @@ export function articleJsonLd(input: {
     author: input.authorName
       ? { '@type': 'Person', name: input.authorName }
       : { '@type': 'Organization', name: BRAND_NAME },
-    publisher: { '@type': 'Organization', name: BRAND_NAME, url: getSiteUrl() },
+    publisher: {
+      '@type': 'Organization',
+      name: BRAND_NAME,
+      url: getSiteUrl(),
+      logo: { '@type': 'ImageObject', url: brandLogoUrl() },
+    },
     mainEntityOfPage: absoluteUrl(input.path),
   };
 }
@@ -288,7 +344,7 @@ export function localBusinessJsonLd(input: {
     '@type': 'JewelryStore',
     name: input.name,
     url: absoluteUrl(input.path),
-    image: input.image ? absoluteUrl(input.image) : absoluteUrl('/PVG NEW LOGO DESIGN.PNG'),
+    image: input.image ? absoluteUrl(input.image) : brandLogoUrl(),
     telephone: input.phone,
     address: input.address,
   };

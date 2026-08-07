@@ -68,15 +68,13 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
   const tax = resolveProductTax({ category: item.category });
   const estimatedGst = Math.round(gstOnAmount(Math.max(unitPrice, 0), tax.rate_percent));
 
-  // Ready jewellery: bake 3% into the displayed product price (no GST line).
+  // Ready jewellery: bake 3% into the displayed product price (no GST callout).
   const showIncl = tax.rate_percent > 0 && estimatedGst > 0;
   const lines: ConfiguratorPriceLine[] = [
     {
       key: 'product',
       label: item.category === 'rudraksha' ? 'Rudraksha' : 'Product price',
-      detail: showIncl
-        ? `${formatProductDisplayName(item.name)} · incl. GST`
-        : formatProductDisplayName(item.name),
+      detail: formatProductDisplayName(item.name),
       amount: showIncl ? jewelleryPriceInclGst(unitPrice) : unitPrice,
     },
   ];

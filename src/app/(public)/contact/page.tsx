@@ -92,7 +92,6 @@ const INDIA_PHONES = [
 const UK_PHONE = '+44 7831 491778';
 
 const CONTACT_EMAILS = [
-  'info@purevedicgems.in',
   'info@purevedicgems.com',
   'purevedicgems@gmail.com',
 ] as const;

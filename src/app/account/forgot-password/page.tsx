@@ -3,11 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { AccountPageHeader } from '@/components/account/AccountPageHeader';
 
 export default function ForgotPasswordPage() {
-  const supabase = createClient();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -21,14 +19,15 @@ export default function ForgotPasswordPage() {
       return;
     }
     setIsLoading(true);
-    const redirectTo = `${window.location.origin}/account/set-password`;
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      { redirectTo }
-    );
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+    const data = await res.json().catch(() => ({}));
     setIsLoading(false);
-    if (resetError) {
-      setError(resetError.message ?? 'Could not send a reset link. Please try again.');
+    if (!res.ok) {
+      setError(typeof data.error === 'string' ? data.error : 'Could not send a reset link. Please try again.');
       return;
     }
     setSent(true);

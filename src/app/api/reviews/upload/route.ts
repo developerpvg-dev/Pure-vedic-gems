@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 const BUCKET = 'reviews';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!rateLimit(`review-upload:${ip}`, 20, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many uploads. Please wait a minute.' }, { status: 429 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+
+  if (!rateLimit(`review-upload-user:${user.id}`, 30, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Upload limit reached. Try again later.' }, { status: 429 });
+  }
 
   const formData = await request.formData();
   const file = formData.get('file') as File | null;

@@ -1,0 +1,38 @@
+{
+  "day-1": {
+    "assetId": "image-a6161b9b35e08db303b2e24f2c997414146b355b-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/a6161b9b35e08db303b2e24f2c997414146b355b-1280x750.jpg"
+  },
+  "day-2": {
+    "assetId": "image-17ba78c3f98d44df39fd21360b41bbdac63e1943-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/17ba78c3f98d44df39fd21360b41bbdac63e1943-1280x750.jpg"
+  },
+  "day-3": {
+    "assetId": "image-7fa5811d0aaa8087469b3e85424f29c22644991c-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/7fa5811d0aaa8087469b3e85424f29c22644991c-1280x750.jpg"
+  },
+  "day-4": {
+    "assetId": "image-cb494b454438aeadc17932d5462494567a545a7c-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/cb494b454438aeadc17932d5462494567a545a7c-1280x750.jpg"
+  },
+  "day-5": {
+    "assetId": "image-876f1653742aba928d05127d071ac9a63171e5bf-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/876f1653742aba928d05127d071ac9a63171e5bf-1280x750.jpg"
+  },
+  "day-6": {
+    "assetId": "image-f0a1b5d91a6f054737cb2a2c248fde03fbb9a1a7-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/f0a1b5d91a6f054737cb2a2c248fde03fbb9a1a7-1280x750.jpg"
+  },
+  "day-7": {
+    "assetId": "image-3ebab8dd9cf4e757fd604b3d67450d29e929335e-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/3ebab8dd9cf4e757fd604b3d67450d29e929335e-1280x750.jpg"
+  },
+  "day-8": {
+    "assetId": "image-9a58b2661e210d14f7721ba9219ec5e7ceeef080-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/9a58b2661e210d14f7721ba9219ec5e7ceeef080-1280x750.jpg"
+  },
+  "day-9": {
+    "assetId": "image-fbaaf9fc30689b9cba53fd966cebcc4c698f5edf-1280x750-jpg",
+    "url": "https://cdn.sanity.io/images/8vm3y2bf/production/fbaaf9fc30689b9cba53fd966cebcc4c698f5edf-1280x750.jpg"
+  }
+}

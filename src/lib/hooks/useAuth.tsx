@@ -22,7 +22,12 @@ interface AuthContextValue {
   profile: CustomerProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string; requiresPasswordReset?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{
+    error?: string;
+    requiresPasswordReset?: boolean;
+    requiresAdminOtp?: boolean;
+    adminOtpEmail?: string;
+  }>;
   signUp: (data: {
     email: string;
     password: string;
@@ -112,30 +117,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const signIn = useCallback(
-    async (email: string, password: string): Promise<{ error?: string; requiresPasswordReset?: boolean }> => {
+    async (
+      email: string,
+      password: string,
+    ): Promise<{
+      error?: string;
+      requiresPasswordReset?: boolean;
+      requiresAdminOtp?: boolean;
+      adminOtpEmail?: string;
+    }> => {
       if (!supabase) return { error: missingSupabaseConfigMessage };
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Server-side password + team MFA in one hop (avoids cookie races)
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'email', email, password }),
       });
+      const json = await res.json().catch(() => ({}));
 
-      if (error) {
-        return { error: 'Invalid email or password.' };
+      if (!res.ok) {
+        return { error: typeof json.error === 'string' ? json.error : 'Invalid email or password.' };
       }
 
-      setUser(data.user);
-      let requiresPasswordReset = false;
-      if (data.user) {
-        await fetchProfile(data.user.id);
-        // fetchProfile updates state asynchronously; read the flag directly so
-        // we can route legacy users to the forced reset page immediately.
-        const { data: profileRow } = await supabase
-          .from('customer_profiles')
-          .select('requires_password_reset')
-          .eq('id', data.user.id)
-          .maybeSingle();
-        requiresPasswordReset = Boolean(profileRow?.requires_password_reset);
+      if (json.requiresAdminOtp) {
+        setUser(null);
+        setProfile(null);
+        setIsLoading(false);
+        // Clear any client-cached session left from an older login path
+        await supabase.auth.signOut().catch(() => undefined);
+        return {
+          requiresAdminOtp: true,
+          adminOtpEmail: typeof json.email === 'string' ? json.email : email,
+        };
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      let user = session?.user ?? null;
+
+      // Fallback if server Set-Cookie wasn't picked up yet (keeps customer login reliable)
+      if (!user) {
+        const { data: retry, error: retryError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (retryError || !retry.user) {
+          return { error: 'Signed in on server but session did not sync. Refresh and try again.' };
+        }
+        user = retry.user;
+      }
+
+      setUser(user);
+
+      let requiresPasswordReset = Boolean(json.requiresPasswordReset);
+      if (user) {
+        await fetchProfile(user.id);
+        if (!requiresPasswordReset) {
+          const { data: profileRow } = await supabase
+            .from('customer_profiles')
+            .select('requires_password_reset')
+            .eq('id', user.id)
+            .maybeSingle();
+          requiresPasswordReset = Boolean(profileRow?.requires_password_reset);
+        }
       } else {
         setProfile(null);
       }

@@ -64,7 +64,7 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
     {
       key: 'jewelry',
       // ponytail: one jewellery line — metal/making split stays in orders.* columns
-      label: foldGst && jewelleryEx > 0 ? 'Jewellery (incl. GST)' : 'Jewellery (metal + making)',
+      label: 'Jewellery',
       amount: foldGst && jewelleryEx > 0 ? jewelleryPriceInclGst(jewelleryEx) : jewelleryEx,
       sign: 1,
     },

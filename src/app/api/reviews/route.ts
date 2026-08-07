@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { isReviewEligibleStatus, parseOrderItems } from '@/lib/customer/orders';
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 const reviewCreateSchema = z.object({
   product_id: z.string().uuid(),
@@ -14,12 +15,21 @@ const reviewCreateSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!rateLimit(`review:${ip}`, 10, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many reviews. Please wait a minute.' }, { status: 429 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+
+  if (!rateLimit(`review-user:${user.id}`, 5, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Review limit reached. Try again later.' }, { status: 429 });
+  }
 
   const parsed = reviewCreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

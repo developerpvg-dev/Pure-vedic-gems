@@ -9,6 +9,8 @@ import {
   getCustomerAccountStatus,
   isCustomerAccountAccessible,
 } from '@/lib/customers/account-status';
+import { maskEmail, setAdminMfaPendingCookie } from '@/lib/admin/mfa';
+import { startTeamEmailMfaIfNeeded } from '@/lib/admin/mfa-start';
 
 export async function POST(req: NextRequest) {
   const ip =
@@ -75,26 +77,71 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const accountStatus = await getCustomerAccountStatus(data.user.id);
-    if (!isCustomerAccountAccessible(accountStatus)) {
-      await supabase.auth.signOut();
-      return NextResponse.json(
-        { error: customerStatusBlockMessage(accountStatus) },
-        { status: 403 }
-      );
+    // Active team members skip the customer-status gate (they may not shop).
+    const admin = createAdminClient();
+    const { data: teamMember } = await admin
+      .from('team_members')
+      .select('is_active')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (!teamMember?.is_active) {
+      const accountStatus = await getCustomerAccountStatus(data.user.id);
+      if (!isCustomerAccountAccessible(accountStatus)) {
+        await supabase.auth.signOut();
+        return NextResponse.json(
+          { error: customerStatusBlockMessage(accountStatus) },
+          { status: 403 }
+        );
+      }
+
+      void logCustomerActivity({
+        customerId: data.user.id,
+        eventType: 'login',
+        title: 'Logged in',
+        subtitle: data.user.email ?? 'Email sign-in',
+        metadata: { method: 'email_password' },
+      });
+
+      const { data: profileRow } = await admin
+        .from('customer_profiles')
+        .select('requires_password_reset')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      return NextResponse.json({
+        success: true,
+        requiresAdminOtp: false,
+        requiresPasswordReset: Boolean(profileRow?.requires_password_reset),
+        user: { id: data.user.id, email: data.user.email },
+      });
     }
 
-    void logCustomerActivity({
-      customerId: data.user.id,
-      eventType: 'login',
-      title: 'Logged in',
-      subtitle: data.user.email ?? 'Email sign-in',
-      metadata: { method: 'email_password' },
-    });
-    return NextResponse.json({
+    // Team: password ok → email OTP (same cookie response as session clear)
+    const mfa = await startTeamEmailMfaIfNeeded(supabase, data.user, '/admin');
+    if ('error' in mfa) {
+      return NextResponse.json({ error: mfa.error }, { status: 400 });
+    }
+    if (!mfa.required) {
+      // shouldn't happen after team check; treat as normal
+      return NextResponse.json({
+        success: true,
+        requiresAdminOtp: false,
+        user: { id: data.user.id, email: data.user.email },
+      });
+    }
+
+    const res = NextResponse.json({
       success: true,
-      user: { id: data.user.id, email: data.user.email },
+      requiresAdminOtp: true,
+      email: maskEmail(mfa.email),
     });
+    setAdminMfaPendingCookie(res, {
+      userId: mfa.userId,
+      email: mfa.email,
+      next: mfa.next,
+    });
+    return res;
   }
 
   // ── Phone OTP Request ───────────────────────────────────────────────────────
