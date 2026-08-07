@@ -26,6 +26,9 @@ function pageHasBuiltInHeaderOffset(pathname: string): boolean {
 
   const prefixes = [
     '/shop',
+    // WP rewrites still serve shop UI under these paths — same header offset as /shop.
+    '/product-category',
+    '/product/',
     '/tools/',
     '/about/experts',
     '/about/stores',

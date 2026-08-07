@@ -13,6 +13,14 @@ const cases: [string, string | null][] = [
   ['/shop/navaratna/ruby', '/shop/ruby'],
   ['/shop/upratna/pitambari/', '/shop/pitambari'],
   ['/shop/navaratna/some-product-sku', null],
+  ['/rudrakshas', '/shop/rudraksha'],
+  ['/rudrakshas/', '/shop/rudraksha'],
+  ['/astrological-gemstones-online', '/gems-recommendations'],
+  ['/tag/astrological-gemstones', '/gems-recommendations'],
+  // Must NOT hub-dump — same-path video permalinks are live app routes.
+  ['/videos/about-pukhraj', null],
+  ['/videos/how-to-clean-your-astro-gems/', null],
+  ['/videos_cat/informational-videos-about-gemstones-and-rudrakshas', '/videos'],
 ];
 
 for (const [from, want] of cases) {

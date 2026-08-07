@@ -45,15 +45,33 @@ const EXACT = new Map<string, string>();
 for (const [from, to] of p2p11Pairs as [string, string][]) {
   // Live app pages + rebuilt geo SEO URLs — never redirect away from the same URL.
   if (isProtectedLivePath(from)) continue;
+  // Imported WP videos live at the same /videos/{slug} route. Collapsing every
+  // legacy video permalink onto the hub broke Google + sitelinks; skip those rows.
+  const fromBare = barePath(from);
+  if (to === '/videos' && /^\/videos\/.+/u.test(fromBare)) continue;
   EXACT.set(from, to);
   if (!from.endsWith('/')) EXACT.set(`${from}/`, to);
 }
 
 const NESTED_SHOP = /^\/shop\/([^/]+)\/([^/]+)\/?$/;
 
+/** Sitelinks / WP leftovers that must win over the dump’s “send to /” tag catch-alls. */
+const FORCE = new Map<string, string>([
+  ['/rudrakshas', '/shop/rudraksha'],
+  ['/astrological-gemstones-online', '/gems-recommendations'],
+  ['/tag/astrological-gemstone', '/gems-recommendations'],
+  ['/tag/astrological-gemstones', '/gems-recommendations'],
+  ['/tag/astrological-gemstones-guide', '/gems-recommendations'],
+  ['/tag/astrological-gemstones-india', '/gems-recommendations'],
+  ['/tag/genuine-astrological-gemstones', '/gems-recommendations'],
+]);
+
 export function lookupLegacyRedirect(pathname: string): string | null {
   const bare = barePath(pathname);
   if (isProtectedLivePath(bare)) return null;
+
+  const forced = FORCE.get(pathname) ?? FORCE.get(bare);
+  if (forced) return forced;
 
   const hit = EXACT.get(pathname) ?? EXACT.get(bare);
   if (hit) return hit;

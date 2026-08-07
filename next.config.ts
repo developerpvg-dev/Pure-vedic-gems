@@ -573,7 +573,15 @@ const nextConfig: NextConfig = {
         ['/gemstone-recommendation-date-of-birth', '/gems-recommendations'],
         ['/gemstone-recommendations-pure-vedic-science', '/gems-recommendations'],
         ['/online-rudraksha-recommendation', '/gems-recommendations'],
+        // Google sitelink "Astrological Gemstones online"
+        ['/astrological-gemstones-online', '/gems-recommendations'],
       ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
+      // Google sitelink "Rudraksha" still hits plural WP slug → shop hub.
+      ...[['/rudrakshas', '/shop/rudraksha']].flatMap(([source, destination]) => [
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
