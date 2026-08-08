@@ -8,6 +8,7 @@ import {
   getBlogPostCountByCategory,
 } from '@/lib/sanity/queries';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
+import { BlogPagination, BLOG_POSTS_PER_PAGE } from '@/components/blog/BlogPagination';
 import type { SanityBlogPost, SanityCategory } from '@/lib/types/blog';
 import type { Metadata } from 'next';
 import '../../blog-page.css';
@@ -16,6 +17,7 @@ export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ category: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 export async function generateStaticParams() {
@@ -34,18 +36,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BlogCategoryPage({ params }: PageProps) {
+export default async function BlogCategoryPage({ params, searchParams }: PageProps) {
   const { category: slug } = await params;
+  const { page: pageParam } = await searchParams;
+  const requestedPage = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
 
-  const [cat, posts, totalCount] = await Promise.all([
+  const [cat, totalCount] = await Promise.all([
     getBlogCategoryBySlug(slug),
-    getBlogPostsByCategory(slug, 50, 0),
     getBlogPostCountByCategory(slug),
   ]);
 
   const category = cat as SanityCategory | null;
   if (!category) notFound();
 
+  const totalPages = Math.max(1, Math.ceil(totalCount / BLOG_POSTS_PER_PAGE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const offset = (currentPage - 1) * BLOG_POSTS_PER_PAGE;
+
+  const posts = await getBlogPostsByCategory(slug, BLOG_POSTS_PER_PAGE, offset);
   const allPosts = (posts ?? []) as SanityBlogPost[];
 
   return (
@@ -78,11 +86,18 @@ export default async function BlogCategoryPage({ params }: PageProps) {
         </header>
 
         {allPosts.length > 0 ? (
-          <section className="pvg-blog-grid" aria-label={`${category.title} articles`}>
-            {allPosts.map((post) => (
-              <BlogPostCard key={post._id} post={post} />
-            ))}
-          </section>
+          <>
+            <section className="pvg-blog-grid" aria-label={`${category.title} articles`}>
+              {allPosts.map((post) => (
+                <BlogPostCard key={post._id} post={post} />
+              ))}
+            </section>
+            <BlogPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              basePath={`/blog/category/${slug}`}
+            />
+          </>
         ) : (
           <div className="pvg-blog-empty">
             <p className="pvg-blog-empty-title">No articles in this category yet.</p>

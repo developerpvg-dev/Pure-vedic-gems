@@ -6,6 +6,7 @@ import {
   getBlogPostCount,
 } from '@/lib/sanity/queries';
 import { BlogFeaturedPost, BlogPostCard } from '@/components/blog/BlogPostCard';
+import { BlogPagination, BLOG_POSTS_PER_PAGE } from '@/components/blog/BlogPagination';
 import type { SanityBlogPost, SanityCategory } from '@/lib/types/blog';
 import type { Metadata } from 'next';
 import './blog-page.css';
@@ -24,15 +25,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function BlogPage() {
-  const [featured, posts, categories, totalCount] = await Promise.all([
+export default async function BlogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const requestedPage = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
+
+  const [featured, categories, totalCount] = await Promise.all([
     getFeaturedBlogPost(),
-    getAllBlogPosts(50, 0),
     getAllBlogCategories(),
     getBlogPostCount(),
   ]);
 
-  const featuredPost = featured as SanityBlogPost | null;
+  const totalPages = Math.max(1, Math.ceil(totalCount / BLOG_POSTS_PER_PAGE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const offset = (currentPage - 1) * BLOG_POSTS_PER_PAGE;
+
+  const posts = await getAllBlogPosts(BLOG_POSTS_PER_PAGE, offset);
+
+  const featuredPost = (currentPage === 1 ? featured : null) as SanityBlogPost | null;
   const allPosts = (posts ?? []) as SanityBlogPost[];
   const allCategories = (categories ?? []) as SanityCategory[];
 
@@ -82,11 +95,14 @@ export default async function BlogPage() {
         )}
 
         {remainingPosts.length > 0 ? (
-          <section className="pvg-blog-grid" aria-label="All articles">
-            {remainingPosts.map((post) => (
-              <BlogPostCard key={post._id} post={post} />
-            ))}
-          </section>
+          <>
+            <section className="pvg-blog-grid" aria-label="All articles">
+              {remainingPosts.map((post) => (
+                <BlogPostCard key={post._id} post={post} />
+              ))}
+            </section>
+            <BlogPagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
+          </>
         ) : (
           <div className="pvg-blog-empty">
             <p className="pvg-blog-empty-title">No blog posts published yet.</p>

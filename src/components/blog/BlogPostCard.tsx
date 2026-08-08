@@ -6,7 +6,7 @@ import type { SanityBlogPost } from '@/lib/types/blog';
 
 export function BlogPostCard({ post }: { post: SanityBlogPost }) {
   const imageUrl = post.mainImage
-    ? urlFor(post.mainImage).width(600).height(400).quality(80).auto('format').url()
+    ? urlFor(post.mainImage).width(960).height(540).fit('crop').quality(80).auto('format').url()
     : null;
 
   return (
@@ -17,7 +17,7 @@ export function BlogPostCard({ post }: { post: SanityBlogPost }) {
             src={imageUrl}
             alt={post.title}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover object-center"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
@@ -60,19 +60,19 @@ export function BlogPostCard({ post }: { post: SanityBlogPost }) {
 
 export function BlogFeaturedPost({ post }: { post: SanityBlogPost }) {
   const imageUrl = post.mainImage
-    ? urlFor(post.mainImage).width(1200).height(600).quality(85).auto('format').url()
+    ? urlFor(post.mainImage).width(1200).height(675).fit('crop').quality(85).auto('format').url()
     : null;
 
   return (
     <Link href={`/blog/${post.slug?.current}`} className="pvg-blog-card group">
       <div className="grid gap-0 md:grid-cols-2">
         {imageUrl && (
-          <div className="relative aspect-3/2 overflow-hidden bg-[#ece5db] md:aspect-auto md:min-h-[18rem]">
+          <div className="relative aspect-video overflow-hidden bg-[#ece5db] md:aspect-auto md:min-h-[18rem]">
             <Image
               src={imageUrl}
               alt={post.title}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-cover object-center"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
             />
