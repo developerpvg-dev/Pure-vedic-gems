@@ -55,9 +55,86 @@ for (const [from, to] of p2p11Pairs as [string, string][]) {
 
 const NESTED_SHOP = /^\/shop\/([^/]+)\/([^/]+)\/?$/;
 
+// WP: /product-category|shop/navratan/rudrakshas/{n}-mukhi-rudraksha[/product]
+// Generic next.config rewrite maps these to /shop/navaratna/... → 404.
+const LEGACY_RUDRAKSHA_TREE =
+  /^\/(?:product-category|shop)\/navratan\/rudrakshas(?:\/([^/]+))?(?:\/([^/]+))?$/;
+
+const RUDRAKSHA_CAT_ALIASES: Record<string, string> = {
+  'ganesh-rudrakshas': 'ganesh-rudraksha',
+  'gauri-shankar-rudrakshas': 'gauri-shankar',
+  'nir-mukhi-rudraksha': 'nir-mukhi',
+  'garbh-gauri': 'garbh-gauri',
+  'sawar-rudraksha': 'sawar-rudraksha',
+};
+
+function mapLegacyRudrakshaCat(legacy: string): string | null {
+  const mukhi = legacy.match(/^(\d{1,2})-mukhi-rudraksha$/);
+  if (mukhi) return `${mukhi[1]}-mukhi`;
+  return RUDRAKSHA_CAT_ALIASES[legacy] ?? null;
+}
+
 /** Sitelinks / WP leftovers that must win over the dump’s “send to /” tag catch-alls. */
 const FORCE = new Map<string, string>([
   ['/rudrakshas', '/shop/rudraksha'],
+  ['/product-category/spiritual-idols', '/shop/idols'],
+  ['/shop/spiritual-idols', '/shop/idols'],
+  ['/product-category/navratan/exclusive-rudraksha', '/shop/rudraksha'],
+  [
+    '/shop/upratan/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+    '/shop/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+  ],
+  ['/shop/jewellery/diamond-jewellery/sample-8', '/shop/diamond-jewellery'],
+  ['/shop/jewelry/diamond-ring-on-demand-6', '/shop/diamond-jewellery'],
+  ['/shop/jewellery/diamond-jewellery/diamond-ring-18', '/shop/diamond-jewellery'],
+  [
+    '/shop/navratan/emerald/emerald-5-53ct-23181-per-ct-super-luxury-natural-gemstone',
+    '/shop/emerald',
+  ],
+  ['/tag/original-vs-substitute-gemstones', '/knowledge/gem-qualities'],
+  ['/tag/gemstone-selection', '/gems-recommendations'],
+  ['/tag/blue-sapphire', '/shop/blue-sapphire'],
+  ['/tag/certified-rudrakshas', '/shop/rudraksha'],
+  ['/tag/purevedicgems', '/about'],
+  ['/tag/pure-vedic-rudraksha', '/shop/rudraksha'],
+  ['/tag/free-gemstone-suggestion', '/gems-recommendations'],
+  ['/tag/free-gemstone-recommendation', '/gems-recommendations'],
+  ['/tag/free-gems-suggestion', '/gems-recommendations'],
+  ['/tag/free-gems-recommendation', '/gems-recommendations'],
+  ['/tag/gemstone-consultation-vedic-astrology', '/gems-recommendations'],
+  ['/tag/authentic-vedic-gemstones', '/blog'],
+  ['/tag/authentic-gemstones', '/blog'],
+  ['/tag/authentic-gemstones-online', '/blog'],
+  ['/tag/authentic-vedic-knowledge', '/blog'],
+  ['/tag/original-astrology-gemstones', '/blog'],
+  ['/tag/gemstone-benefits', '/blog'],
+  ['/tag/vedic-quality-gemstones', '/blog'],
+  ['/tag/gemstones-in-daily-life', '/blog'],
+  ['/tag/astrology-gemstones', '/blog'],
+  ['/tag/benefits-of-pure-and-natural-blue-sapphire-gemstone', '/shop/blue-sapphire'],
+  ['/tag/benefits-of-blue-sapphire', '/shop/blue-sapphire'],
+  ['/tag/blue-sapphire-benefits', '/shop/blue-sapphire'],
+  ['/tag/care-of-gemstones', '/knowledge/gems-care'],
+  ['/tag/chandra-ratna', '/shop/pearl'],
+  ['/tag/garnet-jewellery', '/shop/garnet'],
+  ['/tag/cats-eye-certification', '/shop/cats-eye'],
+  ['/tag/white-sapphire', '/shop/white-sapphire'],
+  ['/tag/authentic-gemstone-shopping-online', '/blog'],
+  ['/tag/neelam-stone', '/shop/blue-sapphire'],
+  ['/tag/vedic-mantra', '/knowledge/astrology'],
+  ['/tag/vedic-astrology', '/knowledge/astrology'],
+  ['/tag/vedic-astrology-benefits', '/knowledge/astrology'],
+  ['/tag/pure-gems', '/shop'],
+  ['/tag/vedic-remedies', '/gems-recommendations'],
+  [
+    '/our_services/online-offline-store-retail-store-gemstones-and-rudrakshas-selling/retail-store-2',
+    '/about/stores',
+  ],
+  [
+    '/our_services/online-offline-store-retail-store-gemstones-and-rudrakshas-selling',
+    '/about/stores',
+  ],
+  ['/category/navratnas', '/shop/navaratna'],
   ['/astrological-gemstones-online', '/gems-recommendations'],
   ['/tag/astrological-gemstone', '/gems-recommendations'],
   ['/tag/astrological-gemstones', '/gems-recommendations'],
@@ -76,6 +153,53 @@ export function lookupLegacyRedirect(pathname: string): string | null {
   const hit = EXACT.get(pathname) ?? EXACT.get(bare);
   if (hit) return hit;
 
+  const rudra = bare.match(LEGACY_RUDRAKSHA_TREE);
+  if (rudra) {
+    const [, cat, product] = rudra;
+    if (!cat) return '/shop/rudraksha';
+    const shopCat = mapLegacyRudrakshaCat(cat);
+    if (!shopCat) return '/shop/rudraksha';
+    return product ? `/shop/${shopCat}/${product}` : `/shop/${shopCat}`;
+  }
+
+  // WooCommerce catalog pagination → shop hub
+  if (/^\/shop\/page\/\d+$/.test(bare)) return '/shop';
+  // WP blog pagination → blog hub
+  if (/^\/blog\/page\/\d+$/.test(bare)) return '/blog';
+
+  // Dead WP diamond on-demand SKUs (not in catalog)
+  if (/^\/shop\/(?:jewelry|jewellery(?:\/diamond-jewellery)?)\/diamond-ring-on-demand(?:-\d+)?$/.test(bare)) {
+    return '/shop/diamond-jewellery';
+  }
+
+  // WP /shop/jewellery/malas/{slug} → /shop/malas/{slug}
+  const jewMala = bare.match(/^\/shop\/jewellery\/malas(?:\/([^/]+))?$/);
+  if (jewMala) return jewMala[1] ? `/shop/malas/${jewMala[1]}` : '/shop/malas';
+
+  // WP /shop/jewellery/bracelets/{slug} → /shop/bracelets/{slug} (normalize spaces)
+  const jewBracelet = bare.match(/^\/shop\/jewellery\/bracelets(?:\/(.+))?$/);
+  if (jewBracelet) {
+    if (!jewBracelet[1]) return '/shop/bracelets';
+    let slug = jewBracelet[1];
+    try {
+      slug = decodeURIComponent(slug);
+    } catch {
+      /* keep raw */
+    }
+    slug = slug.trim().replace(/\s+/g, '-').toLowerCase();
+    return `/shop/bracelets/${slug}`;
+  }
+
+  // Legacy WP store listings
+  if (
+    bare === '/our_services/online-offline-store-retail-store-gemstones-and-rudrakshas-selling' ||
+    bare.startsWith('/our_services/online-offline-store-retail-store-gemstones-and-rudrakshas-selling/') ||
+    bare === '/our_services/online-and-offline-retail-store-gemstones-and-rudrakshas-selling' ||
+    bare.startsWith('/our_services/online-and-offline-retail-store-gemstones-and-rudrakshas-selling/')
+  ) {
+    return '/about/stores';
+  }
+
   // /shop/upratna|navaratna/pitambari → /shop/pitambari
   if (
     pathname === '/shop/upratna/pitambari' ||
@@ -90,6 +214,11 @@ export function lookupLegacyRedirect(pathname: string): string | null {
   if (m && FLAT_PARENTS.has(m[1]) && FLAT_CATEGORY_SLUGS.has(m[2])) {
     return `/shop/${m[2]}`;
   }
+
+  // Unmapped WP taxonomies (next.config must not steal these before the EXACT map)
+  // ponytail: leftover tags → /blog hub; stone/remedy/etc. exacts live in dump/FORCE
+  if (bare.startsWith('/tag/')) return '/blog';
+  if (bare.startsWith('/author/')) return '/blog';
 
   return null;
 }

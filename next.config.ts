@@ -158,6 +158,347 @@ const nextConfig: NextConfig = {
       { source: '/disclaimer', destination: '/policies/legal-notice', statusCode: 301 },
       { source: '/disclaimer/', destination: '/policies/legal-notice', statusCode: 301 },
 
+      { source: '/product-category/spiritual-idols', destination: '/shop/idols', statusCode: 301 },
+      { source: '/product-category/spiritual-idols/', destination: '/shop/idols', statusCode: 301 },
+      { source: '/shop/spiritual-idols', destination: '/shop/idols', statusCode: 301 },
+      { source: '/shop/spiritual-idols/', destination: '/shop/idols', statusCode: 301 },
+      {
+        source: '/product-category/navratan/exclusive-rudraksha',
+        destination: '/shop/rudraksha',
+        statusCode: 301,
+      },
+      {
+        source: '/product-category/navratan/exclusive-rudraksha/',
+        destination: '/shop/rudraksha',
+        statusCode: 301,
+      },
+      // WooCommerce /shop/page/80 pagination → shop hub
+      { source: '/shop/page/:n(\\d+)', destination: '/shop', statusCode: 301 },
+      { source: '/shop/page/:n(\\d+)/', destination: '/shop', statusCode: 301 },
+      // WP /blog/page/3 pagination → blog hub
+      { source: '/blog/page/:n(\\d+)', destination: '/blog', statusCode: 301 },
+      { source: '/blog/page/:n(\\d+)/', destination: '/blog', statusCode: 301 },
+      {
+        source: '/shop/upratan/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+        destination: '/shop/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/upratan/zircon/zircon-5-95ct-2060per-ct-natural-gemstone/',
+        destination: '/shop/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/sample-8',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/sample-8/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewelry/diamond-ring-on-demand-6',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewelry/diamond-ring-on-demand-6/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      // Dead WP diamond ring on-demand SKUs → diamond jewellery hub
+      {
+        source: '/shop/jewelry/diamond-ring-on-demand',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewelry/diamond-ring-on-demand/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewelry/diamond-ring-on-demand-:n(\\d+)',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewelry/diamond-ring-on-demand-:n(\\d+)/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/diamond-ring-on-demand',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/diamond-ring-on-demand/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/diamond-ring-on-demand-:n(\\d+)',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/diamond-ring-on-demand-:n(\\d+)/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      // WP jewellery/malas tree → /shop/malas
+      { source: '/shop/jewellery/malas', destination: '/shop/malas', statusCode: 301 },
+      { source: '/shop/jewellery/malas/', destination: '/shop/malas', statusCode: 301 },
+      {
+        source: '/shop/jewellery/malas/:product',
+        destination: '/shop/malas/:product',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/malas/:product/',
+        destination: '/shop/malas/:product',
+        statusCode: 301,
+      },
+      // WP jewellery/bracelets tree → /shop/bracelets
+      { source: '/shop/jewellery/bracelets', destination: '/shop/bracelets', statusCode: 301 },
+      { source: '/shop/jewellery/bracelets/', destination: '/shop/bracelets', statusCode: 301 },
+      {
+        source: '/shop/jewellery/bracelets/:product',
+        destination: '/shop/bracelets/:product',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/bracelets/:product/',
+        destination: '/shop/bracelets/:product',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/diamond-ring-18',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/jewellery/diamond-jewellery/diamond-ring-18/',
+        destination: '/shop/diamond-jewellery',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/navratan/emerald/emerald-5-53ct-23181-per-ct-super-luxury-natural-gemstone',
+        destination: '/shop/emerald',
+        statusCode: 301,
+      },
+      {
+        source: '/shop/navratan/emerald/emerald-5-53ct-23181-per-ct-super-luxury-natural-gemstone/',
+        destination: '/shop/emerald',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/original-vs-substitute-gemstones',
+        destination: '/knowledge/gem-qualities',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/original-vs-substitute-gemstones/',
+        destination: '/knowledge/gem-qualities',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/gemstone-selection',
+        destination: '/gems-recommendations',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/gemstone-selection/',
+        destination: '/gems-recommendations',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/blue-sapphire',
+        destination: '/shop/blue-sapphire',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/blue-sapphire/',
+        destination: '/shop/blue-sapphire',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/certified-rudrakshas',
+        destination: '/shop/rudraksha',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/certified-rudrakshas/',
+        destination: '/shop/rudraksha',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/purevedicgems',
+        destination: '/about',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/purevedicgems/',
+        destination: '/about',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/pure-vedic-rudraksha',
+        destination: '/shop/rudraksha',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/pure-vedic-rudraksha/',
+        destination: '/shop/rudraksha',
+        statusCode: 301,
+      },
+      ...[
+        '/tag/free-gemstone-suggestion',
+        '/tag/free-gemstone-recommendation',
+        '/tag/free-gems-suggestion',
+        '/tag/free-gems-recommendation',
+        '/tag/gemstone-consultation-vedic-astrology',
+      ].flatMap((source) => [
+        { source, destination: '/gems-recommendations', statusCode: 301 },
+        { source: `${source}/`, destination: '/gems-recommendations', statusCode: 301 },
+      ]),
+      ...[
+        '/tag/authentic-vedic-gemstones',
+        '/tag/authentic-gemstones',
+        '/tag/authentic-gemstones-india',
+        '/tag/authentic-gemstones-online',
+        '/tag/authentic-vedic-knowledge',
+        '/tag/authentic-gemstone-shopping-online',
+        '/tag/original-astrology-gemstones',
+        '/tag/gemstone-benefits',
+        '/tag/gemstone-benefits-as-per-astrology',
+        '/tag/vedic-quality-gemstones',
+        '/tag/gemstones-in-daily-life',
+        '/tag/astrology-gemstones',
+        '/tag/astrology-gemstones-india',
+        '/tag/astrology-gemstone-guide',
+        '/tag/astrology-and-gemstones',
+        '/tag/vedic-astrology-gemstones',
+      ].flatMap((source) => [
+        { source, destination: '/blog', statusCode: 301 },
+        { source: `${source}/`, destination: '/blog', statusCode: 301 },
+      ]),
+      ...[
+        '/tag/benefits-of-pure-and-natural-blue-sapphire-gemstone',
+        '/tag/benefits-of-blue-sapphire',
+        '/tag/blue-sapphire-benefits',
+      ].flatMap((source) => [
+        { source, destination: '/shop/blue-sapphire', statusCode: 301 },
+        { source: `${source}/`, destination: '/shop/blue-sapphire', statusCode: 301 },
+      ]),
+      {
+        source: '/tag/care-of-gemstones',
+        destination: '/knowledge/gems-care',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/care-of-gemstones/',
+        destination: '/knowledge/gems-care',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/chandra-ratna',
+        destination: '/shop/pearl',
+        statusCode: 301,
+      },
+      {
+        source: '/tag/chandra-ratna/',
+        destination: '/shop/pearl',
+        statusCode: 301,
+      },
+      ...[
+        ['/tag/garnet-jewellery', '/shop/garnet'],
+        ['/tag/cats-eye-certification', '/shop/cats-eye'],
+        ['/tag/cats-eye-certificate', '/shop/cats-eye'],
+        ['/tag/white-sapphire', '/shop/white-sapphire'],
+        ['/tag/authentic-gemstone-shopping-online', '/blog'],
+        ['/tag/neelam-stone', '/shop/blue-sapphire'],
+        ['/tag/vedic-mantra', '/knowledge/astrology'],
+        ['/tag/vedic-astrology', '/knowledge/astrology'],
+        ['/tag/vedic-astrology-benefits', '/knowledge/astrology'],
+        ['/tag/pure-gems', '/shop'],
+        ['/tag/pure-gemstones', '/shop'],
+        ['/tag/vedic-remedies', '/gems-recommendations'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+      ...[
+        '/our_services/online-offline-store-retail-store-gemstones-and-rudrakshas-selling',
+        '/our_services/online-and-offline-retail-store-gemstones-and-rudrakshas-selling',
+      ].flatMap((base) => [
+        { source: base, destination: '/about/stores', statusCode: 301 },
+        { source: `${base}/`, destination: '/about/stores', statusCode: 301 },
+        { source: `${base}/:path*`, destination: '/about/stores', statusCode: 301 },
+      ]),
+      {
+        source: '/category/navratnas',
+        destination: '/shop/navaratna',
+        statusCode: 301,
+      },
+      {
+        source: '/category/navratnas/',
+        destination: '/shop/navaratna',
+        statusCode: 301,
+      },
+
+      // WP rudraksha tree. Must beat rewrite /shop/navratan/:slug/:product → /shop/navaratna/:product.
+      // :cat captures "5-mukhi" from "5-mukhi-rudraksha".
+      ...['/shop/navratan/rudrakshas', '/product-category/navratan/rudrakshas'].flatMap((base) => [
+        { source: base, destination: '/shop/rudraksha', statusCode: 301 },
+        { source: `${base}/`, destination: '/shop/rudraksha', statusCode: 301 },
+        {
+          source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha`,
+          destination: '/shop/:cat',
+          statusCode: 301,
+        },
+        {
+          source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha/`,
+          destination: '/shop/:cat',
+          statusCode: 301,
+        },
+        {
+          source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha/:product`,
+          destination: '/shop/:cat/:product',
+          statusCode: 301,
+        },
+        {
+          source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha/:product/`,
+          destination: '/shop/:cat/:product',
+          statusCode: 301,
+        },
+      ]),
+      ...[
+        ['ganesh-rudrakshas', 'ganesh-rudraksha'],
+        ['gauri-shankar-rudrakshas', 'gauri-shankar'],
+        ['nir-mukhi-rudraksha', 'nir-mukhi'],
+        ['garbh-gauri', 'garbh-gauri'],
+        ['sawar-rudraksha', 'sawar-rudraksha'],
+      ].flatMap(([from, to]) =>
+        ['/shop/navratan/rudrakshas', '/product-category/navratan/rudrakshas'].flatMap((base) => [
+          { source: `${base}/${from}`, destination: `/shop/${to}`, statusCode: 301 },
+          { source: `${base}/${from}/`, destination: `/shop/${to}`, statusCode: 301 },
+          {
+            source: `${base}/${from}/:product`,
+            destination: `/shop/${to}/:product`,
+            statusCode: 301,
+          },
+          {
+            source: `${base}/${from}/:product/`,
+            destination: `/shop/${to}/:product`,
+            statusCode: 301,
+          },
+        ]),
+      ),
+
       // Pitambari + flat /shop/{parent}/{category} redirects: src/lib/legacy-redirects.ts
 
       // Legacy yagya / pooja / havan / events pages -> product page if known, else main catalog.
@@ -558,7 +899,7 @@ const nextConfig: NextConfig = {
         ['/thank-you', '/'],
         ['/thankyou-for-enquirys', '/'],
         ['/thank-you-for-enquiry', '/'],
-        ['/sitemap', '/'],
+        ['/sitemap', '/sitemap.xml'],
       ].flatMap(([source, destination]) => [
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },
@@ -655,13 +996,12 @@ const nextConfig: NextConfig = {
       ]),
 
       // P2–P11 leftover URLs: src/lib/legacy-redirects.ts (proxy Map) — keeps deploy under Vercel route caps.
-      // Catch-alls still cover unmapped taxonomy URLs; Map runs first in proxy.
+      // Do NOT catch-all /tag/* or /author/* here — next.config redirects beat proxy and wipe Map destinations.
 
       // Legacy WP taxonomies / authors with no live routes
       { source: '/videos_cat/:path*', destination: '/videos', statusCode: 301 },
       { source: '/events_cat/:path*', destination: '/events-and-seminars', statusCode: 301 },
-      { source: '/tag/:path*', destination: '/', statusCode: 301 },
-      { source: '/author/:path*', destination: '/', statusCode: 301 },
+      // /tag/* and /author/* → handled in lookupLegacyRedirect (EXACT map + fallback)
       { source: '/product-tag/:path*', destination: '/shop', statusCode: 301 },
     ];
   },
