@@ -58,14 +58,28 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
   const jewelryEx = n(order.jewelry_charges);
   const jewelleryEx = metalEx + jewelryEx;
   const foldGst = isJewelleryOnlyGst(order);
+  const gst = n(order.gst_amount);
+
+  // Bake jewellery-slab GST into metal/making; leftover (ready bracelet/jewellery SKU) into subtotal.
+  let jewelleryAmt = jewelleryEx;
+  let subtotalAmt = n(order.subtotal);
+  if (foldGst && gst > 0) {
+    if (jewelleryEx > 0) {
+      jewelleryAmt = jewelleryPriceInclGst(jewelleryEx);
+      const baked = jewelleryAmt - jewelleryEx;
+      if (gst > baked) subtotalAmt += gst - baked;
+    } else {
+      subtotalAmt += gst;
+    }
+  }
 
   const lines: OrderPriceLine[] = [
-    { key: 'subtotal', label: 'Gemstone / product subtotal', amount: n(order.subtotal), sign: 1 },
+    { key: 'subtotal', label: 'Gemstone / product subtotal', amount: subtotalAmt, sign: 1 },
     {
       key: 'jewelry',
       // ponytail: one jewellery line — metal/making split stays in orders.* columns
       label: 'Jewellery',
-      amount: foldGst && jewelleryEx > 0 ? jewelleryPriceInclGst(jewelleryEx) : jewelleryEx,
+      amount: jewelleryAmt,
       sign: 1,
     },
     { key: 'cert', label: 'Certification', amount: n(order.certification_charges), sign: 1 },
@@ -98,13 +112,13 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
     lines.push({ key: 'discount', label: 'Discount', amount: combinedDiscount, sign: -1 });
   }
 
-  // Hide GST line when jewellery GST is already baked into metal/making amounts.
-  if (!foldGst && n(order.gst_amount) > 0) {
+  // Hide GST line when jewellery GST is already baked into metal/making / product amounts.
+  if (!foldGst && gst > 0) {
     const taxView = parseOrderTaxBreakdown(order.tax_breakdown);
     lines.push({
       key: 'gst',
       label: gstSummaryLabel(taxView),
-      amount: n(order.gst_amount),
+      amount: gst,
       sign: 1,
     });
   }

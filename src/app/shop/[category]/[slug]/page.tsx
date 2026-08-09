@@ -29,9 +29,7 @@ import {
 import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
 import { isNoCertification } from '@/lib/utils/format';
 
-export const revalidate = 300;
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 function extractImages(images: Json): string[] {
   if (!Array.isArray(images)) return [];

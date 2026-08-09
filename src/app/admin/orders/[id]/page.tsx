@@ -1227,11 +1227,14 @@ export default async function OrderDetailPage({ params }: PageProps) {
                       </span>
                     </div>
                   ))}
-                  <OrderTaxBreakdownBlock
-                    taxBreakdown={o.tax_breakdown}
-                    formatMoney={fmt}
-                    variant="admin"
-                  />
+                  {/* Offline matches online customer display: jewellery GST baked into lines, no CGST/SGST block */}
+                  {o.order_source === 'offline' ? null : (
+                    <OrderTaxBreakdownBlock
+                      taxBreakdown={o.tax_breakdown}
+                      formatMoney={fmt}
+                      variant="admin"
+                    />
+                  )}
                   <div className="flex items-center justify-between border-t border-stone-200 pt-3">
                     <span className="text-sm font-semibold text-stone-900">Grand total</span>
                     <span className="text-lg font-bold tabular-nums text-stone-900">{fmt(o.total)}</span>

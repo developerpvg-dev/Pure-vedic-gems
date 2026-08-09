@@ -94,10 +94,18 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
     title: 'Parcel Dispatch',
     subtitle: 'Shipping, tracking & follow-up',
     home: '/admin/dispatch',
-    allowPrefixes: ['/admin/dispatch', '/admin/orders', '/admin/leads', '/admin/compliance', '/admin/shipping'],
+    allowPrefixes: [
+      '/admin/dispatch',
+      '/admin/orders',
+      '/admin/leads',
+      '/admin/compliance',
+      '/admin/shipping',
+      '/admin/yagya-bookings',
+    ],
     nav: [
       { href: '/admin/dispatch', label: 'Dispatch dashboard', match: 'prefix' },
       { href: '/admin/orders', label: 'Orders', match: 'prefix' },
+      { href: '/admin/yagya-bookings', label: 'Yagya bookings', match: 'prefix' },
       { href: '/admin/leads', label: 'Leads', match: 'exact' },
       { href: '/admin/leads/metrics', label: 'Lead metrics', match: 'prefix' },
       { href: '/admin/shipping', label: 'Shipping zones & plans', match: 'prefix' },
@@ -158,6 +166,7 @@ export function assertRoleDashboardAllowlists() {
   if (!isScopedRolePathAllowed('fulfillment', '/admin/leads')) throw new Error('fulfillment leads');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/leads/metrics')) throw new Error('fulfillment lead metrics');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/dispatch')) throw new Error('fulfillment dispatch');
+  if (!isScopedRolePathAllowed('fulfillment', '/admin/yagya-bookings')) throw new Error('fulfillment yagya bookings');
   if (isScopedRolePathAllowed('fulfillment', '/admin/commissions')) throw new Error('fulfillment must not open commissions');
   if (!isScopedRolePathAllowed('fulfillment', '/admin/shipping')) throw new Error('fulfillment shipping');
   if (SCOPED_ROLE_DASHBOARDS.fulfillment!.home !== '/admin/dispatch') throw new Error('fulfillment home');

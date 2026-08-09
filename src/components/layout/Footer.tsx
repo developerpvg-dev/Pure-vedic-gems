@@ -42,6 +42,7 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
     title: 'Services',
     links: [
       { label: 'Consultation', href: '/consultation' },
+      { label: 'Yagyas', href: '/vedic-yagyas-service' },
       { label: 'Gem-to-Jewellery Configurator', href: '/configure' },
       { label: 'Remedies Recommendation', href: '/gems-recommendations' },
       { label: 'Carat to Ratti Converter', href: '/tools/carat-to-ratti' },

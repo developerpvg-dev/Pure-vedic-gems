@@ -8,7 +8,7 @@ import { Money } from '@/components/currency/Money';
 import { YagyaServiceIntro } from '@/components/yagyas/YagyaServiceIntro';
 import '@/app/consultation/consultation-page.css';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 export const metadata: Metadata = buildMetadata({
   title: 'Vedic Pooja / Yagya Services — Authentic Havan by Learned Pandits',

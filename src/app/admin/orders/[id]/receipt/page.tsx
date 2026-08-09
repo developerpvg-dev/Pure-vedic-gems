@@ -487,11 +487,13 @@ export default async function OrderReceiptPage({
                 value={`${line.sign < 0 ? '−' : ''}${fmt(line.amount)}`}
               />
             ))}
-            <OrderTaxBreakdownBlock
-              taxBreakdown={order.tax_breakdown}
-              formatMoney={fmt}
-              variant="print"
-            />
+            {order.order_source === 'offline' ? null : (
+              <OrderTaxBreakdownBlock
+                taxBreakdown={order.tax_breakdown}
+                formatMoney={fmt}
+                variant="print"
+              />
+            )}
             <div className="flex justify-between gap-4 border-t border-stone-300 pt-2 text-base font-bold">
               <dt>Grand total</dt>
               <dd className="tabular-nums">{fmt(order.total)}</dd>

@@ -38,7 +38,7 @@ import { RudrakshaCategoryGrid } from '@/components/shop/RudrakshaCategoryGrid';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { MessageCircleQuestion } from 'lucide-react';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 async function resolveCategory(slug: string): Promise<ResolvedShopCategory | null> {
   return resolveShopCategoryPath(slug);

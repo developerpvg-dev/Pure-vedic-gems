@@ -93,25 +93,45 @@ export async function POST(req: NextRequest) {
 
   const event = typeof payload.event === 'string' ? payload.event : 'unknown';
 
-  switch (event) {
-    case 'payment.captured':
-    case 'payment.authorized':
-      return handlePaymentWebhook(event, payload);
-    case 'payment.failed':
-      return handlePaymentFailed(payload);
-    case 'refund.processed':
-      return handleRefundProcessed(payload);
-    default: {
+  // ponytail: after HMAC ok, ack 2xx even if downstream work fails — Razorpay
+  // disables the webhook after sustained non-2xx (seen 2026-08-09). Client-verify
+  // still finalizes payments; upgrade: queue + retry worker if orphan events pile up.
+  try {
+    switch (event) {
+      case 'payment.captured':
+      case 'payment.authorized':
+        return await handlePaymentWebhook(event, payload);
+      case 'payment.failed':
+        return await handlePaymentFailed(payload);
+      case 'refund.processed':
+        return await handleRefundProcessed(payload);
+      default: {
+        const { event: paymentEvent } = await upsertPaymentEvent({
+          eventId: webhookEventId(payload, event, null),
+          eventType: event,
+          signatureValid: true,
+          status: 'ignored',
+          payload: payload as Json,
+        });
+        await markPaymentEventProcessed(paymentEvent.id, 'ignored');
+        return NextResponse.json({ status: 'ignored' });
+      }
+    }
+  } catch (error) {
+    console.error('[Webhook] Processing failed after valid signature:', error);
+    try {
       const { event: paymentEvent } = await upsertPaymentEvent({
         eventId: webhookEventId(payload, event, null),
         eventType: event,
         signatureValid: true,
-        status: 'ignored',
+        status: 'processing_error',
         payload: payload as Json,
       });
-      await markPaymentEventProcessed(paymentEvent.id, 'ignored');
-      return NextResponse.json({ status: 'ignored' });
+      await markPaymentEventProcessed(paymentEvent.id, 'processing_error');
+    } catch (persistError) {
+      console.error('[Webhook] Could not persist processing_error event:', persistError);
     }
+    return NextResponse.json({ status: 'processing_error' });
   }
 }
 
@@ -156,8 +176,21 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
   try {
     facts = await fetchRazorpayPaymentFacts(razorpayOrderId, razorpayPaymentId);
   } catch (error) {
+    // Wrong live/test API keys or transient Razorpay API errors used to 502 here —
+    // that is what gets the webhook auto-disabled. Ack receipt; leave order for review.
     console.error('[Webhook] Could not verify Razorpay payment facts:', error);
-    return NextResponse.json({ error: 'Razorpay lookup failed' }, { status: 502 });
+    await markOrderPaymentReview({
+      order,
+      eventId: event.id,
+      razorpayPaymentId,
+      reason: `Razorpay lookup failed after valid webhook: ${
+        error instanceof Error ? error.message : 'unknown error'
+      }`,
+      expectedPaise,
+      amountPaise,
+    });
+    await markPaymentEventProcessed(event.id, 'razorpay_lookup_failed');
+    return NextResponse.json({ status: 'razorpay_lookup_failed' });
   }
 
   const amountMatches =

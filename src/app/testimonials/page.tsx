@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Read customer testimonials and proof archives from Pure Vedic Gems clients across India and overseas.',
 };
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 const TESTIMONIALS_PER_PAGE = 8;
 
@@ -115,7 +115,7 @@ export default async function TestimonialsPage({
                <div className="flex -space-x-3">
                   {[...Array(4)].map((_, i) => (
                       <div key={i} className="w-10 h-10 rounded-full border-2 border-[#faf8f4] bg-[#e0d6c8] overflow-hidden shadow-sm flex items-center justify-center">
-                         <span className="text-xs text-[#8c7456] block mt-1">👤</span>
+                         <span className="text-xs text-[#8c7456] block mt-1">??</span>
                       </div>
                   ))}
                </div>

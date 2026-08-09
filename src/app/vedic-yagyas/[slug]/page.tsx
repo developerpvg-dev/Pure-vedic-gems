@@ -7,7 +7,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { Money } from '@/components/currency/Money';
 import { buildMetadata, serviceJsonLd } from '@/lib/utils/seo';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 type YagyaDetailRow = {
   id: string;

@@ -7,9 +7,6 @@ import { leadListScope, isLeadManager, redactLeadContactForRole } from '@/lib/le
 import { LEAD_PIPELINE_STAGES, TELECOM_ACTIVE_STAGES, ASTRO_ACTIVE_STAGES } from '@/lib/leads/constants';
 import { mergeBirthFields, needsBirthHydration } from '@/lib/leads/hydrate';
 import { attachDuplicateHints } from '@/lib/leads/duplicates';
-import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
-import type { Consultation } from '@/lib/types/database';
-
 // ponytail: hard cap — raise or page if managers regularly export >5k filtered rows
 const LEADS_EXPORT_LIMIT = 5000;
 
@@ -97,33 +94,6 @@ function applyKindFilter(
     );
   }
   return q.ilike('enquiry_type', `%${sanitizeSearchTerm(enquiryType)}%`);
-}
-
-/** Pull paid bookings into CRM when payment ran before week43 / verify missed the insert. */
-async function syncPaidConsultationsIntoCrm(admin: ReturnType<typeof createAdminClient>) {
-  const { data: paid, error } = await admin
-    .from('consultations')
-    .select('*')
-    .eq('payment_status', 'captured')
-    .order('created_at', { ascending: false })
-    .limit(60);
-  if (error || !paid?.length) return;
-
-  const rows = paid as unknown as Consultation[];
-  const ids = rows.map((row) => row.id);
-  const { data: linked } = await admin.from('enquiries').select('consultation_id').in('consultation_id', ids);
-  const have = new Set((linked ?? []).map((row) => row.consultation_id as string));
-
-  for (const row of rows) {
-    if (have.has(row.id)) continue;
-    try {
-      await ensureLeadFromConsultation(admin, row);
-    } catch (err) {
-      // ponytail: missing consultation_id column until week43 — don't break the list
-      console.error('[Leads] sync consultation→enquiry failed:', err);
-      break;
-    }
-  }
 }
 
 async function fetchLeadSummary(
@@ -460,10 +430,7 @@ export async function GET(request: NextRequest) {
       .is('enquiry_type', null),
   ]);
 
-  // Managers only: pull captured payments that never got a CRM row
-  if (!scope && isLeadManager(auth.member.normalizedRole)) {
-    await syncPaidConsultationsIntoCrm(admin);
-  }
+  // ponytail: no list-time consultation→enquiry backfill — it resurrected deleted test leads every refresh. Payment verify still creates CRM rows.
 
   const queue = searchParams.get('queue'); // active | past | waiting | all
   const pipelineParam = searchParams.get('pipeline');

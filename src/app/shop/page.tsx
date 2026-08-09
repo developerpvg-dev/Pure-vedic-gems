@@ -11,7 +11,7 @@ import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import type { Metadata } from 'next';
 import type { ProductCard } from '@/lib/types/product';
 
-export const revalidate = 300; // ISR: 5 min — product data rarely changes minute-to-minute
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 export const metadata: Metadata = {
   title: 'Buy Certified Vedic Gemstones — PureVedicGems',

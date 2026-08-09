@@ -5,7 +5,7 @@ export const SITE_CONFIG = {
     'Certified natural Vedic gemstones, Rudraksha, and custom jewelry from a trusted heritage brand.',
   founded: 1937,
   phone: '+91-9871582404',
-  email: 'info@purevedicgems.com',
+  email: 'purevedicgems@gmail.com',
   address: {
     street: 'FF-32, MGF Metropolitan Mall, Distt. Centre Saket',
     city: 'New Delhi',
@@ -28,7 +28,7 @@ export const TOPBAR_ITEMS: readonly TopbarItem[] = [
   { label: 'Sultanpur, Delhi', kind: 'location', flag: '🇮🇳', tag: 'IN' },
   { label: 'Hounslow, London UK', kind: 'location', flag: '🇬🇧', tag: 'GB' },
   { label: '+91-9871582404', kind: 'phone' },
-  { label: 'info@purevedicgems.com', kind: 'email' },
+  { label: 'purevedicgems@gmail.com', kind: 'email' },
   { label: 'Insured Worldwide Shipping', kind: 'shipping', highlight: true },
   { label: '+91-9310172512', kind: 'phone' },
 ] as const;

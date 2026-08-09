@@ -17,7 +17,7 @@ import { HomeVideosSection } from '@/components/home/HomeVideosSection';
 import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
 import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
   const supabase = await createClient();

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: 'Watch Pure Vedic Gems event, seminar, yagya, pooja, and spiritual ceremony videos grouped by event category.',
 };
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 const CATEGORIES_PER_PAGE = 5;
 

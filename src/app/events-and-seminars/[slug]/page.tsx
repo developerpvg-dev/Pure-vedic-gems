@@ -7,7 +7,7 @@ import type { EventVideo, EventVideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoRow } from '@/components/events/VideoRow';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 type Props = { params: Promise<{ slug: string }> };
 

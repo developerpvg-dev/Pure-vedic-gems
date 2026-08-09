@@ -7,7 +7,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { YagyaBuyForm } from '@/components/yagyas/YagyaBuyForm';
 import { buildMetadata } from '@/lib/utils/seo';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 type YagyaBuyRow = {
   id: string;

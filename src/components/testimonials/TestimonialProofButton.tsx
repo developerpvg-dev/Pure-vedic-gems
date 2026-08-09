@@ -1,5 +1,7 @@
 'use client';
 
+import { isViewableProofUrl } from '@/lib/testimonials/proof-url';
+
 type TestimonialProofButtonProps = {
   proofUrl: string | null;
   proofAlt: string | null;
@@ -7,7 +9,7 @@ type TestimonialProofButtonProps = {
 };
 
 export function TestimonialProofButton({ proofUrl }: TestimonialProofButtonProps) {
-  if (!proofUrl) return null;
+  if (!isViewableProofUrl(proofUrl)) return null;
 
   return (
     <a

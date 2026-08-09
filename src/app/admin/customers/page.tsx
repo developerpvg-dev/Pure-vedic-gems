@@ -199,6 +199,7 @@ export default function AdminCustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [timelineLoading, setTimelineLoading] = useState(false);
@@ -248,7 +249,7 @@ export default function AdminCustomersPage() {
       per_page: String(CUSTOMERS_PER_PAGE),
       sort: sortMode,
     });
-    if (search) params.set('search', search);
+    if (debouncedSearch) params.set('search', debouncedSearch);
     const response = await fetch(`/api/admin/customers?${params.toString()}`, { cache: 'no-store' });
     const data = await response.json().catch(() => null) as {
       customers?: CustomerRow[];
@@ -261,7 +262,7 @@ export default function AdminCustomersPage() {
     setTotalPages(data?.total_pages ?? 1);
     setSelectedId((current) => nextCustomers.some((customer) => customer.id === current) ? current : nextCustomers[0]?.id ?? null);
     setLoading(false);
-  }, [page, search, sortMode]);
+  }, [page, debouncedSearch, sortMode]);
 
   const updateAccountStatus = useCallback(async (status: CustomerAccountStatus) => {
     if (!selectedId) return;
@@ -310,9 +311,20 @@ export default function AdminCustomersPage() {
       .catch(() => undefined);
   }, []);
 
+  // ponytail: debounce search so activity sort doesn't fire a serverless call per keystroke
   useEffect(() => {
-    const timer = window.setTimeout(() => { void fetchCustomers(); }, 0);
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch((prev) => {
+        const next = search.trim();
+        if (prev !== next) setPage(1);
+        return next;
+      });
+    }, 300);
     return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    void fetchCustomers();
   }, [fetchCustomers]);
 
   useEffect(() => {

@@ -58,6 +58,33 @@ const lines = buildOrderPriceLines({
 assert.equal(lines.find((l) => l.key === 'gst'), undefined);
 assert.equal(lines.find((l) => l.key === 'jewelry')?.amount, jewelleryPriceInclGst(10000));
 
+// Ready bracelet/jewellery SKU: bake 3% into product subtotal (no metal line).
+const readyJewelleryTax = {
+  ...sample,
+  components: [
+    {
+      label: 'Bracelet',
+      component: 'product',
+      taxable_amount: 10000,
+      hsn_code: '7113',
+      rate_percent: 3,
+      cgst: 0,
+      sgst: 0,
+      igst: 300,
+      total_tax: 300,
+    },
+  ],
+};
+const readyLines = buildOrderPriceLines({
+  subtotal: 10000,
+  jewelry_charges: 0,
+  metal_charges: 0,
+  gst_amount: 300,
+  tax_breakdown: readyJewelleryTax,
+});
+assert.equal(readyLines.find((l) => l.key === 'gst'), undefined);
+assert.equal(readyLines.find((l) => l.key === 'subtotal')?.amount, 10300);
+
 const patched = applyJewelleryGstDeltaToTaxBreakdown(sample, {
   gstDelta: 30,
   jewelleryTaxableDelta: 1000,

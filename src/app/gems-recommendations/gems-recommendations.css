@@ -307,6 +307,9 @@
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(44, 4, 4, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .pvg-remedy-shrine:hover {

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: canonicalUrl('/videos') },
 };
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 const CATEGORIES_PER_PAGE = 4;
 

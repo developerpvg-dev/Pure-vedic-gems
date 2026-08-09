@@ -111,7 +111,7 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
     const interval = window.setInterval(() => {
       if (document.hidden) return;
       void loadNotifications();
-    }, 60000);
+    }, 180000); // ponytail: 3 min poll — cuts admin Fluid/invocation floor; was 60s
     return () => {
       window.clearTimeout(initial);
       window.clearInterval(interval);

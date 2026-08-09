@@ -54,7 +54,7 @@ const STORE_LOCATIONS: DisplayStore[] = OFFICE_LOCATIONS.map((location) => ({
   })),
   landmark: location.landmark,
   phones: location.id === 'uk' ? [UK_PHONE] : INDIA_PHONES,
-  email: location.id === 'uk' ? 'info@purevedicgems.com' : 'info@purevedicgems.in',
+  email: 'purevedicgems@gmail.com',
   mapUrl: location.mapUrl,
   isPrimary: location.id === 'delhi',
   hours:

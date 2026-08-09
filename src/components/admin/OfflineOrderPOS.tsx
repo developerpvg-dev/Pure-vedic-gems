@@ -22,7 +22,6 @@ import { OfflinePosCatalogPicker } from '@/components/admin/OfflinePosCatalogPic
 import type { ConfiguredOrderResult } from '@/components/configurator/PriceSummary';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
-import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 import type { ProductCard } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { getApiErrorMessage } from '@/lib/utils/api-validation';
@@ -196,11 +195,7 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
             <dd className="tabular-nums text-emerald-800">-{fmt(manualOnly)}</dd>
           </div>
         ) : null}
-        <OrderTaxBreakdownBlock
-          taxBreakdown={pricing.tax_breakdown}
-          formatMoney={fmt}
-          variant="pos"
-        />
+        {/* ponytail: match online — jewellery GST baked into lines via buildOrderPriceLines; no CGST/SGST UI */}
         <div className="flex justify-between gap-4 border-t border-stone-300 pt-2 text-base font-bold text-stone-900">
           <dt>Order total</dt>
           <dd className="tabular-nums">{fmt(pricing.total)}</dd>

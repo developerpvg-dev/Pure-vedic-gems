@@ -31,7 +31,7 @@ const DEFAULT_DESCRIPTION =
 const BRAND_LOGO_PATH = '/pvg-logo.png';
 /** 1200×630 default share card. */
 const DEFAULT_OG_IMAGE_PATH = '/og-default.png';
-const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'info@purevedicgems.com';
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'purevedicgems@gmail.com';
 const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-9871582404';
 const OFFICIAL_SAME_AS = [
   'https://www.facebook.com/puregems.vm',

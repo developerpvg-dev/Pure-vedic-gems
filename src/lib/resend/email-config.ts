@@ -60,7 +60,7 @@ export function getFromAddress(channel: EmailChannel = 'general'): string {
   const defaults: Record<EmailChannel, string> = {
     orders: 'PureVedicGems <orders@purevedicgems.com>',
     consultations: 'PureVedicGems <consultations@purevedicgems.com>',
-    general: 'PureVedicGems <info@purevedicgems.com>',
+    general: 'PureVedicGems <purevedicgems@gmail.com>',
   };
 
   return defaults[channel];
@@ -71,7 +71,7 @@ export function getAdminNotificationEmail(): string | null {
 }
 
 export function getSupportEmail(): string {
-  return process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'info@purevedicgems.com';
+  return process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'purevedicgems@gmail.com';
 }
 
 export function getSupportPhone(): string {

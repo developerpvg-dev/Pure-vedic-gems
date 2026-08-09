@@ -139,6 +139,7 @@ export const GEMS_REC_SERVICES = [
     title: 'Horoscope / Kundli',
     titleHi: 'कुंडली',
     image: '/home/remediesrec/Horoscope%20%20Kundli.jpg',
+    href: '/consultation',
     body: 'Detailed lagna, chalit, moon, and divisional chart study — Mahadasha, Antardasha, and planetary dignity — by experienced Vedic astrologers.',
   },
   {
@@ -146,6 +147,7 @@ export const GEMS_REC_SERVICES = [
     title: 'Gemstones',
     titleHi: 'रत्न',
     image: '/home/remediesrec/Gemstones.jpg',
+    href: '/shop',
     body: 'Navratna and suitable Upratna recommendations matched to benefics in your chart, with guidance on quality grade, weight, and metal.',
   },
   {
@@ -153,6 +155,7 @@ export const GEMS_REC_SERVICES = [
     title: 'Rudrakshas',
     titleHi: 'रुद्राक्ष',
     image: '/home/remediesrec/Rudrakshas.jpg',
+    href: '/shop/rudraksha',
     body: 'Mukhi selection based on your Kundli when gemstones are not suitable, or as complementary remedies for balance and protection.',
   },
 ] as const;

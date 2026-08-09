@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
 import { RecoHeroPriceCopy } from '@/components/home/RecoHeroPriceCopy';
@@ -158,7 +159,7 @@ export default function GemsRecommendationsPage() {
           <div className="pvg-remedy-triptych">
             {GEMS_REC_SERVICES.map((item, index) => (
               <ScrollReveal key={item.slug} delay={index * 90}>
-                <article className="pvg-remedy-shrine">
+                <Link href={item.href} className="pvg-remedy-shrine">
                   <div className="pvg-remedy-shrine-media">
                     <Image
                       src={item.image}
@@ -172,7 +173,7 @@ export default function GemsRecommendationsPage() {
                     <h3>{item.title}</h3>
                     <p>{item.body}</p>
                   </div>
-                </article>
+                </Link>
               </ScrollReveal>
             ))}
           </div>

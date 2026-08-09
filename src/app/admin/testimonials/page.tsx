@@ -5,6 +5,7 @@ import { BarChart3, CheckCircle2, Eye, Home, Loader2, Pencil, Plus, Star, Trash2
 import { AdminAnalyticsPanel, AdminPageHeader, AdminStatCard } from '@/components/admin/AdminPageShell';
 import { MetricBars, RevenueTrendChart } from '@/components/admin/AdminCharts';
 import { useAdminAnalytics } from '@/components/admin/useAdminAnalytics';
+import { isViewableProofUrl } from '@/lib/testimonials/proof-url';
 
 interface TestimonialItem {
   id: string;
@@ -196,7 +197,7 @@ export default function AdminTestimonialsPage() {
           </div>
           <textarea value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} placeholder="Testimonial message" rows={6} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <div className="flex gap-2">
-            <input value={form.proof_image_url} onChange={(event) => setForm({ ...form, proof_image_url: event.target.value })} placeholder="Proof image URL or /legacy path" className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+            <input value={form.proof_image_url} onChange={(event) => setForm({ ...form, proof_image_url: event.target.value })} placeholder="Proof image URL (https / Supabase upload)" className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm" />
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700">
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Upload
@@ -256,7 +257,7 @@ export default function AdminTestimonialsPage() {
                     {item.title && <h3 className="mt-3 font-semibold text-gray-900">{item.title}</h3>}
                     <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-gray-600">{item.message}</p>
                     <p className="mt-3 text-xs text-gray-400">{item.location || 'No location'} · order {item.sort_order}</p>
-                    {item.proof_image_url && <a href={item.proof_image_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:underline"><Eye className="h-3.5 w-3.5" /> View proof</a>}
+                    {isViewableProofUrl(item.proof_image_url) && <a href={item.proof_image_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:underline"><Eye className="h-3.5 w-3.5" /> View proof</a>}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => updateTestimonial(item.id, { status: 'approved', is_active: true })} className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white"><CheckCircle2 className="h-3.5 w-3.5" />Publish</button>

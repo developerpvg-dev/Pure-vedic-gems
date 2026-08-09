@@ -8734,7 +8734,7 @@ main:has(> .pvg-react-home-root) {
   isolation: isolate;
   background:
     linear-gradient(90deg, rgba(17, 8, 5, 0.94) 0%, rgba(31, 13, 8, 0.82) 34%, rgba(58, 18, 12, 0.72) 100%),
-    url('/home/testimonial/cardbg.webp') center / cover no-repeat !important;
+    url('/home/testimonial/cardbg.webp?v=20260810') center / cover no-repeat !important;
   color: #ffffff;
 }
 
@@ -9294,7 +9294,7 @@ main:has(> .pvg-react-home-root) {
 }
 
 .pvg-react-home-root .testimonials-section {
-  background: url('/home/testimonial/cardbg.webp') center / cover no-repeat !important;
+  background: url('/home/testimonial/cardbg.webp?v=20260810') center / cover no-repeat !important;
   color: #2c0404 !important;
 }
 

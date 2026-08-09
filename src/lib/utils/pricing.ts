@@ -250,6 +250,7 @@ export async function recalculateOrderTotal(
       const manual = item.manual_design;
       const itemPrice = Number(manual.item_price) || 0;
       const otherCharge = Number(manual.other_charge) || 0;
+      // Match online configurator: gem/item + other are GST-exempt; 3% only on metal+labour.
       pricedItems.push({
         line_id: item.line_id,
         product_id: '',
@@ -262,10 +263,10 @@ export async function recalculateOrderTotal(
         origin: null,
         sold_individually: true,
         hsn_code: '7113',
-        gst_rate: 3,
+        gst_rate: 0,
         tax_status: 'taxable',
-        tax_class: 'jewelry',
-        tax_rate_percent: 3,
+        tax_class: 'jewellery_mounted_gem',
+        tax_rate_percent: 0,
         unit_price: itemPrice + otherCharge,
         line_total: itemPrice + otherCharge,
         quantity: 1,
@@ -589,6 +590,14 @@ export function __pricingOfflineSelfCheck() {
   console.assert(
     manualDesign.item_price + manualDesign.metal_price + manualDesign.labour_charge + manualDesign.other_charge === 9000,
     'manual design components total correctly',
+  );
+  // Product line tax_rate_percent is 0; jewellery GST is only metal + labour @ 3%.
+  const jewelleryTaxable = manualDesign.metal_price + manualDesign.labour_charge;
+  const expectedGst = Math.round(jewelleryTaxable * 0.03);
+  console.assert(expectedGst === 111, 'manual design GST = 3% of metal+labour only');
+  console.assert(
+    Math.round((manualDesign.item_price + manualDesign.other_charge) * 0.03) === 159,
+    'pre-fix product-line GST would have been 159 — must stay exempt',
   );
   console.log('pricing offline self-check ok');
 }

@@ -11,6 +11,16 @@ export type CustomerActivityInput = {
   metadata?: Record<string, unknown>;
 };
 
+export async function touchCustomerLastActivity(customerId: string, at = new Date().toISOString()) {
+  const admin = createAdminClient();
+  // ponytail: app-side bump for hosts that haven't applied DB triggers yet; rare out-of-order races are fine
+  await admin
+    .from('customer_profiles')
+    .update({ last_activity_at: at })
+    .eq('id', customerId)
+    .then(null, () => undefined);
+}
+
 export async function logCustomerActivity({
   customerId,
   eventType,
@@ -21,6 +31,7 @@ export async function logCustomerActivity({
   metadata = {},
 }: CustomerActivityInput) {
   const admin = createAdminClient();
+  const createdAt = new Date().toISOString();
   await admin
     .from('customer_activity_log')
     .insert({
@@ -31,6 +42,10 @@ export async function logCustomerActivity({
       entity_type: entityType,
       entity_id: entityId,
       metadata: metadata as Json,
+      created_at: createdAt,
     })
     .then(null, () => undefined);
+
+  // Trigger also bumps this when migration is applied; keep for pre-trigger envs.
+  await touchCustomerLastActivity(customerId, createdAt);
 }

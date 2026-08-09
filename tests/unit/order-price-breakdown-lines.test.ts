@@ -42,7 +42,35 @@ describe('buildOrderPriceLines', () => {
       total: 20300,
     });
     expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery');
+    expect(lines.find((l) => l.key === 'jewelry')?.amount).toBe(10300);
     expect(lines.find((l) => l.key === 'gst')).toBeUndefined();
+  });
+
+  it('folds ready jewellery/bracelet GST into product subtotal', () => {
+    const lines = buildOrderPriceLines({
+      subtotal: 10000,
+      jewelry_charges: 0,
+      metal_charges: 0,
+      gst_amount: 300,
+      tax_breakdown: {
+        components: [
+          {
+            label: 'Bracelet',
+            component: 'product',
+            taxable_amount: 10000,
+            rate_percent: 3,
+            cgst: 0,
+            sgst: 0,
+            igst: 300,
+            total_tax: 300,
+          },
+        ],
+        totals: { taxable_amount: 10000, cgst: 0, sgst: 0, igst: 300, gst_amount: 300 },
+      },
+      total: 10300,
+    });
+    expect(lines.find((l) => l.key === 'gst')).toBeUndefined();
+    expect(lines.find((l) => l.key === 'subtotal')?.amount).toBe(10300);
   });
 
   it('does not double-count discount when coupon and rewards are present', () => {

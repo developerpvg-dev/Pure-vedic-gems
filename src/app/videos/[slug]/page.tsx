@@ -8,7 +8,7 @@ import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { canonicalUrl } from '@/lib/utils/seo';
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 type Props = { params: Promise<{ slug: string }> };
 

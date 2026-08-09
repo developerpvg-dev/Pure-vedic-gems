@@ -10,7 +10,7 @@ export function NavaratnaHomeCta({ className = '' }: { className?: string }) {
         copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
         primary={{ label: 'Get Gem Recommendation', href: '/consultation' }}
         secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
-        image="/home/ctas/cta1.webp?v=4"
+        image="/home/ctas/cta1.webp?v=20260810"
         imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
         imageSide="right"
       />

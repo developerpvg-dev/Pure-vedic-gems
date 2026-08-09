@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'View sample gemstone and Rudraksha lab certificates used by Pure Vedic Gems from reputed Indian and international laboratories.',
 };
 
-export const revalidate = 300;
+export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 const LOCAL_CERTIFICATE_ASSETS: Record<string, string> = {
   'grs-international-swiss-lab': '/legacy/lab-certificates/grs-international-swiss-lab.jpg',
