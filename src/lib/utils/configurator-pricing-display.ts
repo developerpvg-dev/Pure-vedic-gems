@@ -3,8 +3,8 @@ import {
   gstOnAmount,
   gstOnJewellery,
   isMetalMounted,
-  jewelleryPriceInclGst,
   resolveGemOrBeadTaxRate,
+  resolveJewelryPricingMode,
 } from '@/lib/utils/tax';
 
 export interface ConfiguratorPriceLine {
@@ -18,30 +18,34 @@ export interface ConfiguratorPriceLine {
 export interface ConfiguratorPriceTotals {
   lines: ConfiguratorPriceLine[];
   jewelry_subtotal: number;
-  /** Ex-GST merchandise (gem + jewellery + fees). */
+  /** Ex-tax merchandise (gem + jewellery + fees). */
   pre_gst_subtotal: number;
-  /** 3% on (metal + labour + diamond + custom) when mounted/fixed. */
+  /** Internal: 3% on weight+labour jewellery (never shown as a customer line). */
   gst_jewelry: number;
-  /** @deprecated Prefer gst_jewelry — kept 0 when mounted for one-line GST. */
+  /** @deprecated Prefer gst_jewelry */
   gst_metal: number;
   /** @deprecated Prefer gst_jewelry */
   gst_making: number;
-  /** Loose gem/bead GST (always 0 under current policy). */
   gst_gemstone: number;
-  /** Rate shown on the gem/bead GST line (always 0). */
   gst_gem_rate_percent: number;
   gst_certification: number;
   gst_energization: number;
   gst_total: number;
+  /** Customer grand total including any weight jewellery tax (no separate GST row). */
   grand_total: number;
 }
 
+/**
+ * Customer price lines never mention GST.
+ * Weight + labour: 3% is baked once into the primary jewellery line + grand_total.
+ * Fixed sheet: amounts as entered.
+ */
 export function buildConfiguratorPriceTotals(
   pricing: ConfigPricingBreakdown,
   options: {
     settingType: string | null;
     productCategory?: string | null;
-    /** @deprecated Ignored — server uses metal-mounted 3% for metal + making. Kept so old callers compile. */
+    /** @deprecated Ignored */
     jewelryGstPercent?: number;
     designNote?: string | null;
   }
@@ -52,7 +56,34 @@ export function buildConfiguratorPriceTotals(
     designNote = pricing.design_note,
   } = options;
   const showJewelry = Boolean(settingType && settingType !== 'loose');
+  const mode = resolveJewelryPricingMode(pricing);
   const lines: ConfiguratorPriceLine[] = [];
+
+  const mountingEx = pricing.metal_price + pricing.making_charge;
+  const diamondEx = pricing.diamond_charge;
+  const customEx = pricing.custom_design_fee;
+
+  const jewelryGst = Math.round(
+    gstOnJewellery(
+      {
+        metal: pricing.metal_price,
+        making: pricing.making_charge,
+        diamond: pricing.diamond_charge,
+        custom: pricing.custom_design_fee,
+      },
+      mode,
+    ),
+  );
+
+  // Bake full jewellery tax once onto one line so line amounts still sum to grand_total.
+  let mountingAmt = mountingEx;
+  let diamondAmt = diamondEx;
+  let customAmt = customEx;
+  if (jewelryGst > 0) {
+    if (mountingEx > 0) mountingAmt = mountingEx + jewelryGst;
+    else if (diamondEx > 0) diamondAmt = diamondEx + jewelryGst;
+    else if (customEx > 0) customAmt = customEx + jewelryGst;
+  }
 
   lines.push({
     key: 'gem',
@@ -78,18 +109,15 @@ export function buildConfiguratorPriceTotals(
         display: 'TBD',
       });
     } else if (hasJewelryDetail) {
-      // ponytail: hide metal/labor split — one Est. mounting line (charges still in amount)
-      // Display is tax-inclusive; gem never carries GST.
-      const mountingEx = pricing.metal_price + pricing.making_charge;
       if (mountingEx > 0) {
         lines.push({
           key: 'est-mounting',
           label: 'Est. mounting',
           detail:
-            pricing.jewelry_pricing_mode === 'weight' && pricing.metal_weight_grams > 0
+            mode === 'weight' && pricing.metal_weight_grams > 0
               ? `${pricing.metal_weight_grams} g`
               : undefined,
-          amount: jewelleryPriceInclGst(mountingEx),
+          amount: mountingAmt,
         });
       }
     } else {
@@ -101,13 +129,13 @@ export function buildConfiguratorPriceTotals(
       });
     }
 
-    if (pricing.diamond_charge > 0) {
+    if (diamondEx > 0) {
       lines.push({
         key: 'stone-addon',
         label: pricing.stone_addon_label
           ? `${pricing.stone_addon_label} add-on`
           : 'Stone / diamond add-on',
-        amount: jewelleryPriceInclGst(pricing.diamond_charge),
+        amount: diamondAmt,
       });
     }
 
@@ -136,14 +164,12 @@ export function buildConfiguratorPriceTotals(
     });
   }
 
-  if (pricing.custom_design_fee > 0) {
+  if (customEx > 0) {
     lines.push({
       key: 'custom-design',
       label: 'Custom design review',
-      amount: jewelleryPriceInclGst(pricing.custom_design_fee),
+      amount: customAmt,
     });
-  } else if (pricing.custom_design_pricing_pending && showJewelry) {
-    // TBD line already added above when jewelry detail is empty
   }
 
   const jewelrySubtotal =
@@ -163,26 +189,15 @@ export function buildConfiguratorPriceTotals(
   });
   const gemRate = resolveGemOrBeadTaxRate(productCategory, mounted);
 
-  // Jewellery only: 3% on (metal + labour + diamond + custom). Gem/bead never taxed.
-  let gstJewelry = 0;
+  let gstJewelry = jewelryGst;
   let gstGemstone = 0;
-  if (mounted) {
-    gstJewelry = gstOnJewellery({
-      metal: pricing.metal_price,
-      making: pricing.making_charge,
-      diamond: pricing.diamond_charge,
-      custom: pricing.custom_design_fee,
-    });
-  } else {
-    gstGemstone = gstOnAmount(pricing.gem_price, gemRate);
+  if (!mounted) {
+    gstJewelry = 0;
+    gstGemstone = Math.round(gstOnAmount(pricing.gem_price, gemRate));
   }
 
-  const gstCertification = 0;
-  const gstEnergization = 0;
-
-  const gstTotal = Math.round(
-    gstJewelry + gstGemstone + gstCertification + gstEnergization,
-  );
+  const gstTotal = gstJewelry + gstGemstone;
+  // ponytail: no customer "GST" line — tax is inside jewellery line amounts + grand_total
   const grandTotal = preGstSubtotal + gstTotal;
 
   return {
@@ -194,8 +209,8 @@ export function buildConfiguratorPriceTotals(
     gst_making: 0,
     gst_gemstone: gstGemstone,
     gst_gem_rate_percent: gemRate,
-    gst_certification: gstCertification,
-    gst_energization: gstEnergization,
+    gst_certification: 0,
+    gst_energization: 0,
     gst_total: gstTotal,
     grand_total: grandTotal,
   };

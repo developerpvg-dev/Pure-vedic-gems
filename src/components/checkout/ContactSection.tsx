@@ -89,7 +89,7 @@ export function ContactSection({
           <p className="truncate">{savedData.email}</p>
           <p>{savedData.phone}</p>
           {savedData.billing_gstin ? (
-            <p className="truncate">GST: {savedData.billing_gstin}</p>
+            <p className="truncate">Tax ID: {savedData.billing_gstin}</p>
           ) : null}
         </div>
       </div>
@@ -207,9 +207,9 @@ export function ContactSection({
               className="mt-1"
             />
             <span>
-              I need a GST tax invoice for a business purchase.
+              I need a business tax invoice for this purchase.
               <span className="mt-1 block text-xs text-[var(--pvg-muted)]">
-                GSTIN is stored on the order and printed on the invoice only after payment verification.
+                Your business tax ID is stored on the order and printed on the invoice only after payment verification.
               </span>
             </span>
           </label>
@@ -233,7 +233,7 @@ export function ContactSection({
                 {errors.business_name && <p className="text-xs text-red-500 mt-1">{errors.business_name}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-[var(--pvg-text)] mb-1.5">GSTIN</label>
+                <label className="block text-xs font-medium text-[var(--pvg-text)] mb-1.5">Business tax ID</label>
                 <input
                   type="text"
                   value={billingGstin}

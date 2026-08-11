@@ -91,10 +91,14 @@ export function canMarkConverted(role: string | null | undefined) {
 }
 
 /** Astrologers get chart fields only — never customer phone/email */
-export function redactLeadContactForRole<T extends { phone?: string | null; email?: string | null }>(
-  role: string | null | undefined,
-  lead: T
-): T {
+export function redactLeadContactForRole<
+  T extends {
+    phone?: string | null;
+    email?: string | null;
+    additional_phones?: string[] | null;
+    additional_emails?: string[] | null;
+  },
+>(role: string | null | undefined, lead: T): T {
   if (!isAstrologerRole(role)) return lead;
-  return { ...lead, phone: null, email: '' };
+  return { ...lead, phone: null, email: '', additional_phones: [], additional_emails: [] };
 }

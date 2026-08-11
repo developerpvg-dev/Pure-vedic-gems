@@ -284,7 +284,8 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
         </h2>
         <p className="mt-1 text-sm text-gray-500">
           Add metals from the catalog, choose weight + labor % or fixed ₹ per metal. Labor %
-          auto-fills from the {productScope} {settingType} category when configured. GST {defaultGst}% is fixed.
+          auto-fills from the {productScope} {settingType} category when configured. Weight +
+          labor % adds 3% GST automatically; fixed ₹ prices are tax-inclusive (no auto GST).
         </p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">

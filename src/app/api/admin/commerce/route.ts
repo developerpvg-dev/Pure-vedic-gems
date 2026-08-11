@@ -74,6 +74,8 @@ const currencySchema = z.object({
   base_currency: z.string().trim().length(3).transform((value) => value.toUpperCase()).default('INR'),
   currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
   rate: z.coerce.number().finite().positive(),
+  /** Raw mid-market from API refresh; omitted on manual edits. */
+  api_rate: z.coerce.number().finite().positive().nullable().optional(),
   manual_override: z.coerce.boolean().default(false),
   source: z.string().trim().max(80).default('manual'),
   is_active: z.coerce.boolean().default(true),
@@ -122,20 +124,57 @@ async function saveCurrencyRate(
 ) {
   const currency = data.currency;
   const rate = currency === 'INR' ? 1 : Number(Number(data.rate).toFixed(6));
+  const apiRate =
+    data.api_rate == null
+      ? undefined
+      : currency === 'INR'
+        ? 1
+        : Number(Number(data.api_rate).toFixed(6));
 
-  const modernPayload = {
-    base_currency: data.base_currency || 'INR',
-    currency,
-    rate,
+  // Production may be legacy (rate_to_inr only), modern (rate), or hybrid.
+  // Try richest payload first; each step drops columns the schema may lack.
+  const payloads: Record<string, unknown>[] = [
+    {
+      base_currency: data.base_currency || 'INR',
+      currency,
+      rate,
+      rate_to_inr: rate,
+      ...(apiRate !== undefined ? { api_rate: apiRate } : {}),
+      manual_override: data.manual_override,
+      source: data.source,
+      is_active: data.is_active,
+      updated_at: now,
+      fetched_at: now,
+    },
+  ];
+  if (apiRate !== undefined) {
+    payloads.push({
+      base_currency: data.base_currency || 'INR',
+      currency,
+      rate,
+      rate_to_inr: rate,
+      manual_override: data.manual_override,
+      source: data.source,
+      is_active: data.is_active,
+      updated_at: now,
+      fetched_at: now,
+    });
+  }
+  // Legacy / hybrid: no `rate` column — still write api_rate when present.
+  payloads.push({
+    rate_to_inr: rate,
+    ...(apiRate !== undefined ? { api_rate: apiRate } : {}),
+    manual_override: data.manual_override,
+    source: data.source,
+    fetched_at: now,
+  });
+  payloads.push({
     rate_to_inr: rate,
     manual_override: data.manual_override,
     source: data.source,
-    is_active: data.is_active,
-    updated_at: now,
     fetched_at: now,
-  };
+  });
 
-  // Prefer update-by-currency so legacy + modern rows both get live rates.
   const existing = await db
     .from('currency_rates')
     .select('id')
@@ -149,37 +188,64 @@ async function saveCurrencyRate(
       : '';
 
   if (existingId) {
-    let result = await db
+    let last = await db
       .from('currency_rates')
-      .update(modernPayload)
+      .update(payloads[0])
       .eq('id', existingId)
       .select()
       .single();
-
-    if (result.error) {
-      result = await db
+    for (let i = 1; i < payloads.length && last.error; i++) {
+      last = await db
         .from('currency_rates')
-        .update({
-          rate_to_inr: rate,
-          manual_override: data.manual_override,
-          source: data.source,
-          fetched_at: now,
-        })
+        .update(payloads[i])
         .eq('id', existingId)
         .select()
         .single();
     }
-    return result;
+    return last;
   }
 
-  let result = await db
+  // No id row: upsert by modern unique key, then legacy PK.
+  let last = await db
     .from('currency_rates')
-    .upsert(modernPayload, { onConflict: 'base_currency,currency' })
+    .upsert(
+      {
+        base_currency: data.base_currency || 'INR',
+        currency,
+        rate,
+        rate_to_inr: rate,
+        ...(apiRate !== undefined ? { api_rate: apiRate } : {}),
+        manual_override: data.manual_override,
+        source: data.source,
+        is_active: data.is_active,
+        updated_at: now,
+        fetched_at: now,
+      },
+      { onConflict: 'base_currency,currency' }
+    )
     .select()
     .single();
 
-  if (result.error) {
-    result = await db
+  if (last.error) {
+    last = await db
+      .from('currency_rates')
+      .upsert(
+        {
+          currency,
+          rate_to_inr: rate,
+          ...(apiRate !== undefined ? { api_rate: apiRate } : {}),
+          manual_override: data.manual_override,
+          source: data.source,
+          fetched_at: now,
+        },
+        { onConflict: 'currency' }
+      )
+      .select()
+      .single();
+  }
+
+  if (last.error && apiRate !== undefined) {
+    last = await db
       .from('currency_rates')
       .upsert(
         {
@@ -195,7 +261,7 @@ async function saveCurrencyRate(
       .single();
   }
 
-  return result;
+  return last;
 }
 
 export async function POST(request: NextRequest) {
@@ -265,6 +331,7 @@ export async function POST(request: NextRequest) {
     // Explicit admin refresh: overwrite every storefront FX + any other active DB currencies.
     const { fetchLiveRatesToInr } = await import('@/lib/currency/fetch-live-rates');
     const { FX_CURRENCY_CODES } = await import('@/lib/currency/catalog');
+    const { applyLossOffset, lossOffsetInr } = await import('@/lib/currency/loss-offsets');
     try {
       const existing = normalizeCurrencyRates(await readTable(db, 'currency_rates', []));
       const byCode = new Map(existing.map((row) => [row.currency, row]));
@@ -276,7 +343,7 @@ export async function POST(request: NextRequest) {
       );
 
       const live = await fetchLiveRatesToInr(codes);
-      const updated: Array<{ currency: string; rate: number }> = [];
+      const updated: Array<{ currency: string; api_rate: number; rate: number; offset: number }> = [];
       const failed: Array<{ currency: string; error: string }> = [];
 
       const inrSave = await saveCurrencyRate(
@@ -285,6 +352,7 @@ export async function POST(request: NextRequest) {
           base_currency: 'INR',
           currency: 'INR',
           rate: 1,
+          api_rate: 1,
           manual_override: false,
           source: live.source,
           is_active: true,
@@ -294,15 +362,16 @@ export async function POST(request: NextRequest) {
       if (inrSave.error) {
         failed.push({ currency: 'INR', error: inrSave.error.message ?? 'Save failed' });
       } else {
-        updated.push({ currency: 'INR', rate: 1 });
+        updated.push({ currency: 'INR', api_rate: 1, rate: 1, offset: 0 });
       }
 
       for (const code of codes) {
-        const rate = live.rates[code];
-        if (!rate) {
+        const apiRate = live.rates[code];
+        if (!apiRate) {
           failed.push({ currency: code, error: 'Missing from live API' });
           continue;
         }
+        const rate = applyLossOffset(apiRate, code);
         const prev = byCode.get(code);
         const { error } = await saveCurrencyRate(
           db,
@@ -310,6 +379,7 @@ export async function POST(request: NextRequest) {
             base_currency: 'INR',
             currency: code,
             rate,
+            api_rate: apiRate,
             manual_override: false,
             source: live.source,
             is_active: prev?.is_active ?? true,
@@ -317,7 +387,7 @@ export async function POST(request: NextRequest) {
           now
         );
         if (error) failed.push({ currency: code, error: error.message ?? 'Save failed' });
-        else updated.push({ currency: code, rate });
+        else updated.push({ currency: code, api_rate: apiRate, rate, offset: lossOffsetInr(code) });
       }
 
       if (updated.length <= 1 && failed.length > 0) {
@@ -328,13 +398,18 @@ export async function POST(request: NextRequest) {
       }
 
       bustCurrencyRatesCache();
+      const usd = updated.find((row) => row.currency === 'USD');
       result = {
         updated: updated.map((row) => row.currency),
         rates: Object.fromEntries(updated.map((row) => [row.currency, row.rate])),
+        api_rates: Object.fromEntries(updated.map((row) => [row.currency, row.api_rate])),
+        offsets: Object.fromEntries(updated.map((row) => [row.currency, row.offset])),
         failed,
         date: live.date,
         source: live.source,
-        sample: { USD: live.rates.USD ?? null },
+        sample: usd
+          ? { USD: { api: usd.api_rate, stored: usd.rate, offset: usd.offset } }
+          : { USD: null },
       };
       action = 'currency_rates_refresh';
     } catch (err) {

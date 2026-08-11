@@ -33,7 +33,7 @@ const QUICK_LINKS = [
   { href: '/account/rewards', icon: Gift, label: 'Reward Points', desc: 'Balance and ledger' },
   { href: '/account/saved', icon: Heart, label: 'Saved Gems', desc: 'Your wishlist' },
   { href: '/account/profile', icon: User, label: 'Profile & DOB', desc: 'Edit details & birth info' },
-  { href: '/account/addresses', icon: MapPin, label: 'Address Book', desc: 'Shipping and GST details' },
+  { href: '/account/addresses', icon: MapPin, label: 'Address Book', desc: 'Shipping and billing details' },
   { href: '/account/reviews', icon: MessageSquare, label: 'My Reviews', desc: 'Verified purchase reviews' },
   { href: '/account/preferences', icon: Bell, label: 'Preferences', desc: 'Consent and notifications' },
   { href: '/account/consultations', icon: CalendarClock, label: 'My Consultations', desc: 'Bookings & payment status' },

@@ -54,21 +54,25 @@ const METAL_LABELS: Record<string, string> = {
   platinum: 'Platinum',
 };
 
+function present(value: ReactNode): boolean {
+  return value != null && value !== '' && value !== '—';
+}
+
 function Row({ label, value }: { label: string; value: ReactNode }) {
-  if (value == null || value === '' || value === '—') return null;
+  if (!present(value)) return null;
   return (
-    <div className="flex justify-between gap-4 border-b border-stone-100 py-1.5 text-sm">
+    <div className="flex justify-between gap-3 border-b border-stone-100 py-1 text-[13px] leading-snug">
       <dt className="shrink-0 text-stone-500">{label}</dt>
-      <dd className="text-right font-medium text-stone-900 break-all">{value}</dd>
+      <dd className="text-right font-medium text-stone-900 break-words">{value}</dd>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-6 break-inside-avoid border-t border-stone-200 pt-5">
-      <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-stone-500">{title}</h2>
-      <div className="mt-3">{children}</div>
+    <section className="mt-4 border-t border-stone-200 pt-3 print:mt-3 print:pt-2.5">
+      <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500">{title}</h2>
+      <div className="mt-2">{children}</div>
     </section>
   );
 }
@@ -181,6 +185,7 @@ export default async function OrderReceiptPage({
   const bankProof = parseBankTransferProof(order.compliance_flags);
   const ceremonyForm = energizationFormFromOrderItems(items);
   const priceLines = buildOrderPriceLines(order);
+  const flags = parseComplianceFlags(order.compliance_flags);
   const channel =
     order.order_source === 'offline'
       ? 'Offline / POS'
@@ -188,24 +193,64 @@ export default async function OrderReceiptPage({
         ? 'Online · Bank transfer'
         : 'Online · Razorpay / gateway';
 
+  const hasAddress = Boolean(addr.line1 || addr.city || addr.country);
+  const hasDelivery = Boolean(
+    order.shipping_method ||
+      order.carrier ||
+      order.tracking_number ||
+      order.tracking_url ||
+      order.delivery_status ||
+      order.estimated_delivery ||
+      order.shipped_at,
+  );
+  const hasWorkshop = Boolean(
+    designerName ||
+      order.design_price != null ||
+      order.design_due_at ||
+      order.design_notes ||
+      order.product_video_url ||
+      flags.product_video_urls?.length ||
+      flags.product_image_urls?.length ||
+      order.puja_video_url,
+  );
+  const hasCommission = Boolean(
+    order.commissions?.length ||
+      order.commission_source ||
+      order.commission_name ||
+      order.commission_amount != null,
+  );
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-6 print:max-w-none print:px-0 print:py-0 sm:px-6">
+      {/* Tight print sheet: no break-inside-avoid on sections (that caused blank page tails). */}
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 10mm 12mm; }
+          html, body { background: #fff !important; overflow: visible !important; }
+        }
+      `}</style>
+
       <ReceiptPrintBar orderId={order.id} />
 
-      <article className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm print:border-0 print:p-0 print:shadow-none sm:p-8">
-        <header className="border-b border-stone-200 pb-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-800">
-            Pure Vedic Gems · Internal order sheet
-          </p>
-          <h1 className="mt-1 font-heading text-2xl font-bold text-stone-900">
-            Full order details
-          </h1>
-          <p className="mt-1 text-sm text-stone-500">{channel}</p>
+      <article className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none sm:p-6">
+        <header className="border-b border-stone-200 pb-3">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-800">
+                Pure Vedic Gems · Internal order sheet
+              </p>
+              <h1 className="mt-0.5 font-heading text-xl font-bold leading-tight text-stone-900">
+                Order #{order.order_number}
+              </h1>
+              <p className="mt-0.5 text-xs text-stone-500">{channel}</p>
+            </div>
+            <p className="text-right text-xs text-stone-500">
+              {fmtDate(order.created_at)}
+            </p>
+          </div>
 
-          <dl className="mt-4 grid gap-x-6 gap-y-1 sm:grid-cols-2">
-            <Row label="Order #" value={`#${order.order_number}`} />
-            <Row label="Invoice #" value={order.invoice_number || '—'} />
-            <Row label="Placed" value={fmtDate(order.created_at)} />
+          <dl className="mt-3 grid gap-x-6 sm:grid-cols-2">
+            <Row label="Invoice #" value={order.invoice_number || null} />
             <Row label="Order status" value={cap(order.status)} />
             <Row label="Payment status" value={cap(order.payment_status)} />
             <Row label="Payment method" value={cap(order.payment_method)} />
@@ -221,8 +266,8 @@ export default async function OrderReceiptPage({
         </header>
 
         <Section title="Customer">
-          <dl>
-            <Row label="Name" value={order.guest_name || '—'} />
+          <dl className="grid gap-x-6 sm:grid-cols-2">
+            <Row label="Name" value={order.guest_name || null} />
             <Row label="Phone" value={order.guest_phone} />
             <Row label="Email" value={order.guest_email} />
             <Row
@@ -232,51 +277,55 @@ export default async function OrderReceiptPage({
           </dl>
         </Section>
 
-        <Section title="Shipping address">
-          <div className="text-sm leading-relaxed text-stone-800">
-            {addr.line1 ? <p>{addr.line1}</p> : null}
-            {addr.line2 ? <p>{addr.line2}</p> : null}
-            {(addr.city || addr.state || addr.pincode) && (
-              <p>{[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}</p>
-            )}
-            {addr.country ? <p>{addr.country}</p> : null}
-            {!addr.line1 && !addr.city ? (
-              <p className="italic text-stone-400">No address recorded</p>
+        {(hasAddress || order.special_instructions) && (
+          <Section title="Shipping address">
+            <div className="text-[13px] leading-snug text-stone-800">
+              {addr.line1 ? <p>{addr.line1}</p> : null}
+              {addr.line2 ? <p>{addr.line2}</p> : null}
+              {(addr.city || addr.state || addr.pincode) && (
+                <p>{[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}</p>
+              )}
+              {addr.country ? <p>{addr.country}</p> : null}
+              {!hasAddress ? (
+                <p className="italic text-stone-400">No address recorded</p>
+              ) : null}
+            </div>
+            {order.special_instructions ? (
+              <p className="mt-2 border border-stone-100 bg-stone-50 px-2.5 py-1.5 text-[13px]">
+                <span className="font-semibold">Special instructions: </span>
+                {order.special_instructions}
+              </p>
             ) : null}
-          </div>
-          {order.special_instructions ? (
-            <p className="mt-3 rounded border border-stone-100 bg-stone-50 px-3 py-2 text-sm">
-              <span className="font-semibold">Special instructions: </span>
-              {order.special_instructions}
-            </p>
-          ) : null}
-        </Section>
+          </Section>
+        )}
 
-        <Section title="Delivery / tracking">
-          <dl>
-            <Row label="Method" value={cap(order.shipping_method)} />
-            <Row label="Carrier" value={order.carrier} />
-            <Row label="Tracking #" value={order.tracking_number} />
-            <Row label="Tracking URL" value={order.tracking_url} />
-            <Row label="Delivery status" value={cap(order.delivery_status)} />
-            <Row
-              label="Est. delivery"
-              value={
-                order.estimated_delivery
-                  ? new Date(order.estimated_delivery).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })
-                  : null
-              }
-            />
-            <Row label="Shipped at" value={order.shipped_at ? fmtDate(order.shipped_at) : null} />
-          </dl>
-        </Section>
+        {hasDelivery && (
+          <Section title="Delivery / tracking">
+            <dl className="grid gap-x-6 sm:grid-cols-2">
+              <Row label="Method" value={cap(order.shipping_method)} />
+              <Row label="Carrier" value={order.carrier} />
+              <Row label="Tracking #" value={order.tracking_number} />
+              <Row label="Tracking URL" value={order.tracking_url} />
+              <Row label="Delivery status" value={cap(order.delivery_status)} />
+              <Row
+                label="Est. delivery"
+                value={
+                  order.estimated_delivery
+                    ? new Date(order.estimated_delivery).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : null
+                }
+              />
+              <Row label="Shipped at" value={order.shipped_at ? fmtDate(order.shipped_at) : null} />
+            </dl>
+          </Section>
+        )}
 
         <Section title={`Items (${items.length})`}>
-          <div className="space-y-5">
+          <div className="space-y-3">
             {items.map((item, idx) => {
               const cfg = item.configuration_id
                 ? (configMap.get(item.configuration_id) as
@@ -312,14 +361,14 @@ export default async function OrderReceiptPage({
               return (
                 <div
                   key={`${item.product_id}-${idx}`}
-                  className="break-inside-avoid rounded-lg border border-stone-200 p-4"
+                  className="border border-stone-200 px-3 py-2.5"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-stone-900">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold leading-snug text-stone-900">
                         {idx + 1}. {item.name}
                       </p>
-                      <p className="mt-0.5 text-xs text-stone-500">
+                      <p className="mt-0.5 text-[11px] text-stone-500">
                         {[
                           item.sku ? `SKU ${item.sku}` : null,
                           item.tag_number ? `Tag ${item.tag_number}` : null,
@@ -331,19 +380,19 @@ export default async function OrderReceiptPage({
                           .join(' · ')}
                       </p>
                       {item.configuration_summary ? (
-                        <p className="mt-1 text-xs text-stone-600">{item.configuration_summary}</p>
+                        <p className="mt-0.5 text-[11px] text-stone-600">{item.configuration_summary}</p>
                       ) : null}
                     </div>
-                    <div className="text-right text-sm">
+                    <div className="text-right text-[13px]">
                       <p className="font-semibold tabular-nums">{fmt(item.line_total)}</p>
-                      <p className="text-xs text-stone-500">
+                      <p className="text-[11px] text-stone-500">
                         {fmt(item.unit_price)} × {item.quantity}
                       </p>
                     </div>
                   </div>
 
                   {beads.length > 0 ? (
-                    <ul className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-xs">
+                    <ul className="mt-2 space-y-0.5 border-t border-stone-100 pt-2 text-[11px]">
                       {beads.map((bead) => (
                         <li key={bead.id} className="flex justify-between gap-2">
                           <span>
@@ -361,7 +410,7 @@ export default async function OrderReceiptPage({
                   ) : null}
 
                   {sel ? (
-                    <dl className="mt-3 grid gap-x-4 sm:grid-cols-2">
+                    <dl className="mt-2 grid gap-x-4 border-t border-stone-100 pt-1.5 sm:grid-cols-2">
                       <Row
                         label="Setting"
                         value={sel.setting_type ? cap(sel.setting_type) : null}
@@ -399,7 +448,7 @@ export default async function OrderReceiptPage({
                   ) : null}
 
                   {sel?.energization_form ? (
-                    <dl className="mt-2 grid gap-x-4 border-t border-stone-50 pt-2 sm:grid-cols-2">
+                    <dl className="mt-1.5 grid gap-x-4 border-t border-stone-50 pt-1.5 sm:grid-cols-2">
                       <Row label="DOB" value={sel.energization_form.dob} />
                       <Row label="Birth time" value={sel.energization_form.birth_time} />
                       <Row label="Birth place" value={sel.energization_form.birth_place} />
@@ -422,54 +471,56 @@ export default async function OrderReceiptPage({
                     pricing.diamond_charge,
                     pricing.custom_design_fee,
                   ].some((v) => (v ?? 0) > 0) ? (
-                    <dl className="mt-3 border-t border-stone-100 pt-2">
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-stone-400">
+                    <dl className="mt-1.5 border-t border-stone-100 pt-1.5">
+                      <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-400">
                         {rudraksha ? 'Bead / config price' : 'Config price'}
                       </p>
-                      <Row
-                        label={rudraksha ? 'Bead price' : 'Gem price'}
-                        value={(pricing.gem_price ?? 0) > 0 ? fmt(pricing.gem_price) : null}
-                      />
-                      <Row
-                        label="Making"
-                        value={(pricing.making_charge ?? 0) > 0 ? fmt(pricing.making_charge) : null}
-                      />
-                      <Row
-                        label="Metal"
-                        value={(pricing.metal_price ?? 0) > 0 ? fmt(pricing.metal_price) : null}
-                      />
-                      <Row
-                        label="Certification"
-                        value={
-                          (pricing.certification_fee ?? 0) > 0
-                            ? fmt(pricing.certification_fee)
-                            : null
-                        }
-                      />
-                      <Row
-                        label="Energization"
-                        value={
-                          (pricing.energization_fee ?? 0) > 0
-                            ? fmt(pricing.energization_fee)
-                            : null
-                        }
-                      />
-                      <Row
-                        label="Stone add-on"
-                        value={(pricing.diamond_charge ?? 0) > 0 ? fmt(pricing.diamond_charge) : null}
-                      />
-                      <Row
-                        label="Custom design"
-                        value={
-                          (pricing.custom_design_fee ?? 0) > 0
-                            ? fmt(pricing.custom_design_fee)
-                            : null
-                        }
-                      />
-                      <Row
-                        label="Config total"
-                        value={fmt(pricing.total ?? cfg?.total_price)}
-                      />
+                      <div className="grid gap-x-4 sm:grid-cols-2">
+                        <Row
+                          label={rudraksha ? 'Bead price' : 'Gem price'}
+                          value={(pricing.gem_price ?? 0) > 0 ? fmt(pricing.gem_price) : null}
+                        />
+                        <Row
+                          label="Making"
+                          value={(pricing.making_charge ?? 0) > 0 ? fmt(pricing.making_charge) : null}
+                        />
+                        <Row
+                          label="Metal"
+                          value={(pricing.metal_price ?? 0) > 0 ? fmt(pricing.metal_price) : null}
+                        />
+                        <Row
+                          label="Certification"
+                          value={
+                            (pricing.certification_fee ?? 0) > 0
+                              ? fmt(pricing.certification_fee)
+                              : null
+                          }
+                        />
+                        <Row
+                          label="Energization"
+                          value={
+                            (pricing.energization_fee ?? 0) > 0
+                              ? fmt(pricing.energization_fee)
+                              : null
+                          }
+                        />
+                        <Row
+                          label="Stone add-on"
+                          value={(pricing.diamond_charge ?? 0) > 0 ? fmt(pricing.diamond_charge) : null}
+                        />
+                        <Row
+                          label="Custom design"
+                          value={
+                            (pricing.custom_design_fee ?? 0) > 0
+                              ? fmt(pricing.custom_design_fee)
+                              : null
+                          }
+                        />
+                        <Row
+                          label="Config total"
+                          value={fmt(pricing.total ?? cfg?.total_price)}
+                        />
+                      </div>
                     </dl>
                   ) : null}
                 </div>
@@ -494,7 +545,7 @@ export default async function OrderReceiptPage({
                 variant="print"
               />
             )}
-            <div className="flex justify-between gap-4 border-t border-stone-300 pt-2 text-base font-bold">
+            <div className="flex justify-between gap-3 border-t border-stone-300 pt-1.5 text-sm font-bold">
               <dt>Grand total</dt>
               <dd className="tabular-nums">{fmt(order.total)}</dd>
             </div>
@@ -504,7 +555,7 @@ export default async function OrderReceiptPage({
         </Section>
 
         <Section title="Payment">
-          <dl>
+          <dl className="grid gap-x-6 sm:grid-cols-2">
             <Row label="Method" value={cap(order.payment_method)} />
             <Row label="Status" value={cap(order.payment_status)} />
             <Row label="Razorpay order" value={order.razorpay_order_id} />
@@ -513,20 +564,17 @@ export default async function OrderReceiptPage({
           </dl>
 
           {bankProof ? (
-            <div className="mt-4 rounded border border-amber-100 bg-amber-50/50 p-3">
+            <div className="mt-2.5 border border-amber-100 bg-amber-50/50 px-2.5 py-2">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-800">
                 Bank transfer proof
               </p>
-              <dl className="mt-2">
+              <dl className="mt-1 grid gap-x-4 sm:grid-cols-2">
                 <Row label="Bank" value={bankProof.bank_label} />
                 <Row label="UTR / reference" value={bankProof.reference} />
                 <Row label="Notes" value={bankProof.notes} />
                 <Row label="Status" value={cap(bankProof.status)} />
                 <Row label="Submitted" value={fmtDate(bankProof.submitted_at)} />
-                <Row
-                  label="Reject reason"
-                  value={bankProof.reject_reason}
-                />
+                <Row label="Reject reason" value={bankProof.reject_reason} />
                 <Row
                   label="Verified"
                   value={bankProof.verified_at ? fmtDate(bankProof.verified_at) : null}
@@ -544,14 +592,14 @@ export default async function OrderReceiptPage({
           ) : null}
 
           {paymentRows.length > 0 ? (
-            <ul className="mt-4 space-y-2 text-sm">
+            <ul className="mt-2.5 space-y-1 text-[13px]">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">
                 Payment ledger
               </p>
               {paymentRows.map((p, i) => (
                 <li
                   key={i}
-                  className="flex flex-wrap justify-between gap-2 border-b border-stone-50 pb-2"
+                  className="flex flex-wrap justify-between gap-2 border-b border-stone-50 pb-1"
                 >
                   <span>
                     {fmtDate(p.paid_at)} · {p.kind} · {p.method.replace(/_/g, ' ')}
@@ -567,7 +615,7 @@ export default async function OrderReceiptPage({
 
         {(order.include_energization || ceremonyForm) && (
           <Section title="Ceremony (order level)">
-            <dl>
+            <dl className="grid gap-x-6 sm:grid-cols-2">
               <Row label="Type" value={cap(order.energization_type)} />
               <Row label="Gotra" value={order.ceremony_gotra || ceremonyForm?.gotra} />
               <Row label="DOB" value={order.ceremony_dob || ceremonyForm?.dob} />
@@ -584,39 +632,34 @@ export default async function OrderReceiptPage({
           </Section>
         )}
 
-        <Section title="Workshop / design">
-          <dl>
-            <Row label="Designer" value={designerName} />
-            <Row
-              label="Design price"
-              value={order.design_price != null ? fmt(order.design_price) : null}
-            />
-            <Row
-              label="Design due"
-              value={order.design_due_at ? fmtDate(order.design_due_at) : null}
-            />
-            <Row label="Design notes" value={order.design_notes} />
-            <Row label="Product video" value={order.product_video_url} />
-            <Row
-              label="Product videos"
-              value={
-                parseComplianceFlags(order.compliance_flags).product_video_urls?.join('\n') || null
-              }
-            />
-            <Row
-              label="Product images"
-              value={
-                parseComplianceFlags(order.compliance_flags).product_image_urls?.join('\n') || null
-              }
-            />
-            <Row label="Puja video" value={order.puja_video_url} />
-          </dl>
-        </Section>
+        {hasWorkshop && (
+          <Section title="Workshop / design">
+            <dl className="grid gap-x-6 sm:grid-cols-2">
+              <Row label="Designer" value={designerName} />
+              <Row
+                label="Design price"
+                value={order.design_price != null ? fmt(order.design_price) : null}
+              />
+              <Row
+                label="Design due"
+                value={order.design_due_at ? fmtDate(order.design_due_at) : null}
+              />
+              <Row label="Design notes" value={order.design_notes} />
+              <Row label="Product video" value={order.product_video_url} />
+              <Row
+                label="Product videos"
+                value={flags.product_video_urls?.join(', ') || null}
+              />
+              <Row
+                label="Product images"
+                value={flags.product_image_urls?.join(', ') || null}
+              />
+              <Row label="Puja video" value={order.puja_video_url} />
+            </dl>
+          </Section>
+        )}
 
-        {(order.commissions?.length ||
-          order.commission_source ||
-          order.commission_name ||
-          order.commission_amount != null) && (
+        {hasCommission && (
           <Section title="Commission">
             {(order.commissions?.length
               ? order.commissions
@@ -626,7 +669,14 @@ export default async function OrderReceiptPage({
                   amount: order.commission_amount,
                 }]
             ).map((entry, index) => (
-              <dl key={index} className={index ? 'mt-3 border-t border-stone-100 pt-3' : ''}>
+              <dl
+                key={index}
+                className={
+                  index
+                    ? 'mt-2 grid gap-x-6 border-t border-stone-100 pt-2 sm:grid-cols-2'
+                    : 'grid gap-x-6 sm:grid-cols-2'
+                }
+              >
                 <Row label="Source" value={cap(entry.source)} />
                 <Row label="Name" value={entry.name} />
                 <Row label="Amount" value={entry.amount != null ? fmt(entry.amount) : null} />
@@ -637,24 +687,24 @@ export default async function OrderReceiptPage({
 
         {(order.internal_notes || order.admin_notes) && (
           <Section title="Internal notes">
-            <p className="whitespace-pre-wrap text-sm text-stone-800">
+            <p className="whitespace-pre-wrap text-[13px] leading-snug text-stone-800">
               {order.internal_notes || order.admin_notes}
             </p>
           </Section>
         )}
 
-        <footer className="mt-10 grid gap-8 border-t border-stone-200 pt-8 text-sm sm:grid-cols-2">
+        <footer className="mt-5 grid gap-6 border-t border-stone-200 pt-4 text-[12px] print:mt-4 print:gap-4 print:pt-3 sm:grid-cols-2">
           <div>
             <p className="text-stone-500">Prepared by</p>
-            <div className="mt-8 border-b border-stone-400" />
+            <div className="mt-5 border-b border-stone-400" />
           </div>
           <div>
             <p className="text-stone-500">Checked / authorized</p>
-            <div className="mt-8 border-b border-stone-400" />
+            <div className="mt-5 border-b border-stone-400" />
           </div>
         </footer>
 
-        <p className="mt-8 text-center text-xs text-stone-400">
+        <p className="mt-4 text-center text-[10px] text-stone-400 print:mt-3">
           Internal print sheet · {order.order_number} · Generated {fmtDate(new Date().toISOString())}
         </p>
       </article>

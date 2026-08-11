@@ -249,8 +249,9 @@ export default function JewelryMetalCatalogPanel({
                   <strong>
                     {productScopeLabel(scopedScope)} {settingTypeLabel(scopedSetting)}
                   </strong>{' '}
-                  designs. GST is fixed at{' '}
-                  <strong>{profileDraft.default_gst_percent}%</strong>. Individual designs can
+                  designs. Auto GST is{' '}
+                  <strong>{profileDraft.default_gst_percent}%</strong> only on weight + labor %
+                  metals. Fixed ₹ prices are tax-inclusive (no auto GST). Individual designs can
                   override labor or use a fixed ₹ price instead.
                 </p>
                 <button

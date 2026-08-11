@@ -68,7 +68,7 @@ export function buildCartItemPriceBreakdown(item: CartItem): CartPriceBreakdown 
   const tax = resolveProductTax({ category: item.category });
   const estimatedGst = Math.round(gstOnAmount(Math.max(unitPrice, 0), tax.rate_percent));
 
-  // Ready jewellery: bake 3% into the displayed product price (no GST callout).
+  // Ready jewellery: list price is final (no auto GST).
   const showIncl = tax.rate_percent > 0 && estimatedGst > 0;
   const lines: ConfiguratorPriceLine[] = [
     {

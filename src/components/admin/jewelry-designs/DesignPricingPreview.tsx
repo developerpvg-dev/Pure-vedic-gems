@@ -65,10 +65,11 @@ export default function DesignPricingPreview({
     (pricing.diamondCharge > 0 ? 'Diamond' : '');
   const subtotal =
     pricing.metalPrice + pricing.makingCharge + pricing.diamondCharge;
-  // Jewellery GST: one 3% on (metal + labour + diamond), matches checkout.
-  const gstEstimate = Math.round(
-    gstOnAmount(subtotal, GST_METAL_MOUNTED_PERCENT),
-  );
+  // Auto GST only for weight + labour %; fixed sheet is staff tax-inclusive.
+  const gstEstimate =
+    pricing.pricingKind === 'weight'
+      ? Math.round(gstOnAmount(subtotal, GST_METAL_MOUNTED_PERCENT))
+      : 0;
   const totalWithGst = subtotal + gstEstimate;
 
   return (
@@ -76,9 +77,8 @@ export default function DesignPricingPreview({
       <p className="font-semibold text-gray-900">Pricing preview — {row.label}</p>
       <p className="mt-1 text-xs text-gray-500">
         {pricing.pricingKind === 'weight'
-          ? `Weight-based: metal × grams + labor (${pricing.laborRatePercent}% of metal value).`
-          : 'Fixed making charge from design sheet.'}{' '}
-        GST: 3% once on (metal + labour + stone add-on).
+          ? `Weight-based: metal × grams + labor (${pricing.laborRatePercent}% of metal value). GST: 3% once on (metal + labour + stone add-on).`
+          : 'Fixed making charge from design sheet (enter tax-inclusive ₹ — no auto GST).'}
       </p>
       <dl className="mt-3 space-y-1.5 text-xs">
         {pricing.metalWeightGrams > 0 && (
@@ -112,12 +112,16 @@ export default function DesignPricingPreview({
           </div>
         )}
         <div className="flex justify-between gap-4 border-t border-amber-200/80 pt-2">
-          <dt className="text-gray-600">Jewellery (incl. 3% GST)</dt>
+          <dt className="text-gray-600">
+            {pricing.pricingKind === 'weight' ? 'Jewellery (incl. 3% GST)' : 'Jewellery total'}
+          </dt>
           <dd className="font-bold text-amber-800">{formatPrice(totalWithGst)}</dd>
         </div>
       </dl>
       <p className="mt-2 text-[11px] text-gray-500">
-        Customer-facing metal / mounting prices include 3% GST. Gemstone, certification, energization, and shipping are added separately (no GST on those).
+        {pricing.pricingKind === 'weight'
+          ? 'Customer-facing weight-based mounting includes 3% GST. Gemstone, certification, energization, and shipping are added separately (no GST on those).'
+          : 'Fixed sheet prices are shown as entered (include GST yourself). Gemstone, certification, energization, and shipping are added separately (no auto GST).'}
       </p>
     </div>
   );

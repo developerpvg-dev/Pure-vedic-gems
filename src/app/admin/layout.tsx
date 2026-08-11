@@ -299,10 +299,10 @@ function AdminShell({
   const brand = role === 'content' ? 'Website Maintenance' : 'PVG Admin';
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 print:block print:min-h-0 print:overflow-visible print:bg-white">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 print:hidden lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -320,7 +320,7 @@ function AdminShell({
         />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-64">
+      <div className="flex min-w-0 flex-1 flex-col overflow-visible lg:ml-64 print:ml-0 print:block print:w-full">
         <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 print:hidden lg:hidden">
           <button
             type="button"
@@ -335,7 +335,7 @@ function AdminShell({
           </div>
         </div>
 
-        <main className="min-w-0 flex-1 p-4 print:p-0 sm:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 overflow-visible p-4 print:overflow-visible print:p-0 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

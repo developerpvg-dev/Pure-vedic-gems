@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Address Book | PureVedicGems',
-  description: 'Manage shipping addresses and GST details for your PureVedicGems account.',
+  description: 'Manage shipping addresses and billing details for your PureVedicGems account.',
 };
 
 export default async function AddressesPage() {

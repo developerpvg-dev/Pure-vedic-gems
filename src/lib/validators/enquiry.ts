@@ -51,6 +51,8 @@ export const enquiryUpdateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   email: z.string().email().max(255).optional(),
   phone: z.string().max(40).optional().nullable(),
+  additional_phones: z.array(z.string().max(40)).max(10).optional(),
+  additional_emails: z.array(z.string().max(255)).max(10).optional(),
 });
 
 export type EnquiryUpdateInput = z.infer<typeof enquiryUpdateSchema>;

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { visibleToAdminMember } from '@/lib/notifications/in-app';
 
 const DESIGNER_NOTIFICATION_TYPES = ['order_design_assigned', 'order_status_update'] as const;
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const roles = [auth.member.role, auth.member.normalizedRole].filter(Boolean);
+  const roles = [auth.member.role, auth.member.normalizedRole].filter(Boolean) as string[];
 
   const { data, error } = await db
     .from('in_app_notifications')
@@ -72,13 +73,9 @@ export async function GET(request: NextRequest) {
     read_at: string | null;
   };
 
-  function visibleToAdmin(row: NotificationRow, userId: string, roleList: string[]) {
-    const userMatches = !row.recipient_user_id || row.recipient_user_id === userId;
-    const roleMatches = !row.recipient_role || roleList.includes(row.recipient_role);
-    return userMatches && roleMatches;
-  }
-
-  const visible = ((data ?? []) as NotificationRow[]).filter((row) => visibleToAdmin(row, auth.user.id, roles));
+  const visible = ((data ?? []) as NotificationRow[]).filter((row) =>
+    visibleToAdminMember(row, auth.user.id, roles)
+  );
   return NextResponse.json({
     notifications: visible.slice(0, limit),
     unreadCount: visible.filter((row) => !row.read_at).length,
@@ -131,7 +128,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
-  const roles = [auth.member.role, auth.member.normalizedRole].filter(Boolean);
+  const roles = [auth.member.role, auth.member.normalizedRole].filter(Boolean) as string[];
 
   const { data } = await db
     .from('in_app_notifications')
@@ -148,14 +145,8 @@ export async function PATCH(request: NextRequest) {
     read_at: string | null;
   };
 
-  function visibleToAdmin(row: NotificationRow, userId: string, roleList: string[]) {
-    const userMatches = !row.recipient_user_id || row.recipient_user_id === userId;
-    const roleMatches = !row.recipient_role || roleList.includes(row.recipient_role);
-    return userMatches && roleMatches;
-  }
-
   const visibleIds = ((data ?? []) as NotificationRow[])
-    .filter((row) => visibleToAdmin(row, auth.user.id, roles))
+    .filter((row) => visibleToAdminMember(row, auth.user.id, roles))
     .map((row) => row.id);
   const targetIds = ids.length ? ids.filter((id: string) => visibleIds.includes(id)) : visibleIds;
 

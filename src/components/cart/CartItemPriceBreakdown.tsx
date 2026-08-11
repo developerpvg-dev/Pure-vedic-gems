@@ -16,18 +16,18 @@ function amountLabel(amount: number | null, display?: string) {
 export function CartItemPriceBreakdown({
   item,
   defaultOpen = false,
-  gstNote,
+  footnote: footnoteProp,
 }: {
   item: CartItem;
   defaultOpen?: boolean;
   /** Optional footnote under the breakdown */
-  gstNote?: string;
+  footnote?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const breakdown = useMemo(() => buildCartItemPriceBreakdown(item), [item]);
   const itemTotal = (breakdown.preGstSubtotal + breakdown.estimatedGst) * item.quantity;
 
-  const footnote = gstNote ?? 'Shipping is calculated at checkout.';
+  const footnote = footnoteProp ?? 'Shipping is calculated at checkout.';
 
   return (
     <div className="mt-2 rounded-lg border border-[var(--pvg-border)]/80 bg-brand-bg-alt/60">

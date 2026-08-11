@@ -11,6 +11,8 @@ export type BirthTriplet = {
 export type ContactFields = {
   email?: string | null;
   phone?: string | null;
+  additional_emails?: string[] | null;
+  additional_phones?: string[] | null;
 };
 
 export type LeadIdentity = BirthTriplet & ContactFields;
@@ -38,7 +40,7 @@ export type DuplicateMatch = {
 };
 
 const CANDIDATE_COLS =
-  'id, lead_number, name, email, phone, date_of_birth, birth_time, birth_place, pipeline_stage, assigned_to, created_at';
+  'id, lead_number, name, email, phone, additional_emails, additional_phones, date_of_birth, birth_time, birth_place, pipeline_stage, assigned_to, created_at';
 
 export function normalizeDob(raw: string | null | undefined): string | null {
   if (!raw?.trim()) return null;
@@ -83,6 +85,29 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
+function uniqueStrings(values: (string | null | undefined)[]): string[] {
+  return [...new Set(values.filter((v): v is string => Boolean(v)))];
+}
+
+export function contactEmails(row: ContactFields): string[] {
+  return uniqueStrings([normalizeEmail(row.email), ...(row.additional_emails ?? []).map(normalizeEmail)]);
+}
+
+export function contactPhones(row: ContactFields): string[] {
+  return uniqueStrings([normalizePhone(row.phone), ...(row.additional_phones ?? []).map(normalizePhone)]);
+}
+
+/** Persist-ready lists: normalized, unique, capped. */
+export function sanitizeAdditionalEmails(raw: unknown, max = 10): string[] {
+  if (!Array.isArray(raw)) return [];
+  return uniqueStrings(raw.map((v) => (typeof v === 'string' ? normalizeEmail(v) : null))).slice(0, max);
+}
+
+export function sanitizeAdditionalPhones(raw: unknown, max = 10): string[] {
+  if (!Array.isArray(raw)) return [];
+  return uniqueStrings(raw.map((v) => (typeof v === 'string' ? normalizePhone(v) : null))).slice(0, max);
+}
+
 export function birthFieldCount(row: BirthTriplet): number {
   return [normalizeDob(row.date_of_birth), normalizeTime(row.birth_time), normalizePlace(row.birth_place)].filter(
     Boolean
@@ -90,7 +115,7 @@ export function birthFieldCount(row: BirthTriplet): number {
 }
 
 export function hasContactIdentity(row: ContactFields): boolean {
-  return Boolean(normalizeEmail(row.email) || normalizePhone(row.phone));
+  return contactEmails(row).length > 0 || contactPhones(row).length > 0;
 }
 
 export function scoreBirthMatch(
@@ -110,18 +135,20 @@ export function scoreBirthMatch(
   return { score: matched.length, matched };
 }
 
+function setsOverlap(a: string[], b: string[]): boolean {
+  if (!a.length || !b.length) return false;
+  const setB = new Set(b);
+  return a.some((v) => setB.has(v));
+}
+
 export function scoreContactMatch(
   a: ContactFields,
   b: ContactFields
 ): { email: boolean; phone: boolean; matched: MatchedField[] } {
   const matched: MatchedField[] = [];
-  const emailA = normalizeEmail(a.email);
-  const emailB = normalizeEmail(b.email);
-  const email = Boolean(emailA && emailB && emailA === emailB);
+  const email = setsOverlap(contactEmails(a), contactEmails(b));
   if (email) matched.push('email');
-  const phoneA = normalizePhone(a.phone);
-  const phoneB = normalizePhone(b.phone);
-  const phone = Boolean(phoneA && phoneB && phoneA === phoneB);
+  const phone = setsOverlap(contactPhones(a), contactPhones(b));
   if (phone) matched.push('phone');
   return { email, phone, matched };
 }
@@ -150,16 +177,14 @@ function isPriorLead(
   return (candidate.lead_number ?? 0) < (lead.lead_number ?? Number.MAX_SAFE_INTEGER);
 }
 
-function uniqueStrings(values: (string | null | undefined)[]): string[] {
-  return [...new Set(values.filter((v): v is string => Boolean(v)))];
-}
-
 type CandidateRow = {
   id: string;
   lead_number: number | null;
   name: string;
   email: string;
   phone: string | null;
+  additional_emails?: string[] | null;
+  additional_phones?: string[] | null;
   date_of_birth: string | null;
   birth_time: string | null;
   birth_place: string | null;
@@ -173,36 +198,55 @@ async function loadCandidatePool(admin: Admin, leads: LeadIdentity[]): Promise<C
   if (!eligible.length) return [];
 
   const byId = new Map<string, CandidateRow>();
+  const merge = (rows: CandidateRow[] | null | undefined) => {
+    for (const row of rows ?? []) byId.set(row.id, row);
+  };
 
-  const emails = uniqueStrings(eligible.map((l) => normalizeEmail(l.email)));
+  const emails = uniqueStrings(eligible.flatMap((l) => contactEmails(l)));
   if (emails.length) {
     const orFilter = emails
       .map((e) => `email.ilike."${e.replace(/"/g, '')}"`)
       .join(',');
     const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).or(orFilter).limit(500);
-    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+    merge(data as CandidateRow[]);
+    // also match prior leads that stored this email as additional
+    for (const e of emails.slice(0, 20)) {
+      const { data: extra } = await admin
+        .from('enquiries')
+        .select(CANDIDATE_COLS)
+        .contains('additional_emails', [e])
+        .limit(100);
+      merge(extra as CandidateRow[]);
+    }
   }
 
   // ponytail: exact phone string match first; normalized last-10 covers formatting in scoreContactMatch
-  const phones = uniqueStrings(eligible.map((l) => l.phone?.trim()));
-  if (phones.length) {
-    const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).in('phone', phones).limit(500);
-    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+  const phonesRaw = uniqueStrings(eligible.map((l) => l.phone?.trim()));
+  if (phonesRaw.length) {
+    const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).in('phone', phonesRaw).limit(500);
+    merge(data as CandidateRow[]);
   }
 
-  // Also pull by last-10 digit suffix via ilike when stored with +91 / spaces
-  const phoneTails = uniqueStrings(eligible.map((l) => normalizePhone(l.phone)).filter((p) => p && p.length >= 10));
+  const phoneTails = uniqueStrings(eligible.flatMap((l) => contactPhones(l)).filter((p) => p.length >= 7));
   if (phoneTails.length) {
     const orFilter = phoneTails.map((p) => `phone.ilike.%${p}`).join(',');
     const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).or(orFilter).limit(500);
-    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+    merge(data as CandidateRow[]);
+    for (const p of phoneTails.slice(0, 20)) {
+      const { data: extra } = await admin
+        .from('enquiries')
+        .select(CANDIDATE_COLS)
+        .contains('additional_phones', [p])
+        .limit(100);
+      merge(extra as CandidateRow[]);
+    }
   }
 
   const birthEligible = eligible.filter((l) => birthFieldCount(l) >= 2);
   const dobs = uniqueStrings(birthEligible.map((l) => normalizeDob(l.date_of_birth)));
   if (dobs.length) {
     const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).in('date_of_birth', dobs).limit(500);
-    for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+    merge(data as CandidateRow[]);
   }
 
   // ponytail: also pull same place for time+place potentials when DOB differs. Ceiling: one .or() of page places.
@@ -228,7 +272,7 @@ async function loadCandidatePool(admin: Admin, leads: LeadIdentity[]): Promise<C
         .or(orFilter)
         .not('birth_time', 'is', null)
         .limit(500);
-      for (const row of (data ?? []) as CandidateRow[]) byId.set(row.id, row);
+      merge(data as CandidateRow[]);
     }
   }
 
@@ -291,6 +335,8 @@ export async function attachDuplicateHints(
     lead_number?: number | null;
     email?: string | null;
     phone?: string | null;
+    additional_emails?: string[] | null;
+    additional_phones?: string[] | null;
     date_of_birth?: string | null;
     birth_time?: string | null;
     birth_place?: string | null;
@@ -323,6 +369,8 @@ export async function findPriorDuplicateMatches(
       lead_number: lead.lead_number,
       email: lead.email,
       phone: lead.phone,
+      additional_emails: lead.additional_emails,
+      additional_phones: lead.additional_phones,
       date_of_birth: lead.date_of_birth,
       birth_time: lead.birth_time,
       birth_place: lead.birth_place,
@@ -391,4 +439,32 @@ export function assertDuplicateScoring() {
   }
   if (normalizeEmail('  Foo@Bar.COM ') !== 'foo@bar.com') throw new Error('normalizeEmail');
   if (normalizePhone('+91 98765 43210') !== '9876543210') throw new Error('normalizePhone');
+
+  // additional contacts: new primary matches prior additional
+  const viaAltPhone = scoreContactMatch(
+    { email: 'new@x.com', phone: '1111111111' },
+    { email: 'old@x.com', phone: '2222222222', additional_phones: ['911111111111'] }
+  );
+  if (!viaAltPhone.phone || classifyMatch(0, viaAltPhone) !== 'potential') {
+    throw new Error('additional phone must match as potential');
+  }
+  const viaAltEmail = scoreContactMatch(
+    { email: 'alt@x.com', phone: '3333333333' },
+    { email: 'old@y.com', phone: '4444444444', additional_emails: ['ALT@X.com'] }
+  );
+  if (!viaAltEmail.email || classifyMatch(0, viaAltEmail) !== 'potential') {
+    throw new Error('additional email must match as potential');
+  }
+  const viaAltBoth = scoreContactMatch(
+    { email: 'alt@x.com', phone: '5555555555' },
+    {
+      email: 'old@z.com',
+      phone: '6666666666',
+      additional_emails: ['alt@x.com'],
+      additional_phones: ['5555555555'],
+    }
+  );
+  if (!viaAltBoth.email || !viaAltBoth.phone || classifyMatch(0, viaAltBoth) !== 'duplicate') {
+    throw new Error('additional email+phone must be duplicate');
+  }
 }

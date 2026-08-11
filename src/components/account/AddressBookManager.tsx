@@ -153,7 +153,7 @@ export function AddressBookManager({ initialAddresses }: { initialAddresses: Cus
                   </p>
                   {address.gst_number && (
                     <p className="mt-2 text-xs text-[var(--pvg-muted)]">
-                      GST: {address.gst_number}{address.gst_business_name ? ` · ${address.gst_business_name}` : ''}
+                      Tax ID: {address.gst_number}{address.gst_business_name ? ` · ${address.gst_business_name}` : ''}
                     </p>
                   )}
                 </div>
@@ -211,8 +211,8 @@ export function AddressBookManager({ initialAddresses }: { initialAddresses: Cus
             ['state', 'State'],
             ['pincode', 'Pincode'],
             ['country', 'Country'],
-            ['gst_number', 'GST number'],
-            ['gst_business_name', 'GST business name'],
+            ['gst_number', 'Business tax ID'],
+            ['gst_business_name', 'Business name'],
           ] as const).map(([field, label]) => (
             <label key={field} className="block">
               <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--pvg-muted)]">{label}</span>

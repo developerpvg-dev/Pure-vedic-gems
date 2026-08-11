@@ -7,7 +7,6 @@ import {
   taxBreakdownEmailRows,
 } from './tax-breakdown-display';
 import { buildOrderPriceLines } from './price-breakdown-lines';
-import { jewelleryPriceInclGst } from '@/lib/utils/tax';
 
 assert.equal(formatGstRatePercent(0.25), '0.25%');
 assert.equal(formatGstRatePercent(3), '3%');
@@ -56,7 +55,7 @@ const lines = buildOrderPriceLines({
   tax_breakdown: sample,
 });
 assert.equal(lines.find((l) => l.key === 'gst'), undefined);
-assert.equal(lines.find((l) => l.key === 'jewelry')?.amount, jewelleryPriceInclGst(10000));
+assert.equal(lines.find((l) => l.key === 'jewelry')?.amount, 10300);
 
 // Ready bracelet/jewellery SKU: bake 3% into product subtotal (no metal line).
 const readyJewelleryTax = {

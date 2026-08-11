@@ -654,6 +654,28 @@ html::-webkit-scrollbar-thumb:hover {
   background: var(--pvg-scrollbar-thumb-hover);
 }
 
+/* Print / Save as PDF must not paint the custom scrollbar into the page. */
+@media print {
+  html,
+  body {
+    overflow: visible !important;
+    height: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  *::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+    background: transparent !important;
+  }
+}
+
 /* Shared page section typography (testimonials, contact, knowledge, etc.) */
 .section-head {
   text-align: center;

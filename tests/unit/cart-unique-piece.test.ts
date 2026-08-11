@@ -121,4 +121,15 @@ describe('unique rudraksha combo occupancy', () => {
     expect(getUniquePieceAddConflict([looseCombo], configured)).toBeNull();
     expect(stripOverlappingCartLines([looseCombo], configured)).toEqual([]);
   });
+
+  it('allows replacing an edited jewellery configuration (new config id / line key)', () => {
+    const oldLine = multiBeadConfig();
+    const updated = multiBeadConfig({
+      key: `${primaryId}:cfg:cfg-2`,
+      configuration_id: 'cfg-2',
+      price: 190000,
+    });
+    expect(getUniquePieceAddConflict([oldLine], updated)).toBeNull();
+    expect(stripOverlappingCartLines([oldLine], updated)).toEqual([]);
+  });
 });

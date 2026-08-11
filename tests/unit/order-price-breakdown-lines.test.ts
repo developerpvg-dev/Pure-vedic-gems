@@ -5,7 +5,7 @@ import {
 } from '@/lib/orders/price-breakdown-lines';
 
 describe('buildOrderPriceLines', () => {
-  it('lists every charge so gem + metal + making + cert + GST + shipping = total context', () => {
+  it('bakes jewellery tax into Jewellery line — never shows a GST row', () => {
     const lines = buildOrderPriceLines({
       subtotal: 15048,
       jewelry_charges: 10325,
@@ -23,12 +23,12 @@ describe('buildOrderPriceLines', () => {
       'cert',
       'energization',
       'shipping',
-      'gst',
     ]);
-    expect(lines.find((l) => l.key === 'gst')?.label).toBe('GST');
+    expect(lines.find((l) => l.key === 'gst')).toBeUndefined();
+    expect(lines.every((l) => !/gst|cgst|sgst|igst/i.test(l.label))).toBe(true);
     const sum = lines.reduce((s, l) => s + l.sign * l.amount, 0);
     expect(sum).toBe(15048 + 10325 + 41300 + 4000 + 3500 + 1500 + 3413);
-    expect(lines.find((l) => l.key === 'jewelry')?.amount).toBe(10325 + 41300);
+    expect(lines.find((l) => l.key === 'jewelry')?.amount).toBe(10325 + 41300 + 3413);
     expect(lines.find((l) => l.key === 'jewelry')?.label).toBe('Jewellery');
   });
 

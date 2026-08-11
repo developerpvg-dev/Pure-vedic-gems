@@ -17,7 +17,9 @@ import {
   isMetalMounted,
   resolveProductTax,
   taxBreakdownToJson,
+  weightJewelleryTaxableFromConfig,
 } from '@/lib/utils/tax';
+import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import { quoteRewardRedemption } from '@/lib/rewards/service';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
@@ -223,13 +225,14 @@ export async function recalculateOrderTotal(
     certification_fee: number | null;
     energization_fee: number | null;
     custom_design_fee: number | null;
+    configuration_snapshot: unknown;
   };
 
   const configMap = new Map<string, ConfigForPricing>();
   if (configIds.length > 0) {
     const { data: configs, error: configError } = await supabase
       .from('product_configurations')
-      .select('id, product_id, gem_price, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee')
+      .select('id, product_id, gem_price, making_charge, metal_price, certification_fee, energization_fee, custom_design_fee, configuration_snapshot')
       .in('id', configIds);
 
     // Fail closed: every requested configuration must resolve.
@@ -242,15 +245,12 @@ export async function recalculateOrderTotal(
     }
   }
 
-  /** Indexes in pricedItems whose gem/bead is metal-mounted → gem line is GST-exempt. */
-  const mountedLineIndexes = new Set<number>();
-
   for (const item of items) {
     if (item.manual_design) {
       const manual = item.manual_design;
       const itemPrice = Number(manual.item_price) || 0;
       const otherCharge = Number(manual.other_charge) || 0;
-      // Match online configurator: gem/item + other are GST-exempt; 3% only on metal+labour.
+      // Offline/manual: staff-entered fixed ₹ (tax-inclusive) — no auto GST.
       pricedItems.push({
         line_id: item.line_id,
         product_id: '',
@@ -315,8 +315,8 @@ export async function recalculateOrderTotal(
       : false;
 
     const productTax = resolveProductTax(product);
-    // Mounted stone/rudraksha: gem/bead is GST-exempt; jewellery GST is on metal/making only.
-    const taxRate = mounted ? 0 : productTax.rate_percent;
+    // Products never take auto GST; mounted gem line stays 0 regardless.
+    const taxRate = 0;
     const taxClass = mounted ? 'jewellery_mounted_gem' : productTax.tax_class;
     const hsnCode = productTax.hsn_code;
 
@@ -325,8 +325,6 @@ export async function recalculateOrderTotal(
       configuredGemPrice !== undefined && configuredGemPrice > 0
         ? configuredGemPrice
         : product.price;
-
-    if (mounted) mountedLineIndexes.add(pricedItems.length);
 
     pricedItems.push({
       line_id: item.line_id,
@@ -506,28 +504,42 @@ export async function recalculateOrderTotal(
   const discount = couponDiscount + rewardDiscount + manualDiscount;
 
   // ── 6. GST calculation ────────────────────────────────────────────────
-  // Gem/bead never taxed. Jewellery (metal + making/diamond/custom) @ 3%.
-  // Shipping / cert / energization: 0%.
-  const itemDiscountRatio = subtotal > 0 ? Math.min(discount / subtotal, 1) : 0;
-  const productTaxComponents = pricedItems.map((item, index) => {
-    // Mounted configs: gem/bead line is GST-exempt (jewellery GST is on metal/making only).
-    if (mountedLineIndexes.has(index)) return null;
-    return calculateGstComponent({
-      label: item.name,
-      component: 'product',
-      amount: item.line_total * (1 - itemDiscountRatio),
-      ratePercent: item.tax_rate_percent,
-      hsnCode: item.hsn_code,
-      destinationState: shippingAddress?.state,
+  // Products / gems / fixed-sheet / cert / energization / shipping: 0%.
+  // Weight + labour %: 3% once on metal + labour + stone add-on + custom.
+  // Same amount for India and international (jurisdiction split uses destination state).
+  // Offline manual design: staff tax-inclusive → skipped (treated as fixed).
+  let weightJewelleryTaxable = 0;
+  for (const item of items) {
+    if (item.manual_design || !item.configuration_id) continue;
+    const cfg = configMap.get(item.configuration_id);
+    if (!cfg) continue;
+    const snap = parseConfigurationSnapshot(cfg.configuration_snapshot);
+    const { mode, taxable } = weightJewelleryTaxableFromConfig({
+      snapshotPricing: snap?.pricing
+        ? {
+            metal_price: snap.pricing.metal_price,
+            making_charge: snap.pricing.making_charge,
+            diamond_charge: snap.pricing.diamond_charge,
+            custom_design_fee: snap.pricing.custom_design_fee,
+            jewelry_pricing_mode: snap.pricing.jewelry_pricing_mode,
+            metal_weight_grams: snap.pricing.metal_weight_grams,
+          }
+        : null,
+      db: {
+        metal_price: cfg.metal_price,
+        making_charge: cfg.making_charge,
+        custom_design_fee: cfg.custom_design_fee,
+      },
     });
-  });
-  const jewelleryTaxable = metalCharges + jewelryCharges;
+    if (mode !== 'weight' || taxable <= 0) continue;
+    weightJewelleryTaxable += taxable * item.quantity;
+  }
+
   const taxBreakdown = buildTaxBreakdown(shippingAddress?.state, [
-    ...productTaxComponents,
     calculateGstComponent({
-      label: 'Jewellery (metal + labour + stone add-on)',
+      label: 'Jewellery (weight + labour %)',
       component: 'metal',
-      amount: jewelleryTaxable,
+      amount: weightJewelleryTaxable,
       ratePercent: GST_METAL_MOUNTED_PERCENT,
       hsnCode: '7113',
       destinationState: shippingAddress?.state,
@@ -591,13 +603,10 @@ export function __pricingOfflineSelfCheck() {
     manualDesign.item_price + manualDesign.metal_price + manualDesign.labour_charge + manualDesign.other_charge === 9000,
     'manual design components total correctly',
   );
-  // Product line tax_rate_percent is 0; jewellery GST is only metal + labour @ 3%.
-  const jewelleryTaxable = manualDesign.metal_price + manualDesign.labour_charge;
-  const expectedGst = Math.round(jewelleryTaxable * 0.03);
-  console.assert(expectedGst === 111, 'manual design GST = 3% of metal+labour only');
+  // Manual/offline fixed ₹ → 0% auto GST; weight path still uses 3% of metal+labour.
   console.assert(
-    Math.round((manualDesign.item_price + manualDesign.other_charge) * 0.03) === 159,
-    'pre-fix product-line GST would have been 159 — must stay exempt',
+    Math.round((manualDesign.metal_price + manualDesign.labour_charge) * 0.03) === 111,
+    'weight-path GST formula still 3% of metal+labour when applicable',
   );
   console.log('pricing offline self-check ok');
 }

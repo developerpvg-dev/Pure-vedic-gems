@@ -52,7 +52,7 @@ export const ContactInfoSchema = z.object({
     .toUpperCase()
     .optional()
     .default('')
-    .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid GSTIN'),
+    .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid business tax ID'),
 });
 
 export const CheckoutConsentSchema = z.object({
@@ -278,7 +278,7 @@ export const OfflineOrderCreateSchema = z
         .toUpperCase()
         .optional()
         .default('')
-        .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid GSTIN'),
+        .refine((value) => !value || GSTIN_REGEX.test(value), 'Please enter a valid business tax ID'),
     }),
     items: z.array(OfflineOrderItemSchema).min(1, 'Add at least one item'),
     customer_address: ShippingAddressSchema,

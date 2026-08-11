@@ -31,7 +31,7 @@ import {
   type LeadPipelineStage,
 } from '@/lib/leads/constants';
 import { logLeadActivity } from '@/lib/leads/assign';
-import { findPriorDuplicateMatches } from '@/lib/leads/duplicates';
+import { findPriorDuplicateMatches, sanitizeAdditionalEmails, sanitizeAdditionalPhones } from '@/lib/leads/duplicates';
 
 const SCHEDULE_FIELDS: (keyof ConsultationUpdateInput)[] = [
   'scheduled_date',
@@ -975,7 +975,9 @@ export async function PUT(
     d.ip_location !== undefined ||
     d.name !== undefined ||
     d.email !== undefined ||
-    d.phone !== undefined
+    d.phone !== undefined ||
+    d.additional_phones !== undefined ||
+    d.additional_emails !== undefined
   ) {
     if (!canEditBirthFields(role)) {
       return NextResponse.json({ error: 'Cannot edit customer details' }, { status: 403 });
@@ -992,7 +994,21 @@ export async function PUT(
     if (d.name !== undefined) patch.name = d.name;
     if (d.email !== undefined) patch.email = d.email;
     if (d.phone !== undefined) patch.phone = d.phone;
+    if (d.additional_phones !== undefined) patch.additional_phones = sanitizeAdditionalPhones(d.additional_phones);
+    if (d.additional_emails !== undefined) patch.additional_emails = sanitizeAdditionalEmails(d.additional_emails);
+    const primaryDetailsTouched =
+      d.date_of_birth !== undefined ||
+      d.birth_time !== undefined ||
+      d.birth_place !== undefined ||
+      d.name !== undefined ||
+      d.email !== undefined ||
+      d.phone !== undefined ||
+      d.customer_city !== undefined ||
+      d.customer_state !== undefined ||
+      d.customer_country !== undefined ||
+      d.area_of_concern !== undefined;
     if (
+      primaryDetailsTouched &&
       isTelecomRole(role) &&
       (current.pipeline_stage === 'assigned' || current.pipeline_stage === 'verifying')
     ) {
@@ -1076,7 +1092,9 @@ export async function PUT(
     d.birth_time !== undefined ||
     d.birth_place !== undefined ||
     d.email !== undefined ||
-    d.phone !== undefined;
+    d.phone !== undefined ||
+    d.additional_phones !== undefined ||
+    d.additional_emails !== undefined;
   let duplicate_matches = undefined as Awaited<ReturnType<typeof findPriorDuplicateMatches>> | undefined;
   if (identityTouched && data) {
     duplicate_matches = await findPriorDuplicateMatches(admin, data as Enquiry);

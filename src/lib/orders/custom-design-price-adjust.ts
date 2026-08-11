@@ -103,10 +103,12 @@ export function applyCustomDesignPriceToPricing(
   const customFeeDelta = newFee - oldFee;
 
   const gstDelta =
-    gstOnAmount(newMetal, GST_METAL_MOUNTED_PERCENT) -
-    gstOnAmount(oldMetal, GST_METAL_MOUNTED_PERCENT) +
-    (gstOnAmount(newMaking + newDiamond + newFee, GST_METAL_MOUNTED_PERCENT) -
-      gstOnAmount(oldMaking + oldDiamond + oldFee, GST_METAL_MOUNTED_PERCENT));
+    mode === 'weight'
+      ? gstOnAmount(newMetal, GST_METAL_MOUNTED_PERCENT) -
+        gstOnAmount(oldMetal, GST_METAL_MOUNTED_PERCENT) +
+        (gstOnAmount(newMaking + newDiamond + newFee, GST_METAL_MOUNTED_PERCENT) -
+          gstOnAmount(oldMaking + oldDiamond + oldFee, GST_METAL_MOUNTED_PERCENT))
+      : 0;
 
   const totalDelta = roundMoney(
     metalDelta + makingDelta + diamondDelta + customFeeDelta + gstDelta,
@@ -240,6 +242,7 @@ export function __customDesignPriceAdjustSelfCheck() {
   });
   console.assert(fixed.nextPricing.making_charge === 4500);
   console.assert(fixed.nextPricing.jewelry_pricing_mode === 'fixed');
+  console.assert(fixed.gstDelta === 0, 'fixed mode: no auto GST delta');
 
   console.log('custom-design-price-adjust self-check ok');
 }

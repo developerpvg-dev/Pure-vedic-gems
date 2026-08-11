@@ -2,12 +2,9 @@
  * Single source of order charge lines for confirmation, email, account, admin.
  * Amounts come from orders.* columns written by recalculateOrderTotal.
  *
- * Customer-facing display bakes jewellery GST into metal + making amounts
- * (no separate GST row, no GST callout in labels) when all tax is jewellery 3%.
+ * Customer-facing: jewellery weight-tax is baked into the Jewellery (or product)
+ * amount. Never emit a "GST" line or label.
  */
-
-import { jewelleryPriceInclGst, GST_METAL_MOUNTED_PERCENT, gstOnAmount } from '@/lib/utils/tax';
-import { gstSummaryLabel, parseOrderTaxBreakdown } from '@/lib/orders/tax-breakdown-display';
 
 export type OrderChargeFields = {
   subtotal: number;
@@ -38,46 +35,25 @@ function n(value: number | null | undefined) {
   return Number(value ?? 0);
 }
 
-/** True when GST is only the 3% jewellery slab (safe to fold into metal/making display). */
-function isJewelleryOnlyGst(order: OrderChargeFields): boolean {
-  const gst = n(order.gst_amount);
-  if (gst <= 0) return true;
-  const jewelleryEx = n(order.metal_charges) + n(order.jewelry_charges);
-  const expected = Math.round(gstOnAmount(jewelleryEx, GST_METAL_MOUNTED_PERCENT));
-  if (gst === expected) return true;
-
-  const taxView = parseOrderTaxBreakdown(order.tax_breakdown);
-  if (!taxView || taxView.components.length === 0) return gst === expected;
-  // All taxable comps at jewellery 3% → safe to bake into metal/making display.
-  return taxView.components.every((c) => c.ratePercent === GST_METAL_MOUNTED_PERCENT);
-}
-
-/** Build display rows that sum to order.total when applied with signs. */
+/** Build display rows that sum to order.total when applied with signs. Never includes a GST row. */
 export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[] {
   const metalEx = n(order.metal_charges);
   const jewelryEx = n(order.jewelry_charges);
   const jewelleryEx = metalEx + jewelryEx;
-  const foldGst = isJewelleryOnlyGst(order);
   const gst = n(order.gst_amount);
 
-  // Bake jewellery-slab GST into metal/making; leftover (ready bracelet/jewellery SKU) into subtotal.
+  // Always fold gst_amount into jewellery or product subtotal — never show a tax line.
   let jewelleryAmt = jewelleryEx;
   let subtotalAmt = n(order.subtotal);
-  if (foldGst && gst > 0) {
-    if (jewelleryEx > 0) {
-      jewelleryAmt = jewelleryPriceInclGst(jewelleryEx);
-      const baked = jewelleryAmt - jewelleryEx;
-      if (gst > baked) subtotalAmt += gst - baked;
-    } else {
-      subtotalAmt += gst;
-    }
+  if (gst > 0) {
+    if (jewelleryEx > 0) jewelleryAmt = jewelleryEx + gst;
+    else subtotalAmt += gst;
   }
 
   const lines: OrderPriceLine[] = [
     { key: 'subtotal', label: 'Gemstone / product subtotal', amount: subtotalAmt, sign: 1 },
     {
       key: 'jewelry',
-      // ponytail: one jewellery line — metal/making split stays in orders.* columns
       label: 'Jewellery',
       amount: jewelleryAmt,
       sign: 1,
@@ -90,7 +66,6 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
   const couponDiscount = n(order.coupon_discount);
   const rewardDiscount = n(order.reward_discount);
   const combinedDiscount = n(order.discount);
-  // Prefer split coupon/reward lines; fall back to combined discount only if splits are empty.
   if (couponDiscount > 0) {
     lines.push({
       key: 'coupon',
@@ -112,21 +87,10 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
     lines.push({ key: 'discount', label: 'Discount', amount: combinedDiscount, sign: -1 });
   }
 
-  // Hide GST line when jewellery GST is already baked into metal/making / product amounts.
-  if (!foldGst && gst > 0) {
-    const taxView = parseOrderTaxBreakdown(order.tax_breakdown);
-    lines.push({
-      key: 'gst',
-      label: gstSummaryLabel(taxView),
-      amount: gst,
-      sign: 1,
-    });
-  }
-
   return lines.filter((line) => line.amount > 0);
 }
 
-/** Snapshot piece total (ex-GST) × qty when configured; else gem line_total. */
+/** Snapshot piece total (ex-tax components) × qty when configured; else gem line_total. */
 export function orderItemMerchandiseTotal(item: {
   line_total: number;
   quantity: number;

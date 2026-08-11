@@ -773,8 +773,8 @@ export function PaymentSection({
           : payingPartial
             ? `Razorpay will charge ${formatPrice(chargeNow)} now. The advance amount is re-verified on our server against the final order total before the payment window opens.`
             : showFxNote
-              ? `Payment window shows ${formatPrice(chargeNow)}. Tax totals are verified on our server before Razorpay opens.`
-              : 'Payment and tax totals are verified on our server before Razorpay opens.'}
+              ? `Payment window shows ${formatPrice(chargeNow)}. Order totals are verified on our server before Razorpay opens.`
+              : 'Payment and order totals are verified on our server before Razorpay opens.'}
       </p>
     </div>
   );

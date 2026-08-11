@@ -19,6 +19,27 @@ export type InAppNotificationInput = {
   expiresAt?: string | null;
 };
 
+/** Untagged admin alerts (null recipient_role) — never telecaller / astrologer / designer. */
+const LEGACY_ADMIN_BROADCAST_ROLES = new Set([
+  'owner',
+  'admin',
+  'sales',
+  'stock_manager',
+  'fulfillment',
+  'finance',
+]);
+
+/** Who may see an admin in-app row. Role-targeted and user-targeted only; null role ≠ everyone. */
+export function visibleToAdminMember(
+  row: { recipient_user_id: string | null; recipient_role: string | null },
+  userId: string,
+  roleList: string[]
+) {
+  if (row.recipient_user_id) return row.recipient_user_id === userId;
+  if (row.recipient_role) return roleList.includes(row.recipient_role);
+  return roleList.some((r) => LEGACY_ADMIN_BROADCAST_ROLES.has(r));
+}
+
 function toPayload(input: InAppNotificationInput) {
   return {
     audience: input.audience === 'public' ? 'user' : input.audience,

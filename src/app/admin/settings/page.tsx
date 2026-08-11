@@ -7,6 +7,7 @@ import {
   FX_CURRENCY_OPTIONS,
   currencyRateKey,
   formatCurrencyRateLabel,
+  rateComparison,
   type NormalizedCurrencyRate,
 } from '@/lib/admin/commerce-currency';
 
@@ -109,6 +110,7 @@ const EMPTY_CURRENCY_FORM = {
   rate: '',
   manual_override: true,
   is_active: true,
+  api_rate: null as number | null,
 };
 
 function toDateInputValue(value: string | null | undefined) {
@@ -372,10 +374,14 @@ export default function SettingsPage() {
       const updated = Array.isArray(data.data?.updated) ? data.data.updated.length : 0;
       const failed = Array.isArray(data.data?.failed) ? data.data.failed.length : 0;
       const usd = data.data?.sample?.USD;
+      const usdLine =
+        usd && typeof usd === 'object' && usd.api != null
+          ? ` · USD API ₹${Number(usd.api).toLocaleString('en-IN', { maximumFractionDigits: 4 })} → stored ₹${Number(usd.stored).toLocaleString('en-IN', { maximumFractionDigits: 4 })} (−₹${Number(usd.offset).toLocaleString('en-IN', { maximumFractionDigits: 2 })})`
+          : usd
+            ? ` · 1 USD = ₹${Number(usd).toLocaleString('en-IN', { maximumFractionDigits: 4 })}`
+            : '';
       setMessage(
-        `Rates updated from ${data.data?.source ?? 'live API'} (${updated} currencies${failed ? `, ${failed} failed` : ''})${
-          usd ? ` · 1 USD = ₹${Number(usd).toLocaleString('en-IN', { maximumFractionDigits: 4 })}` : ''
-        }.`
+        `Rates updated from ${data.data?.source ?? 'live API'} with loss buffer (${updated} currencies${failed ? `, ${failed} failed` : ''})${usdLine}.`
       );
       await loadAll();
     } catch {
@@ -393,8 +399,9 @@ export default function SettingsPage() {
       base_currency: rate.base_currency,
       currency: rate.currency,
       rate: String(rate.rate),
-      manual_override: rate.manual_override,
+      manual_override: true,
       is_active: rate.is_active,
+      api_rate: rate.api_rate,
     });
     document.getElementById('currency-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -721,7 +728,7 @@ export default function SettingsPage() {
                   <BadgeIndianRupee className="h-4 w-4" /> Currency Rates
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Storefront uses these DB rates until you change them here. “Update rates from API” overwrites all currencies from live FX. Edit any row manually anytime.
+                  Storefront uses these DB rates (API rate minus loss buffer). “Update rates from API” overwrites all currencies from live FX and stores both the raw API value and the adjusted rate.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -753,11 +760,14 @@ export default function SettingsPage() {
                 void saveCommerce(
                   'currency',
                   {
-                    ...currencyForm,
                     id: currencyForm.id || undefined,
+                    currency: currencyForm.currency,
+                    rate: currencyForm.rate,
+                    is_active: currencyForm.is_active,
                     base_currency: 'INR',
                     source: 'manual',
                     manual_override: true,
+                    // Keep last API value for comparison; do not overwrite api_rate on manual edit.
                   },
                   resetCurrencyForm
                 );
@@ -778,18 +788,23 @@ export default function SettingsPage() {
                   <option key={code} value={code}>{code}</option>
                 ))}
               </select>
-              <input
-                required
-                type="number"
-                min="0.0001"
-                step="0.0001"
-                value={currencyForm.rate}
-                onChange={(e) => setCurrencyForm((p) => ({ ...p, rate: e.target.value }))}
-                placeholder="INR per 1 unit"
-                disabled={currencyForm.currency === 'INR'}
-                className="rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:bg-gray-50"
-              />
-              <label className="inline-flex items-center gap-2 self-center text-sm text-gray-700">
+              <div className="sm:col-span-2 lg:col-span-1">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Stored rate (used on site)
+                </label>
+                <input
+                  required
+                  type="number"
+                  min="0.0001"
+                  step="0.0001"
+                  value={currencyForm.rate}
+                  onChange={(e) => setCurrencyForm((p) => ({ ...p, rate: e.target.value }))}
+                  placeholder="INR per 1 unit"
+                  disabled={currencyForm.currency === 'INR'}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:bg-gray-50"
+                />
+              </div>
+              <label className="inline-flex items-center gap-2 self-end pb-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
                   checked={currencyForm.manual_override}
@@ -797,10 +812,26 @@ export default function SettingsPage() {
                 />
                 Manual override
               </label>
-              {currencyForm.currency !== 'INR' && currencyForm.rate ? (
-                <p className="text-sm text-gray-600 sm:col-span-2 lg:col-span-4">
-                  Preview: <strong>1 {currencyForm.currency} = ₹{Number(currencyForm.rate).toLocaleString('en-IN')}</strong>
-                </p>
+              {currencyForm.currency !== 'INR' ? (
+                <div className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-950 sm:col-span-2 lg:col-span-4">
+                  {currencyForm.api_rate != null ? (
+                    <p>
+                      Last actual API: <strong>₹{Number(currencyForm.api_rate).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</strong>
+                      {currencyForm.rate ? (
+                        <>
+                          {' '}· editing stored to{' '}
+                          <strong>₹{Number(currencyForm.rate).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</strong>
+                        </>
+                      ) : null}
+                      . Saving keeps the API value for comparison.
+                    </p>
+                  ) : (
+                    <p>
+                      No API snapshot yet. After you run the <code className="text-xs">api_rate</code> migration and click
+                      “Update rates from API”, actual vs stored will show here. You can still set the stored rate manually now.
+                    </p>
+                  )}
+                </div>
               ) : null}
               <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
                 <button
@@ -809,7 +840,7 @@ export default function SettingsPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
-                  {editingCurrencyKey ? 'Update rate' : 'Add rate'}
+                  {editingCurrencyKey ? 'Save manual rate' : 'Add rate'}
                 </button>
                 {editingCurrencyKey ? (
                   <button
@@ -834,40 +865,62 @@ export default function SettingsPage() {
                   {currencyRates.map((rate) => {
                     const key = currencyRateKey(rate);
                     const isEditing = editingCurrencyKey === key;
+                    const comparison = rateComparison(rate);
                     return (
                       <div
                         key={key}
-                        className={`flex flex-col gap-3 rounded-lg px-3 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                        className={`flex flex-col gap-3 rounded-lg px-3 py-3 ${
                           isEditing ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-gray-50'
                         }`}
                       >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{formatCurrencyRateLabel(rate)}</p>
-                          <p className="mt-0.5 text-xs text-gray-500">
-                            {rate.manual_override ? 'Manual' : 'Auto'}
-                            {rate.source ? ` · ${rate.source}` : ''}
-                            {rate.updated_at ? ` · updated ${new Date(rate.updated_at).toLocaleDateString('en-IN')}` : ''}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEditCurrency(rate)}
-                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Edit
-                          </button>
-                          {rate.currency !== 'INR' ? (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{formatCurrencyRateLabel(rate)}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                              {rate.manual_override ? 'Manual' : 'Auto'}
+                              {rate.source ? ` · ${rate.source}` : ''}
+                              {rate.updated_at ? ` · updated ${new Date(rate.updated_at).toLocaleDateString('en-IN')}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => disableCommerce('currency', key)}
-                              className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                              onClick={() => startEditCurrency(rate)}
+                              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                             >
-                              Remove
+                              <Pencil className="h-3.5 w-3.5" />
+                              Edit
                             </button>
-                          ) : null}
+                            {rate.currency !== 'INR' ? (
+                              <button
+                                type="button"
+                                onClick={() => disableCommerce('currency', key)}
+                                className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                          </div>
                         </div>
+                        {comparison ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-md border border-gray-200 bg-white px-2.5 py-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">Actual API</p>
+                              <p className="mt-0.5 text-sm font-semibold text-gray-900">{comparison.apiLabel}</p>
+                            </div>
+                            <div className="rounded-md border border-amber-200 bg-amber-50/80 px-2.5 py-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800">Stored / used</p>
+                              <p className="mt-0.5 text-sm font-semibold text-amber-950">{comparison.storedLabel}</p>
+                            </div>
+                            {comparison.missingApi ? (
+                              <p className="col-span-2 text-xs text-amber-800">
+                                Actual API not recorded yet. Run SQL migration <code className="text-[11px]">migration_currency_rates_api_rate_2026.sql</code>, then click “Update rates from API”.
+                              </p>
+                            ) : comparison.bufferLabel ? (
+                              <p className="col-span-2 text-xs text-gray-600">{comparison.bufferLabel}</p>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}

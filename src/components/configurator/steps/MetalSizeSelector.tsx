@@ -26,7 +26,7 @@ import {
 import { getStoneAddonLabelFromDesign } from '@/lib/utils/jewelry-design-fields';
 import { resolveMetalRatePerGram } from '@/lib/hooks/useManualMetalPrices';
 import type { MetalPricingMode } from '@/lib/utils/metal-pricing-config';
-import { jewelleryPriceInclGst } from '@/lib/utils/tax';
+import { gstOnAmount, GST_METAL_MOUNTED_PERCENT } from '@/lib/utils/tax';
 import MetalTrustMarquee from '@/components/configurator/MetalTrustMarquee';
 
 interface MetalSizeSelectorProps {
@@ -108,13 +108,12 @@ function buildMetalPriceLines(
   estimate: MetalEstimate,
   stoneLabel?: string | null
 ): MetalPriceLine[] {
-  // ponytail: metal+labor folded into Est. mounting; only surface stone add-on if present
-  // Amounts are tax-inclusive (jewellery 3%); gem never taxed.
+  // Diamond stays ex-tax; full weight-tax is baked into Est. mounting once below.
   if (estimate.diamondCharge <= 0) return [];
   return [
     {
       label: stoneLabel?.trim() || 'Diamond',
-      amount: jewelleryPriceInclGst(estimate.diamondCharge),
+      amount: estimate.diamondCharge,
     },
   ];
 }
@@ -162,13 +161,16 @@ function MetalOptionCard({
   onSelect: () => void;
 }) {
   const priceLines = hasRates ? buildMetalPriceLines(estimate, stoneLabel) : [];
-  const showTotal = hasRates && estimate.total > 0;
-  // Tax-inclusive jewellery display (3% baked in); gem never taxed.
-  const mountingIncl = jewelleryPriceInclGst(
-    estimate.metalPrice + estimate.makingCharge,
-  );
-  const totalIncl = jewelleryPriceInclGst(estimate.total);
-  // When the only line equals the total (flat fee), skip the duplicate footer
+  const mountingEx = estimate.metalPrice + estimate.makingCharge;
+  const jewelryEx = estimate.total;
+  const jewelryGst =
+    estimate.pricingKind === 'weight' && jewelryEx > 0
+      ? Math.round(gstOnAmount(jewelryEx, GST_METAL_MOUNTED_PERCENT))
+      : 0;
+  // Bake tax once into mounting so card lines + total stay consistent (no GST label).
+  const mountingIncl = mountingEx + jewelryGst;
+  const totalIncl = jewelryEx + jewelryGst;
+  const showTotal = hasRates && totalIncl > 0;
   const showBreakdown =
     priceLines.length > 0 &&
     !(priceLines.length === 1 && priceLines[0].amount === totalIncl);

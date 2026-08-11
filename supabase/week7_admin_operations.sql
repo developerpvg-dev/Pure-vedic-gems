@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS currency_rates (
   base_currency VARCHAR(3) NOT NULL DEFAULT 'INR',
   currency VARCHAR(3) NOT NULL,
   rate DECIMAL(14,6) NOT NULL,
+  api_rate DECIMAL(14,6),
   manual_override BOOLEAN NOT NULL DEFAULT FALSE,
   source VARCHAR(80) NOT NULL DEFAULT 'manual',
   is_active BOOLEAN NOT NULL DEFAULT TRUE,

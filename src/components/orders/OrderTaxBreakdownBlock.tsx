@@ -63,7 +63,7 @@ export function OrderTaxBreakdownBlock({
     <div
       className={
         variant === 'print'
-          ? 'mt-3 border-t border-stone-200 pt-3'
+          ? 'mt-2 border-t border-stone-200 pt-2'
           : 'border-t border-stone-200 pt-2'
       }
     >

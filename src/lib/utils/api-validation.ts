@@ -17,7 +17,7 @@ const FIELD_LABELS: Record<string, string> = {
   shipping_method: 'Shipping method',
   items: 'Items',
   payment: 'Payment',
-  billing_gstin: 'GSTIN',
+  billing_gstin: 'Business tax ID',
   pincode: 'Pincode',
   manual_discount: 'Manual discount',
   coupon_code: 'Coupon',

@@ -31,6 +31,8 @@ export type EnquiryLead = {
   name: string;
   email: string;
   phone: string | null;
+  additional_phones?: string[] | null;
+  additional_emails?: string[] | null;
   subject: string | null;
   message: string;
   source: string;
@@ -448,6 +450,8 @@ export function EnquiryDetail({
     name: lead.name,
     phone: lead.phone || '',
     email: lead.email,
+    additional_phones: lead.additional_phones || [],
+    additional_emails: lead.additional_emails || [],
     ip_location: lead.ip_location || '',
     date_of_birth: lead.date_of_birth || '',
     birth_time: lead.birth_time || '',
@@ -468,6 +472,8 @@ export function EnquiryDetail({
       name: lead.name,
       phone: lead.phone || '',
       email: lead.email,
+      additional_phones: lead.additional_phones || [],
+      additional_emails: lead.additional_emails || [],
       ip_location: lead.ip_location || '',
       date_of_birth: lead.date_of_birth || '',
       birth_time: lead.birth_time || '',
@@ -483,6 +489,8 @@ export function EnquiryDetail({
     lead.name,
     lead.phone,
     lead.email,
+    lead.additional_phones,
+    lead.additional_emails,
     lead.ip_location,
     lead.date_of_birth,
     lead.birth_time,
@@ -532,6 +540,39 @@ export function EnquiryDetail({
           <ResponseField label="Phone" value={lead.phone || ''} />
           <ResponseField label="Email" value={lead.email} />
           <ResponseField label="Source" value={lead.source || 'contact_form'} />
+          {(lead.additional_phones?.length || lead.additional_emails?.length) ? (
+            <>
+              <ResponseField label="Extra phones" value={(lead.additional_phones || []).join(', ')} />
+              <ResponseField label="Extra emails" value={(lead.additional_emails || []).join(', ')} />
+            </>
+          ) : null}
+        </div>
+
+        <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3 space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-900">Additional contacts (for duplicate tracking)</p>
+          <p className="text-[11px] text-amber-900/80">
+            Add other numbers/emails the customer uses. Future leads from those contacts will flag as duplicates of this one.
+          </p>
+          <AdditionalContactsEditor
+            phones={details.additional_phones}
+            emails={details.additional_emails}
+            onPhones={(additional_phones) => setDetails((v) => ({ ...v, additional_phones }))}
+            onEmails={(additional_emails) => setDetails((v) => ({ ...v, additional_emails }))}
+          />
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() =>
+              onUpdate({
+                additional_phones: details.additional_phones,
+                additional_emails: details.additional_emails,
+              })
+            }
+            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save additional contacts
+          </button>
         </div>
 
         {lead.message ? (
@@ -700,6 +741,15 @@ export function EnquiryDetail({
                 <EditField label="Country" value={details.customer_country} onChange={(customer_country) => setDetails((v) => ({ ...v, customer_country }))} />
                 <EditField label="Purpose / area of concern" value={details.area_of_concern} onChange={(area_of_concern) => setDetails((v) => ({ ...v, area_of_concern }))} />
               </div>
+              <div className="mt-3 space-y-2">
+                <p className="text-xs font-semibold text-amber-900">Additional contacts (duplicate tracking)</p>
+                <AdditionalContactsEditor
+                  phones={details.additional_phones}
+                  emails={details.additional_emails}
+                  onPhones={(additional_phones) => setDetails((v) => ({ ...v, additional_phones }))}
+                  onEmails={(additional_emails) => setDetails((v) => ({ ...v, additional_emails }))}
+                />
+              </div>
               <div className="mt-3 flex justify-end gap-2">
                 <button type="button" onClick={() => setEditingDetails(false)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600">
                   Cancel
@@ -712,6 +762,8 @@ export function EnquiryDetail({
                       name: details.name.trim(),
                       phone: details.phone.trim() || null,
                       email: details.email.trim(),
+                      additional_phones: details.additional_phones,
+                      additional_emails: details.additional_emails,
                       date_of_birth: details.date_of_birth || null,
                       birth_time: details.birth_time.trim() || null,
                       birth_place: details.birth_place.trim() || null,
@@ -734,6 +786,8 @@ export function EnquiryDetail({
               <ResponseField label="Name" value={lead.name} />
               <ResponseField label="Phone" value={lead.phone || ''} />
               <ResponseField label="Email" value={lead.email} />
+              <ResponseField label="Extra phones" value={(lead.additional_phones || []).join(', ')} />
+              <ResponseField label="Extra emails" value={(lead.additional_emails || []).join(', ')} />
               <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
               <ResponseField label="Birth place" value={lead.birth_place || ''} />
@@ -833,6 +887,16 @@ export function EnquiryDetail({
           <p className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
             Remedies explained — this lead should move to Conversion for the sale outcome.
           </p>
+        )}
+
+        {/* ponytail: mark-explained moves stage to conversion — keep remedies visible after delivery */}
+        {Boolean(lead.remedies_text) && (explainedPhase || conversionPhase || stage === 'closed') && (
+          <div className="rounded-xl border border-teal-200 bg-teal-50/30 p-3 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-teal-900">Remedies</p>
+            <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-teal-100 bg-white p-3 font-mono text-xs text-gray-800">
+              {lead.remedies_text}
+            </pre>
+          </div>
         )}
 
         {conversionPhase && (
@@ -1082,7 +1146,6 @@ export function EnquiryDetail({
   const canEditDetails = isManager || isTelecom;
   const showRemarks = isManager || isTelecom;
   const showOutcomes = isManager;
-  const showRemediesRead = Boolean(lead.remedies_text) || isAstro || caps.canEditRemedies;
 
   const nextHint = isContact
     ? stage === 'new'
@@ -1184,6 +1247,15 @@ export function EnquiryDetail({
                 <EditField label="Country" value={details.customer_country} onChange={(customer_country) => setDetails((v) => ({ ...v, customer_country }))} />
                 <EditField label="Purpose / area of concern" value={details.area_of_concern} onChange={(area_of_concern) => setDetails((v) => ({ ...v, area_of_concern }))} />
               </div>
+              <div className="mt-3 space-y-2">
+                <p className="text-xs font-semibold text-amber-900">Additional contacts (duplicate tracking)</p>
+                <AdditionalContactsEditor
+                  phones={details.additional_phones}
+                  emails={details.additional_emails}
+                  onPhones={(additional_phones) => setDetails((v) => ({ ...v, additional_phones }))}
+                  onEmails={(additional_emails) => setDetails((v) => ({ ...v, additional_emails }))}
+                />
+              </div>
               <label className="mt-3 block text-xs font-medium text-gray-500">
                 Enquiry type
                 <select
@@ -1214,6 +1286,8 @@ export function EnquiryDetail({
                       name: details.name.trim(),
                       phone: details.phone.trim() || null,
                       email: details.email.trim(),
+                      additional_phones: details.additional_phones,
+                      additional_emails: details.additional_emails,
                       ip_location: details.ip_location.trim() || null,
                       date_of_birth: details.date_of_birth || null,
                       birth_time: details.birth_time.trim() || null,
@@ -1238,6 +1312,8 @@ export function EnquiryDetail({
               <ResponseField label="Name" value={lead.name} />
               <ResponseField label="Phone" value={lead.phone || ''} />
               <ResponseField label="Email" value={lead.email} />
+              <ResponseField label="Extra phones" value={(lead.additional_phones || []).join(', ')} />
+              <ResponseField label="Extra emails" value={(lead.additional_emails || []).join(', ')} />
               <ResponseField label="IP location" value={lead.ip_location || ''} />
               <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
               <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
@@ -1475,6 +1551,19 @@ export function EnquiryDetail({
             </div>
           )}
 
+          {/* ponytail: remedies stay readable after stage leaves sent_to_customer */}
+          {!isContact &&
+            (isManager || isTelecom) &&
+            Boolean(lead.remedies_text) &&
+            (stage === 'conversion' || stage === 'remedies_explained' || stage === 'closed') && (
+              <div className="rounded-lg border border-lime-200 bg-lime-50/40 p-3 space-y-2">
+                <p className="text-xs font-semibold text-lime-900">Remedies</p>
+                <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-lime-100 bg-white p-3 font-mono text-xs text-gray-800">
+                  {lead.remedies_text}
+                </pre>
+              </div>
+            )}
+
           {/* Conversion outcome — stage 9 */}
           {!isContact && (isManager || isTelecom) && (stage === 'conversion' || stage === 'remedies_explained') && (
             <div className="space-y-3">
@@ -1613,10 +1702,109 @@ function EditField({
       <input
         type={type}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
       />
     </label>
+  );
+}
+
+function AdditionalContactsEditor({
+  phones,
+  emails,
+  onPhones,
+  onEmails,
+}: {
+  phones: string[];
+  emails: string[];
+  onPhones: (phones: string[]) => void;
+  onEmails: (emails: string[]) => void;
+}) {
+  const [phoneDraft, setPhoneDraft] = useState('');
+  const [emailDraft, setEmailDraft] = useState('');
+
+  const addPhone = () => {
+    const v = phoneDraft.trim();
+    if (!v || phones.includes(v)) return;
+    onPhones([...phones, v]);
+    setPhoneDraft('');
+  };
+  const addEmail = () => {
+    const v = emailDraft.trim().toLowerCase();
+    if (!v || emails.includes(v)) return;
+    onEmails([...emails, v]);
+    setEmailDraft('');
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="mb-1 text-[11px] font-medium text-gray-600">Extra phones</p>
+        {phones.length ? (
+          <ul className="mb-2 flex flex-wrap gap-1.5">
+            {phones.map((p) => (
+              <li key={p} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs text-gray-800 ring-1 ring-gray-200">
+                {p}
+                <button type="button" onClick={() => onPhones(phones.filter((x) => x !== p))} className="text-gray-400 hover:text-red-600" aria-label={`Remove ${p}`}>
+                  <X className="h-3 w-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            value={phoneDraft}
+            onChange={(e) => setPhoneDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addPhone();
+              }
+            }}
+            placeholder="Add phone"
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          />
+          <button type="button" onClick={addPhone} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+            Add
+          </button>
+        </div>
+      </div>
+      <div>
+        <p className="mb-1 text-[11px] font-medium text-gray-600">Extra emails</p>
+        {emails.length ? (
+          <ul className="mb-2 flex flex-wrap gap-1.5">
+            {emails.map((em) => (
+              <li key={em} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs text-gray-800 ring-1 ring-gray-200">
+                {em}
+                <button type="button" onClick={() => onEmails(emails.filter((x) => x !== em))} className="text-gray-400 hover:text-red-600" aria-label={`Remove ${em}`}>
+                  <X className="h-3 w-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={emailDraft}
+            onChange={(e) => setEmailDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addEmail();
+              }
+            }}
+            placeholder="Add email"
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          />
+          <button type="button" onClick={addEmail} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

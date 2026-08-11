@@ -2324,6 +2324,8 @@ export interface Database {
           name: string;
           email: string;
           phone: string | null;
+          additional_phones: string[];
+          additional_emails: string[];
           subject: string | null;
           message: string;
           product_id: string | null;
@@ -2383,6 +2385,8 @@ export interface Database {
           name: string;
           email: string;
           phone?: string | null;
+          additional_phones?: string[];
+          additional_emails?: string[];
           subject?: string | null;
           message: string;
           product_id?: string | null;
@@ -2442,6 +2446,8 @@ export interface Database {
           name?: string;
           email?: string;
           phone?: string | null;
+          additional_phones?: string[];
+          additional_emails?: string[];
           subject?: string | null;
           message?: string;
           product_id?: string | null;

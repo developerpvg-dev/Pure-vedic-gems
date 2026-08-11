@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildConfiguratorPriceTotals } from '@/lib/utils/configurator-pricing-display';
 import type { ConfigPricingBreakdown } from '@/lib/types/configurator';
-import { gstOnJewellery, jewelleryPriceInclGst } from '@/lib/utils/tax';
+import { gstOnJewellery } from '@/lib/utils/tax';
 
 const basePricing: ConfigPricingBreakdown = {
   gem_price: 0,
@@ -21,7 +21,7 @@ const basePricing: ConfigPricingBreakdown = {
 };
 
 describe('buildConfiguratorPriceTotals', () => {
-  it('uses 3% jewellery GST on making+diamond only and shows tax-inclusive amounts', () => {
+  it('fixed sheet: no auto GST; amounts shown as entered', () => {
     const pricing: ConfigPricingBreakdown = {
       ...basePricing,
       gem_price: 18430,
@@ -43,20 +43,15 @@ describe('buildConfiguratorPriceTotals', () => {
       'Diamond add-on',
       'Certification',
     ]);
-    expect(totals.lines.find((l) => l.key === 'est-mounting')?.amount).toBe(
-      jewelleryPriceInclGst(7000),
-    );
-    expect(totals.lines.find((l) => l.key === 'stone-addon')?.amount).toBe(
-      jewelleryPriceInclGst(17500),
-    );
+    expect(totals.lines.find((l) => l.key === 'est-mounting')?.amount).toBe(7000);
+    expect(totals.lines.find((l) => l.key === 'stone-addon')?.amount).toBe(17500);
     expect(totals.pre_gst_subtotal).toBe(42930);
-    const expected = gstOnJewellery({ making: 7000, diamond: 17500 });
-    expect(totals.gst_jewelry).toBe(expected);
+    expect(totals.gst_jewelry).toBe(0);
     expect(totals.gst_gemstone).toBe(0);
     expect(totals.gst_metal).toBe(0);
     expect(totals.gst_making).toBe(0);
-    expect(totals.gst_total).toBe(Math.round(expected));
-    expect(totals.grand_total).toBe(42930 + totals.gst_total);
+    expect(totals.gst_total).toBe(0);
+    expect(totals.grand_total).toBe(42930);
   });
 
   it('uses 3% on metal+labour only (not gem) for weight-based gold', () => {
@@ -77,14 +72,17 @@ describe('buildConfiguratorPriceTotals', () => {
       productCategory: 'gemstone',
     });
 
-    const expected = gstOnJewellery({ metal: 24000, making: 6000 });
+    const expected = gstOnJewellery({ metal: 24000, making: 6000 }, 'weight');
     expect(totals.gst_jewelry).toBe(expected);
     expect(totals.gst_gemstone).toBe(0);
     expect(totals.gst_total).toBe(Math.round(expected));
     expect(totals.grand_total).toBe(40000 + totals.gst_total);
+    // Mounting is tax-inclusive for weight mode; never a separate "GST" line.
     expect(totals.lines.find((l) => l.key === 'est-mounting')?.amount).toBe(
-      jewelleryPriceInclGst(30000),
+      Math.round(30000 + expected),
     );
+    expect(totals.lines.find((l) => l.key === 'gst')).toBeUndefined();
+    expect(totals.lines.every((l) => !/gst/i.test(l.label))).toBe(true);
   });
 
   it('matches checkout jewellery-only GST for configured ring', () => {
@@ -108,11 +106,11 @@ describe('buildConfiguratorPriceTotals', () => {
     });
 
     expect(totals.pre_gst_subtotal).toBe(74173);
-    const expected = gstOnJewellery({ metal: 41300, making: 10325 });
+    const expected = Math.round(gstOnJewellery({ metal: 41300, making: 10325 }, 'weight'));
     expect(totals.gst_jewelry).toBe(expected);
     expect(totals.gst_certification).toBe(0);
     expect(totals.gst_energization).toBe(0);
-    expect(totals.gst_total).toBe(Math.round(expected));
+    expect(totals.gst_total).toBe(expected);
   });
 
   it('shows diamond add-on before metal is chosen and design note for remark-only designs', () => {
@@ -133,8 +131,8 @@ describe('buildConfiguratorPriceTotals', () => {
 
     expect(totals.lines.map((l) => l.key)).toContain('stone-addon');
     expect(totals.lines.map((l) => l.key)).toContain('design-note');
-    // Diamond alone mounts the piece → jewellery 3% on diamond only (not gem)
-    expect(totals.gst_jewelry).toBe(gstOnJewellery({ diamond: 17500 }));
+    // No weight mode → no auto GST on diamond alone
+    expect(totals.gst_jewelry).toBe(0);
   });
 
   it('shows TBD mounting line when custom design pricing is pending', () => {

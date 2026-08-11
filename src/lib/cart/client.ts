@@ -48,8 +48,9 @@ export function isProductOccupiedInCart(
 }
 
 /**
- * Block loose add when the piece is already inside a configured jewellery line
- * (or another config that already claims the same bead).
+ * Block loose add when the piece is already inside a configured jewellery line.
+ * Configured → configured is allowed: stripOverlappingCartLines replaces the old line
+ * (edit-from-cart uses a new configuration_id / line key).
  */
 export function getUniquePieceAddConflict(
   state: Array<
@@ -61,15 +62,16 @@ export function getUniquePieceAddConflict(
     configuration_snapshot?: unknown;
   },
 ): string | null {
-  const incomingIds = new Set(collectCartItemProductIds(incoming));
-  const incomingConfigured = Boolean(incoming.configuration_id);
+  // Configured add replaces overlapping lines via stripOverlappingCartLines.
+  if (incoming.configuration_id) return null;
 
+  const incomingIds = new Set(collectCartItemProductIds(incoming));
   for (const item of state) {
     if (item.key === incoming.key) continue;
-    const overlap = collectCartItemProductIds(item).some((id) => incomingIds.has(id));
-    if (!overlap) continue;
-    if (!incomingConfigured && item.configuration_id) return CART_UNIQUE_PIECE_MESSAGE;
-    if (incomingConfigured && item.configuration_id) return CART_UNIQUE_PIECE_MESSAGE;
+    if (!item.configuration_id) continue;
+    if (collectCartItemProductIds(item).some((id) => incomingIds.has(id))) {
+      return CART_UNIQUE_PIECE_MESSAGE;
+    }
   }
   return null;
 }

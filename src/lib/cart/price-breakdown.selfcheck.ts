@@ -19,7 +19,6 @@ const plain: CartItem = {
 const plainBreak = buildCartItemPriceBreakdown(plain);
 assert.equal(plainBreak.lines.length, 1);
 assert.equal(plainBreak.preGstSubtotal, 10000);
-// Loose gemstone: 0% GST
 assert.equal(plainBreak.estimatedGst, 0);
 assert.equal(plainBreak.gstLines.length, 0);
 
@@ -31,9 +30,9 @@ const readyJewellery: CartItem = {
   price: 10000,
 };
 const jewBreak = buildCartItemPriceBreakdown(readyJewellery);
-assert.equal(jewBreak.estimatedGst, Math.round(10000 * 0.03));
+assert.equal(jewBreak.estimatedGst, 0);
 assert.equal(jewBreak.gstLines.length, 0);
-assert.equal(jewBreak.lines[0]?.amount, jewelleryPriceInclGst(10000));
+assert.equal(jewBreak.lines[0]?.amount, 10000);
 
 const configured: CartItem = {
   ...plain,
@@ -66,7 +65,9 @@ assert.equal(cfgBreak.gstLines.length, 0);
 assert.ok(cfgBreak.estimatedGst > 0);
 assert.equal(
   cfgBreak.lines.find((l) => l.key === 'est-mounting')?.amount,
-  jewelleryPriceInclGst(2500),
+  jewelleryPriceInclGst(2500, 'weight'),
 );
+assert.equal(cfgBreak.lines.find((l) => l.key === 'gst'), undefined);
+assert.ok(cfgBreak.lines.every((l) => !/gst|cgst|sgst|igst/i.test(l.label)));
 
 console.log('cart price-breakdown self-check ok');
