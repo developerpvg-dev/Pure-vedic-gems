@@ -35,6 +35,7 @@ export function AdminPosConfigurator({
         preselectedProduct={product ?? null}
         comboProductIds={comboProductIds}
         onConfigured={onConfigured}
+        onClose={onClose}
         submitLabel="Add to order"
       />
     </div>

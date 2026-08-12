@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { getShortLivedCache } from '@/lib/cache/short-lived';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { applyProductTextSearch } from '@/lib/shop/product-search';
+import { applyProductIlikeSearch } from '@/lib/shop/product-search';
 import { applyExclusiveGemsShelfFilter, isExclusiveGemsShelf } from '@/lib/shop/catalog-scope';
 import {
   AVAILABILITY_STATUS_OPTIONS,
@@ -235,7 +235,7 @@ async function loadFacetRows(
   if (scope.subCategories?.length) query = query.in('sub_category', scope.subCategories);
   if (scope.directorsPick || filters.directors_pick) query = query.eq('is_directors_pick', true);
   if (scope.primaryGemSlugs?.length) query = query.in('sub_category', scope.primaryGemSlugs);
-  if (filters.q) query = applyProductTextSearch(query, filters.q);
+  if (filters.q) query = applyProductIlikeSearch(query, filters.q);
 
   const { data } = await query;
   return (data ?? []) as FacetRow[];

@@ -1,5 +1,5 @@
 import type { ProductFilters } from '@/lib/types/product';
-import { applyProductTextSearch } from '@/lib/shop/product-search';
+import { applyProductIlikeSearch } from '@/lib/shop/product-search';
 import { originFilterClauses } from '@/lib/utils/origin';
 import {
   isCanonicalQualityTier,
@@ -69,7 +69,7 @@ export function applyShopProductFilters<T extends SortableQuery>(
     query = query.eq('configurator_enabled', filters.configurator_enabled) as T;
   }
   if (filters.q) {
-    query = applyProductTextSearch(query, filters.q) as T;
+    query = applyProductIlikeSearch(query, filters.q) as T;
   }
   return query;
 }

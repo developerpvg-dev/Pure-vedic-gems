@@ -1,5 +1,8 @@
 /**
  * HTML → PDF via Chromium. Serverless uses @sparticuz/chromium; local uses system Chrome.
+ *
+ * ponytail: one shared browser per warm isolate + serialized jobs.
+ * Ceiling: Vercel may still cold-start Chromium per new isolate; Fly/VPS worker if volume grows.
  */
 const PDF_OPTS = {
   format: 'A4' as const,
@@ -21,6 +24,13 @@ const PDF_OPTS = {
 const CHROMIUM_PACK_URL =
   process.env.CHROMIUM_REMOTE_EXEC_PATH ||
   'https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.x64.tar';
+
+type PuppeteerBrowser = Awaited<ReturnType<typeof launchLocal>>;
+
+let sharedBrowser: PuppeteerBrowser | null = null;
+let launching: Promise<PuppeteerBrowser> | null = null;
+/** Serialize PDF jobs — one page at a time on the shared browser. */
+let pdfQueue: Promise<unknown> = Promise.resolve();
 
 async function launchServerless() {
   const chromium = (await import('@sparticuz/chromium')).default;
@@ -56,21 +66,46 @@ async function launchLocal() {
   });
 }
 
-export async function htmlToPdf(html: string): Promise<Buffer> {
-  const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-  const browser = await (isServerless ? launchServerless() : launchLocal());
-  try {
-    const page = await browser.newPage();
-    // networkidle0 so Roboto can load; fall back if fonts stall
-    // ponytail: puppeteer-core types dropped networkidle0; Chromium still accepts it
-    await page
-      .setContent(html, { waitUntil: 'networkidle0' as 'load', timeout: 45_000 })
-      .catch(async () => {
-        await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
+async function getBrowser(): Promise<PuppeteerBrowser> {
+  if (sharedBrowser?.connected) return sharedBrowser;
+  if (!launching) {
+    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+    launching = (isServerless ? launchServerless() : launchLocal())
+      .then((browser) => {
+        sharedBrowser = browser;
+        browser.on('disconnected', () => {
+          if (sharedBrowser === browser) sharedBrowser = null;
+        });
+        return browser;
+      })
+      .finally(() => {
+        launching = null;
       });
-    await page.evaluate(() => document.fonts.ready).catch(() => undefined);
-    return Buffer.from(await page.pdf(PDF_OPTS));
-  } finally {
-    await browser.close();
   }
+  return launching;
+}
+
+export async function htmlToPdf(html: string): Promise<Buffer> {
+  const job = pdfQueue.then(async () => {
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+    try {
+      // ponytail: embedLocalAssets HTML is self-contained — skip networkidle0 (was burning CPU waiting)
+      await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
+      await page.evaluate(() => document.fonts.ready).catch(() => undefined);
+      return Buffer.from(await page.pdf(PDF_OPTS));
+    } finally {
+      await page.close().catch(() => undefined);
+    }
+  });
+  pdfQueue = job.then(
+    () => undefined,
+    () => undefined,
+  );
+  return job;
+}
+
+/** Prefer an already-stored PDF over launching Chromium again. */
+export function shouldReuseStoredPdf(pdfPath: string | null | undefined): pdfPath is string {
+  return typeof pdfPath === 'string' && pdfPath.length > 0 && !pdfPath.includes('..');
 }

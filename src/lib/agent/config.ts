@@ -2,6 +2,11 @@ export function isAgentEnabled() {
   return process.env.AGENT_ENABLED === 'true';
 }
 
+/** Client gate: mount chat UI only when this is true (avoids /api/agent/config on every page). Keep in sync with AGENT_ENABLED. */
+export function isAgentUiEnabled() {
+  return process.env.NEXT_PUBLIC_AGENT_ENABLED === 'true';
+}
+
 export type RatnaCallNumber = { region: string; number: string };
 
 /**

@@ -25,7 +25,7 @@ export function DesignImageLightbox({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="!top-1/2 !left-1/2 !z-[60] !max-h-[min(92dvh,720px)] !w-[min(92vw,520px)] !max-w-[min(92vw,520px)] !-translate-x-1/2 !-translate-y-1/2 overflow-visible border-0 bg-transparent p-0 shadow-none ring-0 sm:!max-w-[min(92vw,520px)]"
+        className="!top-1/2 !left-1/2 !z-[1210] !max-h-[min(92dvh,720px)] !w-[min(92vw,520px)] !max-w-[min(92vw,520px)] !-translate-x-1/2 !-translate-y-1/2 overflow-visible border-0 bg-transparent p-0 shadow-none ring-0 sm:!max-w-[min(92vw,520px)]"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
 

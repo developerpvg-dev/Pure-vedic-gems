@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ExternalLink, FileBadge2, ShieldCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LabCertificate } from '@/lib/types/database';
 import './lab-certificate-page.css';
 
@@ -30,12 +30,15 @@ function certificateAsset(certificate: LabCertificate) {
 }
 
 export default async function LabCertificatePage() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from('lab_certificates')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
+  // ponytail: public client so cookies() don't force this route dynamic
+  const supabase = createOptionalPublicClient();
+  const { data } = supabase
+    ? await supabase
+        .from('lab_certificates')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+    : { data: null };
   const certificates = (data ?? []) as LabCertificate[];
 
   return (

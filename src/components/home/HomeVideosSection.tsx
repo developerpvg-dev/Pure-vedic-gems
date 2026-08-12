@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LibraryVideo } from '@/lib/types/database';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { SliderButton } from '@/components/home/PvgManagedCategorySections';
 
 export async function HomeVideosSection() {
-  const supabase = await createClient();
+  // ponytail: public client so homepage ISR isn't defeated by cookies()
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return null;
+
   const { data } = await supabase
     .from('videos')
     .select('*')

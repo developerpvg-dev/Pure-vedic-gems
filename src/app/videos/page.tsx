@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LibraryVideo, VideoCategory } from '@/lib/types/database';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { canonicalUrl } from '@/lib/utils/seo';
@@ -83,11 +83,14 @@ export default async function VideoLibraryPage({
   const { page: pageParam } = await searchParams;
   const currentPage = Math.max(1, parseInt(pageParam ?? '1', 10));
 
-  const supabase = await createClient();
-  const [categoriesResult, videosResult] = await Promise.all([
-    supabase.from('video_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
-    supabase.from('videos').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
-  ]);
+  // ponytail: public client so cookies() don't force this route dynamic
+  const supabase = createOptionalPublicClient();
+  const [categoriesResult, videosResult] = supabase
+    ? await Promise.all([
+        supabase.from('video_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+        supabase.from('videos').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+      ])
+    : [{ data: null }, { data: null }];
 
   const videos = (videosResult.data ?? []) as LibraryVideo[];
   const allCategories = ((categoriesResult.data ?? []) as VideoCategory[])

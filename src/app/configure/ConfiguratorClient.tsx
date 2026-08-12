@@ -39,6 +39,7 @@ interface ConfiguratorClientProps {
   comboProductIds?: string[];
   /** Admin POS: return saved config instead of adding to cart */
   onConfigured?: (result: ConfiguredOrderResult) => void;
+  onClose?: () => void;
   submitLabel?: string;
 }
 
@@ -48,6 +49,7 @@ interface ConfiguratorSessionProps {
   storageKey: string;
   comboProductIds?: string[];
   onConfigured?: (result: ConfiguredOrderResult) => void;
+  onClose?: () => void;
   submitLabel?: string;
 }
 
@@ -57,6 +59,7 @@ function ConfiguratorSession({
   storageKey,
   comboProductIds = [],
   onConfigured,
+  onClose,
   submitLabel,
 }: ConfiguratorSessionProps) {
   const { metalPrices, laborRates, pricingModes, ratesBySlug } = useManualMetalPrices();
@@ -175,6 +178,7 @@ function ConfiguratorSession({
       settingProfiles={profileData?.profiles ?? null}
       startStep={startStep}
       onConfigured={onConfigured}
+      onClose={onClose}
       submitLabel={submitLabel}
     />
   );
@@ -184,6 +188,7 @@ export default function ConfiguratorClient({
   preselectedProduct,
   comboProductIds = [],
   onConfigured,
+  onClose,
   submitLabel,
 }: ConfiguratorClientProps) {
   const { getCartItem } = useCart();
@@ -247,6 +252,7 @@ export default function ConfiguratorClient({
       storageKey={session.storageKey}
       comboProductIds={session.comboIds}
       onConfigured={onConfigured}
+      onClose={onClose}
       submitLabel={submitLabel}
     />
   );

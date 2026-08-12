@@ -8,10 +8,13 @@
 
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type Dispatch } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/utils/format';
+import { productHref } from '@/lib/categories/storefront';
 import { buildConfiguratorPriceTotals } from '@/lib/utils/configurator-pricing-display';
 import type {
   ConfiguratorAction,
@@ -125,6 +128,7 @@ interface ConfiguratorWrapperProps {
   settingProfiles?: JewelrySettingMetalProfiles | null;
   startStep?: number;
   onConfigured?: (result: ConfiguredOrderResult) => void;
+  onClose?: () => void;
   submitLabel?: string;
 }
 
@@ -142,8 +146,10 @@ export default function ConfiguratorWrapper({
   settingProfiles = null,
   startStep = 1,
   onConfigured,
+  onClose,
   submitLabel,
 }: ConfiguratorWrapperProps) {
+  const router = useRouter();
   const contentRef = useRef<HTMLDivElement>(null);
   const [priceMobileOpen, setPriceMobileOpen] = useState(false);
   const [optionRules, setOptionRules] = useState<ConfiguratorOptionRules | null>(null);
@@ -213,6 +219,20 @@ export default function ConfiguratorWrapper({
     dispatch({ type: 'SET_SETTING_TYPE', payload: 'loose' });
     dispatch({ type: 'GO_TO_STEP', payload: 6 });
   }, [dispatch]);
+
+  const handleClose = useCallback(() => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+    // ponytail: Next.js idx is the in-app back signal; history.length is the new-tab fallback
+    const idx = window.history.state?.idx;
+    if (typeof idx === 'number' ? idx > 0 : window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/');
+  }, [onClose, router]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -309,6 +329,16 @@ export default function ConfiguratorWrapper({
       document.body.style.overflow = '';
     };
   }, []);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleClose]);
 
   const renderStep = () => {
     switch (state.current_step) {
@@ -458,6 +488,9 @@ export default function ConfiguratorWrapper({
   );
   const currentStepMeta = getConfiguratorStepMeta(state.current_step, state);
   const selectedProductImage = getSelectedProductImage(state);
+  const selectedProductPageHref = state.selected_product?.slug
+    ? productHref(state.selected_product)
+    : null;
   const progressPct = Math.round((currentDisplayNum / totalSteps) * 100);
   const visibleSteps = CONFIGURATOR_STEPS.filter(
     (step) => step.id >= startStep && !isStepSkipped(step.id, state, optionRules)
@@ -477,11 +510,11 @@ export default function ConfiguratorWrapper({
   return (
     <div className={cn('pvg-configurator font-sans', rudrakshaFlow && 'pvg-configurator--rudraksha')}>
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[3px]"
-        onClick={() => window.history.back()}
+        className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-[3px]"
+        onClick={handleClose}
       />
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-20 z-50 sm:top-24 sm:inset-4 lg:inset-x-6 lg:bottom-6 lg:top-28">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-20 z-[1100] sm:top-24 sm:inset-4 lg:inset-x-6 lg:bottom-6 lg:top-28">
         <div className="mx-auto flex h-full max-w-265 items-stretch">
           <div
             className={cn(
@@ -538,7 +571,7 @@ export default function ConfiguratorWrapper({
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.history.back()}
+                  onClick={handleClose}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-white/80 text-muted-foreground transition hover:border-accent/40 hover:text-primary"
                   aria-label="Close"
                 >
@@ -576,25 +609,55 @@ export default function ConfiguratorWrapper({
               {/* Selected stone context chip */}
               {state.selected_product ? (
                 <div className="flex items-center gap-2 border-t border-border/40 px-3 py-1.5">
-                  {selectedProductImage && (
-                    <div className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full border border-border/60">
-                      <Image
-                        src={selectedProductImage}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="16px"
-                      />
-                    </div>
+                  {selectedProductPageHref ? (
+                    <Link
+                      href={selectedProductPageHref}
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 hover:opacity-80"
+                      aria-label={`View ${state.selected_product.name}`}
+                    >
+                      {selectedProductImage ? (
+                        <div className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full border border-border/60">
+                          <Image
+                            src={selectedProductImage}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="16px"
+                          />
+                        </div>
+                      ) : null}
+                      <p className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+                        <span className="font-medium text-primary underline-offset-2 hover:underline">
+                          {state.selected_product.name}
+                        </span>
+                        {state.selected_product.carat_weight
+                          ? ` · ${state.selected_product.carat_weight.toFixed(2)} ct`
+                          : ''}
+                      </p>
+                    </Link>
+                  ) : (
+                    <>
+                      {selectedProductImage ? (
+                        <div className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full border border-border/60">
+                          <Image
+                            src={selectedProductImage}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="16px"
+                          />
+                        </div>
+                      ) : null}
+                      <p className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+                        <span className="font-medium text-primary">
+                          {state.selected_product.name}
+                        </span>
+                        {state.selected_product.carat_weight
+                          ? ` · ${state.selected_product.carat_weight.toFixed(2)} ct`
+                          : ''}
+                      </p>
+                    </>
                   )}
-                  <p className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
-                    <span className="font-medium text-primary">
-                      {state.selected_product.name}
-                    </span>
-                    {state.selected_product.carat_weight
-                      ? ` · ${state.selected_product.carat_weight.toFixed(2)} ct`
-                      : ''}
-                  </p>
                   {canBuyLoose ? (
                     <button
                       type="button"
@@ -619,30 +682,59 @@ export default function ConfiguratorWrapper({
               }}
             >
               {selectedProductImage ? (
-                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-border/70 bg-muted">
-                  <Image
-                    src={selectedProductImage}
-                    alt={state.selected_product?.name ?? 'Selected stone'}
-                    fill
-                    className="object-cover"
-                    sizes="36px"
-                  />
-                </div>
+                selectedProductPageHref ? (
+                  <Link
+                    href={selectedProductPageHref}
+                    className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-border/70 bg-muted transition hover:border-accent/50"
+                    aria-label={`View ${state.selected_product?.name ?? 'selected stone'}`}
+                  >
+                    <Image
+                      src={selectedProductImage}
+                      alt={state.selected_product?.name ?? 'Selected stone'}
+                      fill
+                      className="object-cover"
+                      sizes="36px"
+                    />
+                  </Link>
+                ) : (
+                  <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-border/70 bg-muted">
+                    <Image
+                      src={selectedProductImage}
+                      alt={state.selected_product?.name ?? 'Selected stone'}
+                      fill
+                      className="object-cover"
+                      sizes="36px"
+                    />
+                  </div>
+                )
               ) : null}
 
               <div className="min-w-0 flex-1 flex items-center gap-2.5">
                 <span className="hidden shrink-0 rounded-full border border-border/60 bg-white/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground xl:inline">
                   Configurator
                 </span>
-                <h2 className="truncate text-base font-semibold text-primary">
-                  {startStep >= 3 && state.selected_product
-                    ? rudrakshaFlow
-                      ? `Configure ${state.selected_product.name} Pendant`
-                      : `Configure ${state.selected_product.name}`
-                    : rudrakshaFlow
-                      ? 'Design Your Rudraksha Pendant'
-                      : 'Design Your Jewelry'}
-                </h2>
+                {selectedProductPageHref && state.selected_product ? (
+                  <Link
+                    href={selectedProductPageHref}
+                    className="truncate text-base font-semibold text-primary underline-offset-2 hover:underline"
+                  >
+                    {startStep >= 3
+                      ? rudrakshaFlow
+                        ? `Configure ${state.selected_product.name} Pendant`
+                        : `Configure ${state.selected_product.name}`
+                      : state.selected_product.name}
+                  </Link>
+                ) : (
+                  <h2 className="truncate text-base font-semibold text-primary">
+                    {startStep >= 3 && state.selected_product
+                      ? rudrakshaFlow
+                        ? `Configure ${state.selected_product.name} Pendant`
+                        : `Configure ${state.selected_product.name}`
+                      : rudrakshaFlow
+                        ? 'Design Your Rudraksha Pendant'
+                        : 'Design Your Jewelry'}
+                  </h2>
+                )}
               </div>
 
               <div className="flex shrink-0 items-center gap-1.5">
@@ -666,7 +758,7 @@ export default function ConfiguratorWrapper({
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.history.back()}
+                  onClick={handleClose}
                   className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/70 bg-white/75 text-muted-foreground transition hover:border-accent/40 hover:text-primary"
                   aria-label="Close"
                 >

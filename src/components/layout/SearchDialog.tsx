@@ -22,7 +22,8 @@ interface SearchDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const SUGGESTED_SEARCHES = ['yellow sapphire', 'ruby', 'rudraksha', 'emerald', 'cat eye'];
+const SUGGESTED_SEARCHES = ['yellow sapphire', 'ruby', '5.76ct', 'rudraksha', 'emerald'];
+const GROUP_ORDER: SearchResultType[] = ['product', 'tool', 'knowledge', 'blog', 'category'];
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const router = useRouter();
@@ -74,9 +75,20 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   }, [trimmedQuery]);
 
   const visibleGroups = useMemo(() => {
-    if (groups.length > 0) return groups.map((group) => ({ ...group, results: group.results.slice(0, 6) }));
-    if (results.length === 0) return [];
-    return [{ type: 'product' as const, label: 'Results', results: results.slice(0, 6) }];
+    const source = groups.length > 0
+      ? groups
+      : results.length > 0
+        ? [{ type: 'product' as const, label: 'Results', results }]
+        : [];
+
+    return source
+      .slice()
+      .sort((a, b) => GROUP_ORDER.indexOf(a.type) - GROUP_ORDER.indexOf(b.type))
+      .map((group) => ({
+        ...group,
+        results: group.results.slice(0, group.type === 'product' ? 8 : 3),
+      }))
+      .filter((group) => group.results.length > 0);
   }, [groups, results]);
 
   const submitSearch = (value = trimmedQuery) => {
@@ -104,34 +116,40 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl border border-[var(--pvg-border)] bg-brand-bg p-0 text-[var(--pvg-text)] sm:max-w-2xl">
-        <DialogHeader className="border-b border-[var(--pvg-border)] px-5 py-4">
+      <DialogContent className="top-24 flex max-h-[calc(100vh-6rem)] max-w-2xl flex-col overflow-hidden border border-[var(--pvg-border)] bg-brand-bg p-0 text-[var(--pvg-text)] translate-y-0 sm:top-28 sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b border-[var(--pvg-border)] px-5 py-4">
           <DialogTitle className="font-heading text-lg text-[var(--pvg-primary)]">Search the catalog</DialogTitle>
           <DialogDescription className="text-xs text-[var(--pvg-muted)]">
-            Search by gemstone, SKU, tag number, origin, planet, or collection.
+            Search by gemstone, weight (5.76ct / 6 ratti), SKU, tag number, origin, or planet.
           </DialogDescription>
         </DialogHeader>
 
         <form
-          className="px-5 pt-5"
+          className="shrink-0 px-5 pt-5"
           onSubmit={(event) => {
             event.preventDefault();
             submitSearch();
           }}
         >
           <label className="relative block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--pvg-muted)]" />
             <input
               id="pvg-site-search"
               value={query}
               onChange={(event) => handleQueryChange(event.target.value)}
-              placeholder="Search yellow sapphire, GIA tag, Rahu, Nepal..."
-              className="h-12 w-full rounded-xl border border-[var(--pvg-border)] bg-brand-surface pl-10 pr-4 text-sm outline-none transition focus:border-[var(--pvg-accent)]"
+              placeholder="Search yellow sapphire, 5.76ct, GIA tag..."
+              className="h-12 w-full rounded-xl border border-[var(--pvg-border)] bg-brand-surface pl-4 pr-12 text-sm outline-none transition focus:border-[var(--pvg-accent)]"
             />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-[var(--pvg-primary)] text-white transition hover:opacity-90"
+            >
+              <Search className="h-4 w-4" />
+            </button>
           </label>
         </form>
 
-        <div className="max-h-[60vh] overflow-y-auto px-5 pb-5 pt-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-4">
           {trimmedQuery.length < 2 ? (
             <div>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[2px] text-[var(--pvg-muted)]">
@@ -187,7 +205,9 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                           </p>
                         </div>
                         {typeof result.price === 'number' ? (
-                          <p className="text-xs font-bold text-[var(--pvg-primary)]">{formatPrice(result.price)}</p>
+                          <p className="text-xs font-bold text-[var(--pvg-primary)]">
+                            {result.type === 'product' && result.price <= 0 ? 'On Demand' : formatPrice(result.price)}
+                          </p>
                         ) : (
                           <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-[var(--pvg-accent)]">Open</p>
                         )}

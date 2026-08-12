@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { AgentChatPanel } from '@/components/agent/AgentChatPanel';
+import { isAgentUiEnabled } from '@/lib/agent/config';
 
 export function AgentChatWidget() {
   const [open, setOpen] = useState(false);
@@ -12,6 +13,11 @@ export function AgentChatWidget() {
   const [pipecatUrl, setPipecatUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    // ponytail: no config round-trip when UI gate is off
+    if (!isAgentUiEnabled()) {
+      setEnabled(false);
+      return;
+    }
     fetch('/api/agent/config')
       .then((r) => r.json())
       .then((data: { enabled?: boolean; pipecatUrl?: string | null }) => {

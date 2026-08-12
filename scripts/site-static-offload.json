@@ -1,0 +1,51 @@
+{
+  "bucket": "site-static",
+  "topLevelDirs": [
+    "legacy-geo",
+    "rudraksha-knowledge",
+    "pendant-designs",
+    "gems-knowledge",
+    "aboutus",
+    "rudraksha-designs",
+    "ring-designs",
+    "bracelet-designs",
+    "legacy",
+    "testimonial",
+    "astrology",
+    "knowledge",
+    "whychooseus",
+    "treatments",
+    "office",
+    "our_expets_img",
+    "config_img",
+    "geo"
+  ],
+  "homeSubdirs": [
+    "certificates",
+    "configuratorsteps",
+    "ctas",
+    "director'spick",
+    "gemrecomndation",
+    "heri",
+    "imgandicon",
+    "navratnaimg",
+    "ourservicesimg",
+    "remediesrec",
+    "rudrakhshas images",
+    "rudraksha-cards",
+    "testimonial",
+    "upratna-cards",
+    "VedicRemedies",
+    "whoweare"
+  ],
+  "rootFiles": [],
+  "keepLocal": [
+    "home/hero",
+    "email",
+    "pvg-emblem.webp",
+    "pvg-logo.png",
+    "ringsizeguide.png",
+    "PVG NEW LOGO DESIGN.webp",
+    "Algerian.webp"
+  ]
+}

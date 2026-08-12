@@ -526,7 +526,7 @@ export function FilterBar({
       <input
         value={searchText}
         onChange={(event) => setSearchText(event.target.value)}
-        placeholder="Search products, SKU, tag..."
+        placeholder="Search name, SKU, 5.76ct, tag..."
         aria-label="Search products"
       />
       {searchText ? (

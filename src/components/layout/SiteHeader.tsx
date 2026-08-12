@@ -1187,7 +1187,7 @@ export function SiteHeader() {
           >
             {/* Logo */}
             <Link href="/" aria-label="Pure Vedic Gems — Home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
-              <Image src="/PVG NEW LOGO DESIGN.webp" alt="Pure Vedic Gems emblem" width={48} height={48} priority
+              <Image src="/pvg-emblem.webp" alt="Pure Vedic Gems emblem" width={48} height={48} priority
                 style={{ width: '48px', height: '48px', objectFit: 'contain', flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30} priority
@@ -1250,7 +1250,7 @@ export function SiteHeader() {
           {/* Mobile/tablet — visible below 1360px */}
           <div className="pvg-mob-nav" style={{ height: '62px', alignItems: 'center', padding: '0 16px' }}>
             <Link href="/" aria-label="Pure Vedic Gems home" className="pvg-mob-brand">
-              <Image src="/PVG NEW LOGO DESIGN.webp" alt="Pure Vedic Gems" width={40} height={40} priority
+              <Image src="/pvg-emblem.webp" alt="Pure Vedic Gems" width={40} height={40} priority
                 className="pvg-mob-logo" />
               <div className="pvg-mob-brand-text">
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority

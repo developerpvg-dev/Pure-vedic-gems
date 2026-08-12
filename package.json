@@ -36,6 +36,9 @@
     "security:audit": "npm audit --audit-level=high",
     "redirects:generate-live": "node scripts/generate-live-app-paths.mjs",
     "redirects:selfcheck": "npm run redirects:generate-live && tsx src/lib/legacy-redirects.selfcheck.ts",
+    "site-static:upload": "node scripts/upload-site-static.mjs",
+    "site-static:upload:delete-local": "node scripts/upload-site-static.mjs --delete-local",
+    "site-static:verify": "node scripts/verify-site-static.mjs",
     "ci": "npm run lint && npm run typecheck && npm run redirects:selfcheck && npm run test && npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

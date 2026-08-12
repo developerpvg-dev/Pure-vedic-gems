@@ -197,7 +197,7 @@ export function Footer() {
             <div className="pvg-footer-brand-copy">
               <div className="pvg-footer-brand-row">
                 <Image
-                  src="/PVG NEW LOGO DESIGN.webp"
+                  src="/pvg-emblem.webp"
                   alt="Pure Vedic Gems emblem"
                   className="pvg-footer-logo-img"
                   width={96}

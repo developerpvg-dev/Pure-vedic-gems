@@ -1,11 +1,58 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 import path from 'path';
+import siteStaticOffload from './scripts/site-static-offload.json';
 
 // P2–P11 + flat shop-category redirects live in src/lib/legacy-redirects.ts
 // (proxy lookup) — next.config redirects hit Vercel's deploy route ceiling.
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+/** ponytail: offloaded public/ folders live in Supabase Storage — same URL paths via rewrite (not DB). */
+function encodePathSegments(p: string) {
+  return p
+    .split('/')
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');
+}
+
+function siteStaticAssetRewrites(): { source: string; destination: string }[] {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!base) return [];
+  const prefix = `${base}/storage/v1/object/public/${siteStaticOffload.bucket}`;
+  const out: { source: string; destination: string }[] = [];
+  const ext = ':path*.:ext(webp|jpg|jpeg|png|gif|svg|avif|css)';
+  // `knowledge` is also an App Router page tree — only rewrite files, never /knowledge itself
+  const pageColliding = new Set(['knowledge']);
+  for (const dir of siteStaticOffload.topLevelDirs) {
+    const destDir = encodePathSegments(dir);
+    if (pageColliding.has(dir)) {
+      out.push({
+        source: `/${dir}/${ext}`,
+        destination: `${prefix}/${destDir}/${ext}`,
+      });
+      continue;
+    }
+    out.push({
+      source: `/${dir}/:path*`,
+      destination: `${prefix}/${destDir}/:path*`,
+    });
+  }
+  for (const sub of siteStaticOffload.homeSubdirs) {
+    const enc = encodePathSegments(sub);
+    out.push({
+      source: `/home/${sub}/:path*`,
+      destination: `${prefix}/home/${enc}/:path*`,
+    });
+    if (enc !== sub) {
+      out.push({
+        source: `/home/${enc}/:path*`,
+        destination: `${prefix}/home/${enc}/:path*`,
+      });
+    }
+  }
+  return out;
+}
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -122,6 +169,8 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     return [
+      // Phase 4: large static assets → Supabase Storage (same path, no Vercel origin bytes)
+      ...siteStaticAssetRewrites(),
       // Legacy WP product-category URLs map to current shop routes (no redirect — keep old URLs working)
       // /product-category/navratan/<gem>           -> listing  /shop/<gem>
       // /product-category/navratan/<gem>/<product> -> PDP      /shop/navaratna/<product>

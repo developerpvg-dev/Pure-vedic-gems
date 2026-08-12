@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ThumbsUp, Share2, MessageCircle } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { EventVideo, EventVideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoRow } from '@/components/events/VideoRow';
@@ -13,7 +13,10 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
+  // ponytail: public client so cookies() don't force this route dynamic
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return { title: 'Video Not Found' };
+
   const { data: video } = await supabase
     .from('event_videos')
     .select('title, description')
@@ -30,7 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function VideoDetailPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createOptionalPublicClient();
+  if (!supabase) notFound();
 
   const { data: videoData } = await supabase
     .from('event_videos')

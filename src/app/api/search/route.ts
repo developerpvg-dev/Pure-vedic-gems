@@ -6,8 +6,7 @@ import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowl
 import { productHref } from '@/lib/categories/storefront';
 import { getAllBlogPosts, getAllKnowledgeArticles } from '@/lib/sanity/queries';
 import { rateLimit } from '@/lib/utils/rate-limit';
-import { applyProductTextSearch, applyProductIlikeSearch, isMissingSearchVectorError } from '@/lib/shop/product-search';
-import { tryRpc } from '@/lib/supabase/rpc';
+import { applyProductIlikeSearch } from '@/lib/shop/product-search';
 import { sanitizeSearchTerm } from '@/lib/utils/search';
 import { searchQuerySchema } from '@/lib/validators/product';
 import type { SearchResponse, SearchResult, SearchResultGroup } from '@/lib/types/product';
@@ -137,59 +136,29 @@ export async function GET(request: NextRequest) {
     let productResults: SearchResult[] = [];
 
     if (supabase) {
-      const rpcResults = await tryRpc<
-        Array<{
-          id: string;
-          slug: string;
-          name: string;
-          category: string;
-          price: number;
-          thumbnail_url: string | null;
-          origin: string | null;
-          planet: string | null;
-          tag_number: string | null;
-        }>
-      >(supabase, 'search_products', { p_query: sanitizeSearchTerm(q), p_limit: 10 });
+      const productQuery = applyProductIlikeSearch(
+        supabase
+          .from('products')
+          .select('id, slug, name, category, price, thumbnail_url, origin, planet, tag_number')
+          .eq('is_active', true),
+        sanitizeSearchTerm(q),
+      );
 
-      if (rpcResults) {
-        productResults = rpcResults.map((result) => ({
+      const { data: results, error } = await productQuery
+        .order('featured', { ascending: false })
+        .order('price', { ascending: true })
+        .limit(12);
+
+      if (error) {
+        console.error('Search query error:', error);
+      } else {
+        productResults = (results ?? []).map((result) => ({
           ...result,
           type: 'product' as const,
           href: productHref(result),
           categoryLabel: 'Product',
           description: null,
         }));
-      } else {
-        const baseSelect = supabase
-          .from('products')
-          .select('id, slug, name, category, price, thumbnail_url, origin, planet, tag_number')
-          .eq('is_active', true);
-
-        let productQuery = applyProductTextSearch(baseSelect, sanitizeSearchTerm(q));
-        let { data: results, error } = await productQuery
-          .order('featured', { ascending: false })
-          .order('price', { ascending: true })
-          .limit(10);
-
-        if (isMissingSearchVectorError(error)) {
-          productQuery = applyProductIlikeSearch(baseSelect, sanitizeSearchTerm(q));
-          ({ data: results, error } = await productQuery
-            .order('featured', { ascending: false })
-            .order('price', { ascending: true })
-            .limit(10));
-        }
-
-        if (error) {
-          console.error('Search query error:', error);
-        } else {
-          productResults = (results ?? []).map((result) => ({
-            ...result,
-            type: 'product' as const,
-            href: productHref(result),
-            categoryLabel: 'Product',
-            description: null,
-          }));
-        }
       }
     }
 
@@ -231,10 +200,10 @@ export async function GET(request: NextRequest) {
 
     const groups = toGroups([
       { type: 'product', label: 'Products', results: productResults },
-      { type: 'category', label: 'SEO Guides', results: getCategoryResults(q) },
-      { type: 'knowledge', label: 'Knowledge', results: [...getStaticKnowledgeResults(q), ...dynamicKnowledgeResults].slice(0, 8) },
-      { type: 'blog', label: 'Blog', results: blogResults },
       { type: 'tool', label: 'Tools', results: getToolResults(q) },
+      { type: 'knowledge', label: 'Knowledge', results: [...getStaticKnowledgeResults(q), ...dynamicKnowledgeResults].slice(0, 4) },
+      { type: 'blog', label: 'Blog', results: blogResults.slice(0, 4) },
+      { type: 'category', label: 'Pages', results: getCategoryResults(q).slice(0, 4) },
     ]);
 
     const allResults = groups.flatMap((group) => group.results);

@@ -7,7 +7,7 @@ import {
   CONSULTATION_PATH,
   consultationGeoInternalJsonLd,
 } from '@/lib/constants/consultation-geo-seo';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { ConsultationPlan } from '@/lib/types/database';
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata, serviceJsonLd } from '@/lib/utils/seo';
 
@@ -27,14 +27,19 @@ export const metadata: Metadata = {
   },
 };
 
+// ponytail: plans are public; ISR so cookies() no longer force SSR every visit
+export const revalidate = 1800;
+
 export default async function ConsultationPage() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('consultation_plans')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: false });
+  const supabase = createOptionalPublicClient();
+  const { data, error } = supabase
+    ? await supabase
+        .from('consultation_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false })
+    : { data: null, error: null };
 
   if (error) {
     console.error('[Consultation] Failed to load plans:', error);

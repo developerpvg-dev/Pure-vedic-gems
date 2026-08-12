@@ -6,6 +6,7 @@ import { SiteHeader } from './SiteHeader';
 import { Footer } from './Footer';
 import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { AgentChatWidget } from '@/components/agent/AgentChatWidget';
+import { isAgentUiEnabled } from '@/lib/agent/config';
 import { CurrencyProvider } from '@/lib/hooks/useCurrency';
 
 /** Routes that already reserve space below the fixed header in their own layout */
@@ -82,7 +83,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       {showHeaderSpacer ? <div className="pvg-header-spacer" aria-hidden="true" /> : null}
       <main className={shellClassName}>{children}</main>
       <StickyContactRail />
-      <AgentChatWidget />
+      {/* ponytail: skip mount+config fetch while Ratna is off — set NEXT_PUBLIC_AGENT_ENABLED=true with AGENT_ENABLED */}
+      {isAgentUiEnabled() ? <AgentChatWidget /> : null}
       <Footer />
       {!isHome ? <ThemeSwitcher /> : null}
     </CurrencyProvider>

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
+import { siteStaticPublicUrl } from '@/lib/site-static';
 
 const PROTECTED_PREFIXES = ['/account', '/admin', '/studio'];
 
@@ -69,9 +70,21 @@ function passthroughNextImage(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(resolved.href, 307);
 }
 
+function passthroughSiteStatic(request: NextRequest): NextResponse | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return null;
+  const target = siteStaticPublicUrl(request.nextUrl.pathname, supabaseUrl);
+  if (!target) return null;
+  // ponytail: 307 to Storage CDN — corrects space/apostrophe URLs rewrites mishandle
+  return NextResponse.redirect(target, 307);
+}
+
 export async function proxy(request: NextRequest) {
   const imageRes = passthroughNextImage(request);
   if (imageRes) return imageRes;
+
+  const siteStaticRes = passthroughSiteStatic(request);
+  if (siteStaticRes) return siteStaticRes;
 
   const { pathname } = request.nextUrl;
 
@@ -92,9 +105,45 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Include /_next/image so old optimizer URLs are redirected (no transform bill).
+  // Include /_next/image + offloaded asset trees (images were excluded before → broken after Phase 4).
   matcher: [
     '/_next/image',
+    '/legacy-geo/:path*',
+    '/rudraksha-knowledge/:path*',
+    '/pendant-designs/:path*',
+    '/gems-knowledge/:path*',
+    '/aboutus/:path*',
+    '/rudraksha-designs/:path*',
+    '/ring-designs/:path*',
+    '/bracelet-designs/:path*',
+    '/legacy/:path*',
+    '/testimonial/:path*',
+    '/astrology/:path*',
+    '/knowledge/:path*.:ext(webp|jpg|jpeg|png|gif|svg|avif|css)',
+    '/whychooseus/:path*',
+    '/treatments/:path*',
+    '/office/:path*',
+    '/our_expets_img/:path*',
+    '/config_img/:path*',
+    '/geo/:path*',
+    '/home/certificates/:path*',
+    '/home/configuratorsteps/:path*',
+    '/home/ctas/:path*',
+    "/home/director'spick/:path*",
+    '/home/director%27spick/:path*',
+    '/home/gemrecomndation/:path*',
+    '/home/heri/:path*',
+    '/home/imgandicon/:path*',
+    '/home/navratnaimg/:path*',
+    '/home/ourservicesimg/:path*',
+    '/home/remediesrec/:path*',
+    '/home/rudrakhshas images/:path*',
+    '/home/rudrakhshas%20images/:path*',
+    '/home/rudraksha-cards/:path*',
+    '/home/testimonial/:path*',
+    '/home/upratna-cards/:path*',
+    '/home/VedicRemedies/:path*',
+    '/home/whoweare/:path*',
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml|woff2?)$).*)',
   ],
 };

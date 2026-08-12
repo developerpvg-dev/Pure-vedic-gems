@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
@@ -80,18 +81,26 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
   }
   const totalPages = Math.ceil(total / perPage);
   const facets = await getShopFilterOptions({}, filters);
+  const isSearch = Boolean(filters.q?.trim());
 
   return (
-    <section className="px-4 pb-16 sm:px-6 lg:px-10" aria-labelledby="shop-catalog-heading">
+    <section className="px-4 pb-16 sm:px-6 lg:px-10" aria-labelledby={isSearch ? undefined : 'shop-catalog-heading'}>
       <div className="mx-auto max-w-350">
-        <div className="section-head mb-8">
-          <h2 className="section-title" id="shop-catalog-heading">
-            All Products
-          </h2>
-          <p className="navratna-subtitle">Filter and browse our full certified catalog</p>
-          <div className="section-rule-center" />
-        </div>
-        <FilterBar total={total} facets={facets} showCategoryFilter={false} />
+        {!isSearch ? (
+          <div className="section-head mb-8">
+            <h2 className="section-title" id="shop-catalog-heading">
+              All Products
+            </h2>
+            <p className="navratna-subtitle">Filter and browse our full certified catalog</p>
+            <div className="section-rule-center" />
+          </div>
+        ) : null}
+        <FilterBar
+          total={total}
+          facets={facets}
+          showCategoryFilter={isSearch}
+          showSubcategoryFilter={isSearch}
+        />
         <div className="mt-6">
           <ProductGrid products={products} />
         </div>
@@ -132,15 +141,38 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const searchQuery = params.q?.trim();
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
-      <KnowledgePageHero
-        title={searchQuery ? `Search: ${searchQuery}` : 'Shop'}
-        subtitle="Browse certified Vedic gemstones, Rudraksha, idols, and jewellery — the same collections featured on our homepage, with full catalog filters below."
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: searchQuery ? `Search: ${searchQuery}` : 'Shop' },
-        ]}
-      />
+    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 font-body text-[#15110d]">
+      {searchQuery ? (
+        <header className="px-4 pt-[calc(var(--pvg-site-header-offset)+0.35rem)] pb-2 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <nav
+              aria-label="Breadcrumb"
+              className="mb-2 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6B5B4E]"
+            >
+              <Link href="/" className="transition hover:text-[#7A1515]">Home</Link>
+              <span aria-hidden="true">/</span>
+              <Link href="/shop" className="transition hover:text-[#7A1515]">Shop</Link>
+              <span aria-hidden="true">/</span>
+              <span className="text-[#4D0A0A]">Search: {searchQuery}</span>
+            </nav>
+            <div className="mx-auto max-w-4xl text-center">
+              <h1 className="section-title">Search: {searchQuery}</h1>
+              <p className="navratna-subtitle !mt-2 !text-[#5a5043] !text-sm">
+                Refine your results with filters and sorting below.
+              </p>
+            </div>
+          </div>
+        </header>
+      ) : (
+        <KnowledgePageHero
+          title="Shop"
+          subtitle="Browse certified Vedic gemstones, Rudraksha, idols, and jewellery — the same collections featured on our homepage, with full catalog filters below."
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Shop' },
+          ]}
+        />
+      )}
 
       {!searchQuery ? <ShopCategoryBrowse /> : null}
 

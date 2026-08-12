@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { consultationPlanSchema } from '@/lib/validators/consultation';
@@ -58,5 +59,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create consultation plan' }, { status: 500 });
   }
 
+  revalidatePath('/consultation');
   return NextResponse.json({ plan: data }, { status: 201 });
 }

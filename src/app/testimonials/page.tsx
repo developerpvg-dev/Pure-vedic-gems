@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { Testimonial } from '@/lib/types/database';
 import { TestimonialCard } from '@/components/testimonials/TestimonialCard';
 
@@ -83,15 +83,18 @@ export default async function TestimonialsPage({
   const from = (requestedPage - 1) * TESTIMONIALS_PER_PAGE;
   const to = from + TESTIMONIALS_PER_PAGE - 1;
 
-  const supabase = await createClient();
-  const { data, count } = await supabase
-    .from('testimonials')
-    .select('*', { count: 'exact' })
-    .eq('status', 'approved')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
-    .order('published_at', { ascending: false })
-    .range(from, to);
+  // ponytail: public client so cookies() don't force this route dynamic
+  const supabase = createOptionalPublicClient();
+  const { data, count } = supabase
+    ? await supabase
+        .from('testimonials')
+        .select('*', { count: 'exact' })
+        .eq('status', 'approved')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('published_at', { ascending: false })
+        .range(from, to)
+    : { data: null, count: 0 };
 
   const testimonials = (data ?? []) as Testimonial[];
   const totalPages = Math.max(1, Math.ceil((count ?? testimonials.length) / TESTIMONIALS_PER_PAGE));

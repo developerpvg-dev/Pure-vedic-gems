@@ -331,6 +331,10 @@ export default function GemBrowser({
     }
 
     if (!rudrakshaMode) {
+      if (selected?.id === product.id && product.slug) {
+        window.location.href = productHref(product);
+        return;
+      }
       onSelect(product);
       return;
     }

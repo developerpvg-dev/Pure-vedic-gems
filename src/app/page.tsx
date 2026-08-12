@@ -2,7 +2,7 @@ import { HeroPreloadLinks } from '@/components/home/HeroPreloadLinks';
 import { PvgHeroSection } from '@/components/home/PvgHeroSection';
 import { PvgHomeInteractions } from '@/components/home/PvgHomeInteractions';
 import { getActiveHeroSlides } from '@/lib/hero-slides';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import {
   DirectorsPickSection,
   ExploreByCategorySection,
@@ -20,7 +20,10 @@ import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
-  const supabase = await createClient();
+  // ponytail: public client so homepage ISR isn't defeated by cookies()
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return [];
+
   const { data } = await supabase
     .from('testimonials')
     .select('id, name, location, rating, title, message, proof_image_url, proof_alt')

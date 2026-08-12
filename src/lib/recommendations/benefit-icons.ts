@@ -162,7 +162,7 @@ export function benefitSvgMarkup(label: string, size = 22): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
 
-export const DEFAULT_REPORT_LOGO = '/PVG NEW LOGO DESIGN.webp';
+export const DEFAULT_REPORT_LOGO = '/pvg-emblem.webp';
 export const DEFAULT_REPORT_WORDMARK = '/Algerian.webp';
 
 /** Encode each path segment so spaces in filenames (e.g. logo webp) don't break fetches. */

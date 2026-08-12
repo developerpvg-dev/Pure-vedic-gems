@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ThumbsUp, Share2, MessageCircle } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LibraryVideo, VideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoCard } from '@/components/videos/VideoCard';
@@ -13,7 +13,9 @@ export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refr
 type Props = { params: Promise<{ slug: string }> };
 
 async function loadVideo(rawSlug: string) {
-  const supabase = await createClient();
+  // ponytail: public client so cookies() don't force this route dynamic
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return null;
   const slug = decodeURIComponent(rawSlug);
   const { data } = await supabase
     .from('videos')
@@ -58,7 +60,9 @@ export default async function VideoDetailPage({ params }: Props) {
   const video = await loadVideo(slug);
   if (!video) notFound();
 
-  const supabase = await createClient();
+  const supabase = createOptionalPublicClient();
+  if (!supabase) notFound();
+
   const [{ data: categoryData }, { data: relatedData }] = await Promise.all([
     video.category_id
       ? supabase.from('video_categories').select('*').eq('id', video.category_id).single()

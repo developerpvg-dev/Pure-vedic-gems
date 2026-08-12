@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createOptionalPublicClient } from '@/lib/supabase/public';
 
 /**
  * Hero slide image specs (see admin hero_slides or public/home/hero fallbacks):
@@ -74,7 +74,10 @@ function mapRow(row: HeroSlideRow): HeroSlide {
 
 export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
   try {
-    const supabase = await createClient();
+    // ponytail: public client so homepage ISR isn't defeated by cookies()
+    const supabase = createOptionalPublicClient();
+    if (!supabase) return FALLBACK_HERO_SLIDES;
+
     const { data, error } = await supabase
       .from('hero_slides')
       .select('id, slug, desktop_image_url, mobile_image_url, alt_text, link_url, sort_order')
