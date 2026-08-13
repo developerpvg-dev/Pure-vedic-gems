@@ -10,6 +10,7 @@ import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rul
 const RUDRAKSHA_STEP_LABELS: Record<number, { title: string; short: string }> = {
   1: { title: 'Rudraksha Type', short: 'Bead Type' },
   2: { title: 'Choose Beads', short: 'Your Beads' },
+  3: { title: 'Loose or Pendant', short: 'Setting' },
   4: { title: 'Pendant Design', short: 'Mounting' },
   5: { title: 'Metal & Chain', short: 'Metal & Chain' },
   6: { title: 'Certification', short: 'Certification' },
@@ -38,12 +39,6 @@ export function isConfiguratorStepSkipped(
   optionRules?: ConfiguratorOptionRules | null
 ): boolean {
   if ((step === 4 || step === 5) && state.setting_type === 'loose') return true;
-  if (
-    step === 3 &&
-    isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)
-  ) {
-    return true;
-  }
   if (step === 6 && !isCertificationStepAvailable(optionRules ?? null)) {
     return true;
   }
@@ -90,16 +85,9 @@ export function getConfiguratorNextStep(
   state: ConfiguratorState,
   optionRules?: ConfiguratorOptionRules | null
 ): number {
-  const rudraksha = isRudrakshaConfiguratorContext(
-    state.gem_category,
-    state.selected_product
-  );
-
   let candidate: number;
   if (step === 3 && state.setting_type === 'loose') {
     candidate = 6;
-  } else if (step === 2 && rudraksha) {
-    candidate = 4;
   } else {
     candidate = Math.min(step + 1, 7);
   }
@@ -112,16 +100,9 @@ export function getConfiguratorPrevStep(
   state: ConfiguratorState,
   optionRules?: ConfiguratorOptionRules | null
 ): number {
-  const rudraksha = isRudrakshaConfiguratorContext(
-    state.gem_category,
-    state.selected_product
-  );
-
   let candidate: number;
   if (step === 6 && state.setting_type === 'loose') {
     candidate = 3;
-  } else if (step === 4 && rudraksha) {
-    candidate = 2;
   } else {
     candidate = Math.max(step - 1, 1);
   }

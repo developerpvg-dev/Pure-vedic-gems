@@ -1101,6 +1101,7 @@ export function SiteHeader() {
       `}</style>
 
       <header
+        id="pvg-site-header"
         style={{
           position: 'fixed',
           inset: '0 0 auto 0',

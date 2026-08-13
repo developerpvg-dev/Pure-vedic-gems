@@ -31,6 +31,7 @@ interface GemBrowserProps {
   comboProducts?: ProductCard[];
   onToggleCombo?: (product: ProductCard) => void;
   onContinueRudraksha?: () => void;
+  onAddLoose?: (products: ProductCard[]) => void;
 }
 
 const PRICE_RANGES = [
@@ -212,6 +213,7 @@ export default function GemBrowser({
   comboProducts = [],
   onToggleCombo,
   onContinueRudraksha,
+  onAddLoose,
 }: GemBrowserProps) {
   const [products, setProducts] = useState<ProductCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -652,16 +654,32 @@ export default function GemBrowser({
                 </Button>
               </nav>
             )}
-            {rudrakshaMode && selected && onContinueRudraksha && (
-              <div className="pvg-rudraksha-continue mt-4 flex justify-stretch sm:justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-10 w-full px-4 text-xs sm:h-9 sm:w-auto"
-                  onClick={onContinueRudraksha}
-                >
-                  Continue with {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'}
-                </Button>
+            {rudrakshaMode && selected && (onContinueRudraksha || onAddLoose) && (
+              <div className="pvg-rudraksha-continue mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                {onAddLoose ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 w-full px-4 text-xs sm:h-9 sm:w-auto"
+                    onClick={() => {
+                      const extra = comboProducts.filter((item) => item.id !== selected.id);
+                      onAddLoose([selected, ...extra]);
+                    }}
+                  >
+                    Add {selectedBeadCount} as loose
+                  </Button>
+                ) : null}
+                {onContinueRudraksha ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-10 w-full px-4 text-xs sm:h-9 sm:w-auto"
+                    onClick={onContinueRudraksha}
+                  >
+                    Continue with {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'}
+                  </Button>
+                ) : null}
               </div>
             )}
           </>

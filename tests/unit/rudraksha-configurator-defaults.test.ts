@@ -10,7 +10,7 @@ describe('configurable rudraksha energization defaults', () => {
     const rules = defaultConfigurableRudrakshaOptionRules(['e1', 'e2'], ['lab-1']);
     expect(rules.energization_enabled).toBe(true);
     expect(rules.allowed_energization_option_ids).toEqual(['e1', 'e2']);
-    expect(rules.allowed_setting_types).toEqual(['pendant']);
+    expect(rules.allowed_setting_types).toEqual(['pendant', 'loose']);
   });
 
   it('fills missing option_rules on create', () => {

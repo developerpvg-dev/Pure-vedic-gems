@@ -35,10 +35,20 @@ async function backfillEnquiryFromConsultation(
 
   const now = new Date().toISOString();
   const patch: Record<string, string | boolean | null> = {};
-  if (!row.area_of_concern && consultation.life_situation) patch.area_of_concern = consultation.life_situation;
+  if (
+    consultation.life_situation &&
+    (!row.area_of_concern || row.area_of_concern.length < consultation.life_situation.length)
+  ) {
+    patch.area_of_concern = consultation.life_situation;
+  }
   if (!row.date_of_birth && consultation.date_of_birth) patch.date_of_birth = consultation.date_of_birth;
   if (!row.birth_time && consultation.birth_time) patch.birth_time = consultation.birth_time;
-  if (!row.birth_place && consultation.birth_place) patch.birth_place = consultation.birth_place;
+  if (
+    consultation.birth_place &&
+    (!row.birth_place || row.birth_place.length < consultation.birth_place.length)
+  ) {
+    patch.birth_place = consultation.birth_place;
+  }
   if (!row.customer_city && consultation.customer_city) patch.customer_city = consultation.customer_city;
   if (!row.customer_state && consultation.customer_state) patch.customer_state = consultation.customer_state;
   if (!row.customer_country && consultation.customer_country) patch.customer_country = consultation.customer_country;

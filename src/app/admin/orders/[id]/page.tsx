@@ -912,7 +912,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                 </p>
                               ) : null}
 
-                              {rudrakshaBeads.length > 0 ? (
+                              {rudrakshaConfig && rudrakshaBeads.length > 0 ? (
                                 <ul className="mb-3 divide-y divide-stone-100 overflow-hidden rounded-lg border border-stone-200 bg-white">
                                   {rudrakshaBeads.map((bead) => (
                                     <li
@@ -991,7 +991,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                           item.configuration_snapshot ?? cfg?.configuration_snapshot,
                                         )}
                                         itemName={item.name}
-                                        formatMoney={fmt}
                                       />
                                     ) : null}
                                   </div>
@@ -1160,7 +1159,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                   goldRatePerGram={Number(pricing?.gold_rate_per_gram ?? 0)}
                                   metalPrice={Number(pricing?.metal_price ?? 0)}
                                   itemName={designName ?? item.name}
-                                  formatMoney={fmt}
                                 />
                               ) : null}
                             </div>
@@ -1231,7 +1229,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
                   {o.order_source === 'offline' ? null : (
                     <OrderTaxBreakdownBlock
                       taxBreakdown={o.tax_breakdown}
-                      formatMoney={fmt}
                       variant="admin"
                     />
                   )}

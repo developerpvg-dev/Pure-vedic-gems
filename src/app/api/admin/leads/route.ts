@@ -7,8 +7,24 @@ import { leadListScope, isLeadManager, redactLeadContactForRole } from '@/lib/le
 import { LEAD_PIPELINE_STAGES, TELECOM_ACTIVE_STAGES, ASTRO_ACTIVE_STAGES } from '@/lib/leads/constants';
 import { mergeBirthFields, needsBirthHydration } from '@/lib/leads/hydrate';
 import { attachDuplicateHints } from '@/lib/leads/duplicates';
+import { reconcileUnfinalizedConsultationPayments } from '@/lib/consultation/finalize-captured-payment';
 // ponytail: hard cap — raise or page if managers regularly export >5k filtered rows
 const LEADS_EXPORT_LIMIT = 5000;
+// ponytail: process-local 10min throttle. Recovers ₹101 payments Razorpay already 2xx'd as order_not_found. Cron if orphans pile up.
+let lastConsultReconcileAt = 0;
+
+async function maybeReconcileConsultationLeads(admin: ReturnType<typeof createAdminClient>) {
+  if (Date.now() - lastConsultReconcileAt < 10 * 60 * 1000) return;
+  lastConsultReconcileAt = Date.now();
+  try {
+    const result = await reconcileUnfinalizedConsultationPayments(admin);
+    if (result.finalized) {
+      console.log('[Leads] reconciled captured consultation payments', result);
+    }
+  } catch (error) {
+    console.error('[Leads] consultation payment reconcile failed:', error);
+  }
+}
 
 function toLeadExportRows(
   rows: Record<string, unknown>[],
@@ -430,7 +446,11 @@ export async function GET(request: NextRequest) {
       .is('enquiry_type', null),
   ]);
 
-  // ponytail: no list-time consultation→enquiry backfill — it resurrected deleted test leads every refresh. Payment verify still creates CRM rows.
+  // Recover captured Razorpay ₹101 bookings the webhook used to ignore (shop-order only).
+  // Does not recreate deleted leads from already-captured consultations — only pending→captured.
+  if (isLeadManager(auth.member.normalizedRole)) {
+    await maybeReconcileConsultationLeads(admin);
+  }
 
   const queue = searchParams.get('queue'); // active | past | waiting | all
   const pipelineParam = searchParams.get('pipeline');

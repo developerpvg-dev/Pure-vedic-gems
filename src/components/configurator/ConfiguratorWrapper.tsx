@@ -502,7 +502,6 @@ export default function ConfiguratorWrapper({
   );
   const canBuyLoose =
     !!state.selected_product &&
-    !rudrakshaFlow &&
     state.current_step >= 3 &&
     state.setting_type !== 'loose' &&
     isSettingTypeAllowed(optionRules, 'loose');
@@ -719,19 +718,15 @@ export default function ConfiguratorWrapper({
                     className="truncate text-base font-semibold text-primary underline-offset-2 hover:underline"
                   >
                     {startStep >= 3
-                      ? rudrakshaFlow
-                        ? `Configure ${state.selected_product.name} Pendant`
-                        : `Configure ${state.selected_product.name}`
+                      ? `Configure ${state.selected_product.name}`
                       : state.selected_product.name}
                   </Link>
                 ) : (
                   <h2 className="truncate text-base font-semibold text-primary">
                     {startStep >= 3 && state.selected_product
-                      ? rudrakshaFlow
-                        ? `Configure ${state.selected_product.name} Pendant`
-                        : `Configure ${state.selected_product.name}`
+                      ? `Configure ${state.selected_product.name}`
                       : rudrakshaFlow
-                        ? 'Design Your Rudraksha Pendant'
+                        ? 'Design Your Rudraksha'
                         : 'Design Your Jewelry'}
                   </h2>
                 )}

@@ -54,4 +54,10 @@ if (paymentFlags('pending', 101).payment_received) throw new Error('pending must
 if (paymentFlags('pending', 101).payment_note !== '₹101 payment pending') throw new Error('pending note');
 if (!paymentFlags('captured', 101).payment_received) throw new Error('captured must be paid');
 
+// Purpose can exceed old varchar(180) — DB is TEXT; validators allow 5000 like consultation.life_situation
+const longPurpose =
+  'Recommended me only one gems can be till its Mahadasha or lifetime looking at lagna and navasma chart, for career and material gains in social media and grocery store And WhatsApp urgently please.';
+if (longPurpose.length <= 180) throw new Error('fixture must exceed old 180 limit');
+if (longPurpose.length > 5000) throw new Error('fixture must fit consultation max');
+
 console.log('leads-crm self-check ok');

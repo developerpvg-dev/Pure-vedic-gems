@@ -22,6 +22,7 @@ interface RazorpayPaymentRecord {
 interface RazorpayTransactionsClient {
   orders: {
     fetch: (orderId: string) => Promise<RazorpayOrderRecord>;
+    fetchPayments: (orderId: string) => Promise<{ items?: RazorpayPaymentRecord[] }>;
   };
   payments: {
     fetch: (paymentId: string) => Promise<RazorpayPaymentRecord>;
@@ -43,6 +44,19 @@ export interface RazorpayPaymentFacts {
 
 function toPaise(value: number | string) {
   return typeof value === 'string' ? Number.parseInt(value, 10) : value;
+}
+
+/** Used to recover consultations when client-verify never ran (webhook already 2xx'd). */
+export async function findCapturedPaymentOnOrder(
+  razorpayOrderId: string
+): Promise<RazorpayPaymentFacts | null> {
+  const razorpay = getRazorpayClient() as unknown as RazorpayTransactionsClient;
+  const listed = await razorpay.orders.fetchPayments(razorpayOrderId);
+  const captured = (listed.items ?? []).find(
+    (payment) => payment.captured === true || payment.status === 'captured'
+  );
+  if (!captured?.id) return null;
+  return fetchRazorpayPaymentFacts(razorpayOrderId, captured.id);
 }
 
 export async function fetchRazorpayPaymentFacts(

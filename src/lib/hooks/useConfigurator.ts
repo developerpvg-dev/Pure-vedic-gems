@@ -157,25 +157,14 @@ interface UseConfiguratorOptions {
 
 /**
  * If setting is 'loose', skip design + metal steps (4 & 5).
- * Rudraksha flow skips setting-type step (3) — mountings are always pendant.
  */
 function getNextStep(step: number, state: ConfiguratorState): number {
-  const rudraksha = isRudrakshaConfiguratorContext(
-    state.gem_category,
-    state.selected_product
-  );
   if (step === 3 && state.setting_type === 'loose') return 6;
-  if (step === 2 && rudraksha) return 4;
   return Math.min(step + 1, 7);
 }
 
 function getPrevStep(step: number, state: ConfiguratorState): number {
-  const rudraksha = isRudrakshaConfiguratorContext(
-    state.gem_category,
-    state.selected_product
-  );
   if (step === 6 && state.setting_type === 'loose') return 3;
-  if (step === 4 && rudraksha) return 2;
   return Math.max(step - 1, 1);
 }
 
@@ -307,7 +296,6 @@ function createConfiguratorReducer(initialState: ConfiguratorState) {
           selected_product: withProductDisplayName(action.payload),
           ...(rudraksha
             ? {
-                setting_type: 'pendant' as const,
                 selected_design: null,
                 custom_design_url: null,
                 custom_design_brief: null,

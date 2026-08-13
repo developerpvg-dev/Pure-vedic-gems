@@ -25,17 +25,15 @@ export function OrderCustomDesignPriceEditor({
   preferredMetal,
   pending,
   itemName,
-  formatMoney,
 }: {
   orderId: string;
   itemIndex: number;
   preferredMetal?: string | null;
   pending: boolean;
   itemName?: string | null;
-  formatMoney?: (n: number) => string;
 }) {
   const router = useRouter();
-  const money = formatMoney ?? ((n: number) => fmt(n));
+  const money = fmt;
   const [mode, setMode] = useState<'weight' | 'fixed'>('weight');
   const [metal, setMetal] = useState(preferredMetal && METAL_OPTS.some((m) => m.value === preferredMetal) ? preferredMetal : 'gold_18k');
   const [weight, setWeight] = useState('');

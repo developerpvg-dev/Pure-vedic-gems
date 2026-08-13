@@ -4,14 +4,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { captureAuthorizedRazorpayPayment, fetchRazorpayPaymentFacts } from '@/lib/razorpay/transactions';
 import { verifyPaymentSignature } from '@/lib/razorpay/verify';
 import { rateLimit } from '@/lib/utils/rate-limit';
-import { sendConsultationBookingEmails } from '@/lib/resend/send-consultation-booking';
 import { consultationPaymentVerifySchema } from '@/lib/validators/consultation';
-import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { hasValidBookingToken } from '@/lib/security/booking-token';
+import { applyRazorpayFactsToConsultation } from '@/lib/consultation/finalize-captured-payment';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
-import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
-import { formatChargedMoney } from '@/lib/currency/format-charged';
-import type { Consultation, Json } from '@/lib/types/database';
+import type { Consultation } from '@/lib/types/database';
 
 function geoFromRequest(request: NextRequest) {
   const decode = (value: string | null) => {
@@ -70,17 +67,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
   }
 
-  if (consultation.customer_id) {
-    // Account-owned bookings can only be finalized by their owner.
-    if (consultation.customer_id !== user?.id) {
-      return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
-    }
-  } else if (!hasValidBookingToken(request, 'consultation', consultation.id)) {
-    // Guest bookings require the signed cookie issued at create-order time.
-    return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
-  }
+  const ownsBooking = consultation.customer_id
+    ? consultation.customer_id === user?.id
+    : hasValidBookingToken(request, 'consultation', consultation.id);
 
   if (consultation.payment_status === 'captured') {
+    if (!ownsBooking && consultation.razorpay_order_id !== parsed.data.razorpay_order_id) {
+      return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
+    }
     let enquiryId: string | null = null;
     try {
       enquiryId = await ensureLeadFromConsultation(admin, consultation, {
@@ -112,7 +106,11 @@ export async function POST(request: NextRequest) {
     console.error('[Consultation payment] Signature verification failed:', error);
   }
 
+  // Valid Razorpay signature is proof of payment — don't 404 if the guest cookie dropped.
   if (!signatureValid) {
+    if (!ownsBooking) {
+      return NextResponse.json({ error: 'Consultation booking not found' }, { status: 404 });
+    }
     await admin
       .from('consultations')
       .update({
@@ -136,189 +134,59 @@ export async function POST(request: NextRequest) {
 
   const expectedPaise = consultation.amount_paise ?? Math.round(Number(consultation.amount_inr ?? 0) * 100);
   const expectedCurrency = String(consultation.currency || 'INR').toUpperCase();
-  const amountMatches =
-    facts.razorpayOrderAmountPaise === expectedPaise &&
-    facts.razorpayPaymentAmountPaise === expectedPaise &&
-    facts.currency === expectedCurrency;
 
-  if (!amountMatches) {
-    await admin
-      .from('consultations')
-      .update({
-        payment_status: 'amount_mismatch',
-        status: 'payment_review',
-        payment_review_reason: 'Gateway amount or currency did not match booking amount',
-        razorpay_payment_id: parsed.data.razorpay_payment_id,
-        razorpay_signature: parsed.data.razorpay_signature,
-        payment_metadata: facts as unknown as Json,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', consultation.id);
-    await createInAppNotifications([
-      {
-        audience: 'admin',
-        recipientRole: 'finance',
-        type: 'consultation_payment_review',
-        title: 'Consultation payment needs review',
-        message: `Consultation payment for ${consultation.full_name} did not match the expected amount.`,
-        href: '/admin/leads',
-        entityType: 'consultation',
-        entityId: consultation.id,
-        metadata: { consultation_id: consultation.id, expected_paise: expectedPaise },
-      },
-    ]);
-    return NextResponse.json({ error: 'Payment amount mismatch. Our team will review this booking.' }, { status: 409 });
-  }
-
-  if (!facts.captured) {
-    if (facts.paymentStatus === 'authorized') {
-      try {
-        facts = await captureAuthorizedRazorpayPayment(
-          facts,
-          parsed.data.razorpay_payment_id,
-          expectedPaise,
-          expectedCurrency
-        );
-      } catch (error) {
-        console.error('[Consultation payment] Razorpay capture failed:', error);
-        await admin
-          .from('consultations')
-          .update({
-            payment_status: 'authorized',
-            status: 'pending_payment',
-            payment_failure_reason: null,
-            payment_review_reason: 'Payment authorized but server-side capture failed',
-            razorpay_payment_id: parsed.data.razorpay_payment_id,
-            razorpay_signature: parsed.data.razorpay_signature,
-            payment_metadata: facts as unknown as Json,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', consultation.id);
-        return NextResponse.json(
-          { error: 'Payment was authorized, but capture could not be completed. Please contact support.' },
-          { status: 502 }
-        );
-      }
+  if (!facts.captured && facts.paymentStatus === 'authorized') {
+    try {
+      facts = await captureAuthorizedRazorpayPayment(
+        facts,
+        parsed.data.razorpay_payment_id,
+        expectedPaise,
+        expectedCurrency
+      );
+    } catch (error) {
+      console.error('[Consultation payment] Razorpay capture failed:', error);
+      await admin
+        .from('consultations')
+        .update({
+          payment_status: 'authorized',
+          status: 'pending_payment',
+          payment_failure_reason: null,
+          payment_review_reason: 'Payment authorized but server-side capture failed',
+          razorpay_payment_id: parsed.data.razorpay_payment_id,
+          razorpay_signature: parsed.data.razorpay_signature,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', consultation.id);
+      return NextResponse.json(
+        { error: 'Payment was authorized, but capture could not be completed. Please contact support.' },
+        { status: 502 }
+      );
     }
   }
 
-  if (!facts.captured) {
-    await admin
-      .from('consultations')
-      .update({
-        payment_status: facts.paymentStatus === 'authorized' ? 'authorized' : 'failed',
-        status: facts.paymentStatus === 'authorized' ? 'pending_payment' : 'payment_review',
-        payment_failure_reason: facts.paymentStatus === 'authorized' ? null : `Gateway status: ${facts.paymentStatus}`,
-        payment_review_reason: facts.paymentStatus === 'authorized' ? 'Payment authorized and awaiting capture' : null,
-        razorpay_payment_id: parsed.data.razorpay_payment_id,
-        razorpay_signature: parsed.data.razorpay_signature,
-        payment_metadata: facts as unknown as Json,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', consultation.id);
+  const result = await applyRazorpayFactsToConsultation({
+    admin,
+    consultation,
+    facts,
+    razorpayPaymentId: parsed.data.razorpay_payment_id,
+    razorpaySignature: parsed.data.razorpay_signature,
+    ipLocation: geoFromRequest(request),
+  });
+
+  if (result.status === 'amount_mismatch') {
+    return NextResponse.json({ error: 'Payment amount mismatch. Our team will review this booking.' }, { status: 409 });
+  }
+  if (result.status === 'not_captured') {
     return NextResponse.json({ error: 'Payment has not been captured yet.' }, { status: 409 });
   }
-
-  const { data: updatedRow, error: updateError } = await admin
-    .from('consultations')
-    .update({
-      payment_status: 'captured',
-      status: 'confirmed',
-      payment_method: facts.method,
-      razorpay_payment_id: parsed.data.razorpay_payment_id,
-      razorpay_signature: parsed.data.razorpay_signature,
-      payment_failure_reason: null,
-      payment_review_reason: null,
-      amount_verified_at: new Date().toISOString(),
-      payment_metadata: facts as unknown as Json,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', consultation.id)
-    .select('*')
-    .single();
-
-  const updated = updatedRow as Consultation | null;
-
-  if (updateError || !updated) {
-    console.error('[Consultation payment] Finalize failed:', updateError);
+  if (result.status === 'update_failed') {
     return NextResponse.json({ error: 'Failed to finalize consultation payment' }, { status: 500 });
   }
 
-  if (!updated.confirmation_email_sent_at || !updated.admin_notification_sent_at) {
-    const sent = await sendConsultationBookingEmails({
-      id: updated.id,
-      full_name: updated.full_name,
-      email: updated.email,
-      phone: updated.phone,
-      plan_title: updated.plan_title_snapshot ?? 'Vedic Consultation',
-      plan_description: updated.plan_description_snapshot,
-      amount_inr: updated.amount_inr,
-      amount_paise: updated.amount_paise,
-      currency: updated.currency,
-      razorpay_payment_id: updated.razorpay_payment_id,
-      mode: updated.mode,
-      preferred_date: updated.preferred_date,
-      preferred_time: updated.preferred_time,
-      date_of_birth: updated.date_of_birth,
-      birth_time: updated.birth_time,
-      birth_place: updated.birth_place,
-      life_situation: updated.life_situation,
-      message: updated.message,
-      status: updated.status,
-    });
-
-    const emailUpdate: Record<string, string> = {};
-    const now = new Date().toISOString();
-    if (sent.customer && !updated.confirmation_email_sent_at) emailUpdate.confirmation_email_sent_at = now;
-    if (sent.admin && !updated.admin_notification_sent_at) emailUpdate.admin_notification_sent_at = now;
-    if (Object.keys(emailUpdate).length > 0) {
-      await admin.from('consultations').update(emailUpdate).eq('id', updated.id);
-    }
-  }
-
-  let enquiryId: string | null = null;
-  try {
-    enquiryId = await ensureLeadFromConsultation(admin, updated, {
-      ipLocation: geoFromRequest(request),
-    });
-  } catch (error) {
-    console.error('[Consultation payment] CRM lead create failed:', error);
-  }
-
-  const isRemedies =
-    Number(updated.amount_inr) === RS101_AMOUNT_INR ||
-    (updated.plan_title_snapshot || '').toLowerCase().includes('gem recommendation');
-
-  await createInAppNotifications([
-    ...(updated.customer_id
-      ? [{
-          audience: 'user' as const,
-          recipientUserId: updated.customer_id,
-          type: 'consultation_confirmed',
-          title: isRemedies ? 'Remedies recommendation confirmed' : 'Consultation confirmed',
-          message: isRemedies
-            ? `${updated.plan_title_snapshot ?? 'Your remedies recommendation'} is confirmed (${formatChargedMoney({
-                amount_inr: updated.amount_inr,
-                amount_paise: updated.amount_paise,
-                currency: updated.currency,
-              })}). Our experts will review your birth details shortly.`
-            : `${updated.plan_title_snapshot ?? 'Your consultation'} is confirmed (${formatChargedMoney({
-                amount_inr: updated.amount_inr,
-                amount_paise: updated.amount_paise,
-                currency: updated.currency,
-              })}). Our team will coordinate the next steps.`,
-          href: '/account',
-          entityType: 'consultation' as const,
-          entityId: updated.id,
-          metadata: { plan_title: updated.plan_title_snapshot, amount_inr: updated.amount_inr },
-        }]
-      : []),
-  ]);
-
   return NextResponse.json({
     success: true,
-    consultation_id: updated.id,
-    enquiry_id: enquiryId,
-    status: updated.status,
+    consultation_id: result.consultation.id,
+    enquiry_id: result.enquiryId,
+    status: result.consultation.status,
   });
 }

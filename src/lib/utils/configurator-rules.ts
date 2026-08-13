@@ -204,7 +204,7 @@ export function resolveConfiguratorOptionRules(
       jewelry_design_enabled: true,
       metal_enabled: true,
       ring_size_enabled: false,
-      allowed_setting_types: ['pendant'],
+      allowed_setting_types: ['pendant', 'loose'],
       // Labs in rules mean the cert step is on — don't leave stale certificate_enabled:false
       certificate_enabled:
         rules.certificate_enabled || rules.allowed_certification_lab_ids.length > 0,

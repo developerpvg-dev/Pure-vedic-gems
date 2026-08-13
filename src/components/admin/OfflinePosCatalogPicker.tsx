@@ -16,8 +16,10 @@ import '@/app/configure/configurator-page.css';
 
 export function OfflinePosCatalogPicker({
   onConfigure,
+  onAddLoose,
 }: {
   onConfigure: (product: ProductCard, comboProductIds?: string[]) => void;
+  onAddLoose: (products: ProductCard[]) => void;
 }) {
   const [gemCategory, setGemCategory] = useState<GemCategory | null>(null);
   const [selected, setSelected] = useState<ProductCard | null>(null);
@@ -63,7 +65,9 @@ export function OfflinePosCatalogPicker({
           Change category
         </button>
         <p className="text-xs text-stone-500">
-          Browse with filters, then configure setting / design / metal / cert / puja.
+          {rudrakshaMode
+            ? 'Add selected beads as loose, or continue to configure a pendant.'
+            : 'Select a stone to configure. Buy loose is in the configurator.'}
         </p>
       </div>
 
@@ -90,6 +94,11 @@ export function OfflinePosCatalogPicker({
                   ...combo.map((p) => p.id).filter((id) => id !== primary.id),
                 ];
                 onConfigure(primary, comboIds);
+              },
+              onAddLoose: (products: ProductCard[]) => {
+                onAddLoose(products);
+                setSelected(null);
+                setCombo([]);
               },
             }
           : {})}

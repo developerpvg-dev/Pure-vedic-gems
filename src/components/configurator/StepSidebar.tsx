@@ -9,7 +9,7 @@
 import { Fragment } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CONFIGURATOR_STEPS } from '@/lib/types/configurator';
+import { CONFIGURATOR_STEPS, SETTING_TYPE_META } from '@/lib/types/configurator';
 import type { ConfiguratorState } from '@/lib/types/configurator';
 import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
 import { isConfiguratorStepSkipped, getConfiguratorStepMeta } from '@/lib/utils/configurator-steps';
@@ -46,11 +46,7 @@ function getStepValue(step: number, state: ConfiguratorState): string | null {
       return state.selected_product.name;
     }
     case 3:
-      return state.setting_type
-        ? isRudrakshaConfiguratorContext(state.gem_category, state.selected_product)
-          ? 'Rudraksha Pendant'
-          : state.setting_type.charAt(0).toUpperCase() + state.setting_type.slice(1)
-        : null;
+      return state.setting_type ? SETTING_TYPE_META[state.setting_type].label : null;
     case 4:
       return state.selected_design?.name ?? (state.custom_design_url ? 'Custom Design' : null);
     case 5:

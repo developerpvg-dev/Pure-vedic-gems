@@ -5,7 +5,12 @@ import {
   type OrderTaxBreakdownView,
 } from '@/lib/orders/tax-breakdown-display';
 
-type MoneyFmt = (amount: number) => string;
+function fmtInr(amount: number) {
+  return '₹' + Number(amount ?? 0).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 /**
  * Renders CGST/SGST/IGST + per-component rates from orders.tax_breakdown.
@@ -13,12 +18,13 @@ type MoneyFmt = (amount: number) => string;
  */
 export function OrderTaxBreakdownBlock({
   taxBreakdown,
-  formatMoney,
+  /** Pre-formatted amounts when caller already has FX labels; defaults to INR. */
+  formatMoney = fmtInr,
   /** print = always expanded (no disclosure); admin/pos can use compact */
   variant = 'admin',
 }: {
   taxBreakdown: unknown;
-  formatMoney: MoneyFmt;
+  formatMoney?: (amount: number) => string;
   variant?: 'admin' | 'print' | 'pos';
 }): ReactNode {
   const view = parseOrderTaxBreakdown(taxBreakdown);

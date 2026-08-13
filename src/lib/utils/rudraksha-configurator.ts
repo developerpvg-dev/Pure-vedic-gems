@@ -17,7 +17,7 @@ export function defaultConfigurableRudrakshaOptionRules(
     jewelry_design_enabled: true,
     metal_enabled: true,
     ring_size_enabled: false,
-    allowed_setting_types: ['pendant'] as const,
+    allowed_setting_types: ['pendant', 'loose'] as const,
     allowed_metals: [] as string[],
     allowed_ring_size_systems: [] as string[],
     allowed_certification_lab_ids: [...certificationLabIds],

@@ -19,10 +19,14 @@ import {
   settlePaymentAttempt,
 } from '@/lib/orders/online-payments';
 import { applyPaymentToBalances, roundMoney } from '@/lib/orders/counter-payments';
-import type { Json, Order } from '@/lib/types/database';
+import type { Consultation, Json, Order } from '@/lib/types/database';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
 import { getAdminNotificationEmail, getEmailSiteUrl } from '@/lib/resend/email-config';
 import { releaseProductsForOrder } from '@/lib/inventory/order-availability';
+import {
+  applyRazorpayFactsToConsultation,
+  findConsultationByRazorpayOrder,
+} from '@/lib/consultation/finalize-captured-payment';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -168,6 +172,21 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
 
   if (alreadyProcessed) return NextResponse.json({ status: 'duplicate' });
   if (!order) {
+    const notes = asRecord(entity?.notes);
+    const notesConsultationId = typeof notes?.consultation_id === 'string' ? notes.consultation_id : null;
+    const consultation = await findConsultationByRazorpayOrder(
+      createAdminClient(),
+      razorpayOrderId,
+      notesConsultationId
+    );
+    if (consultation) {
+      return await handleConsultationPaymentWebhook({
+        eventId: event.id,
+        consultation,
+        razorpayOrderId,
+        razorpayPaymentId,
+      });
+    }
     await markPaymentEventProcessed(event.id, 'order_not_found');
     return NextResponse.json({ status: 'order_not_found' });
   }
@@ -273,6 +292,65 @@ async function handlePaymentWebhook(eventType: string, payload: UnknownRecord) {
   });
 
   return NextResponse.json({ status: 'captured' });
+}
+
+async function handleConsultationPaymentWebhook(input: {
+  eventId: string;
+  consultation: Consultation;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+}) {
+  const admin = createAdminClient();
+  let facts;
+  try {
+    facts = await fetchRazorpayPaymentFacts(input.razorpayOrderId, input.razorpayPaymentId);
+  } catch (error) {
+    console.error('[Webhook] Consultation Razorpay lookup failed:', error);
+    await markPaymentEventProcessed(input.eventId, 'razorpay_lookup_failed');
+    return NextResponse.json({ status: 'razorpay_lookup_failed' });
+  }
+
+  const expectedPaise =
+    input.consultation.amount_paise ?? Math.round(Number(input.consultation.amount_inr ?? 0) * 100);
+  const expectedCurrency = String(input.consultation.currency || 'INR').toUpperCase();
+
+  if (!facts.captured && facts.paymentStatus === 'authorized') {
+    try {
+      facts = await captureAuthorizedRazorpayPayment(
+        facts,
+        input.razorpayPaymentId,
+        expectedPaise,
+        expectedCurrency
+      );
+    } catch (error) {
+      console.error('[Webhook] Consultation capture failed after authorization:', error);
+      await markPaymentEventProcessed(input.eventId, 'capture_pending');
+      return NextResponse.json({ status: 'capture_pending' });
+    }
+  }
+
+  const result = await applyRazorpayFactsToConsultation({
+    admin,
+    consultation: input.consultation,
+    facts,
+    razorpayPaymentId: input.razorpayPaymentId,
+  });
+
+  if (result.status === 'amount_mismatch') {
+    await markPaymentEventProcessed(input.eventId, 'amount_mismatch');
+    return NextResponse.json({ status: 'amount_mismatch' });
+  }
+  if (result.status === 'not_captured') {
+    await markPaymentEventProcessed(input.eventId, 'authorized');
+    return NextResponse.json({ status: 'authorized' });
+  }
+  if (result.status === 'update_failed') {
+    await markPaymentEventProcessed(input.eventId, 'processing_error');
+    return NextResponse.json({ status: 'processing_error' });
+  }
+
+  await markPaymentEventProcessed(input.eventId, 'processed');
+  return NextResponse.json({ status: 'consultation_captured', enquiry_id: result.enquiryId });
 }
 
 async function handlePaymentFailed(payload: UnknownRecord) {

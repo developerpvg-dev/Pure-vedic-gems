@@ -14,7 +14,7 @@ describe('resolveConfiguratorOptionRules', () => {
     allowed_setting_types: ['loose'],
   });
 
-  it('forces pendant design + metal for rudraksha despite loose-only DB rules', () => {
+  it('keeps pendant jewellery options and also allows loose for rudraksha', () => {
     const rules = resolveConfiguratorOptionRules(
       {
         id: 'prod-1',
@@ -27,7 +27,7 @@ describe('resolveConfiguratorOptionRules', () => {
 
     expect(rules.jewelry_design_enabled).toBe(true);
     expect(rules.metal_enabled).toBe(true);
-    expect(rules.allowed_setting_types).toEqual(['pendant']);
+    expect(rules.allowed_setting_types).toEqual(['pendant', 'loose']);
     expect(rules.energization_enabled).toBe(true);
   });
 

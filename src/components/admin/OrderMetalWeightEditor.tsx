@@ -16,7 +16,6 @@ export function OrderMetalWeightEditor({
   goldRatePerGram,
   metalPrice,
   itemName,
-  formatMoney,
 }: {
   orderId: string;
   itemIndex: number;
@@ -25,11 +24,9 @@ export function OrderMetalWeightEditor({
   goldRatePerGram: number;
   metalPrice: number;
   itemName?: string | null;
-  /** Locked payment currency formatter; defaults to INR ledger. */
-  formatMoney?: (n: number) => string;
 }) {
   const router = useRouter();
-  const money = formatMoney ?? ((n: number) => fmt(n));
+  const money = fmt;
   const [weight, setWeight] = useState(String(currentWeightGrams || ''));
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);

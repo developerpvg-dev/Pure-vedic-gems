@@ -250,10 +250,9 @@ export default function ConfiguratorClient({
     const initialState =
       fromCart ??
       createConfiguratorState({
-        current_step: rudraksha ? 4 : 3,
+        current_step: 3,
         gem_category: category,
         selected_product: preselectedProduct,
-        ...(rudraksha ? { setting_type: 'pendant' as const } : {}),
       });
 
     // Cart is source of truth when editing — overwrite any stale draft before hydrate.

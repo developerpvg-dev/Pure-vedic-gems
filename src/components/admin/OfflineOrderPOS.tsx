@@ -143,9 +143,9 @@ function fmt(n: number) {
   return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
-function productImage(p: ProductHit) {
+function productImage(p: { images?: unknown; thumbnail_url?: string | null }) {
   if (Array.isArray(p.images) && typeof p.images[0] === 'string') return p.images[0];
-  return '';
+  return p.thumbnail_url ?? '';
 }
 
 function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCode?: string }) {
@@ -302,26 +302,52 @@ export function OfflineOrderPOS() {
     })();
   }, [fulfillmentType, pricing?.subtotal, shippingMethod]);
 
-  function addSimpleProduct(p: ProductHit) {
-    if (items.some((i) => i.product_id === p.id)) {
+  function appendSimpleProducts(
+    products: Array<{
+      id: string;
+      name: string;
+      sku?: string | null;
+      tag_number?: string | null;
+      price: number;
+      category?: string | null;
+      images?: unknown;
+      thumbnail_url?: string | null;
+    }>,
+  ) {
+    if (products.length === 0) return;
+    const alreadyOnOrder = products.filter((p) => items.some((i) => i.product_id === p.id));
+    if (alreadyOnOrder.length === products.length) {
       setError('This product is already on the order (unique pieces only).');
       return;
     }
-    setError('');
+    setError(
+      alreadyOnOrder.length
+        ? 'Some beads were already on the order and were skipped.'
+        : '',
+    );
+    const skip = new Set(alreadyOnOrder.map((p) => p.id));
+    const stamp = Date.now();
     setItems((prev) => [
       ...prev,
-      {
-        key: `${p.id}-${Date.now()}`,
-        product_id: p.id,
-        name: formatProductDisplayName(p.name),
-        sku: p.sku ?? undefined,
-        tag_number: p.tag_number,
-        price: Number(p.price) || 0,
-        quantity: 1,
-        image_url: productImage(p),
-        category: p.category ?? undefined,
-      },
+      ...products
+        .filter((p) => !skip.has(p.id))
+        .map((p, index) => ({
+          key: `${p.id}-${stamp}-${index}`,
+          product_id: p.id,
+          name: formatProductDisplayName(p.name),
+          sku: p.sku ?? undefined,
+          tag_number: p.tag_number,
+          price: Number(p.price) || 0,
+          quantity: 1,
+          image_url: productImage(p),
+          category: p.category ?? undefined,
+          configuration_summary: 'Loose',
+        })),
     ]);
+  }
+
+  function addSimpleProduct(p: ProductHit) {
+    appendSimpleProducts([p]);
     setProductQuery('');
     setProductHits([]);
   }
@@ -820,11 +846,14 @@ export function OfflineOrderPOS() {
               <Package className="h-4 w-4" /> Products & designs
             </div>
             <p className="text-xs text-gray-500">
-              Same flow as the website: pick Navaratna / Uparatna / Rudraksha, filter and browse with images,
-              then configure setting, design, metal, certification, and energization.
+              Browse a category, then add beads as loose or configure jewellery. Search by tag / SKU
+              also has Add (loose) and Configure.
             </p>
 
-            <OfflinePosCatalogPicker onConfigure={openConfigurator} />
+            <OfflinePosCatalogPicker
+              onConfigure={openConfigurator}
+              onAddLoose={appendSimpleProducts}
+            />
 
             <div className="space-y-2 border-t border-gray-100 pt-3">
               <p className="text-xs font-semibold text-stone-700">
@@ -864,22 +893,25 @@ export function OfflineOrderPOS() {
                                 </p>
                               </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => void addProduct(p)}
-                              disabled={loadingConfigure}
-                              className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1.5 text-xs font-semibold text-amber-900 disabled:opacity-50"
-                            >
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => addSimpleProduct(p)}
+                                className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-stone-800"
+                              >
+                                <Plus className="h-3.5 w-3.5" /> Add
+                              </button>
                               {configurable ? (
-                                <>
+                                <button
+                                  type="button"
+                                  onClick={() => void addProduct(p)}
+                                  disabled={loadingConfigure}
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1.5 text-xs font-semibold text-amber-900 disabled:opacity-50"
+                                >
                                   <Palette className="h-3.5 w-3.5" /> Configure
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="h-3.5 w-3.5" /> Add
-                                </>
-                              )}
-                            </button>
+                                </button>
+                              ) : null}
+                            </div>
                           </li>
                         );
                       })}
@@ -955,7 +987,7 @@ export function OfflineOrderPOS() {
             </div>
 
             {items.length === 0 ? (
-              <p className="text-sm text-gray-500">No items yet. Browse a category and configure a stone.</p>
+              <p className="text-sm text-gray-500">No items yet. Add as loose or configure a stone.</p>
             ) : (
               <ul className="space-y-3">
                 {items.map((item) => (

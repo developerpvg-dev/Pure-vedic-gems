@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import type { ConfiguratorState } from '@/lib/types/configurator';
 import { normalizeConfiguratorRules } from '@/lib/utils/configurator-rules';
-import { getConfiguratorLastVisibleStep } from '@/lib/utils/configurator-steps';
+import {
+  getConfiguratorLastVisibleStep,
+  getConfiguratorNextStep,
+  isConfiguratorStepSkipped,
+} from '@/lib/utils/configurator-steps';
 
 function baseState(overrides: Partial<ConfiguratorState> = {}): ConfiguratorState {
   return {
@@ -71,5 +75,27 @@ describe('getConfiguratorLastVisibleStep', () => {
         rules
       )
     ).toBe(7);
+  });
+
+  it('shows setting type for rudraksha and advances beads → setting → loose skips metal', () => {
+    const rules = normalizeConfiguratorRules({
+      certificate_enabled: true,
+      allowed_certification_lab_ids: ['lab-1'],
+      energization_enabled: true,
+      allowed_energization_option_ids: ['e1'],
+    });
+    const rudraksha = baseState({
+      gem_category: 'rudraksha',
+      selected_product: {
+        id: 'p-r',
+        name: '2 Mukhi',
+        category: 'rudraksha',
+        sub_category: '2-mukhi',
+      } as ConfiguratorState['selected_product'],
+      setting_type: 'loose',
+    });
+    expect(isConfiguratorStepSkipped(3, rudraksha, rules)).toBe(false);
+    expect(getConfiguratorNextStep(2, rudraksha, rules)).toBe(3);
+    expect(getConfiguratorNextStep(3, rudraksha, rules)).toBe(6);
   });
 });
