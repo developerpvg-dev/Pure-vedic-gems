@@ -1906,6 +1906,7 @@
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
+  margin-top: 0 !important;
   aspect-ratio: 1024 / 346;
 }
 

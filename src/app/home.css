@@ -6644,6 +6644,20 @@
   padding-top: 0;
 }
 
+/*
+ * Header clearance for the home hero.
+ * Use a same-color block (not margin-top): margin exposed the cream page bg as a
+ * "gap under the navbar" whenever --pvg-site-header-offset drifted or CSS loaded late.
+ */
+.pvg-react-home-root::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: var(--pvg-site-header-offset);
+  background: #1c0202;
+  pointer-events: none;
+}
+
 main:has(> .pvg-react-home-root) {
   margin-top: 0;
   padding-top: 0;
@@ -6728,7 +6742,7 @@ main:has(> .pvg-react-home-root) {
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
-  margin-top: var(--pvg-site-header-offset) !important;
+  margin-top: 0 !important;
   padding-top: 0 !important;
   aspect-ratio: 1024 / 346;
   background: #1c0202 !important;
