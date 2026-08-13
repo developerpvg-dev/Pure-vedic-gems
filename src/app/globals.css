@@ -131,26 +131,28 @@
   --pvg-scrollbar-thumb: #B8A080;
   --pvg-scrollbar-thumb-hover: #9A6B1A;
 
-  /* Fixed SiteHeader clearance — fallbacks only; SiteHeader syncs real height to these vars */
+  /* Fixed SiteHeader clearance — keep in sync with SiteHeader chrome (topbar + nav + 2px border).
+     ponytail: CSS only. JS getBoundingClientRect + ResizeObserver wrote this onto <html> and
+     could inflate after load (mega-menu overflow, both navs, delayed reflow), shifting every page. */
   /* Mobile: 28px topbar + 56px nav + 2px border = 86px */
-  --pvg-site-header-offset: 86px;
-  --pvg-site-header-sticky-top: 86px;
+  --pvg-site-header-offset: calc(86px + env(safe-area-inset-top, 0px));
+  --pvg-site-header-sticky-top: var(--pvg-site-header-offset);
 }
 
 @media (max-width: 430px) {
   :root,
   [data-palette='1'] {
     /* 28px topbar + 52px nav + 2px border = 82px */
-    --pvg-site-header-offset: 82px;
-    --pvg-site-header-sticky-top: 82px;
+    --pvg-site-header-offset: calc(82px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: var(--pvg-site-header-offset);
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   :root,
   [data-palette='1'] {
-    --pvg-site-header-offset: 86px;
-    --pvg-site-header-sticky-top: 86px;
+    --pvg-site-header-offset: calc(86px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: var(--pvg-site-header-offset);
   }
 }
 
@@ -158,8 +160,8 @@
   :root,
   [data-palette='1'] {
     /* Tablet: 32px topbar + 62px mob-nav + 2px border = 96px */
-    --pvg-site-header-offset: 96px;
-    --pvg-site-header-sticky-top: 96px;
+    --pvg-site-header-offset: calc(96px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: var(--pvg-site-header-offset);
   }
 }
 
@@ -167,8 +169,8 @@
   :root,
   [data-palette='1'] {
     /* Desk topbar + mob-nav: 38 + 62 + 2 = 102px */
-    --pvg-site-header-offset: 102px;
-    --pvg-site-header-sticky-top: 102px;
+    --pvg-site-header-offset: calc(102px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: var(--pvg-site-header-offset);
   }
 }
 
@@ -176,8 +178,8 @@
   :root,
   [data-palette='1'] {
     /* 38px topbar + 74px desk nav + 2px border = 114px */
-    --pvg-site-header-offset: 114px;
-    --pvg-site-header-sticky-top: 114px;
+    --pvg-site-header-offset: calc(114px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-sticky-top: var(--pvg-site-header-offset);
   }
 }
 

@@ -416,29 +416,11 @@ export function SiteHeader() {
   const cartCount = mounted ? cart.item_count : 0;
   const categoryGroups = useStorefrontCategories();
 
-  // Keep CSS offset in sync with the real fixed header (all pages / all breakpoints).
-  // Static px guesses drift when topbar/nav heights change and create a gap under the nav.
+  // Drop leftover inline offsets from the old ResizeObserver sync (survives HMR / bfcache).
   useLayoutEffect(() => {
-    const header = document.getElementById('pvg-site-header');
-    if (!header) return undefined;
-
-    const syncOffset = () => {
-      const height = Math.ceil(header.getBoundingClientRect().height);
-      if (height <= 0) return;
-      const root = document.documentElement;
-      root.style.setProperty('--pvg-site-header-offset', `${height}px`);
-      // Sticky bars sit just under the full header
-      root.style.setProperty('--pvg-site-header-sticky-top', `${height}px`);
-    };
-
-    syncOffset();
-    const ro = new ResizeObserver(syncOffset);
-    ro.observe(header);
-    window.addEventListener('resize', syncOffset);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', syncOffset);
-    };
+    const root = document.documentElement;
+    root.style.removeProperty('--pvg-site-header-offset');
+    root.style.removeProperty('--pvg-site-header-sticky-top');
   }, []);
 
   useEffect(() => {
