@@ -2511,6 +2511,8 @@ export interface Database {
           remark_code: string;
           remark_label: string;
           note: string | null;
+          channel: string | null;
+          occurred_at: string | null;
           created_by: string | null;
           created_by_name: string | null;
           created_at: string;
@@ -2521,6 +2523,8 @@ export interface Database {
           remark_code: string;
           remark_label: string;
           note?: string | null;
+          channel?: string | null;
+          occurred_at?: string | null;
           created_by?: string | null;
           created_by_name?: string | null;
           created_at?: string;
@@ -2531,6 +2535,8 @@ export interface Database {
           remark_code?: string;
           remark_label?: string;
           note?: string | null;
+          channel?: string | null;
+          occurred_at?: string | null;
           created_by?: string | null;
           created_by_name?: string | null;
           created_at?: string;

@@ -54,10 +54,15 @@ export const ROLE_LABELS: Record<CanonicalAdminRole, string> = {
   designer: 'Jewelry Designer',
 };
 
-/** Sanity Studio (/studio) — Super Admin, Admin, and SEO & CMS only. */
+/** Sanity Studio (/studio) — Super Admin, Admin, SEO & CMS, Website Maintenance. */
 export function canAccessStudio(role: string | null | undefined): boolean {
   const normalized = normalizeAdminRole(role);
-  return normalized === 'owner' || normalized === 'admin' || normalized === 'seo_cms';
+  return (
+    normalized === 'owner' ||
+    normalized === 'admin' ||
+    normalized === 'seo_cms' ||
+    normalized === 'content'
+  );
 }
 
 const LEGACY_ROLE_MAP: Record<string, CanonicalAdminRole> = {
@@ -109,17 +114,19 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'dashboard.read',
     'products.read',
     'products.write',
+    'products.delete',
     'imports.write',
     'orders.read',
     'content.manage',
     'settings.commerce',
   ],
-  // Studio-only role; admin panel redirects to /studio in proxy.
-  seo_cms: ['content.manage'],
+  // Products (SEO/copy), category hubs, Sanity Studio.
+  seo_cms: ['dashboard.read', 'products.read', 'products.write', 'content.manage'],
   inventory: [
     'dashboard.read',
     'products.read',
     'products.write',
+    'products.delete',
     'imports.write',
     'orders.read',
     'content.manage',

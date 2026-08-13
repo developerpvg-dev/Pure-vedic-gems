@@ -116,7 +116,10 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-24 flex max-h-[calc(100vh-6rem)] max-w-2xl flex-col overflow-hidden border border-[var(--pvg-border)] bg-brand-bg p-0 text-[var(--pvg-text)] translate-y-0 sm:top-28 sm:max-w-2xl">
+      <DialogContent
+        overlayClassName="z-[1200]"
+        className="fixed top-24 left-1/2 z-[1200] flex max-h-[calc(100vh-6rem)] w-full max-w-2xl -translate-x-1/2 translate-y-0 flex-col overflow-hidden border border-[var(--pvg-border)] bg-brand-bg p-0 text-[var(--pvg-text)] sm:top-28 sm:max-w-2xl"
+      >
         <DialogHeader className="shrink-0 border-b border-[var(--pvg-border)] px-5 py-4">
           <DialogTitle className="font-heading text-lg text-[var(--pvg-primary)]">Search the catalog</DialogTitle>
           <DialogDescription className="text-xs text-[var(--pvg-muted)]">

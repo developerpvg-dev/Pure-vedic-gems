@@ -91,6 +91,8 @@ type Remark = {
   remark_code: string;
   remark_label: string;
   note: string | null;
+  channel?: string | null;
+  occurred_at?: string | null;
   created_by_name: string | null;
   created_at: string;
 };
@@ -330,7 +332,16 @@ export default function LeadsPage() {
     setSaving(null);
   }
 
-  async function addRemark(id: string, code?: LeadRemarkCode) {
+  async function addRemark(
+    id: string,
+    code?: LeadRemarkCode,
+    extras?: {
+      note?: string | null;
+      channel?: 'call' | 'whatsapp' | 'email' | null;
+      occurred_at?: string | null;
+      follow_up_date?: string | null;
+    }
+  ) {
     setSaving(id);
     setError(null);
     const used = code ?? remarkCode;
@@ -338,7 +349,13 @@ export default function LeadsPage() {
       const res = await fetch(`/api/admin/leads/${id}/remarks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: used, note: remarkNote || null }),
+        body: JSON.stringify({
+          code: used,
+          note: extras?.note !== undefined ? extras.note : remarkNote || null,
+          channel: extras?.channel ?? null,
+          occurred_at: extras?.occurred_at ?? null,
+          follow_up_date: extras?.follow_up_date,
+        }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -806,7 +823,7 @@ export default function LeadsPage() {
                     copied={copied}
                     onRemarkCode={setRemarkCode}
                     onRemarkNote={setRemarkNote}
-                    onAddRemark={(code) => addRemark(lead.id, code)}
+                    onAddRemark={(code, extras) => addRemark(lead.id, code, extras)}
                     onUpdate={(updates) => updateLead(lead.id, 'enquiry', updates)}
                     onOpenPrior={async (priorId) => {
                       if (leads.some((l) => l.id === priorId)) {

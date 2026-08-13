@@ -298,6 +298,7 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
       className={`pvg-nav-item${lockedClosed ? ' pvg-nav-item--closed' : ''}`}
       // Wide mega-menus: static so the panel positions against .pvg-desk-nav (centered, no right crop)
       style={{ position: isWide ? 'static' : 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
+      onMouseEnter={() => setLockedClosed(false)}
       onMouseLeave={() => setLockedClosed(false)}
     >
       <Link

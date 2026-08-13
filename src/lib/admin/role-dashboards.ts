@@ -42,6 +42,17 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/erp-sync', label: 'Store ERP sync', match: 'prefix' },
     ],
   },
+  seo_cms: {
+    title: 'SEO & CMS',
+    subtitle: 'Product SEO, category hubs & Sanity',
+    home: '/admin/products',
+    allowPrefixes: ['/admin/products', '/admin/shop-category-pages'],
+    nav: [
+      { href: '/admin/products', label: 'Products', match: 'products' },
+      { href: '/admin/shop-category-pages', label: 'Category hub pages', match: 'prefix' },
+      { href: '/studio', label: 'Sanity Studio', match: 'prefix' },
+    ],
+  },
   // ponytail: Website Maintenance uses full AdminShell with a hidden-href filter (too many content pages for a scoped nav)
   inventory: {
     title: 'Products Uploading',
@@ -153,6 +164,9 @@ export function assertRoleDashboardAllowlists() {
   if (!isScopedRolePathAllowed('finance', '/admin/commissions')) throw new Error('finance commissions');
   if (isScopedRolePathAllowed('finance', '/admin/products')) throw new Error('finance must not open products');
   if (getScopedRoleDashboard('content')) throw new Error('content uses full admin shell');
+  if (!isScopedRolePathAllowed('seo_cms', '/admin/products')) throw new Error('seo_cms products');
+  if (!isScopedRolePathAllowed('seo_cms', '/admin/shop-category-pages')) throw new Error('seo_cms hubs');
+  if (isScopedRolePathAllowed('seo_cms', '/admin/orders')) throw new Error('seo_cms must not open orders');
   if (!isScopedRolePathAllowed('inventory', '/admin/products/import')) throw new Error('inventory import');
   if (!isScopedRolePathAllowed('inventory', '/admin/orders')) throw new Error('inventory orders');
   if (isScopedRolePathAllowed('inventory', '/admin/leads')) throw new Error('inventory must not open leads');

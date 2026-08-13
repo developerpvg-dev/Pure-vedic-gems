@@ -35,6 +35,8 @@ import {
 import MetalPricingTable from '@/components/admin/jewelry-designs/MetalPricingTable';
 import DesignPricingPreview from '@/components/admin/jewelry-designs/DesignPricingPreview';
 import MetalAddForm, { type MetalAddDraft } from '@/components/admin/jewelry-designs/MetalAddForm';
+import { designHref } from '@/lib/designs/public';
+import { absoluteUrl } from '@/lib/utils/seo';
 
 export interface AdminJewelryDesign {
   id: string;
@@ -267,6 +269,12 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
     }
   };
 
+  const publicPagePath = designHref({
+    name: name.trim() || design?.name || '',
+    setting_type: settingType,
+    product_scope: productScope,
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-8">
       <div className="relative w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl">
@@ -356,6 +364,19 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="Optional notes shown in configurator"
               />
+              {publicPagePath ? (
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Public page:{' '}
+                  <a
+                    href={publicPagePath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-amber-800 underline-offset-2 hover:underline"
+                  >
+                    {absoluteUrl(publicPagePath)}
+                  </a>
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-4">

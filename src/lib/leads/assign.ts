@@ -1,8 +1,15 @@
 import type { createAdminClient } from '@/lib/supabase/admin';
-import { LEAD_REMARK_BY_CODE, type LeadRemarkCode } from '@/lib/leads/constants';
+import { LEAD_REMARK_BY_CODE, inferFollowUpChannel, type LeadFollowUpChannel, type LeadRemarkCode } from '@/lib/leads/constants';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 
 type Admin = ReturnType<typeof createAdminClient>;
+
+function parseOccurredAt(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  const d = new Date(raw.trim());
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
 
 export async function logLeadActivity(
   admin: Admin,
@@ -33,12 +40,17 @@ export async function appendLeadRemark(
     enquiryId: string;
     code: LeadRemarkCode;
     note?: string | null;
+    channel?: LeadFollowUpChannel | null;
+    occurredAt?: string | null;
+    followUpDate?: string | null;
     actorId?: string | null;
     actorName?: string | null;
   }
 ) {
   const def = LEAD_REMARK_BY_CODE[input.code];
   const now = new Date().toISOString();
+  const occurredAt = parseOccurredAt(input.occurredAt) ?? now;
+  const channel = input.channel ?? inferFollowUpChannel(input.code);
   const { data: remark, error } = await admin
     .from('lead_remarks')
     .insert({
@@ -46,6 +58,8 @@ export async function appendLeadRemark(
       remark_code: input.code,
       remark_label: def.label,
       note: input.note?.trim() || null,
+      channel,
+      occurred_at: occurredAt,
       created_by: input.actorId ?? null,
       created_by_name: input.actorName ?? null,
     })
@@ -64,9 +78,13 @@ export async function appendLeadRemark(
 
   const enquiryPatch: Record<string, unknown> = {
     last_remark_code: input.code,
-    last_remark_at: now,
+    last_remark_at: occurredAt,
     updated_at: now,
   };
+
+  if (input.followUpDate !== undefined) {
+    enquiryPatch.follow_up_date = input.followUpDate?.trim() || null;
+  }
 
   // ponytail: no follow_up stage — callback/retry remarks stay on verifying or deliver
   if (def.terminal) {
@@ -107,7 +125,12 @@ export async function appendLeadRemark(
     enquiryId: input.enquiryId,
     action: 'remark_added',
     toValue: input.code,
-    meta: { note: input.note ?? null, label: def.label },
+    meta: {
+      note: input.note ?? null,
+      label: def.label,
+      channel,
+      occurred_at: occurredAt,
+    },
     actorId: input.actorId,
     actorName: input.actorName,
   });

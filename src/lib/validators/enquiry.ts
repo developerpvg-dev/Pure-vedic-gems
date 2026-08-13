@@ -60,6 +60,11 @@ export type EnquiryUpdateInput = z.infer<typeof enquiryUpdateSchema>;
 export const leadRemarkCreateSchema = z.object({
   code: remarkCodeEnum,
   note: z.string().max(5000).optional().nullable(),
+  channel: z.enum(['call', 'whatsapp', 'email']).optional().nullable(),
+  /** ISO or local datetime string — when the follow-up actually happened */
+  occurred_at: z.string().max(40).optional().nullable(),
+  /** Optional next callback date (YYYY-MM-DD) stored on the enquiry */
+  follow_up_date: z.string().max(40).optional().nullable(),
 });
 
 export type LeadRemarkCreateInput = z.infer<typeof leadRemarkCreateSchema>;

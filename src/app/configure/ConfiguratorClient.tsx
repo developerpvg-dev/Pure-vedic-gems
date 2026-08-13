@@ -21,7 +21,7 @@ import {
 import ConfiguratorWrapper from '@/components/configurator/ConfiguratorWrapper';
 import type { ConfiguredOrderResult } from '@/components/configurator/PriceSummary';
 import type { ProductCard } from '@/lib/types/product';
-import type { ConfiguratorState, GemCategory } from '@/lib/types/configurator';
+import type { ConfiguratorState, GemCategory, SettingType } from '@/lib/types/configurator';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import type { JewelrySettingMetalProfiles } from '@/lib/utils/jewelry-setting-metal-profiles';
@@ -32,9 +32,25 @@ import type {
   JewelryDesign,
 } from '@/lib/types/database';
 
+function designStub(id: string, setting: SettingType | null): JewelryDesign {
+  return {
+    id,
+    name: 'Design',
+    setting_type: setting ?? 'ring',
+    making_charges: {},
+    estimated_metal_weight: {},
+    diamond_charges: {},
+    labor_rates: {},
+    is_active: true,
+  } as unknown as JewelryDesign;
+}
+
 interface ConfiguratorClientProps {
   /** Pre-selected product (routed from PDP "Configure" button) */
   preselectedProduct?: ProductCard | null;
+  /** Public design page deep-link */
+  presetDesignId?: string | null;
+  presetSetting?: SettingType | null;
   /** Additional Rudraksha product IDs for multi-bead pendant configuration */
   comboProductIds?: string[];
   /** Admin POS: return saved config instead of adding to cart */
@@ -186,6 +202,8 @@ function ConfiguratorSession({
 
 export default function ConfiguratorClient({
   preselectedProduct,
+  presetDesignId = null,
+  presetSetting = null,
   comboProductIds = [],
   onConfigured,
   onClose,
@@ -197,6 +215,18 @@ export default function ConfiguratorClient({
 
   const session = useMemo(() => {
     if (!preselectedProduct) {
+      if (presetDesignId) {
+        return {
+          key: `design:${presetDesignId}`,
+          initialState: createConfiguratorState({
+            setting_type: presetSetting,
+            selected_design: designStub(presetDesignId, presetSetting),
+          }),
+          startStep: 1,
+          storageKey: `pvg_configurator:design:${presetDesignId}`,
+          comboIds: comboProductIds,
+        };
+      }
       return {
         key: 'full',
         initialState: createConfiguratorState(),
@@ -242,7 +272,15 @@ export default function ConfiguratorClient({
       storageKey,
       comboIds: [...new Set([...comboProductIds, ...comboFromCart])],
     };
-  }, [preselectedProduct, onConfigured, cartConfigured, cartItem, comboProductIds]);
+  }, [
+    preselectedProduct,
+    presetDesignId,
+    presetSetting,
+    onConfigured,
+    cartConfigured,
+    cartItem,
+    comboProductIds,
+  ]);
 
   return (
     <ConfiguratorSession

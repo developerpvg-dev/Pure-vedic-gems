@@ -97,6 +97,12 @@ const cases: [string, string | null][] = [
   ['/videos/about-pukhraj', null],
   ['/videos/how-to-clean-your-astro-gems/', null],
   ['/videos_cat/informational-videos-about-gemstones-and-rudrakshas', '/videos'],
+  // Jewelry design catalog (overrides dump → /)
+  ['/designs_set/design-1', '/designs/ring/design-1'],
+  ['/designs_set/design-14-2', '/designs/ring/design-14'],
+  ['/designs_cat/rings-design', '/designs/ring'],
+  ['/designs_cat/pendents', '/designs/pendant'],
+  ['/rudraksha-designs', '/designs/rudraksha'],
 ];
 
 for (const [from, want] of cases) {

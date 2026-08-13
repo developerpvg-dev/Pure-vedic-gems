@@ -150,6 +150,15 @@ export function lookupLegacyRedirect(pathname: string): string | null {
   const forced = FORCE.get(pathname) ?? FORCE.get(bare);
   if (forced) return forced;
 
+  // WP jewelry design landings → public configurator design catalog
+  const designSet = bare.match(/^\/designs_set\/(design-\d+)(?:-\d+)?$/);
+  if (designSet) return `/designs/ring/${designSet[1]}`;
+  if (bare === '/designs_cat/rings-design') return '/designs/ring';
+  if (bare === '/designs_cat/pendents') return '/designs/pendant';
+  if (bare === '/designs_cat/rudraksha-designs' || bare === '/rudraksha-designs') {
+    return '/designs/rudraksha';
+  }
+
   const hit = EXACT.get(pathname) ?? EXACT.get(bare);
   if (hit) return hit;
 

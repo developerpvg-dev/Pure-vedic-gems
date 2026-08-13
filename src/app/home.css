@@ -2148,12 +2148,12 @@
 
     .pvg-main-img {
       opacity: 1;
-      transition: opacity 0.35s var(--ease-out-expo);
+      transition: none;
     }
 
     .pvg-hover-img {
       opacity: 0;
-      transition: opacity 0.35s var(--ease-out-expo), filter 0.4s;
+      transition: none;
     }
 
     .gem-card-new:hover .pvg-hover-img,

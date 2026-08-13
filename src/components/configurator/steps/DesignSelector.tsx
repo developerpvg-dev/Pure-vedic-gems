@@ -18,6 +18,7 @@ import type { ConfiguratorOptionRules } from '@/lib/utils/configurator-rules';
 import { DesignImageLightbox } from '@/components/configurator/DesignImageLightbox';
 import CustomDesignDetailsForm from '@/components/configurator/CustomDesignDetailsForm';
 import { designImageSrc } from '@/lib/utils/design-image';
+import { designHref } from '@/lib/designs/public';
 import {
   designMatchesRudrakshaSelection,
   getRudrakshaDesignCategoriesForSelection,
@@ -25,6 +26,7 @@ import {
   RUDRAKSHA_DESIGN_CATEGORIES,
   type RudrakshaDesignCategory,
 } from '@/lib/utils/rudraksha-design-rules';
+import Link from 'next/link';
 
 interface DesignSelectorProps {
   settingType: SettingType;
@@ -223,6 +225,7 @@ export default function DesignSelector({
 
   function renderDesignCard(design: JewelryDesign) {
     const isChosen = selected?.id === design.id;
+    const shareHref = designHref(design);
     return (
       <div
         key={design.id}
@@ -263,8 +266,20 @@ export default function DesignSelector({
           </div>
         </button>
 
-        {design.image_url || design.video_url ? (
+        {design.image_url || design.video_url || shareHref ? (
           <div className="absolute right-1.5 top-1.5 z-10 flex gap-1">
+            {shareHref ? (
+              <Link
+                href={shareHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-medium text-primary shadow-sm ring-1 ring-black/10 backdrop-blur-sm transition hover:bg-accent hover:text-accent-foreground"
+                aria-label={`Share page for ${design.name}`}
+              >
+                Share
+              </Link>
+            ) : null}
             {design.video_url ? (
               <a
                 href={design.video_url}

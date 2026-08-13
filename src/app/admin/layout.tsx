@@ -92,6 +92,13 @@ const CONTENT_HIDDEN_HREFS = new Set([
   '/admin/compliance',
 ]);
 
+const STUDIO_NAV_LINK = {
+  href: '/studio',
+  label: 'Sanity Studio',
+  icon: FileText,
+  match: 'prefix' as const,
+};
+
 function navLinkActive(
   pathname: string | null,
   searchParams: URLSearchParams,
@@ -132,7 +139,13 @@ function AdminNavContent({
     ? NAV_GROUPS.map((group) => ({
         ...group,
         links: group.links.filter((link) => !CONTENT_HIDDEN_HREFS.has(link.href)),
-      })).filter((group) => group.links.length > 0)
+      }))
+        .filter((group) => group.links.length > 0)
+        .map((group) =>
+          group.label === 'Content Pages'
+            ? { ...group, links: [...group.links, STUDIO_NAV_LINK] }
+            : group,
+        )
     : NAV_GROUPS;
 
   return (

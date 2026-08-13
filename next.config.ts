@@ -988,7 +988,7 @@ const nextConfig: NextConfig = {
         ['/treatments-and-enhancements-gemstones', '/knowledge/treatments'],
         ['/rudraksha-qualities', '/knowledge/rudraksha-qualities'],
         ['/buy-online-rudraksha', '/knowledge/rudraksha-qualities'],
-        ['/rings-design', '/shop/jewelry'],
+        ['/rings-design', '/designs/ring'],
         ['/video', '/videos'],
         ['/videos-testimonials', '/videos'],
         ['/blogs', '/blog'],

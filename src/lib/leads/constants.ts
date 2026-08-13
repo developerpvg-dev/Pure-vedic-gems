@@ -130,6 +130,36 @@ export const LEAD_REMARK_CODES = [
 
 export type LeadRemarkCode = (typeof LEAD_REMARK_CODES)[number]['code'];
 
+export const LEAD_FOLLOWUP_CHANNELS = [
+  { code: 'call' as const, label: 'Call' },
+  { code: 'whatsapp' as const, label: 'WhatsApp' },
+  { code: 'email' as const, label: 'Email' },
+] as const;
+
+export type LeadFollowUpChannel = (typeof LEAD_FOLLOWUP_CHANNELS)[number]['code'];
+
+export const LEAD_FOLLOWUP_CHANNEL_LABEL: Record<LeadFollowUpChannel, string> = {
+  call: 'Call',
+  whatsapp: 'WhatsApp',
+  email: 'Email',
+};
+
+/** Infer medium from remark code when telecaller uses a quick chip without picking channel. */
+export function inferFollowUpChannel(code: LeadRemarkCode): LeadFollowUpChannel | null {
+  if (code === 'whatsapp_sent') return 'whatsapp';
+  if (code === 'email_sent' || code === 'email_awaiting_reply' || code === 'contact_via_email') return 'email';
+  if (
+    code === 'call_not_answering' ||
+    code === 'call_disconnected' ||
+    code === 'call_back_later' ||
+    code === 'invalid_number' ||
+    code === 'language_issue'
+  ) {
+    return 'call';
+  }
+  return null;
+}
+
 export const LEAD_REMARK_BY_CODE = Object.fromEntries(
   LEAD_REMARK_CODES.map((r) => [r.code, r])
 ) as Record<LeadRemarkCode, (typeof LEAD_REMARK_CODES)[number]>;

@@ -11,6 +11,7 @@ import {
   ClipboardList,
   FileBadge2,
   FileEdit,
+  FileText,
   Flame,
   Gem,
   Images,
@@ -35,6 +36,7 @@ import {
   Truck,
   Store,
   HandCoins,
+  Trash2,
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -64,7 +66,9 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/agent-sessions': Bot,
   '/admin/products': Package,
   '/admin/products?status=inactive': FileEdit,
+  '/admin/products?status=trash': Trash2,
   '/admin/products/import': UploadCloud,
+  '/studio': FileText,
   '/admin/stock': LayoutDashboard,
   '/admin/stock/completeness': ClipboardList,
   '/admin/erp-sync': Store,

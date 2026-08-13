@@ -14,6 +14,7 @@ import {
 } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { absoluteUrl, getSiteUrl } from '@/lib/utils/seo';
+import { designHref } from '@/lib/designs/public';
 
 // Regenerate at most hourly — search engine crawlers hitting the sitemap
 // should not trigger fresh product/category/video queries every time.
@@ -76,6 +77,43 @@ async function getVideoEntries(): Promise<MetadataRoute.Sitemap> {
     }));
 }
 
+async function getDesignEntries(): Promise<MetadataRoute.Sitemap> {
+  const supabase = createOptionalPublicClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('jewelry_designs')
+    .select('name, setting_type, product_scope, created_at')
+    .eq('is_active', true)
+    .eq('is_custom', false)
+    .order('sort_order', { ascending: true })
+    .limit(500);
+
+  if (error || !data) return [];
+
+  const entries: MetadataRoute.Sitemap = [
+    entry('/designs', { changeFrequency: 'weekly', priority: 0.7 }),
+    entry('/designs/ring', { changeFrequency: 'weekly', priority: 0.68 }),
+    entry('/designs/pendant', { changeFrequency: 'weekly', priority: 0.68 }),
+    entry('/designs/bracelet', { changeFrequency: 'weekly', priority: 0.66 }),
+    entry('/designs/rudraksha', { changeFrequency: 'weekly', priority: 0.66 }),
+  ];
+
+  for (const row of data) {
+    const href = designHref(row);
+    if (!href) continue;
+    entries.push(
+      entry(href, {
+        lastModified: new Date(row.created_at ?? Date.now()),
+        changeFrequency: 'monthly',
+        priority: 0.55,
+      })
+    );
+  }
+
+  return entries;
+}
+
 async function getCategoryEntries(): Promise<MetadataRoute.Sitemap> {
   const supabase = createOptionalPublicClient();
   if (!supabase) return [];
@@ -126,13 +164,22 @@ async function getCategoryEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [blogSlugs, blogCategorySlugs, knowledgeSlugs, productEntries, categoryEntries, videoEntries] = await Promise.all([
+  const [
+    blogSlugs,
+    blogCategorySlugs,
+    knowledgeSlugs,
+    productEntries,
+    categoryEntries,
+    videoEntries,
+    designEntries,
+  ] = await Promise.all([
     getAllBlogPostSlugs(),
     getAllBlogCategorySlugs(),
     getAllKnowledgeArticleSlugs(),
     getProductEntries(),
     getCategoryEntries(),
     getVideoEntries(),
+    getDesignEntries(),
   ]);
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -199,6 +246,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const unique = new Map<string, SitemapEntry>();
-  [...staticPages, ...categoryEntries, ...productEntries, ...videoEntries].forEach((item) => unique.set(item.url, item));
+  [...staticPages, ...categoryEntries, ...productEntries, ...videoEntries, ...designEntries].forEach((item) => unique.set(item.url, item));
   return Array.from(unique.values());
 }

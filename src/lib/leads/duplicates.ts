@@ -97,7 +97,7 @@ export function contactPhones(row: ContactFields): string[] {
   return uniqueStrings([normalizePhone(row.phone), ...(row.additional_phones ?? []).map(normalizePhone)]);
 }
 
-/** Persist-ready lists: normalized, unique, capped. */
+/** Persist-ready lists: unique, capped. Phones kept as typed (country code OK); matching still normalizes. */
 export function sanitizeAdditionalEmails(raw: unknown, max = 10): string[] {
   if (!Array.isArray(raw)) return [];
   return uniqueStrings(raw.map((v) => (typeof v === 'string' ? normalizeEmail(v) : null))).slice(0, max);
@@ -105,7 +105,14 @@ export function sanitizeAdditionalEmails(raw: unknown, max = 10): string[] {
 
 export function sanitizeAdditionalPhones(raw: unknown, max = 10): string[] {
   if (!Array.isArray(raw)) return [];
-  return uniqueStrings(raw.map((v) => (typeof v === 'string' ? normalizePhone(v) : null))).slice(0, max);
+  return uniqueStrings(
+    raw.map((v) => {
+      if (typeof v !== 'string') return null;
+      const trimmed = v.trim().slice(0, 40);
+      // must look like a phone; keep original typing (+91, spaces, etc.)
+      return normalizePhone(trimmed) ? trimmed : null;
+    })
+  ).slice(0, max);
 }
 
 export function birthFieldCount(row: BirthTriplet): number {
@@ -233,12 +240,19 @@ async function loadCandidatePool(admin: Admin, leads: LeadIdentity[]): Promise<C
     const { data } = await admin.from('enquiries').select(CANDIDATE_COLS).or(orFilter).limit(500);
     merge(data as CandidateRow[]);
     for (const p of phoneTails.slice(0, 20)) {
-      const { data: extra } = await admin
+      // exact normalized element (legacy rows) + substring for as-typed "+91 …" values
+      const { data: exact } = await admin
         .from('enquiries')
         .select(CANDIDATE_COLS)
         .contains('additional_phones', [p])
         .limit(100);
-      merge(extra as CandidateRow[]);
+      merge(exact as CandidateRow[]);
+      const { data: fuzzy } = await admin
+        .from('enquiries')
+        .select(CANDIDATE_COLS)
+        .filter('additional_phones::text', 'ilike', `%${p}%`)
+        .limit(100);
+      merge(fuzzy as CandidateRow[]);
     }
   }
 
@@ -439,6 +453,11 @@ export function assertDuplicateScoring() {
   }
   if (normalizeEmail('  Foo@Bar.COM ') !== 'foo@bar.com') throw new Error('normalizeEmail');
   if (normalizePhone('+91 98765 43210') !== '9876543210') throw new Error('normalizePhone');
+
+  const kept = sanitizeAdditionalPhones(['+91 98765 43210', '  9876543210  ', 'bad']);
+  if (!kept.includes('+91 98765 43210') || kept.length !== 2) {
+    throw new Error('sanitizeAdditionalPhones must keep as-typed numbers');
+  }
 
   // additional contacts: new primary matches prior additional
   const viaAltPhone = scoreContactMatch(

@@ -5,6 +5,8 @@ import { CheckCircle2, Copy, Loader2, Pencil, Save, X } from 'lucide-react';
 import {
   CONTACT_STAGE_CHIPS,
   LEAD_ENQUIRY_TYPES,
+  LEAD_FOLLOWUP_CHANNEL_LABEL,
+  LEAD_FOLLOWUP_CHANNELS,
   LEAD_NOT_CONVERTED_BY_CODE,
   LEAD_NOT_CONVERTED_REASONS,
   LEAD_PIPELINE_HELP,
@@ -17,6 +19,7 @@ import {
   TELECOM_CALL_OUTCOMES,
   TELECOM_DELIVERY_OUTCOMES,
   isContactEnquiryLead,
+  type LeadFollowUpChannel,
   type LeadNotConvertedReason,
   type LeadPipelineStage,
   type LeadRemarkCode,
@@ -101,8 +104,17 @@ type Remark = {
   remark_code: string;
   remark_label: string;
   note: string | null;
+  channel?: string | null;
+  occurred_at?: string | null;
   created_by_name: string | null;
   created_at: string;
+};
+
+export type RemarkExtras = {
+  note?: string | null;
+  channel?: LeadFollowUpChannel | null;
+  occurred_at?: string | null;
+  follow_up_date?: string | null;
 };
 
 export type LeadCaps = {
@@ -239,6 +251,183 @@ function DuplicateBanner({
 function fmtDate(value: string | null | undefined) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function fmtDateTime(value: string | null | undefined) {
+  if (!value) return '—';
+  return new Date(value).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function remarkWhen(r: Remark) {
+  return r.occurred_at || r.created_at;
+}
+
+function channelLabel(channel: string | null | undefined) {
+  if (!channel) return null;
+  return LEAD_FOLLOWUP_CHANNEL_LABEL[channel as LeadFollowUpChannel] || channel;
+}
+
+function toLocalDateTimeInput(iso?: string | null) {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function FollowUpTimeline({ remarks, title = 'Follow-up history' }: { remarks: Remark[]; title?: string }) {
+  if (!remarks.length) return null;
+  const counts = { call: 0, whatsapp: 0, email: 0 };
+  for (const r of remarks) {
+    if (r.channel === 'call' || r.channel === 'whatsapp' || r.channel === 'email') counts[r.channel] += 1;
+  }
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">{title}</p>
+      <p className="mb-2 text-[11px] text-gray-500">
+        {remarks.length} follow-up{remarks.length === 1 ? '' : 's'}
+        {counts.call || counts.whatsapp || counts.email
+          ? ` · Call ${counts.call} · WhatsApp ${counts.whatsapp} · Email ${counts.email}`
+          : ''}
+      </p>
+      <ol className="space-y-2">
+        {remarks.map((r, idx) => (
+          <li key={r.id} className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-semibold text-gray-800">
+                ({idx + 1}) {r.remark_label}
+              </span>
+              <span className="shrink-0 text-gray-400">{fmtDateTime(remarkWhen(r))}</span>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {channelLabel(r.channel) ? (
+                <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 ring-1 ring-gray-200">
+                  {channelLabel(r.channel)}
+                </span>
+              ) : null}
+              {r.created_by_name ? (
+                <span className="rounded bg-white px-1.5 py-0.5 text-[10px] text-gray-500 ring-1 ring-gray-200">
+                  by {r.created_by_name}
+                </span>
+              ) : null}
+            </div>
+            {r.note ? <p className="mt-1 text-gray-600">{r.note}</p> : null}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function FollowUpLogPanel({
+  saving,
+  defaultCode = 'call_not_answering',
+  defaultFollowUpDate,
+  onSubmit,
+}: {
+  saving: boolean;
+  defaultCode?: LeadRemarkCode;
+  defaultFollowUpDate?: string | null;
+  onSubmit: (code: LeadRemarkCode, extras: RemarkExtras) => void;
+}) {
+  const [channel, setChannel] = useState<LeadFollowUpChannel>('call');
+  const [whenLocal, setWhenLocal] = useState(toLocalDateTimeInput());
+  const [code, setCode] = useState<LeadRemarkCode>(defaultCode);
+  const [note, setNote] = useState('');
+  const [nextFollowUp, setNextFollowUp] = useState(defaultFollowUpDate || '');
+
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 space-y-3">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-indigo-900">Log follow-up</p>
+        <p className="mt-0.5 text-[11px] text-indigo-900/80">
+          Record each call / WhatsApp / email separately with date &amp; time so the full history is visible.
+        </p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="block text-xs font-medium text-gray-600">
+          Date &amp; time
+          <input
+            type="datetime-local"
+            value={whenLocal}
+            onChange={(e) => setWhenLocal(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-xs font-medium text-gray-600">
+          Medium
+          <select
+            value={channel}
+            onChange={(e) => setChannel(e.target.value as LeadFollowUpChannel)}
+            className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          >
+            {LEAD_FOLLOWUP_CHANNELS.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="block text-xs font-medium text-gray-600">
+        Status / response
+        <select
+          value={code}
+          onChange={(e) => setCode(e.target.value as LeadRemarkCode)}
+          className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        >
+          {LEAD_REMARK_CODES.map((r) => (
+            <option key={r.code} value={r.code}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-xs font-medium text-gray-600">
+        Notes / remarks
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={2}
+          placeholder="What happened on this follow-up…"
+          className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+      <label className="block text-xs font-medium text-gray-600">
+        Next follow-up date (optional)
+        <input
+          type="date"
+          value={nextFollowUp}
+          onChange={(e) => setNextFollowUp(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+        />
+      </label>
+      <button
+        type="button"
+        disabled={saving || (code === 'custom' && !note.trim())}
+        onClick={() => {
+          const occurred = whenLocal ? new Date(whenLocal) : new Date();
+          onSubmit(code, {
+            channel,
+            note: note.trim() || null,
+            occurred_at: Number.isNaN(occurred.getTime()) ? null : occurred.toISOString(),
+            // only update lead follow_up_date when telecaller sets one
+            ...(nextFollowUp ? { follow_up_date: nextFollowUp } : {}),
+          });
+          setNote('');
+          setWhenLocal(toLocalDateTimeInput());
+        }}
+        className="w-full rounded-lg bg-indigo-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-indigo-800 disabled:opacity-50"
+      >
+        Save follow-up
+      </button>
+    </div>
+  );
 }
 
 function ConversionBanner({ lead }: { lead: EnquiryLead }) {
@@ -426,7 +615,7 @@ export function EnquiryDetail({
   copied: boolean;
   onRemarkCode: (v: LeadRemarkCode) => void;
   onRemarkNote: (v: string) => void;
-  onAddRemark: (code?: LeadRemarkCode) => void;
+  onAddRemark: (code?: LeadRemarkCode, extras?: RemarkExtras) => void;
   onUpdate: (updates: Record<string, unknown>) => void;
   onCopy: () => void;
   onOpenPrior?: (id: string) => void;
@@ -585,41 +774,48 @@ export function EnquiryDetail({
         ) : null}
 
         {active ? (
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-indigo-900">Call result</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {TELECOM_CALL_OUTCOMES.map((o) => (
-                <button
-                  key={o.code}
-                  type="button"
-                  disabled={saving || (o.code === 'custom' && !remarkNote.trim())}
-                  title={o.hint}
-                  onClick={() => onAddRemark(o.code)}
-                  className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-50 ${
-                    lead.last_remark_code === o.code
-                      ? 'border-indigo-400 bg-indigo-50 text-indigo-900'
-                      : 'border-gray-200 bg-white text-gray-800 hover:border-indigo-200 hover:bg-indigo-50/40'
-                  }`}
-                >
-                  {o.short}
-                </button>
-              ))}
-            </div>
-            <textarea
-              value={remarkNote}
-              onChange={(e) => onRemarkNote(e.target.value)}
-              rows={2}
-              placeholder="Note (required for Custom remark)…"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          <div className="space-y-3">
+            <FollowUpLogPanel
+              saving={saving}
+              defaultFollowUpDate={lead.follow_up_date}
+              onSubmit={(code, extras) => onAddRemark(code, extras)}
             />
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
-              className="w-full rounded-lg bg-sky-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-sky-800 disabled:opacity-50"
-            >
-              Mark handled — close lead
-            </button>
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-900">Quick call result</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {TELECOM_CALL_OUTCOMES.map((o) => (
+                  <button
+                    key={o.code}
+                    type="button"
+                    disabled={saving || (o.code === 'custom' && !remarkNote.trim())}
+                    title={o.hint}
+                    onClick={() => onAddRemark(o.code)}
+                    className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-50 ${
+                      lead.last_remark_code === o.code
+                        ? 'border-indigo-400 bg-indigo-50 text-indigo-900'
+                        : 'border-gray-200 bg-white text-gray-800 hover:border-indigo-200 hover:bg-indigo-50/40'
+                    }`}
+                  >
+                    {o.short}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={remarkNote}
+                onChange={(e) => onRemarkNote(e.target.value)}
+                rows={2}
+                placeholder="Note (required for Custom remark on quick chips)…"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
+                className="w-full rounded-lg bg-sky-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-sky-800 disabled:opacity-50"
+              >
+                Mark handled — close lead
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -633,22 +829,7 @@ export function EnquiryDetail({
           </p>
         ) : null}
 
-        {remarks.length > 0 ? (
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Remarks</p>
-            <ul className="space-y-2">
-              {remarks.map((r) => (
-                <li key={r.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-700">
-                  <span className="font-semibold">{r.remark_label}</span>
-                  {r.note ? ` — ${r.note}` : ''}
-                  <span className="mt-0.5 block text-[10px] text-gray-400">
-                    {r.created_by_name || 'Staff'} · {new Date(r.created_at).toLocaleString('en-IN')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <FollowUpTimeline remarks={remarks} />
       </div>
     );
   }
@@ -798,6 +979,14 @@ export function EnquiryDetail({
             </div>
           )}
         </div>
+
+        {stage !== 'closed' ? (
+          <FollowUpLogPanel
+            saving={saving}
+            defaultFollowUpDate={lead.follow_up_date}
+            onSubmit={(code, extras) => onAddRemark(code, extras)}
+          />
+        ) : null}
 
         {verifyPhase && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 space-y-3">
@@ -982,20 +1171,7 @@ export function EnquiryDetail({
         )}
 
         {remarks.length > 0 && (
-          <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Status history (manager can see)</p>
-            <ol className="space-y-2">
-              {remarks.map((r) => (
-                <li key={r.id} className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2 text-xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-semibold text-gray-800">{r.remark_label}</span>
-                    <span className="shrink-0 text-gray-400">{fmtDate(r.created_at)}</span>
-                  </div>
-                  {r.note && <p className="mt-1 text-gray-600">{r.note}</p>}
-                </li>
-              ))}
-            </ol>
-          </div>
+          <FollowUpTimeline remarks={remarks} title="Follow-up history" />
         )}
 
         {(lead.phone || lead.email) ? (
@@ -1594,54 +1770,18 @@ export function EnquiryDetail({
           )}
 
           {showRemarks && (
-            <div className="rounded-lg border border-gray-200 p-3">
-              <p className="mb-2 text-xs font-semibold text-gray-800">Add remark / status</p>
-              <select
-                value={remarkCode}
-                onChange={(e) => onRemarkCode(e.target.value as LeadRemarkCode)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-              >
-                {LEAD_REMARK_CODES.map((r, i) => (
-                  <option key={r.code} value={r.code}>
-                    ({i + 1}) {r.label}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                value={remarkNote}
-                onChange={(e) => onRemarkNote(e.target.value)}
-                rows={2}
-                placeholder="Optional note…"
-                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => onAddRemark()}
-                className="mt-2 w-full rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
-              >
-                Append remark
-              </button>
-            </div>
+            <FollowUpLogPanel
+              saving={saving}
+              defaultCode={remarkCode}
+              defaultFollowUpDate={lead.follow_up_date}
+              onSubmit={(code, extras) => {
+                onRemarkCode(code);
+                onAddRemark(code, extras);
+              }}
+            />
           )}
 
-          {remarks.length > 0 && (
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Remark timeline</p>
-              <ol className="space-y-2">
-                {remarks.map((r, idx) => (
-                  <li key={r.id} className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2 text-xs">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold text-gray-800">({idx + 1}) {r.remark_label}</span>
-                      <span className="shrink-0 text-gray-400">{fmtDate(r.created_at)}</span>
-                    </div>
-                    {r.note && <p className="mt-1 text-gray-600">{r.note}</p>}
-                    {r.created_by_name && <p className="mt-0.5 text-[10px] text-gray-400">by {r.created_by_name}</p>}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+          <FollowUpTimeline remarks={remarks} title="Follow-up history" />
 
           {lead.phone && (isTelecom || isManager) && (
             <a

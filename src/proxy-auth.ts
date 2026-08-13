@@ -132,9 +132,6 @@ export async function handleAuthProxy(request: NextRequest) {
     }
 
     const normalizedRole = normalizeAdminRole(teamMember.role);
-    if (normalizedRole === 'seo_cms') {
-      return NextResponse.redirect(new URL('/studio', request.url));
-    }
     if (normalizedRole === 'designer') {
       const allowed =
         pathname.startsWith('/admin/designer') || pathname.startsWith('/admin/join');

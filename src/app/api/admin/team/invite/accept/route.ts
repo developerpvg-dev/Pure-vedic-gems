@@ -8,7 +8,7 @@ import { rateLimit } from '@/lib/utils/rate-limit';
 function redirectForRole(role: string) {
   const acceptedRole = normalizeAdminRole(role);
   if (acceptedRole === 'designer') return '/admin/designer';
-  if (acceptedRole === 'seo_cms') return '/studio';
+  if (acceptedRole === 'seo_cms') return '/admin/products';
   return '/admin';
 }
 

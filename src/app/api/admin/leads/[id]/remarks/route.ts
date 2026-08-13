@@ -28,7 +28,12 @@ export async function GET(
     .order('created_at', { ascending: true });
 
   if (error) return NextResponse.json({ error: 'Failed to load remarks' }, { status: 500 });
-  return NextResponse.json({ remarks: data ?? [] });
+  const remarks = [...(data ?? [])].sort((a, b) => {
+    const aAt = String((a as { occurred_at?: string | null }).occurred_at || (a as { created_at: string }).created_at);
+    const bAt = String((b as { occurred_at?: string | null }).occurred_at || (b as { created_at: string }).created_at);
+    return aAt.localeCompare(bAt);
+  });
+  return NextResponse.json({ remarks });
 }
 
 export async function POST(
@@ -69,6 +74,9 @@ export async function POST(
       enquiryId: id,
       code: parsed.data.code as LeadRemarkCode,
       note: parsed.data.note,
+      channel: parsed.data.channel ?? null,
+      occurredAt: parsed.data.occurred_at ?? null,
+      followUpDate: parsed.data.follow_up_date,
       actorId: auth.user.id,
       actorName: auth.member.name,
     });
