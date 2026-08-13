@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useState, useSyncExternalStore } from 'react';
+import React, { Suspense, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -415,6 +415,31 @@ export function SiteHeader() {
   const { cart } = useCart();
   const cartCount = mounted ? cart.item_count : 0;
   const categoryGroups = useStorefrontCategories();
+
+  // Keep CSS offset in sync with the real fixed header (all pages / all breakpoints).
+  // Static px guesses drift when topbar/nav heights change and create a gap under the nav.
+  useLayoutEffect(() => {
+    const header = document.getElementById('pvg-site-header');
+    if (!header) return undefined;
+
+    const syncOffset = () => {
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      if (height <= 0) return;
+      const root = document.documentElement;
+      root.style.setProperty('--pvg-site-header-offset', `${height}px`);
+      // Sticky bars sit just under the full header
+      root.style.setProperty('--pvg-site-header-sticky-top', `${height}px`);
+    };
+
+    syncOffset();
+    const ro = new ResizeObserver(syncOffset);
+    ro.observe(header);
+    window.addEventListener('resize', syncOffset);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', syncOffset);
+    };
+  }, []);
 
   useEffect(() => {
     for (const src of collectGemstoneNavImageUrls(categoryGroups)) {
@@ -1107,6 +1132,8 @@ export function SiteHeader() {
           inset: '0 0 auto 0',
           zIndex: 1000,
           background: '#fff',
+          // ponytail: include notch so measured offset matches visible header
+          paddingTop: 'env(safe-area-inset-top, 0px)',
           transition: 'box-shadow 0.3s',
           boxShadow: scrolled ? '0 4px 28px rgba(0,0,0,0.10)' : 'none',
           overflow: 'visible',

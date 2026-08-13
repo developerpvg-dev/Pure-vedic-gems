@@ -131,45 +131,44 @@
   --pvg-scrollbar-thumb: #B8A080;
   --pvg-scrollbar-thumb-hover: #9A6B1A;
 
-  /* Fixed SiteHeader clearance — topbar + navbar + nav border (keep in sync with SiteHeader.tsx) */
-  /* Mobile: 28px topbar + 56px nav (≤767) + 2px border = 86px */
-  --pvg-site-header-offset: calc(86px + env(safe-area-inset-top, 0px));
-  --pvg-site-header-sticky-top: calc(78px + env(safe-area-inset-top, 0px));
+  /* Fixed SiteHeader clearance — fallbacks only; SiteHeader syncs real height to these vars */
+  /* Mobile: 28px topbar + 56px nav + 2px border = 86px */
+  --pvg-site-header-offset: 86px;
+  --pvg-site-header-sticky-top: 86px;
 }
 
 @media (max-width: 430px) {
   :root,
   [data-palette='1'] {
     /* 28px topbar + 52px nav + 2px border = 82px */
-    --pvg-site-header-offset: calc(82px + env(safe-area-inset-top, 0px));
-    --pvg-site-header-sticky-top: calc(74px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-offset: 82px;
+    --pvg-site-header-sticky-top: 82px;
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   :root,
   [data-palette='1'] {
-    /* Phone landscape / large phone: mob-nav 56 + topbar 28 + 2 = 86 */
-    --pvg-site-header-offset: calc(86px + env(safe-area-inset-top, 0px));
-    --pvg-site-header-sticky-top: calc(78px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-offset: 86px;
+    --pvg-site-header-sticky-top: 86px;
   }
 }
 
 @media (min-width: 768px) {
   :root,
   [data-palette='1'] {
-    /* Tablet (<1360 uses mob-nav): 32px topbar + 62px nav + 2px border = 96px */
-    --pvg-site-header-offset: calc(96px + env(safe-area-inset-top, 0px));
-    --pvg-site-header-sticky-top: calc(88px + env(safe-area-inset-top, 0px));
+    /* Tablet: 32px topbar + 62px mob-nav + 2px border = 96px */
+    --pvg-site-header-offset: 96px;
+    --pvg-site-header-sticky-top: 96px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1359px) {
   :root,
   [data-palette='1'] {
-    /* Desk topbar + mob-nav until 1360: 38 + 62 + 2 = 102px */
-    --pvg-site-header-offset: calc(102px + env(safe-area-inset-top, 0px));
-    --pvg-site-header-sticky-top: calc(94px + env(safe-area-inset-top, 0px));
+    /* Desk topbar + mob-nav: 38 + 62 + 2 = 102px */
+    --pvg-site-header-offset: 102px;
+    --pvg-site-header-sticky-top: 102px;
   }
 }
 
@@ -177,8 +176,8 @@
   :root,
   [data-palette='1'] {
     /* 38px topbar + 74px desk nav + 2px border = 114px */
-    --pvg-site-header-offset: calc(114px + env(safe-area-inset-top, 0px));
-    --pvg-site-header-sticky-top: calc(106px + env(safe-area-inset-top, 0px));
+    --pvg-site-header-offset: 114px;
+    --pvg-site-header-sticky-top: 114px;
   }
 }
 

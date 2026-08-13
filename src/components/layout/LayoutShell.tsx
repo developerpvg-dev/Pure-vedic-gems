@@ -104,6 +104,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return <main className="flex-1">{children}</main>;
   }
 
+  // Spacer height comes from --pvg-site-header-offset (SiteHeader keeps it = real header height).
+  // Home skips spacer so the hero can sit under the fixed header.
   return (
     <CurrencyProvider>
       <SiteHeader />
