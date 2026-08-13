@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { StickyContactRail } from './StickyContactRail';
 import { SiteHeader } from './SiteHeader';
@@ -8,6 +9,28 @@ import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { AgentChatWidget } from '@/components/agent/AgentChatWidget';
 import { isAgentUiEnabled } from '@/lib/agent/config';
 import { CurrencyProvider } from '@/lib/hooks/useCurrency';
+
+/** Clears Base UI dialog scroll-lock leftovers after search → navigate races. */
+function clearStuckScrollLock() {
+  if (typeof document === 'undefined') return;
+  const html = document.documentElement;
+  const body = document.body;
+  if (!html.hasAttribute('data-base-ui-scroll-locked')) return;
+
+  html.removeAttribute('data-base-ui-scroll-locked');
+  html.style.overflowY = '';
+  html.style.overflowX = '';
+  html.style.scrollbarGutter = '';
+  html.style.scrollBehavior = '';
+  body.style.position = '';
+  body.style.height = '';
+  body.style.width = '';
+  body.style.boxSizing = '';
+  body.style.overflow = '';
+  body.style.overflowY = '';
+  body.style.overflowX = '';
+  body.style.scrollBehavior = '';
+}
 
 /** Routes that already reserve space below the fixed header in their own layout */
 function pageHasBuiltInHeaderOffset(pathname: string): boolean {
@@ -48,6 +71,10 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const isStudio = pathname.startsWith('/studio');
   const isHome = pathname === '/';
   const showHeaderSpacer = !isAdmin && !isStudio && !isHome && !pageHasBuiltInHeaderOffset(pathname);
+
+  useEffect(() => {
+    clearStuckScrollLock();
+  }, [pathname]);
   const usesReferenceTheme = [
     '/policies',
     '/account',

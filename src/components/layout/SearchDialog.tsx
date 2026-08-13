@@ -96,8 +96,12 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     if (!nextQuery) return;
 
     trackStorefrontEvent('search_submit', { query: nextQuery, result_count: results.length });
+    // Close first so Base UI unlocks body scroll before the soft navigation;
+    // navigating while the dialog is still locking scroll left a permanent top gap.
     onOpenChange(false);
-    router.push(`/shop?q=${encodeURIComponent(nextQuery)}`);
+    window.setTimeout(() => {
+      router.push(`/shop?q=${encodeURIComponent(nextQuery)}`);
+    }, 0);
   };
 
   const getResultIcon = (type?: SearchResultType) => {
@@ -115,7 +119,9 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    // trap-focus: keep focus inside, but skip Base UI body scroll-lock.
+    // modal scroll-lock + soft nav to /shop?q= left stuck body styles → gap under navbar site-wide.
+    <Dialog open={open} onOpenChange={onOpenChange} modal="trap-focus">
       <DialogContent
         overlayClassName="z-[1200]"
         className="fixed top-24 left-1/2 z-[1200] flex max-h-[calc(100vh-6rem)] w-full max-w-2xl -translate-x-1/2 translate-y-0 flex-col overflow-hidden border border-[var(--pvg-border)] bg-brand-bg p-0 text-[var(--pvg-text)] sm:top-28 sm:max-w-2xl"
