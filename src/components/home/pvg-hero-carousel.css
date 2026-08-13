@@ -2,25 +2,12 @@
 
 /* Beat legacy .hero { height: 88vh; min-height: 580px } when CSS chunks load out of order on CDN */
 .pvg-hero-carousel.hero.pvg-hero-clean {
-  margin-top: var(--pvg-site-header-offset) !important;
+  margin-top: 0 !important;
   padding-top: 0 !important;
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
   background: #1c0202 !important;
-}
-
-/*
- * margin-top clears the fixed header; this ::before paints that margin gap maroon
- * (body bg is cream — raw margin-top alone showed a cream band in production).
- */
-.pvg-hero-carousel.hero.pvg-hero-clean::before {
-  content: '';
-  display: block;
-  height: var(--pvg-site-header-offset);
-  margin-top: calc(-1 * var(--pvg-site-header-offset));
-  background: #1c0202;
-  pointer-events: none;
 }
 
 .pvg-hero-carousel {
