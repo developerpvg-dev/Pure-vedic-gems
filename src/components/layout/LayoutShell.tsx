@@ -10,13 +10,12 @@ import { AgentChatWidget } from '@/components/agent/AgentChatWidget';
 import { isAgentUiEnabled } from '@/lib/agent/config';
 import { CurrencyProvider } from '@/lib/hooks/useCurrency';
 
-/** Clears Base UI dialog scroll-lock leftovers after search → navigate races. */
+/** Clears Base UI dialog scroll-lock leftovers after search → navigate races.
+ *  Always reset — the attribute can be gone while body position/height remain. */
 function clearStuckScrollLock() {
   if (typeof document === 'undefined') return;
   const html = document.documentElement;
   const body = document.body;
-  if (!html.hasAttribute('data-base-ui-scroll-locked')) return;
-
   html.removeAttribute('data-base-ui-scroll-locked');
   html.style.overflowY = '';
   html.style.overflowX = '';
@@ -70,7 +69,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const isAdmin = pathname.startsWith('/admin');
   const isStudio = pathname.startsWith('/studio');
   const isHome = pathname === '/';
-  const showHeaderSpacer = !isAdmin && !isStudio && !isHome && !pageHasBuiltInHeaderOffset(pathname);
+  // Home uses this spacer (not a second clearance div). Shop/knowledge paint their own offset.
+  const showHeaderSpacer = !isAdmin && !isStudio && !pageHasBuiltInHeaderOffset(pathname);
 
   useEffect(() => {
     clearStuckScrollLock();
@@ -104,8 +104,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return <main className="flex-1">{children}</main>;
   }
 
-  // Spacer height is --pvg-site-header-offset in globals.css (must match SiteHeader chrome).
-  // Home skips spacer so the hero can sit under the fixed header.
+  // One shared spacer. Pages with .pvg-owns-header-offset hide it in CSS so it cannot stack.
   return (
     <CurrencyProvider>
       <SiteHeader />

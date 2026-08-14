@@ -50,8 +50,6 @@ export default async function HomePage() {
     <>
       <HeroPreloadLinks slides={heroSlides} />
       <div className="pvg-react-home-root">
-        {/* Sibling clearance for fixed header — maroon, outside hero overflow clip */}
-        <div className="pvg-home-header-clearance" aria-hidden="true" />
         <PvgHeroSection slides={heroSlides} />
         <PvgReferenceSections
           navaratnaSection={<NavaratnaHomeSection categories={categories.navaratna} />}

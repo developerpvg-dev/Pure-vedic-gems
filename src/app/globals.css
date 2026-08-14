@@ -192,6 +192,21 @@
   pointer-events: none;
 }
 
+/* Home spacer sits behind the opaque navbar — paint it maroon so page cream cannot show through. */
+body:has(.pvg-react-home-root) .pvg-header-spacer {
+  background: #1c0202;
+}
+
+/* Pages that already pad for the header (shop search, knowledge hero, leftover home clearance). */
+body:has(.pvg-owns-header-offset) .pvg-header-spacer,
+body:has(.pvg-knowledge-hero) .pvg-header-spacer,
+body:has(.pvg-knowledge-page) .pvg-header-spacer,
+body:has(.pvg-home-header-clearance) .pvg-header-spacer {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden;
+}
+
 .pvg-page-below-header {
   padding-top: var(--pvg-site-header-offset);
 }

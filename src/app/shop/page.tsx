@@ -141,7 +141,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const searchQuery = params.q?.trim();
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#faf8f4] pb-20 font-body text-[#15110d]">
+    <main className="pvg-owns-header-offset min-h-screen overflow-hidden bg-[#faf8f4] pb-20 font-body text-[#15110d]">
       {searchQuery ? (
         <div className="px-4 pt-[calc(var(--pvg-site-header-offset)+0.35rem)] pb-2 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
