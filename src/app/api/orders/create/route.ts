@@ -13,6 +13,7 @@ import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
 import { cancelRewardRedemption, reserveRewardRedemption } from '@/lib/rewards/service';
 import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 function createGuestOrderToken() {
   const token = crypto.randomBytes(32).toString('hex');
@@ -129,6 +130,8 @@ async function reserveUniquePhysicalProducts({
       throw new Error(`Product "${target.name}" was just reserved by another customer.`);
     }
   }
+
+  if (reserveTargets.size) revalidateProductSurfaces();
 }
 
 /**

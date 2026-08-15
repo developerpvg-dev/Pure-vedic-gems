@@ -5,6 +5,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase, type UntypedSupabase } from '@/lib/supabase/untyped';
 import type { Json } from '@/lib/types/database';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 export const runtime = 'nodejs';
 
@@ -302,6 +303,7 @@ export async function POST(request: NextRequest) {
     ipAddress: getRequestIp(request),
   });
 
+  revalidateProductSurfaces();
   return NextResponse.json({ success: true, batchId, inserted: inserted ?? [], summary: preview.summary });
 }
 
@@ -329,5 +331,6 @@ export async function DELETE(request: NextRequest) {
     ipAddress: getRequestIp(request),
   });
 
+  revalidateProductSurfaces();
   return NextResponse.json({ success: true, archivedProducts: data?.length ?? 0 });
 }

@@ -109,7 +109,12 @@ export async function POST(
     updates.reservation_note = parsed.data.note ?? null;
   }
 
-  const { data, error } = await db.from('products').update(updates).eq('id', id).select('id, sku, name, category, stock_quantity').single();
+  const { data, error } = await db
+    .from('products')
+    .update(updates)
+    .eq('id', id)
+    .select('id, sku, name, slug, category, sub_category, stock_quantity')
+    .single();
   if (error || !data) return NextResponse.json({ error: 'Failed to update product workflow' }, { status: 500 });
 
   await logAdminAction({
@@ -125,7 +130,11 @@ export async function POST(
     await notifyLowStockProduct(data as { id: string; sku: string | null; name: string; category: string | null; stock_quantity: number | null }, `product_${parsed.data.action}`);
   }
 
-  revalidateProductSurfaces(data as { category?: string | null });
+  revalidateProductSurfaces(data as {
+    slug?: string | null;
+    category?: string | null;
+    sub_category?: string | null;
+  });
 
   return NextResponse.json({ success: true, product: data });
 }

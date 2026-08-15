@@ -5,6 +5,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { resolveCatalogOrderPair } from '@/lib/admin/catalog-order-categories';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 const querySchema = z.object({
   category: z.string().trim().min(1),
@@ -115,5 +116,6 @@ export async function PUT(request: NextRequest) {
     ipAddress: getRequestIp(request),
   });
 
+  revalidateProductSurfaces({ category, sub_category });
   return NextResponse.json({ success: true, updated: items.length });
 }

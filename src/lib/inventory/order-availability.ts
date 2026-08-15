@@ -4,6 +4,7 @@ import { notifyLowStockProduct } from '@/lib/inventory/stock-alerts';
 import { queueErpOutboundSale } from '@/lib/erp/sync';
 import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 import { cancelRewardRedemption } from '@/lib/rewards/service';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 export type OrderInventoryItem = {
   product_id?: string | null;
@@ -100,6 +101,7 @@ export async function keepProductsReservedAfterPayment(
     else reservedIds.push(productId);
   }
 
+  if (reservedIds.length) revalidateProductSurfaces();
   return { reservedIds, failedIds };
 }
 
@@ -171,6 +173,8 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
       'order_marked_sold',
     );
   }
+
+  if (productIds.length) revalidateProductSurfaces();
 }
 
 /** Product IDs for one order line (main SKU + configured rudraksha beads). */
@@ -232,6 +236,7 @@ export async function releaseProductsForOrder(
     if (!error) restored.push(productId);
   }
 
+  if (restored.length) revalidateProductSurfaces();
   return restored;
 }
 

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
 const updateSchema = z.object({
   items: z
@@ -89,5 +90,6 @@ export async function PUT(request: NextRequest) {
     ipAddress: getRequestIp(request),
   });
 
+  revalidateProductSurfaces();
   return NextResponse.json({ success: true, updated: items.length });
 }

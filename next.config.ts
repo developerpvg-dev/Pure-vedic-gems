@@ -1057,6 +1057,20 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
+      // Public catalog listings use URL filters only; cache each exact URL at Vercel's CDN.
+      // ponytail: 15m safety ceiling for one-of-one gems; extend only after edge purging is available.
+      {
+        source: '/shop',
+        headers: [
+          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+        ],
+      },
+      {
+        source: '/shop/:category',
+        headers: [
+          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+        ],
+      },
       // Long-lived cache for all static assets in /public
       {
         source: '/rudraksha-knowledge/:path*',

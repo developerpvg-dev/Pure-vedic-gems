@@ -209,6 +209,7 @@ function otherQualityLabelOptions(rows: FacetRow[]) {
 }
 
 const FILTER_CACHE_TTL_MS = 300_000;
+export const SHOP_FILTER_FACETS_CACHE_TAG = 'shop-filter-facets';
 
 function buildFilterCacheKey(scope: ShopFilterScope, filters: Pick<ProductFilters, 'q' | 'directors_pick'>) {
   return JSON.stringify({ scope, filters });
@@ -245,7 +246,10 @@ async function loadFacetRows(
 // facet query for a given scope runs once per 10 minutes platform-wide
 // instead of once per instance. Free-text (q) queries bypass this to avoid
 // unbounded cache keys and use the in-memory cache instead.
-const loadFacetRowsShared = unstable_cache(loadFacetRows, ['shop-filter-facets'], { revalidate: 600 });
+const loadFacetRowsShared = unstable_cache(loadFacetRows, ['shop-filter-facets'], {
+  revalidate: 600,
+  tags: [SHOP_FILTER_FACETS_CACHE_TAG],
+});
 
 export async function getShopFilterOptions(
   scope: ShopFilterScope,
