@@ -124,10 +124,11 @@ function extractTagsFromWorkbook(filename: string, buffer: Buffer) {
   return { filename, tags: [...tags].sort(), sheetStats };
 }
 
+// ponytail: one-off script — don't couple to supabase generic variance (breaks next build)
 async function findProduct(
-  sb: ReturnType<typeof createClient>,
+  sb: { from: (table: string) => any },
   tag: string,
-  hints: string[]
+  hints: string[],
 ): Promise<ProductRow | null> {
   const sel =
     'id,name,sku,tag_number,availability_status,in_stock,stock_quantity,is_active,sold_individually,category,price_mode';
