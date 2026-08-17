@@ -1,10 +1,12 @@
 ﻿import type { Metadata } from 'next';
 import { FeedbackForm } from '@/components/feedback/FeedbackForm';
+import { buildMetadata } from '@/lib/utils/seo';
 
-export const metadata: Metadata = {
-  title: 'Feedback | Pure Vedic Gems',
+export const metadata: Metadata = buildMetadata({
+  title: 'Share Feedback | PureVedicGems',
   description: 'Share your experience with Pure Vedic Gems products and services.',
-};
+  path: '/feedback',
+});
 
 export default function FeedbackPage() {
   return (

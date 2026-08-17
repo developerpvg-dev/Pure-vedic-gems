@@ -47,13 +47,13 @@ export function ReportEditor({ initial }: { initial: RecommendationReport }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Save failed');
       setStatus(data.report.status);
-      toast.success('Saved');
+      toast.success(status === 'sent' ? 'Saved — next email will use the updated report' : 'Saved');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Save failed');
     } finally {
       setSaving(false);
     }
-  }, [blocks, chartImageUrl, customer, initial.id, title]);
+  }, [blocks, chartImageUrl, customer, initial.id, status, title]);
 
   const uploadChart = useCallback(async (file: File) => {
     const fd = new FormData();
@@ -125,7 +125,15 @@ export function ReportEditor({ initial }: { initial: RecommendationReport }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Send failed');
       setStatus('sent');
-      toast.success(data.pdfAttached ? 'Emailed with PDF attached' : 'Emailed (view link; PDF skipped)');
+      toast.success(
+        status === 'sent'
+          ? data.pdfAttached
+            ? 'Updated & resent with PDF'
+            : 'Updated & resent (view link; PDF skipped)'
+          : data.pdfAttached
+            ? 'Emailed with PDF attached'
+            : 'Emailed (view link; PDF skipped)'
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Send failed');
     } finally {
@@ -177,7 +185,7 @@ export function ReportEditor({ initial }: { initial: RecommendationReport }) {
           className="inline-flex items-center gap-1 rounded bg-amber-600 px-3 py-1.5 text-sm text-white hover:bg-amber-700 disabled:opacity-50"
         >
           {busy === 'send' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-          Send email
+          {status === 'sent' ? 'Update & resend' : 'Send email'}
         </button>
       </div>
 

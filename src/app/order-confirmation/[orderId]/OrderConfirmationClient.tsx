@@ -28,6 +28,7 @@ import {
   parseBankTransferProof,
 } from '@/lib/orders/bank-transfer-proof';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
+import { trackEcommerceEvent } from '@/lib/utils/analytics';
 
 const CONFETTI_COLORS = ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'];
 const CONFETTI_PIECES = Array.from({ length: 40 }, (_, i) => ({
@@ -126,6 +127,23 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
   }, [isPaid]);
+
+  useEffect(() => {
+    if (!isPaid) return;
+    const key = `pvg_meta_purchase_${order.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // private mode / blocked storage — still fire once this mount
+    }
+    trackEcommerceEvent('purchase', {
+      value: Number(order.amount_paid ?? order.total ?? 0),
+      currency: 'INR',
+      transaction_id: order.order_number,
+      num_items: order.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+    });
+  }, [isPaid, order.amount_paid, order.id, order.items, order.order_number, order.total]);
 
   const whatsappMessage = `Hi, I just placed order ${order.order_number} on PureVedicGems. Looking forward to receiving my gems! ✨`;
   const whatsappUrl = `https://wa.me/919871582404?text=${encodeURIComponent(whatsappMessage)}`;

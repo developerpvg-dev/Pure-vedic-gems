@@ -6,6 +6,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { EventVideo, EventVideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoRow } from '@/components/events/VideoRow';
+import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
@@ -15,7 +16,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   // ponytail: public client so cookies() don't force this route dynamic
   const supabase = createOptionalPublicClient();
-  if (!supabase) return { title: 'Video Not Found' };
+  if (!supabase) {
+    return buildMetadata({
+      title: 'Event Video Not Found | PureVedicGems',
+      description: 'The requested event video could not be found.',
+      path: `/events-and-seminars/${slug}`,
+      noIndex: true,
+    });
+  }
 
   const { data: video } = await supabase
     .from('event_videos')
@@ -23,12 +31,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('slug', slug)
     .single();
 
-  if (!video) return { title: 'Video Not Found' };
+  if (!video) {
+    return buildMetadata({
+      title: 'Event Video Not Found | PureVedicGems',
+      description: 'The requested event video could not be found.',
+      path: `/events-and-seminars/${slug}`,
+      noIndex: true,
+    });
+  }
 
-  return {
-    title: `${video.title} | Events & Seminars | Pure Vedic Gems`,
+  return buildMetadata({
+    title: `${video.title} | Events & Seminars | PureVedicGems`,
     description: video.description ?? `Watch ${video.title} from the Pure Vedic Gems events archive.`,
-  };
+    path: `/events-and-seminars/${slug}`,
+  });
 }
 
 export default async function VideoDetailPage({ params }: Props) {

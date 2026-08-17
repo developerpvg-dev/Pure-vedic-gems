@@ -11,18 +11,16 @@ import { ShopPagination } from '@/components/shop/ShopPagination';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import type { Metadata } from 'next';
 import type { ProductCard } from '@/lib/types/product';
+import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
-export const metadata: Metadata = {
-  title: 'Buy Certified Vedic Gemstones — PureVedicGems',
+export const metadata: Metadata = buildMetadata({
+  title: 'Buy Certified Vedic Gemstones Online | PureVedicGems',
   description:
     'Browse our complete collection of certified natural gemstones, rudraksha, jewelry and malas. Filter by category, price, origin and planet. Trusted since 1937.',
-  openGraph: {
-    title: 'Shop — PureVedicGems',
-    description: 'Certified natural Vedic gemstones, Rudraksha and jewelry.',
-  },
-};
+  path: '/shop',
+});
 
 const CARD_SELECT = `
   id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price,

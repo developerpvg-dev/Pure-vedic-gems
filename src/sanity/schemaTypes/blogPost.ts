@@ -1,4 +1,4 @@
-import { defineField, defineType } from 'sanity';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 import { imageWithAlt, richTextBlocks, seoFields } from './shared';
 
 export const blogPost = defineType({
@@ -13,6 +13,32 @@ export const blogPost = defineType({
     defineField({ name: 'author', title: 'Author', type: 'reference', to: [{ type: 'author' }] }),
     defineField({ name: 'mainImage', title: 'Main Image', ...imageWithAlt }),
     defineField({ name: 'body', title: 'Body', type: 'array', of: richTextBlocks }),
+    defineField({
+      name: 'faqs',
+      title: 'FAQs',
+      type: 'array',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          fields: [
+            defineField({ name: 'question', title: 'Question', type: 'string', validation: (rule) => rule.required() }),
+            defineField({ name: 'answer', title: 'Answer', type: 'text', rows: 3, validation: (rule) => rule.required() }),
+          ],
+        }),
+      ],
+    }),
+    defineField({
+      name: 'relatedProductCategoryHref',
+      title: 'Related Product Category URL',
+      type: 'string',
+      validation: (rule) => rule.custom((value) => !value || value.startsWith('/') || 'Use a relative site URL, e.g. /shop/emerald'),
+    }),
+    defineField({
+      name: 'relatedProductCategoryLabel',
+      title: 'Related Product Category Label',
+      type: 'string',
+      validation: (rule) => rule.max(80),
+    }),
     defineField({ name: 'featured', title: 'Featured', type: 'boolean', initialValue: false }),
     defineField({ name: 'publishedAt', title: 'Published At', type: 'datetime', initialValue: () => new Date().toISOString() }),
     ...seoFields,

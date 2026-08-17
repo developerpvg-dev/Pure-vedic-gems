@@ -18,7 +18,7 @@ import { RecentlyViewedProducts, type RecentlyViewedProduct } from '@/components
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
-import { buildMetadata } from '@/lib/utils/seo';
+import { buildMetadata, productMetadata } from '@/lib/utils/seo';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
@@ -52,6 +52,10 @@ function buildSKUMeta(product: Product): string {
   if (product.treatment && product.treatment !== 'none') parts.push(product.treatment);
   if (product.certification && !isNoCertification(product.certification)) parts.push(product.certification);
   return parts.join(' · ');
+}
+
+function productHeading(product: Product): string {
+  return formatProductDisplayName(product.name) || product.sku || product.sub_category || 'Certified Natural Gemstone';
 }
 
 function formatLabel(value?: string | null) {
@@ -107,7 +111,7 @@ function ProductJsonLd({
   };
   const structuredPrice = productStructuredOfferPrice(pricing);
   const offerAvailability = productOfferAvailability(pricing);
-  const displayName = formatProductDisplayName(product.name);
+  const displayName = productHeading(product);
   const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
   const averageRating = ratedReviews.length > 0
     ? ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
@@ -171,13 +175,9 @@ export async function generateMetadata({
   const imageUrl = product.thumbnail_url ?? images[0];
   const href = productHref(product);
 
-  return buildMetadata({
-    title: product.meta_title ?? `${formatProductDisplayName(product.name)} | PureVedicGems`,
-    description:
-      product.meta_description ??
-      product.short_desc ??
-      `Buy ${formatProductDisplayName(product.name)} at PureVedicGems`,
-    path: href,
+  return productMetadata(product, href, {
+    title: product.meta_title,
+    description: product.meta_description,
     image: imageUrl,
   });
 }
@@ -392,7 +392,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     product.certificate_url || product.certificate_file_url,
   );
   const skuMeta = buildSKUMeta(product);
-  const displayName = formatProductDisplayName(product.name);
+  const displayName = productHeading(product);
   const related = (relatedResult.data ?? []) as unknown as ProductCardType[];
   const expert = expertResult.data as {
     id: string; name: string; title: string | null;

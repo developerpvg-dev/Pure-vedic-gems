@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Loader2, Pencil, Save, X } from 'lucide-react';
 import {
+  BLOG_STAGE_CHIPS,
   CONTACT_STAGE_CHIPS,
   LEAD_ENQUIRY_TYPES,
   LEAD_FOLLOWUP_CHANNEL_LABEL,
@@ -18,7 +19,9 @@ import {
   REMEDIES_TEMPLATE,
   TELECOM_CALL_OUTCOMES,
   TELECOM_DELIVERY_OUTCOMES,
+  isBlogEnquiryLead,
   isContactEnquiryLead,
+  leadStageLabel,
   type LeadFollowUpChannel,
   type LeadNotConvertedReason,
   type LeadPipelineStage,
@@ -626,6 +629,7 @@ export function EnquiryDetail({
   const isTelecom = role === 'telecom';
   const isAstro = role === 'astrologer';
   const isContact = isContactEnquiryLead(lead.source, lead.enquiry_type);
+  const isBlog = isBlogEnquiryLead(lead.source, lead.enquiry_type);
   const owner = LEAD_STAGE_OWNER[stage] ?? 'manager';
   const duplicateMatches = lead.duplicate_matches ?? [];
 
@@ -694,6 +698,91 @@ export function EnquiryDetail({
     lead.remedies_text,
     lead.duplicate_matches,
   ]);
+
+  // ── Blog Ask-an-expert popup (Not addressed → Addressed) ─────────────────
+  if (isBlog) {
+    const open = stage !== 'closed';
+    return (
+      <div className="border-t border-gray-100 p-4 space-y-4">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-rose-100 bg-rose-50/50 px-3 py-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100'}`}>
+            {leadStageLabel(stage, { source: lead.source, enquiryType: lead.enquiry_type })}
+          </span>
+          <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-900">
+            Blog enquiry
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {BLOG_STAGE_CHIPS.map((s) => {
+            const active = (stage === 'closed' ? 'closed' : 'new') === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                disabled={saving || active}
+                onClick={() =>
+                  onUpdate(
+                    s === 'closed'
+                      ? { pipeline_stage: 'closed', status: 'resolved' }
+                      : { pipeline_stage: 'new', status: 'new' },
+                  )
+                }
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+                  active ? 'bg-rose-700 text-white' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-rose-50'
+                }`}
+              >
+                {leadStageLabel(s, { source: 'blog_popup' })}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="text-sm text-gray-600">
+          {open
+            ? 'This enquiry came from the blog Ask-an-expert popup. Contact the customer, then mark it Addressed.'
+            : 'This blog enquiry has been marked Addressed.'}
+        </p>
+
+        <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <ResponseField label="Name" value={lead.name} />
+          <ResponseField label="Phone" value={lead.phone || ''} />
+          <ResponseField label="Email" value={lead.email || '—'} />
+          <ResponseField label="Source" value={lead.source || 'blog_popup'} />
+          <ResponseField label="Blog / subject" value={lead.subject || ''} wide />
+        </div>
+
+        {lead.message ? (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Their query</p>
+            <p className="mt-1 whitespace-pre-wrap rounded-lg border border-rose-100 bg-rose-50/40 p-3 text-sm text-gray-800">
+              {lead.message}
+            </p>
+          </div>
+        ) : null}
+
+        {open ? (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
+            className="w-full rounded-lg bg-rose-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
+          >
+            Mark as Addressed
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => onUpdate({ pipeline_stage: 'new', status: 'new' })}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Reopen as Not addressed
+          </button>
+        )}
+      </div>
+    );
+  }
 
   // ── Contact form pipeline (no chart / remedies) ─────────────────────────
   if (isTelecom && isContact) {
@@ -1127,8 +1216,8 @@ export function EnquiryDetail({
                   disabled={saving || (o.code === 'custom' && !remarkNote.trim())}
                   title={o.hint}
                   onClick={() =>
-                    o.code === 'remedies_explain' || o.code === 'satisfied'
-                      ? onUpdate({ action: 'mark_remedies_explained' })
+                    o.code === 'remedies_explain' || o.code === 'satisfied' || o.code === 'remedies_forwarded'
+                      ? onUpdate({ action: 'mark_remedies_explained', remark_code: o.code })
                       : onAddRemark(o.code)
                   }
                   className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-50 ${
@@ -1707,14 +1796,33 @@ export function EnquiryDetail({
           {!isContact && (isManager || isTelecom) && stage === 'sent_to_customer' && Boolean(lead.remedies_text) && (
             <div className="rounded-lg border border-lime-200 bg-lime-50/40 p-3 space-y-3">
               <p className="text-xs font-semibold text-lime-900">7. Deliver remedies → mark explained</p>
-              <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-lime-100 bg-white p-3 font-mono text-xs text-gray-800">
-                {lead.remedies_text}
-              </pre>
+              {isManager ? (
+                <>
+                  <textarea
+                    value={remedies}
+                    onChange={(e) => setRemedies(e.target.value)}
+                    rows={12}
+                    className="w-full rounded-lg border border-lime-200 bg-white px-3 py-2 font-mono text-xs leading-relaxed"
+                  />
+                  <button
+                    type="button"
+                    disabled={saving || !remedies.trim()}
+                    onClick={() => onUpdate({ remedies_text: remedies })}
+                    className="rounded-lg border border-lime-300 bg-white px-3 py-1.5 text-xs font-semibold text-lime-900 hover:bg-lime-50 disabled:opacity-50"
+                  >
+                    Update remedies
+                  </button>
+                </>
+              ) : (
+                <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-lime-100 bg-white p-3 font-mono text-xs text-gray-800">
+                  {lead.remedies_text}
+                </pre>
+              )}
               {lead.forwarded_to_customer_at && (
                 <p className="text-[11px] text-lime-800">Sent for delivery {fmtDate(lead.forwarded_to_customer_at)}</p>
               )}
               <p className="text-[11px] text-lime-800">
-                After explaining the remedies to the customer, mark this so the lead moves to Explained Remedies.
+                After explaining on the call, mark Explained. If final remedies were emailed/forwarded instead, mark Remedies Forwarded/Emailed.
               </p>
               <button
                 type="button"
@@ -1724,12 +1832,44 @@ export function EnquiryDetail({
               >
                 Mark remedies explained
               </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onUpdate({ action: 'mark_remedies_explained', remark_code: 'remedies_forwarded' })}
+                className="w-full rounded-lg border border-lime-600 bg-white px-3 py-2 text-xs font-semibold text-lime-900 hover:bg-lime-50 disabled:opacity-50"
+              >
+                Remedies Forwarded/Emailed
+              </button>
             </div>
           )}
 
-          {/* ponytail: remedies stay readable after stage leaves sent_to_customer */}
+          {/* ponytail: managers can still edit remedies after email / conversion */}
           {!isContact &&
-            (isManager || isTelecom) &&
+            isManager &&
+            Boolean(lead.remedies_text) &&
+            (stage === 'conversion' || stage === 'remedies_explained') && (
+              <div className="rounded-lg border border-lime-200 bg-lime-50/40 p-3 space-y-2">
+                <p className="text-xs font-semibold text-lime-900">Remedies (update after email)</p>
+                <textarea
+                  value={remedies}
+                  onChange={(e) => setRemedies(e.target.value)}
+                  rows={12}
+                  className="w-full rounded-lg border border-lime-200 bg-white px-3 py-2 font-mono text-xs leading-relaxed"
+                />
+                <button
+                  type="button"
+                  disabled={saving || !remedies.trim()}
+                  onClick={() => onUpdate({ remedies_text: remedies })}
+                  className="rounded-lg border border-lime-300 bg-white px-3 py-1.5 text-xs font-semibold text-lime-900 hover:bg-lime-50 disabled:opacity-50"
+                >
+                  Save updated remedies
+                </button>
+              </div>
+            )}
+
+          {!isContact &&
+            isTelecom &&
+            !isManager &&
             Boolean(lead.remedies_text) &&
             (stage === 'conversion' || stage === 'remedies_explained' || stage === 'closed') && (
               <div className="rounded-lg border border-lime-200 bg-lime-50/40 p-3 space-y-2">

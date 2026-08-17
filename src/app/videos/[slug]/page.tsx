@@ -6,7 +6,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LibraryVideo, VideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoCard } from '@/components/videos/VideoCard';
-import { canonicalUrl } from '@/lib/utils/seo';
+import { canonicalUrl, fitDescription, fitTitle } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
@@ -36,20 +36,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical = canonicalUrl(`/videos/${encodeURIComponent(video.slug)}`);
 
   return {
-    title: video.seo_title ?? `${video.title} | Pure Vedic Gems`,
-    description,
+    title: fitTitle(video.seo_title ?? `${video.title} | PureVedicGems`),
+    description: fitDescription(description),
     alternates: { canonical },
     openGraph: {
-      title: video.title,
-      description,
+      title: fitTitle(video.seo_title ?? `${video.title} | PureVedicGems`),
+      description: fitDescription(description),
       type: 'video.other',
       url: canonical,
       images: [{ url: `https://i.ytimg.com/vi/${video.youtube_id}/maxresdefault.jpg` }],
     },
     twitter: {
       card: 'player',
-      title: video.title,
-      description,
+      title: fitTitle(video.seo_title ?? `${video.title} | PureVedicGems`),
+      description: fitDescription(description),
       images: [`https://i.ytimg.com/vi/${video.youtube_id}/maxresdefault.jpg`],
     },
   };

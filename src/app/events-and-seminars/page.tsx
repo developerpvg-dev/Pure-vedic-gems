@@ -5,12 +5,14 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { EventVideo, EventVideoCategory } from '@/lib/types/database';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoRow } from '@/components/events/VideoRow';
+import { buildMetadata } from '@/lib/utils/seo';
 import './events-page.css';
 
-export const metadata: Metadata = {
-  title: 'Events and Seminars | Pure Vedic Gems Videos',
+export const metadata: Metadata = buildMetadata({
+  title: 'Events & Seminars | PureVedicGems',
   description: 'Watch Pure Vedic Gems event, seminar, yagya, pooja, and spiritual ceremony videos grouped by event category.',
-};
+  path: '/events-and-seminars',
+});
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 

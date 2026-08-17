@@ -28,6 +28,7 @@ import {
   isLeadNotConvertedReason,
   isLeadPipelineStage,
   LEAD_NOT_CONVERTED_BY_CODE,
+  LEAD_REMARK_BY_CODE,
   type LeadPipelineStage,
 } from '@/lib/leads/constants';
 import { logLeadActivity } from '@/lib/leads/assign';
@@ -595,13 +596,30 @@ export async function PUT(
       return NextResponse.json({ error: 'This lead is not assigned to you' }, { status: 403 });
     }
 
+    const remarkCodeRaw = typeof updateData.remark_code === 'string' ? updateData.remark_code : 'remedies_explain';
+    const remarkCode =
+      remarkCodeRaw === 'remedies_forwarded' || remarkCodeRaw === 'satisfied' || remarkCodeRaw === 'remedies_explain'
+        ? remarkCodeRaw
+        : 'remedies_explain';
+    const remarkLabel = LEAD_REMARK_BY_CODE[remarkCode]?.label || 'Remedies Explain';
+    const activityAction =
+      remarkCode === 'remedies_forwarded' ? 'remedies_forwarded' : 'remedies_explained';
+    const notifyTitle =
+      remarkCode === 'remedies_forwarded'
+        ? 'Remedies Forwarded/Emailed — conversion pending'
+        : 'Remedies explained — conversion pending';
+    const notifyMessage =
+      remarkCode === 'remedies_forwarded'
+        ? `${current.name} · remedies forwarded/emailed`
+        : `${current.name} · telecaller explained remedies`;
+
     const { data, error } = await admin
       .from('enquiries')
       .update({
-        // ponytail: explained lands on Conversion chip — outcome recorded there before Closed
+        // ponytail: explained/forwarded lands on Conversion chip — outcome recorded there before Closed
         pipeline_stage: 'conversion',
         status: 'contacted',
-        last_remark_code: 'remedies_explain',
+        last_remark_code: remarkCode,
         last_remark_at: now,
         updated_at: now,
       })
@@ -616,18 +634,23 @@ export async function PUT(
 
     await logLeadActivity(admin, {
       enquiryId: id,
-      action: 'remedies_explained',
+      action: activityAction,
       fromValue: 'sent_to_customer',
       toValue: 'conversion',
       actorId: auth.user.id,
       actorName,
+      meta: { remark_code: remarkCode },
     });
 
     await admin.from('lead_remarks').insert({
       enquiry_id: id,
-      remark_code: 'remedies_explain',
-      remark_label: 'Remedies Explain',
-      note: isLeadManager(role) ? 'Marked explained by leads manager' : null,
+      remark_code: remarkCode,
+      remark_label: remarkLabel,
+      note: isLeadManager(role)
+        ? remarkCode === 'remedies_forwarded'
+          ? 'Marked Forwarded/Emailed by leads manager'
+          : 'Marked explained by leads manager'
+        : null,
       created_by: auth.user.id,
       created_by_name: actorName,
     });
@@ -638,12 +661,12 @@ export async function PUT(
           audience: 'admin',
           recipientRole: 'sales',
           type: 'lead_remedies_explained',
-          title: 'Remedies explained — conversion pending',
-          message: `${current.name} · telecaller explained remedies`,
+          title: notifyTitle,
+          message: notifyMessage,
           href: `/admin/leads?id=${id}&pipeline=conversion`,
           entityType: 'enquiry',
           entityId: id,
-          metadata: {},
+          metadata: { remark_code: remarkCode },
         },
       ]).catch(() => undefined);
     }

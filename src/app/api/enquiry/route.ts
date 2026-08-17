@@ -107,19 +107,25 @@ export async function POST(request: NextRequest) {
         recipientRole: 'sales',
         type: 'new_enquiry',
         title: dupeNote
-          ? `${dupeNote.split(' ·')[0]} — assign telecaller`
+          ? `${dupeNote.split(' ·')[0]} — review lead`
           : parsed.data.source === 'contact_form'
             ? 'New contact message — assign telecaller'
-            : 'New enquiry — assign telecaller',
+            : parsed.data.source === 'blog_popup' || parsed.data.source === 'blog_sidebar'
+              ? 'New blog enquiry'
+              : 'New enquiry — assign telecaller',
         message: dupeNote
           ? `${parsed.data.name} · ${dupeNote}`
           : parsed.data.source === 'contact_form'
             ? `${parsed.data.name} sent a contact form message. Forward to any telecaller.`
-            : `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
+            : parsed.data.source === 'blog_popup' || parsed.data.source === 'blog_sidebar'
+              ? `${parsed.data.name} submitted a blog Ask-an-expert enquiry.`
+              : `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
         href:
           parsed.data.source === 'contact_form'
             ? `/admin/leads?kind=contact&type=enquiry&id=${data.id}`
-            : `/admin/leads?type=enquiry&id=${data.id}`,
+            : parsed.data.source === 'blog_popup' || parsed.data.source === 'blog_sidebar'
+              ? `/admin/leads?kind=blog&type=enquiry&id=${data.id}`
+              : `/admin/leads?type=enquiry&id=${data.id}`,
         entityType: 'enquiry',
         entityId: data.id,
         metadata: {

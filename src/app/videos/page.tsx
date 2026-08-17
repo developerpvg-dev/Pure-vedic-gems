@@ -4,15 +4,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LibraryVideo, VideoCategory } from '@/lib/types/database';
 import { VideoCard } from '@/components/videos/VideoCard';
-import { canonicalUrl } from '@/lib/utils/seo';
+import { buildMetadata, canonicalUrl } from '@/lib/utils/seo';
 import './videos-page.css';
 
-export const metadata: Metadata = {
-  title: 'Vedic Gemstone & Astrology Video Library | Pure Vedic Gems',
+export const metadata: Metadata = buildMetadata({
+  title: 'Vedic Gemstone & Astrology Video Library | PureVedicGems',
   description:
     'Watch free educational videos on Vedic jyotish remedies, gemstones, rudraksha, karmic remedies, ratna shuddhikaran and pran pratishtha from the Pure Vedic Gems experts.',
-  alternates: { canonical: canonicalUrl('/videos') },
-};
+  path: '/videos',
+});
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 

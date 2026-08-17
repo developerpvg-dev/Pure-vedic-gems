@@ -4,11 +4,13 @@ import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { Testimonial } from '@/lib/types/database';
 import { TestimonialCard } from '@/components/testimonials/TestimonialCard';
+import { buildMetadata } from '@/lib/utils/seo';
 
-export const metadata: Metadata = {
-  title: 'Testimonials | Pure Vedic Gems Reviews',
+export const metadata: Metadata = buildMetadata({
+  title: 'Customer Reviews & Testimonials | PureVedicGems',
   description: 'Read customer testimonials and proof archives from Pure Vedic Gems clients across India and overseas.',
-};
+  path: '/testimonials',
+});
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 

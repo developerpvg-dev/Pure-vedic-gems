@@ -99,7 +99,7 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
     <section
       className="hero pvg-hero-clean pvg-hero-carousel"
       id="hero"
-      aria-label="Hero slideshow"
+      aria-labelledby="home-hero-heading"
       tabIndex={0}
       style={{ '--hero-slide-ms': `${SLIDE_INTERVAL_MS}ms` } as CSSProperties}
       onKeyDown={(event) => {
@@ -107,6 +107,9 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
         if (event.key === 'ArrowRight') goToNext();
       }}
     >
+      <h1 id="home-hero-heading" className="sr-only">
+        Certified Vedic Gemstones and Rudraksha from PureVedicGems
+      </h1>
       {activeSlides.map((item, index) => {
         if (!visibleIndices.has(index)) return null;
 

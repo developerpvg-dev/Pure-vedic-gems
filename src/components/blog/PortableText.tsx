@@ -35,13 +35,13 @@ interface MarkDef {
   href?: string;
 }
 
-function renderMarks(span: Span, markDefs: MarkDef[] = []) {
+function renderMarks(span: Span, markDefs: MarkDef[] = [], allowLinks = true) {
   let node: React.ReactNode = span.text ?? '';
   if (!span.marks?.length) return node;
 
   for (const mark of span.marks) {
     const def = markDefs.find((d) => d._key === mark);
-    if (def?._type === 'link' && def.href) {
+    if (allowLinks && def?._type === 'link' && def.href) {
       node = (
         <a
           href={def.href}
@@ -64,9 +64,9 @@ function renderMarks(span: Span, markDefs: MarkDef[] = []) {
   return node;
 }
 
-function renderChildren(children: Span[] = [], markDefs: MarkDef[] = []) {
+function renderChildren(children: Span[] = [], markDefs: MarkDef[] = [], allowLinks = true) {
   return children.map((span, i) => (
-    <span key={span._key ?? i}>{renderMarks(span, markDefs)}</span>
+    <span key={span._key ?? i}>{renderMarks(span, markDefs, allowLinks)}</span>
   ));
 }
 
@@ -83,11 +83,12 @@ function slugifyHeading(value: string) {
 }
 
 function renderBlock(block: Block) {
-  const children = renderChildren(block.children, block.markDefs);
+  const isHeading = block.style?.startsWith('h');
+  const children = renderChildren(block.children, block.markDefs, !isHeading);
   const headingId = slugifyHeading(getPlainText(block.children));
   switch (block.style) {
     case 'h1':
-      return <h1 id={headingId}>{children}</h1>;
+      return <h2 id={headingId}>{children}</h2>;
     case 'h2':
       return <h2 id={headingId}>{children}</h2>;
     case 'h3':

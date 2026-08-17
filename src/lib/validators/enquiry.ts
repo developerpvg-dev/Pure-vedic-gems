@@ -3,7 +3,13 @@ import { LEAD_PIPELINE_STAGES, LEAD_REMARK_CODES } from '@/lib/leads/constants';
 
 export const enquiryCreateSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200).trim(),
-  email: z.string().email('Invalid email').max(255).trim(),
+  email: z
+    .string()
+    .trim()
+    .max(255)
+    .optional()
+    .transform((value) => (value ?? '').toLowerCase())
+    .refine((value) => value === '' || z.string().email().safeParse(value).success, 'Invalid email'),
   phone: z.string().max(20).optional(),
   subject: z.string().max(200).optional(),
   message: z.string().min(1, 'Message is required').max(5000).trim(),

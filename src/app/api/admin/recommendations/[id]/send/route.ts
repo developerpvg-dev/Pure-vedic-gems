@@ -92,12 +92,21 @@ export async function POST(_request: NextRequest, ctx: Ctx) {
   if (report.enquiry_id) {
     await admin.from('lead_remarks').insert({
       enquiry_id: report.enquiry_id,
-      remark_code: 'email_sent',
-      remark_label: 'Recommendation emailed',
+      remark_code: 'remedies_forwarded',
+      remark_label: 'Remedies Forwarded/Emailed',
       note: `Report: ${report.title}. Link: /r/${report.public_token}`,
       created_by: auth.user.id,
       created_by_name: auth.member.name,
     });
+    await admin
+      .from('enquiries')
+      .update({
+        last_remark_code: 'remedies_forwarded',
+        last_remark_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', report.enquiry_id)
+      .eq('pipeline_stage', 'sent_to_customer');
   }
 
   if (updateError || !updated) {

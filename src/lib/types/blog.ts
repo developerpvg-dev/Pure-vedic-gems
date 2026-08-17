@@ -27,7 +27,7 @@ export interface SanityBlogPost {
   excerpt?: string;
   body?: unknown[]; // Portable Text blocks
   category?: SanityCategory;
-  mainImage?: SanityImageSource;
+  mainImage?: SanityImageSource & { alt?: string };
   publishedAt: string;
   author?: SanityAuthor;
   estimatedReadingTime?: number;
@@ -35,4 +35,7 @@ export interface SanityBlogPost {
   seoTitle?: string;
   seoDescription?: string;
   ogImage?: SanityImageSource;
+  faqs?: Array<{ question: string; answer: string }>;
+  relatedProductCategoryHref?: string;
+  relatedProductCategoryLabel?: string;
 }

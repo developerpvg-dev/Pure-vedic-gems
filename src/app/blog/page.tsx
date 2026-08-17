@@ -5,25 +5,23 @@ import {
   getAllBlogCategories,
   getBlogPostCount,
 } from '@/lib/sanity/queries';
-import { BlogFeaturedPost, BlogPostCard } from '@/components/blog/BlogPostCard';
+import { BlogFeaturedPost } from '@/components/blog/BlogPostCard';
+import { BlogPostRow } from '@/components/blog/BlogPostRow';
+import { BlogChooseGemRail } from '@/components/blog/BlogChooseGemRail';
 import { BlogPagination, BLOG_POSTS_PER_PAGE } from '@/components/blog/BlogPagination';
 import type { SanityBlogPost, SanityCategory } from '@/lib/types/blog';
 import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/utils/seo';
 import './blog-page.css';
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: 'Blog — PureVedicGems',
+export const metadata: Metadata = buildMetadata({
+  title: 'Vedic Gemstone Guides & Astrology Insights | PureVedicGems',
   description:
     'Expert insights on Vedic gemstones, astrology, spiritual jewelry, and gemstone buying guides from 4 generations of expertise.',
-  openGraph: {
-    title: 'Blog — PureVedicGems',
-    description:
-      'Expert insights on Vedic gemstones, astrology, spiritual jewelry, and gemstone buying guides.',
-    type: 'website',
-  },
-};
+  path: '/blog',
+});
 
 export default async function BlogPage({
   searchParams,
@@ -94,21 +92,32 @@ export default async function BlogPage({
           </section>
         )}
 
-        {remainingPosts.length > 0 ? (
-          <>
-            <section className="pvg-blog-grid" aria-label="All articles">
-              {remainingPosts.map((post) => (
-                <BlogPostCard key={post._id} post={post} />
-              ))}
-            </section>
-            <BlogPagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
-          </>
-        ) : (
-          <div className="pvg-blog-empty">
-            <p className="pvg-blog-empty-title">No blog posts published yet.</p>
-            <p className="pvg-blog-empty-copy">Content will appear here once published in Sanity Studio.</p>
+        <div className="pvg-blog-archive-layout">
+          <div className="pvg-blog-archive-main">
+            {remainingPosts.length > 0 ? (
+              <>
+                <div className="pvg-blog-section-head">
+                  <h2>Latest Articles</h2>
+                  <p>
+                    Page {currentPage} of {totalPages}
+                  </p>
+                </div>
+                <section className="pvg-blog-row-list" aria-label="All articles">
+                  {remainingPosts.map((post) => (
+                    <BlogPostRow key={post._id} post={post} />
+                  ))}
+                </section>
+                <BlogPagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
+              </>
+            ) : (
+              <div className="pvg-blog-empty">
+                <p className="pvg-blog-empty-title">No blog posts published yet.</p>
+                <p className="pvg-blog-empty-copy">Content will appear here once published in Sanity Studio.</p>
+              </div>
+            )}
           </div>
-        )}
+          <BlogChooseGemRail />
+        </div>
 
         <script
           type="application/ld+json"

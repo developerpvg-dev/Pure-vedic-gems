@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
@@ -22,6 +22,7 @@ import { ShippingSection } from '@/components/checkout/ShippingSection';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
 import { RewardPointsRedemption, type CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
+import { trackEcommerceEvent } from '@/lib/utils/analytics';
 import Link from 'next/link';
 
 type CheckoutStep = 'contact' | 'shipping' | 'payment';
@@ -54,6 +55,17 @@ export default function CheckoutPage() {
   const isContactComplete = contactData !== null;
   const isShippingComplete = shippingData !== null;
   const cartSubtotal = useMemo(() => cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart.items]);
+  const checkoutTracked = useRef(false);
+
+  useEffect(() => {
+    if (checkoutTracked.current || cart.items.length === 0) return;
+    checkoutTracked.current = true;
+    trackEcommerceEvent('begin_checkout', {
+      value: cartSubtotal,
+      currency: 'INR',
+      num_items: cart.items.reduce((sum, item) => sum + item.quantity, 0),
+    });
+  }, [cart.items, cartSubtotal]);
 
   useEffect(() => {
     let active = true;

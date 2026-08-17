@@ -28,6 +28,9 @@ const BLOG_POST_DETAIL_FIELDS = `
   publishedAt,
   "author": author->{ name, image, bio },
   "estimatedReadingTime": round(length(pt::text(body)) / 5 / 200),
+  faqs,
+  relatedProductCategoryHref,
+  relatedProductCategoryLabel,
   seoTitle,
   seoDescription,
   ogImage

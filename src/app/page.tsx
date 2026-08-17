@@ -16,8 +16,17 @@ import { PvgReferenceSections, type HomeTestimonial } from '@/components/home/Pv
 import { HomeVideosSection } from '@/components/home/HomeVideosSection';
 import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
 import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
+import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
+
+export const metadata: Metadata = buildMetadata({
+  title: 'PureVedicGems | Heritage Vedic Gemstones Since 1937',
+  description:
+    'Shop certified natural Vedic gemstones, Rudraksha, and custom jewelry with expert astrological guidance from a heritage brand.',
+  path: '/',
+});
 
 async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
   // ponytail: public client so homepage ISR isn't defeated by cookies()

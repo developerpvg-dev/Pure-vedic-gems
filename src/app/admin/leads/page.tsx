@@ -21,6 +21,7 @@ import { AdminStatCard } from '@/components/admin/AdminPageShell';
 import { EnquiryDetail, type EnquiryLead, type LeadCaps } from '@/components/admin/leads/EnquiryDetail';
 import {
   ASTRO_STAGE_CHIPS,
+  BLOG_STAGE_CHIPS,
   CONTACT_STAGE_CHIPS,
   CONTACT_TELECOM_STAGE_CHIPS,
   LEAD_PIPELINE_LABELS,
@@ -29,14 +30,16 @@ import {
   MANAGER_STAGE_FILTERS,
   TELECOM_CALL_OUTCOMES,
   TELECOM_STAGE_CHIPS,
+  isBlogEnquiryLead,
   isContactEnquiryLead,
+  leadStageLabel,
   type LeadPipelineStage,
   type LeadRemarkCode,
 } from '@/lib/leads/constants';
 import { formatDob } from '@/lib/utils/format';
 import { formatChargedMoney } from '@/lib/currency/format-charged';
 
-type LeadKind = 'remedies' | 'consultation' | 'contact';
+type LeadKind = 'remedies' | 'consultation' | 'contact' | 'blog';
 
 function readLeadQuery() {
   if (typeof window === 'undefined') {
@@ -45,7 +48,9 @@ function readLeadQuery() {
   const q = new URLSearchParams(window.location.search);
   const kindRaw = q.get('kind') || '';
   const kind: '' | LeadKind =
-    kindRaw === 'contact' || kindRaw === 'consultation' || kindRaw === 'remedies' ? kindRaw : '';
+    kindRaw === 'contact' || kindRaw === 'consultation' || kindRaw === 'remedies' || kindRaw === 'blog'
+      ? kindRaw
+      : '';
   return {
     assigned_to: q.get('assigned_to') || '',
     astrologer_id: q.get('astrologer_id') || '',
@@ -235,7 +240,13 @@ export default function LeadsPage() {
     const params = new URLSearchParams({ page: String(page), per_page: String(LEADS_PER_PAGE), type: 'enquiry' });
     params.set(
       'enquiry_type',
-      kind === 'remedies' ? 'remedies' : kind === 'consultation' ? 'consultation' : 'contact'
+      kind === 'remedies'
+        ? 'remedies'
+        : kind === 'consultation'
+          ? 'consultation'
+          : kind === 'blog'
+            ? 'blog'
+            : 'contact'
     );
     if (pipeline) params.set('pipeline', pipeline);
     else params.set('queue', queue);
@@ -384,13 +395,15 @@ export default function LeadsPage() {
 
   const stageChips: LeadPipelineStage[] = isAstroDesk
     ? [...ASTRO_STAGE_CHIPS]
-    : kind === 'contact'
-      ? isTelecomDesk
-        ? [...CONTACT_TELECOM_STAGE_CHIPS]
-        : [...CONTACT_STAGE_CHIPS]
-      : isTelecomDesk
-        ? [...TELECOM_STAGE_CHIPS]
-        : [...MANAGER_STAGE_FILTERS];
+    : kind === 'blog'
+      ? [...BLOG_STAGE_CHIPS]
+      : kind === 'contact'
+        ? isTelecomDesk
+          ? [...CONTACT_TELECOM_STAGE_CHIPS]
+          : [...CONTACT_STAGE_CHIPS]
+        : isTelecomDesk
+          ? [...TELECOM_STAGE_CHIPS]
+          : [...MANAGER_STAGE_FILTERS];
 
   function resetFilters() {
     setPipeline('');
@@ -411,7 +424,13 @@ export default function LeadsPage() {
     const params = new URLSearchParams({ type: 'enquiry', format: 'xlsx' });
     params.set(
       'enquiry_type',
-      kind === 'remedies' ? 'remedies' : kind === 'consultation' ? 'consultation' : 'contact'
+      kind === 'remedies'
+        ? 'remedies'
+        : kind === 'consultation'
+          ? 'consultation'
+          : kind === 'blog'
+            ? 'blog'
+            : 'contact'
     );
     if (pipeline) params.set('pipeline', pipeline);
     else params.set('queue', queue);
@@ -452,7 +471,9 @@ export default function LeadsPage() {
                 ? isTelecomDesk
                   ? 'Contact form messages — call the customer, log the outcome, then close.'
                   : 'Contact form messages → forward to any telecaller → they call & close'
-                : isTelecomDesk
+                : kind === 'blog'
+                  ? 'Blog Ask-an-expert popup enquiries — Not addressed → Addressed'
+                  : isTelecomDesk
                   ? 'Filter by pipeline stage. Call status & dates are under More filters.'
                   : 'New → Telecaller → Verified → Astrologer → Remedies ready → Deliver → Explained → Conversion → Closed'}
           </p>
@@ -500,7 +521,21 @@ export default function LeadsPage() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
-          <AdminStatCard label={kind === 'remedies' ? 'Remedies leads' : kind === 'consultation' ? 'Consultations' : 'Contact messages'} value={summary.totalEnquiries.toLocaleString('en-IN')} icon={UsersIcon} tone="text-gray-900" bg="bg-gray-50" />
+          <AdminStatCard
+            label={
+              kind === 'remedies'
+                ? 'Remedies leads'
+                : kind === 'consultation'
+                  ? 'Consultations'
+                  : kind === 'blog'
+                    ? 'Blog enquiries'
+                    : 'Contact messages'
+            }
+            value={summary.totalEnquiries.toLocaleString('en-IN')}
+            icon={UsersIcon}
+            tone="text-gray-900"
+            bg="bg-gray-50"
+          />
           <AdminStatCard label="New / unassigned" value={`${summary.newEnquiries} / ${summary.unassigned}`} icon={MessageSquare} tone="text-sky-700" bg="bg-sky-50" />
           <AdminStatCard label="With telecaller" value={summary.verifying.toLocaleString('en-IN')} icon={Phone} tone="text-amber-700" bg="bg-amber-50" />
           {kind === 'contact' ? (
@@ -542,6 +577,7 @@ export default function LeadsPage() {
           <button type="button" onClick={() => { setKind('remedies'); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${kind === 'remedies' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>Remedies leads (₹101)</button>
           <button type="button" onClick={() => { setKind('consultation'); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${kind === 'consultation' ? 'bg-violet-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>Detailed consultations</button>
           <button type="button" onClick={() => { setKind('contact'); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${kind === 'contact' ? 'bg-sky-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>Contact messages</button>
+          <button type="button" onClick={() => { setKind('blog'); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${kind === 'blog' ? 'bg-rose-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>Blog enquiries</button>
         </div>
         <button type="button" onClick={() => setShowFilters((v) => !v)} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
           <Filter className="h-3.5 w-3.5" />
@@ -557,7 +593,7 @@ export default function LeadsPage() {
           <button type="button" onClick={() => { setPipeline(''); setQueue('all'); setPage(1); }} className={`rounded-full px-3 py-1 text-[11px] font-semibold ${!pipeline ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>All stages</button>
           {stageChips.map((stage) => (
             <button key={stage} type="button" onClick={() => { setPipeline(stage); setQueue('all'); setPage(1); }} className={`rounded-full px-3 py-1 text-[11px] font-semibold ${pipeline === stage ? 'bg-amber-600 text-white' : `${STAGE_COLORS[stage]} hover:opacity-80`}`}>
-              {LEAD_PIPELINE_LABELS[stage]}
+              {kind === 'blog' ? leadStageLabel(stage, { source: 'blog_popup' }) : LEAD_PIPELINE_LABELS[stage]}
               {summary.byStage?.[stage] != null ? ` (${summary.byStage[stage]})` : ''}
             </button>
           ))}
@@ -725,13 +761,17 @@ export default function LeadsPage() {
                       <p className="truncate text-sm font-semibold text-gray-900">{name}</p>
                       {isEnquiry ? (
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          isContactEnquiryLead(lead.source, lead.enquiry_type)
+                          isBlogEnquiryLead(lead.source, lead.enquiry_type)
+                            ? 'bg-rose-50 text-rose-800'
+                            : isContactEnquiryLead(lead.source, lead.enquiry_type)
                             ? 'bg-sky-50 text-sky-800'
                             : (lead.enquiry_type || '').toLowerCase().includes('consultation')
                               ? 'bg-purple-50 text-purple-700'
                               : 'bg-amber-50 text-amber-700'
                         }`}>
-                          {isContactEnquiryLead(lead.source, lead.enquiry_type)
+                          {isBlogEnquiryLead(lead.source, lead.enquiry_type)
+                            ? 'Blog'
+                            : isContactEnquiryLead(lead.source, lead.enquiry_type)
                             ? 'Contact'
                             : (lead.enquiry_type || '').toLowerCase().includes('consultation')
                               ? 'Consultation'
@@ -743,7 +783,9 @@ export default function LeadsPage() {
                         </span>
                       )}
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100 text-gray-600'}`}>
-                        {isEnquiry ? LEAD_PIPELINE_LABELS[stage as LeadPipelineStage] || stage : stage}
+                        {isEnquiry
+                          ? leadStageLabel(stage as string, { source: lead.source, enquiryType: lead.enquiry_type })
+                          : stage}
                       </span>
                       {isEnquiry && lead.details_confirmed && (
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Details OK</span>

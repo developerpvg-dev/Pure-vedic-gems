@@ -99,7 +99,7 @@ export async function appendLeadRemark(
       enquiryPatch.status = 'contacted';
     }
   } else if (
-    (input.code === 'remedies_explain' || input.code === 'satisfied') &&
+    (input.code === 'remedies_explain' || input.code === 'satisfied' || input.code === 'remedies_forwarded') &&
     (stage === 'sent_to_customer' || stage === 'follow_up' || stage === 'remedies_explained' || stage === 'conversion')
   ) {
     enquiryPatch.pipeline_stage = 'conversion';
@@ -145,8 +145,13 @@ export async function appendLeadRemark(
         audience: 'admin',
         recipientRole: 'sales',
         type: 'lead_remedies_explained',
-        title: 'Remedies explained — conversion pending',
-        message: `${who} ${sr} · telecaller explained remedies`.trim(),
+        title:
+          input.code === 'remedies_forwarded'
+            ? 'Remedies Forwarded/Emailed — conversion pending'
+            : 'Remedies explained — conversion pending',
+        message: `${who} ${sr} · ${
+          input.code === 'remedies_forwarded' ? 'remedies forwarded/emailed' : 'telecaller explained remedies'
+        }`.trim(),
         href: `/admin/leads?id=${input.enquiryId}&pipeline=conversion`,
         entityType: 'enquiry',
         entityId: input.enquiryId,
@@ -156,8 +161,13 @@ export async function appendLeadRemark(
         audience: 'admin',
         recipientRole: 'admin',
         type: 'lead_remedies_explained',
-        title: 'Remedies explained — conversion pending',
-        message: `${who} ${sr} · telecaller explained remedies`.trim(),
+        title:
+          input.code === 'remedies_forwarded'
+            ? 'Remedies Forwarded/Emailed — conversion pending'
+            : 'Remedies explained — conversion pending',
+        message: `${who} ${sr} · ${
+          input.code === 'remedies_forwarded' ? 'remedies forwarded/emailed' : 'telecaller explained remedies'
+        }`.trim(),
         href: `/admin/leads?id=${input.enquiryId}&pipeline=conversion`,
         entityType: 'enquiry',
         entityId: input.enquiryId,

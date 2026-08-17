@@ -571,10 +571,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     const isGemKind = config.kind === 'navratna' || config.kind === 'upratna';
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
-    const defaultMetaTitle = truncateText(`${trimmedName} | PureVedicGems`, 70);
+    const defaultMetaTitle = truncateText(`${trimmedName} | PureVedicGems`, 60);
     const defaultMetaDescription = truncateText(
       stripHtml(shortDesc || description || `Buy ${trimmedName} from PureVedicGems with expert guidance and secure checkout.`),
-      160,
+      155,
     );
     const defaultCanonicalUrl = productCanonicalUrl(config.category, trimmedSlug);
     const effectiveOrigin = config.kind === 'rudraksha' ? rudrakshaOrigin || undefined : origin || undefined;

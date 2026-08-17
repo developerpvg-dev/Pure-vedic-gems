@@ -136,7 +136,7 @@ export default function PrivacyPolicyPage() {
                   Cookies &amp; Analytics
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Essential cookies support cart, checkout, account security, and fraud prevention. Analytics cookies are loaded only after consent. You can change your choice by clearing the cookie named <strong className="text-primary">pvg_cookie_consent</strong> and revisiting the site.
+                  Essential cookies support cart, checkout, account security, and fraud prevention. We also use analytics cookies to understand site traffic and improve the storefront.
                 </p>
               </div>
             </ScrollReveal>
@@ -150,7 +150,7 @@ export default function PrivacyPolicyPage() {
                   <li>• Request a copy of your account, order, consultation, saved-item, and notification data.</li>
                   <li>• Ask us to correct inaccurate personal, billing, or birth-detail information.</li>
                   <li>• Request deletion where retention is not legally required for invoices, tax, fraud prevention, or disputes.</li>
-                  <li>• Withdraw marketing, WhatsApp, or analytics consent without affecting essential order communication.</li>
+                  <li>• Withdraw marketing or WhatsApp consent without affecting essential order communication.</li>
                 </ul>
               </div>
             </ScrollReveal>

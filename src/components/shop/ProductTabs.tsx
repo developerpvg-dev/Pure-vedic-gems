@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Star, Shield, Book, Gem, MessageSquare } from 'lucide-react';
 import type { Product } from '@/lib/types/product';
 import { isNoCertification } from '@/lib/utils/format';
+import { demoteBodyH1s } from '@/lib/utils/html-headings';
 
 interface ProductTabsProps {
   product: Product;
@@ -137,7 +138,7 @@ export function ProductTabs({ product, reviews = [], reviewPoolLabel = null }: P
             {product.description && (
               <div
                 className="prose prose-sm max-w-none text-[14px] leading-[1.9] text-brand-muted [&_a]:text-brand-accent [&_a]:underline [&_h1]:font-heading [&_h2]:font-heading [&_h3]:font-heading [&_h4]:font-heading [&_li]:marker:text-brand-accent [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: demoteBodyH1s(product.description) }}
               />
             )}
             {benefits.length > 0 && (

@@ -39,6 +39,33 @@ const OFFICIAL_SAME_AS = [
   'https://www.youtube.com/@purevedicgems',
 ] as const;
 
+function cleanSeoText(value: string) {
+  return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function truncateAtWord(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  const truncated = value.slice(0, maxLength + 1);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > 0 ? truncated.slice(0, lastSpace) : value.slice(0, maxLength)).trim();
+}
+
+export function fitTitle(value: string, maxLength = 60) {
+  const title = cleanSeoText(value);
+  if (title.length <= maxLength) return title;
+
+  const brandSuffix = ` | ${BRAND_NAME}`;
+  if (title.endsWith(brandSuffix) && brandSuffix.length < maxLength) {
+    return `${truncateAtWord(title.slice(0, -brandSuffix.length), maxLength - brandSuffix.length)}${brandSuffix}`;
+  }
+
+  return truncateAtWord(title, maxLength);
+}
+
+export function fitDescription(value: string, maxLength = 155) {
+  return truncateAtWord(cleanSeoText(value), maxLength);
+}
+
 function productDescription(product: Product | ProductCard) {
   const detailedProduct = product as Product;
   return detailedProduct.short_desc || detailedProduct.clean_description || `${formatProductDisplayName(product.name)} from ${BRAND_NAME}.`;
@@ -70,41 +97,54 @@ export function defaultOgImageUrl() {
 export function buildMetadata({ title, description, path = '/', image, type = 'website', noIndex = false }: MetadataInput): Metadata {
   const canonical = canonicalUrl(path);
   const ogImage = image ? absoluteUrl(image) : defaultOgImageUrl();
+  const seoTitle = fitTitle(title);
+  const seoDescription = fitDescription(description);
 
   return {
-    title: { absolute: title },
-    description,
+    title: { absolute: seoTitle },
+    description: seoDescription,
     alternates: { canonical },
     openGraph: {
-      title,
-      description,
+      title: seoTitle,
+      description: seoDescription,
       type,
       url: canonical,
       siteName: BRAND_NAME,
       locale: 'en_IN',
-      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: seoTitle }],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description,
+      title: seoTitle,
+      description: seoDescription,
       images: [ogImage],
     },
     robots: noIndex ? { index: false, follow: false } : { index: true, follow: true },
   };
 }
 
-export function productMetadata(product: Product | ProductCard, path: string): Metadata {
+export function productMetadata(
+  product: Product | ProductCard,
+  path: string,
+  overrides?: { title?: string | null; description?: string | null; image?: string | null },
+): Metadata {
   const displayName = formatProductDisplayName(product.name);
-  const gemDetails = [product.carat_weight ? `${product.carat_weight} carat` : null, product.origin, product.planet]
+  const detailedProduct = product as Product;
+  const gemDetails = [
+    product.carat_weight ? `${product.carat_weight} carat` : null,
+    product.origin,
+    product.planet,
+    detailedProduct.sku ? `SKU ${detailedProduct.sku}` : null,
+  ]
     .filter(Boolean)
     .join(' ');
-  const title = `${displayName}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
+  const title = overrides?.title || `${displayName}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
   const description =
+    overrides?.description ||
     productDescription(product) ||
     `Shop ${displayName}${gemDetails ? ` (${gemDetails})` : ''} from ${BRAND_NAME}. Certified gemstone details, pricing, and expert guidance.`;
 
-  return buildMetadata({ title, description, path, image: product.thumbnail_url });
+  return buildMetadata({ title, description, path, image: overrides?.image ?? product.thumbnail_url });
 }
 
 export function categoryMetadata({ title, description, path, image }: MetadataInput): Metadata {

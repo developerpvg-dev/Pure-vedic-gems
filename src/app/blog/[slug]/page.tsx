@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, MessageCircle } from 'lucide-react';
 import { urlFor } from '@/lib/sanity/client';
 import {
   getBlogPostBySlug,
@@ -11,8 +11,14 @@ import {
 import { PortableText } from '@/components/blog/PortableText';
 import { ShareButtons } from '@/components/blog/ShareButtons';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
+import { BlogConversionRail } from '@/components/blog/BlogConversionRail';
+import { BlogLeadPopup } from '@/components/blog/BlogLeadPopup';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import type { Metadata } from 'next';
+import { auditedBlogEnrichment } from '@/lib/blog/audit-enrichment';
+import { getBlogRelatedProducts } from '@/lib/blog/blog-rail-data';
+import { inferRelatedProductCategory } from '@/lib/blog/related-product-category';
+import { blogMetadata, faqJsonLd } from '@/lib/utils/seo';
 import '../blog-page.css';
 
 export const revalidate = 3600;
@@ -31,33 +37,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = (await getBlogPostBySlug(slug)) as SanityBlogPost | null;
   if (!post) return { title: 'Post Not Found — PureVedicGems' };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
   const ogImage = post.ogImage
     ? urlFor(post.ogImage).width(1200).height(630).url()
     : post.mainImage
       ? urlFor(post.mainImage).width(1200).height(630).url()
       : undefined;
 
+  const metadata = blogMetadata({
+    title: post.seoTitle || `${post.title} | PureVedicGems`,
+    description: post.seoDescription || post.excerpt || 'Read this Vedic gemstone guide from PureVedicGems.',
+    path: `/blog/${slug}`,
+    image: ogImage,
+  });
+
   return {
-    title: post.seoTitle || `${post.title} — PureVedicGems Blog`,
-    description: post.seoDescription || post.excerpt || '',
+    ...metadata,
     openGraph: {
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt || '',
+      ...metadata.openGraph,
       type: 'article',
       publishedTime: post.publishedAt,
       authors: post.author?.name ? [post.author.name] : undefined,
-      images: ogImage ? [{ url: ogImage, width: 1200, height: 630 }] : undefined,
-      url: `${siteUrl}/blog/${slug}`,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt || '',
-      images: ogImage ? [ogImage] : undefined,
-    },
-    alternates: {
-      canonical: `${siteUrl}/blog/${slug}`,
     },
   };
 }
@@ -71,6 +70,28 @@ export default async function BlogPostPage({ params }: PageProps) {
   const relatedPosts = post.category?._id
     ? ((await getRelatedBlogPosts(post._id, post.category._id, 3)) as SanityBlogPost[])
     : [];
+  const auditEnrichment = auditedBlogEnrichment(slug);
+  const faqs = post.faqs?.length ? post.faqs : (auditEnrichment?.faqs ?? []);
+  const inferredCategory = inferRelatedProductCategory({
+    slug,
+    title: post.title,
+    categorySlug: post.category?.slug?.current ?? (typeof post.category?.slug === 'string' ? post.category.slug : null),
+    categoryTitle: post.category?.title,
+  });
+  let relatedProductCategoryHref =
+    post.relatedProductCategoryHref ??
+    auditEnrichment?.relatedProductCategoryHref ??
+    inferredCategory?.relatedProductCategoryHref;
+  let relatedProductCategoryLabel =
+    post.relatedProductCategoryLabel ??
+    auditEnrichment?.relatedProductCategoryLabel ??
+    inferredCategory?.relatedProductCategoryLabel;
+  const relatedResult = await getBlogRelatedProducts(relatedProductCategoryHref);
+  const relatedProducts = relatedResult.products;
+  if (relatedResult.usedFallback) {
+    relatedProductCategoryHref = '/shop';
+    relatedProductCategoryLabel = 'Featured Pieces';
+  }
 
   // ponytail: width-only so Sanity doesn't crop; height comes from the image
   const heroImage = post.mainImage
@@ -99,10 +120,12 @@ export default async function BlogPostPage({ params }: PageProps) {
       '@id': `${siteUrl}/blog/${slug}`,
     },
   };
+  const faqSchema = faqJsonLd(faqs);
 
   return (
     <main className="pvg-blog-page font-body text-[#15110d]">
-      <article className="pvg-blog-article-inner">
+      <div className="pvg-blog-post-layout">
+        <article className="pvg-blog-article-inner">
         <nav className="pvg-blog-breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link>
           <span aria-hidden="true">/</span>
@@ -119,11 +142,23 @@ export default async function BlogPostPage({ params }: PageProps) {
           <span aria-current="page" className="line-clamp-1">{post.title}</span>
         </nav>
 
+        <Link
+          href={
+            post.category
+              ? `/blog/category/${post.category.slug?.current ?? post.category.slug}`
+              : '/blog'
+          }
+          className="pvg-blog-back"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {post.category ? `Back to ${post.category.title}` : 'Back to Blog'}
+        </Link>
+
         {heroImage && (
           <div className="pvg-blog-post-hero">
             <Image
               src={heroImage}
-              alt={post.title}
+              alt={post.mainImage?.alt || post.title}
               width={1200}
               height={800}
               className="h-auto w-full"
@@ -145,7 +180,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           )}
           <h1 className="section-title" style={{ textAlign: 'left' }}>{post.title}</h1>
           {post.excerpt && (
-            <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.75rem 0 0', textAlign: 'left' }}>
+            <p className="pvg-blog-intro" style={{ margin: '0.75rem 0 0', textAlign: 'left' }}>
               {post.excerpt}
             </p>
           )}
@@ -193,6 +228,54 @@ export default async function BlogPostPage({ params }: PageProps) {
           <PortableText value={post.body as unknown[]} />
         </div>
 
+        {relatedProductCategoryHref && relatedProductCategoryLabel ? (
+          <section className="pvg-blog-product-category" aria-labelledby="related-products-heading">
+            <div className="pvg-blog-product-category-copy">
+              <p className="pvg-blog-section-eyebrow">Related collection</p>
+              <h2 id="related-products-heading">Explore {relatedProductCategoryLabel}</h2>
+              <p>Compare certified pieces, treatment disclosures, and lab certificates.</p>
+            </div>
+            <Link href={relatedProductCategoryHref} className="pvg-blog-cta-link">
+              Browse collection
+            </Link>
+          </section>
+        ) : null}
+
+        {faqs.length > 0 ? (
+          <section className="pvg-blog-faq" aria-labelledby="blog-faq-heading">
+            <p className="pvg-blog-section-eyebrow">Buying guidance</p>
+            <h2 id="blog-faq-heading">Frequently Asked Questions</h2>
+            <div className="pvg-blog-faq-list">
+              {faqs.map((faq) => (
+                <details key={faq.question}>
+                  <summary>{faq.question}</summary>
+                  <p>{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <aside className="pvg-blog-expert-cta" aria-labelledby="blog-expert-cta-heading">
+          <div>
+            <p className="pvg-blog-section-eyebrow">Need personal guidance?</p>
+            <h2 id="blog-expert-cta-heading">Talk to a gemstone expert</h2>
+            <p>Compare certified stones and product documentation before you buy.</p>
+          </div>
+          <div className="pvg-blog-cta-actions">
+            <Link href="/contact" className="pvg-blog-cta-link">Contact our team</Link>
+            <a
+              href={`https://wa.me/919310172512?text=${encodeURIComponent(`Hello, I have a question about ${post.title}.`)}`}
+              className="pvg-blog-cta-link pvg-blog-cta-link--outline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle aria-hidden="true" />
+              WhatsApp us
+            </a>
+          </div>
+        </aside>
+
         <div className="pvg-blog-post-footer">
           <Link href="/blog" className="pvg-blog-back">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -214,12 +297,27 @@ export default async function BlogPostPage({ params }: PageProps) {
           </section>
         )}
 
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        {[articleJsonLd, faqSchema].filter(Boolean).map((schema, index) => (
+          <script
+            key={index}
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
+        ))}
+        </article>
+        <BlogConversionRail
+          relatedProductCategoryHref={relatedProductCategoryHref}
+          relatedProductCategoryLabel={relatedProductCategoryLabel}
         />
-      </article>
+      </div>
+      <BlogLeadPopup
+        postTitle={post.title}
+        slug={slug}
+        relatedProducts={relatedProducts}
+        relatedHref={relatedProductCategoryHref}
+        relatedLabel={relatedProductCategoryLabel}
+      />
     </main>
   );
 }

@@ -98,6 +98,16 @@ function applyKindFilter(
       ].join(',')
     );
   }
+  if (enquiryType === 'blog' || enquiryType === 'Blog enquiry') {
+    return q.or(
+      [
+        'source.eq.blog_popup',
+        'source.eq.blog_sidebar',
+        'enquiry_type.eq.Blog enquiry',
+        'enquiry_type.ilike.%Blog enquir%',
+      ].join(',')
+    );
+  }
   if (enquiryType === 'contact' || enquiryType === 'Enquiry') {
     // ponytail: do NOT use %Contact% — it matches "Consultation"
     return q.or(

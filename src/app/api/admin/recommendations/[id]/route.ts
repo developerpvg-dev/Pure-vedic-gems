@@ -42,6 +42,24 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
   if (body.status === 'draft' || body.status === 'ready' || body.status === 'sent') patch.status = body.status;
 
   const admin = createAdminClient();
+
+  // Content edits after send must regenerate PDF on next email (old pdf_path would reuse stale file)
+  const contentTouched =
+    body.title !== undefined ||
+    body.customer !== undefined ||
+    body.blocks !== undefined ||
+    body.chart_image_url !== undefined;
+  if (contentTouched) {
+    const { data: existing } = await admin
+      .from('recommendation_reports')
+      .select('status')
+      .eq('id', id)
+      .maybeSingle();
+    if (existing?.status === 'sent') {
+      patch.pdf_path = null;
+    }
+  }
+
   const { data, error } = await admin.from('recommendation_reports').update(patch).eq('id', id).select('*').single();
 
   if (error || !data) {

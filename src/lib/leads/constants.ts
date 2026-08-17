@@ -116,6 +116,7 @@ export const LEAD_REMARK_CODES = [
   { code: 'email_awaiting_reply', label: 'Email Sent — Awaiting Reply', terminal: false },
   { code: 'refused_to_pay', label: 'Refused to Pay', terminal: true },
   { code: 'remedies_explain', label: 'Remedies Explain', terminal: false },
+  { code: 'remedies_forwarded', label: 'Remedies Forwarded/Emailed', terminal: false },
   { code: 'option_sent', label: 'Option Sent', terminal: false },
   { code: 'payment_pending', label: '₹101/- Payment Pending', terminal: false },
   { code: 'budget_issue', label: 'Budget Issue', terminal: false },
@@ -147,7 +148,9 @@ export const LEAD_FOLLOWUP_CHANNEL_LABEL: Record<LeadFollowUpChannel, string> = 
 /** Infer medium from remark code when telecaller uses a quick chip without picking channel. */
 export function inferFollowUpChannel(code: LeadRemarkCode): LeadFollowUpChannel | null {
   if (code === 'whatsapp_sent') return 'whatsapp';
-  if (code === 'email_sent' || code === 'email_awaiting_reply' || code === 'contact_via_email') return 'email';
+  if (code === 'email_sent' || code === 'email_awaiting_reply' || code === 'contact_via_email' || code === 'remedies_forwarded') {
+    return 'email';
+  }
   if (
     code === 'call_not_answering' ||
     code === 'call_disconnected' ||
@@ -178,12 +181,37 @@ export const CONTACT_STAGE_CHIPS: LeadPipelineStage[] = ['new', 'assigned', 'ver
 
 export const CONTACT_TELECOM_STAGE_CHIPS: LeadPipelineStage[] = ['assigned', 'verifying', 'closed'];
 
+/** Blog Ask-an-expert popup — two phases only */
+export const BLOG_STAGE_CHIPS: LeadPipelineStage[] = ['new', 'closed'];
+
+export const BLOG_LEAD_STAGE_LABELS: Partial<Record<LeadPipelineStage, string>> = {
+  new: 'Not addressed',
+  closed: 'Addressed',
+};
+
 /** Website “Send Us a Message” and plain Enquiry — telecaller contacts, then close */
 export function isContactEnquiryLead(source?: string | null, enquiryType?: string | null) {
+  if (isBlogEnquiryLead(source, enquiryType)) return false;
   if (source === 'contact_form') return true;
   const t = (enquiryType || '').toLowerCase();
   // ponytail: "consultation".includes("contact") is true — check enquiry / contact enquir only
   return t === 'enquiry' || t.includes('contact enquir');
+}
+
+export function isBlogEnquiryLead(source?: string | null, enquiryType?: string | null) {
+  if (source === 'blog_popup' || source === 'blog_sidebar') return true;
+  const t = (enquiryType || '').toLowerCase();
+  return t === 'blog enquiry' || t.includes('blog enquir');
+}
+
+export function leadStageLabel(
+  stage: string,
+  opts?: { source?: string | null; enquiryType?: string | null },
+) {
+  if (opts && isBlogEnquiryLead(opts.source, opts.enquiryType) && (stage === 'new' || stage === 'closed')) {
+    return BLOG_LEAD_STAGE_LABELS[stage] || stage;
+  }
+  return LEAD_PIPELINE_LABELS[stage as LeadPipelineStage] || stage;
 }
 
 export const TELECOM_EDITABLE_STAGES: LeadPipelineStage[] = [
@@ -219,6 +247,7 @@ export const TELECOM_DELIVERY_OUTCOMES = [
   { code: 'email_sent' as const, short: 'Email sent', hint: 'Remedies / follow-up emailed to customer' },
   { code: 'email_awaiting_reply' as const, short: 'Awaiting email reply', hint: 'Email sent — waiting for customer reply' },
   { code: 'remedies_explain' as const, short: 'Remedies explained', hint: 'Moves lead to Conversion — record sale outcome next' },
+  { code: 'remedies_forwarded' as const, short: 'Remedies Forwarded/Emailed', hint: 'Final remedies emailed / forwarded — moves to Conversion' },
   { code: 'option_sent' as const, short: 'Option sent', hint: 'Product / remedy options shared' },
   { code: 'satisfied' as const, short: 'Satisfied', hint: 'Customer happy — moves to Conversion for sale outcome' },
   { code: 'dissatisfied' as const, short: 'Dissatisfied', hint: 'Customer unhappy — try again later' },
@@ -297,7 +326,7 @@ export function canTransitionPipeline(from: string, to: string): boolean {
 }
 
 export function assertLeadConstants() {
-  if (LEAD_REMARK_CODES.length !== 23) throw new Error('expected 23 remark codes');
+  if (LEAD_REMARK_CODES.length !== 24) throw new Error('expected 24 remark codes');
   if (!canTransitionPipeline('new', 'assigned')) throw new Error('new→assigned');
   if (!canTransitionPipeline('verified', 'with_astrologer')) throw new Error('verified→astrologer');
   if (!canTransitionPipeline('with_astrologer', 'remedies_ready')) throw new Error('astro→remedies');
@@ -321,5 +350,10 @@ export function assertLeadConstants() {
   if (isContactEnquiryLead('homepage_recommendation', 'Remedies Recommendation')) {
     throw new Error('remedies must not be contact lead');
   }
+  if (!isBlogEnquiryLead('blog_popup', 'Blog enquiry')) throw new Error('blog_popup is blog lead');
+  if (!isBlogEnquiryLead('blog_sidebar', null)) throw new Error('blog_sidebar is blog lead');
+  if (isContactEnquiryLead('blog_popup', 'Blog enquiry')) throw new Error('blog must not be contact lead');
+  if (leadStageLabel('new', { source: 'blog_popup' }) !== 'Not addressed') throw new Error('blog new label');
+  if (leadStageLabel('closed', { source: 'blog_popup' }) !== 'Addressed') throw new Error('blog closed label');
   if (!canTransitionPipeline('assigned', 'closed')) throw new Error('contact path assigned→closed');
 }
