@@ -59,7 +59,7 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "form-action 'self'",
+  "form-action 'self' https://www.facebook.com",
   [
     "script-src 'self' 'unsafe-inline'",
     isProduction ? '' : "'unsafe-eval'",
@@ -72,12 +72,12 @@ const contentSecurityPolicy = [
     .join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://www.facebook.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com",
+  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com",
   "media-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io",
-  "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com",
+  "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com https://www.facebook.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://sanity-cdn.com https://*.api.sanity.io https://api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com https://connect.facebook.net",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://sanity-cdn.com https://*.api.sanity.io https://api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://www.google.com https://stats.g.doubleclick.net https://www.facebook.com https://connect.facebook.net",
   isProduction ? 'upgrade-insecure-requests' : '',
 ]
   .filter(Boolean)
