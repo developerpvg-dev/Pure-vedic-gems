@@ -1,6 +1,6 @@
 import { turnstileConfigured, verifyTurnstileToken } from './verify-turnstile';
 
-type EnquirySpamInput = {
+export type EnquirySpamInput = {
   name: string;
   email?: string;
   message: string;
@@ -10,11 +10,8 @@ type EnquirySpamInput = {
   turnstileToken?: string;
 };
 
-/** Silent-reject signals — return true to discard without storing. */
-export async function isEnquirySpam(
-  input: EnquirySpamInput,
-  remoteip?: string
-): Promise<boolean> {
+/** Honeypot / timing / gibberish — silent reject (bots). */
+export function isBotSpam(input: EnquirySpamInput): boolean {
   if (input._hp?.trim()) return true;
 
   const startedAt = input._startedAt;
@@ -26,13 +23,30 @@ export async function isEnquirySpam(
   if (looksLikeGibberishName(input.name)) return true;
   if (looksLikeGibberishName(input.message)) return true;
 
-  if (turnstileConfigured()) {
-    const token = input.turnstileToken?.trim();
-    if (!token) return true;
-    if (!(await verifyTurnstileToken(token, remoteip))) return true;
-  }
-
   return false;
+}
+
+/** Missing or invalid Turnstile — show error to real users. */
+export async function isTurnstileInvalid(
+  input: EnquirySpamInput,
+  remoteip?: string,
+  options?: { skipTurnstile?: boolean }
+): Promise<boolean> {
+  if (!turnstileConfigured() || options?.skipTurnstile) return false;
+
+  const token = input.turnstileToken?.trim();
+  if (!token) return true;
+  return !(await verifyTurnstileToken(token, remoteip));
+}
+
+/** @deprecated use isBotSpam + isTurnstileInvalid */
+export async function isEnquirySpam(
+  input: EnquirySpamInput,
+  remoteip?: string,
+  options?: { skipTurnstile?: boolean }
+): Promise<boolean> {
+  if (isBotSpam(input)) return true;
+  return isTurnstileInvalid(input, remoteip, options);
 }
 
 /** Random bot names: long tokens, mixed case, few spaces. */

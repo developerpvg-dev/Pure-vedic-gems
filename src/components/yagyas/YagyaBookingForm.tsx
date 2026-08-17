@@ -33,7 +33,7 @@ export function YagyaBookingForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting || !turnstile.ready) return;
+    if (submitting) return;
 
     const selected = yagyas.find((y) => y.id === yagyaId);
     const yagyaName = selected?.name ?? preselectedName ?? 'General enquiry';
@@ -207,7 +207,7 @@ export function YagyaBookingForm({
 
       <button
         type="submit"
-        disabled={submitting || !turnstile.ready}
+        disabled={submitting}
         className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flame className="h-5 w-5" />}

@@ -1,8 +1,9 @@
 'use client';
 
 import Script from 'next/script';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TURNSTILE_ENQUIRY_ACTION } from '@/lib/enquiry/verify-turnstile';
+import { isTurnstileProductionHost } from '@/lib/enquiry/turnstile-host';
 
 export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || '';
 
@@ -11,7 +12,13 @@ type TurnstileWidgetId = string;
 type TurnstileApi = {
   render: (
     container: HTMLElement,
-    options: { sitekey: string; action: string; callback: (token: string) => void }
+    options: {
+      sitekey: string;
+      action: string;
+      appearance?: 'always' | 'execute' | 'interaction-only';
+      callback: (token: string) => void;
+      'error-callback'?: () => void;
+    }
   ) => TurnstileWidgetId;
   reset: (widgetId: TurnstileWidgetId) => void;
 };
@@ -26,18 +33,44 @@ export function useTurnstile() {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null);
   const [token, setToken] = useState('');
-  const enabled = Boolean(TURNSTILE_SITE_KEY);
+  const [loadError, setLoadError] = useState(false);
+  const [hostOk, setHostOk] = useState(false);
+
+  useEffect(() => {
+    setHostOk(isTurnstileProductionHost(window.location.hostname));
+  }, []);
+
+  const enabled = Boolean(TURNSTILE_SITE_KEY) && hostOk;
 
   const renderWidget = useCallback(() => {
     if (!enabled || !containerRef.current || widgetIdRef.current !== null || !window.turnstile) {
-      return;
+      return false;
     }
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
       action: TURNSTILE_ENQUIRY_ACTION,
-      callback: setToken,
+      appearance: 'always',
+      callback: (value) => {
+        setLoadError(false);
+        setToken(value);
+      },
+      'error-callback': () => setLoadError(true),
     });
+    return true;
   }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled || widgetIdRef.current !== null) return;
+      if (!renderWidget()) window.setTimeout(tick, 100);
+    };
+    tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, renderWidget]);
 
   const reset = useCallback(() => {
     if (widgetIdRef.current !== null && window.turnstile) {
@@ -54,12 +87,20 @@ export function useTurnstile() {
     />
   ) : null;
 
-  const field = enabled ? <div ref={containerRef} className="min-h-[65px]" /> : null;
+  const field = enabled ? (
+    <div className="space-y-1">
+      <div ref={containerRef} className="min-h-[65px]" />
+      {loadError ? (
+        <p className="text-sm text-red-700" role="alert">
+          Security check failed to load. Refresh the page and try again.
+        </p>
+      ) : null}
+    </div>
+  ) : null;
 
   return {
     enabled,
     token,
-    ready: !enabled || Boolean(token),
     reset,
     script,
     field,

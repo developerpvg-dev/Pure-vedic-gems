@@ -24,8 +24,6 @@ export function BlogEnquiryForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!turnstile.ready) return;
-
     setStatus('submitting');
     setError('');
 
@@ -108,7 +106,7 @@ export function BlogEnquiryForm({
         </label>
         {turnstile.field}
         {status === 'error' ? <p className="pvg-blog-form-error" role="alert">{error}</p> : null}
-        <button type="submit" disabled={status === 'submitting' || !turnstile.ready}>
+        <button type="submit" disabled={status === 'submitting'}>
           {status === 'submitting' ? 'Sending…' : 'Request Expert Help'}
         </button>
       </form>

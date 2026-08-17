@@ -6,7 +6,8 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
 import { logLeadActivity } from '@/lib/leads/assign';
 import { rateLimit } from '@/lib/utils/rate-limit';
-import { isEnquirySpam } from '@/lib/enquiry/spam-guard';
+import { isBotSpam, isTurnstileInvalid } from '@/lib/enquiry/spam-guard';
+import { isTurnstileProductionHost } from '@/lib/enquiry/turnstile-host';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
@@ -40,9 +41,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (await isEnquirySpam(parsed.data, ip !== 'unknown' ? ip : undefined)) {
-    // Silent accept so bots do not adapt
+  const host = request.headers.get('host') ?? '';
+  const skipTurnstile = !isTurnstileProductionHost(host);
+  const remoteIp = ip !== 'unknown' ? ip : undefined;
+
+  if (isBotSpam(parsed.data)) {
     return NextResponse.json({ success: true }, { status: 201 });
+  }
+
+  if (await isTurnstileInvalid(parsed.data, remoteIp, { skipTurnstile })) {
+    return NextResponse.json(
+      { error: 'Please complete the security check and try again.' },
+      { status: 403 }
+    );
   }
 
   const admin = createAdminClient();

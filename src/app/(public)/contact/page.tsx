@@ -120,14 +120,14 @@ function cleanPhone(value: string) {
 export default function ContactPage() {
   const [formState, setFormState] = useState(initialForm);
   const [status, setStatus] = useState<SubmitStatus>('idle');
+  const [formError, setFormError] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [formStartedAt] = useState(() => Date.now());
   const turnstile = useTurnstile();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!turnstile.ready) return;
-
+    setFormError('');
     setStatus('sending');
 
     try {
@@ -156,12 +156,16 @@ export default function ContactPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to submit enquiry');
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || 'Failed to submit enquiry');
+      }
 
       setStatus('sent');
       setFormState(initialForm);
-    } catch {
+    } catch (error) {
       setStatus('error');
+      setFormError(error instanceof Error ? error.message : 'Could not send right now.');
     } finally {
       turnstile.reset();
     }
@@ -260,18 +264,17 @@ export default function ContactPage() {
                   className="pvg-contact-textarea"
                 />
                 {turnstile.field}
-                <button
-                  type="submit"
-                  disabled={status === 'sending' || !turnstile.ready}
-                  className="pvg-contact-submit"
-                >
+                <button type="submit" disabled={status === 'sending'} className="pvg-contact-submit">
                   {status === 'sending' ? 'Sending...' : 'Send Message'}
                   <Send className="h-4 w-4" />
                 </button>
+                {formError ? (
+                  <p className="pvg-contact-status pvg-contact-status--err">{formError}</p>
+                ) : null}
                 {status === 'sent' ? (
                   <p className="pvg-contact-status pvg-contact-status--ok">Message sent. We will get back to you shortly.</p>
                 ) : null}
-                {status === 'error' ? (
+                {status === 'error' && !formError ? (
                   <p className="pvg-contact-status pvg-contact-status--err">Could not send right now. Please call or email us directly.</p>
                 ) : null}
               </form>
