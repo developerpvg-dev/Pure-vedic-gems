@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { resolveShopCategoryPath, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
@@ -21,6 +21,7 @@ import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductGrid } from '@/components/shop/ProductGrid';
 import { ShopPagination } from '@/components/shop/ShopPagination';
 import { CategoryHubHeader } from '@/components/shop/CategoryHub';
+import { NavaratnaHomeSection, RudrakshaHomeSection, getHomeManagedCategories, getShopBrowseCategories } from '@/components/home/PvgManagedCategorySections';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -34,7 +35,6 @@ import {
 } from '@/lib/utils/seo';
 import type { SeoLandingPage } from '@/lib/constants/seo-landing-pages';
 import type { ProductCard } from '@/lib/types/product';
-import { RudrakshaCategoryGrid } from '@/components/shop/RudrakshaCategoryGrid';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { MessageCircleQuestion } from 'lucide-react';
 
@@ -159,6 +159,14 @@ async function CategoryProducts({
   const displayIntro = hubPage?.intro_text ?? desc;
 
   const contentSections = hubPage ? buildCategoryHubSections(hubPage, displayLabel) : [];
+  const isNavaratnaHub = categorySlug === 'navaratna' || categorySlug === 'navratna';
+  const isUpratnaHub = categorySlug === 'upratna';
+  const isRudrakshaHub = categorySlug === 'rudraksha';
+  const homeManaged = isNavaratnaHub || isUpratnaHub ? await getHomeManagedCategories() : null;
+  const shopBrowse = isRudrakshaHub ? await getShopBrowseCategories() : null;
+  const navaratnaHome = homeManaged?.navaratna ?? [];
+  const upratnaHome = homeManaged?.upratna ?? [];
+  const rudrakshaHome = shopBrowse?.gems.rudraksha ?? [];
 
   const faqs = hubPage?.faqs ?? [];
   const howToSteps = hubPage?.how_to_wear_html
@@ -182,8 +190,27 @@ async function CategoryProducts({
         <CategoryHeader label={label} desc={desc} />
       )}
 
-      {meta?.category === 'rudraksha' && !meta?.sub_category && !meta?.catalogSubcategories?.length ? (
-        <RudrakshaCategoryGrid />
+      {isRudrakshaHub && rudrakshaHome.length ? (
+        <div className="pvg-react-home-root mb-8">
+          <RudrakshaHomeSection categories={rudrakshaHome} showCta={false} showHeading={false} />
+        </div>
+      ) : null}
+
+      {isNavaratnaHub && navaratnaHome.length ? (
+        <div className="pvg-react-home-root mb-8">
+          <NavaratnaHomeSection categories={navaratnaHome} showCta={false} showHeading={false} />
+        </div>
+      ) : null}
+
+      {isUpratnaHub && upratnaHome.length ? (
+        <div className="pvg-react-home-root mb-8">
+          <NavaratnaHomeSection
+            categories={upratnaHome}
+            showCta={false}
+            showHeading={false}
+            srHeading="Shop Upratna gems"
+          />
+        </div>
       ) : null}
 
       <section id="collection" className="category-hub-collection scroll-mt-40">
@@ -400,7 +427,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   if (meta.canonicalPath && meta.canonicalPath !== currentPath) {
     const query = new URLSearchParams(sParams).toString();
-    redirect(`${meta.canonicalPath}${query ? `?${query}` : ''}`);
+      permanentRedirect(`${meta.canonicalPath}${query ? `?${query}` : ''}`);
   }
 
   const displayLabel = hubPage ? shopCategoryLabel(hubPage) : meta.label;

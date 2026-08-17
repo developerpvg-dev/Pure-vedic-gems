@@ -10,31 +10,31 @@ const cases: [string, string | null][] = [
   ['/author/admin/', '/blog'],
   ['/cart', null],
   ['/checkout', null],
-  ['/shop/navaratna/ruby', '/shop/ruby'],
-  ['/shop/upratna/pitambari/', '/shop/pitambari'],
-  ['/shop/navaratna/some-product-sku', null],
-  ['/rudrakshas', '/shop/rudraksha'],
-  ['/rudrakshas/', '/shop/rudraksha'],
-  ['/product-category/navratan/rudrakshas/5-mukhi-rudraksha', '/shop/5-mukhi'],
-  ['/product-category/navratan/rudrakshas/5-mukhi-rudraksha/', '/shop/5-mukhi'],
-  ['/product-category/navratan/rudrakshas', '/shop/rudraksha'],
-  ['/shop/navratan/rudrakshas/10-mukhi-rudraksha', '/shop/10-mukhi'],
-  ['/product-category/navratan/rudrakshas/ganesh-rudrakshas', '/shop/ganesh-rudraksha'],
+  ['/shop/navaratna/ruby', '/gemstones/navaratna/ruby'],
+  ['/shop/upratna/pitambari/', '/gemstones/navaratna/pitambari'],
+  ['/shop/navaratna/some-product-sku', '/gemstones/navaratna/some-product-sku'],
+  ['/rudrakshas', '/rudraksha'],
+  ['/rudrakshas/', '/rudraksha'],
+  ['/product-category/navratan/rudrakshas/5-mukhi-rudraksha', '/rudraksha/5-mukhi'],
+  ['/product-category/navratan/rudrakshas/5-mukhi-rudraksha/', '/rudraksha/5-mukhi'],
+  ['/product-category/navratan/rudrakshas', '/rudraksha'],
+  ['/shop/navratan/rudrakshas/10-mukhi-rudraksha', '/rudraksha/10-mukhi'],
+  ['/product-category/navratan/rudrakshas/ganesh-rudrakshas', '/rudraksha/ganesh-rudraksha'],
   [
     '/product-category/navratan/rudrakshas/5-mukhi-rudraksha/5-mukhi-rudraksha-2-496g-natural-rudraksha',
-    '/shop/5-mukhi/5-mukhi-rudraksha-2-496g-natural-rudraksha',
+    '/rudraksha/5-mukhi/5-mukhi-rudraksha-2-496g-natural-rudraksha',
   ],
   ['/product-category/spiritual-idols', '/shop/idols'],
   ['/product-category/spiritual-idols/', '/shop/idols'],
   ['/shop/spiritual-idols', '/shop/idols'],
-  ['/product-category/navratan/exclusive-rudraksha', '/shop/rudraksha'],
+  ['/product-category/navratan/exclusive-rudraksha', '/rudraksha'],
   ['/shop/page/80', '/shop'],
   ['/shop/page/96/', '/shop'],
   ['/blog/page/3', '/blog'],
   ['/blog/page/12/', '/blog'],
   [
     '/shop/upratan/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
-    '/shop/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+    '/gemstones/upratna/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
   ],
   ['/shop/jewellery/diamond-jewellery/sample-8', '/shop/diamond-jewellery'],
   ['/shop/jewelry/diamond-ring-on-demand-6', '/shop/diamond-jewellery'],
@@ -54,15 +54,15 @@ const cases: [string, string | null][] = [
   ['/shop/jewellery/diamond-jewellery/diamond-ring-18', '/shop/diamond-jewellery'],
   [
     '/shop/navratan/emerald/emerald-5-53ct-23181-per-ct-super-luxury-natural-gemstone',
-    '/shop/emerald',
+    '/gemstones/navaratna/emerald',
   ],
   ['/tag/original-vs-substitute-gemstones', '/knowledge/gem-qualities'],
   ['/tag/gemstone-selection', '/gems-recommendations'],
-  ['/tag/blue-sapphire', '/shop/blue-sapphire'],
-  ['/tag/blue-sapphire-price', '/shop/blue-sapphire'],
-  ['/tag/certified-rudrakshas', '/shop/rudraksha'],
+  ['/tag/blue-sapphire', '/gemstones/navaratna/blue-sapphire'],
+  ['/tag/blue-sapphire-price', '/gemstones/navaratna/blue-sapphire'],
+  ['/tag/certified-rudrakshas', '/rudraksha'],
   ['/tag/purevedicgems', '/about'],
-  ['/tag/pure-vedic-rudraksha', '/shop/rudraksha'],
+  ['/tag/pure-vedic-rudraksha', '/rudraksha'],
   ['/tag/free-gemstone-suggestion', '/gems-recommendations'],
   ['/tag/free-gemstone-recommendation', '/gems-recommendations'],
   ['/tag/gemstone-consultation-vedic-astrology', '/gems-recommendations'],
@@ -72,13 +72,13 @@ const cases: [string, string | null][] = [
   ['/tag/gemstone-benefits', '/blog'],
   ['/tag/vedic-quality-gemstones', '/blog'],
   ['/tag/gemstones-in-daily-life', '/blog'],
-  ['/tag/benefits-of-pure-and-natural-blue-sapphire-gemstone', '/shop/blue-sapphire'],
+  ['/tag/benefits-of-pure-and-natural-blue-sapphire-gemstone', '/gemstones/navaratna/blue-sapphire'],
   ['/tag/care-of-gemstones', '/knowledge/gems-care'],
-  ['/tag/chandra-ratna', '/shop/pearl'],
-  ['/tag/garnet-jewellery', '/shop/garnet'],
-  ['/tag/cats-eye-certification', '/shop/cats-eye'],
-  ['/tag/white-sapphire', '/shop/white-sapphire'],
-  ['/tag/neelam-stone', '/shop/blue-sapphire'],
+  ['/tag/chandra-ratna', '/gemstones/navaratna/pearl'],
+  ['/tag/garnet-jewellery', '/gemstones/upratna/garnet'],
+  ['/tag/cats-eye-certification', '/gemstones/navaratna/cats-eye'],
+  ['/tag/white-sapphire', '/gemstones/navaratna/white-sapphire'],
+  ['/tag/neelam-stone', '/gemstones/navaratna/blue-sapphire'],
   ['/tag/vedic-mantra', '/knowledge/astrology'],
   ['/tag/vedic-astrology-benefits', '/knowledge/astrology'],
   ['/tag/pure-gems', '/shop'],
@@ -88,7 +88,7 @@ const cases: [string, string | null][] = [
     '/about/stores',
   ],
   ['/testimonial/satya', null],
-  ['/category/navratnas', '/shop/navaratna'],
+  ['/category/navratnas', '/gemstones/navaratna'],
   ['/astrological-gemstones-online', '/gems-recommendations'],
   ['/tag/astrological-gemstones', '/gems-recommendations'],
   // Unmapped tag fallback after removing next.config /tag catch-all
@@ -103,12 +103,35 @@ const cases: [string, string | null][] = [
   ['/designs_cat/rings-design', '/designs/ring'],
   ['/designs_cat/pendents', '/designs/pendant'],
   ['/rudraksha-designs', '/designs/rudraksha'],
+  ['/shop/ruby', '/gemstones/navaratna/ruby'],
+  ['/shop/ruby/natural-ruby-sku', '/gemstones/navaratna/ruby/natural-ruby-sku'],
+  ['/shop/5-mukhi', '/rudraksha/5-mukhi'],
+  ['/shop/navratna', '/gemstones/navaratna'],
+  ['/shop/navratana/ruby', '/gemstones/navaratna/ruby'],
+  ['/shop/navratan/catseye', '/gemstones/navaratna/cats-eye'],
+  ['/shop/catseye', '/gemstones/navaratna/cats-eye'],
+  ['/gemstones/navaratna/catseye', '/gemstones/navaratna/cats-eye'],
+  ['/product-category/navratan/ruby', '/gemstones/navaratna/ruby'],
+  ['/product-category/navratan/catseye', '/gemstones/navaratna/cats-eye'],
+  ['/product-category/navratan/amethyst', '/gemstones/upratna/amethyst'],
+  ['/product-category/navratnas/ruby', '/gemstones/navaratna/ruby'],
+  ['/tag/catseye', '/gemstones/navaratna/cats-eye'],
+  ['/gemstones', '/gemstones/navaratna'],
+  ['/gemstones/navratna/ruby', '/gemstones/navaratna/ruby'],
+  ['/gemstones/navaratna/ruby', null],
+  ['/rudraksha', null],
+  ['/rudraksha/5-mukhi', null],
+  ['/shop/malas', null],
+  ['/shop/bracelets', null],
 ];
 
 for (const [from, want] of cases) {
   const got = lookupLegacyRedirect(from);
   if (got !== want) {
     throw new Error(`lookupLegacyRedirect(${from}) => ${got}, want ${want}`);
+  }
+  if (want && lookupLegacyRedirect(want) != null) {
+    throw new Error(`redirect chain ${from} → ${want} → ${lookupLegacyRedirect(want)}`);
   }
 }
 
@@ -127,6 +150,15 @@ if (stolen.length) {
 for (const path of LIVE_APP_EXACT_PATHS) {
   if (lookupLegacyRedirect(path) != null) {
     throw new Error(`live path ${path} must not redirect`);
+  }
+}
+
+for (const [from] of p2p11Pairs as [string, string][]) {
+  const got = lookupLegacyRedirect(from);
+  if (!got) continue;
+  const hop2 = lookupLegacyRedirect(got);
+  if (hop2) {
+    throw new Error(`dump chain ${from} → ${got} → ${hop2}`);
   }
 }
 

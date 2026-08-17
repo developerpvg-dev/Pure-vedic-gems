@@ -5,6 +5,11 @@ import {
 } from '@/lib/constants/rudraksha-subcategories';
 import { NAVARATNA_NAV_IMAGE_BY_SLUG } from '@/lib/constants/navaratna-category-images';
 import { UPRATNA_NAV_IMAGE_BY_SLUG } from '@/lib/constants/upratna-category-images';
+import {
+  canonicalGroupHref,
+  canonicalSubcategoryHref,
+  parentForMigratedSlug,
+} from '@/lib/categories/canonical-storefront-path';
 
 export type StorefrontCategoryGroupSlug = 'navaratna' | 'upratna' | 'rudraksha' | 'idols' | 'jewelry' | 'malas';
 
@@ -56,10 +61,17 @@ export function normalizeStorefrontGroupSlug(value: string | null | undefined): 
 }
 
 export function storefrontGroupHref(slug: StorefrontCategoryGroupSlug | 'gemstones') {
+  if (slug === 'gemstones') return canonicalGroupHref('navaratna');
+  if (slug === 'navaratna' || slug === 'upratna' || slug === 'rudraksha') return canonicalGroupHref(slug);
   return `/shop/${slug}`;
 }
 
-export function storefrontSubcategoryHref(_parentSlug: StorefrontCategoryGroupSlug, subcategorySlug: string) {
+export function storefrontSubcategoryHref(parentSlug: StorefrontCategoryGroupSlug, subcategorySlug: string) {
+  const migrated = canonicalSubcategoryHref(subcategorySlug);
+  if (migrated) return migrated;
+  if (parentSlug === 'navaratna' || parentSlug === 'upratna' || parentSlug === 'rudraksha') {
+    return `${canonicalGroupHref(parentSlug)}/${subcategorySlug}`;
+  }
   return `/shop/${subcategorySlug}`;
 }
 
@@ -73,12 +85,25 @@ export function productCategoryToStorefrontGroupSlug(category: string | null | u
   return PRODUCT_CATEGORY_TO_GROUP[category.toLowerCase()] ?? category.toLowerCase();
 }
 
+export function internalShopProductHref(product: { category?: string | null; sub_category?: string | null; slug: string }) {
+  if (product.sub_category) return `/shop/${product.sub_category}/${product.slug}`;
+  const groupSlug = productCategoryToStorefrontGroupSlug(product.category) ?? product.category ?? 'navaratna';
+  return `/shop/${groupSlug}/${product.slug}`;
+}
+
 export function productHref(product: { category?: string | null; sub_category?: string | null; slug: string }) {
   if (product.sub_category) {
-    return `/shop/${product.sub_category}/${product.slug}`;
+    const hinted = productCategoryToStorefrontGroupSlug(product.category);
+    const parent = (
+      hinted && hinted !== 'gemstones'
+        ? hinted
+        : (parentForMigratedSlug(product.sub_category) ?? 'navaratna')
+    ) as StorefrontCategoryGroupSlug;
+    return `${storefrontSubcategoryHref(parent, product.sub_category)}/${product.slug}`;
   }
-  const groupSlug = productCategoryToStorefrontGroupSlug(product.category) ?? product.category ?? 'gemstones';
-  return `/shop/${groupSlug}/${product.slug}`;
+  const groupSlug = productCategoryToStorefrontGroupSlug(product.category) ?? product.category ?? 'navaratna';
+  if (groupSlug === 'gemstones') return `${canonicalGroupHref('navaratna')}/${product.slug}`;
+  return `${storefrontGroupHref(groupSlug as StorefrontCategoryGroupSlug)}/${product.slug}`;
 }
 
 export interface StorefrontSubCategory {

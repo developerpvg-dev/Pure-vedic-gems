@@ -93,7 +93,7 @@ function CategoryHubNav({
               type="button"
               onClick={() => onSelectTab(section.id)}
               aria-expanded={activeTab === section.id}
-              aria-controls={`panel-${section.id}`}
+              aria-controls={section.id}
               className={`category-hub-nav__link ${activeTab === section.id ? 'category-hub-nav__link--active' : ''}`}
             >
               {section.title || TAB_LABELS[section.id]}
@@ -104,7 +104,7 @@ function CategoryHubNav({
               type="button"
               onClick={() => onSelectTab('faqs')}
               aria-expanded={activeTab === 'faqs'}
-              aria-controls="panel-faqs"
+              aria-controls="faqs"
               className={`category-hub-nav__link ${activeTab === 'faqs' ? 'category-hub-nav__link--active' : ''}`}
             >
               {TAB_LABELS.faqs}
@@ -199,45 +199,49 @@ export function CategoryHubHeader({
           </div>
         </div>
 
-        <CategoryHubNav
-          availableSections={availableSections}
-          hasFaqs={hasFaqs}
-          activeTab={activeTab}
-          onSelectTab={selectTab}
-        />
+        {availableSections.length > 0 || hasFaqs ? (
+          <CategoryHubNav
+            availableSections={availableSections}
+            hasFaqs={hasFaqs}
+            activeTab={activeTab}
+            onSelectTab={selectTab}
+          />
+        ) : null}
 
-        <div className="category-hub-panels">
-          {availableSections.map((section) => (
-            <div
-              key={section.id}
-              id={`panel-${section.id}`}
-              role="region"
-              aria-label={section.title || TAB_LABELS[section.id]}
-              hidden={activeTab !== section.id}
-              className="category-hub-panel"
-            >
-              <h2 className="category-hub-panel__title">{section.title || TAB_LABELS[section.id]}</h2>
+        {availableSections.length > 0 || hasFaqs ? (
+          <div className="category-hub-panels">
+            {availableSections.map((section) => (
               <div
-                className="category-hub-panel__body prose prose-sm max-w-none md:prose-base"
-                dangerouslySetInnerHTML={{ __html: section.html ?? '' }}
-              />
-            </div>
-          ))}
-
-          {hasFaqs ? (
-            <div id="panel-faqs" role="region" aria-label="FAQs" hidden={activeTab !== 'faqs'} className="category-hub-panel">
-              <h2 className="category-hub-panel__title">{TAB_LABELS.faqs}</h2>
-              <div className="category-hub-faq-list">
-                {faqs.map((faq) => (
-                  <details key={faq.question} className="category-hub-faq-item">
-                    <summary className="category-hub-faq-question">{faq.question}</summary>
-                    <p className="category-hub-faq-answer">{faq.answer}</p>
-                  </details>
-                ))}
+                key={section.id}
+                id={section.id}
+                role="region"
+                aria-label={section.title || TAB_LABELS[section.id]}
+                hidden={activeTab !== section.id}
+                className="category-hub-panel"
+              >
+                <h2 className="category-hub-panel__title">{section.title || TAB_LABELS[section.id]}</h2>
+                <div
+                  className="category-hub-panel__body prose prose-sm max-w-none md:prose-base"
+                  dangerouslySetInnerHTML={{ __html: section.html ?? '' }}
+                />
               </div>
-            </div>
-          ) : null}
-        </div>
+            ))}
+
+            {hasFaqs ? (
+              <div id="faqs" role="region" aria-label="FAQs" hidden={activeTab !== 'faqs'} className="category-hub-panel">
+                <h2 className="category-hub-panel__title">{TAB_LABELS.faqs}</h2>
+                <div className="category-hub-faq-list">
+                  {faqs.map((faq) => (
+                    <details key={faq.question} className="category-hub-faq-item">
+                      <summary className="category-hub-faq-question">{faq.question}</summary>
+                      <p className="category-hub-faq-answer">{faq.answer}</p>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
     </div>
   );

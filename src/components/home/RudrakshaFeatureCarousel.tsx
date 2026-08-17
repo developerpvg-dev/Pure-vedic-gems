@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { catalogFamilyToStorefrontGroupSlug, storefrontSubcategoryHref } from '@/lib/categories/storefront';
+import { catalogFamilyToStorefrontGroupSlug, storefrontGroupHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
 import { RUDRAKSHA_FEATURE_IMAGES } from '@/lib/constants/rudraksha-category-images';
 import type { HomeCatalogCategory } from '@/components/home/PvgManagedCategorySections';
 
@@ -13,7 +13,9 @@ const MOBILE_AUTO_ADVANCE_MS = 4500;
 function catalogCategoryHref(category: HomeCatalogCategory) {
   const parentSlug = catalogFamilyToStorefrontGroupSlug(category.family) ?? 'jewelry';
   const legacySinglePath = `/shop/${category.slug}`;
-  if (category.slug === parentSlug || (parentSlug === 'malas' && category.slug === 'mala')) return `/shop/${parentSlug}`;
+  if (category.slug === parentSlug || (parentSlug === 'malas' && category.slug === 'mala')) {
+    return storefrontGroupHref(parentSlug);
+  }
   if (category.canonical_path && category.canonical_path !== legacySinglePath) return category.canonical_path;
   return storefrontSubcategoryHref(parentSlug, category.slug);
 }

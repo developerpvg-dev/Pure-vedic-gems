@@ -7,7 +7,7 @@ export type BlogEnrichment = {
 // ponytail: preserves useful sections on the two audited posts until editors save the same fields in Sanity.
 const AUDIT_POST_ENRICHMENT: Record<string, BlogEnrichment> = {
   'untreated-emerald-for-astrology-panna-stone-benefits-price-buying-guide': {
-    relatedProductCategoryHref: '/shop/emerald',
+    relatedProductCategoryHref: '/gemstones/navaratna/emerald',
     relatedProductCategoryLabel: 'Natural Emerald (Panna)',
     faqs: [
       {
@@ -25,7 +25,7 @@ const AUDIT_POST_ENRICHMENT: Record<string, BlogEnrichment> = {
     ],
   },
   'natural-untreated-pukhraj-gemstone-for-astrology-buying-guide': {
-    relatedProductCategoryHref: '/shop/yellow-sapphire',
+    relatedProductCategoryHref: '/gemstones/navaratna/yellow-sapphire',
     relatedProductCategoryLabel: 'Natural Yellow Sapphire (Pukhraj)',
     faqs: [
       {

@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -15,12 +14,14 @@ import { GemstoneWorldMap } from '@/components/ui/gemstone-world-map';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
 import { ABOUT_LOCATION_CARDS } from '@/lib/constants/company-addresses';
+import { buildMetadata } from '@/lib/utils/seo';
 
-export const metadata: Metadata = {
-  title: 'About Pure Vedic Gems | Heritage Since 1937 — Four Generations',
+export const metadata = buildMetadata({
+  title: 'About Pure Vedic Gems | Heritage Since 1937',
   description:
-    'Pure Vedic Gems: India\'s oldest trusted name since 1937 in Astro-Jyotish gemstones, authentic Rudrakshas, Vedic astrologers, custom jewellery, Sultanpur research centre, and energization — serving 40+ countries worldwide.',
-};
+    'Pure Vedic Gems: heritage Vedic gemstones and Rudraksha since 1937 — certified stones, astrologers, custom jewellery, and the Sultanpur research centre.',
+  path: '/about',
+});
 
 const GENERATIONS = [
   {

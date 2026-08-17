@@ -24,31 +24,31 @@ export const BASE_CATEGORY_MAP: Record<string, BaseShopCategory> = {
     category: 'gemstone',
     label: 'Gemstones',
     desc: 'Certified natural gemstones from premium origins worldwide. Each stone ethically sourced and laboratory verified.',
-    canonicalPath: '/shop/gemstones',
+    canonicalPath: '/gemstones/navaratna',
   },
   navaratna: {
     category: 'navaratna',
-    label: 'Navaratna - Sacred Nine Gems',
-    desc: 'The nine sacred Navaratna gems aligned with the nine planets. Each carries unique cosmic energy for Vedic healing.',
-    canonicalPath: '/shop/navaratna',
+    label: 'Navaratna (Navratna)',
+    desc: 'The nine sacred Navaratna gems aligned with the Navagraha. Certified natural stones with Jyotish guidance from Delhi since 1937.',
+    canonicalPath: '/gemstones/navaratna',
   },
   navratna: {
     category: 'navaratna',
-    label: 'Navaratna - Sacred Nine Gems',
-    desc: 'The nine sacred Navaratna gems aligned with the nine planets. Each carries unique cosmic energy for Vedic healing.',
-    canonicalPath: '/shop/navaratna',
+    label: 'Navaratna (Navratna)',
+    desc: 'The nine sacred Navaratna gems aligned with the Navagraha. Certified natural stones with Jyotish guidance from Delhi since 1937.',
+    canonicalPath: '/gemstones/navaratna',
   },
   upratna: {
     category: 'upratna',
-    label: 'Upratna - Semi-Precious Gems',
+    label: 'Upratna (Semi-Precious Gems)',
     desc: 'Semi-precious Vedic gemstones - affordable alternatives with powerful planetary benefits.',
-    canonicalPath: '/shop/upratna',
+    canonicalPath: '/gemstones/upratna',
   },
   rudraksha: {
     category: 'rudraksha',
     label: 'Rudraksha',
     desc: 'Sacred Rudraksha beads from Nepal and India. Each bead energized with Vedic mantras for maximum efficacy.',
-    canonicalPath: '/shop/rudraksha',
+    canonicalPath: '/rudraksha',
   },
   jewelry: {
     category: 'jewelry',
@@ -261,10 +261,6 @@ function gemLabel(category: GemCategoryRow) {
   return category.sanskrit_name ? `${category.name} (${category.sanskrit_name})` : category.name;
 }
 
-function flatCategoryPath(slug: string) {
-  return `/shop/${slug}`;
-}
-
 function resolvedGemCategory(category: GemCategoryRow): ResolvedShopCategory {
   const parentSlug = gemParentSlug(category.type);
   return {
@@ -273,7 +269,7 @@ function resolvedGemCategory(category: GemCategoryRow): ResolvedShopCategory {
     parentSlug,
     label: gemLabel(category),
     desc: category.description || `Explore our collection of natural ${category.name} gemstones.`,
-    canonicalPath: flatCategoryPath(category.slug),
+    canonicalPath: storefrontSubcategoryHref(parentSlug, category.slug),
   };
 }
 
@@ -286,7 +282,7 @@ function resolvedProductCategory(category: ProductCategoryRow): ResolvedShopCate
     label: category.name,
     desc: category.description || `Explore our collection of ${category.name}.`,
     canonicalPath: category.parent_id
-      ? flatCategoryPath(category.slug)
+      ? storefrontSubcategoryHref(parentSlug as StorefrontCategoryGroupSlug, category.slug)
       : storefrontGroupHref(parentSlug as StorefrontCategoryGroupSlug),
   };
 }
@@ -302,7 +298,7 @@ function knownGemCategory(slug: string, expectedType?: GemCategoryRow['type']): 
     label: known.label,
     desc: known.desc,
     seoTitle: known.seoTitle,
-    canonicalPath: flatCategoryPath(slug),
+    canonicalPath: storefrontSubcategoryHref(parentSlug, slug),
   };
 }
 
@@ -316,7 +312,7 @@ function knownCatalogCategory(slug: string, expectedFamilies?: CatalogFamily[]):
     parentSlug,
     label: known.label,
     desc: `Explore our collection of ${known.label}.`,
-    canonicalPath: flatCategoryPath(slug),
+    canonicalPath: storefrontSubcategoryHref(parentSlug, slug),
   };
 }
 
@@ -386,7 +382,7 @@ async function findShopCategoryPageFallback(slug: string): Promise<ResolvedShopC
     parentSlug,
     label,
     desc: row.intro_text || `Explore our collection of ${row.name}.`,
-    canonicalPath: flatCategoryPath(row.slug),
+    canonicalPath: storefrontSubcategoryHref(parentSlug, row.slug),
   };
 }
 

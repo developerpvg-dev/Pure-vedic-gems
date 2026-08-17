@@ -18,14 +18,14 @@ const KEY_TO_SLUG = {
 };
 
 const SHOP = {
-  'blue-sapphire': '/shop/blue-sapphire',
-  'yellow-sapphire': '/shop/yellow-sapphire',
-  ruby: '/shop/ruby',
-  emerald: '/shop/emerald',
-  'red-coral': '/shop/red-coral',
-  catseye: '/shop/cats-eye',
-  hessonite: '/shop/hessonite',
-  opal: '/shop/opal',
+  'blue-sapphire': '/gemstones/navaratna/blue-sapphire',
+  'yellow-sapphire': '/gemstones/navaratna/yellow-sapphire',
+  ruby: '/gemstones/navaratna/ruby',
+  emerald: '/gemstones/navaratna/emerald',
+  'red-coral': '/gemstones/navaratna/red-coral',
+  catseye: '/gemstones/navaratna/cats-eye',
+  hessonite: '/gemstones/navaratna/hessonite',
+  opal: '/gemstones/upratna/opal',
 };
 
 function img(slug, file) {

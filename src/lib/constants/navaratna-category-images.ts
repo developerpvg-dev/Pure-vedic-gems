@@ -16,3 +16,6 @@ export const NAVARATNA_NAV_IMAGE_BY_SLUG: Record<string, string> = {
 export function navaratnaNavImage(slug: string): string | null {
   return NAVARATNA_NAV_IMAGE_BY_SLUG[slug] ?? null;
 }
+
+/** Hub hero — keep-local so proxy does not send it to the offloaded navratnaimg bucket. */
+export const NAVARATNA_SET_HERO = '/home/hero/navaratna-set.png';

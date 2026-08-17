@@ -27,6 +27,7 @@ export function table(rows: Array<[string, string]>) {
 export type RichGemSections = {
   intro?: string;
   hero_benefits?: HeroBenefit[];
+  seo_title?: string;
   seo_description?: string;
   meta_keywords?: string[];
   about_html?: string;

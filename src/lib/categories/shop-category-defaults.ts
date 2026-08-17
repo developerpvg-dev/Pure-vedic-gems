@@ -1,6 +1,10 @@
-import { KNOWN_CATALOG_SUBCATEGORIES, KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
+import { BASE_CATEGORY_MAP, KNOWN_CATALOG_SUBCATEGORIES, KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
 import { getRichCategoryContent } from '@/lib/categories/shop-category-content';
 import { compactHeroBenefits, compactHeroIntro } from '@/lib/categories/shop-category-content/helpers';
+import { NAVARATNA_SET_HERO } from '@/lib/constants/navaratna-category-images';
+import { RUDRAKSHA_FEATURE_IMAGES } from '@/lib/constants/rudraksha-category-images';
+import { UPRATNA_HUB_HERO } from '@/lib/constants/upratna-category-images';
+import { gemEnglishName, navaratnaChildMeta, upratnaChildMeta, vedicNameFromLabel } from '@/lib/seo/storefront-meta';
 import type { CategoryFaq, HeroBenefit, ShopCategoryPageContent } from '@/lib/types/shop-category-page';
 
 const BRAND = 'PureVedicGems';
@@ -62,6 +66,7 @@ function mergeRichContent(
     hero_benefits: rich.hero_benefits?.length
       ? compactHeroBenefits(rich.hero_benefits)
       : base.hero_benefits,
+    seo_title: rich.seo_title ?? base.seo_title,
     seo_description: rich.seo_description ?? base.seo_description,
     meta_keywords: rich.meta_keywords ?? base.meta_keywords,
     about_html: rich.about_html ?? base.about_html,
@@ -84,8 +89,7 @@ function buildGemDefaults(
   desc: string,
   planet?: string,
 ): ShopCategoryPageContent {
-  const shortName = label.split('(')[0].trim();
-  const seoTitle = `Buy Natural ${label} Online — Certified ${shortName} | ${BRAND}`;
+  const shortName = gemEnglishName(label);
   const keywords = [
     shortName.toLowerCase(),
     slug,
@@ -103,11 +107,11 @@ function buildGemDefaults(
   const base: ShopCategoryPageContent = {
     slug,
     name: shortName,
-    sanskrit_name: label.match(/\(([^)]+)\)/)?.[1] ?? null,
+    sanskrit_name: vedicNameFromLabel(label),
     product_category: category,
     planet: planet ?? null,
-    seo_title: seoTitle,
-    seo_description: `${desc} Shop certified natural ${label} with lab reports, expert consultation, and worldwide delivery from ${BRAND}.`,
+    seo_title: `Buy ${shortName} Online in India | ${BRAND}`,
+    seo_description: `${desc} Shop ${shortName} with lab reports, expert consultation, and worldwide delivery from ${BRAND}.`,
     meta_keywords: keywords,
     intro_text: desc,
     hero_benefits: defaultBenefits(shortName, planet),
@@ -154,7 +158,12 @@ function buildGemDefaults(
     is_active: true,
   };
 
-  return mergeRichContent(base, getRichCategoryContent(slug, label, category));
+  const merged = mergeRichContent(base, getRichCategoryContent(slug, label, category));
+  const meta =
+    category === 'upratna'
+      ? upratnaChildMeta(shortName)
+      : navaratnaChildMeta(shortName, vedicNameFromLabel(label));
+  return { ...merged, ...meta };
 }
 
 const PLANET_BY_SLUG: Record<string, string> = {
@@ -245,6 +254,28 @@ export function buildGenericShopCategoryDraft(input: {
 }
 
 export function getDefaultShopCategoryPage(slug: string): ShopCategoryPageContent | null {
+  if (slug === 'navaratna' || slug === 'navratna') {
+    const parent = BASE_CATEGORY_MAP.navaratna;
+    const page = buildCatalogDefaults('navaratna', parent.label, parent.category ?? 'navaratna');
+    return { ...page, image_url: NAVARATNA_SET_HERO, hero_image_url: NAVARATNA_SET_HERO };
+  }
+
+  if (slug === 'rudraksha') {
+    const parent = BASE_CATEGORY_MAP.rudraksha;
+    const page = buildCatalogDefaults('rudraksha', parent.label, parent.category ?? 'rudraksha');
+    return {
+      ...page,
+      image_url: RUDRAKSHA_FEATURE_IMAGES.collection,
+      hero_image_url: RUDRAKSHA_FEATURE_IMAGES.collection,
+    };
+  }
+
+  if (slug === 'upratna') {
+    const parent = BASE_CATEGORY_MAP.upratna;
+    const page = buildCatalogDefaults('upratna', parent.label, parent.category ?? 'upratna');
+    return { ...page, image_url: UPRATNA_HUB_HERO, hero_image_url: UPRATNA_HUB_HERO };
+  }
+
   const gem = KNOWN_GEM_SUBCATEGORIES[slug];
   if (gem) {
     return buildGemDefaults(slug, gem.label, gem.category, gem.desc, PLANET_BY_SLUG[slug]);
@@ -260,6 +291,9 @@ export function getDefaultShopCategoryPage(slug: string): ShopCategoryPageConten
 
 export function getAllDefaultCategorySlugs(): string[] {
   return [
+    'navaratna',
+    'rudraksha',
+    'upratna',
     ...Object.keys(KNOWN_GEM_SUBCATEGORIES),
     ...Object.keys(KNOWN_CATALOG_SUBCATEGORIES),
   ];

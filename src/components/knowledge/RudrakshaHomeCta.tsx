@@ -12,7 +12,7 @@ export function RudrakshaHomeCta({ className = '' }: { className?: string }) {
         title="Not sure which Rudraksha is right for you?"
         copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
         primary={{ label: 'Get Rudraksha Guidance', href: '/consultation' }}
-        secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
+        secondary={{ label: 'See Rudraksha Collection', href: '/rudraksha' }}
         image="/home/ctas/cta2.webp?v=2"
         imageAlt="Rudraksha expert offering personalised guidance"
         imageSide="left"

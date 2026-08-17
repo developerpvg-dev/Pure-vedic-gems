@@ -1,18 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
+import { buildMetadata } from '@/lib/utils/seo';
 import {
   getHomeManagedCategories,
   type HomeManagedCategory,
 } from '@/components/home/PvgManagedCategorySections';
 
-export const metadata: Metadata = {
+export const metadata = buildMetadata({
   title: 'The Nine Vedic Gems - Navratnas | PureVedicGems',
   description:
     'A complete guide to the nine Vedic gems or Navratnas: Ruby, Pearl, Red Coral, Emerald, Yellow Sapphire, Diamond, Blue Sapphire, Hessonite, and Cat Eye.',
-};
+  path: '/knowledge/gemstones',
+});
 
 export const revalidate = 3600;
 
@@ -53,7 +54,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Diamond, Hessonite, Blue Sapphire',
     colors: 'Orange, saffron, light red, yellow',
     ray: 'Red cosmic rays',
-    shopHref: '/shop/navaratna/ruby',
+    shopHref: '/gemstones/navaratna/ruby',
     fallbackImage: '/home/navratnaimg/stone1.webp',
     overview:
       'Ruby, known as Manik in India, is traditionally connected with the Sun. Classical Vedic gem therapy associates it with vitality, authority, self-confidence, name, reputation, warmth, and leadership presence.',
@@ -83,7 +84,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Hessonite',
     colors: 'Silver, white, orange, yellow',
     ray: 'Orange cosmic rays',
-    shopHref: '/shop/navaratna/pearl',
+    shopHref: '/gemstones/navaratna/pearl',
     fallbackImage: '/home/navratnaimg/stone2.webp',
     overview:
       'Pearl, called Moti, is associated with the Moon. Vedic tradition connects it with emotional steadiness, calmness, motherly support, sleep rhythm, sensitivity, and mental peace.',
@@ -113,7 +114,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Diamond, Blue Sapphire, Emerald, Hessonite',
     colors: 'Red shades, copper, yellow',
     ray: 'Yellow cosmic rays',
-    shopHref: '/shop/navaratna/red-coral',
+    shopHref: '/gemstones/navaratna/red-coral',
     fallbackImage: '/home/navratnaimg/stone7.webp',
     overview:
       'Red Coral, known as Moonga, is the Navratna for Mars. It is traditionally associated with courage, stamina, discipline, decisiveness, ambition, and physical drive.',
@@ -143,7 +144,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'None commonly listed',
     colors: 'Green shades, yellow',
     ray: 'Green cosmic rays',
-    shopHref: '/shop/navaratna/emerald',
+    shopHref: '/gemstones/navaratna/emerald',
     fallbackImage: '/home/navratnaimg/stone4.webp',
     overview:
       'Emerald, called Panna, is the gemstone of Mercury. It is traditionally connected with intelligence, memory, communication, speech, learning, trade, analysis, humor, and diplomacy.',
@@ -173,7 +174,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Hessonite, Blue Sapphire, Diamond',
     colors: 'Yellow shades, golden, red, orange, light blue',
     ray: 'Blue cosmic rays',
-    shopHref: '/shop/navaratna/yellow-sapphire',
+    shopHref: '/gemstones/navaratna/yellow-sapphire',
     fallbackImage: '/home/navratnaimg/stone5.webp',
     overview:
       'Yellow Sapphire, known as Pukhraj, is connected with Jupiter. Vedic tradition associates it with wisdom, prosperity, dharma, education, marriage guidance, counsel, faith, and protection from adversity.',
@@ -203,7 +204,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Ruby, Red Coral, Yellow Sapphire',
     colors: 'Indigo, cream, blue, black',
     ray: 'Indigo cosmic rays',
-    shopHref: '/shop/navaratna/diamond',
+    shopHref: '/gemstones/navaratna/diamond',
     fallbackImage: '/home/navratnaimg/stone6.webp',
     overview:
       'Diamond, called Heera, is associated with Venus. Classical traditions connect it with refinement, beauty, comfort, luxury, relationship themes, artistic taste, and material grace.',
@@ -233,7 +234,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Ruby, Red Coral, Yellow Sapphire, Pearl',
     colors: 'Violet, black, navy blue, turquoise, grey',
     ray: 'Violet cosmic rays',
-    shopHref: '/shop/navaratna/blue-sapphire',
+    shopHref: '/gemstones/navaratna/blue-sapphire',
     fallbackImage: '/home/navratnaimg/stone3.webp',
     overview:
       'Blue Sapphire, known as Neelam, is the gemstone of Saturn. It is considered one of the strongest Navratnas and is traditionally linked with discipline, endurance, karma, career stability, and long-term responsibility.',
@@ -263,7 +264,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'Ruby, Pearl, Coral',
     colors: 'Black, dark brown, dark green',
     ray: 'Ultraviolet cosmic rays',
-    shopHref: '/shop/navaratna/hessonite',
+    shopHref: '/gemstones/navaratna/hessonite',
     fallbackImage: '/home/navratnaimg/stone8.webp',
     overview:
       'Hessonite, called Gomed, is associated with Rahu, the north lunar node. Vedic tradition links it with focus during uncertainty, ambition, public life, sudden rise, obsessive patterns, and unusual delays.',
@@ -293,7 +294,7 @@ const NAVRATNAS: NavratnaGuide[] = [
     inimical: 'None commonly listed',
     colors: 'Multi-colored, black, smoky grey',
     ray: 'Infrared cosmic rays',
-    shopHref: '/shop/navaratna/cats-eye',
+    shopHref: '/gemstones/navaratna/cats-eye',
     fallbackImage: '/home/navratnaimg/stone9.webp',
     overview:
       "Cat's Eye, known as Lehsuniya, is associated with Ketu, the south lunar node. It is traditionally connected with intuition, detachment, spiritual insight, sudden shifts, hidden obstacles, and protection practices.",

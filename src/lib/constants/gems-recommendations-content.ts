@@ -11,10 +11,9 @@
 export const GEMS_REC_PATH = '/gems-recommendations';
 
 export const GEMS_REC_META = {
-  title:
-    'Which Gemstone Should I Wear? Vedic Remedies by Birth Chart Online | Pure Vedic Gems',
+  title: 'Which Gemstone Should I Wear? | Kundli Recommendation',
   description:
-    'Expert Vedic gemstone & Rudraksha recommendation by birth chart (Kundli), lagna, and date of birth — for India and worldwide (USA, UK, UAE, Canada, Singapore, Australia, NRIs). Lucky stones, stones to avoid, and Yagya remedies from Pure Vedic Science astrologers — online consultation from ₹101.',
+    'Expert Vedic gemstone & Rudraksha recommendation by birth chart (Kundli), lagna, and date of birth — India and worldwide. Lucky stones, stones to avoid, and Yagya remedies from Pure Vedic Gems.',
 };
 
 /** Compact on-page FAQs only (must match visible FAQ + FAQ schema). */
@@ -155,7 +154,7 @@ export const GEMS_REC_SERVICES = [
     title: 'Rudrakshas',
     titleHi: 'रुद्राक्ष',
     image: '/home/remediesrec/Rudrakshas.jpg',
-    href: '/shop/rudraksha',
+    href: '/rudraksha',
     body: 'Mukhi selection based on your Kundli when gemstones are not suitable, or as complementary remedies for balance and protection.',
   },
 ] as const;

@@ -302,6 +302,8 @@
 }
 
 .category-hub-hero__image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -461,6 +463,7 @@
   padding: 1.5rem 1.25rem;
   border-top: 1px solid var(--pvg-border);
   animation: category-hub-panel-in 0.18s ease;
+  scroll-margin-top: 6rem;
 }
 
 @media (min-width: 768px) {
@@ -546,6 +549,83 @@
   color: var(--pvg-primary);
   white-space: nowrap;
   background: var(--pvg-gold-light);
+}
+
+.category-hub-panel__body table th {
+  background: var(--pvg-gold-light);
+  font-weight: 700;
+  color: var(--pvg-primary);
+}
+
+.category-hub-panel__body a {
+  color: var(--pvg-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .category-hub-panel__body table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .category-hub-panel__body table td:first-child {
+    white-space: normal;
+  }
+}
+
+.pvg-react-home-root .navratna-section.navratna-section--embedded {
+  padding: 0 0 8px;
+  background: transparent;
+  overflow: visible;
+}
+
+.pvg-react-home-root .navratna-section.navratna-section--embedded .container {
+  padding-left: 0;
+  padding-right: 0;
+  max-width: none;
+}
+
+.pvg-react-home-root .rudraksha-section.rudraksha-section--embedded {
+  padding: 0 0 8px !important;
+  background: transparent;
+  overflow: visible;
+}
+
+.pvg-react-home-root .rudraksha-section.rudraksha-section--embedded .container {
+  padding-left: 0;
+  padding-right: 0;
+  max-width: none;
+}
+
+.pvg-react-home-root .rudraksha-section--embedded .rudra-grid-right {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 18px 14px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+.pvg-react-home-root .rudraksha-section--embedded .rudra-item-card {
+  flex: none !important;
+}
+
+@media (max-width: 1024px) {
+  .pvg-react-home-root .rudraksha-section--embedded .rudra-grid-right {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .pvg-react-home-root .rudraksha-section--embedded .rudra-grid-right {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .pvg-react-home-root .rudraksha-section--embedded .rudra-grid-right {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 /* FAQ list within the FAQs panel */

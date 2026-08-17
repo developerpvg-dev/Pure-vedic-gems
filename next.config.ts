@@ -214,12 +214,12 @@ const nextConfig: NextConfig = {
       { source: '/shop/spiritual-idols/', destination: '/shop/idols', statusCode: 301 },
       {
         source: '/product-category/navratan/exclusive-rudraksha',
-        destination: '/shop/rudraksha',
+        destination: '/rudraksha',
         statusCode: 301,
       },
       {
         source: '/product-category/navratan/exclusive-rudraksha/',
-        destination: '/shop/rudraksha',
+        destination: '/rudraksha',
         statusCode: 301,
       },
       // WooCommerce /shop/page/80 pagination → shop hub
@@ -230,12 +230,12 @@ const nextConfig: NextConfig = {
       { source: '/blog/page/:n(\\d+)/', destination: '/blog', statusCode: 301 },
       {
         source: '/shop/upratan/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
-        destination: '/shop/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+        destination: '/gemstones/upratna/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
         statusCode: 301,
       },
       {
         source: '/shop/upratan/zircon/zircon-5-95ct-2060per-ct-natural-gemstone/',
-        destination: '/shop/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
+        destination: '/gemstones/upratna/zircon/zircon-5-95ct-2060per-ct-natural-gemstone',
         statusCode: 301,
       },
       {
@@ -337,12 +337,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/shop/navratan/emerald/emerald-5-53ct-23181-per-ct-super-luxury-natural-gemstone',
-        destination: '/shop/emerald',
+        destination: '/gemstones/navaratna/emerald',
         statusCode: 301,
       },
       {
         source: '/shop/navratan/emerald/emerald-5-53ct-23181-per-ct-super-luxury-natural-gemstone/',
-        destination: '/shop/emerald',
+        destination: '/gemstones/navaratna/emerald',
         statusCode: 301,
       },
       {
@@ -367,22 +367,22 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/tag/blue-sapphire',
-        destination: '/shop/blue-sapphire',
+        destination: '/gemstones/navaratna/blue-sapphire',
         statusCode: 301,
       },
       {
         source: '/tag/blue-sapphire/',
-        destination: '/shop/blue-sapphire',
+        destination: '/gemstones/navaratna/blue-sapphire',
         statusCode: 301,
       },
       {
         source: '/tag/certified-rudrakshas',
-        destination: '/shop/rudraksha',
+        destination: '/rudraksha',
         statusCode: 301,
       },
       {
         source: '/tag/certified-rudrakshas/',
-        destination: '/shop/rudraksha',
+        destination: '/rudraksha',
         statusCode: 301,
       },
       {
@@ -397,12 +397,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/tag/pure-vedic-rudraksha',
-        destination: '/shop/rudraksha',
+        destination: '/rudraksha',
         statusCode: 301,
       },
       {
         source: '/tag/pure-vedic-rudraksha/',
-        destination: '/shop/rudraksha',
+        destination: '/rudraksha',
         statusCode: 301,
       },
       ...[
@@ -441,8 +441,8 @@ const nextConfig: NextConfig = {
         '/tag/benefits-of-blue-sapphire',
         '/tag/blue-sapphire-benefits',
       ].flatMap((source) => [
-        { source, destination: '/shop/blue-sapphire', statusCode: 301 },
-        { source: `${source}/`, destination: '/shop/blue-sapphire', statusCode: 301 },
+        { source, destination: '/gemstones/navaratna/blue-sapphire', statusCode: 301 },
+        { source: `${source}/`, destination: '/gemstones/navaratna/blue-sapphire', statusCode: 301 },
       ]),
       {
         source: '/tag/care-of-gemstones',
@@ -456,21 +456,21 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/tag/chandra-ratna',
-        destination: '/shop/pearl',
+        destination: '/gemstones/navaratna/pearl',
         statusCode: 301,
       },
       {
         source: '/tag/chandra-ratna/',
-        destination: '/shop/pearl',
+        destination: '/gemstones/navaratna/pearl',
         statusCode: 301,
       },
       ...[
-        ['/tag/garnet-jewellery', '/shop/garnet'],
-        ['/tag/cats-eye-certification', '/shop/cats-eye'],
-        ['/tag/cats-eye-certificate', '/shop/cats-eye'],
-        ['/tag/white-sapphire', '/shop/white-sapphire'],
+        ['/tag/garnet-jewellery', '/gemstones/upratna/garnet'],
+        ['/tag/cats-eye-certification', '/gemstones/navaratna/cats-eye'],
+        ['/tag/cats-eye-certificate', '/gemstones/navaratna/cats-eye'],
+        ['/tag/white-sapphire', '/gemstones/navaratna/white-sapphire'],
         ['/tag/authentic-gemstone-shopping-online', '/blog'],
-        ['/tag/neelam-stone', '/shop/blue-sapphire'],
+        ['/tag/neelam-stone', '/gemstones/navaratna/blue-sapphire'],
         ['/tag/vedic-mantra', '/knowledge/astrology'],
         ['/tag/vedic-astrology', '/knowledge/astrology'],
         ['/tag/vedic-astrology-benefits', '/knowledge/astrology'],
@@ -491,38 +491,38 @@ const nextConfig: NextConfig = {
       ]),
       {
         source: '/category/navratnas',
-        destination: '/shop/navaratna',
+        destination: '/gemstones/navaratna',
         statusCode: 301,
       },
       {
         source: '/category/navratnas/',
-        destination: '/shop/navaratna',
+        destination: '/gemstones/navaratna',
         statusCode: 301,
       },
 
       // WP rudraksha tree. Must beat rewrite /shop/navratan/:slug/:product → /shop/navaratna/:product.
       // :cat captures "5-mukhi" from "5-mukhi-rudraksha".
       ...['/shop/navratan/rudrakshas', '/product-category/navratan/rudrakshas'].flatMap((base) => [
-        { source: base, destination: '/shop/rudraksha', statusCode: 301 },
-        { source: `${base}/`, destination: '/shop/rudraksha', statusCode: 301 },
+        { source: base, destination: '/rudraksha', statusCode: 301 },
+        { source: `${base}/`, destination: '/rudraksha', statusCode: 301 },
         {
           source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha`,
-          destination: '/shop/:cat',
+          destination: '/rudraksha/:cat',
           statusCode: 301,
         },
         {
           source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha/`,
-          destination: '/shop/:cat',
+          destination: '/rudraksha/:cat',
           statusCode: 301,
         },
         {
           source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha/:product`,
-          destination: '/shop/:cat/:product',
+          destination: '/rudraksha/:cat/:product',
           statusCode: 301,
         },
         {
           source: `${base}/:cat(\\d{1,2}-mukhi)-rudraksha/:product/`,
-          destination: '/shop/:cat/:product',
+          destination: '/rudraksha/:cat/:product',
           statusCode: 301,
         },
       ]),
@@ -534,16 +534,16 @@ const nextConfig: NextConfig = {
         ['sawar-rudraksha', 'sawar-rudraksha'],
       ].flatMap(([from, to]) =>
         ['/shop/navratan/rudrakshas', '/product-category/navratan/rudrakshas'].flatMap((base) => [
-          { source: `${base}/${from}`, destination: `/shop/${to}`, statusCode: 301 },
-          { source: `${base}/${from}/`, destination: `/shop/${to}`, statusCode: 301 },
+          { source: `${base}/${from}`, destination: `/rudraksha/${to}`, statusCode: 301 },
+          { source: `${base}/${from}/`, destination: `/rudraksha/${to}`, statusCode: 301 },
           {
             source: `${base}/${from}/:product`,
-            destination: `/shop/${to}/:product`,
+            destination: `/rudraksha/${to}/:product`,
             statusCode: 301,
           },
           {
             source: `${base}/${from}/:product/`,
-            destination: `/shop/${to}/:product`,
+            destination: `/rudraksha/${to}/:product`,
             statusCode: 301,
           },
         ]),
@@ -845,26 +845,32 @@ const nextConfig: NextConfig = {
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
 
-      // Legacy geo consultation + regional astrology landings -> /consultation.
-      // SEO from these pages is retained via consultation page meta + JSON-LD (not on-page copy).
+      // Legacy geo consultation landings -> /consultation.
       ...[
         '/astrological-consultation-in-abu-dhabi-professional-guidance-for-your-birth-chart',
         '/astrological-consultation-in-birmingham-kundli-guidance',
         '/best-astrological-consultation-in-california-expert-vedic-astrologer',
         '/best-astrological-consultation-in-new-york-and-expert-vedic-astrology-guidance',
         '/trusted-astrological-consultation-in-sharjah-personalised-vedic-guidance',
-        '/natural-certified-blue-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide',
-        '/natural-certified-emerald-gemstone-in-malaysia-benefits-astrology-buying-guide',
-        '/natural-certified-hessonite-gemstone-in-malaysia-benefits-astrology-buying-guide',
-        '/natural-certified-pearl-gemstone-in-malaysia-benefits-astrology-buying-guide',
-        '/natural-certified-white-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide',
-        '/natural-yellow-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide',
-        '/red-coral-gemstone-in-malaysia-benefits-price-astrology-and-buying-guide',
-        '/ruby-gemstone-in-malaysia-natural-certified-astrological-stone-for-confidence-success-and-wealth-growth',
         '/tag/astrological-consultation',
       ].flatMap((source) => [
         { source, destination: '/consultation', statusCode: 301 },
         { source: `${source}/`, destination: '/consultation', statusCode: 301 },
+      ]),
+
+      // Malaysia gem buy-guides → quality hubs (not consultation).
+      ...[
+        ['/natural-certified-blue-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/blue-sapphire'],
+        ['/natural-certified-emerald-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/emerald'],
+        ['/natural-certified-hessonite-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/hessonite'],
+        ['/natural-certified-pearl-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/pearl'],
+        ['/natural-certified-white-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/white-sapphire'],
+        ['/natural-yellow-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/yellow-sapphire'],
+        ['/red-coral-gemstone-in-malaysia-benefits-price-astrology-and-buying-guide', '/knowledge/gem-qualities/red-coral'],
+        ['/ruby-gemstone-in-malaysia-natural-certified-astrological-stone-for-confidence-success-and-wealth-growth', '/knowledge/gem-qualities/ruby'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
       ]),
 
       // Legacy geo "buy gem / rudraksha in CITY" landings → stone/rudraksha quality hubs.
@@ -965,13 +971,15 @@ const nextConfig: NextConfig = {
         ['/online-rudraksha-recommendation', '/gems-recommendations'],
         // Google sitelink "Astrological Gemstones online"
         ['/astrological-gemstones-online', '/gems-recommendations'],
+        // Free shortlist tool paused — send traffic to expert recommendation page
+        ['/tools/recommendation', '/gems-recommendations'],
       ].flatMap(([source, destination]) => [
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
 
       // Google sitelink "Rudraksha" still hits plural WP slug → shop hub.
-      ...[['/rudrakshas', '/shop/rudraksha']].flatMap(([source, destination]) => [
+      ...[['/rudrakshas', '/rudraksha']].flatMap(([source, destination]) => [
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },
       ]),
@@ -1010,10 +1018,10 @@ const nextConfig: NextConfig = {
 
       // Legacy bare gem category / listing pages -> storefront listings.
       ...[
-        ['/blue-sapphire', '/shop/blue-sapphire'],
-        ['/yellow-sapphire', '/shop/yellow-sapphire'],
-        ['/catseye-gemstone', '/shop/cats-eye'],
-        ['/emerald-gemstone', '/shop/emerald'],
+        ['/blue-sapphire', '/gemstones/navaratna/blue-sapphire'],
+        ['/yellow-sapphire', '/gemstones/navaratna/yellow-sapphire'],
+        ['/catseye-gemstone', '/gemstones/navaratna/cats-eye'],
+        ['/emerald-gemstone', '/gemstones/navaratna/emerald'],
       ].flatMap(([source, destination]) => [
         { source, destination, statusCode: 301 },
         { source: `${source}/`, destination, statusCode: 301 },

@@ -46,10 +46,10 @@ export default function GemsRecommendationsPage() {
       <section className="px-4 pb-5 pt-10 sm:px-6 lg:pt-14" aria-labelledby="remedy-hero-heading">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="section-title" id="remedy-hero-heading">
-            Get Your Remedies Recommendation
+            Which Gemstone Should I Wear?
           </h1>
           <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
-            Personalized gemstone, Rudraksha &amp; Yagya guidance from your Kundli — just{' '}
+            Expert gemstone, Rudraksha &amp; Yagya guidance from your Kundli — not an automated tool. Book online from{' '}
             <Money amount={RS101_AMOUNT_INR} />.
           </p>
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />

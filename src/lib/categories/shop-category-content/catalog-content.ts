@@ -1,4 +1,5 @@
 import type { CategoryFaq, HeroBenefit } from '@/lib/types/shop-category-page';
+import { mukhiMeta } from '@/lib/seo/storefront-meta';
 import { BRAND, h3, mergeKeywords, p, ul, type RichGemSections } from './helpers';
 
 type MukhiMeta = {
@@ -692,7 +693,7 @@ function buildMukhiContent(slug: string, label: string, mukhi: number): RichGemS
   return {
     intro: `${label} is sacred to ${meta.deity}${meta.planet ? ` and traditionally linked to ${meta.planet}` : ''}. At ${BRAND}, we source natural, certified ${shortLabel} with transparent origin and mukhi verification — continuing our heritage in Vedic spiritual goods since 1937.`,
     hero_benefits: toHeroBenefits(meta.heroBenefits),
-    seo_description: `Buy authentic ${label} online at ${BRAND}. Certified natural bead, ${meta.deity} blessings, expert energization, and worldwide delivery. Discover traditional benefits, wearing rules, and care for ${mukhi} Mukhi Rudraksha.`,
+    ...mukhiMeta(mukhi),
     meta_keywords: rudrakshaKeywords(slug, label, [
       `${mukhi} mukhi`,
       meta.deity.toLowerCase(),
@@ -977,8 +978,15 @@ function buildMalaContent(slug: string, label: string): RichGemSections {
   return {
     intro: `${label} from ${BRAND} support japa, meditation, and Shiva remembrance. ${meta.focus} — hand-selected beads with uniform mukhi and traditional knotting.`,
     hero_benefits: toHeroBenefits(meta.heroBenefits),
-    seo_description: `Buy ${label} online at ${BRAND}. Authentic 108-bead japa malas, multiple mukhi options, energization, knotting tradition, and worldwide delivery.`,
-    meta_keywords: mergeKeywords(jewelryKeywords(slug, label), ['japa mala', '108 mala', 'rudraksha mala', 'meditation mala']),
+    seo_title: 'Buy Rudraksha Mala Online | 108 Japa Malas',
+    seo_description: `Buy certified Rudraksha malas online at ${BRAND}. Authentic 108-bead japa malas, mukhi options, energization, and worldwide delivery.`,
+    meta_keywords: mergeKeywords(jewelryKeywords(slug, label), [
+      'japa mala',
+      '108 mala',
+      'rudraksha mala',
+      'meditation mala',
+      'buy rudraksha mala',
+    ]),
     about_html: p(
       'The Rudraksha mala is the quintessential tool for mantra japa — 108 repetitions circling back to the meru (guru) bead without crossing it.',
       meta.buyerNotes,
@@ -1015,6 +1023,14 @@ function buildMalaContent(slug: string, label: string): RichGemSections {
       `${BRAND} counts every mala before dispatch and verifies mukhi uniformity.`,
     ),
     faqs: [
+      {
+        question: 'What does a Rudraksha mala cost?',
+        answer: 'Price depends on mukhi count, bead size, origin (Nepal vs Java), knotting, and spacers. A standard 5 Mukhi 108-bead japa mala is the most accessible; rare mukhi or gold-spacer malas cost more.',
+      },
+      {
+        question: 'Who should wear a Rudraksha mala?',
+        answer: 'Beginners usually start with a 5 Mukhi 108-bead mala for daily japa. Combination or high-mukhi malas need guru or astrologer guidance. Malas support sadhana; they are not a substitute for medical care.',
+      },
       {
         question: 'Why 108 beads on a japa mala?',
         answer: '108 is sacred in Vedic cosmology — sun diameter, moon distance ratios, and mantra numerology. The meru (guru) bead marks the 109th point and is not crossed during japa.',

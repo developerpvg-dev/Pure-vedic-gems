@@ -1,10 +1,10 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { productHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 
 type Ctx = { params: Promise<{ slug: string }> };
 
-/** Legacy /products/:slug → canonical /shop/{category}/{slug} (recommendation BUY links). */
+/** Legacy /products/:slug → canonical storefront PDP. */
 export default async function LegacyProductRedirect({ params }: Ctx) {
   const { slug } = await params;
   const supabase = createOptionalPublicClient();
@@ -18,5 +18,5 @@ export default async function LegacyProductRedirect({ params }: Ctx) {
     .maybeSingle();
 
   if (!data?.slug) notFound();
-  redirect(productHref(data));
+  permanentRedirect(productHref(data));
 }

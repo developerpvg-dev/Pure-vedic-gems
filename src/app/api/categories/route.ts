@@ -7,6 +7,7 @@ import {
 import {
   catalogFamilyToStorefrontGroupSlug,
   STORE_CATEGORY_GROUPS_FALLBACK,
+  storefrontGroupHref,
   storefrontSubcategoryHref,
   type StorefrontCategoryGroup,
   type StorefrontCategoryGroupSlug,
@@ -51,12 +52,12 @@ const STOREFRONT_GROUP_CONFIG: Array<{
   gemType?: GemCategoryRow['type'];
   catalogFamilies?: CatalogCategoryRow['family'][];
 }> = [
-  { slug: 'navaratna', label: 'Navaratna Gems', href: '/shop/navaratna', gemType: 'navaratna' },
-  { slug: 'upratna', label: 'Upratna Gems', href: '/shop/upratna', gemType: 'upratna' },
-  { slug: 'rudraksha', label: 'Rudraksha', href: '/shop/rudraksha', gemType: 'rudraksha' },
-  { slug: 'idols', label: 'Spiritual Idols', href: '/shop/idols', catalogFamilies: ['idol'] },
-  { slug: 'jewelry', label: 'Vedic Jewellery', href: '/shop/jewelry', catalogFamilies: ['jewelry'] },
-  { slug: 'malas', label: 'Malas', href: '/shop/malas', catalogFamilies: ['mala'] },
+  { slug: 'navaratna', label: 'Navaratna Gems', href: storefrontGroupHref('navaratna'), gemType: 'navaratna' },
+  { slug: 'upratna', label: 'Upratna Gems', href: storefrontGroupHref('upratna'), gemType: 'upratna' },
+  { slug: 'rudraksha', label: 'Rudraksha', href: storefrontGroupHref('rudraksha'), gemType: 'rudraksha' },
+  { slug: 'idols', label: 'Spiritual Idols', href: storefrontGroupHref('idols'), catalogFamilies: ['idol'] },
+  { slug: 'jewelry', label: 'Vedic Jewellery', href: storefrontGroupHref('jewelry'), catalogFamilies: ['jewelry'] },
+  { slug: 'malas', label: 'Malas', href: storefrontGroupHref('malas'), catalogFamilies: ['mala'] },
 ];
 
 function fallbackGroup(slug: StorefrontCategoryGroupSlug) {
@@ -72,7 +73,7 @@ function gemToSubcategory(category: GemCategoryRow): StorefrontSubCategory {
   return {
     slug: category.slug,
     label: gemLabel(category),
-    href: `/shop/${category.slug}`,
+    href: storefrontSubcategoryHref(category.type === 'rudraksha' ? 'rudraksha' : category.type, category.slug),
     swatch: category.color,
     image,
     meta: category.type === 'navaratna' ? category.planet ?? null : null,
@@ -85,7 +86,7 @@ function catalogToSubcategory(category: CatalogCategoryRow): StorefrontSubCatego
   return {
     slug: category.slug,
     label: category.name,
-    href: isParentCategory ? `/shop/${parentSlug}` : `/shop/${category.slug}`,
+    href: isParentCategory ? storefrontGroupHref(parentSlug) : storefrontSubcategoryHref(parentSlug, category.slug),
     meta: category.homepage_subtitle ?? category.description,
   };
 }

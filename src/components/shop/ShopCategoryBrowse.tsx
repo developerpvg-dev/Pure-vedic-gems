@@ -2,7 +2,6 @@ import {
   ExploreByCategorySection,
   getShopBrowseCategories,
   NavaratnaHomeSection,
-  RudrakshaHomeSection,
   SemipreciousHomeSection,
 } from '@/components/home/PvgManagedCategorySections';
 import { PvgHomeInteractions } from '@/components/home/PvgHomeInteractions';
@@ -14,7 +13,6 @@ export async function ShopCategoryBrowse() {
   return (
     <div className="pvg-react-home-root pvg-shop-category-browse">
       <NavaratnaHomeSection categories={gems.navaratna} showCta={false} />
-      <RudrakshaHomeSection categories={gems.rudraksha} showCta={false} />
       <SemipreciousHomeSection categories={gems.upratna} showCta={false} />
       <ExploreByCategorySection idols={idols} jewelry={jewelry} showCta={false} />
       <PvgHomeInteractions />

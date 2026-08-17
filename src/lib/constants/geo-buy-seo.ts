@@ -814,6 +814,30 @@ export function geoBuySourcesForDest(destination: string): GeoBuySource[] {
   return GEO_BUY_SOURCES.filter((s) => s.destination === destination);
 }
 
+export function geoBuyCityList(destination: string, limit = 6): string[] {
+  return [...new Set(geoBuySourcesForDest(destination).map((s) => s.city))].slice(0, limit);
+}
+
+export function geoBuyShipCopy(label: string, cities: string[]): string | null {
+  if (cities.length === 0) return null;
+  const listed = [...cities];
+  const last = listed.pop();
+  const places = listed.length ? `${listed.join(', ')} and ${last}` : last;
+  return `Certified ${label} ships from our Delhi workshop to buyers in ${places}, with insured international delivery. Suitability still depends on the stone and, for astrological wear, a chart review.`;
+}
+
+/** Malaysia buy-guides wrongly pointed at /consultation; quality hubs are the commercial canonical. */
+export const MALAYSIA_GEM_REDIRECTS: Array<[string, string]> = [
+  ['/natural-certified-blue-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/blue-sapphire'],
+  ['/natural-certified-emerald-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/emerald'],
+  ['/natural-certified-hessonite-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/hessonite'],
+  ['/natural-certified-pearl-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/pearl'],
+  ['/natural-certified-white-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/white-sapphire'],
+  ['/natural-yellow-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide', '/knowledge/gem-qualities/yellow-sapphire'],
+  ['/red-coral-gemstone-in-malaysia-benefits-price-astrology-and-buying-guide', '/knowledge/gem-qualities/red-coral'],
+  ['/ruby-gemstone-in-malaysia-natural-certified-astrological-stone-for-confidence-success-and-wealth-growth', '/knowledge/gem-qualities/ruby'],
+];
+
 export function geoBuyInternalJsonLd(
   destination: string,
   absoluteUrl: (path?: string) => string,

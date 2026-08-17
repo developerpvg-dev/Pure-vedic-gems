@@ -1,11 +1,12 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cache } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BadgeCheck, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { resolveShopCategoryPath } from '@/lib/categories/shop';
-import { productHref } from '@/lib/categories/storefront';
+import { productHref, storefrontGroupHref } from '@/lib/categories/storefront';
+import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryProductListing } from '@/components/shop/CategoryProductListing';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
@@ -205,7 +206,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
           image: '/home/ctas/cta2.webp',
           imageAlt: 'Rudraksha expert offering personalised guidance',
           primary: { label: 'Get Rudraksha Guidance', href: '/consultation' },
-          secondary: { label: 'See Rudraksha Collection', href: '/shop/rudraksha' },
+          secondary: { label: 'See Rudraksha Collection', href: storefrontGroupHref('rudraksha') },
           imageSide: 'left' as const,
         }
       : variant === 'uparatna'
@@ -215,7 +216,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
             image: '/home/ctas/cta3.webp',
             imageAlt: 'Vedic astrologer reviewing semi-precious gemstone alternatives',
             primary: { label: 'Get Uparatna Guidance', href: '/consultation' },
-            secondary: { label: 'See Uparatna Collection', href: '/shop/upratna' },
+            secondary: { label: 'See Uparatna Collection', href: storefrontGroupHref('upratna') },
             imageSide: 'right' as const,
           }
         : {
@@ -224,7 +225,7 @@ function ProductCategoryCta({ product }: { product: Product }) {
             image: '/home/ctas/cta1.webp',
             imageAlt: 'Vedic gemstone consultants preparing a horoscope recommendation',
             primary: { label: 'Get Gem Recommendation', href: '/consultation' },
-            secondary: { label: 'See Navaratna Collection', href: '/shop/navaratna' },
+            secondary: { label: 'See Navaratna Collection', href: storefrontGroupHref('navaratna') },
             imageSide: 'right' as const,
           };
   const isReverse = config.imageSide === 'right';
@@ -307,10 +308,11 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   ) as Record<string, string>;
 
   if (nestedCategoryMeta) {
-    const currentPath = `/shop/${category}/${slug}`;
-    if (nestedCategoryMeta.canonicalPath !== currentPath) {
+    const requestPath = `/shop/${category}/${slug}`;
+    const internal = toInternalShopPath(nestedCategoryMeta.canonicalPath) ?? nestedCategoryMeta.canonicalPath;
+    if (requestPath !== internal) {
       const query = new URLSearchParams(sParams).toString();
-      redirect(`${nestedCategoryMeta.canonicalPath}${query ? `?${query}` : ''}`);
+      permanentRedirect(`${nestedCategoryMeta.canonicalPath}${query ? `?${query}` : ''}`);
     }
 
     return (
@@ -345,9 +347,10 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     notFound();
   }
   const href = productHref(product);
-  const currentPath = `/shop/${category}/${slug}`;
-  if (href !== currentPath) {
-    redirect(href);
+  const requestPath = `/shop/${category}/${slug}`;
+  const internal = toInternalShopPath(href) ?? href;
+  if (requestPath !== internal) {
+    permanentRedirect(href);
   }
 
   const relatedSelect = 'id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number';
@@ -399,8 +402,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     photo_url: string | null; specialty: string | null;
     personal_quote: string | null;
   } | null;
-  const parentCategoryHref = href.split('/').slice(0, 3).join('/');
-  const categoryListingHref = product.sub_category ? `${parentCategoryHref}/${product.sub_category}` : parentCategoryHref;
+  const categoryListingHref = href.split('/').slice(0, -1).join('/') || '/shop';
   const recentlyViewedProduct: RecentlyViewedProduct = {
     id: product.id,
     name: displayName,

@@ -4,6 +4,7 @@ import {
   productOfferAvailability,
   productStructuredOfferPrice,
 } from '@/lib/shop/product-pricing';
+import { gemProductMeta, stripPriceFromTitle, vedicNameFromSlug } from '@/lib/seo/storefront-meta';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { ORGANIZATION_ADDRESSES } from '@/lib/constants/company-addresses';
 
@@ -123,6 +124,22 @@ export function buildMetadata({ title, description, path = '/', image, type = 'w
   };
 }
 
+function isGemOrRudrakshaSku(product: Product | ProductCard) {
+  const cat = (product.category || '').toLowerCase();
+  if (cat === 'jewelry' || cat === 'jewellery' || cat === 'idol' || cat === 'mala' || cat === 'malas') return false;
+  const type = 'product_type' in product ? product.product_type : undefined;
+  if (type === 'jewelry' || type === 'idol' || type === 'mala') return false;
+  return (
+    cat === 'navaratna' ||
+    cat === 'upratna' ||
+    cat === 'uparatna' ||
+    cat === 'rudraksha' ||
+    cat === 'gemstone' ||
+    type === 'gemstone' ||
+    type === 'rudraksha'
+  );
+}
+
 export function productMetadata(
   product: Product | ProductCard,
   path: string,
@@ -138,11 +155,36 @@ export function productMetadata(
   ]
     .filter(Boolean)
     .join(' ');
-  const title = overrides?.title || `${displayName}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
-  const description =
-    overrides?.description ||
-    productDescription(product) ||
-    `Shop ${displayName}${gemDetails ? ` (${gemDetails})` : ''} from ${BRAND_NAME}. Certified gemstone details, pricing, and expert guidance.`;
+
+  const cmsTitle = overrides?.title?.trim();
+  const cmsDescription = overrides?.description?.trim();
+  let title: string;
+  let description: string;
+
+  if (cmsTitle) {
+    title = stripPriceFromTitle(cmsTitle);
+    description = cmsDescription || productDescription(product);
+  } else if (isGemOrRudrakshaSku(product)) {
+    const meta = gemProductMeta({
+      name: displayName,
+      origin: product.origin,
+      carat: product.carat_weight,
+      sizeMm: detailedProduct.bead_size_mm,
+      vedicName: vedicNameFromSlug(product.sub_category),
+      category: product.category,
+      treatment: product.treatment,
+      certification: product.certification,
+      certificateLab: detailedProduct.certificate_lab,
+    });
+    title = meta.title;
+    description = cmsDescription || meta.description;
+  } else {
+    title = `${displayName}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
+    description =
+      cmsDescription ||
+      productDescription(product) ||
+      `Shop ${displayName}${gemDetails ? ` (${gemDetails})` : ''} from ${BRAND_NAME}. Certified gemstone details, pricing, and expert guidance.`;
+  }
 
   return buildMetadata({ title, description, path, image: overrides?.image ?? product.thumbnail_url });
 }

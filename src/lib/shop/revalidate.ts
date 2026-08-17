@@ -1,5 +1,5 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { productHref } from '@/lib/categories/storefront';
+import { productHref, internalShopProductHref } from '@/lib/categories/storefront';
 import { SHOP_FILTER_FACETS_CACHE_TAG } from '@/lib/shop/filters';
 
 type ProductLike = {
@@ -27,11 +27,13 @@ export function revalidateProductSurfaces(product?: ProductLike | null) {
     if (product?.category) revalidatePath(`/shop/${product.category}`);
     if (product?.sub_category) revalidatePath(`/shop/${product.sub_category}`);
     if (product?.slug) {
-      revalidatePath(productHref({
+      const row = {
         slug: product.slug,
         category: product.category ?? null,
         sub_category: product.sub_category ?? null,
-      }));
+      };
+      revalidatePath(internalShopProductHref(row));
+      revalidatePath(productHref(row));
     }
   } catch (error) {
     // Revalidation is best-effort; never fail the mutation because of it.

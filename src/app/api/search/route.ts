@@ -28,13 +28,6 @@ function getToolResults(query: string): SearchResult[] {
       description: 'Book expert Vedic remedies recommendation — gemstone, Rudraksha, and Yagya — by Kundli for ₹101.',
     },
     {
-      id: 'tool-recommendation',
-      name: 'Gemstone Recommendation Tool',
-      href: '/tools/recommendation',
-      category: 'tool',
-      description: 'Build a preliminary gemstone shortlist using purpose, birth details, and budget.',
-    },
-    {
       id: 'tool-carat-ratti',
       name: 'Carat to Ratti Converter',
       href: '/tools/carat-to-ratti',

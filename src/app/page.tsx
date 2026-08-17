@@ -22,9 +22,9 @@ import { buildMetadata } from '@/lib/utils/seo';
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 export const metadata: Metadata = buildMetadata({
-  title: 'PureVedicGems | Heritage Vedic Gemstones Since 1937',
+  title: 'Buy Certified Vedic Gemstones Online | Since 1937',
   description:
-    'Shop certified natural Vedic gemstones, Rudraksha, and custom jewelry with expert astrological guidance from a heritage brand.',
+    'Shop certified natural Vedic gemstones and Rudraksha online in India. Lab-disclosed stones, Jyotish guidance, and custom jewellery from a heritage house since 1937.',
   path: '/',
 });
 

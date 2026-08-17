@@ -49,6 +49,10 @@ function pageHasBuiltInHeaderOffset(pathname: string): boolean {
 
   const prefixes = [
     '/shop',
+    // Phase 5 facade URLs still render shop pages (own pt- offset). Without these the
+    // layout spacer stacks on top of that padding.
+    '/gemstones',
+    '/rudraksha',
     // WP rewrites still serve shop UI under these paths — same header offset as /shop.
     '/product-category',
     '/product/',

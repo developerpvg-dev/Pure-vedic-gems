@@ -216,3 +216,61 @@ export const ORGANIZATION_ADDRESSES = [
     addressCountry: 'GB',
   }),
 ] as const;
+
+const DELHI_SHOWROOM_HOURS = [
+  {
+    '@type': 'OpeningHoursSpecification' as const,
+    dayOfWeek: ['Monday', 'Tuesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '11:00',
+    closes: '20:00',
+  },
+];
+const SULTANPUR_HOURS = [
+  {
+    '@type': 'OpeningHoursSpecification' as const,
+    dayOfWeek: ['Monday', 'Tuesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '10:00',
+    closes: '19:00',
+  },
+];
+
+/** One schema entity per visitable location. UK is appointment-only, not a walk-in store. */
+export function storeLocationsJsonLd(siteUrl: string, phones: { india: string; uk: string }) {
+  const origin = siteUrl.replace(/\/$/, '');
+  const orgId = `${origin}/#organization`;
+  const page = `${origin}/about/stores`;
+  return [
+    {
+      '@type': 'JewelryStore',
+      '@id': `${page}#delhi-saket`,
+      name: 'PureVedicGems Saket Showroom',
+      url: page,
+      telephone: phones.india,
+      hasMap: DELHI_MAP_URL,
+      parentOrganization: { '@id': orgId },
+      address: ORGANIZATION_ADDRESSES[1],
+      openingHoursSpecification: DELHI_SHOWROOM_HOURS,
+    },
+    {
+      '@type': 'JewelryStore',
+      '@id': `${page}#sultanpur`,
+      name: 'Pure Vedic Science and Research Centre',
+      url: page,
+      telephone: phones.india,
+      hasMap: SULTANPUR_MAP_URL,
+      parentOrganization: { '@id': orgId },
+      address: ORGANIZATION_ADDRESSES[2],
+      openingHoursSpecification: SULTANPUR_HOURS,
+    },
+    {
+      '@type': 'LocalBusiness',
+      '@id': `${page}#uk-hounslow`,
+      name: 'PureVedicGems UK Office (appointment only)',
+      url: page,
+      telephone: phones.uk,
+      hasMap: UK_OFFICE_MAP_URL,
+      parentOrganization: { '@id': orgId },
+      address: ORGANIZATION_ADDRESSES[3],
+    },
+  ];
+}

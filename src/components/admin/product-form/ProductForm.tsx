@@ -9,7 +9,7 @@ import { TRASH_RETENTION_DAYS } from '@/lib/products/trash';
 
 import { createClient } from '@/lib/supabase/client';
 import { MediaUploader, type MediaFile } from '@/components/admin/MediaUploader';
-import { productCategoryToStorefrontGroupSlug } from '@/lib/categories/storefront';
+import { productHref } from '@/lib/categories/storefront';
 import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
 import { caratToRatti, isNoCertification } from '@/lib/utils/format';
 import {
@@ -124,8 +124,7 @@ function siteOrigin() {
 }
 
 function productCanonicalUrl(category: string, productSlug: string) {
-  const groupSlug = productCategoryToStorefrontGroupSlug(category) ?? category;
-  return `${siteOrigin()}/shop/${groupSlug}/${productSlug}`;
+  return `${siteOrigin()}${productHref({ category, slug: productSlug })}`;
 }
 
 function canonicalPathname(urlOrPath: string, fallbackAbsolute: string) {

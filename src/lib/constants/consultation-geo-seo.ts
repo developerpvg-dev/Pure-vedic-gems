@@ -12,14 +12,6 @@ export const CONSULTATION_GEO_REDIRECT_SOURCES = [
   '/best-astrological-consultation-in-california-expert-vedic-astrologer',
   '/best-astrological-consultation-in-new-york-and-expert-vedic-astrology-guidance',
   '/trusted-astrological-consultation-in-sharjah-personalised-vedic-guidance',
-  '/natural-certified-blue-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide',
-  '/natural-certified-emerald-gemstone-in-malaysia-benefits-astrology-buying-guide',
-  '/natural-certified-hessonite-gemstone-in-malaysia-benefits-astrology-buying-guide',
-  '/natural-certified-pearl-gemstone-in-malaysia-benefits-astrology-buying-guide',
-  '/natural-certified-white-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide',
-  '/natural-yellow-sapphire-gemstone-in-malaysia-benefits-astrology-buying-guide',
-  '/red-coral-gemstone-in-malaysia-benefits-price-astrology-and-buying-guide',
-  '/ruby-gemstone-in-malaysia-natural-certified-astrological-stone-for-confidence-success-and-wealth-growth',
   '/tag/astrological-consultation',
 ] as const;
 

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { GEM_QUALITIES, GEM_QUALITY_FAQS, type GemQuality } from '@/lib/constants/gem-qualities';
 
-export function GemQualityContent({ slug }: { slug: string }) {
+export function GemQualityContent({ slug, shipNote }: { slug: string; shipNote?: string | null }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const gem = GEM_QUALITIES.find((g) => g.slug === slug);
   if (!gem) return null;
@@ -39,7 +39,11 @@ export function GemQualityContent({ slug }: { slug: string }) {
           { label: 'Gem Qualities', href: '/knowledge/gem-qualities' },
           { label: gem.name },
         ]}
-      />
+      >
+        {shipNote ? (
+          <p className="mx-auto mt-4 max-w-3xl text-sm leading-6 text-[#5a5043]">{shipNote}</p>
+        ) : null}
+      </KnowledgePageHero>
 
       <section className="mx-auto max-w-6xl px-4 md:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">

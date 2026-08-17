@@ -9,7 +9,7 @@ export type LegacyGemQualitySlug = (typeof LEGACY_GEM_QUALITY_SLUGS)[number];
 const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   "blue-sapphire": {
     "slug": "blue-sapphire",
-    "shopHref": "/shop/blue-sapphire",
+    "shopHref": "/gemstones/navaratna/blue-sapphire",
     "faqs": [
       {
         "question": "What are blue sapphire gemstones?",
@@ -264,7 +264,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "yellow-sapphire": {
     "slug": "yellow-sapphire",
-    "shopHref": "/shop/yellow-sapphire",
+    "shopHref": "/gemstones/navaratna/yellow-sapphire",
     "faqs": [
       {
         "question": "What is yellow sapphire gemstone?",
@@ -505,7 +505,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "ruby": {
     "slug": "ruby",
-    "shopHref": "/shop/ruby",
+    "shopHref": "/gemstones/navaratna/ruby",
     "faqs": [
       {
         "question": "What is a ruby gemstone?",
@@ -753,7 +753,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "emerald": {
     "slug": "emerald",
-    "shopHref": "/shop/emerald",
+    "shopHref": "/gemstones/navaratna/emerald",
     "faqs": [
       {
         "question": "What are emerald gemstones?",
@@ -987,7 +987,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "red-coral": {
     "slug": "red-coral",
-    "shopHref": "/shop/red-coral",
+    "shopHref": "/gemstones/navaratna/red-coral",
     "faqs": [
       {
         "question": "What are red coral gemstones?",
@@ -1277,7 +1277,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "catseye": {
     "slug": "catseye",
-    "shopHref": "/shop/cats-eye",
+    "shopHref": "/gemstones/navaratna/cats-eye",
     "faqs": [
       {
         "question": "What is a Cat's eye gemstone?",
@@ -1509,7 +1509,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "hessonite": {
     "slug": "hessonite",
-    "shopHref": "/shop/hessonite",
+    "shopHref": "/gemstones/navaratna/hessonite",
     "faqs": [
       {
         "question": "What is hessonite gemstone ?",
@@ -1747,7 +1747,7 @@ const GUIDES: Record<LegacyGemQualitySlug, GemLegacyGuide> = {
   },
   "opal": {
     "slug": "opal",
-    "shopHref": "/shop/opal",
+    "shopHref": "/gemstones/upratna/opal",
     "faqs": [
       {
         "question": "What is opal gemstone ?",

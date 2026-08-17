@@ -11,9 +11,10 @@ import { GEM_QUALITIES } from '@/lib/constants/gem-qualities';
 import {
   GEO_BUY_KEYWORDS_BY_DEST,
   geoBuyInternalJsonLd,
-  geoBuySourcesForDest,
+  geoBuyShipCopy,
+  geoBuyCityList,
 } from '@/lib/constants/geo-buy-seo';
-import { absoluteUrl } from '@/lib/utils/seo';
+import { absoluteUrl, buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 86400;
 
@@ -29,13 +30,11 @@ export async function generateMetadata(
   if (!gem) return { title: 'Gem Quality Guide | PureVedicGems' };
 
   const path = `/knowledge/gem-qualities/${gem.slug}`;
-  const url = absoluteUrl(path);
   const legacyGuide = isLegacyGemQualitySlug(slug) ? getGemLegacyGuide(slug) : null;
   const ogImage = absoluteUrl(
     legacyGuide?.tiers[0]?.images[0]?.src ?? gem.heroImage,
   );
-  const geoSources = geoBuySourcesForDest(path);
-  const cities = [...new Set(geoSources.map((s) => s.city))];
+  const cities = geoBuyCityList(path);
   const title = legacyGuide
     ? `${legacyGuide.legacyH1} | PureVedicGems`
     : `${gem.name} (${gem.hindiName}) Quality Guide – Natural vs Treated | PureVedicGems`;
@@ -48,19 +47,14 @@ export async function generateMetadata(
       : baseDescription;
 
   return {
-    title,
-    description,
-    keywords: GEO_BUY_KEYWORDS_BY_DEST[path],
-    alternates: { canonical: url },
-    openGraph: {
-      title: legacyGuide ? legacyGuide.legacyH1 : `${gem.name} — ${gem.hindiName} | PureVedicGems`,
-      description: legacyGuide ? legacyGuide.aboutParagraphs[0] ?? description : gem.intro,
+    ...buildMetadata({
+      title,
+      description,
+      path,
+      image: ogImage,
       type: 'article',
-      url,
-      images: [{ url: ogImage, width: 1200, height: 900, alt: gem.name }],
-      locale: 'en_IN',
-      alternateLocale: ['en_US', 'en_GB', 'en_AE', 'en_MY'],
-    },
+    }),
+    keywords: GEO_BUY_KEYWORDS_BY_DEST[path],
   };
 }
 
@@ -77,14 +71,15 @@ export default async function GemQualityPage(
   const pageDescription = legacyGuide
     ? legacyGuide.certificationQuote
     : gem.intro;
+  const shipNote = geoBuyShipCopy(gem.name, geoBuyCityList(path));
 
   return (
     <>
       <JsonLd data={geoBuyInternalJsonLd(path, absoluteUrl, pageName, pageDescription)} />
       {isLegacyGemQualitySlug(slug) ? (
-        <GemLegacyQualityContent slug={slug} />
+        <GemLegacyQualityContent slug={slug} shipNote={shipNote} />
       ) : (
-        <GemQualityContent slug={slug} />
+        <GemQualityContent slug={slug} shipNote={shipNote} />
       )}
     </>
   );

@@ -1,14 +1,15 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { ZoomableAstrologyImage } from '@/components/knowledge/ZoomableAstrologyImage';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
+import { buildMetadata } from '@/lib/utils/seo';
 
-export const metadata: Metadata = {
-  title: 'About Vedic Astrology | Jyotisha & Navagraha | PureVedicGems',
+export const metadata = buildMetadata({
+  title: 'About Vedic Astrology | Jyotisha & Navagraha',
   description:
     'A comprehensive guide to Vedic Astrology (Jyotisha), karma, the Navagrahas, and the role of planetary gemstones in Vedic remedies.',
-};
+  path: '/knowledge/astrology',
+});
 
 export const revalidate = false;
 

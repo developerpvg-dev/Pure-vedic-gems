@@ -10,6 +10,7 @@ import {
   type StaticKnowledgeGuide,
 } from '@/lib/constants/static-knowledge-guides';
 import { getKnowledgeArticlesByCategory } from '@/lib/sanity/queries';
+import { buildMetadata } from '@/lib/utils/seo';
 import type { SanityKnowledgeArticle } from '@/lib/types/content';
 
 export type KnowledgeCategoryKey = 'gemstones' | 'rudraksha' | 'astrology';
@@ -42,10 +43,13 @@ export const KNOWLEDGE_CATEGORY_CONFIG: Record<KnowledgeCategoryKey, {
 
 export function getKnowledgeCategoryMetadata(key: KnowledgeCategoryKey): Metadata {
   const config = KNOWLEDGE_CATEGORY_CONFIG[key];
-  return {
+  const path =
+    key === 'gemstones' ? '/knowledge/gemstones' : key === 'rudraksha' ? '/knowledge/rudraksha' : '/knowledge/astrology';
+  return buildMetadata({
     title: `${config.title} | PureVedicGems`,
     description: config.description,
-  };
+    path,
+  });
 }
 
 function getImageUrl(article: SanityKnowledgeArticle) {

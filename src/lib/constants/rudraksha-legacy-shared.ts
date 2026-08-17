@@ -11,7 +11,7 @@ export function buildWhereToBuy(extended = false): string {
 }
 
 export const RUDRAKSHA_COLLECTION_LINKS: { label: string; href: string }[] = [
-  { label: 'Rudrakshas', href: '/shop/rudraksha' },
+  { label: 'Rudrakshas', href: '/rudraksha' },
   { label: 'One Mukhi Rudraksha', href: '/knowledge/rudraksha/1-mukhi' },
   { label: 'Two Mukhi Rudraksha', href: '/knowledge/rudraksha/2-mukhi' },
   { label: 'Three Mukhi Rudraksha', href: '/knowledge/rudraksha/3-mukhi' },
@@ -28,9 +28,9 @@ export const RUDRAKSHA_COLLECTION_LINKS: { label: string; href: string }[] = [
   { label: 'Fourteen Mukhi Rudraksha', href: '/knowledge/rudraksha/14-mukhi' },
   { label: 'Fifteen Mukhi Rudraksha', href: '/knowledge/rudraksha/15-mukhi' },
   { label: 'Sixteen Mukhi Rudraksha', href: '/knowledge/rudraksha/16-mukhi' },
-  { label: 'Gauri Shankar Rudraksha', href: '/shop/rudraksha/gauri-shankar' },
-  { label: 'Ganesh Rudraksha', href: '/shop/rudraksha/ganesh-rudraksha' },
-  { label: 'Nir Mukhi Rudraksha', href: '/shop/rudraksha/nir-mukhi' },
-  { label: 'Garbh Gauri', href: '/shop/rudraksha/garbh-gauri' },
-  { label: 'Sawar Rudraksha', href: '/shop/rudraksha/sawar-rudraksha' },
+  { label: 'Gauri Shankar Rudraksha', href: '/rudraksha/gauri-shankar' },
+  { label: 'Ganesh Rudraksha', href: '/rudraksha/ganesh-rudraksha' },
+  { label: 'Nir Mukhi Rudraksha', href: '/rudraksha/nir-mukhi' },
+  { label: 'Garbh Gauri', href: '/rudraksha/garbh-gauri' },
+  { label: 'Sawar Rudraksha', href: '/rudraksha/sawar-rudraksha' },
 ];

@@ -9,6 +9,7 @@ import {
   ul,
   type RichGemSections,
 } from './helpers';
+import { canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
 
 type GemDef = RichGemSections & {
   slug: string;
@@ -678,7 +679,17 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
     name: 'Yellow Sapphire',
     hindi: 'Pukhraj',
     planet: 'Jupiter',
-    extraKeywords: ['ceylon pukhraj', 'sri lanka yellow sapphire', 'guru ratna', 'sagittarius gemstone', 'pisces gemstone', 'unheated pukhraj'],
+    extraKeywords: [
+      'ceylon pukhraj',
+      'sri lanka yellow sapphire',
+      'guru ratna',
+      'sagittarius gemstone',
+      'pisces gemstone',
+      'unheated pukhraj',
+      'yellow sapphire price',
+      'pukhraj price',
+      'pukhraj benefits',
+    ],
     intro:
       'Yellow Sapphire (Pukhraj) radiates the benevolent wisdom of Guru—Jupiter. Among the most auspicious Navaratna gems, a fine natural Pukhraj is sought for prosperity, marriage blessings, and spiritual growth. PureVedicGems selects Ceylon and other origins with heat-treatment disclosure and Jyotish grading.',
     hero_benefits: [
@@ -688,7 +699,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       { text: 'Pacifies afflicted Guru during challenging dasha periods' },
     ],
     seo_description:
-      'Buy certified Yellow Sapphire (Pukhraj) online for Guru. Ceylon unheated sapphires, gold settings, Jyotish consultation from PureVedicGems.',
+      'Buy certified Yellow Sapphire (Pukhraj) online. Price depends on origin, heat, and carat. Ceylon unheated options with Jyotish guidance from PureVedicGems.',
     about_html: [
       p(
         'Yellow sapphire is corundum coloured by iron traces. Sanskrit: Pukhraj or Pushparaga. It is the ratna of Brihaspati—Jupiter, planet of wisdom, dharma, children, and wealth.',
@@ -765,6 +776,9 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       p(`${BRAND} certifies every yellow sapphire as natural corundum with treatment disclosure.`),
     ].join('\n'),
     faqs: [
+      { question: 'What does Yellow Sapphire (Pukhraj) cost?', answer: 'Price follows carat, colour, clarity, origin, and heat treatment. Unheated Ceylon Pukhraj costs more per carat than heated commercial grades. Compare live listings and ask for the lab report before buying.' },
+      { question: 'What are the traditional benefits of Pukhraj?', answer: 'In Jyotish, Pukhraj is worn to support Jupiter themes: wisdom, lawful prosperity, marriage, and teachers. Benefits are traditional, not medical, and depend on chart suitability.' },
+      { question: 'Who should wear Yellow Sapphire?', answer: 'Typically those with weak or afflicted Jupiter after a full Kundli review. Do not wear Pukhraj only because it is your birthstone. Book a recommendation if unsure.' },
       { question: 'Which finger for Pukhraj?', answer: 'Index finger of the right hand in gold is the classical Guru placement.' },
       { question: 'Can unmarried women wear yellow sapphire?', answer: 'Yes—Pukhraj is traditionally worn for marriage blessings when Guru is favourable in the chart.' },
       { question: 'Pukhraj vs topaz?', answer: 'Yellow sapphire is corundum (Navaratna). Yellow topaz is a different mineral—substitute only when prescribed.' },
@@ -882,7 +896,17 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
     name: 'Blue Sapphire',
     hindi: 'Neelam',
     planet: 'Saturn',
-    extraKeywords: ['kashmir neelam', 'ceylon blue sapphire', 'shani ratna', 'capricorn gemstone', 'aquarius gemstone', 'unheated neelam'],
+    extraKeywords: [
+      'kashmir neelam',
+      'ceylon blue sapphire',
+      'shani ratna',
+      'capricorn gemstone',
+      'aquarius gemstone',
+      'unheated neelam',
+      'blue sapphire price',
+      'neelam price',
+      'neelam benefits',
+    ],
     intro:
       'Blue Sapphire (Neelam) channels the disciplined depth of Shani—Saturn. Revered and respected for its swift results, a fine natural neelam demands careful astrological prescription. PureVedicGems emphasises chart consultation, trial periods, and certified unheated sapphires where available.',
     hero_benefits: [
@@ -892,7 +916,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       { text: 'Promotes focus, austerity, and protection from chronic obstacles' },
     ],
     seo_description:
-      'Buy certified Blue Sapphire (Neelam) online for Shani. Ceylon & Kashmir sapphires, trial guidance & Jyotish consultation from PureVedicGems.',
+      'Buy certified Blue Sapphire (Neelam) online. Price depends on origin, heat, and carat. Trial guidance and Jyotish consultation from PureVedicGems.',
     about_html: [
       p(
         'Blue sapphire is corundum coloured by iron and titanium. Sanskrit: Neelam or Neelashma. It is the ratna of Shani—Saturn, karmic taskmaster of discipline, delay, and justice.',
@@ -969,6 +993,9 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       p(`${BRAND} supports trial protocols—responsible neelam selling never skips chart analysis.`),
     ].join('\n'),
     faqs: [
+      { question: 'What does Blue Sapphire (Neelam) cost?', answer: 'Price follows origin, colour, clarity, carat, and heat treatment. Kashmir and unheated Ceylon command premiums. Compare certified listings rather than generic “neelam price” quotes.' },
+      { question: 'What are the traditional benefits of Neelam?', answer: 'Neelam is worn for Saturn themes: discipline, career structure, endurance, and protection from delays. Results can be swift — for better or worse — so chart review comes first. These are traditional uses, not medical claims.' },
+      { question: 'Who should wear Blue Sapphire?', answer: 'Only when an astrologer confirms Saturn should be strengthened. Never wear Neelam because a friend did. Use a trial period and expert prescription.' },
       { question: 'Why is neelam considered dangerous?', answer: 'Shani gives swift results. If Saturn is unfavourable, neelam may amplify challenges. Hence trial wear and expert prescription are essential.' },
       { question: 'What is the neelam trial method?', answer: 'Traditionally, tie the stone to your arm for 48–72 hours and observe dreams, mood, and events before committing to a ring.' },
       { question: 'Can I wear neelam during Sade Sati?', answer: 'Sometimes yes, sometimes no—it depends on Shani\'s house lordship and dignity. Never assume Sade Sati automatically requires neelam.' },
@@ -1514,4 +1541,247 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       { question: 'Trial wear for exclusive neelam?', answer: 'Strongly recommended for high-stakes Shani purchases—even at collector tier.' },
     ],
   }),
+};
+
+function shopLink(slug: string, label: string) {
+  return `<a href="${canonicalSubcategoryHref(slug) ?? `/shop/${slug}`}">${label}</a>`;
+}
+
+export const NAVARATNA_HUB_CONTENT: RichGemSections = {
+  intro:
+    'Navaratna (Navratna) are the nine primary Vedic gems — one ratna for each graha. At PureVedicGems, stones are certified, treatment-disclosed, and selected only after Jyotish suitability is considered.',
+  hero_benefits: [
+    { text: 'Nine planetary gems from our Navratnas guide' },
+    { text: 'Natural stones with treatment disclosure' },
+    { text: 'Buy one prescribed gem or a jewellery set' },
+    { text: 'Chart review before combining inimical stones' },
+  ],
+  seo_title: 'Buy Navaratna Gems Online in India | Vedic Gemstones',
+  seo_description:
+    'Buy certified Navratna (Navaratna) stones and nine-gem sets online in India. Natural ruby, pukhraj, neelam, diamond or white sapphire. Delhi since 1937.',
+  meta_keywords: [
+    'buy navratna stone online',
+    'buy navaratna set online',
+    'navratna set price',
+    'certified navratna ring',
+    'original navratna stone',
+    'navratna pendant',
+    'nine gems set',
+    'navgrah ratan',
+    'diamond vs zircon navratna',
+  ],
+  about_html: [
+    p(
+      `According to our <a href="/knowledge/gemstones">Navratnas knowledge guide</a>, planetary imbalances are traditionally addressed with Vedic gems — the nine main gems called Navratnas. They are ${shopLink('ruby', 'Ruby (Manik)')} for the Sun, ${shopLink('pearl', 'Pearl (Moti)')} for the Moon, ${shopLink('red-coral', 'Red Coral (Moonga)')} for Mars, ${shopLink('emerald', 'Emerald (Panna)')} for Mercury, ${shopLink('yellow-sapphire', 'Yellow Sapphire (Pukhraj)')} for Jupiter, ${shopLink('diamond', 'Diamond (Heera)')} for Venus, ${shopLink('blue-sapphire', 'Blue Sapphire (Neelam)')} for Saturn, ${shopLink('hessonite', 'Hessonite (Gomed)')} for Rahu, and ${shopLink('cats-eye', "Cat's Eye (Lehsuniya)")} for Ketu.`,
+      `${shopLink('white-sapphire', 'White Sapphire (Safed Pukhraj)')} is the traditional Jyotish substitute for diamond when Heera is not suitable or not affordable — the same mapping used in our gemstone-recommendation notes. Combinations of these stones can be powerful; they should be decided by an expert for your chart, not copied from a generic “wear all nine” list.`,
+    ),
+    h3('Vedic significance'),
+    p(
+      'Ancient Indian Sanskrit texts treat gem therapy as one method to counter planetary imbalance. Each Navratna is linked to one graha. For Jyotish use, natural origin, even colour, lively lustre, appropriate cutting, reliable certification, and transparent treatment disclosure matter more than buying a larger stone at the cheapest price.',
+      `A nine-stone jewellery set is a recognised ornament. It is not automatically the correct Jyotish remedy. Our Navratnas guide lists inimical gems that are traditionally not worn together unless a learned astrologer gives a special exception — for example Ruby with Diamond, Hessonite, or Blue Sapphire.`,
+    ),
+    h3('The nine gems, planets, and inimical stones'),
+    `<table><thead><tr><th>Gemstone</th><th>Planet</th><th>Traditionally not worn with</th><th>Shop</th></tr></thead><tbody>
+<tr><td>Ruby (Manik)</td><td>Sun (Surya)</td><td>Diamond, Hessonite, Blue Sapphire</td><td>${shopLink('ruby', 'Buy Ruby')}</td></tr>
+<tr><td>Pearl (Moti)</td><td>Moon (Chandra)</td><td>Hessonite</td><td>${shopLink('pearl', 'Buy Pearl')}</td></tr>
+<tr><td>Red Coral (Moonga)</td><td>Mars (Mangal)</td><td>Diamond, Blue Sapphire, Emerald, Hessonite</td><td>${shopLink('red-coral', 'Buy Red Coral')}</td></tr>
+<tr><td>Emerald (Panna)</td><td>Mercury (Budh)</td><td>None commonly listed</td><td>${shopLink('emerald', 'Buy Emerald')}</td></tr>
+<tr><td>Yellow Sapphire (Pukhraj)</td><td>Jupiter (Guru)</td><td>Hessonite, Blue Sapphire, Diamond</td><td>${shopLink('yellow-sapphire', 'Buy Pukhraj')}</td></tr>
+<tr><td>Diamond (Heera) / White Sapphire</td><td>Venus (Shukra)</td><td>Ruby, Red Coral, Yellow Sapphire</td><td>${shopLink('diamond', 'Buy Diamond')} · ${shopLink('white-sapphire', 'White Sapphire')}</td></tr>
+<tr><td>Blue Sapphire (Neelam)</td><td>Saturn (Shani)</td><td>Ruby, Red Coral, Yellow Sapphire, Pearl</td><td>${shopLink('blue-sapphire', 'Buy Neelam')}</td></tr>
+<tr><td>Hessonite (Gomed)</td><td>Rahu</td><td>Ruby, Pearl, Coral</td><td>${shopLink('hessonite', 'Buy Gomed')}</td></tr>
+<tr><td>Cat’s Eye (Lehsuniya)</td><td>Ketu</td><td>None commonly listed</td><td>${shopLink('cats-eye', "Buy Cat's Eye")}</td></tr>
+</tbody></table>`,
+    h3('Jewellery set versus the prescribed gem'),
+    p(
+      'Most Jyotish purchases on this site are a single prescribed stone in a suitable carat weight. A matched millimetre set or Navratna ring is jewellery that places all nine species in one ornament. Because several of those species are listed as inimical to each other, a full set should not be treated as “safer overall protection.” Start with <a href="/consultation">consultation</a> or <a href="/gems-recommendations">Which Gemstone Should I Wear?</a>, then buy the stone that was actually recommended.',
+    ),
+  ].join('\n'),
+  how_to_wear_html: [
+    p(
+      'Our Navratnas guide is clear: after a horoscope is studied, the benefic gem or gems should be purchased from a reliable source. Metal, finger, day, time, and mantra must be considered together — each of the nine stones has its own wearing table on that page. There is no single Sunday / ring-finger rule that covers a full Navaratna combination.',
+    ),
+    table([
+      ['First step', 'Kundli review by a Vedic astrologer. Do not self-prescribe all nine together.'],
+      ['Setting', 'Ring or pendant made so the bottom of the gem is open and can touch the body (ray-transmission principle in our guide).'],
+      ['Purification', 'Bathe, wear clean clothes, then purify in unboiled cow milk or holy Ganga water.'],
+      ['Mantra', 'Energise by chanting the prescribed Vedic mantra at least 108 times. Each Navratna has its own mantra in our <a href="/knowledge/gemstones">Navratnas guide</a> and <a href="/knowledge/energized-gems">energized gems</a> page.'],
+      ['Time', 'Wear at the time recommended for you — usually calculated around sunrise or sunset for your location, not a generic weekday copied from Ruby.'],
+      ['Inimical gems', 'Stones listed as inimical to the main gem are not worn with it unless a learned astrologer gives a special exception.'],
+    ]),
+    h3('If you already own a nine-stone ring'),
+    p(
+      'Jewellery makers often place a ruby in the centre of a Navratna ring as a design. That is an ornament convention, not a substitute for the finger, metal, and day listed for each gem in our knowledge tables. Ask which Venus stone is actually set — diamond, white sapphire, natural zircon, or cubic zirconia — and confirm the combination against your chart before daily wear.',
+    ),
+  ].join('\n'),
+  who_should_wear_html: [
+    p(
+      'Wear the Navratna that was recommended for your lagna, dasha, and house lords. “Anyone can wear Navratna” is jewellery marketing. Our recommendation notes say combinations can be powerful and should be determined by an expert. Blue Sapphire, Hessonite, and Cat’s Eye are treated with extra caution in our guides, often with a trial or close observation period.',
+    ),
+    h3('When a full nine-stone ornament is not the remedy'),
+    ul([
+      'When an astrologer has named one primary gem — buy that stone, not a set that also contains inimical partners.',
+      'When Neelam, Gomed, or Lehsuniya has been flagged as unsuitable or only for trial.',
+      'When birth time is unknown: date of birth alone is not enough for a responsible Vedic recommendation; still consult rather than defaulting to all nine.',
+    ]),
+    h3('Consult an astrologer'),
+    p(
+      `Use <a href="/gems-recommendations">Which Gemstone Should I Wear?</a> with date, time, and place of birth, then <a href="/consultation">book our experts</a>. ${BRAND} would rather sell one correct certified stone than a nine-gem ring that fights the chart.`,
+    ),
+  ].join('\n'),
+  benefits_html: [
+    p(
+      'Benefits belong to the planet of the gem that was prescribed. They are traditional Jyotish associations from our Navratnas guide — not medical or financial promises, and not a reason to wear all nine at once.',
+    ),
+    h3('Sun, Moon, and Mars'),
+    p(
+      'Ruby is linked with vitality, authority, confidence, and public standing. Pearl with emotional steadiness, calmness, and mental peace. Red Coral with courage, stamina, discipline, and decisive action. These three are also the gems most often discussed for health-related charts — still only after analysis, because the wrong stone can aggravate issues.',
+    ),
+    h3('Mercury, Jupiter, and Venus'),
+    p(
+      'Emerald is connected with intelligence, communication, trade, and analysis. Yellow Sapphire with wisdom, prosperity, education, marriage guidance, and dharma. Diamond (or White Sapphire as substitute) with refinement, comfort, relationship themes, and artistic taste.',
+    ),
+    h3('Saturn, Rahu, and Ketu'),
+    p(
+      'Blue Sapphire is one of the strongest Navratnas — discipline, endurance, karma, and long-term responsibility — and is usually recommended only after careful chart analysis. Hessonite is linked with Rahu: focus during uncertainty, ambition, and unusual delays. Cat’s Eye with Ketu: intuition, detachment, spiritual insight, and protection practices. Both nodal gems are highly individual.',
+    ),
+  ].join('\n'),
+  types_html: [
+    h3('The prescribed single gem'),
+    p(
+      `This is the Jyotish default. Shop ${shopLink('ruby', 'Ruby')}, ${shopLink('pearl', 'Pearl')}, ${shopLink('red-coral', 'Red Coral')}, ${shopLink('emerald', 'Emerald')}, ${shopLink('yellow-sapphire', 'Pukhraj')}, ${shopLink('diamond', 'Diamond')}, ${shopLink('white-sapphire', 'White Sapphire')}, ${shopLink('blue-sapphire', 'Neelam')}, ${shopLink('hessonite', 'Gomed')}, or ${shopLink('cats-eye', "Cat's Eye")} after the planet has been named.`,
+    ),
+    h3('Matched millimetre set'),
+    p(
+      'Nine calibrated stones sold as a lot for a jeweller to set. Ask for the species of the white stone in writing. Natural zircon is a listed Venus substitute in our recommendation table; cubic zirconia is not a Vedic gem.',
+    ),
+    h3('Navratna ring or pendant'),
+    p(
+      'A ring or pendant can hold all nine species. For Jyotish, the setting must leave the pavilion open to the skin. A pendant is often more practical if you already wear a primary gemstone ring, or if pearl and coral need gentler handling than a tight shank.',
+    ),
+  ].join('\n'),
+  quality_price_html: [
+    p(
+      'Price follows quality of each of the nine stones plus metal, not a single “Navratna MRP.” Live cards in the collection below are the quote. A listing that is cheaper than one decent Pukhraj usually has an undisclosed Venus substitute or treated organics.',
+    ),
+    h3('What to verify (from our Navratnas quality checks)'),
+    ul([
+      'Natural origin and treatment disclosure on every species — heat on sapphire, oil on emerald, dye on coral, cultured vs natural pearl.',
+      'Eye-clean appearance where the gem is meant to be transparent; pearl and coral are judged on surface, colour, and polish instead.',
+      'Certificate that names the mineral, not a paper that only says “Navratna set.”',
+      'Venus stone named as diamond, white sapphire, natural zircon, or something else — never assumed.',
+    ]),
+    h3('Diamond, white sapphire, and zircon'),
+    p(
+      'Shukra’s primary ratna is diamond. White sapphire is the traditional substitute. Natural zircon and opal appear as further Venus alternates in our recommendation notes. Cubic zirconia is a lookalike and has no place in a certified Jyotish set. If the invoice does not name the white stone, do not pay diamond prices.',
+    ),
+    h3('Why prices differ'),
+    p(
+      'We grade gems by colour, clarity, and brilliance (Economy through Super Luxury). Higher grades are generally more effective astrologically; lower grades can still help when budget is limited. Size of a matched set, a natural diamond vs white sapphire, gold weight, and treatment status all move the total. Compare the collection rather than an invented price band.',
+    ),
+  ].join('\n'),
+  jewellery_html: [
+    p(
+      `${BRAND} sets prescribed Navaratna gems in open-back rings and pendants, in gold, silver, or other metals as advised for that planet. Finger size, metal, and whether diamond or white sapphire is required should be confirmed before making. If one stone in an existing set chips — pearl and coral are the usual casualties — we can match millimetre size instead of forcing a new nine-piece lot.`,
+    ),
+    h3('Open setting'),
+    p(
+      'The Navratnas wearing guide requires the bottom of the gemstone to be open so it can touch the body. Closed cups hide treatments and block that contact.',
+    ),
+    h3('See stones in Delhi'),
+    p(
+      `Inspect colour in daylight at our <a href="/about/stores">Saket, New Delhi showroom</a>, or buy certified stones online with insured shipping. Custom jewellery is made after the gems are approved.`,
+    ),
+  ].join('\n'),
+  cleaning_care_html: [
+    p(
+      'A Navaratna jewel mixes hard corundum (ruby and sapphires) with soft pearl and coral. Our <a href="/knowledge/gems-care">gemstone care guide</a> is the rule: clean as if the weakest stone governs the piece.',
+    ),
+    h3('Safe routine'),
+    ul([
+      'Pearl: wipe with a damp soft cloth after wear; do not soak; perspiration and perfume are harmful.',
+      'Coral: damp cloth and dry; avoid ammonia and mechanical cleaning.',
+      'Emerald: warm water, mild detergent, soft brush — oiling is common, so skip ultrasonic and steam.',
+      'Ruby, sapphire, diamond, hessonite, cat’s eye: warm water, detergent, soft brush; do not use ultrasonic, steam, or boiling at home.',
+    ]),
+    h3('Daily precautions'),
+    p(
+      'Apply perfume, cologne, and hairspray before the jewellery goes on. Extra care with emeralds, corals, and pearls — they chip and scratch more easily than sapphires and rubies. Store so diamond or sapphire cannot rub the organic gems.',
+    ),
+  ].join('\n'),
+  buyer_beware_html: [
+    p(
+      'Cheap “original Navratna” listings usually fail on disclosure, not on a missing ninth colour. Read our <a href="/knowledge/treatments">treatments guide</a> before you pay.',
+    ),
+    ul([
+      'Cubic zirconia or glass sold as diamond.',
+      'Dyed or composite coral; cultured pearl sold without saying cultured (most modern pearls are cultured).',
+      'Glass-filled ruby; diffused or synthetic sapphire sold as Neelam or Pukhraj.',
+      'One certificate for “the set” that does not name each mineral.',
+      'Closed settings that hide the pavilion.',
+      '“Anyone can wear all nine” with no option to skip Neelam, Gomed, or Lehsuniya.',
+    ]),
+  ].join('\n'),
+  faqs: [
+    {
+      question: 'What are the 9 Navaratna gems?',
+      answer:
+        'Ruby (Manik) for the Sun, Pearl (Moti) for the Moon, Red Coral (Moonga) for Mars, Emerald (Panna) for Mercury, Yellow Sapphire (Pukhraj) for Jupiter, Diamond or White Sapphire for Venus, Blue Sapphire (Neelam) for Saturn, Hessonite (Gomed) for Rahu, and Cat’s Eye (Lehsuniya) for Ketu.',
+    },
+    {
+      question: 'What is Navratna set price in India?',
+      answer:
+        'There is no single MRP. Price follows the quality of each stone, whether Venus is diamond or a disclosed substitute, millimetre size, treatment status, and metal. Use the live collection on this page and ask us to name every species before you pay.',
+    },
+    {
+      question: 'Should everyone wear a full Navaratna set?',
+      answer:
+        'No. Combinations can be powerful and should be determined by an expert. Several Navratnas are listed as inimical to each other in our knowledge tables. Confirm with a Kundli review before stacking all nine, especially Blue Sapphire, Hessonite, and Cat’s Eye.',
+    },
+    {
+      question: 'Can I buy Navaratna gems individually?',
+      answer:
+        'Yes. That is the usual Jyotish path: wear the prescribed gem, then add others only if advised. Each of the nine stones has its own shop page on this site.',
+    },
+    {
+      question: 'Is the white stone in Navratna a real diamond?',
+      answer:
+        'Only if the invoice says diamond (Heera). White sapphire is the traditional Jyotish substitute. Natural zircon is a further Venus alternate in our recommendation notes. Cubic zirconia is not an astrological gem.',
+    },
+    {
+      question: 'How do I wear a Navratna ring?',
+      answer:
+        'There is no one weekday for all nine gems. After chart review, use an open-back setting, purify in unboiled cow milk or Ganga jal, chant the prescribed mantra 108 times, and wear at the time calculated for your location (typically around sunrise or sunset). Metal and finger follow the astrologer — and the individual tables in our Navratnas knowledge guide.',
+    },
+    {
+      question: 'Who can wear a Navaratna ring?',
+      answer:
+        'A nine-gem ring can be worn as jewellery. For Jyotish, only after consultation. Skip or trial Neelam, Gomed, and Lehsuniya when they are not indicated.',
+    },
+    {
+      question: 'Navratna ring or pendant — which is better?',
+      answer:
+        'Both work for skin contact if the back is open. A pendant is often easier if you already wear a primary gemstone ring, or if pearl and coral need gentler wear than a tight shank.',
+    },
+    {
+      question: 'How do I identify original certified Navratna stones?',
+      answer:
+        'Each gem should match its species, come with treatment disclosure, and name diamond vs white sapphire vs zircon. Natural origin, even colour, lively lustre, and a lab report that identifies the mineral matter more than a cheap “set” label. You can inspect stones in our Delhi showroom.',
+    },
+    {
+      question: 'Can I wear Navratna with other astrological gemstones?',
+      answer:
+        'Only if the astrologer allows it. Inimical gems are traditionally not worn together. Do not add a Navratna ring that contains Neelam on top of a Neelam ring without advice.',
+    },
+    {
+      question: 'Do you ship Navratna stones across India?',
+      answer:
+        'Yes. PureVedicGems ships certified Navaratna gems and jewellery across India with insured delivery, and you can view pieces in our Delhi showroom. International shipping is available on request for listed in-stock stones.',
+    },
+    {
+      question: 'What is a Navaratna set?',
+      answer:
+        'In jewellery, a Navaratna set is the nine planetary gems in one ornament. In Jyotish, the nine Navratnas are the primary Vedic gems for the nine grahas; you usually wear the one (or ones) prescribed for your chart, not all nine by default.',
+    },
+  ],
 };

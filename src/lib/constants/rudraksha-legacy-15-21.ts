@@ -57,7 +57,7 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
     whereToBuy: buildWhereToBuy(true),
     closing:
       'Pure Vedic Gems has over four generations of experience sourcing authentic, energised Rudrakshas directly from origin. Every bead is supplied with a reputed lab certificate and is purified through traditional Vedic rituals.',
-    shopHref: '/shop/rudraksha/15-mukhi',
+    shopHref: '/rudraksha/15-mukhi',
   },
   {
     mukhi: 16,
@@ -154,7 +154,7 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
       'Sixteen (16) Mukhi Rudraksha can be worn singly or in numbers, if necessary, along with other beads. It can be worn in order to overcome adversaries and to win over the fear of death or for other reasons. One should wear this bead as a protection guard for their life, and can also overcome all the worries after wearing this Rudraksha bead because this Rudraksha offers inner strength to overcome such situations.',
     closing:
       '16 Mukhi may be worn singly or with other beads, in order to overcome adversaries and fear of death. Always purchase from a reputable, experienced seller — Pure Vedic Gems has been dealing in authentic Rudrakshas since 1937 and provides lab-certified, energised beads.',
-    shopHref: '/shop/rudraksha/16-mukhi',
+    shopHref: '/rudraksha/16-mukhi',
   },
   {
     mukhi: 17,
@@ -228,7 +228,7 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
     whereToBuy: buildWhereToBuy(false),
     closing:
       'Genuine 17 Mukhi is rare. Pure Vedic Gems supplies authentic, lab-certified beads with traditional in-house energisation.',
-    shopHref: '/shop/rudraksha/17-mukhi',
+    shopHref: '/rudraksha/17-mukhi',
   },
   {
     mukhi: 18,
@@ -305,7 +305,7 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
     whereToBuy: buildWhereToBuy(false),
     closing:
       'Always energise the bead before first use. Pure Vedic Gems provides lab-certified, naturally formed 18 Mukhi Rudrakshas with full in-house Vedic energisation.',
-    shopHref: '/shop/rudraksha/18-mukhi',
+    shopHref: '/rudraksha/18-mukhi',
   },
   {
     mukhi: 19,
@@ -364,7 +364,7 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
     whereToBuy: buildWhereToBuy(true),
     closing:
       'Pure Vedic Gems is one of the oldest and most experienced sellers of authentic Rudrakshas — sourcing directly from origin, with lab certification and traditional energisation.',
-    shopHref: '/shop/rudraksha/19-mukhi',
+    shopHref: '/rudraksha/19-mukhi',
   },
   {
     mukhi: 20,
@@ -412,7 +412,7 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
     whereToBuy: buildWhereToBuy(true),
     closing:
       '20 Mukhi is extremely rare. Pure Vedic Gems is the only company with a complete in-house Vedic setup for purification (shudhikaran) and energisation (pranpratishtha) as per the authentic ancient rituals.',
-    shopHref: '/shop/rudraksha/20-mukhi',
+    shopHref: '/rudraksha/20-mukhi',
   },
   {
     mukhi: 21,
@@ -463,6 +463,6 @@ export const RUDRAKSHA_LEGACY_GUIDES_15_21: MukhiRichGuide[] = [
     whereToBuy: buildWhereToBuy(true),
     closing:
       '21 Mukhi is the rarest, most prestigious bead — typically a once-in-a-lifetime acquisition. Always insist on lab and X-ray verification. Pure Vedic Gems provides full provenance, lab certificates and in-house energisation.',
-    shopHref: '/shop/rudraksha/21-mukhi',
+    shopHref: '/rudraksha/21-mukhi',
   },
 ];

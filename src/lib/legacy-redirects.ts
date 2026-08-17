@@ -5,6 +5,7 @@
 import p2p11Pairs from '../../redirects/p2-p11-redirects.json';
 import { GEO_GEM_LANDING_PATHS } from '@/lib/constants/geo-gem-landings';
 import { LIVE_APP_EXACT_PATHS } from '@/lib/live-app-paths.generated';
+import { toCanonicalStorefrontPath } from '@/lib/categories/canonical-storefront-path';
 
 const FLAT_PARENTS = new Set([
   'navaratna',
@@ -144,6 +145,16 @@ const FORCE = new Map<string, string>([
 ]);
 
 export function lookupLegacyRedirect(pathname: string): string | null {
+  const dest = lookupLegacyRedirectRaw(pathname);
+  if (dest) return toCanonicalStorefrontPath(dest);
+
+  const bare = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  if (isProtectedLivePath(bare)) return null;
+  const canon = toCanonicalStorefrontPath(bare);
+  return canon !== bare ? canon : null;
+}
+
+function lookupLegacyRedirectRaw(pathname: string): string | null {
   const bare = barePath(pathname);
   if (isProtectedLivePath(bare)) return null;
 
@@ -168,6 +179,16 @@ export function lookupLegacyRedirect(pathname: string): string | null {
     if (!cat) return '/shop/rudraksha';
     const shopCat = mapLegacyRudrakshaCat(cat);
     if (!shopCat) return '/shop/rudraksha';
+    return product ? `/shop/${shopCat}/${product}` : `/shop/${shopCat}`;
+  }
+
+  // WP .com/.in category tree (navratan + navratnas). Rudraksha rows already matched above.
+  const wpNavratan = bare.match(/^\/product-category\/navratans?(?:\/([^/]+))?(?:\/([^/]+))?$/);
+  if (wpNavratan) {
+    const [, cat, product] = wpNavratan;
+    if (!cat) return '/shop/navaratna';
+    const rudraCat = mapLegacyRudrakshaCat(cat);
+    const shopCat = rudraCat ?? cat;
     return product ? `/shop/${shopCat}/${product}` : `/shop/${shopCat}`;
   }
 

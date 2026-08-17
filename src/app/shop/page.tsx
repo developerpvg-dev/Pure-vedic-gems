@@ -15,12 +15,17 @@ import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
-export const metadata: Metadata = buildMetadata({
-  title: 'Buy Certified Vedic Gemstones Online | PureVedicGems',
-  description:
-    'Browse our complete collection of certified natural gemstones, rudraksha, jewelry and malas. Filter by category, price, origin and planet. Trusted since 1937.',
-  path: '/shop',
-});
+export async function generateMetadata({ searchParams }: ShopPageProps): Promise<Metadata> {
+  const rawParams = await searchParams;
+  const q = (Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q)?.trim();
+  return buildMetadata({
+    title: 'Buy Certified Vedic Gemstones Online | PureVedicGems',
+    description:
+      'Buy certified natural Vedic gemstones, Rudraksha, and malas online in India. Lab reports, origin disclosure, and Jyotish consultation. Ships worldwide from Delhi since 1937.',
+    path: '/shop',
+    noIndex: Boolean(q),
+  });
+}
 
 const CARD_SELECT = `
   id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price,
@@ -163,13 +168,33 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </div>
       ) : (
         <KnowledgePageHero
-          title="Shop"
-          subtitle="Browse certified Vedic gemstones, Rudraksha, idols, and jewellery — the same collections featured on our homepage, with full catalog filters below."
+          title="Buy Certified Vedic Gemstones Online"
+          subtitle="Lab-disclosed natural gemstones, Rudraksha, and malas from our Delhi house — with origin, treatment, and certification on every listing. Ships across India and worldwide."
           breadcrumbs={[
             { label: 'Home', href: '/' },
             { label: 'Shop' },
           ]}
-        />
+        >
+          <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-6 text-[#5a5043]">
+            Start with{' '}
+            <Link href="/shop/yellow-sapphire" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+              Yellow Sapphire (Pukhraj)
+            </Link>
+            ,{' '}
+            <Link href="/shop/blue-sapphire" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+              Blue Sapphire (Neelam)
+            </Link>
+            , a{' '}
+            <Link href="/gems-recommendations" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+              Kundli recommendation
+            </Link>
+            , or visit our{' '}
+            <Link href="/about/stores" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+              Delhi showroom
+            </Link>
+            .
+          </p>
+        </KnowledgePageHero>
       )}
 
       {!searchQuery ? <ShopCategoryBrowse /> : null}

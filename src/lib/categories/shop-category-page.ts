@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import { KNOWN_CATALOG_SUBCATEGORIES, KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
+import { canonicalGroupHref, canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import type { ShopCategoryBrowseCard, ShopCategoryPageContent } from '@/lib/types/shop-category-page';
 import type { ShopCategoryPageRow } from '@/lib/types/database';
@@ -25,7 +26,7 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
   if (!dbRow) return defaults;
   if (!defaults) return dbRow;
 
-  return {
+  const merged: ShopCategoryPageContent = {
     ...defaults,
     ...dbRow,
     hero_benefits: dbRow.hero_benefits?.length ? dbRow.hero_benefits : defaults.hero_benefits,
@@ -44,6 +45,31 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     seo_title: dbRow.seo_title || defaults.seo_title,
     seo_description: dbRow.seo_description || defaults.seo_description,
   };
+
+  // ponytail: parent hubs keep body/hero code-owned; CMS seo_title/description wins when set.
+  if (slug === 'navaratna' || slug === 'navratna' || slug === 'rudraksha' || slug === 'upratna') {
+    return {
+      ...merged,
+      name: defaults.name,
+      intro_text: defaults.intro_text,
+      image_url: defaults.image_url,
+      hero_image_url: defaults.hero_image_url,
+      hero_benefits: defaults.hero_benefits,
+      meta_keywords: defaults.meta_keywords,
+      about_html: defaults.about_html,
+      how_to_wear_html: defaults.how_to_wear_html,
+      who_should_wear_html: defaults.who_should_wear_html,
+      benefits_html: defaults.benefits_html,
+      types_html: defaults.types_html,
+      quality_price_html: defaults.quality_price_html,
+      jewellery_html: defaults.jewellery_html,
+      cleaning_care_html: defaults.cleaning_care_html,
+      buyer_beware_html: defaults.buyer_beware_html,
+      faqs: defaults.faqs,
+    };
+  }
+
+  return merged;
 }
 
 async function fetchShopCategoryPageUncached(slug: string): Promise<ShopCategoryPageContent | null> {
@@ -98,6 +124,8 @@ export async function fetchAllShopCategoryPages(): Promise<ShopCategoryPageConte
   }
 
   const allSlugs = new Set([
+    'navaratna',
+    'rudraksha',
     ...Object.keys(KNOWN_GEM_SUBCATEGORIES),
     ...Object.keys(KNOWN_CATALOG_SUBCATEGORIES),
     ...dbBySlug.keys(),
@@ -142,7 +170,12 @@ export async function fetchShopBrowseCards(): Promise<ShopCategoryBrowseCard[]> 
 }
 
 export function shopCategoryHref(slug: string) {
-  return `/shop/${slug}`;
+  const aliased = slug === 'navratna' || slug === 'navratan' || slug === 'navratana' ? 'navaratna' : slug;
+  if (aliased === 'navaratna' || aliased === 'upratna' || aliased === 'rudraksha') {
+    return canonicalGroupHref(aliased);
+  }
+  if (aliased === 'gemstones') return canonicalGroupHref('navaratna');
+  return canonicalSubcategoryHref(aliased) ?? `/shop/${slug}`;
 }
 
 export function shopCategoryLabel(page: ShopCategoryPageContent): string {

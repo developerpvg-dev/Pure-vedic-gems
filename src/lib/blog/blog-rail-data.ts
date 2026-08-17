@@ -53,17 +53,17 @@ export function railKindForCategory(categorySlug?: string): BlogRailKind {
 const RAIL_COPY: Record<BlogRailKind, Omit<BlogGemRailCopy, 'kind'>> = {
   navaratna: {
     title: 'Shop Navaratna',
-    href: '/shop/navaratna',
+    href: '/gemstones/navaratna',
     productCategory: 'navaratna',
   },
   upratna: {
     title: 'Shop Upratna',
-    href: '/shop/upratna',
+    href: '/gemstones/upratna',
     productCategory: 'upratna',
   },
   rudraksha: {
     title: 'Shop Rudraksha',
-    href: '/shop/rudraksha',
+    href: '/rudraksha',
     productCategory: 'rudraksha',
   },
 };

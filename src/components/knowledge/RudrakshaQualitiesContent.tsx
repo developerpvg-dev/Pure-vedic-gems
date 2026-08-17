@@ -124,7 +124,7 @@ function SectionCard({
   );
 }
 
-export function RudrakshaQualitiesContent() {
+export function RudrakshaQualitiesContent({ shipNote }: { shipNote?: string | null } = {}) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
@@ -159,6 +159,9 @@ export function RudrakshaQualitiesContent() {
           </a>{' '}
           is also very important&rdquo;
         </blockquote>
+        {shipNote ? (
+          <p className="mx-auto mt-4 max-w-3xl text-left text-sm leading-6 text-[#5a5043]">{shipNote}</p>
+        ) : null}
       </KnowledgePageHero>
 
       {/* Main content — full width container */}

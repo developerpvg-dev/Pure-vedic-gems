@@ -289,7 +289,7 @@ const planetPages: SeoLandingPage[] = [
   ['mars', 'Mars', 'Red Coral (Moonga)', ['red-coral'], ['Ruby', 'Garnet'], 'Mangal guidance for courage, stamina, initiative, and disciplined action.', '/knowledge/gemstones/red-coral-moonga-guide'],
   ['mercury', 'Mercury', 'Emerald (Panna)', ['emerald'], ['Peridot'], 'Budh guidance for communication, trade, learning, and analytical clarity.', '/knowledge/gemstones/emerald-panna-guide'],
   ['jupiter', 'Jupiter', 'Yellow Sapphire (Pukhraj)', ['yellow-sapphire'], ['Citrine'], 'Guru guidance for wisdom, prosperity, learning, counsel, and dharma.', '/knowledge/gemstones/yellow-sapphire-pukhraj-guide'],
-  ['venus', 'Venus', 'Diamond, Opal, White Sapphire', ['diamond', 'opal', 'white-sapphire'], ['Rose Quartz'], 'Shukra guidance for refinement, relationships, art, beauty, and comforts.', '/knowledge/gem-qualities'],
+  ['venus', 'Venus', 'Diamond, Opal, White Sapphire', ['diamond', 'opal', 'white-sapphire'], ['Rose Quartz'], 'Shukra guidance for refinement, relationships, art, beauty, and comforts.', '/knowledge/gemstones/diamond-heera-guide'],
   ['saturn', 'Saturn', 'Blue Sapphire (Neelam)', ['blue-sapphire', 'amethyst'], ['Iolite'], 'Shani guidance for discipline, endurance, structure, and responsibility.', '/knowledge/gemstones/blue-sapphire-neelam-guide'],
   ['rahu', 'Rahu', 'Hessonite (Gomed)', ['hessonite'], ['Lapis Lazuli'], 'Rahu guidance for focus during complexity, ambition, and unconventional paths.', '/knowledge/gemstones/hessonite-gomed-guide'],
   ['ketu', 'Ketu', "Cat's Eye (Lehsunia)", ['cats-eye'], ['Tiger Eye'], 'Ketu guidance for detachment, intuition, protection, and spiritual insight.', '/knowledge/gemstones/cats-eye-lehsunia-guide'],
@@ -301,7 +301,7 @@ const planetPages: SeoLandingPage[] = [
   seoTitle: `${planet} Gemstone Guide | Vedic Gemstones by Planet`,
   description: `Explore certified Vedic gemstone options for ${planet}, including ${gemLabel} with buying and wearing guidance.`,
   eyebrow: 'Planet Guide',
-  intro: `${focus} This page collects the main gemstone shortlist and related alternatives so shoppers can compare certified options before consultation.`,
+  intro: `${focus} Compare certified ${gemLabel} options here, then confirm wearing with a Jyotish consultation.`,
   advisory: commonAdvisory,
   primaryGemSlugs: primaryGemSlugs as string[],
   primaryGemNames: [gemLabel as string],
@@ -310,6 +310,7 @@ const planetPages: SeoLandingPage[] = [
   faqs: [
     { question: `Which gemstone is linked with ${planet}?`, answer: `${gemLabel} is the traditional primary recommendation most often discussed for ${planet}, subject to chart suitability.` },
     { question: 'Should I buy before consultation?', answer: 'For astrological wearing, consultation is recommended before purchase so the stone, metal, weight, and timing are aligned.' },
+    { question: `Is ${gemLabel} right for every ${planet} chart?`, answer: `No. ${planet} gemstones are worn only when the chart supports strengthening ${planet}. Do not buy from the planet name alone.` },
   ],
   relatedKnowledge: [{ label: `${planet} knowledge guide`, href: knowledgeHref as string }],
 }));
@@ -401,11 +402,26 @@ export const RASHI_SEO_PAGES = rashiPages;
 export const PLANET_SEO_PAGES = planetPages;
 export const PURPOSE_SEO_PAGES = purposePages;
 
+function withSuitabilityFaq(page: SeoLandingPage): SeoLandingPage {
+  const subject = page.rashiName ?? page.planet ?? page.purpose ?? 'this shortlist';
+  return {
+    ...page,
+    faqs: [
+      ...page.faqs,
+      {
+        question: `Should I buy a gemstone only because of ${subject}?`,
+        answer:
+          'No. Rashi, planet, or purpose lists are starting points. Chart dignity, dasha, and contraindications decide whether a stone should be worn. Book a recommendation if you are unsure.',
+      },
+    ],
+  };
+}
+
 export const SEO_LANDING_PAGES = [
-  ...RASHI_SEO_PAGES,
+  ...RASHI_SEO_PAGES.map(withSuitabilityFaq),
   ...PLANET_SEO_PAGES,
-  ...PURPOSE_SEO_PAGES,
-] as const satisfies readonly SeoLandingPage[];
+  ...PURPOSE_SEO_PAGES.map(withSuitabilityFaq),
+];
 
 export function getSeoLandingPageBySlug(slug: string) {
   return SEO_LANDING_PAGES.find((page) => page.slug === slug) ?? null;

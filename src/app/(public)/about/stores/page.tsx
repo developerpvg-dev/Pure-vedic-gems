@@ -1,17 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Clock, Mail, MapPin, Navigation, Phone } from 'lucide-react';
-import type { Metadata } from 'next';
-import { OFFICE_LOCATIONS } from '@/lib/constants/company-addresses';
+import { OFFICE_LOCATIONS, storeLocationsJsonLd } from '@/lib/constants/company-addresses';
+import { breadcrumbJsonLd, buildMetadata, getSiteUrl } from '@/lib/utils/seo';
+import { JsonLd } from '@/components/seo/JsonLd';
 import './stores-page.css';
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: 'Stores | PureVedicGems',
+export const metadata = buildMetadata({
+  title: 'Gemstone Shop in Delhi | Saket Showroom & Stores',
   description:
-    'Pure Vedic Gems Pvt. Ltd. store locations — Saket showroom (Delhi), Sultanpur Vedic Research Centre, and UK office in Hounslow.',
-};
+    'Visit PureVedicGems in Saket, New Delhi — certified Vedic gemstones, consultation, and certificate review. Sultanpur research centre and UK office by appointment.',
+  path: '/about/stores',
+});
 
 type AddressBlock = {
   label: string;
@@ -68,7 +70,7 @@ const STORE_LOCATIONS: DisplayStore[] = OFFICE_LOCATIONS.map((location) => ({
 
 export default function StoresPage() {
   const stores = STORE_LOCATIONS;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
+  const siteUrl = getSiteUrl();
 
   return (
     <main className="pvg-stores-page min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
@@ -84,10 +86,10 @@ export default function StoresPage() {
 
           <div className="mb-0 flex flex-col items-center justify-center">
             <h1 className="section-title" id="stores-page-heading">
-              PureVedicGems Stores
+              Gemstone Shop in Delhi
             </h1>
             <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
-              Visit or connect with our team for gemstone inspection, consultation scheduling, jewellery configuration, and certificate review.
+              Inspect certified stones at our Saket showroom (MGF Metropolitan Mall). Sultanpur is the Vedic research centre. The UK office in Hounslow is appointment only — not a walk-in store.
             </p>
             <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
           </div>
@@ -184,7 +186,11 @@ export default function StoresPage() {
           <div>
             <h2 className="pvg-stores-cta-title">Planning a visit?</h2>
             <p className="pvg-stores-cta-copy">
-              Book an appointment first so the team can prepare the right stones, certificates, and expert support.
+              Book an appointment first so the team can prepare the right stones, certificates, and expert support. Or{' '}
+              <Link href="/shop" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+                shop certified gemstones online
+              </Link>
+              .
             </p>
           </div>
           <Link href="/consultation" className="pvg-stores-cta-link">
@@ -193,25 +199,18 @@ export default function StoresPage() {
         </div>
       </section>
 
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', href: '/' },
+            { name: 'About', href: '/about' },
+            { name: 'Stores', href: '/about/stores' },
+          ]),
+          {
             '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: 'PureVedicGems',
-            url: siteUrl,
-            location: stores.map((store) => ({
-              '@type': 'LocalBusiness',
-              name: `${store.title} — ${store.subtitle}`,
-              address: store.addresses.flatMap((block) => block.lines).join(', '),
-              telephone: store.phones.join(', '),
-              email: store.email,
-              url: `${siteUrl}/about/stores`,
-            })),
-          }),
-        }}
+            '@graph': storeLocationsJsonLd(siteUrl, { india: INDIA_PHONES[0], uk: UK_PHONE }),
+          },
+        ]}
       />
     </main>
   );

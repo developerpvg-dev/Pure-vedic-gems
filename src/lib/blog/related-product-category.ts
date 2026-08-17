@@ -1,4 +1,5 @@
 import { KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
+import { canonicalGroupHref, canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
 
 export type RelatedProductCategory = {
   relatedProductCategoryHref: string;
@@ -59,14 +60,14 @@ export function inferRelatedProductCategory(input: {
 
   if (best) {
     return {
-      relatedProductCategoryHref: `/shop/${best.slug}`,
+      relatedProductCategoryHref: canonicalSubcategoryHref(best.slug) ?? `/shop/${best.slug}`,
       relatedProductCategoryLabel: KNOWN_GEM_SUBCATEGORIES[best.slug].label,
     };
   }
 
   if (/\brudraksha\b/.test(text) || /\bmukhi\b/.test(text)) {
     return {
-      relatedProductCategoryHref: '/shop/rudraksha',
+      relatedProductCategoryHref: canonicalGroupHref('rudraksha'),
       relatedProductCategoryLabel: 'Rudraksha Collection',
     };
   }
@@ -74,19 +75,19 @@ export function inferRelatedProductCategory(input: {
   const category = haystack(input.categorySlug, input.categoryTitle);
   if (category.includes('rudraksha')) {
     return {
-      relatedProductCategoryHref: '/shop/rudraksha',
+      relatedProductCategoryHref: canonicalGroupHref('rudraksha'),
       relatedProductCategoryLabel: 'Rudraksha Collection',
     };
   }
   if (category.includes('navratna') || category.includes('navaratna')) {
     return {
-      relatedProductCategoryHref: '/shop/navaratna',
+      relatedProductCategoryHref: canonicalGroupHref('navaratna'),
       relatedProductCategoryLabel: 'Navaratna Collection',
     };
   }
   if (category.includes('upratna')) {
     return {
-      relatedProductCategoryHref: '/shop/upratna',
+      relatedProductCategoryHref: canonicalGroupHref('upratna'),
       relatedProductCategoryLabel: 'Upratna Collection',
     };
   }

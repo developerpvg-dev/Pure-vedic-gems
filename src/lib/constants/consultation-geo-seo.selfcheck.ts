@@ -14,7 +14,7 @@ import {
 } from './consultation-geo-seo';
 
 if (CONSULTATION_PATH !== '/consultation') throw new Error('path');
-if (CONSULTATION_GEO_REDIRECT_SOURCES.length < 13) throw new Error('missing redirect sources');
+if (CONSULTATION_GEO_REDIRECT_SOURCES.length < 6) throw new Error('missing redirect sources');
 if (CONSULTATION_GEO_SOURCES.length < 13) throw new Error('missing SEO source pages');
 if (CONSULTATION_GEO_KEYWORDS.length < 15) throw new Error('thin keywords');
 if (!CONSULTATION_GEO_META.title.toLowerCase().includes('consultation')) {

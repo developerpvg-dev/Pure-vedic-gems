@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { RudrakshaFeatureCarousel } from '@/components/home/RudrakshaFeatureCarousel';
-import { catalogFamilyToStorefrontGroupSlug, productHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
+import { catalogFamilyToStorefrontGroupSlug, productHref, storefrontGroupHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
 import {
   RUDRAKSHA_FEATURE_IMAGES,
   rudrakshaMukhiImage,
@@ -15,6 +15,7 @@ import {
 } from '@/lib/constants/navaratna-home-grid';
 import {
   RUDRAKSHA_HOME_GRID_SLUGS,
+  RUDRAKSHA_STOREFRONT_SLUGS,
   isRudrakshaStorefrontSlug,
   pickRudrakshaHomeGridCategories,
   rudrakshaSubcategoryLabel,
@@ -135,25 +136,31 @@ const UPRATNA_FALLBACK: HomeManagedCategory[] = [
   { id: 'malachite', name: 'Malachite', slug: 'malachite', type: 'upratna', sanskrit_name: null, planet: null, image_url: null, hover_image_url: null, description: null, display_locations: UPRATNA_DEFAULT_LOCATIONS, color: '#48C07A', sort_order: 10 },
 ];
 
-const RUDRAKSHA_FALLBACK: HomeManagedCategory[] = RUDRAKSHA_HOME_GRID_SLUGS.map((slug, index) => ({
-  id: slug,
-  name: rudrakshaSubcategoryLabel(slug),
-  slug,
-  type: 'rudraksha',
-  sanskrit_name: null,
-  planet: null,
-  image_url: null,
-  hover_image_url: null,
-  description: null,
-  display_locations: Number.parseInt(slug, 10) >= 10 ? 'Rare' : 'Classic',
-  color: null,
-  sort_order: index + 1,
-  featured_on_homepage: true,
-  is_rare: Number.parseInt(slug, 10) >= 10,
-}));
+function rudrakshaFallbackItem(slug: string, index: number): HomeManagedCategory {
+  const mukhi = Number.parseInt(slug, 10);
+  return {
+    id: slug,
+    name: rudrakshaSubcategoryLabel(slug),
+    slug,
+    type: 'rudraksha',
+    sanskrit_name: null,
+    planet: null,
+    image_url: null,
+    hover_image_url: null,
+    description: null,
+    display_locations: Number.isFinite(mukhi) && mukhi >= 10 ? 'Rare' : 'Classic',
+    color: null,
+    sort_order: index + 1,
+    featured_on_homepage: true,
+    is_rare: Number.isFinite(mukhi) && mukhi >= 10,
+  };
+}
+
+const RUDRAKSHA_FALLBACK: HomeManagedCategory[] = RUDRAKSHA_HOME_GRID_SLUGS.map(rudrakshaFallbackItem);
+const RUDRAKSHA_STOREFRONT_FALLBACK: HomeManagedCategory[] = RUDRAKSHA_STOREFRONT_SLUGS.map(rudrakshaFallbackItem);
 
 const RUDRAKSHA_FEATURE_FALLBACK: HomeCatalogCategory[] = [
-  { id: 'rudraksha-mukhi-collection', name: '1-15 Finest Quality Rudrakshas', slug: 'rudraksha-mukhi-collection', family: 'rudraksha', image_url: null, hover_image_url: null, homepage_subtitle: 'Complete Mukhi range', homepage_badge: 'Featured', cta_label: 'Shop All', canonical_path: '/shop/rudraksha', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 1 },
+  { id: 'rudraksha-mukhi-collection', name: '1-15 Finest Quality Rudrakshas', slug: 'rudraksha-mukhi-collection', family: 'rudraksha', image_url: null, hover_image_url: null, homepage_subtitle: 'Complete Mukhi range', homepage_badge: 'Featured', cta_label: 'Shop All', canonical_path: '/rudraksha', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 1 },
   { id: 'exclusive-rudraksha-malas', name: 'Exclusive Rudraksha Malas', slug: 'exclusive-rudraksha-malas', family: 'mala', image_url: null, hover_image_url: null, homepage_subtitle: 'Energized malas', homepage_badge: 'Featured', cta_label: 'Shop Malas', canonical_path: '/shop/malas/exclusive-rudraksha-malas', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 2 },
   { id: 'rudraksha-jewelry', name: 'Customised Rudraksha Jewelleries', slug: 'rudraksha-jewelry', family: 'jewelry', image_url: null, hover_image_url: null, homepage_subtitle: 'Custom settings', homepage_badge: 'Featured', cta_label: 'Shop Jewellery', canonical_path: '/shop/jewelry/rudraksha-jewelry', accent_color: null, homepage_slot: 'rudraksha_feature', sort_order: 3 },
 ];
@@ -276,6 +283,20 @@ function buildRudrakshaHomeCategories(items: HomeManagedCategory[]) {
   }));
 }
 
+/** All 1–21 Mukhi + specials — same set the old /shop/rudraksha grid listed. */
+function buildRudrakshaShopCategories(items: HomeManagedCategory[]) {
+  const bySlug = new Map(
+    mergeWithFallback(
+      items.filter((category) => isRudrakshaStorefrontSlug(category.slug)),
+      RUDRAKSHA_STOREFRONT_FALLBACK,
+    ).map((item) => [item.slug, item]),
+  );
+  return RUDRAKSHA_STOREFRONT_SLUGS.map((slug, index) => {
+    const item = bySlug.get(slug) ?? withLocalNavImages([rudrakshaFallbackItem(slug, index)])[0];
+    return { ...item, name: item.name || rudrakshaSubcategoryLabel(slug) };
+  });
+}
+
 export async function getHomeManagedCategories(): Promise<CategoryBucket> {
   const supabase = createOptionalPublicClient();
   if (!supabase) return FALLBACK_BUCKETS;
@@ -329,7 +350,7 @@ export async function getShopBrowseCategories(): Promise<{
   jewelry: HomeCatalogCategory[];
 }> {
   const empty = {
-    gems: FALLBACK_BUCKETS,
+    gems: { ...FALLBACK_BUCKETS, rudraksha: withLocalNavImages(RUDRAKSHA_STOREFRONT_FALLBACK) },
     idols: EXPLORE_IDOL_FALLBACK,
     jewelry: EXPLORE_JEWELRY_FALLBACK,
   };
@@ -368,13 +389,7 @@ export async function getShopBrowseCategories(): Promise<{
     const gems: CategoryBucket = {
       navaratna: mergeWithFallback(grouped.navaratna, NAVARATNA_FALLBACK),
       upratna: mergeWithFallback(grouped.upratna, UPRATNA_FALLBACK),
-      rudraksha: mergeWithFallback(
-        grouped.rudraksha.filter((category) => isRudrakshaStorefrontSlug(category.slug)),
-        RUDRAKSHA_FALLBACK,
-      ).map((item) => ({
-        ...item,
-        name: item.name || rudrakshaSubcategoryLabel(item.slug),
-      })),
+      rudraksha: buildRudrakshaShopCategories(grouped.rudraksha),
     };
 
     const catalogColumns =
@@ -567,7 +582,9 @@ function managedCategoryHref(category: HomeManagedCategory) {
 function catalogCategoryHref(category: HomeCatalogCategory) {
   const parentSlug = catalogFamilyToStorefrontGroupSlug(category.family) ?? 'jewelry';
   const legacySinglePath = `/shop/${category.slug}`;
-  if (category.slug === parentSlug || (parentSlug === 'malas' && category.slug === 'mala')) return `/shop/${parentSlug}`;
+  if (category.slug === parentSlug || (parentSlug === 'malas' && category.slug === 'mala')) {
+    return storefrontGroupHref(parentSlug);
+  }
   if (category.canonical_path && category.canonical_path !== legacySinglePath) return category.canonical_path;
   return storefrontSubcategoryHref(parentSlug, category.slug);
 }
@@ -691,8 +708,8 @@ function directorNote(product: HomeDirectorPick) {
 
 const HOMEPAGE_CATEGORY_CARDS = [
   { title: 'Bracelets', href: '/shop/jewelry/bracelets', image: '/config_img/bracelet.webp', cta: 'Shop Bracelets' },
-  { title: 'Gemstones', href: '/shop/navaratna', image: '/config_img/loose.webp', cta: 'View Gemstones' },
-  { title: 'Rudraksha', href: '/shop/rudraksha', image: RUDRAKSHA_FEATURE_IMAGES.collection, cta: 'See Rudraksha' },
+  { title: 'Gemstones', href: '/gemstones/navaratna', image: '/config_img/loose.webp', cta: 'View Gemstones' },
+  { title: 'Rudraksha', href: '/rudraksha', image: RUDRAKSHA_FEATURE_IMAGES.collection, cta: 'See Rudraksha' },
   { title: 'Jewellery', href: '/shop/jewelry', image: '/config_img/ring.webp', cta: 'Explore Jewellery' },
   { title: 'Crystals & Trees', href: '/shop/idols', image: '/home/navratnaimg/stone9.webp', cta: 'Explore Crystals' },
 ];
@@ -721,9 +738,13 @@ function configureHref(product: HomeDirectorPick) {
 export function NavaratnaHomeSection({
   categories,
   showCta = true,
+  showHeading = true,
+  srHeading = 'Shop the nine Navaratna gems',
 }: {
   categories: HomeManagedCategory[];
   showCta?: boolean;
+  showHeading?: boolean;
+  srHeading?: string;
 }) {
   const visibleCategories = showCta ? categories.slice(0, NAVARATNA_HOME_GRID_LIMIT) : categories;
   const rows: HomeManagedCategory[][] = [];
@@ -733,14 +754,24 @@ export function NavaratnaHomeSection({
 
   return (
     <>
-      <section className="navratna-section" id="navratna" aria-labelledby="navratna-heading">
-        <div className="navratna-bg-text" aria-hidden="true">नवरत्न</div>
+      <section
+        className={`navratna-section${showHeading ? '' : ' navratna-section--embedded'}`}
+        id="navratna"
+        aria-labelledby="navratna-heading"
+      >
+        {showHeading ? <div className="navratna-bg-text" aria-hidden="true">नवरत्न</div> : null}
         <div className="container">
-          <div className="section-head">
-            <h2 className="section-title" id="navratna-heading">Navaratna Gemstones</h2>
-            <p className="navratna-subtitle">The Nine Sacred Planetary Gemstones</p>
-            <div className="section-rule-center" />
-          </div>
+          {showHeading ? (
+            <div className="section-head">
+              <h2 className="section-title" id="navratna-heading">Navaratna Gemstones</h2>
+              <p className="navratna-subtitle">The Nine Sacred Planetary Gemstones</p>
+              <div className="section-rule-center" />
+            </div>
+          ) : (
+            <h2 className="sr-only" id="navratna-heading">
+              {srHeading}
+            </h2>
+          )}
 
           {rows.map((row) => (
             <div key={row.map((category) => category.slug).join('-')} className={`gem-row gem-row-${row.length}`}>
@@ -792,7 +823,7 @@ export function NavaratnaHomeSection({
             label: <>Get Navaratna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
             href: '#gem-recommendation',
           }}
-          secondary={{ label: 'See Navaratna Collection', href: '/shop/navaratna' }}
+          secondary={{ label: 'See Navaratna Collection', href: '/gemstones/navaratna' }}
           image="/home/ctas/cta1.webp?v=20260810"
           imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
           imageSide="right"
@@ -806,24 +837,36 @@ export function RudrakshaHomeSection({
   categories,
   featureCards = RUDRAKSHA_FEATURE_FALLBACK,
   showCta = true,
+  showHeading = true,
 }: {
   categories: HomeManagedCategory[];
   featureCards?: HomeCatalogCategory[];
   showCta?: boolean;
+  showHeading?: boolean;
 }) {
   const visibleCategories = showCta ? categories.slice(0, 12) : categories;
   const visibleFeatureCards = featureCards;
 
   return (
     <>
-      <section className="rudraksha-section" id="rudraksha" aria-labelledby="rudraksha-heading">
-        <div className="rudraksha-bg-text" aria-hidden="true">रुद्राक्ष</div>
+      <section
+        className={`rudraksha-section${showHeading ? '' : ' rudraksha-section--embedded'}`}
+        id="rudraksha"
+        aria-labelledby="rudraksha-heading"
+      >
+        {showHeading ? <div className="rudraksha-bg-text" aria-hidden="true">रुद्राक्ष</div> : null}
         <div className="container">
-          <div className="section-head" style={{ position: 'relative', zIndex: 1 }}>
-            <h2 className="section-title" id="rudraksha-heading">Rudraksha Beads</h2>
-            <p className="rudraksha-subtitle">Sacred Beads of Lord Shiva</p>
-            <div className="section-rule-center" />
-          </div>
+          {showHeading ? (
+            <div className="section-head" style={{ position: 'relative', zIndex: 1 }}>
+              <h2 className="section-title" id="rudraksha-heading">Rudraksha Beads</h2>
+              <p className="rudraksha-subtitle">Sacred Beads of Lord Shiva</p>
+              <div className="section-rule-center" />
+            </div>
+          ) : (
+            <h2 className="sr-only" id="rudraksha-heading">
+              Browse Rudraksha by type
+            </h2>
+          )}
 
           <div className={`rudra-layout${showCta ? '' : ' rudra-layout--shop'}`}>
             {showCta ? (
@@ -874,7 +917,7 @@ export function RudrakshaHomeSection({
             label: <>Get Rudraksha Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
             href: '#gem-recommendation',
           }}
-          secondary={{ label: 'See Rudraksha Collection', href: '/shop/rudraksha' }}
+          secondary={{ label: 'See Rudraksha Collection', href: '/rudraksha' }}
           image="/home/ctas/cta2.webp?v=2"
           imageAlt="Rudraksha expert offering personalised guidance"
           imageSide="left"
@@ -1146,7 +1189,7 @@ export function SemipreciousHomeSection({
             label: <>Get Uparatna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
             href: '#gem-recommendation',
           }}
-          secondary={{ label: 'See Uparatna Collection', href: '/shop/upratna' }}
+          secondary={{ label: 'See Uparatna Collection', href: '/gemstones/upratna' }}
           image="/home/ctas/cta3.webp?v=2"
           imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"
           imageSide="right"

@@ -10,10 +10,10 @@ const TEXT_HREFS: Record<string, string> = {
   'Find Your Gemstone': '/shop',
   'View Collection': '/shop',
   'View All Gemstones': '/shop',
-  'Shop All': '/shop/rudraksha',
+  'Shop All': '/rudraksha',
   'Shop Malas': '/shop/malas/exclusive-rudraksha-malas',
   'Shop Jewellery': '/shop/jewelry/rudraksha-jewelry',
-  'Show All Rudrakshas': '/shop/rudraksha',
+  'Show All Rudrakshas': '/rudraksha',
   'View All Spiritual Idols': '/shop/idols',
   'View All Vedic Jewellery': '/shop/jewelry',
   'View All Picks': '/shop?featured=true',
@@ -33,16 +33,16 @@ const TEXT_HREFS: Record<string, string> = {
 };
 
 const PARTIAL_HREFS: Array<[RegExp, string]> = [
-  [/ruby|manik/i, '/shop/navaratna/ruby'],
-  [/pearl|moti/i, '/shop/navaratna/pearl'],
-  [/red coral|coral|moonga/i, '/shop/navaratna/red-coral'],
-  [/emerald|panna/i, '/shop/navaratna/emerald'],
-  [/yellow sapphire|pukhraj/i, '/shop/navaratna/yellow-sapphire'],
-  [/blue sapphire|neelam/i, '/shop/navaratna/blue-sapphire'],
-  [/hessonite|gomed/i, '/shop/navaratna/hessonite'],
-  [/cat'?s eye|lehsun/i, '/shop/navaratna/cats-eye'],
-  [/pitambari/i, '/shop/navaratna/pitambari'],
-  [/diamond|heera/i, '/shop/navaratna/diamond'],
+  [/ruby|manik/i, '/gemstones/navaratna/ruby'],
+  [/pearl|moti/i, '/gemstones/navaratna/pearl'],
+  [/red coral|coral|moonga/i, '/gemstones/navaratna/red-coral'],
+  [/emerald|panna/i, '/gemstones/navaratna/emerald'],
+  [/yellow sapphire|pukhraj/i, '/gemstones/navaratna/yellow-sapphire'],
+  [/blue sapphire|neelam/i, '/gemstones/navaratna/blue-sapphire'],
+  [/hessonite|gomed/i, '/gemstones/navaratna/hessonite'],
+  [/cat'?s eye|lehsun/i, '/gemstones/navaratna/cats-eye'],
+  [/pitambari/i, '/gemstones/navaratna/pitambari'],
+  [/diamond|heera/i, '/gemstones/navaratna/diamond'],
   [/ganesh/i, '/shop/idols/ganesha'],
   [/shiva linga|shivling/i, '/shop/idols/shivling'],
   [/lakshmi/i, '/shop/idols/lakshmi'],
@@ -53,7 +53,7 @@ const PARTIAL_HREFS: Array<[RegExp, string]> = [
   [/ring|kada/i, '/shop/jewelry/ring'],
   [/pendant/i, '/shop/jewelry/pendant'],
   [/bracelet/i, '/shop/jewelry/bracelets'],
-  [/mukhi/i, '/shop/rudraksha'],
+  [/mukhi/i, '/rudraksha'],
 ];
 
 type ScrollSequence = {

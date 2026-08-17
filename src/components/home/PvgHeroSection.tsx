@@ -108,7 +108,7 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
       }}
     >
       <h1 id="home-hero-heading" className="sr-only">
-        Certified Vedic Gemstones and Rudraksha from PureVedicGems
+        Buy Certified Vedic Gemstones Online in India
       </h1>
       {activeSlides.map((item, index) => {
         if (!visibleIndices.has(index)) return null;

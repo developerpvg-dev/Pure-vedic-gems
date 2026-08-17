@@ -1,19 +1,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Award, CalendarCheck, Languages, Star } from 'lucide-react';
-import type { Metadata } from 'next';
 import { urlFor } from '@/lib/sanity/client';
 import { getSanityExpertProfiles } from '@/lib/sanity/queries';
 import { FALLBACK_EXPERTS, getAvailableExperts, type PublicExpert } from '@/lib/queries/experts';
 import type { SanityExpertProfile } from '@/lib/types/content';
+import { buildMetadata } from '@/lib/utils/seo';
 import './experts-page.css';
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: 'Experts | PureVedicGems',
-  description: 'Meet the PureVedicGems gemstone, Vedic astrology, and jewellery experts guiding product selection and consultations.',
-};
+export const metadata = buildMetadata({
+  title: 'Gemstone & Jyotish Experts | PureVedicGems',
+  description:
+    'Meet the PureVedicGems gemstone, Vedic astrology, and jewellery experts who guide product selection and consultations.',
+  path: '/about/experts',
+});
 
 type ExpertCard = {
   id: string;

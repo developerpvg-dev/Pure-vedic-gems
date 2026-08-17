@@ -50,7 +50,7 @@ function TierTable({ rows }: { rows: { label: string; value: string }[] }) {
   );
 }
 
-export function GemLegacyQualityContent({ slug }: { slug: string }) {
+export function GemLegacyQualityContent({ slug, shipNote }: { slug: string; shipNote?: string | null }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const guide = getGemLegacyGuide(slug);
   const gemMeta = GEM_QUALITIES.find((g) => g.slug === slug);
@@ -86,6 +86,9 @@ export function GemLegacyQualityContent({ slug }: { slug: string }) {
         <blockquote className="mx-auto mt-4 max-w-5xl rounded-sm border border-[#e8dcc8] bg-[#fdf8ef] px-5 py-5 text-left text-sm italic leading-7 text-[#5a4a3a] sm:px-6 sm:text-base">
           &ldquo;{guide.certificationQuote}&rdquo;
         </blockquote>
+        {shipNote ? (
+          <p className="mx-auto mt-4 max-w-3xl text-left text-sm leading-6 text-[#5a5043]">{shipNote}</p>
+        ) : null}
       </KnowledgePageHero>
 
       <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6 md:space-y-12 md:py-12">

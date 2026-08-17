@@ -1,4 +1,5 @@
 import type { CategoryFaq } from '@/lib/types/shop-category-page';
+import { canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
 import {
   BRAND,
   RichGemSections,
@@ -1946,6 +1947,232 @@ export const UPRATNA_RICH_CONTENT: Record<string, RichGemSections> = {
   'white-coral': WHITE_CORAL,
   spinel: SPINEL,
   chrysoberyl: CHRYSOBERYL,
+};
+
+function shopLink(slug: string, label: string) {
+  return `<a href="${canonicalSubcategoryHref(slug) ?? `/shop/${slug}`}">${label}</a>`;
+}
+
+/** Parent /gemstones/upratna hub — substitutes from our recommendation table and per-stone Upratna pages. */
+export const UPRATNA_HUB_CONTENT: RichGemSections = {
+  intro:
+    'Upratna are traditional Vedic substitutes for Navaratna gems — the same graha, a gentler stone, chosen after chart review.',
+  hero_benefits: [
+    { text: 'Certified natural substitutes' },
+    { text: 'Same planet, gentler stone' },
+    { text: 'Treatment disclosure listed' },
+    { text: 'Chart review before wearing' },
+  ],
+  seo_title: 'Buy Upratna Gems Online in India | Vedic Gemstones',
+  seo_description:
+    'Buy certified Upratna gems online in India. Natural amethyst, citrine, moonstone, zircon as planetary substitutes. Lab reports. Delhi since 1937.',
+  meta_keywords: [
+    'buy upratna stone online',
+    'upratna gemstones',
+    'semi precious vedic gems',
+    'substitute gemstone jyotish',
+    'amethyst for blue sapphire',
+    'citrine for pukhraj',
+    'certified upratna',
+    'natural zircon',
+    'moonstone pearl substitute',
+    BRAND.toLowerCase(),
+  ],
+  about_html: [
+    p(
+      `Upratna (उप रत्न) are the secondary Vedic gems used when a Navaratna is too strong, too costly, or not indicated. Our <a href="/gems-recommendations">recommendation notes</a> and gem-qualities FAQ treat them as planetary substitutes — not as a cheaper way to skip Kundli review. ${ASTRO_DISCLAIMER}`,
+      `At ${BRAND}, each Upratna listing names the mineral, treatment status, and the Navaratna it traditionally stands in for. Buy the substitute that was prescribed, not a colour-matched lookalike.`,
+    ),
+    h3('Planet, Navaratna, and the Upratna we stock'),
+    `<table><thead><tr><th>Planet</th><th>Navaratna</th><th>Upratna on this site</th></tr></thead><tbody>
+<tr><td>Sun (Surya)</td><td>${shopLink('ruby', 'Ruby (Manik)')}</td><td>${shopLink('garnet', 'Garnet')}, ${shopLink('sunstone', 'Sunstone')}, ${shopLink('tiger-eye', "Tiger's Eye")}, ${shopLink('spinel', 'Red Spinel')}</td></tr>
+<tr><td>Moon (Chandra)</td><td>${shopLink('pearl', 'Pearl (Moti)')}</td><td>${shopLink('moonstone', 'Moonstone')}, ${shopLink('white-coral', 'White Coral')}</td></tr>
+<tr><td>Mars (Mangal)</td><td>${shopLink('red-coral', 'Red Coral (Moonga)')}</td><td>Carnelian in our recommendation table — ask at <a href="/consultation">consultation</a> if a Mars upratna is required</td></tr>
+<tr><td>Mercury (Budh)</td><td>${shopLink('emerald', 'Emerald (Panna)')}</td><td>${shopLink('peridot', 'Peridot')}, ${shopLink('aquamarine', 'Aquamarine')}, ${shopLink('diopside', 'Diopside')}, ${shopLink('tourmaline', 'Green Tourmaline')}</td></tr>
+<tr><td>Jupiter (Guru)</td><td>${shopLink('yellow-sapphire', 'Yellow Sapphire (Pukhraj)')}</td><td>${shopLink('citrine', 'Citrine')}, ${shopLink('turquoise', 'Turquoise')}</td></tr>
+<tr><td>Venus (Shukra)</td><td>${shopLink('diamond', 'Diamond')} / ${shopLink('white-sapphire', 'White Sapphire')}</td><td>${shopLink('zircon', 'Zircon')}, ${shopLink('opal', 'Opal')}, ${shopLink('white-topaz', 'White Topaz')}, ${shopLink('rose-quartz', 'Rose Quartz')}</td></tr>
+<tr><td>Saturn (Shani)</td><td>${shopLink('blue-sapphire', 'Blue Sapphire (Neelam)')}</td><td>${shopLink('amethyst', 'Amethyst')}, ${shopLink('iolite', 'Iolite')}, ${shopLink('lapis-lazuli', 'Lapis Lazuli')}, ${shopLink('tanzanite', 'Tanzanite')}, ${shopLink('blue-topaz', 'Blue Topaz')}</td></tr>
+<tr><td>Rahu</td><td>${shopLink('hessonite', 'Hessonite (Gomed)')}</td><td>${shopLink('garnet', 'Garnet')}, ${shopLink('hakik', 'Hakik')}</td></tr>
+<tr><td>Ketu</td><td>${shopLink('cats-eye', "Cat's Eye (Lehsuniya)")}</td><td>${shopLink('chrysoberyl', 'Chrysoberyl')}, ${shopLink('tiger-eye', "Tiger's Eye")} (context-dependent)</td></tr>
+</tbody></table>`,
+    h3('Substitute, not a duplicate Navaratna'),
+    p(
+      'An Upratna is traditionally gentler than the primary ratna of the same graha. That is why Amethyst is used when Neelam is not affordable or not advisable — not because the two stones are interchangeable in every chart. Do not wear an Upratna and its Navaratna together unless an astrologer allows it.',
+    ),
+  ].join('\n'),
+  how_to_wear_html: [
+    p(
+      'There is no one Sunday / ring-finger rule for every Upratna. Metal, finger, day, and mantra follow the planet of the substitute — the same mapping as the Navaratna it stands for — and the wearing notes on that stone’s shop page.',
+    ),
+    table([
+      ['First step', 'Kundli review. Do not self-prescribe an Upratna because it is cheaper than the Navaratna.'],
+      ['Setting', 'Open-back ring or pendant so the stone can touch the skin, as on our Navaratna wearing notes.'],
+      ['Purification', 'Bathe, wear clean clothes, then purify in unboiled cow milk or Ganga jal.'],
+      ['Mantra', 'Use the beej mantra of the ruling graha — listed on each Upratna page — at least 108 times.'],
+      ['Time', 'Wear on the weekday of that planet at the time calculated for you, not a generic hour copied from Ruby.'],
+      ['Do not stack', 'Do not add the primary Navaratna (for example Neelam on top of Amethyst) without explicit approval.'],
+    ]),
+    h3('If you already own a Navaratna ring'),
+    p(
+      'An Upratna pendant is often the practical add-on when a primary gem already occupies the prescribed finger. Confirm the combination against inimical gems in our <a href="/knowledge/gemstones">Navratnas guide</a> before daily wear.',
+    ),
+  ].join('\n'),
+  who_should_wear_html: [
+    p(
+      `Wear the Upratna that was named for your lagna, dasha, and house lords. “Anyone can wear semi-precious gems” is jewellery marketing. ${ASTRO_DISCLAIMER}`,
+    ),
+    h3('When an Upratna is the better first stone'),
+    ul([
+      'When the astrologer has advised a gentler remedy than high-impact Neelam, Gomed, or Lehsuniya.',
+      'When budget cannot yet support a certified Navaratna of usable size — still buy natural, disclosed quality, not glass.',
+      'When a trial period is safer than committing to the primary ratna.',
+    ]),
+    h3('Consult an astrologer'),
+    p(
+      `Use <a href="/gems-recommendations">Which Gemstone Should I Wear?</a>, then <a href="/consultation">book our experts</a>. ${BRAND} would rather sell one correct certified Upratna than a tray of colourful stones that fight the chart.`,
+    ),
+  ].join('\n'),
+  benefits_html: [
+    p(
+      'Benefits belong to the planet of the substitute that was prescribed. They are traditional Jyotish associations from our stone pages — not medical or financial promises, and not a reason to wear every Upratna at once.',
+    ),
+    h3('Sun, Moon, and Mars'),
+    p(
+      `${shopLink('garnet', 'Garnet')}, ${shopLink('sunstone', 'Sunstone')}, and ${shopLink('tiger-eye', "Tiger's Eye")} are the Surya-side stones we list. ${shopLink('moonstone', 'Moonstone')} and ${shopLink('white-coral', 'White Coral')} stand with Chandra. Mars upratna is chart-specific — Carnelian appears in our recommendation table; confirm before you buy a lookalike.`,
+    ),
+    h3('Mercury, Jupiter, and Venus'),
+    p(
+      `${shopLink('peridot', 'Peridot')} and ${shopLink('aquamarine', 'Aquamarine')} are the usual Budh substitutes for Emerald. ${shopLink('citrine', 'Citrine')} is the common Guru stand-in for Pukhraj. For Shukra, ${shopLink('zircon', 'Zircon')} and ${shopLink('opal', 'Opal')} are the Venus alternates named in our recommendation notes — cubic zirconia is not.`,
+    ),
+    h3('Saturn, Rahu, and Ketu'),
+    p(
+      `${shopLink('amethyst', 'Amethyst')} and ${shopLink('iolite', 'Iolite')} are the Shani substitutes listed for Neelam. ${shopLink('garnet', 'Garnet')} and ${shopLink('hakik', 'Hakik')} are used for Rahu when Gomed is not indicated. ${shopLink('chrysoberyl', 'Chrysoberyl')} and, in some charts, ${shopLink('tiger-eye', "Tiger's Eye")} are Ketu-side options — both are individual, not casual first stones.`,
+    ),
+  ].join('\n'),
+  types_html: [
+    h3('Shani substitutes'),
+    p(
+      `${shopLink('amethyst', 'Amethyst (Katela)')}, ${shopLink('iolite', 'Iolite (Neeli)')}, ${shopLink('lapis-lazuli', 'Lapis Lazuli')}, ${shopLink('tanzanite', 'Tanzanite')}, ${shopLink('blue-topaz', 'Blue Topaz')}, and ${shopLink('kyanite', 'Kyanite')}. Amethyst is the usual first Upratna when Neelam is paused.`,
+    ),
+    h3('Shukra substitutes'),
+    p(
+      `${shopLink('zircon', 'Zircon (Jarkan)')}, ${shopLink('opal', 'Opal')}, ${shopLink('white-topaz', 'White Topaz')}, ${shopLink('rose-quartz', 'Rose Quartz')}, and ${shopLink('malachite', 'Malachite')}. Natural zircon is a listed Venus alternate; cubic zirconia is a lookalike with no Jyotish place.`,
+    ),
+    h3('Other grahas'),
+    p(
+      `${shopLink('citrine', 'Citrine')} and ${shopLink('turquoise', 'Turquoise')} for Guru. ${shopLink('peridot', 'Peridot')}, ${shopLink('aquamarine', 'Aquamarine')}, ${shopLink('diopside', 'Diopside')}, and ${shopLink('tourmaline', 'Tourmaline')} for Budh. ${shopLink('moonstone', 'Moonstone')} for Chandra. ${shopLink('garnet', 'Garnet')} for Surya or Rahu depending on the notes. ${shopLink('spinel', 'Spinel')} is colour-mapped — red is not automatically a Ruby substitute.`,
+    ),
+  ].join('\n'),
+  quality_price_html: [
+    p(
+      'Price follows the mineral, colour, clarity, size, and treatment status of that Upratna — not a single “semi-precious MRP.” Live cards in the collection below are the quote.',
+    ),
+    h3('What to verify'),
+    ul([
+      'Natural origin and treatment disclosure — heat on topaz and tanzanite, dye on turquoise, assembled opal, glass-filled anything.',
+      'The Navaratna it is substituting, named on the invoice — “blue stone for Shani” is not enough.',
+      'A lab report that identifies the mineral, not a paper that only says “Upratna.”',
+      'Cubic zirconia, glass, or dyed quartz sold as zircon, amethyst, or citrine.',
+    ]),
+    h3('Why an Upratna can still cost real money'),
+    p(
+      'Fine amethyst, zircon, and tanzanite are priced by quality like any gem. A suspiciously cheap “Neelam substitute” is usually glass. Compare the collection rather than an invented price band.',
+    ),
+  ].join('\n'),
+  jewellery_html: [
+    p(
+      `${BRAND} sets prescribed Upratna gems in open-back rings and pendants, in silver, gold, or Panchdhatu as advised for that planet. Finger, metal, and whether you already wear a Navaratna should be confirmed before making.`,
+    ),
+    h3('Open setting'),
+    p(
+      'The same ray-transmission rule as Navaratna: the pavilion should be open to the skin. Closed cups hide treatments and block contact.',
+    ),
+    h3('See stones in Delhi'),
+    p(
+      `Inspect colour in daylight at our <a href="/about/stores">Saket, New Delhi showroom</a>, or buy certified stones online with insured shipping. Custom jewellery is made after the gems are approved.`,
+    ),
+  ].join('\n'),
+  cleaning_care_html: [
+    p(
+      'Upratna jewellery mixes hard quartz and spinel with soft opal, turquoise, and moonstone. Our <a href="/knowledge/gems-care">gemstone care guide</a> is the rule: clean as if the weakest stone governs the piece.',
+    ),
+    h3('Safe routine'),
+    ul([
+      'Opal and turquoise: damp cloth only; no soak, ultrasonic, or steam.',
+      'Moonstone and pearl-family organics: wipe after wear; perspiration and perfume are harmful.',
+      'Amethyst, citrine, quartz: lukewarm water, mild soap, soft brush; avoid long sun on amethyst.',
+      'Zircon and topaz: warm water and a soft brush; skip ultrasonic at home.',
+    ]),
+    h3('Daily precautions'),
+    p(
+      'Apply perfume and hairspray before the jewellery goes on. Store so harder gems cannot rub opal, turquoise, or moonstone.',
+    ),
+  ].join('\n'),
+  buyer_beware_html: [
+    p(
+      'Cheap “original Upratna” listings usually fail on disclosure. Read our <a href="/knowledge/treatments">treatments guide</a> before you pay.',
+    ),
+    ul([
+      'Cubic zirconia or glass sold as zircon, diamond substitute, or white sapphire.',
+      'Dyed quartz sold as amethyst, citrine, or “Jamunia.”',
+      'Assembled doublet opal or plastic imitation.',
+      'Heat, dye, or impregnation not named on turquoise, topaz, or tanzanite.',
+      'Closed settings that hide the pavilion.',
+      '“Wear any semi-precious stone” with no chart option to skip Shani or Rahu substitutes.',
+    ]),
+  ].join('\n'),
+  faqs: [
+    {
+      question: 'What are Upratna gemstones?',
+      answer:
+        'Upratna are secondary Vedic gems used as planetary substitutes for the nine Navaratna — for example Amethyst for Blue Sapphire, Citrine for Yellow Sapphire, or natural Zircon for Diamond. They still require chart analysis.',
+    },
+    {
+      question: 'Is Upratna the same as Navaratna?',
+      answer:
+        'No. Navaratna are the nine primary ratnas. Upratna are traditionally gentler substitutes of the same graha, used when the primary stone is unsuitable, too strong, or not affordable. They are not interchangeable in every chart.',
+    },
+    {
+      question: 'What is Upratna stone price in India?',
+      answer:
+        'There is no single MRP. Price follows the mineral, quality, size, and treatment status. Use the live collection on this page. A listing cheaper than decent quartz is usually glass or dye.',
+    },
+    {
+      question: 'Can I wear Upratna instead of Navaratna?',
+      answer:
+        'Only if an astrologer has named that substitute for your chart. Amethyst for Neelam is a common example when Blue Sapphire is paused. Do not swap colours on your own.',
+    },
+    {
+      question: 'Can I wear Upratna with a Navaratna ring?',
+      answer:
+        'Generally not with the primary stone of the same planet, and not with inimical gems, unless a learned astrologer allows it. Confirm before stacking Amethyst with Neelam or Zircon with Diamond.',
+    },
+    {
+      question: 'How do I wear an Upratna ring?',
+      answer:
+        'After chart review, use an open-back setting, purify in unboiled cow milk or Ganga jal, chant the graha mantra 108 times, and wear on the weekday of that planet at the time calculated for you. Metal and finger follow the stone’s page and the astrologer.',
+    },
+    {
+      question: 'Which Upratna is used for Blue Sapphire?',
+      answer:
+        'Amethyst (Katela / Jamunia) is the usual Shani substitute on this site. Iolite, Lapis Lazuli, Tanzanite, and Blue Topaz are also listed as Saturn-side Upratna — suitability is chart-specific.',
+    },
+    {
+      question: 'Is zircon a real diamond substitute?',
+      answer:
+        'Natural zircon is a listed Venus alternate in our recommendation notes. White sapphire is the traditional Jyotish substitute for diamond. Cubic zirconia is not an astrological gem.',
+    },
+    {
+      question: 'Are Upratna gems at PureVedicGems certified?',
+      answer:
+        'Listings include transparent certification and treatment disclosure where applicable. Ask for the mineral name on the report, not a paper that only says Upratna.',
+    },
+    {
+      question: 'Do you ship Upratna stones across India?',
+      answer:
+        'Yes. PureVedicGems ships certified Upratna gems and jewellery across India with insured delivery, and you can view pieces in our Delhi showroom. International shipping is available on request for listed in-stock stones.',
+    },
+  ],
 };
 
 

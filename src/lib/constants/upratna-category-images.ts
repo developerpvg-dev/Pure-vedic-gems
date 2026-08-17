@@ -32,3 +32,6 @@ export const UPRATNA_NAV_IMAGE_BY_SLUG: Record<string, string> = {
 export function upratnaNavImage(slug: string): string | null {
   return UPRATNA_NAV_IMAGE_BY_SLUG[slug] ?? null;
 }
+
+/** Hub D-slot — no set photo exists; amethyst card fills until a collection hero is shot. */
+export const UPRATNA_HUB_HERO = UPRATNA_NAV_IMAGE_BY_SLUG.amethyst;

@@ -3,7 +3,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { GEO_BUY_REDIRECTS, GEO_BUY_SOURCES, geoBuySourcesForDest } from './geo-buy-seo';
+import { GEO_BUY_REDIRECTS, GEO_BUY_SOURCES, MALAYSIA_GEM_REDIRECTS, geoBuySourcesForDest } from './geo-buy-seo';
 
 if (GEO_BUY_REDIRECTS.length !== 61) throw new Error(`expected 61 redirects, got ${GEO_BUY_REDIRECTS.length}`);
 if (GEO_BUY_SOURCES.length !== 61) throw new Error(`expected 61 sources, got ${GEO_BUY_SOURCES.length}`);
@@ -26,6 +26,12 @@ for (const d of dests) {
 const cfg = fs.readFileSync(path.join(process.cwd(), 'next.config.ts'), 'utf8');
 for (const [source] of GEO_BUY_REDIRECTS) {
   if (!cfg.includes(`'${source}'`)) throw new Error(`next.config missing ${source}`);
+}
+if (MALAYSIA_GEM_REDIRECTS.length !== 8) throw new Error('expected 8 Malaysia gem redirects');
+for (const [source, dest] of MALAYSIA_GEM_REDIRECTS) {
+  if (!cfg.includes(`'${source}'`)) throw new Error(`next.config missing Malaysia source ${source}`);
+  if (!cfg.includes(`'${dest}'`)) throw new Error(`next.config missing Malaysia dest ${dest}`);
+  if (dest === '/consultation') throw new Error(`Malaysia gem still points at consultation: ${source}`);
 }
 
 console.log('geo-buy-seo.selfcheck: ok', {

@@ -85,7 +85,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'After purification with Gangajal, energise the bead on a Monday at sunrise facing east. Chant "Om Namah Shivaya" 108 times, then wear in white or red silk thread or capped in silver or gold around the neck.',
     closing:
       'One Mukhi Rudraksha is extremely rare. Always buy from an experienced, certified seller with lab and X-ray verification. Pure Vedic Gems offers in-house Vedic purification and energisation as per ancient rituals.',
-    shopHref: '/shop/rudraksha/1-mukhi',
+    shopHref: '/rudraksha/1-mukhi',
   },
   {
     mukhi: 2,
@@ -131,7 +131,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Monday after washing the bead with Gangajal. Chant "Om Namah" 108 times. Best worn in silver, panchdhatu or white silk thread close to the heart.',
     closing:
       'Confirm clean lines and authentic Nepal or Indonesian origin. Always insist on lab verification for high-grade beads.',
-    shopHref: '/shop/rudraksha/2-mukhi',
+    shopHref: '/rudraksha/2-mukhi',
   },
   {
     mukhi: 3,
@@ -175,7 +175,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Tuesday after purification with Gangajal. Chant "Om Kleem Namah" 108 times. Use red silk thread, copper or gold capping.',
     closing:
       'Mars beads should be sized and shaped well. Always verify mukhi lines and choose a healthy, dense bead.',
-    shopHref: '/shop/rudraksha/3-mukhi',
+    shopHref: '/rudraksha/3-mukhi',
   },
   {
     mukhi: 4,
@@ -218,7 +218,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Wednesday after purification. Chant "Om Hreem Namah" 108 times. Wear in green silk, silver or gold.',
     closing:
       'Combine with study habits and pranayama for best results. Verify mukhi count and natural lines before purchase.',
-    shopHref: '/shop/rudraksha/4-mukhi',
+    shopHref: '/rudraksha/4-mukhi',
   },
   {
     mukhi: 5,
@@ -263,7 +263,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Thursday after Gangajal purification. Chant "Om Hreem Namah" 108 times. Best worn in a mala close to the body or in gold/silver capping.',
     closing:
       'Five Mukhi is the most widely available bead — choose only natural Nepal origin beads with clean mukhi lines and verified authenticity.',
-    shopHref: '/shop/rudraksha/5-mukhi',
+    shopHref: '/rudraksha/5-mukhi',
   },
   {
     mukhi: 6,
@@ -306,7 +306,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Friday after purification with Gangajal. Chant "Om Hreem Hum Namah" 108 times. Use white silk thread, silver or panchdhatu.',
     closing:
       'Six Mukhi beads should be visually clean and well-rounded. Verify origin and certification.',
-    shopHref: '/shop/rudraksha/6-mukhi',
+    shopHref: '/rudraksha/6-mukhi',
   },
   {
     mukhi: 7,
@@ -349,7 +349,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Saturday after Gangajal purification. Chant "Om Hum Namah" 108 times. Use black, blue or purple silk thread, silver or panchdhatu.',
     closing:
       'Authentic 7 Mukhi beads should be evenly textured. Verify with a reputable lab certificate.',
-    shopHref: '/shop/rudraksha/7-mukhi',
+    shopHref: '/rudraksha/7-mukhi',
   },
   {
     mukhi: 8,
@@ -392,7 +392,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Saturday after purification. Chant "Om Ganeshaya Namah" or "Om Hum Namah" 108 times. Best worn in panchdhatu or silver.',
     closing:
       'Always source 8 Mukhi from trusted sellers — fake or carved beads are common in this mukhi.',
-    shopHref: '/shop/rudraksha/8-mukhi',
+    shopHref: '/rudraksha/8-mukhi',
   },
   {
     mukhi: 9,
@@ -435,7 +435,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Tuesday after purification. Chant "Om Hreem Hum Namah" 108 times. Use red silk thread, silver or gold.',
     closing:
       'Choose a healthy bead with clearly defined nine lines. Lab certification is recommended.',
-    shopHref: '/shop/rudraksha/9-mukhi',
+    shopHref: '/rudraksha/9-mukhi',
   },
   {
     mukhi: 10,
@@ -479,7 +479,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Thursday after purification. Chant "Om Hreem Namah" 108 times. Wear in silver or yellow silk thread.',
     closing:
       'Ten Mukhi is a popular protection bead — verify with X-ray and lab certification.',
-    shopHref: '/shop/rudraksha/10-mukhi',
+    shopHref: '/rudraksha/10-mukhi',
   },
   {
     mukhi: 11,
@@ -523,7 +523,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Monday or Tuesday after purification. Chant "Om Hreem Hum Namah" or "Om Namah Shivaya" 108 times. Use red silk thread or silver capping.',
     closing:
       'Choose a bead with well-defined mukhi lines and confirm with lab certification.',
-    shopHref: '/shop/rudraksha/11-mukhi',
+    shopHref: '/rudraksha/11-mukhi',
   },
   {
     mukhi: 12,
@@ -566,7 +566,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Sunday at sunrise after purification. Chant the Surya beej mantra 108 times. Use red or saffron silk thread or gold capping.',
     closing:
       'Premium 12 Mukhi beads are increasingly rare — always insist on lab and X-ray verification.',
-    shopHref: '/shop/rudraksha/12-mukhi',
+    shopHref: '/rudraksha/12-mukhi',
   },
   {
     mukhi: 13,
@@ -609,7 +609,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Friday after Gangajal purification. Chant "Om Hreem Namah" 108 times. Use white or pink silk thread, silver or gold.',
     closing:
       'Thirteen Mukhi is highly desirable and often imitated — only buy with verified lab certification.',
-    shopHref: '/shop/rudraksha/13-mukhi',
+    shopHref: '/rudraksha/13-mukhi',
   },
   {
     mukhi: 14,
@@ -652,7 +652,7 @@ export const RUDRAKSHA_RICH_GUIDES: MukhiRichGuide[] = [
       'Wear on a Monday after purification. Chant "Om Namah" or "Om Namah Shivaya" 108 times. Wear in silver or gold setting around the neck.',
     closing:
       '14 Mukhi (Devmani) is extremely rare and very valuable — only buy with full X-ray and lab verification.',
-    shopHref: '/shop/rudraksha/14-mukhi',
+    shopHref: '/rudraksha/14-mukhi',
   },
   ...RUDRAKSHA_LEGACY_GUIDES_15_21,
 

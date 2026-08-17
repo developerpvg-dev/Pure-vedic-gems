@@ -1,6 +1,7 @@
 import type { RichGemSections } from './helpers';
-import { NAVARATNA_RICH_CONTENT } from './navaratna-content';
-import { UPRATNA_RICH_CONTENT } from './upratna-content';
+import { NAVARATNA_HUB_CONTENT, NAVARATNA_RICH_CONTENT } from './navaratna-content';
+import { RUDRAKSHA_HUB_CONTENT } from './rudraksha-content';
+import { UPRATNA_HUB_CONTENT, UPRATNA_RICH_CONTENT } from './upratna-content';
 import { getCatalogRichContent } from './catalog-content';
 
 export function getRichCategoryContent(
@@ -8,6 +9,15 @@ export function getRichCategoryContent(
   label: string,
   category: string,
 ): RichGemSections | null {
+  if (slug === 'navaratna' || slug === 'navratna') {
+    return NAVARATNA_HUB_CONTENT;
+  }
+  if (slug === 'rudraksha') {
+    return RUDRAKSHA_HUB_CONTENT;
+  }
+  if (slug === 'upratna') {
+    return UPRATNA_HUB_CONTENT;
+  }
   if (NAVARATNA_RICH_CONTENT[slug]) {
     return NAVARATNA_RICH_CONTENT[slug];
   }
@@ -21,4 +31,4 @@ export function getRichCategoryContent(
   return null;
 }
 
-export { NAVARATNA_RICH_CONTENT, UPRATNA_RICH_CONTENT, getCatalogRichContent };
+export { NAVARATNA_RICH_CONTENT, UPRATNA_HUB_CONTENT, UPRATNA_RICH_CONTENT, RUDRAKSHA_HUB_CONTENT, getCatalogRichContent };

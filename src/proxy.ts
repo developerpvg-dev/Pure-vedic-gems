@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
+import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
 import { siteStaticPublicUrl } from '@/lib/site-static';
 
 const PROTECTED_PREFIXES = ['/account', '/admin', '/studio'];
@@ -94,6 +95,14 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = dest;
     return NextResponse.redirect(url, 301);
+  }
+
+  // Public facade URLs → existing /shop/[category] pages (browser URL stays canonical).
+  const rewriteTo = toInternalShopPath(pathname);
+  if (rewriteTo && rewriteTo !== pathname && rewriteTo !== pathname.replace(/\/$/, '')) {
+    const url = request.nextUrl.clone();
+    url.pathname = rewriteTo;
+    return NextResponse.rewrite(url);
   }
 
   if (!isProtectedRoute(pathname)) {
