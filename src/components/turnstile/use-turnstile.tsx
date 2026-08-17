@@ -44,7 +44,7 @@ export function useTurnstile() {
 
   const renderWidget = useCallback(() => {
     if (!enabled || !containerRef.current || widgetIdRef.current !== null || !window.turnstile) {
-      return false;
+      return;
     }
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
@@ -56,7 +56,6 @@ export function useTurnstile() {
       },
       'error-callback': () => setLoadError(true),
     });
-    return true;
   }, [enabled]);
 
   useEffect(() => {
@@ -64,7 +63,8 @@ export function useTurnstile() {
     let cancelled = false;
     const tick = () => {
       if (cancelled || widgetIdRef.current !== null) return;
-      if (!renderWidget()) window.setTimeout(tick, 100);
+      renderWidget();
+      if (widgetIdRef.current === null) window.setTimeout(tick, 100);
     };
     tick();
     return () => {
