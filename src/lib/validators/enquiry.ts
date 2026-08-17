@@ -21,6 +21,12 @@ export const enquiryCreateSchema = z.object({
   birth_place: z.string().max(500).optional(),
   area_of_concern: z.string().max(5000).optional(),
   ip_location: z.string().max(160).optional(),
+  /** Honeypot — must stay empty */
+  _hp: z.string().max(200).optional(),
+  /** Client form mount time (ms) for timing check */
+  _startedAt: z.number().int().positive().optional(),
+  /** Cloudflare Turnstile token when TURNSTILE_SECRET_KEY is set */
+  turnstileToken: z.string().max(2048).optional(),
 });
 
 export type EnquiryCreateInput = z.infer<typeof enquiryCreateSchema>;

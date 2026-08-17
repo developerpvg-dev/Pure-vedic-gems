@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useTurnstile } from '@/components/turnstile/use-turnstile';
 
 type BlogEnquiryFormProps = {
   postTitle: string;
@@ -17,9 +18,14 @@ export function BlogEnquiryForm({
 }: BlogEnquiryFormProps) {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const [formStartedAt] = useState(() => Date.now());
+  const turnstile = useTurnstile();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!turnstile.ready) return;
+
     setStatus('submitting');
     setError('');
 
@@ -32,6 +38,9 @@ export function BlogEnquiryForm({
       subject: postTitle,
       source: 'blog_popup',
       enquiry_type: 'Blog enquiry',
+      _hp: honeypot,
+      _startedAt: formStartedAt,
+      turnstileToken: turnstile.token || undefined,
     };
 
     try {
@@ -48,6 +57,8 @@ export function BlogEnquiryForm({
     } catch (submissionError) {
       setStatus('error');
       setError(submissionError instanceof Error ? submissionError.message : 'Unable to send your query.');
+    } finally {
+      turnstile.reset();
     }
   }
 
@@ -56,37 +67,51 @@ export function BlogEnquiryForm({
   }
 
   return (
-    <form
-      className={`pvg-blog-query-form pvg-blog-query-form--${variant}`}
-      onSubmit={onSubmit}
-      onInput={() => onDirtyChange?.(true)}
-    >
-      <label>
-        Name
-        <input name="name" autoComplete="name" required />
-      </label>
-      <label>
-        Phone
-        <input name="phone" type="tel" autoComplete="tel" required />
-      </label>
-      <label>
-        Email <span>(optional)</span>
-        <input name="email" type="email" autoComplete="email" />
-      </label>
-      <label>
-        Your query
-        <textarea
-          name="message"
-          required
-          rows={3}
-          defaultValue={`I would like guidance about ${postTitle}.`}
-          onChange={() => onDirtyChange?.(true)}
-        />
-      </label>
-      {status === 'error' ? <p className="pvg-blog-form-error" role="alert">{error}</p> : null}
-      <button type="submit" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Sending…' : 'Request Expert Help'}
-      </button>
-    </form>
+    <>
+      {turnstile.script}
+      <form
+        className={`pvg-blog-query-form pvg-blog-query-form--${variant}`}
+        onSubmit={onSubmit}
+        onInput={() => onDirtyChange?.(true)}
+      >
+        <label className="sr-only" aria-hidden="true">
+          Website
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(event) => setHoneypot(event.target.value)}
+          />
+        </label>
+        <label>
+          Name
+          <input name="name" autoComplete="name" required />
+        </label>
+        <label>
+          Phone
+          <input name="phone" type="tel" autoComplete="tel" required />
+        </label>
+        <label>
+          Email <span>(optional)</span>
+          <input name="email" type="email" autoComplete="email" />
+        </label>
+        <label>
+          Your query
+          <textarea
+            name="message"
+            required
+            rows={3}
+            defaultValue={`I would like guidance about ${postTitle}.`}
+            onChange={() => onDirtyChange?.(true)}
+          />
+        </label>
+        {turnstile.field}
+        {status === 'error' ? <p className="pvg-blog-form-error" role="alert">{error}</p> : null}
+        <button type="submit" disabled={status === 'submitting' || !turnstile.ready}>
+          {status === 'submitting' ? 'Sending…' : 'Request Expert Help'}
+        </button>
+      </form>
+    </>
   );
 }

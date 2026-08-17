@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, Clock, Diamond, Globe, Headphones, Mail, Phone, Send, Shield } from 'lucide-react';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
+import { useTurnstile } from '@/components/turnstile/use-turnstile';
 import {
   DELHI_MAP_EMBED,
   DELHI_MAP_URL,
@@ -119,9 +120,14 @@ function cleanPhone(value: string) {
 export default function ContactPage() {
   const [formState, setFormState] = useState(initialForm);
   const [status, setStatus] = useState<SubmitStatus>('idle');
+  const [honeypot, setHoneypot] = useState('');
+  const [formStartedAt] = useState(() => Date.now());
+  const turnstile = useTurnstile();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!turnstile.ready) return;
+
     setStatus('sending');
 
     try {
@@ -144,6 +150,9 @@ export default function ContactPage() {
           message: formState.message.trim(),
           source: 'contact_form',
           enquiry_type: 'Enquiry',
+          _hp: honeypot,
+          _startedAt: formStartedAt,
+          turnstileToken: turnstile.token || undefined,
         }),
       });
 
@@ -153,11 +162,14 @@ export default function ContactPage() {
       setFormState(initialForm);
     } catch {
       setStatus('error');
+    } finally {
+      turnstile.reset();
     }
   }
 
   return (
     <main className="pvg-contact-page min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
+      {turnstile.script}
 
       <section className="px-4 pb-6 pt-10 sm:px-6 lg:pt-14" aria-labelledby="contact-hero-heading">
         <div className="mx-auto max-w-4xl text-center">
@@ -187,6 +199,16 @@ export default function ContactPage() {
                 </div>
               </div>
               <form onSubmit={handleSubmit} className="pvg-contact-form">
+                <label className="sr-only" aria-hidden="true">
+                  Website
+                  <input
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(event) => setHoneypot(event.target.value)}
+                  />
+                </label>
                 <input
                   required
                   maxLength={200}
@@ -237,7 +259,12 @@ export default function ContactPage() {
                   onChange={(event) => setFormState({ ...formState, message: event.target.value })}
                   className="pvg-contact-textarea"
                 />
-                <button type="submit" disabled={status === 'sending'} className="pvg-contact-submit">
+                {turnstile.field}
+                <button
+                  type="submit"
+                  disabled={status === 'sending' || !turnstile.ready}
+                  className="pvg-contact-submit"
+                >
                   {status === 'sending' ? 'Sending...' : 'Send Message'}
                   <Send className="h-4 w-4" />
                 </button>

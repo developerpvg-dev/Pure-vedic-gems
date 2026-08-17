@@ -6,6 +6,7 @@ import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
 import { logLeadActivity } from '@/lib/leads/assign';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { isEnquirySpam } from '@/lib/enquiry/spam-guard';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
@@ -29,6 +30,19 @@ export async function POST(request: NextRequest) {
       { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
       { status: 400 }
     );
+  }
+
+  const emailKey = parsed.data.email?.trim().toLowerCase();
+  if (emailKey && !rateLimit(`enquiry-email:${emailKey}`, 2, 60 * 60 * 1000)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  if (await isEnquirySpam(parsed.data, ip !== 'unknown' ? ip : undefined)) {
+    // Silent accept so bots do not adapt
+    return NextResponse.json({ success: true }, { status: 201 });
   }
 
   const admin = createAdminClient();

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Flame, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTurnstile } from '@/components/turnstile/use-turnstile';
 
 export interface YagyaOption {
   id: string;
@@ -26,10 +27,13 @@ export function YagyaBookingForm({
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
+  const [formStartedAt] = useState(() => Date.now());
+  const turnstile = useTurnstile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || !turnstile.ready) return;
 
     const selected = yagyas.find((y) => y.id === yagyaId);
     const yagyaName = selected?.name ?? preselectedName ?? 'General enquiry';
@@ -53,6 +57,9 @@ export function YagyaBookingForm({
           message: fullMessage,
           product_id: yagyaId || undefined,
           source: 'yagya_booking',
+          _hp: honeypot,
+          _startedAt: formStartedAt,
+          turnstileToken: turnstile.token || undefined,
         }),
       });
       if (!res.ok) {
@@ -69,6 +76,7 @@ export function YagyaBookingForm({
       });
     } finally {
       setSubmitting(false);
+      turnstile.reset();
     }
   };
 
@@ -88,8 +96,20 @@ export function YagyaBookingForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-amber-100 bg-white p-6 shadow-sm sm:p-8">
-      <h3 className="font-serif text-xl font-semibold text-gray-900">Book / Enquire about a Yagya</h3>
+    <>
+      {turnstile.script}
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-amber-100 bg-white p-6 shadow-sm sm:p-8">
+        <label className="sr-only" aria-hidden="true">
+          Website
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(event) => setHoneypot(event.target.value)}
+          />
+        </label>
+        <h3 className="font-serif text-xl font-semibold text-gray-900">Book / Enquire about a Yagya</h3>
       <p className="mt-1 text-sm text-gray-500">
         Share your details and the yagya you wish to have performed. Our team will guide you through the entire ritual.
       </p>
@@ -183,14 +203,17 @@ export function YagyaBookingForm({
         </div>
       </div>
 
+      {turnstile.field}
+
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || !turnstile.ready}
         className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flame className="h-5 w-5" />}
         {submitting ? 'Submitting…' : 'Request Booking'}
       </button>
     </form>
+    </>
   );
 }
