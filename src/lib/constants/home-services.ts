@@ -46,7 +46,7 @@ export const HOME_SERVICES: HomeService[] = [
     title:
       'Online and Offline (Retail Store / Vedic Gems, Rudrakshas and Yagyas research and energizing centre) Gemstones and Rudrakshas Selling',
     imageAlt: 'Online and offline gemstone and rudraksha retail store',
-    href: '/shop',
+    href: '/gemstones',
   },
 ];
 

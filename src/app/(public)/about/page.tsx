@@ -131,7 +131,7 @@ export default function AboutPage() {
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#3d1a1a] px-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_18px_rgba(61,26,26,0.35)] transition hover:bg-[#5a2a2a] sm:px-7 sm:text-sm sm:tracking-[0.12em]">
                     <CalendarDays className="h-4 w-4 shrink-0" /> Book Consultation
                   </Link>
-                  <Link href="/shop"
+                  <Link href="/gemstones"
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-[#c9a84c] px-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#261a10] transition hover:bg-[#fff8e6] sm:px-7 sm:text-sm sm:tracking-[0.12em]">
                     <Gem className="h-4 w-4 shrink-0 text-[#8a6400]" /> Explore Gems
                   </Link>

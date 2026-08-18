@@ -315,7 +315,7 @@ export function RudrakshaQualitiesContent({ shipNote }: { shipNote?: string | nu
             Certified Rudrakshas for positive Healing energies in one&apos;s life.
           </h2>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/shop/rudraksha" className="pvg-knowledge-btn-primary px-6 py-3 text-xs">
+            <Link href="/rudraksha" className="pvg-knowledge-btn-primary px-6 py-3 text-xs">
               View Our Rudraksha
             </Link>
             <Link href="/" className="pvg-knowledge-btn-outline px-6 py-3 text-xs">

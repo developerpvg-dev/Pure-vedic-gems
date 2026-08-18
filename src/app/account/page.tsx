@@ -49,7 +49,7 @@ export default async function AccountPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account');
+  if (!user) redirect('/gemstones?auth=login&next=/account');
 
   const [profileResult, ordersResult, consultationsResult] = await Promise.all([
     supabase.from('customer_profiles').select('*').eq('id', user.id).single(),
@@ -164,7 +164,7 @@ export default async function AccountPage() {
             <ShoppingBag className="pvg-account-empty-icon h-12 w-12" aria-hidden="true" />
             <p className="pvg-account-empty-title">No orders yet</p>
             <p className="pvg-account-empty-copy">Explore our collection and find your perfect gemstone.</p>
-            <Link href="/shop" className="pvg-account-btn mt-5">
+            <Link href="/gemstones" className="pvg-account-btn mt-5">
               Browse Gems
             </Link>
           </div>

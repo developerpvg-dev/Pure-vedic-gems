@@ -14,9 +14,11 @@ import { productHref, storefrontGroupHref, storefrontSubcategoryHref } from '@/l
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
 
 describe('Phase 5 canonical storefront paths', () => {
-  it('keeps /shop as the mixed catalog home', () => {
-    expect(toCanonicalStorefrontPath('/shop')).toBe('/shop');
-    expect(lookupLegacyRedirect('/shop')).toBeNull();
+  it('uses /gemstones as the mixed catalog home', () => {
+    expect(toCanonicalStorefrontPath('/shop')).toBe('/gemstones');
+    expect(toCanonicalStorefrontPath('/gemstones')).toBe('/gemstones');
+    expect(lookupLegacyRedirect('/shop')).toBe('/gemstones');
+    expect(lookupLegacyRedirect('/gemstones')).toBeNull();
   });
 
   it('uses navaratna spelling, never navratana', () => {
@@ -76,7 +78,7 @@ describe('Phase 5 canonical storefront paths', () => {
       ['/product-category/navratan/amethyst', '/gemstones/upratna/amethyst'],
       ['/product-category/navratnas/ruby', '/gemstones/navaratna/ruby'],
       ['/tag/catseye', '/gemstones/navaratna/cats-eye'],
-      ['/gemstones', '/gemstones/navaratna'],
+      ['/shop', '/gemstones'],
     ];
     for (const [from, to] of hops) {
       expect(lookupLegacyRedirect(from)).toBe(to);

@@ -157,9 +157,16 @@ function getOptionLabel(options: ShopFilterOption[], value: string) {
 function MobileCategoryNav() {
   const pathname = usePathname();
   const categories = useGemCategories();
-  const shopParts = pathname.split('/shop/')[1]?.split('/').filter(Boolean) ?? [];
-  const currentParentSlug = shopParts[0] ?? '';
-  const currentChildSlug = shopParts[1] ?? '';
+  const pathParts = pathname.split('/').filter(Boolean);
+  const storefrontParts = pathParts[0] === 'shop'
+    ? pathParts.slice(1)
+    : pathParts[0] === 'gemstones'
+      ? pathParts.slice(1)
+      : pathParts[0] === 'rudraksha'
+        ? ['rudraksha', ...pathParts.slice(1)]
+        : [];
+  const currentParentSlug = storefrontParts[0] ?? '';
+  const currentChildSlug = storefrontParts[1] ?? '';
   const currentSlug = currentChildSlug || currentParentSlug;
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
@@ -174,7 +181,7 @@ function MobileCategoryNav() {
   return (
     <div className="space-y-1">
       <Link
-        href="/shop"
+        href="/gemstones"
         className="flex items-center justify-between rounded-md px-3 py-2 text-[13px] transition"
         style={{
           color: !currentSlug ? 'var(--pvg-primary)' : 'var(--pvg-text)',

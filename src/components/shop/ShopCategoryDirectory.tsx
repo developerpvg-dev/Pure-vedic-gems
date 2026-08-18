@@ -14,7 +14,7 @@ export function ShopCategoryDirectory() {
           <p className="text-xs font-black uppercase tracking-[0.24em] text-brand-accent">Browse by family</p>
           <h2 className="mt-1 text-2xl font-black text-brand-primary">Shop Categories</h2>
         </div>
-        <Link href="/shop" className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-[1.5px] text-brand-primary transition hover:text-brand-accent">
+        <Link href="/gemstones" className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-[1.5px] text-brand-primary transition hover:text-brand-accent">
           All Products
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>

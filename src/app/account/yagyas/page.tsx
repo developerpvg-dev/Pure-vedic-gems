@@ -49,7 +49,7 @@ export default async function AccountYagyasPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/yagyas');
+  if (!user) redirect('/gemstones?auth=login&next=/account/yagyas');
 
   const { data, error } = await supabase
     .from('yagya_bookings')

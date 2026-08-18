@@ -146,7 +146,7 @@ export const GEMS_REC_SERVICES = [
     title: 'Gemstones',
     titleHi: 'रत्न',
     image: '/home/remediesrec/Gemstones.jpg',
-    href: '/shop',
+    href: '/gemstones',
     body: 'Navratna and suitable Upratna recommendations matched to benefics in your chart, with guidance on quality grade, weight, and metal.',
   },
   {

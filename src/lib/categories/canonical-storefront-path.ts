@@ -114,7 +114,7 @@ export function toCanonicalStorefrontPath(pathname: string) {
   if (parts.length === 0) return '/';
 
   if (parts[0] === 'gemstones') {
-    if (parts.length === 1) return '/gemstones/navaratna';
+    if (parts.length === 1) return '/gemstones';
     const group = GROUP_ALIAS[parts[1]];
     if (group === 'navaratna' || group === 'upratna') {
       const rest = parts.slice(2);
@@ -135,7 +135,7 @@ export function toCanonicalStorefrontPath(pathname: string) {
 
   if (parts[0] !== 'shop') return join(parts);
 
-  if (parts.length === 1) return '/shop';
+  if (parts.length === 1) return '/gemstones';
 
   const seg1 = parts[1];
   if (seg1 === 'gemstones') {
@@ -163,6 +163,7 @@ export function toCanonicalStorefrontPath(pathname: string) {
 export function toInternalShopPath(pathname: string): string | null {
   const parts = barePathname(pathname).split('/').filter(Boolean);
   if (parts[0] === 'gemstones') {
+    if (parts.length === 1) return '/shop';
     const group = GROUP_ALIAS[parts[1]];
     if (group !== 'navaratna' && group !== 'upratna') return null;
     if (parts.length === 2) return `/shop/${group}`;

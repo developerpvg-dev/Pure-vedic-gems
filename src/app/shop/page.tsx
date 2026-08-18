@@ -22,7 +22,7 @@ export async function generateMetadata({ searchParams }: ShopPageProps): Promise
     title: 'Buy Certified Vedic Gemstones Online | PureVedicGems',
     description:
       'Buy certified natural Vedic gemstones, Rudraksha, and malas online in India. Lab reports, origin disclosure, and Jyotish consultation. Ships worldwide from Delhi since 1937.',
-    path: '/shop',
+    path: '/gemstones',
     noIndex: Boolean(q),
   });
 }
@@ -107,7 +107,7 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
         <div className="mt-6">
           <ProductGrid products={products} />
         </div>
-        <ShopPagination page={page} totalPages={totalPages} searchParams={searchParams} basePath="/shop" />
+        <ShopPagination page={page} totalPages={totalPages} searchParams={searchParams} basePath="/gemstones" />
       </div>
     </section>
   );
@@ -154,7 +154,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             >
               <Link href="/" className="transition hover:text-[#7A1515]">Home</Link>
               <span aria-hidden="true">/</span>
-              <Link href="/shop" className="transition hover:text-[#7A1515]">Shop</Link>
+              <Link href="/gemstones" className="transition hover:text-[#7A1515]">Gemstones</Link>
               <span aria-hidden="true">/</span>
               <span className="text-[#4D0A0A]">Search: {searchQuery}</span>
             </nav>
@@ -172,16 +172,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           subtitle="Lab-disclosed natural gemstones, Rudraksha, and malas from our Delhi house — with origin, treatment, and certification on every listing. Ships across India and worldwide."
           breadcrumbs={[
             { label: 'Home', href: '/' },
-            { label: 'Shop' },
+            { label: 'Gemstones' },
           ]}
         >
           <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-6 text-[#5a5043]">
             Start with{' '}
-            <Link href="/shop/yellow-sapphire" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+            <Link href="/gemstones/navaratna/yellow-sapphire" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
               Yellow Sapphire (Pukhraj)
             </Link>
             ,{' '}
-            <Link href="/shop/blue-sapphire" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+            <Link href="/gemstones/navaratna/blue-sapphire" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
               Blue Sapphire (Neelam)
             </Link>
             , a{' '}

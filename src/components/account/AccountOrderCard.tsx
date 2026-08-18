@@ -897,7 +897,7 @@ export function AccountOrderCard({
           )}
         </button>
         <Link
-          href="/shop"
+          href="/gemstones"
           className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold tracking-wide text-white transition hover:opacity-90"
           style={{ background: 'var(--pvg-primary)' }}
         >

@@ -24,7 +24,7 @@ export const BASE_CATEGORY_MAP: Record<string, BaseShopCategory> = {
     category: 'gemstone',
     label: 'Gemstones',
     desc: 'Certified natural gemstones from premium origins worldwide. Each stone ethically sourced and laboratory verified.',
-    canonicalPath: '/gemstones/navaratna',
+    canonicalPath: '/gemstones',
   },
   navaratna: {
     category: 'navaratna',

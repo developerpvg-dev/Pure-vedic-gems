@@ -16,9 +16,16 @@ export function useGemCategories(): StorefrontCategoryGroup[] {
 export function ShopSidebar() {
   const categories = useStorefrontCategories();
   const pathname = usePathname();
-  const shopParts = pathname.split('/shop/')[1]?.split('/').filter(Boolean) ?? [];
-  const currentParentSlug = shopParts[0] ?? '';
-  const currentChildSlug = shopParts[1] ?? '';
+  const pathParts = pathname.split('/').filter(Boolean);
+  const storefrontParts = pathParts[0] === 'shop'
+    ? pathParts.slice(1)
+    : pathParts[0] === 'gemstones'
+      ? pathParts.slice(1)
+      : pathParts[0] === 'rudraksha'
+        ? ['rudraksha', ...pathParts.slice(1)]
+        : [];
+  const currentParentSlug = storefrontParts[0] ?? '';
+  const currentChildSlug = storefrontParts[1] ?? '';
   const currentSlug = currentChildSlug || currentParentSlug;
   const isDirectorsPick = currentParentSlug === 'directors-pick';
 
@@ -56,7 +63,7 @@ export function ShopSidebar() {
 
           <div className="space-y-1.5 p-3">
             <Link
-              href="/shop"
+              href="/gemstones"
               className="flex items-center justify-between rounded-md px-3 py-3 text-[15px] font-medium transition-all"
               style={{
                 color: !currentSlug ? 'var(--pvg-primary)' : 'var(--pvg-text)',

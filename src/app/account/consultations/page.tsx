@@ -75,7 +75,7 @@ export default async function AccountConsultationsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/consultations');
+  if (!user) redirect('/gemstones?auth=login&next=/account/consultations');
 
   const { data, error } = await supabase
     .from('consultations')

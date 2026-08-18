@@ -187,7 +187,7 @@ export default function StoresPage() {
             <h2 className="pvg-stores-cta-title">Planning a visit?</h2>
             <p className="pvg-stores-cta-copy">
               Book an appointment first so the team can prepare the right stones, certificates, and expert support. Or{' '}
-              <Link href="/shop" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
+              <Link href="/gemstones" className="font-semibold text-[#7a1515] underline-offset-2 hover:underline">
                 shop certified gemstones online
               </Link>
               .

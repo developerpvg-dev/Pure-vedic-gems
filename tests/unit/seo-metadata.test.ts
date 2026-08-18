@@ -118,7 +118,8 @@ describe('storefront SEO templates', () => {
     expect(title).not.toMatch(/^Buy /);
   });
 
-  it('still 301s /gemstones to Navaratna', () => {
-    expect(lookupLegacyRedirect('/gemstones')).toBe('/gemstones/navaratna');
+  it('301s /shop to the new /gemstones hub', () => {
+    expect(lookupLegacyRedirect('/shop')).toBe('/gemstones');
+    expect(lookupLegacyRedirect('/gemstones')).toBeNull();
   });
 });

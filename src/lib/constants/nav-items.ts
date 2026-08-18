@@ -71,7 +71,7 @@ export type HeaderNavItem = {
 };
 
 export const HEADER_NAV_ITEMS: readonly HeaderNavItem[] = [
-  { label: 'Gemstones', href: '/shop', dropdown: 'gemstones' },
+  { label: 'Gemstones', href: '/gemstones', dropdown: 'gemstones' },
   { label: 'Rudraksha', href: storefrontGroupHref('rudraksha'), dropdown: 'rudraksha' },
   { label: 'Knowledge', href: '/knowledge', dropdown: 'knowledge' },
   { label: 'Blog', href: '/blog', dropdown: 'blog' },
@@ -80,7 +80,7 @@ export const HEADER_NAV_ITEMS: readonly HeaderNavItem[] = [
 ] as const;
 
 export const NAV_ITEMS = [
-  { label: 'Gemstones', href: '/shop' },
+  { label: 'Gemstones', href: '/gemstones' },
   { label: 'Rudraksha', href: storefrontGroupHref('rudraksha') },
   { label: 'Knowledge', href: '/knowledge' },
   { label: 'Blog', href: '/blog' },

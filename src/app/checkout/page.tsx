@@ -207,7 +207,7 @@ export default function CheckoutPage() {
           <p className="pvg-checkout-subtitle mt-2">
             Add certified gemstones or jewellery to your cart before completing checkout.
           </p>
-          <Link href="/shop" className="pvg-checkout-btn pvg-checkout-btn--accent mt-6 w-auto px-8">
+          <Link href="/gemstones" className="pvg-checkout-btn pvg-checkout-btn--accent mt-6 w-auto px-8">
             Browse Gemstones
           </Link>
         </div>

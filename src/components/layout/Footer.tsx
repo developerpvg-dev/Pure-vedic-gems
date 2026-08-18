@@ -32,7 +32,7 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
   {
     title: 'Shop',
     links: [
-      { label: 'All Gemstones', href: '/shop' },
+      { label: 'All Gemstones', href: '/gemstones' },
       { label: "Director's Pick", href: '/shop/directors-pick' },
       { label: 'Cart', href: '/cart' },
       { label: 'Saved Items', href: '/account/saved' },
@@ -137,7 +137,7 @@ function buildFooterGroups(groups: StorefrontCategoryGroup[]): FooterLinkGroup[]
     {
       title: 'Shop',
       links: [
-        { label: 'All Gemstones', href: '/shop' },
+        { label: 'All Gemstones', href: '/gemstones' },
         { label: navaratna.label, href: navaratna.href },
         { label: upratna.label, href: upratna.href },
         { label: rudraksha.label, href: rudraksha.href },

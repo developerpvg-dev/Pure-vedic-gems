@@ -248,16 +248,16 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             <AccordionTrigger label="Gemstones" isOpen={expanded === 'gemstones'} onToggle={() => toggle('gemstones')} />
             {expanded === 'gemstones' && (
               <div style={{ padding: '0 20px 16px', background: '#FDFCF9' }}>
-                <SectionHead label="Navaratna Gems" href="/shop/navaratna" />
+                <SectionHead label="Navaratna Gems" href="/gemstones/navaratna" />
                 <div style={{ paddingTop: '6px' }}><GemGrid items={navaratna.subcategories} /></div>
                 <div style={{ marginTop: '12px' }}>
-                  <SectionHead label="Upratna Gems" href="/shop/upratna" />
+                  <SectionHead label="Upratna Gems" href="/gemstones/upratna" />
                   <div style={{ paddingTop: '6px' }}>
                     <GemGrid
                       items={upratna.subcategories}
                       columns={2}
                       maxItems={15}
-                      viewAllHref="/shop/upratna"
+                      viewAllHref="/gemstones/upratna"
                       viewAllLabel="Show All Upratna Gems →"
                     />
                   </div>
@@ -275,7 +275,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                   items={rudraksha.subcategories}
                   columns={3}
                   maxItems={20}
-                  viewAllHref="/shop/rudraksha"
+                  viewAllHref="/rudraksha"
                   viewAllLabel="Show All Rudraksha →"
                 />
               </div>
@@ -390,7 +390,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </div>
 
             <Link
-              href={user ? '/account' : '/shop?auth=login&next=/account'}
+              href={user ? '/account' : '/gemstones?auth=login&next=/account'}
               onClick={onClose}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -404,7 +404,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </Link>
 
             <Link
-              href={user ? '/account/orders' : '/shop?auth=login&next=/account/orders'}
+              href={user ? '/account/orders' : '/gemstones?auth=login&next=/account/orders'}
               onClick={onClose}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -418,7 +418,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </Link>
 
             <Link
-              href={user ? '/account/saved' : '/shop?auth=login&next=/account/saved'}
+              href={user ? '/account/saved' : '/gemstones?auth=login&next=/account/saved'}
               onClick={onClose}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',

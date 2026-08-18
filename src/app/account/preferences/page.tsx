@@ -17,7 +17,7 @@ export default async function PreferencesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/preferences');
+  if (!user) redirect('/gemstones?auth=login&next=/account/preferences');
 
   const { data: preferencesRow } = await supabase
     .from('customer_preferences')

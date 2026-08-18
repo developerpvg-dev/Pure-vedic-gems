@@ -1,6 +1,6 @@
 /** One canonical URL per high-intent Phase 4 keyword cluster. */
 export const KEYWORD_GAP_CANONICALS = [
-  { intent: 'buy certified gemstones online india', path: '/shop' },
+  { intent: 'buy certified gemstones online india', path: '/gemstones' },
   { intent: 'yellow sapphire pukhraj price benefits', path: '/gemstones/navaratna/yellow-sapphire' },
   { intent: 'blue sapphire neelam price benefits', path: '/gemstones/navaratna/blue-sapphire' },
   { intent: 'which gemstone should i wear date of birth', path: '/gems-recommendations' },

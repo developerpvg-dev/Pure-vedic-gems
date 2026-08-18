@@ -245,7 +245,7 @@ async function CategoryProducts({
           data={[
             breadcrumbJsonLd([
               { name: 'Home', href: '/' },
-              { name: 'Shop', href: '/shop' },
+              { name: 'Gemstones', href: '/gemstones' },
               { name: displayLabel, href: basePath },
             ]),
             collectionPageJsonLd({
@@ -385,7 +385,7 @@ function SeoLandingFooter({ landing, products }: { landing: SeoLandingPage; prod
         data={[
           breadcrumbJsonLd([
             { name: 'Home', href: '/' },
-            { name: 'Shop', href: '/shop' },
+            { name: 'Gemstones', href: '/gemstones' },
             { name: landing.title, href: landing.href },
           ]),
           collectionPageJsonLd({
@@ -440,8 +440,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             Home
           </Link>
           <span>/</span>
-          <Link href="/shop" className="transition hover:text-brand-accent">
-            Shop
+          <Link href="/gemstones" className="transition hover:text-brand-accent">
+            Gemstones
           </Link>
           <span>/</span>
           <span className="text-brand-primary">{displayLabel}</span>

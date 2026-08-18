@@ -31,7 +31,7 @@ export default async function OrdersPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/orders');
+  if (!user) redirect('/gemstones?auth=login&next=/account/orders');
 
   const { data: rawOrders } = await supabase
     .from('orders')
@@ -198,7 +198,7 @@ export default async function OrdersPage() {
           <Package className="pvg-account-empty-icon h-14 w-14" aria-hidden="true" />
           <h2 className="pvg-account-empty-title">No orders yet</h2>
           <p className="pvg-account-empty-copy">Your order history will appear here once you make a purchase.</p>
-          <Link href="/shop" className="pvg-account-btn mt-6">
+          <Link href="/gemstones" className="pvg-account-btn mt-6">
             Explore Gemstones
           </Link>
         </div>

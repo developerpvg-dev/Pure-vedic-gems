@@ -9,7 +9,15 @@ import { useFlatShopCategories } from '@/lib/hooks/useFlatShopCategories';
 export function FlatShopSidebar() {
   const categories = useFlatShopCategories();
   const pathname = usePathname();
-  const currentSlug = pathname.split('/shop/')[1]?.split('/')[0] ?? '';
+  const pathParts = pathname.split('/').filter(Boolean);
+  const storefrontParts = pathParts[0] === 'shop'
+    ? pathParts.slice(1)
+    : pathParts[0] === 'gemstones'
+      ? pathParts.slice(1)
+      : pathParts[0] === 'rudraksha'
+        ? ['rudraksha', ...pathParts.slice(1)]
+        : [];
+  const currentSlug = storefrontParts[0] ?? '';
   const [query, setQuery] = useState('');
 
   const filtered = categories.filter((cat) => {
@@ -43,7 +51,7 @@ export function FlatShopSidebar() {
 
           <div className="max-h-[calc(100vh-280px)] space-y-0.5 overflow-y-auto p-2">
             <Link
-              href="/shop"
+              href="/gemstones"
               className="block rounded-md px-3 py-2.5 text-[14px] font-medium transition-all"
               style={{
                 color: !currentSlug ? 'var(--pvg-primary)' : 'var(--pvg-text)',

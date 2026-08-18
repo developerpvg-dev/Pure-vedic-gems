@@ -61,7 +61,7 @@ export function normalizeStorefrontGroupSlug(value: string | null | undefined): 
 }
 
 export function storefrontGroupHref(slug: StorefrontCategoryGroupSlug | 'gemstones') {
-  if (slug === 'gemstones') return canonicalGroupHref('navaratna');
+  if (slug === 'gemstones') return '/gemstones';
   if (slug === 'navaratna' || slug === 'upratna' || slug === 'rudraksha') return canonicalGroupHref(slug);
   return `/shop/${slug}`;
 }

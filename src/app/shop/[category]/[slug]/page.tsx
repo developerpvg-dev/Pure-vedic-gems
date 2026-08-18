@@ -321,7 +321,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-brand-muted">
             <Link href="/" className="transition hover:text-brand-accent">Home</Link>
             <span>/</span>
-            <Link href="/shop" className="transition hover:text-brand-accent">Shop</Link>
+            <Link href="/gemstones" className="transition hover:text-brand-accent">Gemstones</Link>
             <span>/</span>
             <span className="text-brand-primary">{nestedCategoryMeta.label}</span>
           </nav>
@@ -434,7 +434,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           <nav className="mb-3 flex flex-wrap items-center gap-1 text-[11px] font-medium text-brand-muted lg:mb-6 lg:gap-1.5 lg:text-[13px]">
             <Link href="/" className="transition hover:text-brand-accent">Home</Link>
             <span>/</span>
-            <Link href="/shop" className="transition hover:text-brand-accent">Shop</Link>
+            <Link href="/gemstones" className="transition hover:text-brand-accent">Gemstones</Link>
             <span>/</span>
             <Link
               href={categoryListingHref}

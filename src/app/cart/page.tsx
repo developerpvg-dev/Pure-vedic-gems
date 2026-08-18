@@ -282,7 +282,7 @@ function EmptyCart() {
         Explore our curated collection of certified Vedic gemstones and accessories.
       </p>
       <Link
-        href="/shop"
+        href="/gemstones"
         className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-[13px] font-bold uppercase tracking-[1.5px] text-[var(--pvg-bg)] transition hover:-translate-y-0.5 hover:shadow-lg"
         style={{ background: 'var(--pvg-primary)' }}
       >
@@ -373,7 +373,7 @@ export default function CartPage() {
 
               <div className="mt-4 flex items-center justify-between">
                 <Link
-                  href="/shop"
+                  href="/gemstones"
                   className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--pvg-muted)] transition hover:text-[var(--pvg-primary)]"
                 >
                   ← Continue Shopping

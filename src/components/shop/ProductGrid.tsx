@@ -37,7 +37,7 @@ function EmptyState() {
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link
-          href="/shop"
+          href="/gemstones"
           className="rounded-lg bg-[#7A1515] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#5f1010]"
         >
           Clear Filters

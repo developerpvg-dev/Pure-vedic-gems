@@ -46,7 +46,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
       >
         <div className="mt-4 flex flex-wrap justify-center gap-3">
           <Link
-            href="/shop"
+            href="/gemstones"
             className="inline-flex items-center justify-center rounded-md bg-[#4D0A0A] px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-sm transition hover:bg-[#7A1515]"
           >
             Shop Authentic Gemstones
@@ -240,7 +240,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
             gemstone recommendation — backed by lab certification and Vedic energisation.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/shop" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
+            <Link href="/gemstones" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
               Shop Gemstones
             </Link>
             <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">

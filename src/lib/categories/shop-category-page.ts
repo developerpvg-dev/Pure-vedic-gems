@@ -174,7 +174,7 @@ export function shopCategoryHref(slug: string) {
   if (aliased === 'navaratna' || aliased === 'upratna' || aliased === 'rudraksha') {
     return canonicalGroupHref(aliased);
   }
-  if (aliased === 'gemstones') return canonicalGroupHref('navaratna');
+  if (aliased === 'gemstones') return '/gemstones';
   return canonicalSubcategoryHref(aliased) ?? `/shop/${slug}`;
 }
 

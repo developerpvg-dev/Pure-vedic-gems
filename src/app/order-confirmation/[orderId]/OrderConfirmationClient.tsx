@@ -449,7 +449,7 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
         {/* Continue Shopping */}
         <div className="text-center">
           <Link
-            href="/shop"
+            href="/gemstones"
             className="inline-flex items-center gap-2 text-sm text-[var(--pvg-accent)] hover:underline font-medium"
           >
             <ShoppingBag className="h-4 w-4" />

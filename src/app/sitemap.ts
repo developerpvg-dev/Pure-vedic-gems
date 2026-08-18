@@ -189,7 +189,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1,
     },
-    entry('/shop', { changeFrequency: 'daily', priority: 0.9 }),
+    entry('/gemstones', { changeFrequency: 'daily', priority: 0.9 }),
     entry('/gemstones/navaratna', { changeFrequency: 'weekly', priority: 0.88 }),
     entry('/gemstones/upratna', { changeFrequency: 'weekly', priority: 0.84 }),
     entry('/rudraksha', { changeFrequency: 'weekly', priority: 0.88 }),

@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
                 Click the link to choose a new password and activate your account.
               </p>
             </div>
-            <Link href="/shop?auth=login" className="pvg-account-btn inline-flex">
+            <Link href="/gemstones?auth=login" className="pvg-account-btn inline-flex">
               Back to sign in
             </Link>
           </div>
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
             </button>
 
             <Link
-              href="/shop?auth=login"
+              href="/gemstones?auth=login"
               className="flex items-center justify-center gap-1.5 text-sm"
               style={{ color: 'var(--pvg-muted)' }}
             >

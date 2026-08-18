@@ -26,7 +26,7 @@ export default async function RewardsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/rewards');
+  if (!user) redirect('/gemstones?auth=login&next=/account/rewards');
 
   const [transactionsResult, settingsResult] = await Promise.all([
     supabase
@@ -87,7 +87,7 @@ export default async function RewardsPage() {
             <Gift className="h-5 w-5 text-[#b8861e]" aria-hidden="true" />
             <h2 className="pvg-account-card-title">Ledger</h2>
           </div>
-          <Link href="/shop" className="pvg-account-btn">
+          <Link href="/gemstones" className="pvg-account-btn">
             <ShoppingBag className="h-4 w-4" aria-hidden="true" /> Shop
           </Link>
         </div>

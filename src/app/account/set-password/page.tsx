@@ -21,7 +21,7 @@ export default async function SetPasswordPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/shop?auth=login&next=/account/set-password');
+    redirect('/gemstones?auth=login&next=/account/set-password');
   }
 
   const { data: profile } = await supabase

@@ -246,7 +246,7 @@ export function RudrakshaIndexContent() {
             in-house.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/shop/rudraksha" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
+            <Link href="/rudraksha" className="pvg-knowledge-btn-primary px-7 py-3.5 text-sm">
               Shop Rudraksha
             </Link>
             <Link href="/consultation" className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm">

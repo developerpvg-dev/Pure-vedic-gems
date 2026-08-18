@@ -48,10 +48,10 @@ export function NavaDurgaArticleView() {
             <Link href="/consultation" className="nd-btn nd-btn-primary">
               Book consultation
             </Link>
-            <Link href="/shop/navaratna" className="nd-btn nd-btn-outline">
+            <Link href="/gemstones/navaratna" className="nd-btn nd-btn-outline">
               Shop Navaratna
             </Link>
-            <Link href="/shop/rudraksha" className="nd-btn nd-btn-outline">
+            <Link href="/rudraksha" className="nd-btn nd-btn-outline">
               Shop Rudraksha
             </Link>
           </div>

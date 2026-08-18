@@ -23,7 +23,7 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
   } = await supabase.auth.getUser();
 
   if (!user && !PUBLIC_RECOVERY_PATHS.has(pathname)) {
-    redirect('/shop?auth=login&next=/account');
+    redirect('/gemstones?auth=login&next=/account');
   }
 
   return (

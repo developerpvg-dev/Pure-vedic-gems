@@ -901,7 +901,7 @@ export function RudrakshaHomeSection({
               </div>
               {showCta ? (
                 <div className="rudra-right-cta">
-                  <Link href="/shop/rudraksha" className="btn-outline-maroon" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>Show All Rudrakshas</Link>
+                  <Link href="/rudraksha" className="btn-outline-maroon" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>Show All Rudrakshas</Link>
                 </div>
               ) : null}
             </div>

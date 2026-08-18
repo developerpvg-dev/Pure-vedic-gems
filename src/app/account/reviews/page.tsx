@@ -16,7 +16,7 @@ export default async function AccountReviewsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/reviews');
+  if (!user) redirect('/gemstones?auth=login&next=/account/reviews');
 
   const [ordersResult, reviewsResult] = await Promise.all([
     supabase

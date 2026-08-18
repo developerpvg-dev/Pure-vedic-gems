@@ -145,10 +145,12 @@ const FORCE = new Map<string, string>([
 ]);
 
 export function lookupLegacyRedirect(pathname: string): string | null {
+  const bare = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  if (bare === '/shop') return '/gemstones';
+
   const dest = lookupLegacyRedirectRaw(pathname);
   if (dest) return toCanonicalStorefrontPath(dest);
 
-  const bare = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   if (isProtectedLivePath(bare)) return null;
   const canon = toCanonicalStorefrontPath(bare);
   return canon !== bare ? canon : null;

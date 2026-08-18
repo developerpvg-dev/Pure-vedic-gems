@@ -18,7 +18,7 @@ export default async function AddressesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/shop?auth=login&next=/account/addresses');
+  if (!user) redirect('/gemstones?auth=login&next=/account/addresses');
 
   const { data: profileData } = await supabase
     .from('customer_profiles')

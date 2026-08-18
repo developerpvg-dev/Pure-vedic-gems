@@ -1061,7 +1061,7 @@ const nextConfig: NextConfig = {
       { source: '/videos_cat/:path*', destination: '/videos', statusCode: 301 },
       { source: '/events_cat/:path*', destination: '/events-and-seminars', statusCode: 301 },
       // /tag/* and /author/* → handled in lookupLegacyRedirect (EXACT map + fallback)
-      { source: '/product-tag/:path*', destination: '/shop', statusCode: 301 },
+      { source: '/product-tag/:path*', destination: '/gemstones', statusCode: 301 },
     ];
   },
 
@@ -1076,7 +1076,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/gemstones',
+        headers: [
+          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+        ],
+      },
+      {
         source: '/shop/:category',
+        headers: [
+          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+        ],
+      },
+      {
+        source: '/gemstones/:category',
         headers: [
           { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
         ],
