@@ -127,6 +127,7 @@ describe('storefront SEO templates', () => {
     expect(page!.types_html).toMatch(/<h2>Blue Star Sapphire<\/h2>/);
     expect(page!.types_html).toMatch(/<h2>Natural Blue Sapphire vs Heated Stone<\/h2>/);
     expect(page!.buyer_beware_html).toMatch(/<h2>Natural Blue Sapphire vs Synthetic<\/h2>/);
+    expect(body).not.toMatch(/gempundit|gempundit\.com/i);
     expect(page!.types_html).toMatch(/origin=Kashmir/);
     expect(occurrences).toBeGreaterThanOrEqual(28);
     expect((body.split('cornflower blue sapphire').length - 1)).toBeGreaterThanOrEqual(20);

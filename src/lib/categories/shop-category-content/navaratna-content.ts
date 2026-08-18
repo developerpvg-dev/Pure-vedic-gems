@@ -1193,7 +1193,7 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
         'No heat or treatment disclosure',
         'A flawless natural blue sapphire stone at a bargain — often glass or synthetic',
       ]),
-      h3('Why Buy from Authentic Resources Like PureVedicGems?'),
+      h3('Why Buy from PureVedicGems?'),
       p(
         `${BRAND} has sourced Jyotish gems since 1937. We list certified stones, show treatment, and support trial protocols. Buy natural blue sapphire stone online here only after you understand the chart risk. That is how responsible neelam selling works.`,
         'Lab papers come from recognised gem labs. If a listing cannot show heat status, do not treat it as a Shani ratna.',

@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     customer?: Record<string, unknown>;
   };
 
-  const template: TemplateId = body.template === 'blank' ? 'blank' : 'gempundit-classic';
+  const template: TemplateId = body.template === 'blank' ? 'blank' : 'classic';
   const customer = { ...emptyCustomer(), ...normalizeCustomer(body.customer) };
   const admin = createAdminClient();
 

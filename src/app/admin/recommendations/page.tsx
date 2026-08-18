@@ -35,7 +35,7 @@ export default function RecommendationsAdminPage() {
     void load();
   }, [load]);
 
-  async function createReport(template: 'gempundit-classic' | 'blank') {
+  async function createReport(template: 'classic' | 'blank') {
     setCreating(true);
     try {
       const res = await fetch('/api/admin/recommendations', {
@@ -74,7 +74,7 @@ export default function RecommendationsAdminPage() {
             <button
               type="button"
               disabled={creating}
-              onClick={() => createReport('gempundit-classic')}
+              onClick={() => createReport('classic')}
               className="inline-flex items-center gap-1.5 rounded bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
             >
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}

@@ -1,4 +1,4 @@
-import { buildGempunditClassicBlocks, emptyCustomer } from '../src/lib/recommendations/blocks';
+import { buildClassicBlocks, emptyCustomer } from '../src/lib/recommendations/blocks';
 import { renderReportHtml } from '../src/lib/recommendations/render-html';
 import { htmlToPdf } from '../src/lib/recommendations/pdf';
 
@@ -6,7 +6,7 @@ async function main() {
   const html = renderReportHtml({
     title: 'Check',
     customer: { ...emptyCustomer(), name: 'Test', email: 't@example.com' },
-    blocks: buildGempunditClassicBlocks(),
+    blocks: buildClassicBlocks(),
     siteUrl: 'https://example.com',
     embedLocalAssets: true,
   });

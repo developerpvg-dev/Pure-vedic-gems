@@ -339,9 +339,9 @@ export function createEmptyBlock(type: ReportBlockType): ReportBlock {
   }
 }
 
-export type TemplateId = 'gempundit-classic' | 'blank';
+export type TemplateId = 'classic' | 'blank';
 
-export function buildGempunditClassicBlocks(): ReportBlock[] {
+export function buildClassicBlocks(): ReportBlock[] {
   return [
     createEmptyBlock('header'),
     {
@@ -360,12 +360,12 @@ export function buildGempunditClassicBlocks(): ReportBlock[] {
 }
 
 export function blocksForTemplate(template: TemplateId): ReportBlock[] {
-  if (template === 'gempundit-classic') return buildGempunditClassicBlocks();
+  if (template === 'classic') return buildClassicBlocks();
   return [createEmptyBlock('header'), createEmptyBlock('greeting'), createEmptyBlock('customerDetails')];
 }
 
 /** ponytail: one assert-style check that fails if template shape drifts */
-export function assertGempunditClassicShape(blocks: ReportBlock[]): void {
+export function assertClassicShape(blocks: ReportBlock[]): void {
   const types = blocks.map((b) => b.type);
   const required: ReportBlockType[] = [
     'header',
@@ -376,13 +376,13 @@ export function assertGempunditClassicShape(blocks: ReportBlock[]): void {
     'additionalStones',
   ];
   for (const t of required) {
-    if (!types.includes(t)) throw new Error(`gempundit-classic missing block: ${t}`);
+    if (!types.includes(t)) throw new Error(`classic template missing block: ${t}`);
   }
 }
 
 if (process.env.NODE_ENV !== 'production') {
   try {
-    assertGempunditClassicShape(buildGempunditClassicBlocks());
+    assertClassicShape(buildClassicBlocks());
   } catch (e) {
     console.error('[recommendations] template self-check failed', e);
   }

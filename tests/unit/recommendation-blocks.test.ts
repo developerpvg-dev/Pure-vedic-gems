@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { assertGempunditClassicShape, blocksForTemplate, buildGempunditClassicBlocks } from '@/lib/recommendations/blocks';
+import { assertClassicShape, blocksForTemplate, buildClassicBlocks } from '@/lib/recommendations/blocks';
 
 describe('recommendation blocks', () => {
-  it('gempundit-classic has required blocks', () => {
-    expect(() => assertGempunditClassicShape(buildGempunditClassicBlocks())).not.toThrow();
+  it('classic template has required blocks', () => {
+    expect(() => assertClassicShape(buildClassicBlocks())).not.toThrow();
   });
 
   it('blank template is short', () => {
