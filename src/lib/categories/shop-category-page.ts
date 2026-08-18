@@ -69,6 +69,30 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     };
   }
 
+  // ponytail: this money page is code-owned so CMS stale titles cannot zero the target keyword.
+  if (slug === 'blue-sapphire') {
+    return {
+      ...merged,
+      name: defaults.name,
+      sanskrit_name: defaults.sanskrit_name,
+      seo_title: defaults.seo_title,
+      seo_description: defaults.seo_description,
+      meta_keywords: defaults.meta_keywords,
+      intro_text: defaults.intro_text,
+      hero_benefits: defaults.hero_benefits,
+      about_html: defaults.about_html,
+      how_to_wear_html: defaults.how_to_wear_html,
+      who_should_wear_html: defaults.who_should_wear_html,
+      benefits_html: defaults.benefits_html,
+      types_html: defaults.types_html,
+      quality_price_html: defaults.quality_price_html,
+      jewellery_html: defaults.jewellery_html,
+      cleaning_care_html: defaults.cleaning_care_html,
+      buyer_beware_html: defaults.buyer_beware_html,
+      faqs: defaults.faqs,
+    };
+  }
+
   return merged;
 }
 

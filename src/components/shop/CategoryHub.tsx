@@ -8,6 +8,7 @@ import type { ShopCategorySectionKey } from '@/lib/types/shop-category-page';
 export type CategoryHubSection = {
   id: ShopCategorySectionKey;
   title: string;
+  heading?: string;
   html?: string | null;
 };
 
@@ -219,7 +220,9 @@ export function CategoryHubHeader({
                 hidden={activeTab !== section.id}
                 className="category-hub-panel"
               >
-                <h2 className="category-hub-panel__title">{section.title || TAB_LABELS[section.id]}</h2>
+                <h2 className="category-hub-panel__title">
+                  {section.title || TAB_LABELS[section.id]}
+                </h2>
                 <div
                   className="category-hub-panel__body prose prose-sm max-w-none md:prose-base"
                   dangerouslySetInnerHTML={{ __html: section.html ?? '' }}
@@ -228,12 +231,20 @@ export function CategoryHubHeader({
             ))}
 
             {hasFaqs ? (
-              <div id="faqs" role="region" aria-label="FAQs" hidden={activeTab !== 'faqs'} className="category-hub-panel">
+              <div
+                id="faqs"
+                role="region"
+                aria-label="FAQs"
+                hidden={activeTab !== 'faqs'}
+                className="category-hub-panel"
+              >
                 <h2 className="category-hub-panel__title">{TAB_LABELS.faqs}</h2>
                 <div className="category-hub-faq-list">
                   {faqs.map((faq) => (
                     <details key={faq.question} className="category-hub-faq-item">
-                      <summary className="category-hub-faq-question">{faq.question}</summary>
+                      <summary className="category-hub-faq-question">
+                        <h3>{faq.question}</h3>
+                      </summary>
                       <p className="category-hub-faq-answer">{faq.answer}</p>
                     </details>
                   ))}

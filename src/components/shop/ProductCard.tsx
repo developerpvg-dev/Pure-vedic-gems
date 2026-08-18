@@ -215,13 +215,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* ── Info Strip ── */}
       <div className="flex min-w-0 flex-col px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
-        {/* Name */}
-        <Link
-          href={href}
-          className="line-clamp-2 min-h-8 text-[11px] font-semibold leading-snug text-gray-900 transition-colors hover:text-brand-accent sm:line-clamp-1 sm:min-h-0 sm:text-[13px]"
-        >
-          {displayName}
-        </Link>
+        {/* Name — H3 so category pages match catalog heading/keyword scoring */}
+        <h3 className="m-0 line-clamp-2 min-h-8 text-[11px] font-semibold leading-snug text-gray-900 sm:line-clamp-1 sm:min-h-0 sm:text-[13px]">
+          <Link href={href} className="transition-colors hover:text-brand-accent">
+            {displayName}
+          </Link>
+        </h3>
 
         {/* Out of stock label */}
         {isUnavailable && (

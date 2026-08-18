@@ -2,6 +2,7 @@ import type { CategoryFaq } from '@/lib/types/shop-category-page';
 import {
   BRAND,
   baseGemKeywords,
+  h2,
   h3,
   mergeKeywords,
   p,
@@ -893,10 +894,22 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
 
   'blue-sapphire': defineGem({
     slug: 'blue-sapphire',
-    name: 'Blue Sapphire',
-    hindi: 'Neelam',
+    name: 'Natural Blue Sapphire Stone',
+    hindi: 'Neelam Stone',
     planet: 'Saturn',
     extraKeywords: [
+      'neelam stone',
+      'neelam stone price',
+      'light blue sapphire',
+      'blue star sapphire',
+      'royal blue sapphire',
+      'natural blue sapphire',
+      'natural blue sapphire stone',
+      'cornflower blue sapphire',
+      'cornflower blue sapphire stone',
+      'ceylon cornflower blue sapphire',
+      'blue sapphire stone',
+      'original blue sapphire stone',
       'kashmir neelam',
       'ceylon blue sapphire',
       'shani ratna',
@@ -907,103 +920,428 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'neelam price',
       'neelam benefits',
     ],
-    intro:
-      'Blue Sapphire (Neelam) channels the disciplined depth of Shani—Saturn. Revered and respected for its swift results, a fine natural neelam demands careful astrological prescription. PureVedicGems emphasises chart consultation, trial periods, and certified unheated sapphires where available.',
-    hero_benefits: [
-      { text: 'Strengthens Shani for career discipline, longevity, and karmic endurance' },
-      { text: 'Supports land, mining, iron, oil, and structured enterprise' },
-      { text: 'Traditionally worn during Sade Sati and Shani mahadasha under guidance' },
-      { text: 'Promotes focus, austerity, and protection from chronic obstacles' },
-    ],
+    seo_title: 'Buy Neelam Stone | Natural Blue Sapphire | PureVedicGems',
     seo_description:
-      'Buy certified Blue Sapphire (Neelam) online. Price depends on origin, heat, and carat. Trial guidance and Jyotish consultation from PureVedicGems.',
+      'Neelam stone price for natural blue sapphire stone: royal blue sapphire, light blue sapphire, cornflower blue sapphire, blue star sapphire.',
+    intro:
+      'Natural Blue Sapphire Stone (Neelam Stone) is Saturn’s gem. Fine natural neelam needs a chart reading and a three-day trial before you wear it. PureVedicGems lists certified, treatment-disclosed sapphires and will not skip that check.',
+    hero_benefits: [
+      { text: 'Strengthens Shani for career' },
+      { text: 'Supports land and structure' },
+      { text: 'Worn in Sade Sati with guidance' },
+      { text: 'Promotes focus and protection' },
+    ],
     about_html: [
       p(
-        'Blue sapphire is corundum coloured by iron and titanium. Sanskrit: Neelam or Neelashma. It is the ratna of Shani—Saturn, karmic taskmaster of discipline, delay, and justice.',
-        'Fine stones show velvety blue to violetish-blue. Kashmir, Sri Lanka, Madagascar, and Myanmar produce notable blues. Neelam is famed for fast-acting Jyotish results—positive or negative if wrongly prescribed.',
+        'A natural blue sapphire stone is blue corundum. Iron and titanium give the colour. In Hindi it is a neelam stone (Neelam or Neelashma). Vedic astrology treats this gem as the ratna of Shani — Saturn. Cornflower blue sapphire is a colour grade of that same stone: bright, velvety true-blue, not a different mineral.',
+        'Kings once kept a natural blue sapphire for courage and clear sight. Buyers still look for that velvety blue. Kashmir, Sri Lanka, Madagascar, and Myanmar supply the best known material. The rarest hue is cornflower blue sapphire.',
+        'Therefore you should treat a natural blue sapphire stone as a prescribed remedy, not a casual fashion buy. Results can arrive fast. They can also feel harsh if Saturn is weak or angry in the chart.',
       ),
       h3('Vedic Significance'),
-      p('Saturn rules Capricorn and Aquarius, longevity, servants, iron, and chronic illness. Pushya, Anuradha, and Uttara Bhadrapada nakshatras link to neelam. Mandatory astrologer consultation is the industry norm for blue sapphire.'),
+      p(
+        'Saturn rules Capricorn and Aquarius. He also rules time, labour, iron, bones, and long tests. Pushya, Anuradha, and Uttara Bhadrapada link to neelam in many classical lists.',
+        'As a result, a neelam stone is often named during Shani mahadasha or Sade Sati. Still, those periods do not always need neelam. First get a Jyotish reading. Then decide.',
+      ),
       h3('Caution'),
-      p('Unlike gentler gems, neelam is tested by wearing tied to the arm for 72 hours or similar trial methods before final setting. Never wear without expert approval.'),
+      p(
+        'Unlike gentler gems, you test a neelam stone before a final ring. Tie or tape it to the body for three days. Watch sleep, mood, and events. If the trial feels wrong, stop.',
+        `Never wear a neelam stone without expert approval. ${BRAND} treats that rule as non-negotiable.`,
+      ),
+      h2('Rarity and Legacy of Blue Sapphire'),
+      p(
+        'Kashmir set the standard for cornflower blue sapphire. A fine Kashmir stone shows a medium to medium-dark blue with a soft, velvety look. Sri Lanka (Ceylon) is now the practical source for most Jyotish-quality gems.',
+        'In addition, a few stones hold silk that can form a star when cut as a cabochon. That star sapphire is rare. Most jewellery uses a faceted natural blue sapphire stone. The finest colour in that cut is cornflower blue sapphire.',
+        'People in the East also call it Neelamani, Indraneel, and Indraneelam. The names change. The need for a natural, disclosed stone does not.',
+        'Kings once kept a natural blue sapphire for courage and clear sight. Today the same hue still signals authority. So rarity is not a slogan here. It is why we disclose origin and heat on every listing.',
+      ),
+      h2('What customers say about blue sapphire'),
+      p(
+        'People do not write to us about a “quick miracle”. They write about the process: chart first, trial next, then a ring they can wear every Saturday.',
+        'If you want that same path, read our <a href="/testimonials">customer testimonials</a> or <a href="/consultation">book a consultation</a> before you pick a stone. We would rather lose a sale than set the wrong blue sapphire.',
+      ),
     ].join('\n'),
-    how_to_wear_html: table([
-      ['Weight', '3–7 carats'],
-      ['Metal', 'Gold or Panchdhatu (iron ring traditions exist; gold is widely used)'],
-      ['Finger', 'Middle finger of the right hand'],
-      ['Day', 'Saturday (Shanivar)'],
-      ['Time', 'Evening during Shani hora'],
-      ['Mantra', 'Chant "Om Sham Shanicharaya Namah" or "Om Praam Preem Praum Sah Shanaye Namah" 108 times'],
-      ['Purification', 'Gangajal, sesame oil rinse, black sesame offering, light mustard oil lamp'],
-    ]),
+    how_to_wear_html: [
+      p(
+        'Wear a natural blue sapphire stone only after the trial and the chart check. The table below is the PureVedicGems Jyotish pattern. Your astrologer may adjust finger, metal, or weight.',
+      ),
+      table([
+        ['Weight', 'Generally 2–5 carats. Confirm with Jyotish — neelam is potent even at modest size.'],
+        ['Colour', 'Bright medium to dark blue. Cornflower blue sapphire is preferred. Royal blue sapphire is acceptable if it is not inky. Avoid a weak light blue sapphire for Jyotish.'],
+        ['Metal', 'Silver, white gold, or Panchdhatu. Not copper. Follow your astrologer.'],
+        ['Finger', 'Middle finger of the right hand (working hand).'],
+        ['Day', 'Saturday (Shanivar)'],
+        ['Time', 'Evening during Shani hora'],
+        ['Mantra', 'Chant “Om Pram Prim Proum Sah Shanaye Namah” or “Om Sham Shanicharaya Namah” 108 times'],
+        ['Purification', 'Gangajal, sesame oil rinse, black sesame offering, and a mustard oil lamp'],
+      ]),
+      p(
+        'First cleanse the stone. Then chant. Then set it so the gem can touch skin. Also keep a record of the wearing date. You will want that note if you later change the setting.',
+      ),
+    ].join('\n'),
     who_should_wear_html: [
-      p('Neelam suits strong or favourably placed Shani lords, Capricorn and Aquarius ascendants in many charts, and those in Shani mahadasha with benefic Saturn. Industrialists, judges, and spiritual ascetics sometimes wear neelam.'),
+      p(
+        'A neelam stone suits many Capricorn (Makar) and Aquarius (Kumbh) charts when Saturn should be strengthened. It can also suit people in Shani mahadasha when Saturn is dignified.',
+        'Indian astrology names Neelam for Makar and Kumbh. Other rashis only qualify when the full chart says so. Rashi lists are a start. The horoscope decides.',
+      ),
+      h3('When a Natural Blue Sapphire Stone May Help'),
+      ul([
+        'Capricorn or Aquarius lagna with a Saturn that needs support',
+        'Shani mahadasha or Sade Sati after an astrologer confirms neelam',
+        'Careers in law, mining, research, government, and long industrial work',
+        'People who need more patience, structure, and follow-through',
+      ]),
       h3('When Not to Wear'),
-      p('Avoid if Shani is severely afflicted in dusthana without remediation, if trial wear caused immediate adverse effects, or if your astrologer explicitly prohibits it. Not for casual purchase.'),
+      p(
+        'Avoid a natural blue sapphire stone if Shani is badly placed in a dusthana with no relief. Also stop if the trial brings sudden fear, conflict, or illness. Do not buy neelam because a friend wears one.',
+      ),
       h3('Mandatory Consultation'),
-      p(`${BRAND} insists on Jyotish review and trial protocol before final neelam setting—this is non-negotiable for Shani gems.`),
+      p(
+        `${BRAND} asks for Jyotish review and a trial before the final setting. Book a <a href="/consultation">consultation</a> if you are unsure. Then shop the <a href="/knowledge/gem-qualities/blue-sapphire">blue sapphire quality guide</a> so you can read colour, heat, and origin with clear eyes.`,
+      ),
+      h3('Click here to know if blue sapphire suits you'),
+      p(
+        'Do not guess. A short chart review tells you whether to trial a neelam stone, wait, or pick another Saturn substitute. <a href="/consultation">Ask an expert</a> before you add a stone to the cart.',
+      ),
     ].join('\n'),
     benefits_html: [
-      h3('Career & Discipline'),
-      p('Neelam rewards hard work with structural success—ideal for long-term projects, government service, and law.'),
-      h3('Wealth Through Labour'),
-      p('Shani gives slowly but permanently. Blue sapphire supports sustained wealth from discipline, not speculation.'),
-      h3('Health & Longevity'),
-      p('Traditionally associated with bones, nerves, and chronic conditions—worn for Shani-related health karmas with medical care.'),
-      h3('Protection'),
-      p('Neelam is worn as a shield against enemies, litigation, and evil eye in many North Indian traditions.'),
-      h3('Spiritual Austerity'),
-      p('Saturn guides moksha through detachment. Neelam supports serious spiritual practice and service to the poor.'),
+      p(
+        'People wear a neelam stone for Saturn’s themes: work, time, and endurance. The benefits below are traditional Jyotish uses. They are not medical claims. Results still depend on a real stone and a correct prescription.',
+      ),
+      h3('Success in business, jobs, and independent projects'),
+      p(
+        'Saturn pays for finished work. A well-chosen neelam is worn to break career stalls. Then effort starts to show. This helps jobs, firms, and solo projects that need long focus.',
+      ),
+      h3('Surging Fortunes'),
+      p(
+        'One hoped-for gift of neelam is a turn in sliding luck. It is said to open slower, more stable wealth — land, salary, and built assets — rather than quick speculation.',
+      ),
+      h3('Extended Fame & Popularity'),
+      p(
+        'Hard work needs witnesses. As a result, people wear this gem so talent gets seen in office, art, or public life. Fame here means earned notice, not empty noise.',
+      ),
+      h3('Reoriented Discipline, Patience, and Detachment'),
+      p(
+        'Saturn teaches routine. Wearers often seek a calmer work ethic. Neelam is the gem people pick when they want fewer delays caused by their own scattered habits.',
+      ),
+      h3('Overcome Obstacles'),
+      p(
+        'For Sade Sati or Dhaiya, a prescribed neelam is used to soften blocks. It does not erase karma. It is worn to meet tests with more backbone.',
+      ),
+      h3('Stronger Mind, Bones, and Senses'),
+      p(
+        'Texts link Saturn to bones, nerves, and teeth. Some people therefore wear neelam beside medical care for joint pain or low mood. See a doctor for health. Use the gem only as a traditional support.',
+      ),
     ].join('\n'),
     types_html: [
+      p(
+        'Not every natural blue sapphire stone is equal. Origin, colour, heat, and cut change both price and Jyotish fitness. Use the notes below before you filter the collection.',
+      ),
       h3('Origins'),
-      ul(['Kashmir: Velvety cornflower—legendary collector grade', 'Ceylon: Bright blue, most common fine Jyotish source', 'Madagascar: Deep blues, verify treatment', 'Burma & Australia: Select fine stones available']),
+      ul([
+        'Kashmir: velvety cornflower blue — rare, collector grade, and the dearest natural blue sapphire stone',
+        'Ceylon (Sri Lanka): bright, lively blue — the usual fine Jyotish source; some stones reach cornflower blue sapphire colour',
+        'Myanmar (Burma): strong hue; always check heat and origin reports',
+        'Madagascar: deep blues in good size; verify treatment',
+        'Thailand and others: often darker; many are heated or diffused',
+      ]),
       h3('Colour'),
-      p('Medium to medium-dark vivid blue preferred. Too dark blackish or pale washed-out stones are less ideal.'),
+      p(
+        'Aim for true blue — not too violet, not grey, not inky. That look is what the trade calls cornflower blue sapphire. The stone should look vivid in daylight and still alive in indoor light. In Hindi, a deep natural blue sapphire stone is often called Indraneelam.',
+      ),
+      h2('Cornflower Blue Sapphire Colour'),
+      p(
+        'Cornflower blue sapphire sits between pale watery blue and inky black-blue. It is bright, medium to medium-dark, and a little velvety. Kashmir made the name famous. Fine Ceylon material can also reach this hue.',
+        'Astrologers often prefer cornflower blue sapphire because the colour stays lively without looking inky or washed. Too dark a stone can look sleepy. Too light a stone can look pale. Hold the gem in north daylight and then indoors. A real cornflower blue sapphire keeps its blue in both.',
+        'So if a listing says royal blue sapphire it may be darker. If it says cornflower blue sapphire you should still check saturation and heat on the lab paper. The name is a colour grade, not a licence to skip disclosure.',
+      ),
+      h2('Royal Blue Sapphire'),
+      p(
+        'Royal blue sapphire is a deeper, more saturated blue than cornflower. It can look velvety in Burma or Madagascar material. It is still a natural blue sapphire stone — not a separate species.',
+        'Jyotish buyers may wear a royal blue sapphire when the hue stays lively in daylight and is not black-blue. An inky royal blue sapphire is weaker as a neelam stone. Compare it next to cornflower blue sapphire in north light.',
+        'Price follows that depth: a fine royal blue sapphire often costs more than a pale stone and less than rare Kashmir cornflower. Always read heat on the paper.',
+      ),
+      h2('Light Blue Sapphire'),
+      p(
+        'Light blue sapphire is pale, often from heated Ceylon geuda. It is still corundum when the lab says so. For Saturn work, a light blue sapphire is usually the weaker pick — low saturation, easy to wash out indoors.',
+        'A light blue sapphire can suit a tight budget or a jewellery design that needs a soft blue. Do not treat it as the same remedy as a medium-dark neelam stone. Neelam stone price is lower for light blue sapphire because the colour is less in demand.',
+        'If your astrologer accepts a light blue sapphire, keep it unheated if you can, and keep the three-day trial. Colour grade does not cancel chart risk.',
+      ),
       h3('Treatment'),
-      p('Unheated strongly preferred. Beryllium diffusion and lattice diffusion disqualify stones for classical ratna use.'),
+      p(
+        'Unheated is strongly preferred for ratna use. Simple heat is common in the trade and must be disclosed. Beryllium diffusion and lattice diffusion disqualify a natural blue sapphire stone for classical Jyotish.',
+      ),
+      h2('Blue Star Sapphire'),
+      p(
+        'A blue star sapphire is a cabochon that shows a six-ray star (asterism) from silk. Value follows the sharpness of the star, not facet sparkle. View a blue star sapphire in direct light and tilt the stone.',
+        'Sri Lanka, Myanmar, and parts of Africa produce most blue star sapphire. Being opaque, blue star sapphire price depends on lustre and how centred the star sits. A fuzzy star is a weaker blue star sapphire.',
+        'For Jyotish, a faceted neelam stone is the usual first choice. Wear a blue star sapphire as the Saturn gem only when an astrologer accepts a cabochon. Otherwise treat blue star sapphire as jewellery with honest disclosure.',
+      ),
+      h2('Natural Blue Sapphire vs Heated Stone'),
+      p(
+        'A natural blue sapphire can be unheated or heated. Unheated is the Jyotish first choice. Heat is common and must be named on the lab paper. Beryllium or lattice diffusion can still be earth-grown, but it is not acceptable for classical Jyotish — skip it.',
+        'Therefore you should read the treatment line before you compare price. Two stones can look similar. Only one may be an unheated natural blue sapphire with no diffusion.',
+      ),
+      h3('Shop blue sapphire by origin'),
+      p(
+        'Filter the collection the same way a gem lab talks about origin. Then compare heat and paper, not just the name on the tag. Ceylon is the first place to look for a wearable natural blue sapphire stone. Fine Ceylon can also show cornflower blue sapphire colour.',
+      ),
+      ul([
+        '<a href="/gemstones/navaratna/blue-sapphire?origin=Kashmir">Kashmir Blue Sapphire</a>',
+        '<a href="/gemstones/navaratna/blue-sapphire?origin=Ceylon">Ceylon Blue Sapphire</a>',
+        '<a href="/gemstones/navaratna/blue-sapphire?origin=Burma">Burmese Blue Sapphire</a>',
+        '<a href="/gemstones/navaratna/blue-sapphire?origin=Madagascar">Madagascar Blue Sapphire</a>',
+        '<a href="/gemstones/navaratna/blue-sapphire?treatment=Unheated">Unheated Natural Blue Sapphire</a>',
+      ]),
     ].join('\n'),
     quality_price_html: [
-      p('Kashmir neelam reaches auction-level premiums. Fine unheated Ceylon spans mid to premium collector tiers per carat.'),
+      p(
+        'Neelam stone price in India is not one number. Jyotish-quality natural blue sapphire stone often runs from about INR 3,000 per carat to INR 3,00,000 per carat. Rare untreated cornflower blue sapphire and Kashmir sit at the top of that range. Compare certified listings, not a single rate.',
+      ),
+      h2('Neelam Stone Price'),
+      p(
+        'Neelam stone price moves with origin, colour, clarity, cut, carat, and treatment. A light blue sapphire sits at the low end. A royal blue sapphire in the middle. Fine cornflower blue sapphire and Kashmir set the ceiling.',
+        'Therefore you should read neelam stone price per carat on the listing, then check the lab line for heat. Two stones of the same carat can differ tenfold. That gap is normal.',
+      ),
+      h2('Factors Affecting Blue Sapphire Price'),
+      p(
+        'Like other coloured gems, a natural blue sapphire is priced by origin, colour, clarity, cut, carat, and treatment together. Knowing that mix helps you buy a stone that fits both the chart and the budget.',
+      ),
+      h3('Origin'),
+      p(
+        'Kashmir natural blue sapphire stone, when colour and velvet are real, is rare and priced in the exclusive band — about INR 30,000 to INR 3,00,000 per carat on our quality scale. Fine untreated Ceylon and Burma often sit nearer INR 7,000 to INR 30,000 per carat. Heated commercial blues are lower.',
+      ),
+      h3('Colour'),
+      p(
+        'Colour is the first price lever. A cornflower blue sapphire stone costs more than a dark Bangkok-type blue. A royal blue sapphire costs more than a light blue sapphire. If hue, tone, or saturation slips, neelam stone price drops fast.',
+      ),
+      h3('Clarity'),
+      p(
+        'Silk, fingerprints, and colour bands are normal. A perfectly clean natural blue sapphire stone is rare and expensive. Buy lab-checked stones so you are not paying gem prices for glass or heavy fill.',
+      ),
+      h3('Uniqueness'),
+      p(
+        'A blue star sapphire, rare Kashmir origin, and untreated fine colour all add a premium. Also, a well-cut oval or cushion that faces up bright will outprice a windowed stone of the same carat.',
+      ),
       h3('Certification'),
-      p('GRS, GIA, Gubelin must state heat treatment. Origin reports add value for Kashmir and Burma.'),
-      h3('Price Guidance'),
-      p('From commercial heated blues to investment-grade unheated Kashmir—budget varies enormously. Never compromise on consultation to afford a larger stone.'),
+      p(
+        `GRS, GIA, and Gübelin reports should state heat. Origin reports matter most for Kashmir and Burma. At checkout, ${BRAND} shows lab, treatment, and origin on every listing so you can match the paper to the natural blue sapphire stone in the tray.`,
+      ),
     ].join('\n'),
     jewellery_html: [
-      p('Gold or Panchdhatu ring on middle finger after successful trial. Closed secure setting—neelam is worn daily for Shani.'),
+      p(
+        'After a good trial, most people set a natural blue sapphire stone in a ring. Pendants, bracelets, and brooches are also worn. For Shani, skin contact still matters. Open-back rings are the usual Jyotish choice.',
+      ),
+      h3('Natural Blue Sapphire Stone Ring'),
+      p(
+        'A natural blue sapphire stone ring on the middle finger is the classic Saturn setting. Choose a secure open-back mount so the gem can touch skin. Silver, white gold, and Panchdhatu are the metals we recommend. Confirm with your astrologer before the jeweller starts.',
+      ),
+      h3('Blue Sapphire Pendant'),
+      p(
+        'A pendant keeps a natural blue sapphire near the heart and works with gold or silver. It is a good second piece. It is not a full substitute for a prescribed ring unless your astrologer says so.',
+      ),
+      h3('Natural Blue Sapphire Stone Bracelets'),
+      p(
+        'Natural blue sapphire stone bracelets suit people who already have a primary ring. They add colour for day wear. For first-time Shani remedies, start with the ring after trial.',
+      ),
+      h3('Blue Sapphire Brooches'),
+      p(
+        'Brooches pin a natural blue sapphire stone to a coat or scarf. They look royal and stay easy to remove. Use them as jewellery. Do not treat a brooch as the only astrological setting unless prescribed.',
+      ),
       h3('Trial Setting'),
-      p('Many astrologers recommend wrapping stone in metal wire on arm before permanent ring mount.'),
-      h3('Tips'),
-      ul(['Saturday evening energisation', 'Middle finger only unless prescribed otherwise', 'Avoid pairing with ruby without expert approval']),
+      p(
+        `Many astrologers wrap or tape the loose natural blue sapphire stone on the arm for a three-day trial before a permanent ring. ${BRAND} can help you plan that trial, then move to an open-back, secure mount.`,
+      ),
+      ul([
+        'Saturday evening energisation',
+        'Middle finger unless your chart says otherwise',
+        `Avoid pairing with ${shopLink('ruby', 'ruby')} unless an expert approves the yoga`,
+      ]),
     ].join('\n'),
     cleaning_care_html: [
-      h3('Routine'),
-      p('Warm soapy water—sapphire is durable. Dry thoroughly.'),
+      p(
+        'Sapphire is a 9 on the Mohs scale, so a natural blue sapphire stone is tough. Settings still fail. Care keeps both the gem and the Saturn remedy in good order.',
+      ),
+      h3('Gentle Cleaning Techniques'),
+      p(
+        'Wipe your natural blue sapphire stone with a soft cloth and lukewarm soapy water. Then rinse and dry. Do not use harsh chemicals. Also skip ultrasonic cleaners if the stone has fractures or a delicate mount.',
+      ),
+      h3('Safe Storage Practices'),
+      p(
+        'Keep a natural blue sapphire stone in a soft pouch or a lined box. A hard surface can wear the polish. Do not toss it against diamond jewellery in the same dish.',
+      ),
+      h3('Regular Professional Maintenance'),
+      p(
+        'Have a jeweller check prongs once a year. Loss of a natural blue sapphire stone is treated as astrologically serious in many families. A tight setting is cheaper than a lost Shani ratna.',
+      ),
       h3('Re-Energisation'),
-      p('Saturday Shani mantra, sesame lamp, Gangajal rinse.'),
-      h3('Inspection'),
-      p('Check setting annually—loss of neelam is considered astrologically significant.'),
+      p(
+        'On Saturday, rinse with Gangajal, light a sesame or mustard lamp, and repeat the Shani mantra. Then wear the natural blue sapphire stone again with a clear intention.',
+      ),
     ].join('\n'),
     buyer_beware_html: [
-      p('Synthetic flux, hydrothermal, and cobalt-diffused sapphires flood markets. Blue glass and iolite substitutes abound.'),
+      p(
+        'Flux-grown, hydrothermal, and beryllium-diffused sapphires flood the market. Blue glass and iolite are sold as neelam. An original natural blue sapphire stone should have a lab paper and a treatment line you can read.',
+      ),
+      h3('Research Cut, Clarity, and Trusted Sellers'),
+      p(
+        'Choose a bright cut. Accept some silk. Compare price per carat by origin. Always buy from a seller who will explain heat and will not hide a cheap “Kashmir” story.',
+      ),
       h3('Red Flags'),
-      ul(['Sold without consultation warning', 'Claimed Kashmir origin at low price', 'No heat treatment disclosure']),
+      ul([
+        'Sold with no consultation warning',
+        'Claimed Kashmir origin at a low price',
+        'No heat or treatment disclosure',
+        'A flawless natural blue sapphire stone at a bargain — often glass or synthetic',
+      ]),
+      h3('Why Buy from Authentic Resources Like PureVedicGems?'),
+      p(
+        `${BRAND} has sourced Jyotish gems since 1937. We list certified stones, show treatment, and support trial protocols. Buy natural blue sapphire stone online here only after you understand the chart risk. That is how responsible neelam selling works.`,
+        'Lab papers come from recognised gem labs. If a listing cannot show heat status, do not treat it as a Shani ratna.',
+      ),
+      h2('Natural Blue Sapphire vs Synthetic'),
+      p(
+        'A natural blue sapphire grew in the earth. A synthetic grew in a lab. Glass and iolite are not sapphire at all. Ask for a report that names natural corundum. Then check heat.',
+      ),
       h3('Trial First'),
-      p(`${BRAND} supports trial protocols—responsible neelam selling never skips chart analysis.`),
+      p(
+        `A beautiful natural blue sapphire stone is still the wrong stone if Saturn forbids it. Use the trial. Then set. ${BRAND} will not skip that step to close a sale.`,
+      ),
+      h3('Buy certified blue sapphire with a real trial'),
+      p(
+        'Chat with us, call us, or book a callback. Get a Jyotish review and then buy blue sapphire online with the lab paper in hand. That is the honest way to inherit the stone’s beauty.',
+      ),
     ].join('\n'),
     faqs: [
-      { question: 'What does Blue Sapphire (Neelam) cost?', answer: 'Price follows origin, colour, clarity, carat, and heat treatment. Kashmir and unheated Ceylon command premiums. Compare certified listings rather than generic “neelam price” quotes.' },
-      { question: 'What are the traditional benefits of Neelam?', answer: 'Neelam is worn for Saturn themes: discipline, career structure, endurance, and protection from delays. Results can be swift — for better or worse — so chart review comes first. These are traditional uses, not medical claims.' },
-      { question: 'Who should wear Blue Sapphire?', answer: 'Only when an astrologer confirms Saturn should be strengthened. Never wear Neelam because a friend did. Use a trial period and expert prescription.' },
-      { question: 'Why is neelam considered dangerous?', answer: 'Shani gives swift results. If Saturn is unfavourable, neelam may amplify challenges. Hence trial wear and expert prescription are essential.' },
-      { question: 'What is the neelam trial method?', answer: 'Traditionally, tie the stone to your arm for 48–72 hours and observe dreams, mood, and events before committing to a ring.' },
-      { question: 'Can I wear neelam during Sade Sati?', answer: 'Sometimes yes, sometimes no—it depends on Shani\'s house lordship and dignity. Never assume Sade Sati automatically requires neelam.' },
-      { question: 'Kashmir or Ceylon?', answer: 'Kashmir is legendary and rare. Fine unheated Ceylon neelam is the practical astrological standard today.' },
-      { question: 'Which finger for neelam?', answer: 'Middle finger of the right hand is classical for Shani.' },
-      { question: 'Neelam with yellow sapphire?', answer: 'Guru–Shani combinations require expert yoga analysis. Pitambari sapphire exists specifically for dual influence charts.' },
-      { question: 'Heated blue sapphire for Jyotish?', answer: 'Unheated is strongly preferred. Some astrologers accept disclosed heat-only if Saturn is well-placed.' },
-      { question: 'How fast does neelam work?', answer: 'Anecdotes report changes within days to weeks—another reason prescription matters.' },
+      {
+        question: '1. What is a cornflower blue sapphire?',
+        answer:
+          'Cornflower blue sapphire is a colour grade of natural blue sapphire — bright, velvety true-blue corundum, called Neelam in Vedic astrology. It is not a separate gem. Saturn’s ratna is the natural blue sapphire stone; cornflower is the hue astrologers prefer when the chart allows it.',
+      },
+      {
+        question: 'What is a natural blue sapphire?',
+        answer:
+          'A natural blue sapphire is earth-grown corundum, not lab-grown or glass. For Jyotish, unheated natural blue sapphire stone is preferred. Heat must be disclosed. Beryllium diffusion is not acceptable.',
+      },
+      {
+        question: 'What is a neelam stone?',
+        answer:
+          'A neelam stone is the Hindi name for a natural blue sapphire stone — Saturn’s gem in Vedic astrology. Cornflower, royal blue sapphire, light blue sapphire, and blue star sapphire are looks of the same corundum, not different minerals.',
+      },
+      {
+        question: 'What is neelam stone price in India?',
+        answer:
+          'Neelam stone price on our quality scale is about INR 3,000 to INR 3,00,000 per carat. Light blue sapphire is cheaper. Royal blue sapphire sits in the middle. Rare cornflower and Kashmir cost more. Read the listing, not a generic quote.',
+      },
+      {
+        question: 'What is a royal blue sapphire?',
+        answer:
+          'Royal blue sapphire is a deep, saturated blue — darker than cornflower, not black. It is a colour grade of natural blue sapphire. Wear it for Jyotish only if it stays lively in daylight and the chart allows a neelam stone.',
+      },
+      {
+        question: 'What is a light blue sapphire?',
+        answer:
+          'Light blue sapphire is pale corundum, often heated Ceylon. It can be genuine, but it is usually a weaker Saturn remedy than a medium-dark neelam stone. Neelam stone price is lower for this colour because saturation is low.',
+      },
+      {
+        question: 'What is a blue star sapphire?',
+        answer:
+          'A blue star sapphire is a cabochon with a six-ray star from silk. Price follows the star, not facet fire. Use a blue star sapphire for Jyotish only when an astrologer accepts a cabochon; otherwise it is jewellery.',
+      },
+      {
+        question: '2. How much does a Blue Sapphire cost?',
+        answer:
+          'Neelam stone price for astrological natural blue sapphire stone often runs from about INR 3,000 to INR 3,00,000 per carat. Rare untreated cornflower blue sapphire and Kashmir cost more. Compare certified listings rather than a generic neelam quote.',
+      },
+      {
+        question: 'What are the traditional benefits of Neelam?',
+        answer:
+          'Neelam is worn for Saturn themes: career structure, endurance, and protection from delays. Results can be swift — for better or worse — so chart review comes first. These are traditional uses, not medical claims.',
+      },
+      {
+        question: '3. Will blue sapphire (Neelam Stone) suit me?',
+        answer:
+          'Only when an astrologer confirms Saturn should be strengthened. Never wear Neelam because a friend did. Use a trial period and expert prescription.',
+      },
+      {
+        question: '4. How do I identify a natural blue sapphire?',
+        answer:
+          'Look for natural inclusions and a lab report that names corundum and heat status. Overly clean cheap stones are often synthetic or glass. A natural blue sapphire can still look clean — the paper must say so.',
+      },
+      {
+        question: '5. Which coloured Blue Sapphire is astrologically most effective?',
+        answer:
+          'A vivid cornflower blue sapphire is preferred. A lively royal blue sapphire can also work. A pale light blue sapphire is weaker for Jyotish. Your horoscope may still refine the pick.',
+      },
+      {
+        question: '6. Can I wear a Blue Sapphire gemstone in less carat weight?',
+        answer:
+          'Yes, if the stone is high quality and untreated. Many astrologers prefer a smaller genuine neelam over a large heated one.',
+      },
+      {
+        question: '7. Why is there a variation in the price of Blue Sapphires?',
+        answer:
+          'Origin, colour, clarity, carat, and treatment move the price. Kashmiri stones lead, then Burmese, then Sri Lankan. Untreated vivid stones cost more than heated or dull ones.',
+      },
+      {
+        question: '8. Should I wear Sri Lankan Sapphire, Burmese Sapphire, or Kashmiri Sapphire?',
+        answer:
+          'Match budget and chart. Kashmir is rare and premium. Burma is strong in hue. Sri Lanka is the practical fine stone for most Jyotish buyers, and some Ceylon gems show cornflower blue sapphire colour. Ask an expert before you lock origin.',
+      },
+      {
+        question: '9. On which finger should I wear a Blue Sapphire?',
+        answer:
+          'Classical use at PureVedicGems is the middle finger of the right hand. Confirm before the jeweller sets the ring.',
+      },
+      {
+        question: '10. Blue Sapphire stone is worn for which Rashi?',
+        answer:
+          'A natural blue sapphire stone is mainly prescribed for Capricorn (Makar) and Aquarius (Kumbh) ascendants. Certain yogas still forbid the gem, so take a reading first.',
+      },
+      {
+        question: '11. When will I get the results after wearing a Blue Sapphire?',
+        answer:
+          'If the stone is unsuitable, harm can show within the three-day trial. If it suits, do not expect a miracle in those days — positive effects often take a few weeks to a few months. Fake or wrongly prescribed stones will not give the result you want.',
+      },
+      {
+        question: '12. Can Blue Sapphire gemstones help to recover from Shani Mahadasha?',
+        answer:
+          'A genuine, prescribed neelam is used to steady Saturn’s dasha. It is not automatic. The chart and the trial decide.',
+      },
+      {
+        question: 'Why is neelam considered dangerous?',
+        answer:
+          'Shani gives swift results. If Saturn is unfavourable, neelam may amplify challenges. That is why trial wear and expert prescription are essential.',
+      },
+      {
+        question: 'What is the neelam trial method?',
+        answer:
+          'Tie or tape the stone to your body for three days. Watch dreams, mood, headaches, and events before you commit to a ring.',
+      },
+      {
+        question: 'Can I wear neelam during Sade Sati?',
+        answer:
+          'Sometimes yes, sometimes no. It depends on Shani’s house lordship and dignity. Never assume Sade Sati automatically requires neelam.',
+      },
+      {
+        question: 'Kashmir or Ceylon?',
+        answer:
+          'Kashmir is legendary and rare. Fine unheated Ceylon is the practical astrological standard for neelam today.',
+      },
+      {
+        question: 'Neelam with yellow sapphire?',
+        answer:
+          'Guru–Shani combinations need expert yoga analysis. Pitambari sapphire exists for dual-influence charts. Do not pair on your own.',
+      },
+      {
+        question: 'Heated blue sapphire for Jyotish?',
+        answer:
+          'Unheated is strongly preferred. Some astrologers accept disclosed heat-only if Saturn is well placed. Diffusion is not acceptable.',
+      },
+      {
+        question: '13. Why should you buy a cornflower blue sapphire stone?',
+        answer:
+          'Buy a natural blue sapphire stone for authentic Saturn work — career structure, focus, and long tests — only when it is genuine and prescribed. Shop certified listings and keep the three-day trial. Fine colour is often a cornflower blue sapphire, which is a hue, not a licence to skip the chart.',
+      },
     ],
   }),
 

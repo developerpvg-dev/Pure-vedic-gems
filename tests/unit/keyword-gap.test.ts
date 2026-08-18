@@ -25,6 +25,14 @@ describe('Phase 4 keyword-gap map', () => {
     expect(pukhraj.some((faq) => /benefit/i.test(faq.question))).toBe(true);
     expect(neelam.some((faq) => /price|cost/i.test(faq.question))).toBe(true);
     expect(neelam.some((faq) => /benefit/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /blue sapphire stone/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /cornflower blue sapphire/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /natural blue sapphire/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /neelam stone/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /neelam stone price/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /royal blue sapphire/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /light blue sapphire/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /blue star sapphire/i.test(faq.question))).toBe(true);
   });
 
   it('covers navaratna set intent on the parent hub', () => {

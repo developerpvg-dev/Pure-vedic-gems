@@ -87,10 +87,30 @@ export function getCategoryHubSectionDefs(productCategory: string): CategoryHubS
   return PROFILE_SECTIONS[resolveCategoryHubProfile(productCategory)];
 }
 
+const BLUE_SAPPHIRE_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Cornflower Blue Sapphire Stone',
+  'how-to-wear': 'How To Wear Natural Blue Sapphire Stone',
+  'who-should-wear': 'Who Should Wear a Natural Blue Sapphire Stone',
+  benefits: 'Benefits of Original Natural Blue Sapphire Stone',
+  types: 'Types of Cornflower Blue Sapphire Stone',
+  'quality-price': 'Pricing Insights Of Natural Blue Sapphire Stone',
+  jewellery: 'Types of Natural Blue Sapphire Stone Jewellery',
+  'cleaning-care': 'Cleaning and Care for Natural Blue Sapphire Stone',
+  'buyer-beware': 'Buyer Beware Guidelines for Original Natural Blue Sapphire Stone',
+  faqs: 'Frequently Asked Questions about Natural Blue Sapphire Stone',
+};
+
+export function categoryHubSeoHeadings(slug: string) {
+  if (slug === 'blue-sapphire') return BLUE_SAPPHIRE_HEADINGS;
+  return null;
+}
+
 export function buildCategoryHubSections(page: ShopCategoryPageContent, displayLabel: string) {
+  const seoHeadings = categoryHubSeoHeadings(page.slug);
   return getCategoryHubSectionDefs(page.product_category).map(({ key, field, title }) => ({
     id: key,
     title: title(displayLabel),
+    heading: seoHeadings?.[key],
     html: page[field] as string | null | undefined,
   }));
 }

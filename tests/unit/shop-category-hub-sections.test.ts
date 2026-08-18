@@ -59,4 +59,17 @@ describe('shop-category-hub-sections', () => {
     expect(sections.map((s) => s.id)).toContain('jewellery');
     expect(sections.map((s) => s.id)).toContain('cleaning-care');
   });
+
+  it('puts blue sapphire stone in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'blue-sapphire', name: 'Blue Sapphire Stone', product_category: 'navaratna' }),
+      'Blue Sapphire Stone (Neelam)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.find((s) => s.id === 'about')?.heading).toMatch(/blue sapphire stone/i);
+    expect(sections.find((s) => s.id === 'about')?.heading).toMatch(/cornflower blue sapphire/i);
+    expect(sections.find((s) => s.id === 'benefits')?.heading).toMatch(/blue sapphire stone/i);
+    expect(sections.find((s) => s.id === 'benefits')?.heading).toMatch(/natural blue sapphire/i);
+    expect(sections.every((s) => !s.heading || /blue sapphire stone/i.test(s.heading))).toBe(true);
+  });
 });

@@ -158,12 +158,18 @@ function buildGemDefaults(
     is_active: true,
   };
 
-  const merged = mergeRichContent(base, getRichCategoryContent(slug, label, category));
+  const rich = getRichCategoryContent(slug, label, category);
+  const merged = mergeRichContent(base, rich);
   const meta =
     category === 'upratna'
       ? upratnaChildMeta(shortName)
       : navaratnaChildMeta(shortName, vedicNameFromLabel(label));
-  return { ...merged, ...meta };
+  return {
+    ...merged,
+    ...meta,
+    seo_title: rich?.seo_title ?? meta.seo_title,
+    seo_description: rich?.seo_description ?? meta.seo_description,
+  };
 }
 
 const PLANET_BY_SLUG: Record<string, string> = {

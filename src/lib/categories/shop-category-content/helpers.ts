@@ -6,6 +6,10 @@ export function p(...paragraphs: string[]) {
   return paragraphs.map((text) => `<p>${text}</p>`).join('\n');
 }
 
+export function h2(title: string) {
+  return `<h2>${title}</h2>`;
+}
+
 export function h3(title: string) {
   return `<h3>${title}</h3>`;
 }

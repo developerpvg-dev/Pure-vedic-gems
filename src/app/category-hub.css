@@ -517,8 +517,10 @@
   margin-bottom: 1em;
 }
 
+.category-hub-panel__body h2,
 .category-hub-panel__body h3 {
   font-family: var(--font-roboto), 'Roboto', sans-serif;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--pvg-primary);
   margin-top: 1.5em;
@@ -654,6 +656,13 @@
 
 .category-hub-faq-question::-webkit-details-marker {
   display: none;
+}
+
+.category-hub-faq-question h3 {
+  display: inline;
+  margin: 0;
+  font: inherit;
+  color: inherit;
 }
 
 .category-hub-faq-answer {

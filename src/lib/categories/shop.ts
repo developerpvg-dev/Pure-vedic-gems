@@ -111,7 +111,12 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, KnownGemSubcategoryMeta> = 
   emerald: { category: 'navaratna', label: 'Emerald (Panna)', desc: 'Certified Emerald gemstones for Budh, with origin and treatment transparency.' },
   'yellow-sapphire': { category: 'navaratna', label: 'Yellow Sapphire (Pukhraj)', desc: 'Certified Yellow Sapphire gemstones for Guru, curated for Jyotish suitability.' },
   diamond: { category: 'navaratna', label: 'Diamond (Heera)', desc: 'Diamond and Venus-aligned gemstone options from PureVedicGems.' },
-  'blue-sapphire': { category: 'navaratna', label: 'Blue Sapphire (Neelam)', desc: 'Certified Blue Sapphire gemstones for Shani, with expert consultation recommended.' },
+  'blue-sapphire': {
+    category: 'navaratna',
+    label: 'Natural Blue Sapphire Stone (Neelam Stone)',
+    seoTitle: 'Buy Neelam Stone | Natural Blue Sapphire | PureVedicGems',
+    desc: 'Neelam stone price for natural blue sapphire stone: royal blue sapphire, light blue sapphire, cornflower blue sapphire, blue star sapphire.',
+  },
   hessonite: { category: 'navaratna', label: 'Hessonite (Gomed)', desc: 'Natural Hessonite gemstones for Rahu, with lab and origin disclosure where available.' },
   'cats-eye': { category: 'navaratna', label: "Cat's Eye (Lehsunia)", desc: 'Natural Cat Eye gemstones for Ketu, selected with careful Jyotish guidance.' },
   'white-sapphire': { category: 'navaratna', label: 'White Sapphire (Safed Pukhraj)', desc: 'Certified White Sapphire gemstones, the traditional Vedic substitute for Diamond aligned with Shukra (Venus).' },
