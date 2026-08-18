@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { getBlogCategoryProducts, getBlogGemRailData } from '@/lib/blog/blog-rail-data';
-import { BlogShopPopup } from './BlogShopPopup';
 
 export async function BlogChooseGemRail({ categorySlug }: { categorySlug?: string }) {
   const { copy, gems } = await getBlogGemRailData(categorySlug);
@@ -75,8 +74,6 @@ export async function BlogChooseGemRail({ categorySlug }: { categorySlug?: strin
           </section>
         ) : null}
       </aside>
-
-      <BlogShopPopup kind={copy.kind} title={copy.title} href={copy.href} gems={gems} />
     </>
   );
 }

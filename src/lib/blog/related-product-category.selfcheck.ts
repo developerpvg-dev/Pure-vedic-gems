@@ -5,6 +5,7 @@ const cases: Array<[Parameters<typeof inferRelatedProductCategory>[0], string]> 
   [{ slug: 'how-to-buy-certified-white-sapphire-gemstone-online-safed-pukhraj-guide' }, '/gemstones/navaratna/white-sapphire'],
   [{ slug: 'august-birthstone-peridot-meaning-benefits-history-astrology-interesting-facts' }, '/gemstones/upratna/peridot'],
   [{ title: 'Natural Untreated Pukhraj Gemstone Buying Guide' }, '/gemstones/navaratna/yellow-sapphire'],
+  [{ slug: 'untreated-emerald-for-astrology-panna-stone-benefits-price-buying-guide' }, '/gemstones/navaratna/emerald'],
   [{ slug: '5-mukhi-rudraksha-benefits' }, '/rudraksha'],
   [{ categorySlug: 'navratnas' }, '/gemstones/navaratna'],
 ];

@@ -10,17 +10,26 @@ import type { BlogRelatedProduct } from '@/lib/blog/blog-rail-data';
 
 // ponytail: v2 resets stale dismissals from earlier popup iterations during testing
 function enquiryDismissKey(slug: string) {
-  return `pvg-blog-enquiry-dismissed:v2:${slug}`;
+  return `pvg-blog-enquiry-dismissed:v3:${slug}`;
 }
 
 function productsDismissKey(slug: string) {
-  return `pvg-blog-products-popup-dismissed:v2:${slug}`;
+  return `pvg-blog-products-popup-dismissed:v3:${slug}`;
 }
 
-const MOBILE_MAX = 1023;
+const PRODUCTS_DELAY_MS = 30_000;
+const COMPACT_MAX = 1023;
+const OPEN_GRACE_MS = 800;
+const ENQUIRY_SCROLL_RATIO = 0.3;
 
 function isCompactScreen() {
-  return typeof window !== 'undefined' && window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
+  return typeof window !== 'undefined' && window.matchMedia(`(max-width: ${COMPACT_MAX}px)`).matches;
+}
+
+function pageScrollRatio() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  if (max <= 0) return 1;
+  return window.scrollY / max;
 }
 
 type Stage = 'none' | 'enquiry' | 'products';
@@ -42,6 +51,7 @@ export function BlogLeadPopup({
   const [stage, setStage] = useState<Stage>('none');
   const [mounted, setMounted] = useState(false);
   const formDirtyRef = useRef(false);
+  const enquiryOpenedAtRef = useRef(0);
   const productsTimerRef = useRef<number | null>(null);
   const productsRef = useRef(products);
   const relatedHrefRef = useRef(relatedHref);
@@ -57,69 +67,82 @@ export function BlogLeadPopup({
     }
   }
 
+  function canShowProducts() {
+    return Boolean(
+      isCompactScreen() &&
+        productsRef.current.length &&
+        relatedHrefRef.current &&
+        relatedLabelRef.current &&
+        !localStorage.getItem(productsDismissKey(slug)),
+    );
+  }
+
   function scheduleProductsPopup() {
-    if (!isCompactScreen()) return;
-    if (!productsRef.current.length || !relatedHrefRef.current || !relatedLabelRef.current) return;
-    if (localStorage.getItem(productsDismissKey(slug))) return;
+    if (!canShowProducts()) return;
     clearProductsTimer();
     productsTimerRef.current = window.setTimeout(() => {
-      if (!isCompactScreen()) return;
-      if (formDirtyRef.current) return;
-      if (localStorage.getItem(productsDismissKey(slug))) return;
+      if (!canShowProducts()) return;
       setStage('products');
-    }, 10_000);
+    }, PRODUCTS_DELAY_MS);
   }
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Enquiry popup: desktop + mobile, 10s after landing (unless dismissed for this slug)
   useEffect(() => {
-    if (localStorage.getItem(enquiryDismissKey(slug))) return;
-    const timer = window.setTimeout(() => setStage('enquiry'), 10_000);
-    return () => window.clearTimeout(timer);
+    if (localStorage.getItem(enquiryDismissKey(slug))) {
+      scheduleProductsPopup();
+      return () => clearProductsTimer();
+    }
+
+    function openEnquiry() {
+      enquiryOpenedAtRef.current = Date.now();
+      setStage('enquiry');
+    }
+
+    function onScroll() {
+      if (pageScrollRatio() < ENQUIRY_SCROLL_RATIO) return;
+      window.removeEventListener('scroll', onScroll);
+      openEnquiry();
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearProductsTimer();
+    };
+    // ponytail: slug is the visit; product refs update in render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  // If enquiry already dismissed, still offer products on compact screens
   useEffect(() => {
-    if (!localStorage.getItem(enquiryDismissKey(slug))) return;
-    if (localStorage.getItem(productsDismissKey(slug))) return;
-    if (!products.length) return;
-    if (!isCompactScreen()) return;
-    const timer = window.setTimeout(() => {
-      if (!isCompactScreen()) return;
-      setStage('products');
-    }, 10_000);
-    return () => window.clearTimeout(timer);
-  }, [slug, products.length]);
-
-  useEffect(() => () => clearProductsTimer(), []);
-
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOBILE_MAX}px)`);
+    const mq = window.matchMedia(`(max-width: ${COMPACT_MAX}px)`);
     function onChange() {
-      if (!mq.matches && stage === 'products') {
-        clearProductsTimer();
-        setStage('none');
-      }
+      if (mq.matches) return;
+      clearProductsTimer();
+      if (stage === 'products') setStage('none');
     }
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, [stage]);
 
-  function dismissEnquiry() {
-    if (formDirtyRef.current && stage === 'enquiry') return;
+  function closeEnquiry() {
     localStorage.setItem(enquiryDismissKey(slug), 'true');
     setStage('none');
     scheduleProductsPopup();
   }
 
+  function dismissEnquiry() {
+    if (Date.now() - enquiryOpenedAtRef.current < OPEN_GRACE_MS) return;
+    if (formDirtyRef.current && stage === 'enquiry') return;
+    closeEnquiry();
+  }
+
   function forceDismissEnquiry() {
     formDirtyRef.current = false;
-    localStorage.setItem(enquiryDismissKey(slug), 'true');
-    setStage('none');
-    scheduleProductsPopup();
+    closeEnquiry();
   }
 
   function dismissProducts() {
@@ -149,7 +172,7 @@ export function BlogLeadPopup({
       <div
         className="pvg-blog-popup-backdrop"
         role="presentation"
-        onMouseDown={() => {
+        onClick={() => {
           if (!formDirtyRef.current) dismissEnquiry();
         }}
       >
@@ -158,7 +181,7 @@ export function BlogLeadPopup({
           role="dialog"
           aria-modal="true"
           aria-labelledby="blog-popup-heading"
-          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
         >
           <button
             type="button"

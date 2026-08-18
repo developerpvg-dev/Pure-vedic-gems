@@ -4,6 +4,7 @@ import {
 } from '@/components/home/PvgManagedCategorySections';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { NAVARATNA_HOME_GRID_LIMIT } from '@/lib/constants/navaratna-home-grid';
+import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
 import { storefrontSubcategoryHref, productHref } from '@/lib/categories/storefront';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { resolveShopCategoryPath } from '@/lib/categories/shop';
@@ -151,11 +152,17 @@ export async function getBlogFallbackProducts(limit = 3) {
   return shuffleTake((data ?? []) as ProductCard[], limit).map(toBlogRelatedProduct);
 }
 
+/** Category slug for related-product lookup. Public /gemstones and /rudraksha URLs flatten to /shop/{slug}. */
+export function shopSlugFromRelatedHref(href?: string) {
+  if (!href) return undefined;
+  return (toInternalShopPath(href) ?? href).match(/^\/shop\/([^/?#]+)/)?.[1];
+}
+
 export async function getBlogRelatedProducts(href?: string): Promise<{
   products: BlogRelatedProduct[];
   usedFallback: boolean;
 }> {
-  const slug = href?.match(/^\/shop\/([^/?#]+)/)?.[1];
+  const slug = shopSlugFromRelatedHref(href);
   if (!slug) {
     return { products: await getBlogFallbackProducts(3), usedFallback: true };
   }
