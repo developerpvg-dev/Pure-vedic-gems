@@ -43,17 +43,24 @@ export function navaratnaChildMeta(name: string, vedicName: string | null) {
   return { seo_title: title, seo_description: desc };
 }
 
-export function upratnaChildMeta(name: string) {
+export function upratnaChildMeta(name: string, vedicName?: string | null) {
+  const core = name.replace(/^Natural\s+/i, '').replace(/\s+Gemstone$/i, '').trim();
+  const base = `Buy Natural ${core} Gemstone`;
+  const titled = vedicName ? `${base} | ${vedicName}` : base;
+  const seo_title = titled.length >= 30 ? titled : `${titled} | Upratna`;
+  const phrase = `${core} gemstone`.toLowerCase();
   return {
-    seo_title: withBrand(`Buy ${name} Gemstone Online in India | Natural Upratna`),
-    seo_description: `Buy ${name} gemstone online in India from ${BRAND}. Explore quality, colour, origin, treatment and available Upratna options.`,
+    seo_title,
+    seo_description: `Certified ${phrase} and original ${core.toLowerCase()} stone. ${phrase} price with origin and treatment disclosure.`,
   };
 }
 
 export function mukhiMeta(n: number) {
+  const name = `${n} Mukhi Rudraksha`;
+  const phrase = name.toLowerCase();
   return {
-    seo_title: withBrand(`Buy ${n} Mukhi Rudraksha Online in India | Certified Original Bead`),
-    seo_description: `Shop ${n} Mukhi Rudraksha online in India from ${BRAND}. Explore authenticity, quality, origin and traditional significance.`,
+    seo_title: `Buy Original ${name}`,
+    seo_description: `Certified ${phrase} and original ${phrase}. Nepal ${phrase} price with X-ray on premium beads.`,
   };
 }
 

@@ -4,6 +4,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
 import { productHref } from '@/lib/categories/storefront';
+import { SANITY_SEARCH_CACHE_TAG } from '@/lib/sanity/client';
 import { getAllBlogPosts, getAllKnowledgeArticles } from '@/lib/sanity/queries';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { applyProductIlikeSearch } from '@/lib/shop/product-search';
@@ -101,7 +102,7 @@ const getCachedSearchContent = unstable_cache(
     return { knowledgeArticles: knowledgeArticles ?? [], blogPosts: blogPosts ?? [] };
   },
   ['search-sanity-content'],
-  { revalidate: 600 },
+  { revalidate: 600, tags: [SANITY_SEARCH_CACHE_TAG] },
 );
 
 export async function GET(request: NextRequest) {

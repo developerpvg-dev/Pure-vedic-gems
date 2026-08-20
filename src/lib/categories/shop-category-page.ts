@@ -1,8 +1,9 @@
 import { unstable_cache } from 'next/cache';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
-import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import { KNOWN_CATALOG_SUBCATEGORIES, KNOWN_GEM_SUBCATEGORIES } from '@/lib/categories/shop';
-import { canonicalGroupHref, canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
+import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
+import { isRudrakshaStorefrontSlug } from '@/lib/constants/rudraksha-subcategories';
+import { canonicalGroupHref, canonicalSubcategoryHref, UPRATNA_STOREFRONT_SLUGS } from '@/lib/categories/canonical-storefront-path';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import type { ShopCategoryBrowseCard, ShopCategoryPageContent } from '@/lib/types/shop-category-page';
 import type { ShopCategoryPageRow } from '@/lib/types/database';
@@ -69,8 +70,23 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     };
   }
 
-  // ponytail: this money page is code-owned so CMS stale titles cannot zero the target keyword.
-  if (slug === 'blue-sapphire') {
+  // ponytail: money pages are code-owned so CMS stale titles cannot zero the target keyword.
+  const CODE_OWNED_SEO = new Set([
+    'blue-sapphire',
+    'emerald',
+    'ruby',
+    'yellow-sapphire',
+    'white-sapphire',
+    'cats-eye',
+    'opal',
+    'pearl',
+    'red-coral',
+    'diamond',
+    'hessonite',
+    'pitambari',
+    'exclusive-gems',
+  ]);
+  if (CODE_OWNED_SEO.has(slug) || isRudrakshaStorefrontSlug(slug) || UPRATNA_STOREFRONT_SLUGS.has(slug)) {
     return {
       ...merged,
       name: defaults.name,

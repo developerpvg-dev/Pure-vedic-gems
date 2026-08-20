@@ -217,7 +217,7 @@ export const ORGANIZATION_ADDRESSES = [
   }),
 ] as const;
 
-const DELHI_SHOWROOM_HOURS = [
+export const DELHI_SHOWROOM_HOURS = [
   {
     '@type': 'OpeningHoursSpecification' as const,
     dayOfWeek: ['Monday', 'Tuesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],

@@ -744,7 +744,7 @@ html::-webkit-scrollbar-thumb:hover {
   }
 }
 
-/* GemsMantra-inspired document theme for internal informational pages. */
+/* Document theme for internal informational pages. */
 .pvg-reference-theme {
   --pvg-primary: #1f1b16;
   --pvg-accent: #7a4f19;

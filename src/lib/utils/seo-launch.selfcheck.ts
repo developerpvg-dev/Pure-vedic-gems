@@ -47,6 +47,9 @@ for (const url of [
   if (!sameAs.includes(url)) throw new Error(`sameAs missing ${url}`);
 }
 if (!String(brandLogoUrl()).endsWith('/pvg-logo.png')) throw new Error('brand logo path');
+if (!org.merchantReturnPolicy || !String((org.merchantReturnPolicy as { url?: string }).url).includes('/policies/returns')) {
+  throw new Error('Organization must declare merchantReturnPolicy');
+}
 if (!String(defaultOgImageUrl()).endsWith('/og-default.png')) throw new Error('og image path');
 
 const web = websiteJsonLd();

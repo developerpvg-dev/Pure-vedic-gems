@@ -22,6 +22,7 @@ type MetadataInput = {
   image?: string | null;
   type?: 'website' | 'article';
   noIndex?: boolean;
+  keywords?: string[];
 };
 
 const DEFAULT_SITE_URL = 'https://www.purevedicgems.com';
@@ -38,6 +39,7 @@ const OFFICIAL_SAME_AS = [
   'https://www.facebook.com/puregems.vm',
   'https://www.instagram.com/purevedicgems',
   'https://www.youtube.com/@purevedicgems',
+  'https://twitter.com/PurevedicGems',
 ] as const;
 
 function cleanSeoText(value: string) {
@@ -63,7 +65,7 @@ export function fitTitle(value: string, maxLength = 60) {
   return truncateAtWord(title, maxLength);
 }
 
-export function fitDescription(value: string, maxLength = 155) {
+export function fitDescription(value: string, maxLength = 160) {
   return truncateAtWord(cleanSeoText(value), maxLength);
 }
 
@@ -95,7 +97,7 @@ export function defaultOgImageUrl() {
   return absoluteUrl(DEFAULT_OG_IMAGE_PATH);
 }
 
-export function buildMetadata({ title, description, path = '/', image, type = 'website', noIndex = false }: MetadataInput): Metadata {
+export function buildMetadata({ title, description, path = '/', image, type = 'website', noIndex = false, keywords }: MetadataInput): Metadata {
   const canonical = canonicalUrl(path);
   const ogImage = image ? absoluteUrl(image) : defaultOgImageUrl();
   const seoTitle = fitTitle(title);
@@ -104,6 +106,7 @@ export function buildMetadata({ title, description, path = '/', image, type = 'w
   return {
     title: { absolute: seoTitle },
     description: seoDescription,
+    ...(keywords?.length ? { keywords } : {}),
     alternates: { canonical },
     openGraph: {
       title: seoTitle,
@@ -116,6 +119,7 @@ export function buildMetadata({ title, description, path = '/', image, type = 'w
     },
     twitter: {
       card: 'summary_large_image',
+      site: '@PurevedicGems',
       title: seoTitle,
       description: seoDescription,
       images: [ogImage],
@@ -230,10 +234,18 @@ export function organizationJsonLd(): JsonLd {
         contactType: 'customer support',
         telephone: SUPPORT_PHONE,
         email: SUPPORT_EMAIL,
-        areaServed: ['IN', 'GB'],
+        areaServed: ['IN', 'GB', 'AE'],
         availableLanguage: ['en', 'hi'],
       },
     ],
+    merchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      name: 'Return Policy',
+      url: `${siteUrl}/policies/returns`,
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+      merchantReturnDays: 15,
+      returnMethod: 'https://schema.org/ReturnByMail',
+    },
   };
 }
 

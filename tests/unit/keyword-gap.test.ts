@@ -5,7 +5,7 @@ import { getSeoLandingPageBySlug } from '@/lib/constants/seo-landing-pages';
 import { KEYWORD_GAP_CANONICALS } from '@/lib/seo/keyword-gap-map';
 import { NAVARATNA_HUB_CONTENT, NAVARATNA_RICH_CONTENT } from '@/lib/categories/shop-category-content/navaratna-content';
 import { RUDRAKSHA_HUB_CONTENT } from '@/lib/categories/shop-category-content/rudraksha-content';
-import { UPRATNA_HUB_CONTENT } from '@/lib/categories/shop-category-content/upratna-content';
+import { UPRATNA_HUB_CONTENT, UPRATNA_RICH_CONTENT } from '@/lib/categories/shop-category-content/upratna-content';
 
 describe('Phase 4 keyword-gap map', () => {
   it('maps each high-intent cluster to a live canonical path', () => {
@@ -33,6 +33,51 @@ describe('Phase 4 keyword-gap map', () => {
     expect(neelam.some((faq) => /royal blue sapphire/i.test(faq.question))).toBe(true);
     expect(neelam.some((faq) => /light blue sapphire/i.test(faq.question))).toBe(true);
     expect(neelam.some((faq) => /blue star sapphire/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /blue sapphire birthstone/i.test(faq.question))).toBe(true);
+    expect(neelam.some((faq) => /blue sapphire price/i.test(faq.question))).toBe(true);
+    const panna = NAVARATNA_RICH_CONTENT.emerald?.faqs ?? [];
+    expect(panna.some((faq) => /emerald stone/i.test(faq.question))).toBe(true);
+    expect(panna.some((faq) => /emerald gemstone/i.test(faq.question))).toBe(true);
+    expect(panna.some((faq) => /natural emerald/i.test(faq.question))).toBe(true);
+    expect(panna.some((faq) => /real emerald/i.test(faq.question))).toBe(true);
+    const manik = NAVARATNA_RICH_CONTENT.ruby?.faqs ?? [];
+    expect(manik.some((faq) => /ruby gemstone/i.test(faq.question))).toBe(true);
+    expect(manik.some((faq) => /ruby stone price/i.test(faq.question))).toBe(true);
+    expect(manik.some((faq) => /natural ruby/i.test(faq.question))).toBe(true);
+    expect(pukhraj.some((faq) => /yellow sapphire stone/i.test(faq.question))).toBe(true);
+    expect(pukhraj.some((faq) => /yellow sapphire price/i.test(faq.question))).toBe(true);
+    expect(pukhraj.some((faq) => /yellow sapphires for sale/i.test(faq.question))).toBe(true);
+    const safed = NAVARATNA_RICH_CONTENT['white-sapphire']?.faqs ?? [];
+    expect(safed.some((faq) => /white sapphire gemstone/i.test(faq.question))).toBe(true);
+    expect(safed.some((faq) => /natural white sapphire/i.test(faq.question))).toBe(true);
+    expect(safed.some((faq) => /ceylon white sapphire/i.test(faq.question))).toBe(true);
+    const lehsunia = NAVARATNA_RICH_CONTENT['cats-eye']?.faqs ?? [];
+    expect(lehsunia.some((faq) => /catseye gemstone/i.test(faq.question))).toBe(true);
+    expect(lehsunia.some((faq) => /cat's eye chrysoberyl/i.test(faq.question))).toBe(true);
+    expect(lehsunia.some((faq) => /original cats eye stone/i.test(faq.question))).toBe(true);
+    expect(lehsunia.some((faq) => /cats eye gemstone price/i.test(faq.question))).toBe(true);
+    const doodhia = UPRATNA_RICH_CONTENT.opal?.faqs ?? [];
+    expect(doodhia.some((faq) => /opal gemstone/i.test(faq.question))).toBe(true);
+    expect(doodhia.some((faq) => /fire opal/i.test(faq.question))).toBe(true);
+    expect(doodhia.some((faq) => /opal price/i.test(faq.question))).toBe(true);
+    expect(doodhia.some((faq) => /opals for sale/i.test(faq.question))).toBe(true);
+    const moti = NAVARATNA_RICH_CONTENT.pearl?.faqs ?? [];
+    expect(moti.some((faq) => /pearl gemstone/i.test(faq.question))).toBe(true);
+    expect(moti.some((faq) => /moti stone price/i.test(faq.question))).toBe(true);
+    const moonga = NAVARATNA_RICH_CONTENT['red-coral']?.faqs ?? [];
+    expect(moonga.some((faq) => /red coral stone/i.test(faq.question))).toBe(true);
+    expect(moonga.some((faq) => /moonga stone price/i.test(faq.question))).toBe(true);
+    const heera = NAVARATNA_RICH_CONTENT.diamond?.faqs ?? [];
+    expect(heera.some((faq) => /diamond gemstone/i.test(faq.question))).toBe(true);
+    expect(heera.some((faq) => /natural diamond/i.test(faq.question))).toBe(true);
+    const gomed = NAVARATNA_RICH_CONTENT.hessonite?.faqs ?? [];
+    expect(gomed.some((faq) => /hessonite stone/i.test(faq.question))).toBe(true);
+    expect(gomed.some((faq) => /gomed stone price/i.test(faq.question))).toBe(true);
+    const pita = NAVARATNA_RICH_CONTENT.pitambari?.faqs ?? [];
+    expect(pita.some((faq) => /pitambari sapphire/i.test(faq.question))).toBe(true);
+    expect(pita.some((faq) => /sri lankan pitambari/i.test(faq.question))).toBe(true);
+    const exclusive = NAVARATNA_RICH_CONTENT['exclusive-gems']?.faqs ?? [];
+    expect(exclusive.some((faq) => /exclusive gems/i.test(faq.question))).toBe(true);
   });
 
   it('covers navaratna set intent on the parent hub', () => {

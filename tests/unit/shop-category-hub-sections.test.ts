@@ -72,4 +72,89 @@ describe('shop-category-hub-sections', () => {
     expect(sections.find((s) => s.id === 'benefits')?.heading).toMatch(/natural blue sapphire/i);
     expect(sections.every((s) => !s.heading || /blue sapphire stone/i.test(s.heading))).toBe(true);
   });
+
+  it('puts emerald stone in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'emerald', name: 'Emerald Stone', product_category: 'navaratna' }),
+      'Natural Emerald Stone (Panna)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.find((s) => s.id === 'about')?.heading).toMatch(/emerald stone/i);
+    expect(sections.find((s) => s.id === 'benefits')?.heading).toMatch(/emerald stone/i);
+    expect(sections.every((s) => !s.heading || /emerald stone/i.test(s.heading))).toBe(true);
+  });
+
+  it('puts ruby gemstone in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'ruby', name: 'Ruby Gemstone', product_category: 'navaratna' }),
+      'Natural Ruby Gemstone (Manik)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || /ruby gemstone/i.test(s.heading))).toBe(true);
+  });
+
+  it('puts yellow sapphire in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'yellow-sapphire', product_category: 'navaratna' }),
+      'Natural Yellow Sapphire (Pukhraj)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || /yellow sapphire/i.test(s.heading))).toBe(true);
+  });
+
+  it('puts white sapphire in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'white-sapphire', product_category: 'navaratna' }),
+      'Natural White Sapphire (Safed Pukhraj)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || /white sapphire/i.test(s.heading))).toBe(true);
+  });
+
+  it('puts catseye gemstone in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'cats-eye', product_category: 'navaratna' }),
+      'Natural Catseye Gemstone (Lehsunia)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || /catseye gemstone/i.test(s.heading))).toBe(true);
+  });
+
+  it('puts opal gemstone in H2s while keeping short tab labels', () => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug: 'opal', product_category: 'upratna' }),
+      'Natural Opal Gemstone (Doodhia Patthar)',
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || /opal gemstone/i.test(s.heading))).toBe(true);
+  });
+
+  it.each([
+    ['pearl', /pearl gemstone/i],
+    ['red-coral', /red coral stone/i],
+    ['diamond', /diamond gemstone/i],
+    ['hessonite', /hessonite stone/i],
+    ['pitambari', /pitambari sapphire/i],
+    ['exclusive-gems', /exclusive gems/i],
+  ] as const)('puts %s phrase in H2s while keeping short tab labels', (slug, phrase) => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug, product_category: 'navaratna' }),
+      slug,
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || phrase.test(s.heading))).toBe(true);
+  });
+
+  it.each([
+    ['amethyst', /amethyst gemstone/i],
+    ['zircon', /zircon gemstone/i],
+    ['lapis-lazuli', /lapis lazuli gemstone/i],
+  ] as const)('puts %s phrase in H2s while keeping short tab labels', (slug, phrase) => {
+    const sections = buildCategoryHubSections(
+      mockPage({ slug, product_category: 'upratna' }),
+      slug,
+    );
+    expect(sections.find((s) => s.id === 'about')?.title).toBe('About');
+    expect(sections.every((s) => !s.heading || phrase.test(s.heading))).toBe(true);
+  });
 });

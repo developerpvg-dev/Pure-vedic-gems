@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import crypto from 'crypto';
+import { parseBody } from 'next-sanity/webhook';
+import { SANITY_CONTENT_CACHE_TAG, SANITY_SEARCH_CACHE_TAG } from '@/lib/sanity/client';
+import { payloadSlug, sanityRevalidatePaths } from '@/lib/sanity/webhook-paths';
 
-/** Constant-time string comparison that never throws on length mismatch. */
 function timingSafeEqualStr(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
@@ -10,11 +12,16 @@ function timingSafeEqualStr(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+function bust(path: string) {
+  if (path.includes('[')) revalidatePath(path, 'page');
+  else revalidatePath(path);
+}
+
 /**
  * POST /api/webhooks/sanity
  *
- * Handles Sanity CMS webhook events to revalidate pages when content changes.
- * Verifies the webhook secret via HMAC-SHA256 signature.
+ * Sanity signs with `t=<unix>,v1=<hmac>` of `${t}.${body}` — not HMAC(body).
+ * parseBody from next-sanity verifies that and waits ~3s for the Content Lake.
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.SANITY_WEBHOOK_SECRET;
@@ -23,97 +30,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
   }
 
-  // Verify webhook signature
+  let payload: { _type?: string; slug?: unknown; _id?: string } | null = null;
+
   const signature = request.headers.get('sanity-webhook-signature');
-  const body = await request.text();
-
   if (signature) {
-    const expectedSig = crypto
-      .createHmac('sha256', secret)
-      .update(body)
-      .digest('hex');
-
-    if (!timingSafeEqualStr(signature, expectedSig)) {
+    const parsed = await parseBody<{ _type?: string; slug?: unknown; _id?: string }>(request, secret);
+    if (parsed.isValidSignature !== true || !parsed.body) {
       console.warn('[sanity-webhook] Invalid signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
+    payload = parsed.body;
   } else {
-    // Fallback: check secret as query param (Sanity GROQ-powered webhooks).
-    // Constant-time compared to avoid leaking timing information.
     const urlSecret = request.nextUrl.searchParams.get('secret') ?? '';
     if (!timingSafeEqualStr(urlSecret, secret)) {
       return NextResponse.json({ error: 'Invalid secret' }, { status: 401 });
     }
+    try {
+      payload = JSON.parse(await request.text());
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
   }
 
-  let payload: {
-    _type?: string;
-    slug?: { current?: string };
-    _id?: string;
-  };
-  try {
-    payload = JSON.parse(body);
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
+  const docType = payload?._type;
+  const slug = payload ? payloadSlug(payload) : undefined;
+  const paths = sanityRevalidatePaths(docType, slug);
+  for (const path of paths) bust(path);
+  revalidateTag(SANITY_CONTENT_CACHE_TAG, 'max');
+  revalidateTag(SANITY_SEARCH_CACHE_TAG, 'max');
 
-  const docType = payload._type;
-  const slug = payload.slug?.current;
-
-  // Revalidate relevant pages based on document type
-  const revalidated: string[] = [];
-
-  switch (docType) {
-    case 'blogPost':
-      revalidatePath('/blog');
-      revalidated.push('/blog');
-      if (slug) {
-        revalidatePath(`/blog/${slug}`);
-        revalidated.push(`/blog/${slug}`);
-      }
-      // Also revalidate category pages
-      revalidatePath('/blog/category/[category]', 'page');
-      revalidated.push('/blog/category/*');
-      break;
-
-    case 'blogCategory':
-      revalidatePath('/blog');
-      revalidated.push('/blog');
-      if (slug) {
-        revalidatePath(`/blog/category/${slug}`);
-        revalidated.push(`/blog/category/${slug}`);
-      }
-      break;
-
-    case 'knowledgeArticle':
-      revalidatePath('/knowledge');
-      revalidated.push('/knowledge');
-      if (slug) {
-        revalidatePath(`/knowledge/${slug}`);
-        revalidated.push(`/knowledge/${slug}`);
-      }
-      revalidatePath('/knowledge/gemstones');
-      revalidatePath('/knowledge/rudraksha');
-      revalidatePath('/knowledge/astrology');
-      revalidated.push('/knowledge/category-pages');
-      break;
-
-    case 'testimonial':
-      revalidatePath('/');
-      revalidated.push('/');
-      break;
-
-    default:
-      // Unknown type — revalidate homepage as fallback
-      revalidatePath('/');
-      revalidated.push('/');
-  }
-
-  console.log(`[sanity-webhook] Revalidated: ${revalidated.join(', ')} for ${docType}/${slug || payload._id}`);
+  console.log(`[sanity-webhook] Revalidated: ${paths.join(', ')} for ${docType}/${slug || payload?._id}`);
 
   return NextResponse.json({
     revalidated: true,
-    paths: revalidated,
+    paths,
     now: Date.now(),
   });
 }

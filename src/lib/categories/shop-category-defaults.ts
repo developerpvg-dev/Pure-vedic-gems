@@ -162,7 +162,7 @@ function buildGemDefaults(
   const merged = mergeRichContent(base, rich);
   const meta =
     category === 'upratna'
-      ? upratnaChildMeta(shortName)
+      ? upratnaChildMeta(shortName, vedicNameFromLabel(label))
       : navaratnaChildMeta(shortName, vedicNameFromLabel(label));
   return {
     ...merged,

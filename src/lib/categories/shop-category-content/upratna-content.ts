@@ -4,7 +4,9 @@ import {
   BRAND,
   RichGemSections,
   baseGemKeywords,
+  h2,
   h3,
+  mergeKeywords,
   p,
   table,
   ul,
@@ -67,17 +69,40 @@ type UpratnaDef = {
   faqs: CategoryFaq[];
 };
 
+function vedicShort(hindi: string | undefined, name: string) {
+  if (!hindi) return null;
+  return (
+    hindi
+      .split('/')
+      .map((part) => part.trim())
+      .find((part) => part.toLowerCase() !== name.toLowerCase()) ?? null
+  );
+}
+
 function defineUpratna(def: UpratnaDef): RichGemSections {
   const planet = def.planet;
+  const ved = vedicShort(def.hindi, def.name);
+  const phrase = `${def.name} gemstone`;
+  const stone = `${def.name} stone`;
+  const titled = ved ? `Buy Natural ${def.name} Gemstone | ${ved}` : `Buy Natural ${def.name} Gemstone`;
+  const seo_title = titled.length >= 30 ? titled : `${titled} | Upratna`;
+  const seo_description = `Certified ${phrase} and original ${stone}${ved ? ` (${ved})` : ''}. ${phrase} price with origin and treatment disclosure.`;
+
   return {
     intro: def.intro,
     hero_benefits: def.heroBenefits.map((text) => ({ text })),
-    seo_description: def.seoDescription,
+    seo_title,
+    seo_description,
     meta_keywords: baseGemKeywords(def.slug, def.name, def.hindi ?? null, planet).concat(
       def.extraKeywords ?? [],
+      [phrase.toLowerCase(), stone.toLowerCase(), `${phrase} price`.toLowerCase(), ved?.toLowerCase() ?? ''],
     ),
     about_html: [
       p(...def.about),
+      h2(`What is ${def.name} Gemstone`),
+      p(
+        `A natural ${phrase} is the upratna on this hub. Original ${stone}${ved ? ` (${ved})` : ''} is untreated unless the report says otherwise.`,
+      ),
       def.aboutTable ? h3('Quick Reference') + table(def.aboutTable) : '',
     ].join('\n'),
     how_to_wear_html: p(...def.howToWear),
@@ -85,13 +110,41 @@ function defineUpratna(def: UpratnaDef): RichGemSections {
     benefits_html: [p(...def.benefits)].join('\n'),
     types_html: p(...def.types),
     quality_price_html: [
+      h2(`${def.name} Gemstone Price`),
       p(...def.qualityPrice),
+      p(`${phrase} price follows colour, size, and treatment. Compare original ${stone} by the report, not a pretty photo.`),
       def.qualityTable ? h3('Quality Factors') + table(def.qualityTable) : '',
     ].join('\n'),
     jewellery_html: p(...def.jewellery),
     cleaning_care_html: p(...def.care),
-    buyer_beware_html: p(...def.beware),
-    faqs: def.faqs,
+    buyer_beware_html: [
+      h2(`Original ${def.name} Gemstone vs Fake`),
+      p(...def.beware),
+      p(`Glass and dye are sold as original ${phrase}. If ${phrase} price is souvenir-cheap, assume a fake.`),
+    ].join('\n'),
+    faqs: [
+      {
+        question: `What is ${phrase}?`,
+        answer: `${phrase} is a natural upratna${ved ? ` (${ved})` : ''}. Original ${stone} is listed with origin and treatment.`,
+      },
+      {
+        question: `What is ${phrase} price in India?`,
+        answer: `${phrase} price follows size, colour, and treatment. Rare fine ${stone} lots sit above commercial beads.`,
+      },
+      {
+        question: `What is original ${phrase}?`,
+        answer: `Original ${phrase} is natural material, not glass. A dyed ${stone} must be disclosed.`,
+      },
+      {
+        question: `Is ${phrase} certified?`,
+        answer: `Certified ${phrase} at ${BRAND} is listed with origin and treatment so you can compare original ${stone}.`,
+      },
+      {
+        question: `Where to buy ${phrase} online?`,
+        answer: `Buy original ${phrase} on this collection. ${BRAND} ships certified ${stone} in India and abroad.`,
+      },
+      ...def.faqs,
+    ],
   };
 }
 
@@ -899,78 +952,125 @@ const MALACHITE = defineUpratna({
   ],
 });
 
-const OPAL = defineUpratna({
-  slug: 'opal',
-  name: 'Opal',
-  hindi: 'Opal / Doodhiya Patthar',
-  planet: 'Venus (Shukra)',
-  substitute: 'Diamond (Heera)',
+const OPAL: RichGemSections = {
   intro:
-    'Opal captivates with play-of-colour and is widely prescribed as a Shukra upratna when Diamond is impractical — offering Venusian grace with an ethereal glow.',
-  heroBenefits: ['Play-of-colour fire', 'Recognised Shukra upratna', 'Unique gemstone character', 'Strong demand in pendants'],
-  seoDescription: `Shop natural Opal at ${BRAND}. A Venus upratna substitute for Diamond with lab certification, treatment disclosure, and expert Jyotish guidance.`,
-  about: [
-    'Opal is hydrated amorphous silica — SiO₂·nH₂O — with a Mohs hardness of 5.5–6.5. Precious opal shows play-of-colour from silica sphere diffraction.',
-    'Australian, Ethiopian, and Mexican opals dominate markets. Jyotish frequently lists Opal as a Shukra upratna for luxury, marriage, and arts when Heera is not worn. ' + ASTRO_DISCLAIMER,
-    'Black opal, white opal, boulder opal, and fire opal serve different aesthetics — astrologers may prefer white or crystal types for Venus.',
+    'Natural Opal Gemstone (Doodhia Patthar) is a Shukra upratna. An opal stone needs a chart reading. PureVedicGems lists opals for sale with origin and treatment on the report.',
+  hero_benefits: [
+    { text: 'Play-of-colour fire' },
+    { text: 'Venus upratna' },
+    { text: 'Fire opal options' },
+    { text: 'Honest opal price' },
   ],
-  aboutTable: [
-    ['Mineral family', 'Hydrated silica (amorphous)'],
-    ['Key phenomenon', 'Play-of-colour (precious opal)'],
-    ['Mohs hardness', '5.5–6.5'],
-    ['Vedic association', 'Venus (Shukra) — upratna for Heera'],
-  ],
-  howToWear: [
-    'Wear on Friday during Shukra Hora on the middle or ring finger in silver, platinum, or white gold. Chant Shukra mantra 108 times after milk purification.',
-    'Choose solid opal with stable play-of-colour — avoid hydrophane opal that absorbs water unless disclosed and approved.',
-    'Do not wear with primary Diamond without astrological clearance.',
-  ],
-  whoShouldWear: [
-    'Explored when Venus signifies relationships, vehicles, comforts, and arts needing support. Taurus/Libra natives may discuss during Shukra dasha.',
-    'Some traditions caution opal for certain charts — myths about "bad luck" are culturally variable; Jyotish chart fit matters more than superstition.',
-    ASTRO_DISCLAIMER,
-  ],
-  benefits: [
-    'Linked with charm, relational harmony, creative inspiration, and appreciation of beauty under Shukra.',
-    'Play-of-colour offers unique jewellery appeal beyond remedial use.',
-    'White and crystal opal provide affordable entry versus Diamond.',
-  ],
-  types: [
-    'Australian black opal from Lightning Ridge is top tier. Ethiopian welo opal can be hydrophane. Mexican fire opal is transparent orange without play-of-colour.',
-    'Doublets and triplets use opal layers on backing — disclose for Jyotish; solid opal preferred.',
-    'Synthetic opal shows "snakeskin" pattern under magnification.',
-  ],
-  qualityPrice: [
-    'Play-of-colour coverage, brightness, and body tone drive price. Top black opals rival fine diamonds per carat.',
-    'Ethiopian material offers value but check stability and treatment.',
-  ],
-  qualityTable: [
-    ['Play-of-colour', 'Broad flashes across face preferred'],
-    ['Body tone', 'Black or white base per variety standards'],
-    ['Solid vs composite', 'Solid opal for Jyotish'],
-    ['Stability', 'Avoid crazing-prone or untreated hydrophane if water exposure expected'],
-  ],
-  jewellery: [
-    'Opal suits pendants and protected bezel rings. Earrings showcase play-of-colour without heavy knocks.',
-    'White gold and platinum echo Shukra\'s bright aesthetic.',
-  ],
-  care: [
-    'Opal contains water — avoid ultrasonic, steam, and prolonged dryness. Some wearers store with damp cotton.',
-    'Remove before sports and chemicals. Doublets must not soak.',
-  ],
-  beware: [
-    'Synthetic and assembled opal are widespread. "Opal" labels on resin or glass are common online.',
-    'Hydrophane opal changes transparency in water — disclose and understand care.',
-  ],
+  seo_title: 'Buy Natural Opal Gemstone | Venus',
+  seo_description:
+    'Opal stone and opal gemstone for Shukra. Fire opal and opals for sale with opal price, origin, and treatment disclosure.',
+  meta_keywords: mergeKeywords(
+    baseGemKeywords('opal', 'Natural Opal Gemstone', 'Doodhia Patthar', 'Venus (Shukra)'),
+    ['opal gemstone', 'opal stone', 'fire opal', 'opal price', 'opals for sale'],
+  ),
+  about_html: [
+    p(
+      'An opal gemstone is hydrated silica with play-of-colour. In Hindi it is Doodhia Patthar. Vedic astrology treats this opal stone as a Venus upratna when diamond is not worn.',
+      'Australia, Ethiopia, and Mexico supply most opals for sale we grade. Fire opal from Mexico is transparent orange; precious opal shows rainbow fire.',
+      ASTRO_DISCLAIMER,
+    ),
+    h3('Vedic Significance'),
+    p('Venus rules Taurus and Libra. An opal gemstone is often named when Shukra needs a softer substitute. First get a Jyotish reading.'),
+    h2('What is an Opal Gemstone'),
+    p(
+      'An opal gemstone holds water. Mohs 5.5–6.5. An opal stone with broad fire is preferred over dull body tone.',
+      'Myths about luck vary. Chart fit matters more than folklore.',
+    ),
+    h2('What customers say about opal'),
+    p(
+      'People write about creative work and calmer Venus themes — after the chart check.',
+      'Read our <a href="/testimonials">customer testimonials</a> or <a href="/consultation">book a consultation</a> before you pick an opal stone.',
+    ),
+  ].join('\n'),
+  how_to_wear_html: [
+    p('Wear an opal gemstone only after the chart check. The table is the PureVedicGems Jyotish pattern.'),
+    table([
+      ['Weight', 'Generally 5–10 ratti. Confirm with Jyotish.'],
+      ['Colour', 'White or crystal opal stone with lively fire. Black opal if budget allows.'],
+      ['Metal', 'Silver, white gold, or platinum.'],
+      ['Finger', 'Middle or ring finger of the right hand.'],
+      ['Day', 'Friday morning'],
+      ['Time', 'Morning during Shukra hora'],
+      ['Mantra', 'Chant “Om Dram Drim Droum Sah Shukraya Namah” 108 times'],
+      ['Purification', 'Milk purification; avoid long soaks on hydrophane lots'],
+    ]),
+    p('Choose solid opal. Doublets among opals for sale are jewellery, not the first Jyotish pick.'),
+  ].join('\n'),
+  who_should_wear_html: [
+    p('An opal gemstone suits Taurus and Libra charts when Venus should be strengthened and diamond is impractical. Artists often wear this opal stone after a reading.'),
+    h3('When an Opal Gemstone May Help'),
+    ul(['Shukra dasha after an astrologer confirms opal', 'Need for a softer Venus gem', 'Fire opal only if the astrologer names that colour']),
+    h3('When Not to Wear'),
+    p('Some traditions caution an opal stone. Superstition is not a chart. If Shukra is already strong, skip opals for sale as a remedy.'),
+    p(ASTRO_DISCLAIMER),
+  ].join('\n'),
+  benefits_html: [
+    p('People wear an opal gemstone for Shukra’s themes: love, arts, and charm. These are traditional uses, not medical claims.'),
+    h3('Creativity'),
+    p('An opal stone is worn for artistic work. Effort still does the work.'),
+    h3('Relationships'),
+    p('An opal gemstone is a Venus support, not a marriage contract.'),
+    h3('Cost vs diamond'),
+    p('Opal price is usually below Heera. That does not make every fire opal a diamond substitute.'),
+  ].join('\n'),
+  types_html: [
+    p('Not every opal gemstone is equal. Body tone and fire change opal price.'),
+    h2('Opal Gemstone and Fire Opal'),
+    ul([
+      'Australian white and black opal stone — stable fire, usual Jyotish pick',
+      'Ethiopian welo — can be hydrophane; disclose before you wear the opal gemstone',
+      'Mexican fire opal — orange body, often without play-of-colour',
+    ]),
+    h2('Opals for Sale — Solid vs Doublet'),
+    p('Opals for sale include doublets and triplets. Conservative Jyotish prefers a solid opal stone. Synthetic snakeskin patterns are not natural fire.'),
+  ].join('\n'),
+  quality_price_html: [
+    p('Opal price follows fire coverage, brightness, and body tone. A fine opal gemstone can still sit well below diamond.'),
+    h2('Opal Price'),
+    p(
+      'On our quality scale, weak opal stone lots can start near INR 50–200 per carat. Mid Australian fire often sits near INR 200–800. Fine opal gemstone lots run about INR 800–2,000. Rare high-fire Australian material can reach about INR 2,000–10,000 per carat.',
+      'India opal price overall spans about INR 50–10,000 per carat on that scale. Top black opal can exceed it.',
+    ),
+    h3('Quality factors'),
+    table([
+      ['Play-of-colour', 'Broad flashes on the opal gemstone face'],
+      ['Solid vs composite', 'Solid opal stone for Jyotish'],
+      ['Fire opal', 'Name Mexican fire opal if that is the variety'],
+    ]),
+  ].join('\n'),
+  jewellery_html: [
+    p('An opal gemstone likes a protective bezel. Pendants show fire without knocks. White metal matches Shukra.'),
+    p('Remove the opal stone before sport. Opals for sale as rings need a high bezel.'),
+  ].join('\n'),
+  cleaning_care_html: [
+    p('An opal gemstone holds water. Skip ultrasonic and steam. Brief rinse is usually fine on stable Australian opal stone. Hydrophane fire opal must not soak.'),
+    p('Store so harder gems cannot scratch the opal gemstone.'),
+  ].join('\n'),
+  buyer_beware_html: [
+    p('Resin and Gilson synthetic are sold as an opal gemstone. If opal price is souvenir-cheap, assume plastic.'),
+    h2('Opals for Sale — What to Skip'),
+    p('Opals for sale as “opal” on glass are common. A real opal stone shows irregular fire, not a snakeskin grid.'),
+    h3('Red Flags'),
+    ul(['No solid vs doublet line', 'Fire opal labelled as black opal', 'Opal gemstone that clouds in water with no hydrophane warning']),
+  ].join('\n'),
   faqs: [
-    { question: 'Is Opal unlucky in India?', answer: 'Regional superstitions vary. Jyotish evaluates Venus placement — many Indians wear opal successfully as a Shukra upratna when chart-approved.' },
-    { question: 'Opal vs Diamond for Shukra?', answer: 'Diamond (or White Sapphire) is primary. Opal is a recognized upratna — softer and less costly. Astrologer decides based on chart strength.' },
-    { question: 'Which Opal type for Jyotish?', answer: 'Solid white or crystal opal with lively fire is commonly suggested. Black opal is fine if budget allows — confirm with your astrologer.' },
-    { question: 'Can Opal get wet?', answer: 'Brief contact is usually OK for stable Australian solid opal. Hydrophane Ethiopian opal absorbs water — avoid soaking. Follow seller care notes.' },
-    { question: 'Are opal doublets OK?', answer: 'Conservative Jyotish prefers solid opal. Doublets are jewellery-grade composites — seek astrological approval before remedial use.' },
-    { question: 'Friday wear rules?', answer: 'Friday morning Shukra Hora, white clothes optional, Shukra mantra, and metal per chart — typically silver or white metals.' },
+    { question: 'What is an opal gemstone?', answer: 'An opal gemstone is hydrated silica with play-of-colour. It is a Venus upratna when the chart allows.' },
+    { question: 'What is an opal stone in Jyotish?', answer: 'An opal stone is Doodhia Patthar for Shukra. Diamond or white sapphire is still primary when prescribed.' },
+    { question: 'What is fire opal?', answer: 'Fire opal is usually Mexican orange opal. It may lack rainbow fire. Confirm the variety before you wear it as an opal gemstone.' },
+    { question: 'What is opal price in India?', answer: 'Opal price on our scale runs about INR 50–10,000 per carat. Fine Australian opal stone lots sit higher when fire is strong.' },
+    { question: 'Are opals for sale here solid?', answer: 'We disclose solid vs doublet. Conservative Jyotish prefers a solid opal gemstone among opals for sale.' },
+    { question: 'Is opal unlucky?', answer: 'Folklore varies. Jyotish reads Venus. Many people wear an opal stone when the chart fits.' },
+    { question: 'Can an opal gemstone get wet?', answer: 'Stable Australian opal stone usually tolerates a brief rinse. Hydrophane and doublets should not soak.' },
+    { question: 'Which opal gemstone for Jyotish?', answer: 'Solid white or crystal opal with lively fire. Black opal if budget allows. Fire opal only if named.' },
+    { question: 'Friday rules for an opal stone?', answer: 'Friday morning Shukra hora, white metal, Shukra mantra. Confirm finger with the astrologer.' },
+    { question: 'Opal vs diamond?', answer: 'Diamond is primary. An opal gemstone is a recognised upratna — softer, usually a lower opal price.' },
   ],
-});
+};
 
 const TANZANITE = defineUpratna({
   slug: 'tanzanite',

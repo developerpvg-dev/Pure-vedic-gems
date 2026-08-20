@@ -6,13 +6,16 @@ const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
 
 export const isSanityConfigured = Boolean(projectId && dataset);
+export const SANITY_CONTENT_CACHE_TAG = 'sanity-content';
+export const SANITY_SEARCH_CACHE_TAG = 'search-sanity-content';
 
 export const sanityClient = isSanityConfigured
   ? createClient({
       projectId,
       dataset,
       apiVersion: '2024-01-01',
-      useCdn: true,
+      // ponytail: CDN can serve a stale GROQ hit for ~60s after publish; webhook ISR needs the API
+      useCdn: false,
     })
   : null;
 
@@ -31,7 +34,9 @@ const builder = sanityClient ? createImageUrlBuilder(sanityClient) : null;
 
 export async function sanityFetch<T>(query: string, params?: Record<string, unknown>, fallback: T = null as T) {
   if (!sanityClient) return fallback;
-  return sanityClient.fetch<T>(query, params ?? {});
+  return sanityClient.fetch<T>(query, params ?? {}, {
+    next: { tags: [SANITY_CONTENT_CACHE_TAG] },
+  });
 }
 
 export function urlFor(source: SanityImageSource) {

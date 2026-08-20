@@ -1,3 +1,5 @@
+import { UPRATNA_STOREFRONT_SLUGS } from '@/lib/categories/canonical-storefront-path';
+import { isRudrakshaMukhiSlug } from '@/lib/constants/rudraksha-subcategories';
 import type { ShopCategoryPageContent, ShopCategorySectionKey } from '@/lib/types/shop-category-page';
 
 export type CategoryHubProfile = 'gem' | 'rudraksha' | 'idol' | 'jewelry' | 'mala';
@@ -93,16 +95,144 @@ const BLUE_SAPPHIRE_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = 
   'who-should-wear': 'Who Should Wear a Natural Blue Sapphire Stone',
   benefits: 'Benefits of Original Natural Blue Sapphire Stone',
   types: 'Types of Cornflower Blue Sapphire Stone',
-  'quality-price': 'Pricing Insights Of Natural Blue Sapphire Stone',
+  'quality-price': 'Blue Sapphire Price for Natural Blue Sapphire Stone',
   jewellery: 'Types of Natural Blue Sapphire Stone Jewellery',
   'cleaning-care': 'Cleaning and Care for Natural Blue Sapphire Stone',
   'buyer-beware': 'Buyer Beware Guidelines for Original Natural Blue Sapphire Stone',
   faqs: 'Frequently Asked Questions about Natural Blue Sapphire Stone',
 };
 
+const EMERALD_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Natural Emerald Stone',
+  'how-to-wear': 'How To Wear Natural Emerald Stone',
+  'who-should-wear': 'Who Should Wear a Natural Emerald Stone',
+  benefits: 'Benefits of Natural Emerald Stone',
+  types: 'Types of Natural Emerald Stone',
+  'quality-price': 'Emerald Stone Price and Quality',
+  jewellery: 'Natural Emerald Stone Jewellery',
+  'cleaning-care': 'Cleaning and Care for Natural Emerald Stone',
+  'buyer-beware': 'Buyer Beware for Real Emerald Stone',
+  faqs: 'Frequently Asked Questions about Emerald Stone',
+};
+
+const RUBY_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Natural Ruby Gemstone',
+  'how-to-wear': 'How To Wear a Natural Ruby Gemstone',
+  'who-should-wear': 'Who Should Wear a Natural Ruby Gemstone',
+  benefits: 'Benefits of Natural Ruby Gemstone',
+  types: 'Types of Natural Ruby Gemstone',
+  'quality-price': 'Ruby Gemstone Price and Quality',
+  jewellery: 'Natural Ruby Gemstone Jewellery',
+  'cleaning-care': 'Cleaning and Care for Natural Ruby Gemstone',
+  'buyer-beware': 'Buyer Beware for Natural Ruby Gemstone',
+  faqs: 'Frequently Asked Questions about Ruby Gemstone',
+};
+
+const YELLOW_SAPPHIRE_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Natural Yellow Sapphire',
+  'how-to-wear': 'How To Wear Natural Yellow Sapphire',
+  'who-should-wear': 'Who Should Wear Natural Yellow Sapphire',
+  benefits: 'Benefits of Natural Yellow Sapphire',
+  types: 'Types of Yellow Sapphire Stone',
+  'quality-price': 'Yellow Sapphire Price and Quality',
+  jewellery: 'Natural Yellow Sapphire Jewellery',
+  'cleaning-care': 'Cleaning and Care for Natural Yellow Sapphire',
+  'buyer-beware': 'Buyer Beware for Yellow Sapphires for Sale',
+  faqs: 'Frequently Asked Questions about Yellow Sapphire',
+};
+
+const WHITE_SAPPHIRE_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Natural White Sapphire',
+  'how-to-wear': 'How To Wear Natural White Sapphire',
+  'who-should-wear': 'Who Should Wear Natural White Sapphire',
+  benefits: 'Benefits of Natural White Sapphire',
+  types: 'Types of White Sapphire Stone',
+  'quality-price': 'Natural White Sapphire Quality',
+  jewellery: 'White Sapphire Gemstone Jewellery',
+  'cleaning-care': 'Cleaning and Care for White Sapphire',
+  'buyer-beware': 'Buyer Beware for Ceylon White Sapphire',
+  faqs: 'Frequently Asked Questions about White Sapphire',
+};
+
+const CATSEYE_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Natural Catseye Gemstone',
+  'how-to-wear': 'How To Wear a Catseye Gemstone',
+  'who-should-wear': 'Who Should Wear a Catseye Gemstone',
+  benefits: 'Benefits of Catseye Gemstone',
+  types: 'Types of Catseye Gemstone',
+  'quality-price': 'Catseye Gemstone Price and Quality',
+  jewellery: 'Catseye Gemstone Jewellery',
+  'cleaning-care': 'Cleaning and Care for Catseye Gemstone',
+  'buyer-beware': 'Buyer Beware for Original Catseye Gemstone',
+  faqs: 'Frequently Asked Questions about Catseye Gemstone',
+};
+
+const OPAL_HEADINGS: Partial<Record<ShopCategorySectionKey, string>> = {
+  about: 'About Natural Opal Gemstone',
+  'how-to-wear': 'How To Wear an Opal Gemstone',
+  'who-should-wear': 'Who Should Wear an Opal Gemstone',
+  benefits: 'Benefits of Opal Gemstone',
+  types: 'Types of Opal Gemstone and Fire Opal',
+  'quality-price': 'Opal Gemstone Price and Quality',
+  jewellery: 'Opal Gemstone Jewellery',
+  'cleaning-care': 'Cleaning and Care for Opal Gemstone',
+  'buyer-beware': 'Buyer Beware for Opal Gemstone Lots',
+  faqs: 'Frequently Asked Questions about Opal Gemstone',
+};
+
+function phraseHeadings(phrase: string): Partial<Record<ShopCategorySectionKey, string>> {
+  return {
+    about: `About ${phrase}`,
+    'how-to-wear': `How To Wear ${phrase}`,
+    'who-should-wear': `Who Should Wear ${phrase}`,
+    benefits: `Benefits of ${phrase}`,
+    types: `Types of ${phrase}`,
+    'quality-price': `${phrase} Price and Quality`,
+    jewellery: `${phrase} Jewellery`,
+    'cleaning-care': `Cleaning and Care for ${phrase}`,
+    'buyer-beware': `Buyer Beware for ${phrase}`,
+    faqs: `Frequently Asked Questions about ${phrase}`,
+  };
+}
+
+const PEARL_HEADINGS = phraseHeadings('Natural Pearl Gemstone');
+const RED_CORAL_HEADINGS = phraseHeadings('Natural Red Coral Stone');
+const DIAMOND_HEADINGS = phraseHeadings('Natural Diamond Gemstone');
+const HESSONITE_HEADINGS = phraseHeadings('Natural Hessonite Stone');
+const PITAMBARI_HEADINGS = phraseHeadings('Natural Pitambari Sapphire');
+const EXCLUSIVE_GEMS_HEADINGS = phraseHeadings('Exclusive Gems');
+
 export function categoryHubSeoHeadings(slug: string) {
-  if (slug === 'blue-sapphire') return BLUE_SAPPHIRE_HEADINGS;
-  return null;
+  const map: Record<string, Partial<Record<ShopCategorySectionKey, string>>> = {
+    'blue-sapphire': BLUE_SAPPHIRE_HEADINGS,
+    emerald: EMERALD_HEADINGS,
+    ruby: RUBY_HEADINGS,
+    'yellow-sapphire': YELLOW_SAPPHIRE_HEADINGS,
+    'white-sapphire': WHITE_SAPPHIRE_HEADINGS,
+    'cats-eye': CATSEYE_HEADINGS,
+    opal: OPAL_HEADINGS,
+    pearl: PEARL_HEADINGS,
+    'red-coral': RED_CORAL_HEADINGS,
+    diamond: DIAMOND_HEADINGS,
+    hessonite: HESSONITE_HEADINGS,
+    pitambari: PITAMBARI_HEADINGS,
+    'exclusive-gems': EXCLUSIVE_GEMS_HEADINGS,
+  };
+  const special: Record<string, string> = {
+    'gauri-shankar': 'Gauri Shankar Rudraksha',
+    'ganesh-rudraksha': 'Ganesh Rudraksha',
+    'nir-mukhi': 'Nir Mukhi Rudraksha',
+    'garbh-gauri': 'Garbh Gauri Rudraksha',
+    'sawar-rudraksha': 'Sawar Rudraksha',
+  };
+  if (isRudrakshaMukhiSlug(slug)) {
+    return phraseHeadings(`${slug.split('-')[0]} Mukhi Rudraksha`);
+  }
+  if (special[slug]) return phraseHeadings(special[slug]);
+  if (UPRATNA_STOREFRONT_SLUGS.has(slug)) {
+    return map[slug] ?? phraseHeadings(`Natural ${slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} Gemstone`);
+  }
+  return map[slug] ?? null;
 }
 
 export function buildCategoryHubSections(page: ShopCategoryPageContent, displayLabel: string) {

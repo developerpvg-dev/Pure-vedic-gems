@@ -17,15 +17,17 @@ import { HomeVideosSection } from '@/components/home/HomeVideosSection';
 import { WhyChooseUsSection } from '@/components/shared/WhyChooseUsSection';
 import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
 import type { Metadata } from 'next';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { HOME_PAGE_DESCRIPTION, HOME_PAGE_KEYWORDS, HOME_PAGE_TITLE, homePageJsonLd } from '@/lib/seo/home-page';
 import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
 export const metadata: Metadata = buildMetadata({
-  title: 'Buy Certified Vedic Gemstones Online | Since 1937',
-  description:
-    'Shop certified natural Vedic gemstones and Rudraksha online in India. Lab-disclosed stones, Jyotish guidance, and custom jewellery from a heritage house since 1937.',
+  title: HOME_PAGE_TITLE,
+  description: HOME_PAGE_DESCRIPTION,
   path: '/',
+  keywords: HOME_PAGE_KEYWORDS,
 });
 
 async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
@@ -57,6 +59,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={homePageJsonLd()} />
       <HeroPreloadLinks slides={heroSlides} />
       <div className="pvg-react-home-root">
         <PvgHeroSection slides={heroSlides} />

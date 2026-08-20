@@ -1,6 +1,6 @@
 import type { CategoryFaq, HeroBenefit } from '@/lib/types/shop-category-page';
 import { mukhiMeta } from '@/lib/seo/storefront-meta';
-import { BRAND, h3, mergeKeywords, p, ul, type RichGemSections } from './helpers';
+import { BRAND, h2, h3, mergeKeywords, p, ul, type RichGemSections } from './helpers';
 
 type MukhiMeta = {
   deity: string;
@@ -689,119 +689,202 @@ function baseRudrakshaFaqs(label: string, mukhi?: number): CategoryFaq[] {
 function buildMukhiContent(slug: string, label: string, mukhi: number): RichGemSections {
   const meta = MUKHI_META[mukhi];
   const shortLabel = `${mukhi} Mukhi Rudraksha`;
+  const seo = mukhiMeta(mukhi);
 
   return {
-    intro: `${label} is sacred to ${meta.deity}${meta.planet ? ` and traditionally linked to ${meta.planet}` : ''}. At ${BRAND}, we source natural, certified ${shortLabel} with transparent origin and mukhi verification — continuing our heritage in Vedic spiritual goods since 1937.`,
+    intro: `Original ${shortLabel} for ${meta.deity}${meta.planet ? `, linked to ${meta.planet}` : ''}. ${BRAND} lists certified ${shortLabel} with origin and mukhi count on the report.`,
     hero_benefits: toHeroBenefits(meta.heroBenefits),
-    ...mukhiMeta(mukhi),
+    seo_title: seo.seo_title,
+    seo_description: seo.seo_description,
     meta_keywords: rudrakshaKeywords(slug, label, [
-      `${mukhi} mukhi`,
+      `${mukhi} mukhi rudraksha`,
+      `original ${mukhi} mukhi rudraksha`,
+      `${mukhi} mukhi rudraksha price`,
+      'certified rudraksha',
+      'nepal rudraksha',
       meta.deity.toLowerCase(),
       meta.planet?.toLowerCase() ?? '',
-      meta.mantra?.toLowerCase() ?? '',
     ]),
-    about_html: p(
-      `${shortLabel} bears ${mukhi} natural facets (mukhis) on its surface, each representing a divine aspect. In Shiva Purana and Rudraksha Jabala Upanishad traditions, this bead is sacred to ${meta.deity}.`,
-      meta.rarityNote ?? `${shortLabel} is valued by devotees for daily Shiva remembrance and targeted spiritual goals. ${BRAND} lists each bead with clear mukhi count, size in mm, and origin.`,
-      `Our team combines four generations of gemstone and Rudraksha expertise with modern authentication — so you receive a bead worthy of your sadhana.`,
-    ),
+    about_html: [
+      p(
+        `${shortLabel} has ${mukhi} natural mukhi lines. In Shiva Purana and Rudraksha Jabala Upanishad lists, this original ${shortLabel} is sacred to ${meta.deity}.`,
+        meta.rarityNote ??
+          `A certified ${shortLabel} is listed with mm size, origin, and mukhi count. ${BRAND} does not sell carved lines as natural ${shortLabel}.`,
+      ),
+      h2(`What is ${shortLabel}`),
+      p(
+        `${shortLabel} is an Elaeocarpus ganitrus bead with ${mukhi} faces. Original ${shortLabel} is not plastic and not a glued extra line.`,
+        `Nepal ${shortLabel} is the grade we prefer for sadhana. Java beads are smaller and suit malas.`,
+      ),
+    ].join('\n'),
     benefits_html:
       h3('Traditional Benefits') +
       ul(meta.benefits) +
       p(
-        `These benefits unfold through consistent wear, Shiva bhakti, and ethical living — the bead supports your practice; it does not replace personal discipline or dharma.`,
+        `These uses of ${shortLabel} are traditional. Wear, mantra, and dharma still do the work. The bead is not medical care.`,
       ),
     who_should_wear_html: p(
       meta.whoShouldWear,
-      `Book a consultation with ${BRAND} if you are unsure. We align mukhi selection with your birth chart, spiritual goals, and lifestyle.`,
+      `Book a <a href="/consultation">consultation</a> if you are unsure which original ${shortLabel} fits. Chart first for rare mukhis.`,
     ),
     how_to_wear_html:
-      h3('Wearing Guidelines') +
+      h3(`How to wear ${shortLabel}`) +
       ul([
-        `Energize before first wear with jal abhishek, bilva or flowers, and ${meta.mantra ?? RUDRAKSHA_MANTRA} — ideally on ${RUDRAKSHA_DAY}.`,
-        'Wear on neck (thread or capped pendant) or wrist mala. Higher mukhis are often worn on the chest near the heart.',
-        'Women may wear during menstruation per family lineage — some traditions pause wear; others continue with devotion.',
-        'Remove during funeral visits or intimate relations if your guru advises strict orthodox observance.',
-        `${BRAND} offers energization at checkout and sends a wearing guide with every order.`,
+        `Energize original ${shortLabel} with jal abhishek, bilva or flowers, and ${meta.mantra ?? RUDRAKSHA_MANTRA} — ideally on ${RUDRAKSHA_DAY}.`,
+        `Wear ${shortLabel} on a neck thread or capped pendant so the bead can rest near the heart.`,
+        'Women may pause or continue wear during menstruation per family lineage.',
+        'Remove during funeral visits if your guru asks strict observance.',
+        `${BRAND} offers energization at checkout with every certified ${shortLabel}.`,
       ]),
     types_html:
-      h3('Forms & Origins') +
+      h3(`${shortLabel} origins`) +
       ul([
-        'Nepal (Indra Mala origin) — larger beads, deeply etched mukhi lines',
-        'Java/Indonesia — smaller, smoother beads, excellent for malas',
-        'Indian (Haridwar, Dehradun) — includes Sawar and rare formations',
+        `Nepal original ${shortLabel} — larger bead, deep mukhi lines`,
+        `Java ${shortLabel} — smaller, smoother, common in malas`,
+        'Indian lots include Sawar and rare formations',
         mukhi === 1
-          ? 'Round 1 Mukhi is exceptionally rare; crescent and Sawar forms are discussed in Indian tradition'
-          : `Gauri Shankar, Ganesh, and Sawar are distinct formations — not substitutes for ${mukhi} Mukhi unless tradition specifies`,
+          ? 'Round 1 Mukhi Rudraksha is rare; crescent and Sawar are discussed in Indian tradition'
+          : `Gauri Shankar and Ganesh forms are not substitutes for ${shortLabel} unless tradition names them`,
       ]),
-    quality_price_html: p(
-      `${mukhi} Mukhi pricing depends on size (mm), origin, mukhi clarity, symmetry, and whether the bead is collector-grade. Higher mukhis (14–21) command significant premiums — authenticity matters more than size alone.`,
-      `${BRAND} publishes fair prices with origin disclosure. Compare price per mm and mukhi verification level across our inventory.`,
-      meta.rarityNote ?? '',
-    ),
+    quality_price_html: [
+      h2(`${shortLabel} Price`),
+      p(
+        `${shortLabel} price follows mm size, origin, line clarity, and whether the bead is collector-grade. Higher mukhis (14–21) sit far above a 5 Mukhi Rudraksha of the same size.`,
+        `Compare original ${shortLabel} by X-ray on premium lots, not by a pretty photo. ${BRAND} publishes origin on the listing.`,
+      ),
+      meta.rarityNote ? p(meta.rarityNote) : '',
+    ].join('\n'),
     jewellery_html: p(
-      `${shortLabel} is set in gold, silver, or Panchdhatu caps as pendants, rings, and wrist malas. Our jewellers craft open designs that preserve bead integrity.`,
-      'For astrological wear, single-bead pendants touching the chest are preferred. Malas of uniform mukhi support japa sadhana.',
+      `${shortLabel} is capped in gold, silver, or Panchdhatu. A single original ${shortLabel} pendant is the usual Jyotish wear. Uniform ${shortLabel} malas are for japa.`,
     ),
     cleaning_care_html:
-      h3('Care Instructions') +
+      h3(`Care for ${shortLabel}`) +
       ul([
-        'Wipe daily with a soft cloth; apply sandalwood oil monthly to prevent drying',
-        'Avoid chemical soaps, perfumes, and chlorinated water on the bead',
-        'Do not use ultrasonic cleaners — natural Rudraksha is organic seed material',
-        'Store in a cotton pouch on your altar when not wearing',
-        `If thread frays, restring at ${BRAND} or with pure silk/cotton thread`,
+        `Wipe original ${shortLabel} with a soft cloth; a drop of sandalwood oil monthly`,
+        'Skip chemical soap, perfume, and chlorine on the bead',
+        'No ultrasonic — Rudraksha is seed, not gem corundum',
+        `Store certified ${shortLabel} in a cotton pouch on the altar`,
       ]),
-    buyer_beware_html: p(
-      `Beware of artificially carved mukhi lines, plastic replicas, and "1 Mukhi" claims on round beads without expert verification. Demand X-ray or lab mukhi reports for premium purchases.`,
-      `Avoid sellers who cannot explain origin or who pressure instant purchase. ${BRAND} has served discerning spiritual buyers since 1937 with full transparency.`,
-    ),
-    faqs: baseRudrakshaFaqs(label, mukhi),
+    buyer_beware_html: [
+      h2(`Original ${shortLabel} vs Fake`),
+      p(
+        `Carved lines and plastic are sold as original ${shortLabel}. If ${shortLabel} price is souvenir-cheap, assume a fake.`,
+        `Demand X-ray on premium ${shortLabel}. ${BRAND} will not list glued mukhis as certified ${shortLabel}.`,
+      ),
+    ].join('\n'),
+    faqs: [
+      {
+        question: `What is ${shortLabel}?`,
+        answer: `${shortLabel} is a natural Rudraksha bead with ${mukhi} faces, sacred to ${meta.deity}. Original ${shortLabel} shows natural lines, not carved grooves.`,
+      },
+      {
+        question: `What is ${shortLabel} price in India?`,
+        answer: `${shortLabel} price follows size, Nepal vs Java origin, and X-ray grade. Rare mukhis cost more than a common 5 Mukhi Rudraksha.`,
+      },
+      {
+        question: `What is original ${shortLabel}?`,
+        answer: `Original ${shortLabel} is an untreated Elaeocarpus seed with ${mukhi} natural mukhis. Plastic and extra-cut lines are not original ${shortLabel}.`,
+      },
+      {
+        question: `Is ${shortLabel} certified?`,
+        answer: `Certified ${shortLabel} at ${BRAND} is listed with origin and, on premium beads, X-ray so inner compartments match the face count.`,
+      },
+      {
+        question: `Where to buy ${shortLabel} online?`,
+        answer: `Buy original ${shortLabel} on this collection after a mukhi check. ${BRAND} ships certified ${shortLabel} in India and abroad.`,
+      },
+      ...baseRudrakshaFaqs(label, mukhi),
+    ],
   };
 }
+
+const SPECIAL_RUDRAKSHA_SEO: Record<string, { title: string; phrase: string }> = {
+  'gauri-shankar': { title: 'Buy Original Gauri Shankar Rudraksha', phrase: 'Gauri Shankar Rudraksha' },
+  'ganesh-rudraksha': { title: 'Buy Original Ganesh Rudraksha Bead', phrase: 'Ganesh Rudraksha' },
+  'nir-mukhi': { title: 'Buy Original Nir Mukhi Rudraksha', phrase: 'Nir Mukhi Rudraksha' },
+  'garbh-gauri': { title: 'Buy Original Garbh Gauri Rudraksha', phrase: 'Garbh Gauri Rudraksha' },
+  'sawar-rudraksha': { title: 'Buy Original Sawar Rudraksha Bead', phrase: 'Sawar Rudraksha' },
+};
 
 function buildSpecialRudrakshaContent(slug: string, label: string): RichGemSections | null {
   const meta = SPECIAL_RUDRAKSHA_META[slug];
   if (!meta) return null;
+  const seo = SPECIAL_RUDRAKSHA_SEO[slug];
+  const phrase = seo?.phrase ?? label;
+  const low = phrase.toLowerCase();
 
   return {
-    intro: `${label} is a revered Rudraksha formation sacred to ${meta.deity}. ${meta.formDescription} At ${BRAND}, we curate authentic specimens with natural structure verification — never glued or carved imitations.`,
+    intro: `Original ${phrase} — ${meta.formDescription} ${BRAND} lists certified ${phrase} with natural-formation checks, never glued fakes.`,
     hero_benefits: toHeroBenefits(meta.heroBenefits),
-    seo_description: `Shop authentic ${label} at ${BRAND}. ${meta.significance} Certified natural bead, energization services, expert guidance, and worldwide insured delivery.`,
-    meta_keywords: rudrakshaKeywords(slug, label, [slug.replace(/-/g, ' '), meta.deity.toLowerCase()]),
-    about_html: p(
-      meta.formDescription,
-      meta.significance,
-      meta.rarityNote ?? `${BRAND} inspects each ${label} for natural fusion or formation before listing.`,
+    seo_title: seo?.title ?? `Buy Original ${phrase}`,
+    seo_description: `Certified ${low} and original ${low}. ${low} price with natural-formation checks and energization.`,
+    meta_keywords: rudrakshaKeywords(slug, label, [low, `original ${low}`, `${low} price`, 'certified rudraksha']),
+    about_html: [
+      p(meta.formDescription, meta.significance, meta.rarityNote ?? `${BRAND} inspects each original ${phrase} before listing.`),
+      h2(`What is ${phrase}`),
+      p(
+        `${phrase} is a natural Rudraksha formation, not a factory glue job. Original ${phrase} keeps the seed structure intact.`,
+      ),
+    ].join('\n'),
+    benefits_html: h3(`Benefits of ${phrase}`) + ul(meta.benefits),
+    who_should_wear_html: p(
+      meta.whoShouldWear,
+      `Confirm original ${phrase} in consultation if the formation is rare.`,
     ),
-    benefits_html: h3('Traditional Benefits') + ul(meta.benefits),
-    who_should_wear_html: p(meta.whoShouldWear),
     how_to_wear_html:
-      h3('Wearing & Energization') +
+      h3(`How to wear ${phrase}`) +
       ul([
-        `Energize on Monday with jal abhishek and ${meta.mantra ?? RUDRAKSHA_MANTRA}.`,
-        'Wear as pendant near heart or on wrist mala per guru guidance.',
-        'Composite forms like Gauri Shankar are often worn by couples on shared thread or separate pendants.',
-        `${BRAND} provides formation-specific wearing notes with each order.`,
+        `Energize original ${phrase} on Monday with jal abhishek and ${meta.mantra ?? RUDRAKSHA_MANTRA}.`,
+        `Wear ${phrase} as a pendant near the heart, or as your guru names.`,
+        'Gauri Shankar pairs are often worn by couples — still verify natural fusion.',
+        `${BRAND} sends wearing notes with certified ${phrase}.`,
       ]),
     types_html: p(
-      `Authentic ${label} is identified by natural structure, not manufacture. Our listings include photos, size, origin, and expert notes on formation quality.`,
+      `Authentic ${phrase} is identified by natural structure. Photos, mm size, and origin sit on every original ${phrase} listing.`,
     ),
-    quality_price_html: p(
-      `Pricing reflects formation rarity, size, symmetry, and origin. ${label} commands premium over standard mukhi beads of similar size.`,
-      meta.rarityNote ?? `Compare listings transparently at ${BRAND} — we disclose every detail before you buy.`,
-    ),
+    quality_price_html: [
+      h2(`${phrase} Price`),
+      p(
+        `${phrase} price sits above a standard mukhi of the same mm because the formation is rarer. Compare original ${phrase} by fusion or trunk quality, not by a cheap lookalike.`,
+      ),
+      meta.rarityNote ? p(meta.rarityNote) : '',
+    ].join('\n'),
     jewellery_html: p(
-      `${label} is often capped in gold or silver as a pendant. Preserve natural structure — avoid drilling through sacred formations when alternatives exist.`,
+      `${phrase} is usually gold- or silver-capped. Do not drill through the sacred join of original ${phrase} if a cap will hold it.`,
     ),
     cleaning_care_html: p(
-      'Gentle dry wipe; occasional sandalwood oil. Avoid water during daily chemical exposure. Store on altar cloth.',
+      `Wipe original ${phrase} dry. Occasional sandalwood oil. Keep certified ${phrase} off chemical soap.`,
     ),
-    buyer_beware_html: p(
-      `Glued-together beads masquerading as Gauri Shankar and carved "Ganesh trunks" are common frauds. Purchase only from sellers offering formation guarantees.`,
-      `${BRAND} guarantees natural structure on every ${label} or full transparency on treatment status.`,
-    ),
-    faqs: baseRudrakshaFaqs(label),
+    buyer_beware_html: [
+      h2(`Original ${phrase} vs Fake`),
+      p(
+        `Glued twins and carved trunks are sold as original ${phrase}. If ${phrase} price is souvenir-cheap, walk away.`,
+        `${BRAND} will not list a glued bead as certified ${phrase}.`,
+      ),
+    ].join('\n'),
+    faqs: [
+      {
+        question: `What is ${phrase}?`,
+        answer: `${phrase} is a natural Rudraksha formation. ${meta.significance} Original ${phrase} is not glued or carved.`,
+      },
+      {
+        question: `What is ${phrase} price in India?`,
+        answer: `${phrase} price follows size, origin, and how clean the natural formation is. Fakes sit far below original ${phrase}.`,
+      },
+      {
+        question: `What is original ${phrase}?`,
+        answer: `Original ${phrase} grew as one seed structure. Glue lines and carved trunks are not original ${phrase}.`,
+      },
+      {
+        question: `Is ${phrase} certified?`,
+        answer: `Certified ${phrase} at ${BRAND} is checked for natural formation. Ask for photos of the join or trunk before you buy.`,
+      },
+      {
+        question: `Where to buy ${phrase} online?`,
+        answer: `Buy original ${phrase} on this collection. ${BRAND} ships certified ${phrase} with energization on request.`,
+      },
+      ...baseRudrakshaFaqs(label),
+    ],
   };
 }
 

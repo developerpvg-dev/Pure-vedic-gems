@@ -205,7 +205,7 @@ export const GEMS_REC_PROCESS = [
   },
 ] as const;
 
-/** Classical method keywords competitors push (we pair them with human review). */
+/** Classical house-lord method notes (paired with human chart review). */
 export const GEMS_REC_CLASSICAL = [
   {
     title: 'Life stone (Lagna / Ascendant lord)',
@@ -221,7 +221,7 @@ export const GEMS_REC_CLASSICAL = [
   },
   {
     title: 'Stones to avoid',
-    body: 'Gemstones amplify a planet. Stones of functional malefics (often 6th/8th/12th lords for your lagna) can increase trouble. Competitor calculators list avoid-stones; our astrologers also check dasha, dignity, and whether Yagya/Rudraksha is safer than wear.',
+    body: 'Gemstones amplify a planet. Stones of functional malefics (often 6th/8th/12th lords for your lagna) can increase trouble. Our astrologers also check dasha, dignity, and whether Yagya/Rudraksha is safer than wear.',
   },
 ] as const;
 
@@ -262,7 +262,7 @@ export const GEMS_REC_INTL = [
   },
 ] as const;
 
-/** Keyword blocks from date-of-birth / Pure Vedic Science / Rudraksha + competitor gaps. */
+/** Keyword blocks from date-of-birth / Pure Vedic Science / Rudraksha. */
 export const GEMS_REC_SEO_BLOCKS = [
   {
     title: 'Gemstone recommendation by date of birth',
