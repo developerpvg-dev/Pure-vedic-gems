@@ -181,13 +181,10 @@ export const CONTACT_STAGE_CHIPS: LeadPipelineStage[] = ['new', 'assigned', 'ver
 
 export const CONTACT_TELECOM_STAGE_CHIPS: LeadPipelineStage[] = ['assigned', 'verifying', 'closed'];
 
-/** Blog Ask-an-expert popup — two phases only */
-export const BLOG_STAGE_CHIPS: LeadPipelineStage[] = ['new', 'closed'];
+/** Blog Ask-an-expert — same call desk as contact (forward → call → close) */
+export const BLOG_STAGE_CHIPS: LeadPipelineStage[] = CONTACT_STAGE_CHIPS;
 
-export const BLOG_LEAD_STAGE_LABELS: Partial<Record<LeadPipelineStage, string>> = {
-  new: 'Not addressed',
-  closed: 'Addressed',
-};
+export const BLOG_TELECOM_STAGE_CHIPS: LeadPipelineStage[] = CONTACT_TELECOM_STAGE_CHIPS;
 
 /** Website “Send Us a Message” and plain Enquiry — telecaller contacts, then close */
 export function isContactEnquiryLead(source?: string | null, enquiryType?: string | null) {
@@ -204,13 +201,15 @@ export function isBlogEnquiryLead(source?: string | null, enquiryType?: string |
   return t === 'blog enquiry' || t.includes('blog enquir');
 }
 
+/** Contact + blog — assign telecaller, call desk, no chart / remedies */
+export function isCallDeskLead(source?: string | null, enquiryType?: string | null) {
+  return isContactEnquiryLead(source, enquiryType) || isBlogEnquiryLead(source, enquiryType);
+}
+
 export function leadStageLabel(
   stage: string,
-  opts?: { source?: string | null; enquiryType?: string | null },
+  _opts?: { source?: string | null; enquiryType?: string | null },
 ) {
-  if (opts && isBlogEnquiryLead(opts.source, opts.enquiryType) && (stage === 'new' || stage === 'closed')) {
-    return BLOG_LEAD_STAGE_LABELS[stage] || stage;
-  }
   return LEAD_PIPELINE_LABELS[stage as LeadPipelineStage] || stage;
 }
 
@@ -353,7 +352,11 @@ export function assertLeadConstants() {
   if (!isBlogEnquiryLead('blog_popup', 'Blog enquiry')) throw new Error('blog_popup is blog lead');
   if (!isBlogEnquiryLead('blog_sidebar', null)) throw new Error('blog_sidebar is blog lead');
   if (isContactEnquiryLead('blog_popup', 'Blog enquiry')) throw new Error('blog must not be contact lead');
-  if (leadStageLabel('new', { source: 'blog_popup' }) !== 'Not addressed') throw new Error('blog new label');
-  if (leadStageLabel('closed', { source: 'blog_popup' }) !== 'Addressed') throw new Error('blog closed label');
+  if (!isCallDeskLead('blog_popup', 'Blog enquiry')) throw new Error('blog is call desk lead');
+  if (!isCallDeskLead('contact_form', null)) throw new Error('contact is call desk lead');
+  if (isCallDeskLead('homepage_recommendation', 'Remedies Recommendation')) {
+    throw new Error('remedies must not be call desk lead');
+  }
+  if (BLOG_STAGE_CHIPS.join() !== CONTACT_STAGE_CHIPS.join()) throw new Error('blog chips match contact');
   if (!canTransitionPipeline('assigned', 'closed')) throw new Error('contact path assigned→closed');
 }

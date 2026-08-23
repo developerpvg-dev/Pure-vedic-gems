@@ -156,13 +156,13 @@ export default async function DesignDetailPage({ params }: Props) {
             { name: meta.plural, href: `/designs/${kind}` },
             { name: design.name, href: path },
           ]),
+          // ponytail: WebPage not Product — designs have no fixed offer/price; Product rich results need offers|review|aggregateRating
           {
             '@context': 'https://schema.org',
-            '@type': 'Product',
+            '@type': 'WebPage',
             name: `${design.name} ${meta.label} Design`,
             description: bodyCopy,
             image: design.image_url ? absoluteUrl(designImageSrc(design.image_url)) : undefined,
-            brand: { '@type': 'Brand', name: 'PureVedicGems' },
             url: absoluteUrl(path),
           },
         ]}

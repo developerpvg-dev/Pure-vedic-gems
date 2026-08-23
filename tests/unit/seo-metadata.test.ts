@@ -72,7 +72,7 @@ describe('SEO metadata limits', () => {
 describe('storefront SEO templates', () => {
   it('uses the Manik formula on the Ruby hub', () => {
     const page = getDefaultShopCategoryPage('ruby');
-    expect(page?.seo_title).toMatch(/Buy Natural Ruby Gemstone \| Manik/);
+    expect(page?.seo_title).toBe('Buy 100% Natural & Certified Ruby (Manik Stone) Online');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page?.seo_description).toMatch(/ruby gemstone/i);
@@ -80,7 +80,7 @@ describe('storefront SEO templates', () => {
 
   it('uses the Upratna child formula on Zircon', () => {
     const page = getDefaultShopCategoryPage('zircon');
-    expect(page?.seo_title).toBe('Buy Natural Zircon Gemstone | Jarkan');
+    expect(page?.seo_title).toBe('Buy 100% Natural & Certified Zircon (Jarkan Stone) Online');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
   });
@@ -91,7 +91,8 @@ describe('storefront SEO templates', () => {
     const phrase = `${name} gemstone`.toLowerCase();
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page.seo_title!.toLowerCase()).toContain(phrase);
+    expect(page.seo_title!.toLowerCase()).toContain(name.toLowerCase());
+    expect(page.seo_title!.toLowerCase()).toMatch(/certified|natural/);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(page.seo_description!.toLowerCase()).toContain(phrase);
@@ -108,7 +109,7 @@ describe('storefront SEO templates', () => {
 
   it('uses the mukhi formula on 1 Mukhi', () => {
     const page = getDefaultShopCategoryPage('1-mukhi');
-    expect(page?.seo_title).toBe('Buy Original 1 Mukhi Rudraksha');
+    expect(page?.seo_title).toBe('Buy 100% Natural & Certified 1 Mukhi Rudraksha Online');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(fitTitle(mukhiMeta(1).seo_title).length).toBeLessThanOrEqual(60);
@@ -162,8 +163,9 @@ describe('storefront SEO templates', () => {
 
   it('keeps yellow sapphire title in the 30–60 window without stuffing price', () => {
     const page = getDefaultShopCategoryPage('yellow-sapphire');
-    expect(page?.seo_title).toMatch(/natural yellow sapphire/i);
+    expect(page?.seo_title).toMatch(/yellow sapphire/i);
     expect(page?.seo_title).toMatch(/pukhraj/i);
+    expect(page?.seo_title).toMatch(/certified/i);
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page?.seo_title).not.toMatch(/price/i);
@@ -193,9 +195,10 @@ describe('storefront SEO templates', () => {
     const phrase = 'blue sapphire stone';
     const occurrences = body.split(phrase).length - 1;
 
-    expect(title).toMatch(/neelam stone/i);
-    expect(title).toMatch(/natural blue sapphire/i);
-    expect(title).toMatch(/blue sapphire price/i);
+    expect(title).toMatch(/neelam/i);
+    expect(title).toMatch(/blue sapphire/i);
+    expect(title).toMatch(/certified/i);
+    expect(title).not.toMatch(/price/i);
     expect(title.length).toBeGreaterThanOrEqual(30);
     expect(title.length).toBeLessThanOrEqual(60);
     expect(description).toMatch(/blue sapphire stone/i);
@@ -263,8 +266,9 @@ describe('storefront SEO templates', () => {
       .join(' ')
       .toLowerCase();
 
-    expect(title).toMatch(/emerald stone/i);
-    expect(title).toMatch(/natural emerald/i);
+    expect(title).toMatch(/emerald/i);
+    expect(title).toMatch(/panna/i);
+    expect(title).toMatch(/certified/i);
     expect(title.length).toBeGreaterThanOrEqual(30);
     expect(title.length).toBeLessThanOrEqual(60);
     expect(description).toMatch(/emerald stone/i);
@@ -294,7 +298,9 @@ describe('storefront SEO templates', () => {
   it('targets ruby gemstone in title, H1, description, and body', () => {
     const page = getDefaultShopCategoryPage('ruby')!;
     const body = hubBody(page);
-    expect(page.seo_title).toMatch(/ruby gemstone/i);
+    expect(page.seo_title).toMatch(/ruby/i);
+    expect(page.seo_title).toMatch(/manik/i);
+    expect(page.seo_title).toMatch(/certified/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/ruby gemstone/i);
@@ -374,7 +380,9 @@ describe('storefront SEO templates', () => {
   it('targets catseye gemstone in title, H1, description, and body', () => {
     const page = getDefaultShopCategoryPage('cats-eye')!;
     const body = hubBody(page);
-    expect(page.seo_title).toMatch(/catseye gemstone/i);
+    expect(page.seo_title).toMatch(/catseye/i);
+    expect(page.seo_title).toMatch(/lehsunia/i);
+    expect(page.seo_title).toMatch(/certified/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/catseye gem/i);
@@ -400,7 +408,8 @@ describe('storefront SEO templates', () => {
   it('targets opal gemstone in title, H1, description, and body', () => {
     const page = getDefaultShopCategoryPage('opal')!;
     const body = hubBody(page);
-    expect(page.seo_title).toMatch(/opal gemstone/i);
+    expect(page.seo_title).toMatch(/opal/i);
+    expect(page.seo_title).toMatch(/certified|natural/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/opal stone/i);
@@ -427,7 +436,7 @@ describe('storefront SEO templates', () => {
   it.each([
     [
       'pearl',
-      /pearl gemstone/i,
+      /pearl/i,
       ['pearl stone', 'natural pearl', 'moti stone', 'moti stone price'],
       '<h2>What is a Pearl Gemstone</h2>',
       'pearl gemstone',
@@ -435,7 +444,7 @@ describe('storefront SEO templates', () => {
     ],
     [
       'red-coral',
-      /red coral stone/i,
+      /red coral/i,
       ['red coral gemstone', 'moonga stone price', 'natural red coral'],
       '<h2>What is a Red Coral Stone</h2>',
       'red coral stone',
@@ -443,7 +452,7 @@ describe('storefront SEO templates', () => {
     ],
     [
       'diamond',
-      /diamond gemstone/i,
+      /diamond/i,
       ['diamond stone', 'natural diamond'],
       '<h2>What is a Diamond Gemstone</h2>',
       'diamond gemstone',
@@ -451,7 +460,7 @@ describe('storefront SEO templates', () => {
     ],
     [
       'hessonite',
-      /hessonite stone/i,
+      /hessonite/i,
       ['hessonite gemstone', 'gomed stone price', 'hessonite garnet'],
       '<h2>What is a Hessonite Stone</h2>',
       'hessonite stone',

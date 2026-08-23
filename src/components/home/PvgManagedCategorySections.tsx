@@ -821,9 +821,9 @@ export function NavaratnaHomeSection({
           copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
           primary={{
             label: <>Get Navaratna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
-            href: '#gem-recommendation',
+            href: '/gems-recommendations',
           }}
-          secondary={{ label: 'See Navaratna Collection', href: '/gemstones/navaratna' }}
+          secondary={{ label: 'See Navaratna Collection', href: '/gems-recommendations' }}
           image="/home/ctas/cta1.webp?v=20260810"
           imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
           imageSide="right"
@@ -915,7 +915,7 @@ export function RudrakshaHomeSection({
           copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
           primary={{
             label: <>Get Rudraksha Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
-            href: '#gem-recommendation',
+            href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Rudraksha Collection', href: '/rudraksha' }}
           image="/home/ctas/cta2.webp?v=2"
@@ -1187,7 +1187,7 @@ export function SemipreciousHomeSection({
           copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
           primary={{
             label: <>Get Uparatna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
-            href: '#gem-recommendation',
+            href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Uparatna Collection', href: '/gemstones/upratna' }}
           image="/home/ctas/cta3.webp?v=2"

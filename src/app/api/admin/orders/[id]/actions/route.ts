@@ -159,7 +159,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // ponytail: membership first; record_refund also allowed for accountants (finance.read)
+  // ponytail: membership first; record_refund + mark_sold also allowed for accountants (finance.read)
   const auth = await requireAdminAccess();
   if ('error' in auth) return auth.error;
 
@@ -219,9 +219,10 @@ export async function POST(
   }
 
   const canWriteOrders = hasAdminPermission(auth.member.role, 'orders.write', auth.member.permissions);
-  const canRecordRefund =
+  const canFinance =
     canWriteOrders || hasAdminPermission(auth.member.role, 'finance.read', auth.member.permissions);
-  if (parsed.data.action === 'record_refund' ? !canRecordRefund : !canWriteOrders) {
+  const financeActions = new Set(['record_refund', 'mark_sold']);
+  if (financeActions.has(parsed.data.action) ? !canFinance : !canWriteOrders) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 

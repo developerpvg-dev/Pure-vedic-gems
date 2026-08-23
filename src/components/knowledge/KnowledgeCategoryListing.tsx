@@ -3,7 +3,6 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { urlFor } from '@/lib/sanity/client';
-import { FALLBACK_KNOWLEDGE_ARTICLES } from '@/lib/constants/knowledge';
 import {
   NAVARATNA_GUIDES,
   RUDRAKSHA_GUIDES,
@@ -66,9 +65,7 @@ function getStaticGuides(categoryKey: KnowledgeCategoryKey): StaticKnowledgeGuid
 
 export async function KnowledgeCategoryListing({ categoryKey }: { categoryKey: KnowledgeCategoryKey }) {
   const config = KNOWLEDGE_CATEGORY_CONFIG[categoryKey];
-  const sanityArticles = (await getKnowledgeArticlesByCategory(config.categories, 50)) as SanityKnowledgeArticle[];
-  const fallbackArticles = FALLBACK_KNOWLEDGE_ARTICLES.filter((article) => config.categories.includes(article.category));
-  const articles = sanityArticles.length ? sanityArticles : fallbackArticles;
+  const articles = (await getKnowledgeArticlesByCategory(config.categories, 50)) as SanityKnowledgeArticle[];
   const staticGuides = getStaticGuides(categoryKey);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
 

@@ -1,5 +1,5 @@
 import type { CategoryFaq, HeroBenefit } from '@/lib/types/shop-category-page';
-import { mukhiMeta } from '@/lib/seo/storefront-meta';
+import { certifiedRudrakshaHubTitle, mukhiMeta } from '@/lib/seo/storefront-meta';
 import { BRAND, h2, h3, mergeKeywords, p, ul, type RichGemSections } from './helpers';
 
 type MukhiMeta = {
@@ -798,12 +798,12 @@ function buildMukhiContent(slug: string, label: string, mukhi: number): RichGemS
   };
 }
 
-const SPECIAL_RUDRAKSHA_SEO: Record<string, { title: string; phrase: string }> = {
-  'gauri-shankar': { title: 'Buy Original Gauri Shankar Rudraksha', phrase: 'Gauri Shankar Rudraksha' },
-  'ganesh-rudraksha': { title: 'Buy Original Ganesh Rudraksha Bead', phrase: 'Ganesh Rudraksha' },
-  'nir-mukhi': { title: 'Buy Original Nir Mukhi Rudraksha', phrase: 'Nir Mukhi Rudraksha' },
-  'garbh-gauri': { title: 'Buy Original Garbh Gauri Rudraksha', phrase: 'Garbh Gauri Rudraksha' },
-  'sawar-rudraksha': { title: 'Buy Original Sawar Rudraksha Bead', phrase: 'Sawar Rudraksha' },
+const SPECIAL_RUDRAKSHA_SEO: Record<string, { phrase: string }> = {
+  'gauri-shankar': { phrase: 'Gauri Shankar Rudraksha' },
+  'ganesh-rudraksha': { phrase: 'Ganesh Rudraksha' },
+  'nir-mukhi': { phrase: 'Nir Mukhi Rudraksha' },
+  'garbh-gauri': { phrase: 'Garbh Gauri Rudraksha' },
+  'sawar-rudraksha': { phrase: 'Sawar Rudraksha' },
 };
 
 function buildSpecialRudrakshaContent(slug: string, label: string): RichGemSections | null {
@@ -816,7 +816,7 @@ function buildSpecialRudrakshaContent(slug: string, label: string): RichGemSecti
   return {
     intro: `Original ${phrase} — ${meta.formDescription} ${BRAND} lists certified ${phrase} with natural-formation checks, never glued fakes.`,
     hero_benefits: toHeroBenefits(meta.heroBenefits),
-    seo_title: seo?.title ?? `Buy Original ${phrase}`,
+    seo_title: certifiedRudrakshaHubTitle(phrase),
     seo_description: `Certified ${low} and original ${low}. ${low} price with natural-formation checks and energization.`,
     meta_keywords: rudrakshaKeywords(slug, label, [low, `original ${low}`, `${low} price`, 'certified rudraksha']),
     about_html: [

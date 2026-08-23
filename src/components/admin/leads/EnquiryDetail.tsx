@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Loader2, Pencil, Save, X } from 'lucide-react';
 import {
-  BLOG_STAGE_CHIPS,
   CONTACT_STAGE_CHIPS,
   LEAD_ENQUIRY_TYPES,
   LEAD_FOLLOWUP_CHANNEL_LABEL,
@@ -20,8 +19,7 @@ import {
   TELECOM_CALL_OUTCOMES,
   TELECOM_DELIVERY_OUTCOMES,
   isBlogEnquiryLead,
-  isContactEnquiryLead,
-  leadStageLabel,
+  isCallDeskLead,
   type LeadFollowUpChannel,
   type LeadNotConvertedReason,
   type LeadPipelineStage,
@@ -628,14 +626,16 @@ export function EnquiryDetail({
   const isManager = caps.canAssign;
   const isTelecom = role === 'telecom';
   const isAstro = role === 'astrologer';
-  const isContact = isContactEnquiryLead(lead.source, lead.enquiry_type);
   const isBlog = isBlogEnquiryLead(lead.source, lead.enquiry_type);
+  const isCallDesk = isCallDeskLead(lead.source, lead.enquiry_type);
   const owner = LEAD_STAGE_OWNER[stage] ?? 'manager';
   const duplicateMatches = lead.duplicate_matches ?? [];
 
   const [telePick, setTelePick] = useState(
     lead.assigned_to || lead.duplicate_matches?.[0]?.assigned_to || ''
   );
+  const [deliverTelePick, setDeliverTelePick] = useState(lead.assigned_to || '');
+  const [alsoReassignOnSend, setAlsoReassignOnSend] = useState(true);
   const [astroPick, setAstroPick] = useState(lead.astrologer_id || '');
   const [remedies, setRemedies] = useState(lead.remedies_text || REMEDIES_TEMPLATE);
   const [editingDetails, setEditingDetails] = useState(false);
@@ -658,6 +658,8 @@ export function EnquiryDetail({
 
   useEffect(() => {
     setTelePick(lead.assigned_to || lead.duplicate_matches?.[0]?.assigned_to || '');
+    setDeliverTelePick(lead.assigned_to || '');
+    setAlsoReassignOnSend(true);
     setAstroPick(lead.astrologer_id || '');
     setRemedies(lead.remedies_text || REMEDIES_TEMPLATE);
     setEditingDetails(false);
@@ -699,106 +701,25 @@ export function EnquiryDetail({
     lead.duplicate_matches,
   ]);
 
-  // ── Blog Ask-an-expert popup (Not addressed → Addressed) ─────────────────
-  if (isBlog) {
-    const open = stage !== 'closed';
-    return (
-      <div className="border-t border-gray-100 p-4 space-y-4">
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-rose-100 bg-rose-50/50 px-3 py-2">
-          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100'}`}>
-            {leadStageLabel(stage, { source: lead.source, enquiryType: lead.enquiry_type })}
-          </span>
-          <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-900">
-            Blog enquiry
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {BLOG_STAGE_CHIPS.map((s) => {
-            const active = (stage === 'closed' ? 'closed' : 'new') === s;
-            return (
-              <button
-                key={s}
-                type="button"
-                disabled={saving || active}
-                onClick={() =>
-                  onUpdate(
-                    s === 'closed'
-                      ? { pipeline_stage: 'closed', status: 'resolved' }
-                      : { pipeline_stage: 'new', status: 'new' },
-                  )
-                }
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
-                  active ? 'bg-rose-700 text-white' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-rose-50'
-                }`}
-              >
-                {leadStageLabel(s, { source: 'blog_popup' })}
-              </button>
-            );
-          })}
-        </div>
-
-        <p className="text-sm text-gray-600">
-          {open
-            ? 'This enquiry came from the blog Ask-an-expert popup. Contact the customer, then mark it Addressed.'
-            : 'This blog enquiry has been marked Addressed.'}
-        </p>
-
-        <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <ResponseField label="Name" value={lead.name} />
-          <ResponseField label="Phone" value={lead.phone || ''} />
-          <ResponseField label="Email" value={lead.email || '—'} />
-          <ResponseField label="Source" value={lead.source || 'blog_popup'} />
-          <ResponseField label="Blog / subject" value={lead.subject || ''} wide />
-        </div>
-
-        {lead.message ? (
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Their query</p>
-            <p className="mt-1 whitespace-pre-wrap rounded-lg border border-rose-100 bg-rose-50/40 p-3 text-sm text-gray-800">
-              {lead.message}
-            </p>
-          </div>
-        ) : null}
-
-        {open ? (
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
-            className="w-full rounded-lg bg-rose-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
-          >
-            Mark as Addressed
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => onUpdate({ pipeline_stage: 'new', status: 'new' })}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
-          >
-            Reopen as Not addressed
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // ── Contact form pipeline (no chart / remedies) ─────────────────────────
-  if (isTelecom && isContact) {
+  // ── Contact / blog call desk (no chart / remedies) ──────────────────────
+  if (isTelecom && isCallDesk) {
     const active = stage === 'assigned' || stage === 'verifying';
     const lastLabel = lead.last_remark_code
       ? LEAD_REMARK_BY_CODE[lead.last_remark_code as LeadRemarkCode]?.label || lead.last_remark_code
       : null;
+    const deskLabel = isBlog ? 'Blog enquiry' : 'Contact message';
+    const tone = isBlog
+      ? { wrap: 'border-rose-100 bg-rose-50/50', badge: 'bg-rose-100 text-rose-900', msg: 'border-rose-100 bg-rose-50/40' }
+      : { wrap: 'border-sky-100 bg-sky-50/50', badge: 'bg-sky-100 text-sky-900', msg: 'border-sky-100 bg-sky-50/40' };
 
     return (
       <div className="border-t border-gray-100 p-4 space-y-4">
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-sky-100 bg-sky-50/50 px-3 py-2">
+        <div className={`flex flex-wrap items-center gap-2 rounded-lg border ${tone.wrap} px-3 py-2`}>
           <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STAGE_COLORS[stage] || 'bg-gray-100'}`}>
             {LEAD_PIPELINE_LABELS[stage] || stage}
           </span>
-          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-900">
-            Contact message
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tone.badge}`}>
+            {deskLabel}
           </span>
           {lastLabel ? (
             <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-gray-700 ring-1 ring-gray-200">
@@ -809,7 +730,7 @@ export function EnquiryDetail({
 
         <p className="text-sm text-gray-600">
           {stage === 'closed'
-            ? 'This contact lead is closed.'
+            ? `This ${isBlog ? 'blog' : 'contact'} lead is closed.`
             : 'Call or email this customer about their message. Log the call result, then mark handled when done.'}
         </p>
 
@@ -817,7 +738,8 @@ export function EnquiryDetail({
           <ResponseField label="Name" value={lead.name} />
           <ResponseField label="Phone" value={lead.phone || ''} />
           <ResponseField label="Email" value={lead.email} />
-          <ResponseField label="Source" value={lead.source || 'contact_form'} />
+          <ResponseField label="Source" value={lead.source || (isBlog ? 'blog_popup' : 'contact_form')} />
+          {isBlog && lead.subject ? <ResponseField label="Blog / subject" value={lead.subject} wide /> : null}
           {(lead.additional_phones?.length || lead.additional_emails?.length) ? (
             <>
               <ResponseField label="Extra phones" value={(lead.additional_phones || []).join(', ')} />
@@ -856,7 +778,7 @@ export function EnquiryDetail({
         {lead.message ? (
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Their message</p>
-            <p className="mt-1 whitespace-pre-wrap rounded-lg border border-sky-100 bg-sky-50/40 p-3 text-sm text-gray-800">
+            <p className={`mt-1 whitespace-pre-wrap rounded-lg border ${tone.msg} p-3 text-sm text-gray-800`}>
               {lead.message}
             </p>
           </div>
@@ -1412,12 +1334,12 @@ export function EnquiryDetail({
   const showRemarks = isManager || isTelecom;
   const showOutcomes = isManager;
 
-  const nextHint = isContact
+  const nextHint = isCallDesk
     ? stage === 'new'
-      ? 'Forward this contact message to any telecaller so they can call the customer.'
+      ? `Forward this ${isBlog ? 'blog enquiry' : 'contact message'} to any telecaller so they can call the customer.`
       : stage === 'closed'
-        ? 'Contact lead closed.'
-        : 'Telecaller is handling this contact message — they call and close when done.'
+        ? `${isBlog ? 'Blog' : 'Contact'} lead closed.`
+        : `Telecaller is handling this ${isBlog ? 'blog enquiry' : 'contact message'} — they call and close when done.`
     : owner === 'manager' && isManager
       ? LEAD_PIPELINE_HELP[stage]
       : owner === 'telecom' && isTelecom
@@ -1435,7 +1357,7 @@ export function EnquiryDetail({
             {LEAD_PIPELINE_LABELS[stage] || stage}
           </span>
         </div>
-        <PipelineStepper stage={stage} stages={isContact ? CONTACT_STAGE_CHIPS : LEAD_PIPELINE_STAGES} />
+        <PipelineStepper stage={stage} stages={isCallDesk ? CONTACT_STAGE_CHIPS : LEAD_PIPELINE_STAGES} />
         <p className="text-xs text-amber-900/80">
           <span className="font-semibold">Your next step:</span> {nextHint}
         </p>
@@ -1460,8 +1382,10 @@ export function EnquiryDetail({
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Customer response</h3>
               <p className="mt-0.5 text-[11px] text-gray-400">
-                {isContact
-                  ? 'Website contact form message'
+                {isCallDesk
+                  ? isBlog
+                    ? 'Blog Ask-an-expert enquiry'
+                    : 'Website contact form message'
                   : (lead.enquiry_type || '').toLowerCase().includes('consultation')
                     ? 'Vedic Consultation booking'
                     : '₹101 remedies / recommendation form'}
@@ -1483,7 +1407,7 @@ export function EnquiryDetail({
                   Edit details
                 </button>
               ) : null}
-              {(isManager || isAstro) && !editingDetails && !isContact ? (
+              {(isManager || isAstro) && !editingDetails && !isCallDesk ? (
                 <button
                   type="button"
                   onClick={onCopy}
@@ -1580,19 +1504,28 @@ export function EnquiryDetail({
               <ResponseField label="Extra phones" value={(lead.additional_phones || []).join(', ')} />
               <ResponseField label="Extra emails" value={(lead.additional_emails || []).join(', ')} />
               <ResponseField label="IP location" value={lead.ip_location || ''} />
-              <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
-              <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
-              <ResponseField label="Birth place" value={lead.birth_place || ''} />
-              <ResponseField label="City / District" value={lead.customer_city || ''} />
-              <ResponseField label="State" value={lead.customer_state || ''} />
-              <ResponseField label="Country" value={lead.customer_country || ''} />
-              <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} />
-              <ResponseField label="Enquiry type" value={lead.enquiry_type || ''} wide />
-              {lead.payment_received ? (
-                <ResponseField label="Payment" value={lead.payment_note || 'Received'} wide />
-              ) : lead.consultation_id ? (
-                <ResponseField label="Payment" value={lead.payment_note || 'Pending'} wide />
-              ) : null}
+              {isCallDesk ? (
+                <>
+                  {isBlog && lead.subject ? <ResponseField label="Blog / subject" value={lead.subject} wide /> : null}
+                  <ResponseField label="Enquiry type" value={lead.enquiry_type || ''} wide />
+                </>
+              ) : (
+                <>
+                  <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
+                  <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
+                  <ResponseField label="Birth place" value={lead.birth_place || ''} />
+                  <ResponseField label="City / District" value={lead.customer_city || ''} />
+                  <ResponseField label="State" value={lead.customer_state || ''} />
+                  <ResponseField label="Country" value={lead.customer_country || ''} />
+                  <ResponseField label="Purpose / area of concern" value={lead.area_of_concern || ''} />
+                  <ResponseField label="Enquiry type" value={lead.enquiry_type || ''} wide />
+                  {lead.payment_received ? (
+                    <ResponseField label="Payment" value={lead.payment_note || 'Received'} wide />
+                  ) : lead.consultation_id ? (
+                    <ResponseField label="Payment" value={lead.payment_note || 'Pending'} wide />
+                  ) : null}
+                </>
+              )}
             </div>
           )}
 
@@ -1603,7 +1536,7 @@ export function EnquiryDetail({
             </div>
           )}
 
-          {showOutcomes && (
+          {showOutcomes && !isCallDesk && (
             <div className="grid grid-cols-2 gap-2 rounded-lg border border-gray-100 bg-gray-50/60 p-3">
               <Toggle label="Payment received" value={Boolean(lead.payment_received)} onChange={(v) => onUpdate({ payment_received: v })} />
               <Toggle label="Astrologer help" value={Boolean(lead.astrologer_help)} onChange={(v) => onUpdate({ astrologer_help: v })} />
@@ -1613,7 +1546,7 @@ export function EnquiryDetail({
             </div>
           )}
 
-          {canEditDetails && (
+          {canEditDetails && !isCallDesk && (
             <Field label="Payment note" value={lead.payment_note || ''} onSave={(v) => onUpdate({ payment_note: v || null })} />
           )}
         </div>
@@ -1621,11 +1554,10 @@ export function EnquiryDetail({
         <div className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Actions for your role</h3>
 
-          {/* MANAGER: assign telecaller (once only) */}
+          {/* MANAGER: assign telecaller (first time) */}
           {isManager && !lead.assigned_to && (stage === 'new' || stage === 'closed') && (
             <div className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
               <p className="mb-2 text-xs font-semibold text-indigo-900">1. Assign telecaller</p>
-              <p className="mb-2 text-[11px] text-indigo-800">Assignment is permanent — cannot be changed later.</p>
               {duplicateMatches[0]?.assigned_to ? (
                 <p className="mb-2 text-[11px] text-indigo-900">
                   Suggested from prior lead: <span className="font-semibold">{duplicateMatches[0].telecaller_name}</span>
@@ -1652,28 +1584,49 @@ export function EnquiryDetail({
             </div>
           )}
           {isManager && lead.assigned_to && (
-            <p className="rounded-lg border border-indigo-100 bg-indigo-50/40 px-3 py-2 text-xs text-indigo-900">
-              Telecaller locked:{' '}
-              <span className="font-semibold">
-                {staff.telecom.find((m) => m.id === lead.assigned_to)?.name || 'Assigned'}
-              </span>
-              {' '}— cannot reassign.
-            </p>
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
+              <p className="mb-2 text-xs font-semibold text-indigo-900">Telecaller</p>
+              <p className="mb-2 text-[11px] text-indigo-800">
+                Current:{' '}
+                <span className="font-semibold">
+                  {staff.telecom.find((m) => m.id === lead.assigned_to)?.name || 'Assigned'}
+                </span>
+                . Reassign to move this lead to another telecaller (removes it from the current one).
+              </p>
+              <select
+                value={telePick}
+                onChange={(e) => setTelePick(e.target.value)}
+                className="w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">Select telecaller</option>
+                {staff.telecom.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!telePick || telePick === lead.assigned_to || saving}
+                onClick={() => onUpdate({ action: 'reassign_telecaller', assigned_to: telePick })}
+                className="mt-2 w-full rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-50"
+              >
+                Reassign telecaller
+              </button>
+            </div>
           )}
 
-          {isManager && isContact && lead.assigned_to && stage !== 'closed' && (
+          {isManager && isCallDesk && lead.assigned_to && stage !== 'closed' && (
             <button
               type="button"
               disabled={saving}
               onClick={() => onUpdate({ pipeline_stage: 'closed', status: 'resolved' })}
               className="w-full rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
             >
-              Close contact lead
+              Close {isBlog ? 'blog' : 'contact'} lead
             </button>
           )}
 
           {/* TELECOM: verify (managers also see when helping) — skipped for contact messages */}
-          {!isContact && (isTelecom || isManager) && (stage === 'assigned' || stage === 'verifying') && (
+          {!isCallDesk && (isTelecom || isManager) && (stage === 'assigned' || stage === 'verifying') && (
             <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 space-y-2">
               <p className="text-xs font-semibold text-emerald-900">2. Telecaller verification</p>
               <p className="text-[11px] text-emerald-800">
@@ -1697,7 +1650,7 @@ export function EnquiryDetail({
           )}
 
           {/* MANAGER: forward to astrologer (once only) */}
-          {!isContact && caps.canForwardAstrologer && stage === 'verified' && !lead.astrologer_id && (
+          {!isCallDesk && caps.canForwardAstrologer && stage === 'verified' && !lead.astrologer_id && (
             <div className="rounded-lg border border-violet-100 bg-violet-50/40 p-3">
               <p className="mb-2 text-xs font-semibold text-violet-900">3. Forward to pandit / astrologer</p>
               <p className="mb-2 text-[11px] text-violet-800">Assignment is permanent — cannot be changed later.</p>
@@ -1724,7 +1677,7 @@ export function EnquiryDetail({
               </button>
             </div>
           )}
-          {!isContact && isManager && lead.astrologer_id && (
+          {!isCallDesk && isManager && lead.astrologer_id && (
             <p className="rounded-lg border border-violet-100 bg-violet-50/40 px-3 py-2 text-xs text-violet-900">
               Astrologer locked:{' '}
               <span className="font-semibold">
@@ -1735,7 +1688,7 @@ export function EnquiryDetail({
           )}
 
           {/* ASTROLOGER: write remedies */}
-          {!isContact && (isAstro || (isManager && stage === 'with_astrologer')) && (stage === 'with_astrologer' || stage === 'remedies_ready') && (
+          {!isCallDesk && (isAstro || (isManager && stage === 'with_astrologer')) && (stage === 'with_astrologer' || stage === 'remedies_ready') && (
             <div className="rounded-lg border border-fuchsia-100 bg-fuchsia-50/30 p-3">
               <p className="mb-2 text-xs font-semibold text-fuchsia-900">4. Write remedies</p>
               <textarea
@@ -1765,12 +1718,12 @@ export function EnquiryDetail({
             </div>
           )}
 
-          {/* MANAGER: edit + send to same telecaller */}
-          {!isContact && caps.canSendToTelecaller && stage === 'remedies_ready' && (
+          {/* MANAGER: edit + send to telecaller (can pick a second and reassign) */}
+          {!isCallDesk && caps.canSendToTelecaller && stage === 'remedies_ready' && (
             <div className="rounded-lg border border-teal-100 bg-teal-50/40 p-3">
               <p className="mb-2 text-xs font-semibold text-teal-900">6. Review remedies → send for delivery</p>
               <p className="mb-2 text-[11px] text-teal-800">
-                Edit if needed, then send to the telecaller. After the customer is briefed, mark Explained Remedies (next step).
+                Edit if needed, then send to a telecaller. After the customer is briefed, mark Explained Remedies (next step).
               </p>
               <textarea
                 value={remedies}
@@ -1778,10 +1731,52 @@ export function EnquiryDetail({
                 rows={12}
                 className="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 font-mono text-xs leading-relaxed"
               />
+              {lead.assigned_to ? (
+                <div className="mt-2 space-y-2">
+                  <label className="block text-[11px] font-semibold text-teal-900">Send to telecaller</label>
+                  <select
+                    value={deliverTelePick || lead.assigned_to}
+                    onChange={(e) => setDeliverTelePick(e.target.value)}
+                    className="w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm"
+                  >
+                    {staff.telecom.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  {(deliverTelePick || lead.assigned_to) !== lead.assigned_to && (
+                    <label className="flex items-start gap-2 text-[11px] text-teal-900">
+                      <input
+                        type="checkbox"
+                        checked={alsoReassignOnSend}
+                        onChange={(e) => setAlsoReassignOnSend(e.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        Also reassign this lead to them (removes it from{' '}
+                        {staff.telecom.find((m) => m.id === lead.assigned_to)?.name || 'the current telecaller'})
+                      </span>
+                    </label>
+                  )}
+                </div>
+              ) : null}
               <button
                 type="button"
-                disabled={saving || !remedies.trim() || !lead.assigned_to}
-                onClick={() => onUpdate({ action: 'send_to_telecaller', remedies_text: remedies })}
+                disabled={
+                  saving ||
+                  !remedies.trim() ||
+                  !lead.assigned_to ||
+                  ((deliverTelePick || lead.assigned_to) !== lead.assigned_to && !alsoReassignOnSend)
+                }
+                onClick={() =>
+                  onUpdate({
+                    action: 'send_to_telecaller',
+                    remedies_text: remedies,
+                    assigned_to: deliverTelePick || lead.assigned_to,
+                    ...((deliverTelePick || lead.assigned_to) !== lead.assigned_to
+                      ? { reassign_lead: alsoReassignOnSend }
+                      : {}),
+                  })
+                }
                 className="mt-2 w-full rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
               >
                 Send remedies to telecaller (→ Deliver)
@@ -1793,7 +1788,7 @@ export function EnquiryDetail({
           )}
 
           {/* MANAGER / telecom: deliver + mark explained */}
-          {!isContact && (isManager || isTelecom) && stage === 'sent_to_customer' && Boolean(lead.remedies_text) && (
+          {!isCallDesk && (isManager || isTelecom) && stage === 'sent_to_customer' && Boolean(lead.remedies_text) && (
             <div className="rounded-lg border border-lime-200 bg-lime-50/40 p-3 space-y-3">
               <p className="text-xs font-semibold text-lime-900">7. Deliver remedies → mark explained</p>
               {isManager ? (
@@ -1844,7 +1839,7 @@ export function EnquiryDetail({
           )}
 
           {/* ponytail: managers can still edit remedies after email / conversion */}
-          {!isContact &&
+          {!isCallDesk &&
             isManager &&
             Boolean(lead.remedies_text) &&
             (stage === 'conversion' || stage === 'remedies_explained') && (
@@ -1867,7 +1862,7 @@ export function EnquiryDetail({
               </div>
             )}
 
-          {!isContact &&
+          {!isCallDesk &&
             isTelecom &&
             !isManager &&
             Boolean(lead.remedies_text) &&
@@ -1881,7 +1876,7 @@ export function EnquiryDetail({
             )}
 
           {/* Conversion outcome — stage 9 */}
-          {!isContact && (isManager || isTelecom) && (stage === 'conversion' || stage === 'remedies_explained') && (
+          {!isCallDesk && (isManager || isTelecom) && (stage === 'conversion' || stage === 'remedies_explained') && (
             <div className="space-y-3">
               <p className="text-xs font-semibold text-orange-950">9. Conversion</p>
               <p className="text-[11px] text-orange-900/80">

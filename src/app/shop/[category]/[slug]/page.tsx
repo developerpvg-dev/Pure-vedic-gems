@@ -11,22 +11,19 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryProductListing } from '@/components/shop/CategoryProductListing';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { ProductGallery } from '@/components/shop/ProductGallery';
-import { ProductTabs, type ProductReview } from '@/components/shop/ProductTabs';
+import { ProductTabs } from '@/components/shop/ProductTabs';
 import { PriceDisplay } from '@/components/shop/PriceDisplay';
 import { AddToCartBar } from '@/components/shop/AddToCartBar';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { RecentlyViewedProducts, type RecentlyViewedProduct } from '@/components/shop/RecentlyViewedProducts';
 import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
+import { JsonLd } from '@/components/seo/JsonLd';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
-import { buildMetadata, productMetadata } from '@/lib/utils/seo';
+import { breadcrumbJsonLd, buildMetadata, productJsonLd, productMetadata } from '@/lib/utils/seo';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
-import {
-  productOfferAvailability,
-  productStructuredOfferPrice,
-} from '@/lib/shop/product-pricing';
 import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
 import { isNoCertification } from '@/lib/utils/format';
 
@@ -86,72 +83,6 @@ const getProductBySlug = cache(async (slug: string): Promise<Product | null> => 
 
   return data ? (data as unknown as Product) : null;
 });
-
-// ─── JSON-LD ─────────────────────────────────────────────────────────────────
-
-function ProductJsonLd({
-  product,
-  href,
-  reviews,
-}: {
-  product: Product;
-  href: string;
-  reviews: ProductReview[];
-}) {
-  const images = extractImages(product.images);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com';
-  const pricing = {
-    price: product.price,
-    price_per_carat: product.price_per_carat,
-    carat_weight: product.carat_weight,
-    price_mode: product.price_mode,
-    in_stock: product.in_stock,
-    stock_quantity: product.stock_quantity,
-    availability_status: product.availability_status,
-    sold_individually: product.sold_individually,
-  };
-  const structuredPrice = productStructuredOfferPrice(pricing);
-  const offerAvailability = productOfferAvailability(pricing);
-  const displayName = productHeading(product);
-  const ratedReviews = reviews.filter((review) => typeof review.rating === 'number');
-  const averageRating = ratedReviews.length > 0
-    ? ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
-    : null;
-
-  const schema = {
-    '@context': 'https://schema.org/',
-    '@type': 'Product',
-    name: displayName,
-    description: product.short_desc ?? product.meta_description ?? '',
-    sku: product.sku,
-    image: images.length > 0 ? images : undefined,
-    brand: { '@type': 'Brand', name: 'PureVedicGems' },
-    offers: {
-      '@type': 'Offer',
-      url: `${siteUrl}${href}`,
-      priceCurrency: 'INR',
-      price: structuredPrice,
-      availability: offerAvailability,
-      seller: { '@type': 'Organization', name: 'PureVedicGems' },
-    },
-    ...(averageRating != null
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: Math.round(averageRating * 10) / 10,
-            reviewCount: reviews.length,
-          },
-        }
-      : {}),
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
 
 // ─── generateMetadata ────────────────────────────────────────────────────────
 
@@ -425,7 +356,21 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
   return (
     <>
-      <ProductJsonLd product={product} href={href} reviews={reviews} />
+      <JsonLd
+        data={[
+          productJsonLd(product, href, {
+            images: images.length > 0 ? images : product.thumbnail_url ? [product.thumbnail_url] : [],
+            displayName,
+            reviews,
+          }),
+          breadcrumbJsonLd([
+            { name: 'Home', href: '/' },
+            { name: 'Gemstones', href: '/gemstones' },
+            { name: categoryLabel, href: categoryListingHref },
+            { name: displayName, href },
+          ]),
+        ]}
+      />
 
       <main className="pvg-product-page min-h-screen overflow-x-clip bg-[#fbf7ef] px-3 pb-24 pt-28 font-body lg:px-8 lg:pt-32">
         <div className="mx-auto min-w-0 max-w-340">

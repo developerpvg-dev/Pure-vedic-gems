@@ -977,7 +977,7 @@ export function PvgReferenceSections({
     copy="Book a personalized Vedic Yagya service aligned to your birth chart, life goals, and current planetary periods with guidance from our in-house experts."
     primary={{
       label: <>Book a Yagya Consultation — <Money amount={RS101_AMOUNT_INR} /></>,
-      href: '#gem-recommendation',
+      href: '/gems-recommendations',
     }}
     secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas-service' }}
     image="/home/ctas/cta4.webp?v=20260810"

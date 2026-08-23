@@ -215,6 +215,7 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (/^\/admin\/products\/[^/]+$/.test(pathname)) return 'products.write';
   if (pathname.startsWith('/admin/products')) return 'products.read';
   if (pathname.startsWith('/admin/erp-sync')) return 'products.read';
+  if (pathname.startsWith('/admin/item-status')) return 'products.read';
   if (pathname.startsWith('/admin/stock/completeness')) return 'products.read';
   if (pathname.startsWith('/admin/stock')) return 'dashboard.read';
   if (pathname.startsWith('/admin/designer')) return 'orders.design';

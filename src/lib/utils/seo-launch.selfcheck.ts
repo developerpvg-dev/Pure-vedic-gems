@@ -47,8 +47,11 @@ for (const url of [
   if (!sameAs.includes(url)) throw new Error(`sameAs missing ${url}`);
 }
 if (!String(brandLogoUrl()).endsWith('/pvg-logo.png')) throw new Error('brand logo path');
-if (!org.merchantReturnPolicy || !String((org.merchantReturnPolicy as { url?: string }).url).includes('/policies/returns')) {
-  throw new Error('Organization must declare merchantReturnPolicy');
+if (!org.hasMerchantReturnPolicy || !String((org.hasMerchantReturnPolicy as { url?: string }).url).includes('/policies/returns')) {
+  throw new Error('Organization must declare hasMerchantReturnPolicy');
+}
+if (!Array.isArray(org.hasShippingService) || org.hasShippingService.length === 0) {
+  throw new Error('Organization must declare hasShippingService');
 }
 if (!String(defaultOgImageUrl()).endsWith('/og-default.png')) throw new Error('og image path');
 

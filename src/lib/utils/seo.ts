@@ -205,12 +205,125 @@ export function knowledgeMetadata({ title, description, path, image }: MetadataI
   return buildMetadata({ title, description, path, image, type: 'article' });
 }
 
+/** Shared @id so Product Offers can point at the org return policy. */
+export function merchantReturnPolicyJsonLd(): JsonLd {
+  const siteUrl = getSiteUrl();
+  return {
+    '@type': 'MerchantReturnPolicy',
+    '@id': `${siteUrl}/policies/returns#policy`,
+    name: 'Return Policy',
+    url: `${siteUrl}/policies/returns`,
+    applicableCountry: ['IN', 'GB', 'AE'],
+    returnPolicyCountry: 'IN',
+    returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: 15,
+    returnMethod: 'https://schema.org/ReturnByMail',
+    // ponytail: policy page says customer pays return shipping
+    returnFees: 'https://schema.org/ReturnShippingFees',
+    refundType: 'https://schema.org/FullRefund',
+  };
+}
+
+/** Matches /policies/shipping — paid domestic (not free delivery). */
+function merchantShippingServicesJsonLd(): JsonLd[] {
+  const siteUrl = getSiteUrl();
+  const origin = {
+    '@type': 'DefinedRegion',
+    addressCountry: 'IN',
+  };
+  return [
+    {
+      '@type': 'ShippingService',
+      '@id': `${siteUrl}/policies/shipping#india`,
+      name: 'India Post Speed Post',
+      description: 'Domestic shipping for orders up to ₹25,000',
+      fulfillmentType: 'https://schema.org/FulfillmentTypeDelivery',
+      shippingConditions: [
+        {
+          '@type': 'ShippingConditions',
+          shippingOrigin: origin,
+          shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' },
+          shippingRate: {
+            '@type': 'MonetaryAmount',
+            value: '200',
+            currency: 'INR',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 6,
+            maxValue: 7,
+            unitCode: 'DAY',
+          },
+        },
+      ],
+    },
+    {
+      '@type': 'ShippingService',
+      '@id': `${siteUrl}/policies/shipping#international`,
+      name: 'International EMS / courier',
+      description: 'Tracked international shipping',
+      fulfillmentType: 'https://schema.org/FulfillmentTypeDelivery',
+      shippingConditions: [
+        {
+          '@type': 'ShippingConditions',
+          shippingOrigin: origin,
+          shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'GB' },
+          shippingRate: {
+            '@type': 'MonetaryAmount',
+            value: '2500',
+            currency: 'INR',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 12,
+            maxValue: 15,
+            unitCode: 'DAY',
+          },
+        },
+      ],
+    },
+  ];
+}
+
+/** Offer-level shipping for merchant listings (India primary). */
+function productOfferShippingDetailsJsonLd(): JsonLd {
+  const siteUrl = getSiteUrl();
+  return {
+    '@type': 'OfferShippingDetails',
+    shippingRate: {
+      '@type': 'MonetaryAmount',
+      value: '200',
+      currency: 'INR',
+    },
+    shippingDestination: {
+      '@type': 'DefinedRegion',
+      addressCountry: 'IN',
+    },
+    deliveryTime: {
+      '@type': 'ShippingDeliveryTime',
+      handlingTime: {
+        '@type': 'QuantitativeValue',
+        minValue: 3,
+        maxValue: 7,
+        unitCode: 'DAY',
+      },
+      transitTime: {
+        '@type': 'QuantitativeValue',
+        minValue: 6,
+        maxValue: 7,
+        unitCode: 'DAY',
+      },
+    },
+    hasShippingService: { '@id': `${siteUrl}/policies/shipping#india` },
+  };
+}
+
 export function organizationJsonLd(): JsonLd {
   const siteUrl = getSiteUrl();
   const logo = brandLogoUrl();
   return {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'OnlineStore'],
     '@id': `${siteUrl}/#organization`,
     name: BRAND_NAME,
     alternateName: ['Pure Vedic Gems', 'PureVedic Gems'],
@@ -238,14 +351,8 @@ export function organizationJsonLd(): JsonLd {
         availableLanguage: ['en', 'hi'],
       },
     ],
-    merchantReturnPolicy: {
-      '@type': 'MerchantReturnPolicy',
-      name: 'Return Policy',
-      url: `${siteUrl}/policies/returns`,
-      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-      merchantReturnDays: 15,
-      returnMethod: 'https://schema.org/ReturnByMail',
-    },
+    hasMerchantReturnPolicy: merchantReturnPolicyJsonLd(),
+    hasShippingService: merchantShippingServicesJsonLd(),
   };
 }
 
@@ -301,7 +408,24 @@ export function faqJsonLd(faqs: Array<{ question: string; answer: string }>): Js
   };
 }
 
-export function productJsonLd(product: Product | ProductCard, path: string): JsonLd {
+/** Minimal review shape for AggregateRating / Review JSON-LD (avoid importing client components). */
+export type ProductReviewJsonLdInput = {
+  customer_name: string;
+  rating: number | null;
+  title?: string | null;
+  review_text?: string | null;
+  created_at: string;
+};
+
+export function productJsonLd(
+  product: Product | ProductCard,
+  path: string,
+  options?: {
+    images?: string[];
+    displayName?: string;
+    reviews?: ProductReviewJsonLdInput[];
+  },
+): JsonLd {
   const pricing = {
     price: product.price,
     price_per_carat: product.price_per_carat,
@@ -314,25 +438,77 @@ export function productJsonLd(product: Product | ProductCard, path: string): Jso
   };
   const availability = productOfferAvailability(pricing);
   const structuredPrice = productStructuredOfferPrice(pricing);
+  const siteUrl = getSiteUrl();
+  const offerUrl = absoluteUrl(path);
+
+  const imageUrls = (options?.images?.length
+    ? options.images
+    : product.thumbnail_url
+      ? [product.thumbnail_url]
+      : []
+  )
+    .map((url) => absoluteUrl(url))
+    .filter(Boolean);
+
+  const ratedReviews = (options?.reviews ?? []).filter(
+    (review): review is ProductReviewJsonLdInput & { rating: number } =>
+      typeof review.rating === 'number' && review.rating >= 1 && review.rating <= 5,
+  );
+  const averageRating =
+    ratedReviews.length > 0
+      ? ratedReviews.reduce((sum, review) => sum + review.rating, 0) / ratedReviews.length
+      : null;
+
+  const priceValidUntil = new Date();
+  priceValidUntil.setFullYear(priceValidUntil.getFullYear() + 1);
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: formatProductDisplayName(product.name),
+    name: options?.displayName || formatProductDisplayName(product.name),
     sku: product.sku,
-    image: product.thumbnail_url ? [absoluteUrl(product.thumbnail_url)] : undefined,
+    image: imageUrls.length > 0 ? imageUrls : undefined,
     brand: { '@type': 'Brand', name: BRAND_NAME },
     category: product.category,
     description: productDescription(product),
-    url: absoluteUrl(path),
+    url: offerUrl,
     offers: {
       '@type': 'Offer',
-      url: absoluteUrl(path),
+      url: offerUrl,
       priceCurrency: (product as Product).currency || 'INR',
       price: structuredPrice,
+      priceValidUntil: priceValidUntil.toISOString().slice(0, 10),
       availability,
       itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: BRAND_NAME, '@id': `${siteUrl}/#organization` },
+      hasMerchantReturnPolicy: { '@id': `${siteUrl}/policies/returns#policy` },
+      shippingDetails: productOfferShippingDetailsJsonLd(),
     },
+    ...(averageRating != null
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Math.round(averageRating * 10) / 10,
+            reviewCount: ratedReviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          // Cap Review nodes — AggregateRating already covers the star count
+          review: ratedReviews.slice(0, 5).map((review) => ({
+            '@type': 'Review',
+            author: { '@type': 'Person', name: review.customer_name || 'Customer' },
+            datePublished: review.created_at.slice(0, 10),
+            reviewBody: review.review_text || undefined,
+            name: review.title || undefined,
+            reviewRating: {
+              '@type': 'Rating',
+              ratingValue: review.rating,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          })),
+        }
+      : {}),
   };
 }
 

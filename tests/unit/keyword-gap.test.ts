@@ -97,7 +97,7 @@ describe('Phase 4 keyword-gap map', () => {
   });
 
   it('covers upratna substitute intent on the parent hub', () => {
-    expect(UPRATNA_HUB_CONTENT.seo_title).toMatch(/buy upratna gems online in india/i);
+    expect(UPRATNA_HUB_CONTENT.seo_title).toMatch(/buy 100% natural & certified upratna gems online/i);
     expect(UPRATNA_HUB_CONTENT.seo_title!.length).toBeLessThanOrEqual(60);
     expect(UPRATNA_HUB_CONTENT.seo_description!.length).toBeLessThanOrEqual(155);
     expect(UPRATNA_HUB_CONTENT.about_html).toMatch(/\/gemstones\/upratna\/amethyst/);
@@ -110,7 +110,7 @@ describe('Phase 4 keyword-gap map', () => {
   });
 
   it('covers original/certified rudraksha intent on the parent hub', () => {
-    expect(RUDRAKSHA_HUB_CONTENT.seo_title).toMatch(/buy original rudraksha online in india/i);
+    expect(RUDRAKSHA_HUB_CONTENT.seo_title).toMatch(/buy 100% natural & certified rudraksha online/i);
     expect(RUDRAKSHA_HUB_CONTENT.seo_title!.length).toBeLessThanOrEqual(60);
     expect(RUDRAKSHA_HUB_CONTENT.seo_description!.length).toBeLessThanOrEqual(155);
     expect(RUDRAKSHA_HUB_CONTENT.about_html).toMatch(/Elaeocarpus/);

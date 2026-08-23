@@ -22,6 +22,7 @@ import { EnquiryDetail, type EnquiryLead, type LeadCaps } from '@/components/adm
 import {
   ASTRO_STAGE_CHIPS,
   BLOG_STAGE_CHIPS,
+  BLOG_TELECOM_STAGE_CHIPS,
   CONTACT_STAGE_CHIPS,
   CONTACT_TELECOM_STAGE_CHIPS,
   LEAD_PIPELINE_LABELS,
@@ -396,7 +397,9 @@ export default function LeadsPage() {
   const stageChips: LeadPipelineStage[] = isAstroDesk
     ? [...ASTRO_STAGE_CHIPS]
     : kind === 'blog'
-      ? [...BLOG_STAGE_CHIPS]
+      ? isTelecomDesk
+        ? [...BLOG_TELECOM_STAGE_CHIPS]
+        : [...BLOG_STAGE_CHIPS]
       : kind === 'contact'
         ? isTelecomDesk
           ? [...CONTACT_TELECOM_STAGE_CHIPS]
@@ -472,7 +475,9 @@ export default function LeadsPage() {
                   ? 'Contact form messages — call the customer, log the outcome, then close.'
                   : 'Contact form messages → forward to any telecaller → they call & close'
                 : kind === 'blog'
-                  ? 'Blog Ask-an-expert popup enquiries — Not addressed → Addressed'
+                  ? isTelecomDesk
+                    ? 'Blog Ask-an-expert enquiries — call the customer, log the outcome, then close.'
+                    : 'Blog Ask-an-expert → forward to any telecaller → they call & close'
                   : isTelecomDesk
                   ? 'Filter by pipeline stage. Call status & dates are under More filters.'
                   : 'New → Telecaller → Verified → Astrologer → Remedies ready → Deliver → Explained → Conversion → Closed'}
@@ -538,7 +543,7 @@ export default function LeadsPage() {
           />
           <AdminStatCard label="New / unassigned" value={`${summary.newEnquiries} / ${summary.unassigned}`} icon={MessageSquare} tone="text-sky-700" bg="bg-sky-50" />
           <AdminStatCard label="With telecaller" value={summary.verifying.toLocaleString('en-IN')} icon={Phone} tone="text-amber-700" bg="bg-amber-50" />
-          {kind === 'contact' ? (
+          {kind === 'contact' || kind === 'blog' ? (
             <AdminStatCard label="Past closed" value={summary.pastClosed.toLocaleString('en-IN')} icon={CheckCircle2} tone="text-gray-700" bg="bg-gray-50" />
           ) : (
             <>

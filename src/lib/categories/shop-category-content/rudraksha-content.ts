@@ -51,7 +51,7 @@ export const RUDRAKSHA_HUB_CONTENT: RichGemSections = {
     { text: 'Purified & energized' },
     { text: 'Chart-guided mukhi pick' },
   ],
-  seo_title: 'Buy Original Rudraksha Online in India | PureVedicGems',
+  seo_title: 'Buy 100% Natural & Certified Rudraksha Online',
   seo_description:
     'Buy original Nepal Rudraksha online — 1 to 21 Mukhi, X-ray certified, purified & energized. Natural beads from PureVedicGems, Delhi since 1937.',
   meta_keywords: [

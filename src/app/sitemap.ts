@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next';
 import { SEO_LANDING_PAGES } from '@/lib/constants/seo-landing-pages';
-import { FALLBACK_KNOWLEDGE_ARTICLES } from '@/lib/constants/knowledge';
 import { GEM_QUALITIES } from '@/lib/constants/gem-qualities';
 import { getAllGeoGemLandingSlugs } from '@/lib/constants/geo-gem-landings';
 import { NAVARATNA_GUIDES, RUDRAKSHA_GUIDES } from '@/lib/constants/static-knowledge-guides';
@@ -210,7 +209,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.66,
     })),
-    ...FALLBACK_KNOWLEDGE_ARTICLES.map((article) => entry(`/knowledge/${article.slug.current}`, { priority: 0.62 })),
     // Geo gem landings (live at /[slug]) — must be listed or crawlers miss ~69 URLs.
     ...getAllGeoGemLandingSlugs().map((slug) => entry(`/${slug}`, { priority: 0.72 })),
     entry('/blog', { priority: 0.7 }),

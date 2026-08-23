@@ -14,6 +14,13 @@ export const blogPost = defineType({
     defineField({ name: 'mainImage', title: 'Main Image', ...imageWithAlt }),
     defineField({ name: 'body', title: 'Body', type: 'array', of: richTextBlocks }),
     defineField({
+      name: 'faqHeading',
+      title: 'FAQ Heading',
+      type: 'string',
+      description: 'Optional. Defaults to "Frequently Asked Questions". Example: Frequently Asked Questions about Natural vs Treated Gemstones',
+      validation: (rule) => rule.max(120),
+    }),
+    defineField({
       name: 'faqs',
       title: 'FAQs',
       type: 'array',

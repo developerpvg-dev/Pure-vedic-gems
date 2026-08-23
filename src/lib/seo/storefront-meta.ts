@@ -33,10 +33,30 @@ function withBrand(title: string) {
   return branded.length <= 60 ? branded : title;
 }
 
+/** SERP title like competitors: "Buy 100% Natural & Certified Ruby (Manik Stone) Online" (≤60). */
+export function certifiedGemHubTitle(englishName: string, vedicName?: string | null) {
+  const name = englishName
+    .replace(/^Natural\s+/i, '')
+    .replace(/\s+(Gemstone|Stone)$/i, '')
+    .trim();
+  if (!vedicName) {
+    const plain = `Buy 100% Natural & Certified ${name} Online`;
+    return plain.length <= 60 ? plain : `Buy Natural & Certified ${name} Online`;
+  }
+  const hindi = vedicName.replace(/\s+(Stone|Gemstone)$/i, '').trim();
+  const candidates = [
+    `Buy 100% Natural & Certified ${name} (${hindi} Stone) Online`,
+    `Buy 100% Natural & Certified ${name} (${hindi}) Online`,
+    `Buy Natural & Certified ${name} (${hindi}) Online`,
+    `Buy Natural ${name} (${hindi}) Online`,
+    `Buy Certified ${name} (${hindi}) Online`,
+    `Buy ${name} (${hindi}) Online`,
+  ];
+  return candidates.find((title) => title.length <= 60) ?? candidates[candidates.length - 1]!.slice(0, 60);
+}
+
 export function navaratnaChildMeta(name: string, vedicName: string | null) {
-  const title = vedicName
-    ? withBrand(`Buy ${name} Online in India | Natural ${vedicName}`)
-    : withBrand(`Buy ${name} Online in India`);
+  const title = certifiedGemHubTitle(name, vedicName);
   const desc = vedicName
     ? `Shop ${name} (${vedicName}) gemstones online in India at ${BRAND}. Explore quality, colour, origin, treatment and Vedic suitability.`
     : `Shop ${name} gemstones online in India at ${BRAND}. Explore quality, colour, origin, treatment and Vedic suitability.`;
@@ -45,21 +65,30 @@ export function navaratnaChildMeta(name: string, vedicName: string | null) {
 
 export function upratnaChildMeta(name: string, vedicName?: string | null) {
   const core = name.replace(/^Natural\s+/i, '').replace(/\s+Gemstone$/i, '').trim();
-  const base = `Buy Natural ${core} Gemstone`;
-  const titled = vedicName ? `${base} | ${vedicName}` : base;
-  const seo_title = titled.length >= 30 ? titled : `${titled} | Upratna`;
   const phrase = `${core} gemstone`.toLowerCase();
   return {
-    seo_title,
+    seo_title: certifiedGemHubTitle(core, vedicName),
     seo_description: `Certified ${phrase} and original ${core.toLowerCase()} stone. ${phrase} price with origin and treatment disclosure.`,
   };
+}
+
+/** SERP title for Rudraksha hubs: "Buy 100% Natural & Certified 5 Mukhi Rudraksha Online" (≤60). */
+export function certifiedRudrakshaHubTitle(name: string) {
+  const candidates = [
+    `Buy 100% Natural & Certified ${name} Online`,
+    `Buy Natural & Certified ${name} Online`,
+    `Buy Certified Original ${name} Online`,
+    `Buy Certified ${name} Online`,
+    `Buy Original ${name} Online`,
+  ];
+  return candidates.find((title) => title.length <= 60) ?? `Buy ${name} Online`.slice(0, 60);
 }
 
 export function mukhiMeta(n: number) {
   const name = `${n} Mukhi Rudraksha`;
   const phrase = name.toLowerCase();
   return {
-    seo_title: `Buy Original ${name}`,
+    seo_title: certifiedRudrakshaHubTitle(name),
     seo_description: `Certified ${phrase} and original ${phrase}. Nepal ${phrase} price with X-ray on premium beads.`,
   };
 }

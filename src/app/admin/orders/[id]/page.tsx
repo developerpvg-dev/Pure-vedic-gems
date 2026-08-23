@@ -240,6 +240,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
     'orders.write',
     (viewer?.permissions ?? null) as Json,
   );
+  const canMarkSold =
+    canWriteOrders ||
+    hasAdminPermission(viewer?.role, 'finance.read', (viewer?.permissions ?? null) as Json);
   // Parcel Dispatch ships parcels — design work slip is out of scope for them
   const canManageDesign =
     canWriteOrders && normalizeAdminRole(viewer?.role) !== 'fulfillment';
@@ -1349,6 +1352,48 @@ export default async function OrderDetailPage({ params }: PageProps) {
               trackingEvents={trackingEvents}
             />
           </div>
+          ) : canMarkSold ? (
+            <OrderActions
+              markSoldOnly
+              orderId={o.id}
+              currentStatus={o.status}
+              currentNotes={orderExtras.internal_notes ?? orderExtras.admin_notes ?? null}
+              currentTracking={o.tracking_number}
+              currentTrackingUrl={o.tracking_url}
+              currentEstDelivery={o.estimated_delivery}
+              currentCarrier={orderExtras.carrier ?? null}
+              currentShippedAt={orderExtras.shipped_at ?? null}
+              currentDeliveryStatus={orderExtras.delivery_status ?? null}
+              currentProductVideoUrl={orderExtras.product_video_url ?? null}
+              currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
+              currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
+              productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
+              orderSource={o.order_source ?? null}
+              orderTotal={o.total}
+              customerPhone={displayPhone}
+              customerName={displayName}
+              orderNumber={o.order_number}
+              orderItems={items.map((item) => ({
+                product_id: item.product_id,
+                name: item.name,
+                tag_number: item.tag_number,
+                sku: item.sku,
+                category: item.category,
+                configuration_id: item.configuration_id,
+                configuration_snapshot: item.configuration_snapshot,
+              }))}
+              includeEnergization={o.include_energization ?? false}
+              certificationCharges={o.certification_charges ?? 0}
+              energizationCharges={o.energization_charges ?? 0}
+              currentReturnStatus={orderExtras.return_status ?? 'none'}
+              cancelReason={orderExtras.payment_failure_reason ?? null}
+              complianceFlags={orderExtras.compliance_flags ?? null}
+              paymentStatus={o.payment_status ?? null}
+              amountPaid={o.amount_paid ?? null}
+              amountDue={o.amount_due ?? null}
+              createdAt={o.created_at}
+              trackingEvents={trackingEvents}
+            />
           ) : (
             <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
               Orders are view-only for your role.

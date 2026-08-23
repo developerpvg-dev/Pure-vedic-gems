@@ -45,7 +45,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'surya ratna',
       'unheated ruby',
     ],
-    seo_title: 'Buy Natural Ruby Gemstone | Manik',
     seo_description:
       'Natural ruby stone and ruby gemstone (Manik) for Surya. Ruby stone price for certified Burma and Mozambique stones.',
     intro:
@@ -192,7 +191,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'basra pearl',
       'south sea pearl',
     ],
-    seo_title: 'Buy Natural Pearl Gemstone | Moti',
     seo_description:
       'Natural pearl gemstone and pearl stone (Moti) for Chandra. Moti stone price for certified South Sea and Basra lots.',
     intro:
@@ -327,7 +325,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'italian coral',
       'natural red coral',
     ],
-    seo_title: 'Buy Natural Red Coral Stone | Moonga',
     seo_description:
       'Natural red coral stone and red coral gemstone (Moonga) for Mangal. Moonga stone price for Italian and Japanese coral.',
     intro:
@@ -468,7 +465,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'panna ring',
       'emerald stone price',
     ],
-    seo_title: 'Buy Natural Emerald Stone | Panna',
     seo_description:
       'Natural emerald stone and real emerald gemstone (Panna) for Budh. Shop certified Colombian and Zambian emeralds with oil disclosure.',
     intro:
@@ -727,7 +723,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'ceylon pukhraj',
       'unheated pukhraj',
     ],
-    seo_title: 'Buy Natural Yellow Sapphire | Pukhraj',
     seo_description:
       'Natural yellow sapphire stone (Pukhraj) for Guru. Yellow sapphire price for Ceylon lots. Yellow sapphires for sale with heat disclosure.',
     intro:
@@ -872,7 +867,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'lab grown diamond',
       'shukra ratna',
     ],
-    seo_title: 'Buy Natural Diamond Gemstone | Heera',
     seo_description:
       'Natural diamond gemstone (Heera) for Shukra. Diamond stone vs lab-grown, with clarity and Jyotish disclosure.',
     intro:
@@ -1020,7 +1014,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'neelam price',
       'neelam benefits',
     ],
-    seo_title: 'Buy Neelam Stone | Natural Blue Sapphire Price',
     seo_description:
       'Blue sapphire price, neelam stone price: natural blue sapphire stone, royal blue sapphire, light blue sapphire, cornflower blue sapphire, blue star sapphire.',
     intro:
@@ -1482,7 +1475,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'hessonite garnet',
       'ceylon gomed',
     ],
-    seo_title: 'Buy Natural Hessonite Stone | Gomed',
     seo_description:
       'Natural hessonite stone and hessonite gemstone (Gomed) for Rahu. Gomed stone price for Ceylon hessonite garnet.',
     intro:
@@ -1615,7 +1607,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'lehsunia',
       'ketu ratna',
     ],
-    seo_title: 'Buy Catseye Gemstone | Lehsunia',
     seo_description:
       'Original cats eye stone and catseye gem (Lehsunia) for Ketu. Cat\'s eye chrysoberyl with cats eye gemstone price and lab disclosure.',
     intro:
@@ -1752,7 +1743,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'ceylon white sapphire',
       'safed pukhraj',
     ],
-    seo_title: 'Buy Natural White Sapphire | Venus',
     seo_description:
       'Natural white sapphire stone and white sapphire gemstone (Safed Pukhraj). Ceylon white sapphire as the Jyotish diamond substitute.',
     intro:
@@ -1887,7 +1877,6 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
       'sri lankan pitambari',
       'dual colour sapphire',
     ],
-    seo_title: 'Buy Pitambari Sapphire | Neelam',
     seo_description:
       'Natural pitambari and pitambari sapphire (Pitambari Neelam) for Guru and Shani. Sri Lankan pitambari with dual yellow-blue zoning.',
     intro:

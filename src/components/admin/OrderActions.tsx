@@ -185,6 +185,8 @@ interface OrderActionsProps {
   amountDue?: number | null;
   createdAt?: string | null;
   trackingEvents?: TrackingEventRow[];
+  /** Accountant: only inventory mark-sold (no fulfillment / cancel / restore). */
+  markSoldOnly?: boolean;
 }
 
 export function OrderActions({
@@ -222,6 +224,7 @@ export function OrderActions({
   amountDue = null,
   createdAt = null,
   trackingEvents = [],
+  markSoldOnly = false,
 }: OrderActionsProps) {
   const [status, setStatus] = useState(currentStatus);
   const [notes, setNotes] = useState(currentNotes ?? '');
@@ -653,6 +656,68 @@ export function OrderActions({
 
   const isTerminal = status === 'cancelled' || status === 'refunded';
   const showRefund = !isTerminal || status === 'cancelled';
+
+  if (markSoldOnly) {
+    return (
+      <div className="space-y-3">
+        {error ? (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
+        ) : null}
+        {success ? (
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {success}
+          </p>
+        ) : null}
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+          <div className="border-b border-stone-100 px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">Inventory</p>
+            <p className="mt-0.5 text-sm font-semibold text-stone-900">Mark items sold</p>
+          </div>
+          <div className="space-y-3 bg-stone-50/40 px-4 py-4">
+            {markedSoldAt ? (
+              <p className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
+                Marked sold {formatCompletedDate(markedSoldAt)} — items show as Sold on the website.
+              </p>
+            ) : (
+              <>
+                <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
+                  {orderSource === 'offline'
+                    ? 'Offline sale: items are Reserved on the website until you mark them sold.'
+                    : 'Items stay Reserved after payment until you mark them sold (after billing).'}
+                </p>
+                {orderItems.length > 0 ? (
+                  <ul className="space-y-2">
+                    {orderItems.map((item, index) => {
+                      const label = item.name || item.tag_number || item.sku || `Item ${index + 1}`;
+                      const meta = [item.tag_number, item.sku].filter(Boolean).join(' · ');
+                      return (
+                        <li
+                          key={`${item.product_id ?? 'line'}-${index}`}
+                          className="rounded-xl border border-stone-100 bg-white px-3 py-2.5"
+                        >
+                          <p className="truncate text-sm font-medium text-stone-900">{label}</p>
+                          {meta ? <p className="truncate text-[11px] text-stone-400">{meta}</p> : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={markSoldAfterBilling}
+                  disabled={saving || isTerminal || status === 'pending_payment'}
+                  className={btnPrimary}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gem className="h-4 w-4" />}
+                  Mark items sold
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const saveWorkshopPayload = {
     status,

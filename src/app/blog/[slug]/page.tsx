@@ -244,7 +244,9 @@ export default async function BlogPostPage({ params }: PageProps) {
         {faqs.length > 0 ? (
           <section className="pvg-blog-faq" aria-labelledby="blog-faq-heading">
             <p className="pvg-blog-section-eyebrow">Buying guidance</p>
-            <h2 id="blog-faq-heading">Frequently Asked Questions</h2>
+            <h2 id="blog-faq-heading">
+              {post.faqHeading?.trim() || 'Frequently Asked Questions'}
+            </h2>
             <div className="pvg-blog-faq-list">
               {faqs.map((faq) => (
                 <details key={faq.question}>

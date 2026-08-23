@@ -133,17 +133,19 @@ export async function POST(request: NextRequest) {
         type: 'new_enquiry',
         title: dupeNote
           ? `${dupeNote.split(' ·')[0]} — review lead`
-          : parsed.data.source === 'contact_form'
-            ? 'New contact message — assign telecaller'
-            : parsed.data.source === 'blog_popup' || parsed.data.source === 'blog_sidebar'
-              ? 'New blog enquiry'
-              : 'New enquiry — assign telecaller',
+          : parsed.data.source === 'contact_form' ||
+              parsed.data.source === 'blog_popup' ||
+              parsed.data.source === 'blog_sidebar'
+            ? parsed.data.source === 'contact_form'
+              ? 'New contact message — assign telecaller'
+              : 'New blog enquiry — assign telecaller'
+            : 'New enquiry — assign telecaller',
         message: dupeNote
           ? `${parsed.data.name} · ${dupeNote}`
           : parsed.data.source === 'contact_form'
             ? `${parsed.data.name} sent a contact form message. Forward to any telecaller.`
             : parsed.data.source === 'blog_popup' || parsed.data.source === 'blog_sidebar'
-              ? `${parsed.data.name} submitted a blog Ask-an-expert enquiry.`
+              ? `${parsed.data.name} submitted a blog Ask-an-expert enquiry. Forward to any telecaller.`
               : `${parsed.data.name} submitted an enquiry. Assign a telecaller to verify.`,
         href:
           parsed.data.source === 'contact_form'

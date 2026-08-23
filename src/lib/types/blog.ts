@@ -35,6 +35,7 @@ export interface SanityBlogPost {
   seoTitle?: string;
   seoDescription?: string;
   ogImage?: SanityImageSource;
+  faqHeading?: string;
   faqs?: Array<{ question: string; answer: string }>;
   relatedProductCategoryHref?: string;
   relatedProductCategoryLabel?: string;

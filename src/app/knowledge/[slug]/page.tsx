@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { urlFor } from '@/lib/sanity/client';
 import { PortableText } from '@/components/blog/PortableText';
-import { FALLBACK_KNOWLEDGE_ARTICLES, getFallbackKnowledgeArticle } from '@/lib/constants/knowledge';
 import { getAllKnowledgeArticleSlugs, getKnowledgeArticleBySlug } from '@/lib/sanity/queries';
 import type { PortableTextBlock, SanityKnowledgeArticle } from '@/lib/types/content';
 
@@ -44,16 +43,15 @@ function getImageUrl(article: SanityKnowledgeArticle, width = 1200, height = 720
 }
 
 async function getArticle(slug: string) {
-  return ((await getKnowledgeArticleBySlug(slug)) as SanityKnowledgeArticle | null) ?? getFallbackKnowledgeArticle(slug);
+  return (await getKnowledgeArticleBySlug(slug)) as SanityKnowledgeArticle | null;
 }
 
 export async function generateStaticParams() {
   const sanitySlugs = await getAllKnowledgeArticleSlugs();
-  const slugs = new Set(FALLBACK_KNOWLEDGE_ARTICLES.map((article) => article.slug.current));
-  for (const item of sanitySlugs ?? []) {
-    if (item.slug?.current) slugs.add(item.slug.current);
-  }
-  return Array.from(slugs).map((slug) => ({ slug }));
+  return (sanitySlugs ?? [])
+    .map((item) => item.slug?.current)
+    .filter((slug): slug is string => Boolean(slug))
+    .map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: KnowledgeArticleProps): Promise<Metadata> {

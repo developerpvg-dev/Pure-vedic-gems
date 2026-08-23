@@ -25,6 +25,8 @@ import {
 } from '@/lib/leads/permissions';
 import {
   canTransitionPipeline,
+  isBlogEnquiryLead,
+  isCallDeskLead,
   isLeadNotConvertedReason,
   isLeadPipelineStage,
   LEAD_NOT_CONVERTED_BY_CODE,
@@ -326,17 +328,109 @@ export async function PUT(
       actorName,
     });
 
-    const isContact = current.source === 'contact_form';
+    const isCallDesk = isCallDeskLead(current.source, current.enquiry_type);
+    const isBlog = isBlogEnquiryLead(current.source, current.enquiry_type);
     await createInAppNotifications([
       {
         audience: 'admin',
         recipientUserId: member.id,
         type: 'lead_assigned_telecom',
-        title: isContact ? 'New contact lead to call' : 'New lead to verify',
-        message: isContact
-          ? `${current.name} — contact form message (SR #${current.lead_number ?? ''})`
+        title: isCallDesk
+          ? isBlog
+            ? 'New blog lead to call'
+            : 'New contact lead to call'
+          : 'New lead to verify',
+        message: isCallDesk
+          ? isBlog
+            ? `${current.name} — blog Ask-an-expert (SR #${current.lead_number ?? ''})`
+            : `${current.name} — contact form message (SR #${current.lead_number ?? ''})`
           : `${current.name} — call & confirm details (SR #${current.lead_number ?? ''})`,
-        href: isContact ? `/admin/leads?kind=contact&id=${id}` : `/admin/leads?id=${id}`,
+        href: isCallDesk
+          ? isBlog
+            ? `/admin/leads?kind=blog&id=${id}`
+            : `/admin/leads?kind=contact&id=${id}`
+          : `/admin/leads?id=${id}`,
+        entityType: 'enquiry',
+        entityId: id,
+        metadata: { lead_number: current.lead_number },
+      },
+    ]);
+
+    return NextResponse.json({ lead: data });
+  }
+
+  if (action === 'reassign_telecaller') {
+    if (!canAssignLeads(role)) {
+      return NextResponse.json({ error: 'Only leads manager can reassign telecallers' }, { status: 403 });
+    }
+    if (!current.assigned_to) {
+      return NextResponse.json({ error: 'Lead has no telecaller — use Forward to telecaller first' }, { status: 400 });
+    }
+    const telecallerId = typeof updateData.assigned_to === 'string' ? updateData.assigned_to : null;
+    if (!telecallerId) {
+      return NextResponse.json({ error: 'Select a telecaller' }, { status: 400 });
+    }
+    if (telecallerId === current.assigned_to) {
+      return NextResponse.json({ error: 'Lead is already assigned to this telecaller' }, { status: 400 });
+    }
+    const { data: member } = await admin
+      .from('team_members')
+      .select('id, name, role')
+      .eq('id', telecallerId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!member || (member.role !== 'telecom' && member.role !== 'sales')) {
+      return NextResponse.json({ error: 'Invalid telecaller' }, { status: 400 });
+    }
+
+    const { data, error } = await admin
+      .from('enquiries')
+      .update({
+        assigned_to: member.id,
+        assigned_at: now,
+        updated_at: now,
+      })
+      .eq('id', id)
+      .eq('assigned_to', current.assigned_to)
+      .select()
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: 'Reassign failed', detail: error.message }, { status: 500 });
+    if (!data) {
+      return NextResponse.json({ error: 'Lead assignment changed — refresh and try again' }, { status: 409 });
+    }
+
+    await logLeadActivity(admin, {
+      enquiryId: id,
+      action: 'reassigned_telecaller',
+      fromValue: current.assigned_to,
+      toValue: member.id,
+      meta: {
+        previous_telecaller_id: current.assigned_to,
+        telecaller_id: member.id,
+        telecaller_name: member.name,
+      },
+      actorId: auth.user.id,
+      actorName,
+    });
+
+    const isCallDesk = isCallDeskLead(current.source, current.enquiry_type);
+    const isBlog = isBlogEnquiryLead(current.source, current.enquiry_type);
+    await createInAppNotifications([
+      {
+        audience: 'admin',
+        recipientUserId: member.id,
+        type: 'lead_assigned_telecom',
+        title: isCallDesk
+          ? isBlog
+            ? 'Blog lead reassigned to you'
+            : 'Contact lead reassigned to you'
+          : 'Lead reassigned to you',
+        message: `${current.name} — handed off to you (SR #${current.lead_number ?? ''})`,
+        href: isCallDesk
+          ? isBlog
+            ? `/admin/leads?kind=blog&id=${id}`
+            : `/admin/leads?kind=contact&id=${id}`
+          : `/admin/leads?id=${id}`,
         entityType: 'enquiry',
         entityId: id,
         metadata: { lead_number: current.lead_number },
@@ -541,6 +635,34 @@ export async function PUT(
       return NextResponse.json({ error: 'Final remedies text is required' }, { status: 400 });
     }
 
+    // Optional second telecaller + optional reassign (telecom can only open leads assigned to them)
+    let deliverTo = current.assigned_to;
+    let reassignTo: { id: string; name: string } | null = null;
+    const wantReassign = updateData.reassign_lead === true;
+    const pickId = typeof updateData.assigned_to === 'string' ? updateData.assigned_to : null;
+    if (pickId && pickId !== current.assigned_to) {
+      const { data: member } = await admin
+        .from('team_members')
+        .select('id, name, role')
+        .eq('id', pickId)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (!member || (member.role !== 'telecom' && member.role !== 'sales')) {
+        return NextResponse.json({ error: 'Invalid telecaller' }, { status: 400 });
+      }
+      if (!wantReassign) {
+        return NextResponse.json(
+          {
+            error:
+              'Check “Also reassign lead” so the second telecaller can access this lead (or keep the current telecaller)',
+          },
+          { status: 400 }
+        );
+      }
+      deliverTo = member.id;
+      reassignTo = { id: member.id, name: member.name };
+    }
+
     const { data, error } = await admin
       .from('enquiries')
       .update({
@@ -549,18 +671,41 @@ export async function PUT(
         pipeline_stage: 'sent_to_customer',
         status: 'contacted',
         updated_at: now,
+        ...(reassignTo
+          ? { assigned_to: reassignTo.id, assigned_at: now }
+          : {}),
       })
       .eq('id', id)
       .select()
       .single();
     if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 });
 
+    if (reassignTo) {
+      await logLeadActivity(admin, {
+        enquiryId: id,
+        action: 'reassigned_telecaller',
+        fromValue: current.assigned_to,
+        toValue: reassignTo.id,
+        meta: {
+          previous_telecaller_id: current.assigned_to,
+          telecaller_id: reassignTo.id,
+          telecaller_name: reassignTo.name,
+          with_send_to_telecaller: true,
+        },
+        actorId: auth.user.id,
+        actorName,
+      });
+    }
+
     await logLeadActivity(admin, {
       enquiryId: id,
       action: 'sent_remedies_to_telecaller',
       fromValue: current.pipeline_stage,
       toValue: 'sent_to_customer',
-      meta: { telecaller_id: current.assigned_to },
+      meta: {
+        telecaller_id: deliverTo,
+        reassigned: Boolean(reassignTo),
+      },
       actorId: auth.user.id,
       actorName,
     });
@@ -568,9 +713,11 @@ export async function PUT(
     await createInAppNotifications([
       {
         audience: 'admin',
-        recipientUserId: current.assigned_to,
+        recipientUserId: deliverTo,
         type: 'lead_remedies_for_delivery',
-        title: 'Remedies ready to share with customer',
+        title: reassignTo
+          ? 'Lead reassigned — remedies ready to share'
+          : 'Remedies ready to share with customer',
         message: `${current.name} — contact customer with final remedies (SR #${current.lead_number ?? ''})`,
         href: `/admin/leads?id=${id}`,
         entityType: 'enquiry',

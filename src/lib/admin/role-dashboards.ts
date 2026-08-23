@@ -31,11 +31,13 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       '/admin/yagya-bookings',
       '/admin/design-jobs',
       '/admin/erp-sync',
+      '/admin/item-status',
     ],
     nav: [
       { href: '/admin/finance', label: 'Finance', match: 'prefix' },
       { href: '/admin/compliance', label: 'Compliance & refunds', match: 'prefix' },
       { href: '/admin/orders', label: 'Orders', match: 'prefix' },
+      { href: '/admin/item-status', label: 'Item status', match: 'prefix' },
       { href: '/admin/commissions', label: 'Commissions', match: 'prefix' },
       { href: '/admin/yagya-bookings', label: 'Yagya bookings', match: 'prefix' },
       { href: '/admin/design-jobs', label: 'Design jobs', match: 'prefix' },
@@ -158,6 +160,7 @@ export function assertRoleDashboardAllowlists() {
   if (isScopedRolePathAllowed('finance', '/admin/customers')) throw new Error('finance must not open customers');
   if (isScopedRolePathAllowed('finance', '/admin/rewards')) throw new Error('finance must not open rewards');
   if (!isScopedRolePathAllowed('finance', '/admin/erp-sync')) throw new Error('finance erp-sync');
+  if (!isScopedRolePathAllowed('finance', '/admin/item-status')) throw new Error('finance item-status');
   if (isScopedRolePathAllowed('finance', '/admin/metals')) throw new Error('finance must not open metals');
   if (isScopedRolePathAllowed('finance', '/admin/leads')) throw new Error('finance must not open leads');
   if (!isScopedRolePathAllowed('finance', '/admin/design-jobs')) throw new Error('finance design-jobs');

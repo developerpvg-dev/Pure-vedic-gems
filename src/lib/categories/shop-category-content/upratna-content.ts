@@ -1,5 +1,6 @@
 import type { CategoryFaq } from '@/lib/types/shop-category-page';
 import { canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
+import { certifiedGemHubTitle } from '@/lib/seo/storefront-meta';
 import {
   BRAND,
   RichGemSections,
@@ -84,8 +85,7 @@ function defineUpratna(def: UpratnaDef): RichGemSections {
   const ved = vedicShort(def.hindi, def.name);
   const phrase = `${def.name} gemstone`;
   const stone = `${def.name} stone`;
-  const titled = ved ? `Buy Natural ${def.name} Gemstone | ${ved}` : `Buy Natural ${def.name} Gemstone`;
-  const seo_title = titled.length >= 30 ? titled : `${titled} | Upratna`;
+  const seo_title = certifiedGemHubTitle(def.name, ved);
   const seo_description = `Certified ${phrase} and original ${stone}${ved ? ` (${ved})` : ''}. ${phrase} price with origin and treatment disclosure.`;
 
   return {
@@ -961,7 +961,6 @@ const OPAL: RichGemSections = {
     { text: 'Fire opal options' },
     { text: 'Honest opal price' },
   ],
-  seo_title: 'Buy Natural Opal Gemstone | Venus',
   seo_description:
     'Opal stone and opal gemstone for Shukra. Fire opal and opals for sale with opal price, origin, and treatment disclosure.',
   meta_keywords: mergeKeywords(
@@ -2063,7 +2062,7 @@ export const UPRATNA_HUB_CONTENT: RichGemSections = {
     { text: 'Treatment disclosure listed' },
     { text: 'Chart review before wearing' },
   ],
-  seo_title: 'Buy Upratna Gems Online in India | Vedic Gemstones',
+  seo_title: 'Buy 100% Natural & Certified Upratna Gems Online',
   seo_description:
     'Buy certified Upratna gems online in India. Natural amethyst, citrine, moonstone, zircon as planetary substitutes. Lab reports. Delhi since 1937.',
   meta_keywords: [

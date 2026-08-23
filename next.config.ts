@@ -784,6 +784,26 @@ const nextConfig: NextConfig = {
         { source: `${source}/`, destination: '/knowledge', statusCode: 301 },
       ]),
 
+      // Retired fallback knowledge articles -> related blogs.
+      ...[
+        [
+          '/knowledge/yellow-sapphire-pukhraj-complete-guide',
+          '/blog/yellow-sapphire-stone-pukhraj-stone-complete-guide-to-properties-benefits-buying',
+        ],
+        [
+          '/knowledge/rudraksha-buying-guide',
+          '/blog/rudraksha-buying-guide-how-to-identify-natural-certified-and-energised-rudraksha',
+        ],
+        [
+          '/knowledge/real-vs-fake-expert-identification',
+          '/blog/how-to-buy-untreated-astrological-gemstones-online-in-india-without-getting-cheated',
+        ],
+        ['/knowledge/navagraha-gemstone-connections', '/blog/planetary-gemology'],
+      ].flatMap(([source, destination]) => [
+        { source, destination, statusCode: 301 },
+        { source: `${source}/`, destination, statusCode: 301 },
+      ]),
+
       // Legacy gem quality / buy-online pages -> rebuilt knowledge guides.
       ...[
         ['/buy-online-blue-sapphire-gemstone', '/knowledge/gem-qualities/blue-sapphire'],

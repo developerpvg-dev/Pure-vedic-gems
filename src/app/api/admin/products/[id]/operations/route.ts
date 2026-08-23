@@ -15,6 +15,9 @@ const operationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('purge') }),
   z.object({ action: z.literal('reserve'), note: z.string().trim().max(500).optional(), reserved_until: z.string().trim().optional(), quantity: z.coerce.number().int().positive().default(1) }),
   z.object({ action: z.literal('release') }),
+  // ponytail: accountants flip unique pieces without opening the full product editor
+  z.object({ action: z.literal('sold'), note: z.string().trim().max(500).optional() }),
+  z.object({ action: z.literal('activate'), note: z.string().trim().max(500).optional() }),
   z.object({ action: z.literal('directors_pick'), enabled: z.coerce.boolean(), display_order: z.coerce.number().int().default(0), curator_note: z.string().trim().max(500).optional() }),
   // ponytail: each piece is unique — stock is only 0 or 1
   z.object({ action: z.literal('stock_update'), stock_quantity: z.coerce.number().int().min(0).max(1), note: z.string().trim().max(500).optional() }),
@@ -81,6 +84,9 @@ export async function POST(
     updates.availability_status = 'out_of_stock';
   } else if (parsed.data.action === 'reserve') {
     updates.availability_status = 'reserved';
+    updates.in_stock = false;
+    updates.stock_quantity = 0;
+    updates.stock_status = 'out_of_stock';
     updates.manual_reserve_enabled = true;
     updates.reserved_quantity = parsed.data.quantity;
     updates.reserved_by_admin_id = auth.user.id;
@@ -88,12 +94,41 @@ export async function POST(
     updates.reservation_note = parsed.data.note ?? 'Reserved by admin';
   } else if (parsed.data.action === 'release') {
     updates.availability_status = 'in_stock';
+    updates.in_stock = true;
+    updates.stock_quantity = 1;
+    updates.stock_status = 'in_stock';
+    updates.is_active = true;
     updates.manual_reserve_enabled = false;
     updates.reserved_quantity = 0;
     updates.reserved_by_admin_id = null;
     updates.reserved_by_customer_id = null;
     updates.reserved_until = null;
     updates.reservation_note = null;
+  } else if (parsed.data.action === 'sold') {
+    updates.in_stock = false;
+    updates.stock_quantity = 0;
+    updates.stock_status = 'out_of_stock';
+    updates.availability_status = 'sold';
+    updates.manual_reserve_enabled = false;
+    updates.reserved_quantity = 0;
+    updates.reserved_by_admin_id = null;
+    updates.reserved_by_customer_id = null;
+    updates.reserved_until = null;
+    updates.reservation_note = parsed.data.note ?? 'Marked sold by admin';
+  } else if (parsed.data.action === 'activate') {
+    // Live & buyable again (from sold / reserved / inactive / archived)
+    updates.is_active = true;
+    updates.deleted_at = null;
+    updates.in_stock = true;
+    updates.stock_quantity = 1;
+    updates.stock_status = 'in_stock';
+    updates.availability_status = 'in_stock';
+    updates.manual_reserve_enabled = false;
+    updates.reserved_quantity = 0;
+    updates.reserved_by_admin_id = null;
+    updates.reserved_by_customer_id = null;
+    updates.reserved_until = null;
+    updates.reservation_note = parsed.data.note ?? null;
   } else if (parsed.data.action === 'directors_pick') {
     updates.is_directors_pick = parsed.data.enabled;
     updates.display_order = parsed.data.display_order;
@@ -126,7 +161,12 @@ export async function POST(
     ipAddress: getRequestIp(request),
   });
 
-  if (parsed.data.action === 'stock_update' || parsed.data.action === 'restore') {
+  if (
+    parsed.data.action === 'stock_update' ||
+    parsed.data.action === 'restore' ||
+    parsed.data.action === 'sold' ||
+    parsed.data.action === 'activate'
+  ) {
     await notifyLowStockProduct(data as { id: string; sku: string | null; name: string; category: string | null; stock_quantity: number | null }, `product_${parsed.data.action}`);
   }
 

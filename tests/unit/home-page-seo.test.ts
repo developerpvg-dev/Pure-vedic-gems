@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HOME_PAGE_DESCRIPTION, HOME_PAGE_TITLE, homePageJsonLd } from '@/lib/seo/home-page';
-import { fitDescription, fitTitle, organizationJsonLd } from '@/lib/utils/seo';
+import { fitDescription, fitTitle, organizationJsonLd, productJsonLd } from '@/lib/utils/seo';
+import type { ProductCard } from '@/lib/types/product';
 import { expectOwnBrandCopy } from './expect-own-brand-copy';
 
 describe('homepage SEO (head + JSON-LD only)', () => {
@@ -35,8 +36,51 @@ describe('homepage SEO (head + JSON-LD only)', () => {
   });
 
   it('declares a 15-day merchant return policy on the organization graph', () => {
-    const policy = organizationJsonLd().merchantReturnPolicy as { merchantReturnDays?: number; url?: string };
+    const org = organizationJsonLd();
+    const policy = org.hasMerchantReturnPolicy as { merchantReturnDays?: number; url?: string; '@id'?: string };
     expect(policy.merchantReturnDays).toBe(15);
     expect(policy.url).toMatch(/\/policies\/returns$/);
+    expect(policy['@id']).toMatch(/\/policies\/returns#policy$/);
+    expect(org.hasShippingService).toBeTruthy();
+  });
+
+  it('emits merchant listing fields and aggregateRating on product JSON-LD', () => {
+    const product = {
+      id: '1',
+      sku: 'RUBY-1',
+      slug: 'ruby-1',
+      name: 'Natural Ruby',
+      category: 'gemstone',
+      sub_category: 'ruby',
+      price: 5000,
+      images: [],
+      in_stock: true,
+      featured: false,
+      is_directors_pick: false,
+      created_at: '2026-01-01',
+      thumbnail_url: '/gems/ruby.jpg',
+    } as ProductCard;
+
+    const schema = productJsonLd(product, '/gemstones/navaratna/ruby/ruby-1', {
+      reviews: [
+        {
+          customer_name: 'Asha',
+          rating: 5,
+          title: 'Beautiful',
+          review_text: 'Certified and as described.',
+          created_at: '2026-01-15T00:00:00.000Z',
+        },
+      ],
+    });
+    const offers = schema.offers as Record<string, unknown>;
+    const rating = schema.aggregateRating as { ratingValue?: number; reviewCount?: number };
+
+    expect(schema.image).toEqual([expect.stringMatching(/\/gems\/ruby\.jpg$/)]);
+    expect(offers.hasMerchantReturnPolicy).toEqual({
+      '@id': expect.stringMatching(/\/policies\/returns#policy$/),
+    });
+    expect(offers.shippingDetails).toMatchObject({ '@type': 'OfferShippingDetails' });
+    expect(rating.ratingValue).toBe(5);
+    expect(rating.reviewCount).toBe(1);
   });
 });

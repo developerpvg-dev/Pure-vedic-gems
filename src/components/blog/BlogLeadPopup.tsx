@@ -7,19 +7,20 @@ import Link from 'next/link';
 import { X } from 'lucide-react';
 import { BlogEnquiryForm } from './BlogEnquiryForm';
 import type { BlogRelatedProduct } from '@/lib/blog/blog-rail-data';
+import { blogScrollRatio } from './blog-scroll-ratio';
 
-// ponytail: v2 resets stale dismissals from earlier popup iterations during testing
+// ponytail: v4 clears phones that auto-opened+ghost-dismissed on Google cold loads (v3 max<=0→1 bug)
 function enquiryDismissKey(slug: string) {
-  return `pvg-blog-enquiry-dismissed:v3:${slug}`;
+  return `pvg-blog-enquiry-dismissed:v4:${slug}`;
 }
 
 function productsDismissKey(slug: string) {
-  return `pvg-blog-products-popup-dismissed:v3:${slug}`;
+  return `pvg-blog-products-popup-dismissed:v4:${slug}`;
 }
 
 const PRODUCTS_DELAY_MS = 30_000;
 const COMPACT_MAX = 1023;
-const OPEN_GRACE_MS = 800;
+const OPEN_GRACE_MS = 1600;
 const ENQUIRY_SCROLL_RATIO = 0.3;
 
 function isCompactScreen() {
@@ -27,9 +28,8 @@ function isCompactScreen() {
 }
 
 function pageScrollRatio() {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  if (max <= 0) return 1;
-  return window.scrollY / max;
+  const top = window.scrollY || document.documentElement.scrollTop || 0;
+  return blogScrollRatio(top, document.documentElement.scrollHeight, window.innerHeight);
 }
 
 type Stage = 'none' | 'enquiry' | 'products';
@@ -104,13 +104,19 @@ export function BlogLeadPopup({
     function onScroll() {
       if (pageScrollRatio() < ENQUIRY_SCROLL_RATIO) return;
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
       openEnquiry();
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     onScroll();
+    // ponytail: Google mobile often finishes image/layout after first paint; one delayed recheck catches that
+    const readyTimer = window.setTimeout(onScroll, 600);
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      window.clearTimeout(readyTimer);
       clearProductsTimer();
     };
     // ponytail: slug is the visit; product refs update in render
