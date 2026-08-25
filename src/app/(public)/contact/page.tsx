@@ -9,6 +9,8 @@ import {
   DELHI_MAP_EMBED,
   DELHI_MAP_URL,
   OFFICE_LOCATIONS,
+  SULTANPUR_MAP_EMBED,
+  SULTANPUR_MAP_URL,
 } from '@/lib/constants/company-addresses';
 import './contact-page.css';
 
@@ -434,12 +436,12 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="pvg-contact-maps" aria-labelledby="contact-map-heading">
+      <section className="pvg-contact-maps" aria-label="Directions to our locations">
         <div className="pvg-contact-maps-inner">
           <ScrollReveal>
             <article className="pvg-contact-map-block">
               <div className="section-head !mb-6">
-                <h2 className="section-title" id="contact-map-heading">
+                <h2 className="section-title" id="contact-map-saket">
                   Saket Showroom — Directions
                 </h2>
                 <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
@@ -460,6 +462,39 @@ export default function ContactPage() {
                 <iframe
                   title="Saket showroom map"
                   src={DELHI_MAP_EMBED}
+                  className="pvg-contact-map-embed"
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </article>
+          </ScrollReveal>
+
+          <ScrollReveal delay={80}>
+            <article className="pvg-contact-map-block">
+              <div className="section-head !mb-6">
+                <h2 className="section-title" id="contact-map-sultanpur">
+                  Sultanpur — Directions
+                </h2>
+                <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
+              </div>
+              <div className="pvg-contact-map-actions">
+                <a href={SULTANPUR_MAP_URL} target="_blank" rel="noreferrer" className="pvg-contact-link">
+                  Open in Maps <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+              <div className="pvg-contact-map-grid">
+                <Image
+                  src="/contact/DELHI.png"
+                  alt="How to find Pure Vedic Science and Research Centre near Sultanpur Metro Station"
+                  width={1080}
+                  height={1350}
+                  className="pvg-contact-map-route"
+                />
+                <iframe
+                  title="Sultanpur research centre map"
+                  src={SULTANPUR_MAP_EMBED}
                   className="pvg-contact-map-embed"
                   loading="lazy"
                   allowFullScreen

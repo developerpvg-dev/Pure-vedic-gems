@@ -333,11 +333,19 @@ function ActiveFilters({
   onClear: (key: FilterKey | 'q') => void;
 }) {
   const optionMap = new Map(definitions.map((definition) => [definition.key, definition.options]));
+  const qualityTierValues = new Set(
+    (optionMap.get('quality_tier') ?? []).map((option) => option.value.toLowerCase()),
+  );
   const activeEntries: Array<[FilterKey | 'q', string]> = [
     ['q', getValue('q')],
     ...definitions.map((definition) => [definition.key, getValue(definition.key)] as [FilterKey, string]),
   ];
-  const entries = activeEntries.filter(([, value]) => value !== '');
+  // quality_tier and quality_label share ?quality_label= — show the grade chip only.
+  const entries = activeEntries.filter(([key, value]) => {
+    if (value === '') return false;
+    if (key === 'quality_label' && qualityTierValues.has(value.toLowerCase())) return false;
+    return true;
+  });
 
   if (entries.length === 0) return null;
 

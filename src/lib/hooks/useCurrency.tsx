@@ -23,6 +23,20 @@ import {
 import { suggestCurrencyFromLanguage } from '@/lib/currency/geo';
 import { formatPrice } from '@/lib/utils/format';
 
+/** First visit: IP country from /api/currency/suggest, else browser language. */
+async function resolveSuggestedCurrency(): Promise<string> {
+  try {
+    const res = await fetch('/api/currency/suggest', { cache: 'no-store' });
+    if (res.ok) {
+      const data = (await res.json()) as { currency?: string };
+      if (data.currency && isStorefrontCurrency(data.currency)) return data.currency;
+    }
+  } catch {
+    // fall through
+  }
+  return suggestCurrencyFromLanguage(navigator.language || 'en-IN');
+}
+
 const STORAGE_KEY = 'pvg_currency';
 
 type CurrencyContextValue = {
@@ -73,22 +87,24 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
     async function boot() {
       const saved = localStorage.getItem(STORAGE_KEY)?.toUpperCase() ?? null;
-      const suggested = suggestCurrencyFromLanguage(navigator.language || 'en-IN');
       let rates: Record<string, number> = { INR: 1 };
 
-      try {
-        // Cached until admin updates rates (Data Cache + short CDN stale-while-revalidate).
-        const res = await fetch('/api/currency/rates');
-        if (res.ok) {
-          const data = (await res.json()) as {
-            rates?: Array<{ currency: string; rate: number; is_active?: boolean }>;
-          };
-          rates = ratesFromPayload(data.rates ?? []);
-        }
-      } catch {
-        // keep INR defaults
-      }
+      const [ratesRes, suggested] = await Promise.all([
+        fetch('/api/currency/rates')
+          .then(async (res) => {
+            if (!res.ok) return null;
+            return (await res.json()) as {
+              rates?: Array<{ currency: string; rate: number; is_active?: boolean }>;
+            };
+          })
+          .catch(() => null),
+        // Only hit geo when the visitor has no saved pick.
+        saved && isStorefrontCurrency(saved)
+          ? Promise.resolve(saved)
+          : resolveSuggestedCurrency(),
+      ]);
 
+      if (ratesRes?.rates) rates = ratesFromPayload(ratesRes.rates);
       if (cancelled) return;
 
       const next =

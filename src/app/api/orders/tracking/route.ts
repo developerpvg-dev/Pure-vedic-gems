@@ -220,6 +220,7 @@ export async function POST(request: NextRequest) {
       product_video_url: order.product_video_url,
       product_video_urls: normalizeHttpsUrlList(mediaFlags.product_video_urls),
       product_image_urls: normalizeHttpsUrlList(mediaFlags.product_image_urls),
+      packing_image_urls: normalizeHttpsUrlList(mediaFlags.packing_image_urls),
       puja_video_url: order.puja_video_url,
       energization_image_urls: normalizeHttpsUrlList(mediaFlags.energization_image_urls),
       compliance_flags: order.compliance_flags,

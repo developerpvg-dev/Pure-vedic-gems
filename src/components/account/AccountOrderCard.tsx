@@ -93,6 +93,7 @@ export type AccountOrderCardData = {
   product_video_url: string | null;
   product_video_urls?: string[];
   product_image_urls?: string[];
+  packing_image_urls?: string[];
   puja_video_url: string | null;
   delivery_status?: string | null;
   shipped_at?: string | null;
@@ -488,6 +489,7 @@ export function AccountOrderCard({
           product_video_url={order.product_video_url}
           product_video_urls={order.product_video_urls}
           product_image_urls={order.product_image_urls}
+          packing_image_urls={order.packing_image_urls}
           puja_video_url={order.puja_video_url}
           energization_image_urls={order.energization_image_urls}
           tracking_number={order.tracking_number}

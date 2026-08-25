@@ -31,7 +31,8 @@ const SULTANPUR_RESEARCH_MAP_QUERY =
 
 export const DELHI_MAP_URL = `https://www.google.com/maps/search/?api=1&query=${DELHI_SHOWROOM_MAP_QUERY}`;
 export const UK_OFFICE_MAP_URL = `https://www.google.com/maps/search/?api=1&query=${UK_OFFICE_MAP_QUERY}`;
-export const SULTANPUR_MAP_URL = `https://www.google.com/maps/search/?api=1&query=${SULTANPUR_RESEARCH_MAP_QUERY}`;
+/** Shared Google Maps pin for the Sultanpur research centre. */
+export const SULTANPUR_MAP_URL = 'https://share.google/8B7MTrj66sHDXIzOd';
 
 export const DELHI_MAP_EMBED = `https://maps.google.com/maps?hl=en&q=${DELHI_SHOWROOM_MAP_QUERY}&z=15&output=embed`;
 export const UK_OFFICE_MAP_EMBED = `https://maps.google.com/maps?hl=en&q=${UK_OFFICE_MAP_QUERY}&z=14&output=embed`;

@@ -1,8 +1,8 @@
 /**
  * Mark website products sold from soldlist/*.xlsx issue registers.
  *
- *   npx tsx scripts/db/_mark-sold-from-soldlist.ts
- *   npx tsx scripts/db/_mark-sold-from-soldlist.ts --write
+ *   npx tsx scripts/db/_mark-sold-from-soldlist.ts --dir sold2025-26
+ *   npx tsx scripts/db/_mark-sold-from-soldlist.ts --dir sold2025-26 --write
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -13,18 +13,21 @@ import * as XLSX from 'xlsx';
 loadEnv({ path: resolve(process.cwd(), '.env.local'), override: true });
 
 const WRITE = process.argv.includes('--write');
-const SOLDLIST_DIR = resolve(process.cwd(), '..', 'soldlist');
+const dirIdx = process.argv.indexOf('--dir');
+const subDir = dirIdx >= 0 ? process.argv[dirIdx + 1] : 'sold2025-26';
+const SOLDLIST_DIR = resolve(process.cwd(), '..', 'soldlist', subDir);
 
 /** Filename → category/name hints used to pick the right SKU when tags collide. */
 function categoryHints(filename: string): string[] {
   const f = filename.toLowerCase();
-  if (f.includes('rudraksha')) return ['rudraksha'];
-  if (f.includes('pooja')) return ['rudraksha', 'pooja', 'idol'];
+  // ponytail: sold24-25 file is misspelled RUSRAKSHA
+  if (f.includes('rudraksha') || f.includes('rusraksha')) return ['rudraksha'];
+  if (f.includes('pooja') || f.includes('idol')) return ['rudraksha', 'pooja', 'idol'];
   if (f.includes('emerald')) return ['navaratna', 'emerald'];
   if (f.includes('ruby')) return ['navaratna', 'ruby'];
   if (f.includes('sapphire')) return ['navaratna', 'sapphire'];
   if (f.includes('semi')) return ['uparatna', 'semi'];
-  if (f.includes('pre stone') || f.includes('pre stn') || f.includes('pre stone')) {
+  if (f.includes('pre stone') || f.includes('pre ston') || f.includes('pre stn')) {
     return ['navaratna', 'uparatna', 'pearl', 'coral', 'opal', 'zircon', 'hessonite', 'cats'];
   }
   return [];

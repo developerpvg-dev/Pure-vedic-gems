@@ -51,6 +51,8 @@ export type ReturnComplianceFlags = {
   /** Design media — multiple product videos / images, shown on tracking + review email */
   product_video_urls?: string[];
   product_image_urls?: string[];
+  /** Packed package + address-label photos for customer confirm before ship */
+  packing_image_urls?: string[];
 };
 
 /** Trim https URL lists stored on compliance_flags (media, energization, returns). */

@@ -247,7 +247,7 @@ export function GemsQualitiesIndexContent({ gems }: { gems: GemQualityIndexItem[
               Book Consultation
             </Link>
             <a
-              href="https://wa.me/919810335577"
+              href="https://wa.me/919871582404"
               target="_blank"
               rel="noopener noreferrer"
               className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm"

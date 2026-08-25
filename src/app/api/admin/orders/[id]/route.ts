@@ -5,6 +5,7 @@ import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { sendTrackingUpdateEmail } from '@/lib/resend/send-tracking-update';
 import { sendOrderCancelledEmail } from '@/lib/resend/send-order-cancelled';
 import { sendProductVideoReviewEmail } from '@/lib/resend/send-product-video-review';
+import { sendPackageAddressReviewEmail } from '@/lib/resend/send-package-address-review';
 import { sendPujaEnergizationMediaEmail } from '@/lib/resend/send-puja-energization-media';
 import { sendRingSizeReuploadEmail } from '@/lib/resend/send-ring-size-reupload';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
@@ -17,6 +18,7 @@ import {
   parseComplianceFlags,
 } from '@/lib/orders/returns';
 import { beginProductVideoReviewNotify } from '@/lib/orders/product-video-review';
+import { beginPackageAddressReviewNotify } from '@/lib/orders/package-address-review';
 import { beginRingSizeConfirmationNotify, clearRingSizeConfirmationImage } from '@/lib/orders/ring-size-confirmation';
 import { storageObjectFromPublicUrl } from '@/lib/supabase/storage-public-url';
 import { requiresDispatchPaymentVerify } from '@/lib/orders/dispatch-proof';
@@ -81,6 +83,7 @@ export async function PUT(
     assigned_to,
     notify_customer,
     notify_product_video,
+    notify_package_address,
     notify_puja_energization,
     notify_ring_size,
     ring_size_admin_remarks,
@@ -88,6 +91,7 @@ export async function PUT(
     product_video_url,
     product_video_urls,
     product_image_urls,
+    packing_image_urls,
     puja_video_url,
     energization_image_urls,
     commission_source,
@@ -214,6 +218,7 @@ export async function PUT(
     energization_image_urls?: string[];
     product_video_urls?: string[];
     product_image_urls?: string[];
+    packing_image_urls?: string[];
   } = {};
   if (energization_image_urls !== undefined) {
     mediaFlagPatch.energization_image_urls = normalizeHttpsUrlList(energization_image_urls);
@@ -225,6 +230,9 @@ export async function PUT(
   }
   if (product_image_urls !== undefined) {
     mediaFlagPatch.product_image_urls = normalizeHttpsUrlList(product_image_urls);
+  }
+  if (packing_image_urls !== undefined) {
+    mediaFlagPatch.packing_image_urls = normalizeHttpsUrlList(packing_image_urls);
   }
   if (Object.keys(mediaFlagPatch).length > 0) {
     updates.compliance_flags = mergeComplianceFlags(
@@ -280,6 +288,44 @@ export async function PUT(
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : 'Could not start product video review' },
+        { status: 400 },
+      );
+    }
+  }
+
+  let packageAddressReviewRound: number | null = null;
+  let packageAddressReviewImages: string[] = [];
+  if (notify_package_address) {
+    const flagsForNotify = parseComplianceFlags(
+      updates.compliance_flags ?? current.compliance_flags,
+    );
+    const packingUrls =
+      packing_image_urls !== undefined
+        ? normalizeHttpsUrlList(packing_image_urls)
+        : normalizeHttpsUrlList(flagsForNotify.packing_image_urls);
+    if (!packingUrls.length) {
+      return NextResponse.json(
+        { error: 'Upload packing / address photos before notifying the customer' },
+        { status: 400 },
+      );
+    }
+    if (!customerEmail) {
+      return NextResponse.json(
+        { error: 'No customer email on this order — cannot send package confirmation email' },
+        { status: 400 },
+      );
+    }
+    packageAddressReviewImages = packingUrls;
+    try {
+      const started = beginPackageAddressReviewNotify(
+        updates.compliance_flags ?? current.compliance_flags,
+        packingUrls,
+      );
+      updates.compliance_flags = started.flags;
+      packageAddressReviewRound = started.review.round;
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Could not start package address review' },
         { status: 400 },
       );
     }
@@ -566,6 +612,51 @@ export async function PUT(
     });
   }
 
+  let packageAddressReviewEmailId: string | null = null;
+  if (
+    notify_package_address &&
+    customerEmail &&
+    packageAddressReviewRound != null &&
+    packageAddressReviewImages.length
+  ) {
+    packageAddressReviewEmailId = await sendPackageAddressReviewEmail({
+      to: customerEmail,
+      customerName,
+      orderNumber: current.order_number,
+      orderId: id,
+      round: packageAddressReviewRound,
+      imageUrls: packageAddressReviewImages,
+    });
+
+    await db.from('order_tracking_events').insert({
+      order_id: id,
+      status: 'package_address_review',
+      event_time: new Date().toISOString(),
+      note: 'Packing photos sent for customer confirmation of package and address.',
+      created_by: auth.user.id,
+      is_customer_visible: true,
+    });
+
+    if (current.customer_id) {
+      await createInAppNotifications([
+        {
+          audience: 'user',
+          recipientUserId: current.customer_id,
+          type: 'package_address_review',
+          title: 'Confirm your package & address',
+          message: `Please confirm the packing photos for order ${current.order_number} before we ship.`,
+          href: '/account/orders',
+          entityType: 'order',
+          entityId: id,
+          metadata: {
+            order_number: current.order_number,
+            round: packageAddressReviewRound,
+          },
+        },
+      ]);
+    }
+  }
+
   let pujaEnergizationEmailId: string | null = null;
   if (notify_puja_energization && customerEmail && (pujaNotifyVideo || pujaNotifyImages.length)) {
     pujaEnergizationEmailId = await sendPujaEnergizationMediaEmail({
@@ -722,6 +813,8 @@ export async function PUT(
       trackingEmailId,
       productVideoReviewEmailId,
       productVideoReviewRound,
+      packageAddressReviewEmailId,
+      packageAddressReviewRound,
       pujaEnergizationEmailId,
       ringSizeReuploadEmailId,
       ringSizeNotifyRound,

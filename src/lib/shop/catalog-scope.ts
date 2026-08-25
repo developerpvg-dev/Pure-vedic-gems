@@ -43,12 +43,20 @@ type FilterableQuery = {
   not(column: string, operator: string, value: string): FilterableQuery;
 };
 
+/** True when the shopper explicitly asked for the Exclusive quality bucket. */
+export function isExclusiveQualityFilter(qualityLabel?: string | null): boolean {
+  return qualityLabel?.trim().toLowerCase() === 'exclusive';
+}
+
 /** Hide on-request exclusive gems from priced navaratna collection pages. */
 export function applyQuoteOnlyListingFilter<T extends FilterableQuery>(
   query: T,
   category?: string | null,
   subCategory?: string | null,
+  // ponytail: Exclusive filter IS the on-request shelf — don't hide the rows it selects.
+  qualityLabel?: string | null,
 ): T {
+  if (isExclusiveQualityFilter(qualityLabel)) return query;
   if (!shouldHideQuoteOnlyFromListing(category, subCategory)) {
     return query;
   }

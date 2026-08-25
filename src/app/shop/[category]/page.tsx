@@ -124,6 +124,7 @@ async function CategoryProducts({
         query,
         meta?.category ?? filters.category,
         meta?.sub_category ?? filters.sub_category,
+        filters.quality_label,
       );
       query = applyShopProductFilters(query, filters);
 

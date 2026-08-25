@@ -169,6 +169,7 @@ export default async function OrdersPage() {
         product_video_url: extras.product_video_url ?? null,
         product_video_urls: flags.product_video_urls ?? [],
         product_image_urls: flags.product_image_urls ?? [],
+        packing_image_urls: flags.packing_image_urls ?? [],
         puja_video_url: extras.puja_video_url ?? null,
         delivery_status: extras.delivery_status ?? null,
         shipped_at: extras.shipped_at ?? null,

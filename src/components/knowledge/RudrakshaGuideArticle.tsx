@@ -258,7 +258,7 @@ export function RudrakshaGuideArticle({
                 Shop {guide.shortTitle}
               </Link>
               <a
-                href="https://wa.me/919810335577"
+                href="https://wa.me/919871582404"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-md border-2 border-[#4D0A0A] bg-white px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-[#4D0A0A] transition hover:bg-[#FDF6E8]"
@@ -294,7 +294,7 @@ export function RudrakshaGuideArticle({
               Book Consultation
             </Link>
             <a
-              href="https://wa.me/919810335577"
+              href="https://wa.me/919871582404"
               target="_blank"
               rel="noopener noreferrer"
               className="pvg-knowledge-btn-outline px-7 py-3.5 text-sm"

@@ -18,6 +18,7 @@ export type CustomerJourneyInput = {
   product_video_url?: string | null;
   product_video_urls?: string[] | null;
   product_image_urls?: string[] | null;
+  packing_image_urls?: string[] | null;
   puja_video_url?: string | null;
   energization_image_urls?: string[] | null;
   tracking_number?: string | null;
@@ -57,7 +58,7 @@ const STEP_DESCRIPTIONS: Record<JourneyStepKey, string> = {
   energization: 'Puja ritual is performed as requested. Video or pictures appear here when ready.',
   product_video: 'Product videos and images of your finished piece will appear here when ready.',
   puja_video: 'Puja ritual is performed as requested. Ceremony video appears here when ready.',
-  packed: 'Order packed and ready for courier handoff.',
+  packed: 'Order packed and ready for courier handoff. Photos of the package and address appear here when shared.',
   shipped: 'Package handed to the courier with tracking details.',
   in_transit: 'Your package is on the way with the courier.',
   out_for_delivery: 'Courier is delivering your package today.',
@@ -244,9 +245,11 @@ export function getCustomerJourney(order: CustomerJourneyInput) {
         ? order.product_image_urls ?? []
         : step.key === 'energization'
           ? order.energization_image_urls ?? []
-          : step.key === 'delivered' && pod?.image_urls?.length
-            ? pod.image_urls
-            : [],
+          : step.key === 'packed'
+            ? order.packing_image_urls ?? []
+            : step.key === 'delivered' && pod?.image_urls?.length
+              ? pod.image_urls
+              : [],
     detail: stepDetail(step.key, order),
   }));
 

@@ -144,10 +144,16 @@ function buildFooterGroups(groups: StorefrontCategoryGroup[]): FooterLinkGroup[]
         { label: idols.label, href: idols.href },
         { label: jewelry.label, href: jewelry.href },
         { label: malas.label, href: malas.href },
+        {
+          label: 'Exclusive Gems',
+          href: navaratna.subcategories.find((s) => s.slug === 'exclusive-gems')?.href
+            ?? '/gemstones/navaratna/exclusive-gems',
+        },
         { label: "Director's Pick", href: '/shop/directors-pick' },
       ],
     },
-    categoryGroupLinks(navaratna, 9),
+    // Include Exclusive Gems (+ Pitambari); limit 9 stopped before them.
+    categoryGroupLinks(navaratna, navaratna.subcategories.length),
     categoryGroupLinks(upratna, 8),
     categoryGroupLinks(rudraksha, 8),
     {

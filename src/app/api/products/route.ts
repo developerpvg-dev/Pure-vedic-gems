@@ -80,7 +80,8 @@ export async function GET(request: NextRequest) {
     query = applyQuoteOnlyListingFilter(
       query,
       listingFilters.category,
-      listingFilters.sub_category
+      listingFilters.sub_category,
+      listingFilters.quality_label,
     );
     query = applyShopProductFilters(query, listingFilters);
     if (listingFilters.featured !== undefined) {

@@ -304,24 +304,37 @@ export function MediaUploader({
               className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white"
             >
               {file.type === 'video' ? (
-                <div className="flex aspect-square items-center justify-center bg-gray-100">
+                <a
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open video"
+                  className="relative flex aspect-square items-center justify-center bg-gray-100"
+                >
                   <Film className="h-8 w-8 text-gray-400" />
                   <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
                     VIDEO
                   </span>
-                </div>
+                </a>
               ) : (
-                <div className="relative aspect-square bg-gray-100">
+                <a
+                  href={file.preview || file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open full size"
+                  className="relative block aspect-square bg-gray-100"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={file.preview || file.url}
                     alt={file.name}
                     className="h-full w-full object-cover"
                   />
-                </div>
+                </a>
               )}
 
-              <div className="absolute inset-0 flex items-start justify-between bg-black/0 p-1.5 opacity-0 transition-opacity group-hover:bg-black/20 group-hover:opacity-100">
+              {/* ponytail: pointer-events-none so click falls through to open-full-size link; buttons re-enable */}
+              <div className="pointer-events-none absolute inset-0 flex items-start justify-between bg-black/0 p-1.5 opacity-0 transition-opacity group-hover:bg-black/20 group-hover:opacity-100">
                 {mode !== 'videos' && i === 0 && (
                   <span className="rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                     THUMBNAIL
@@ -331,7 +344,7 @@ export function MediaUploader({
                   <button
                     type="button"
                     onClick={() => moveFile(i, 0)}
-                    className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 hover:bg-white"
+                    className="pointer-events-auto rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 hover:bg-white"
                   >
                     Set as thumbnail
                   </button>
@@ -339,7 +352,7 @@ export function MediaUploader({
                 <button
                   type="button"
                   onClick={() => void removeFile(i)}
-                  className="rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
+                  className="pointer-events-auto rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -354,14 +367,14 @@ export function MediaUploader({
       {value.length > 0 && mode === 'all' && (
         <p className="text-xs text-gray-400">
           {value.filter((f) => f.type === 'image').length} images,{' '}
-          {value.filter((f) => f.type === 'video').length} videos — first image is thumbnail. Hover to
-          reorder or remove.
+          {value.filter((f) => f.type === 'video').length} videos — first image is thumbnail. Click to
+          view full size. Hover to reorder or remove.
         </p>
       )}
       {value.length > 0 && mode === 'images' && (
         <p className="text-xs text-gray-400">
-          {value.length} image{value.length === 1 ? '' : 's'} — first image is the thumbnail. Hover to
-          reorder or remove.
+          {value.length} image{value.length === 1 ? '' : 's'} — first image is the thumbnail. Click to
+          view full size. Hover to reorder or remove.
         </p>
       )}
     </div>

@@ -31,6 +31,10 @@ import {
   PRODUCT_VIDEO_REVIEW_STATUS_LABELS,
 } from '@/lib/orders/product-video-review';
 import {
+  parsePackageAddressReview,
+  PACKAGE_ADDRESS_REVIEW_STATUS_LABELS,
+} from '@/lib/orders/package-address-review';
+import {
   parseRingSizeConfirmation,
   RING_SIZE_CONFIRM_STATUS_LABELS,
 } from '@/lib/orders/ring-size-confirmation';
@@ -48,7 +52,10 @@ import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-
 const TERMINAL_STATUSES = ['cancelled', 'refunded', 'payment_review'] as const;
 const CARRIER_ORDER_STATUSES = new Set(['shipped', 'out_for_delivery', 'delivered', 'feedback']);
 
-function flagUrlList(value: unknown, key: 'energization_image_urls' | 'product_video_urls' | 'product_image_urls'): string[] {
+function flagUrlList(
+  value: unknown,
+  key: 'energization_image_urls' | 'product_video_urls' | 'product_image_urls' | 'packing_image_urls',
+): string[] {
   const flags = parseComplianceFlags(value) as Record<string, unknown>;
   const raw = flags[key];
   if (!Array.isArray(raw)) return [];
@@ -242,6 +249,9 @@ export function OrderActions({
   const [productImageFiles, setProductImageFiles] = useState<MediaFile[]>(() =>
     urlsToImageFiles(flagUrlList(complianceFlags, 'product_image_urls')),
   );
+  const [packingImageFiles, setPackingImageFiles] = useState<MediaFile[]>(() =>
+    urlsToImageFiles(flagUrlList(complianceFlags, 'packing_image_urls')),
+  );
   const [pujaVideoUrl, setPujaVideoUrl] = useState(currentPujaVideoUrl ?? '');
   const [energizationImageFiles, setEnergizationImageFiles] = useState<MediaFile[]>(() =>
     urlsToImageFiles(flagUrlList(complianceFlags, 'energization_image_urls')),
@@ -277,9 +287,12 @@ export function OrderActions({
   const isShippedOrLater = ['shipped', 'out_for_delivery', 'delivered', 'feedback'].includes(
     currentStatus,
   );
-  const isMediaStage = ['design_completed', 'jewelry_making', 'energization', 'quality_check'].includes(
-    currentStatus,
-  );
+  const isMediaStage = [
+    'design_completed',
+    'jewelry_making',
+    'energization',
+    'quality_check',
+  ].includes(currentStatus);
   // ponytail: open only the stage that matches current work — less accordion noise
   const [openWorkshop, setOpenWorkshop] = useState(!isShippedOrLater && !hasActiveReturn);
   const [openMedia, setOpenMedia] = useState(isMediaStage);
@@ -299,6 +312,7 @@ export function OrderActions({
 
   const returnMeta = parseComplianceFlags(flagsState);
   const productVideoReview = parseProductVideoReview(flagsState);
+  const packageAddressReview = parsePackageAddressReview(flagsState);
   const ringSizeConfirmation = parseRingSizeConfirmation(flagsState);
   const paymentVerifiedStamp = isDispatchPaymentVerified(flagsState);
   // Legacy mid-pipeline orders without a stamp stay usable
@@ -344,10 +358,8 @@ export function OrderActions({
     [selectableStatuses],
   );
 
-  const showMediaSection =
-    fulfillmentContext.showProductVideo ||
-    fulfillmentContext.showPujaVideo ||
-    fulfillmentContext.showEnergization;
+  // ponytail: packing photos apply to every shippable order
+  const showMediaSection = true;
 
   const currentIndex = statusPipeline.indexOf(status as (typeof statusPipeline)[number]);
   const nextStatus =
@@ -369,6 +381,7 @@ export function OrderActions({
       setSuccess('');
       const prevProductImages = flagUrlList(flagsState, 'product_image_urls');
       const prevEnergizationImages = flagUrlList(flagsState, 'energization_image_urls');
+      const prevPackingImages = flagUrlList(flagsState, 'packing_image_urls');
       try {
         const res = await fetch(`/api/admin/orders/${orderId}`, {
           method: 'PUT',
@@ -396,9 +409,14 @@ export function OrderActions({
           Array.isArray(updates.energization_image_urls)
             ? (updates.energization_image_urls as string[])
             : prevEnergizationImages;
+        const nextPacking =
+          Array.isArray(updates.packing_image_urls)
+            ? (updates.packing_image_urls as string[])
+            : prevPackingImages;
         const removed = [
           ...prevProductImages.filter((url) => !nextProduct.includes(url)),
           ...prevEnergizationImages.filter((url) => !nextEnergization.includes(url)),
+          ...prevPackingImages.filter((url) => !nextPacking.includes(url)),
         ];
         if (removed.length) {
           await fetch('/api/admin/upload', {
@@ -411,13 +429,15 @@ export function OrderActions({
         setSuccess(
           updates.notify_product_video
             ? 'Saved — customer emailed product media / design review'
-            : updates.notify_puja_energization
-              ? 'Saved — customer emailed puja / energization media'
-              : updates.notify_ring_size
-                ? 'Saved — customer emailed to re-upload ring diameter photo'
-                : updates.delete_ring_size_image_url
-                  ? 'Ring size photo deleted'
-                  : 'Saved',
+            : updates.notify_package_address
+              ? 'Saved — customer emailed packing / address confirmation'
+              : updates.notify_puja_energization
+                ? 'Saved — customer emailed puja / energization media'
+                : updates.notify_ring_size
+                  ? 'Saved — customer emailed to re-upload ring diameter photo'
+                  : updates.delete_ring_size_image_url
+                    ? 'Ring size photo deleted'
+                    : 'Saved',
         );
         setTimeout(() => setSuccess(''), 3000);
       } catch {
@@ -735,12 +755,14 @@ export function OrderActions({
 
   const productVideoUrlList = linesToUrls(productVideoUrls);
   const productImageUrlList = productImageFiles.map((f) => f.url);
+  const packingImageUrlList = packingImageFiles.map((f) => f.url);
   const energizationImageUrlList = energizationImageFiles.map((f) => f.url);
   const saveMediaPayload = {
     // ponytail: first URL kept on column for review-notify / legacy readers
     product_video_url: productVideoUrlList[0] ?? null,
     product_video_urls: productVideoUrlList,
     product_image_urls: productImageUrlList,
+    packing_image_urls: packingImageUrlList,
     puja_video_url: pujaVideoUrl || null,
     energization_image_urls: energizationImageUrlList,
   };
@@ -1114,9 +1136,11 @@ export function OrderActions({
           open={openMedia}
           onToggle={() => setOpenMedia((v) => !v)}
           badge={
-            productVideoReview
-              ? PRODUCT_VIDEO_REVIEW_STATUS_LABELS[productVideoReview.status]
-              : null
+            packageAddressReview
+              ? PACKAGE_ADDRESS_REVIEW_STATUS_LABELS[packageAddressReview.status]
+              : productVideoReview
+                ? PRODUCT_VIDEO_REVIEW_STATUS_LABELS[productVideoReview.status]
+                : null
           }
         >
           {fulfillmentContext.showProductVideo ? (
@@ -1208,6 +1232,57 @@ export function OrderActions({
               </p>
             </div>
           ) : null}
+          <div>
+            <label className={labelCls}>Packed package & address photos</label>
+            <MediaUploader
+              mode="images"
+              maxFiles={8}
+              folder={`order-media/${orderId}/packing`}
+              value={packingImageFiles}
+              onChange={setPackingImageFiles}
+            />
+            <p className="mt-1 text-[11px] text-stone-400">
+              Include photos of the packed product and the address written on the package. Customer
+              can confirm or report an address issue. Images deleted after 7 days.
+            </p>
+          </div>
+          {packageAddressReview ? (
+            <div
+              className={`rounded-xl px-3 py-2.5 text-sm ${
+                packageAddressReview.status === 'approved'
+                  ? 'bg-emerald-50 text-emerald-900'
+                  : packageAddressReview.status === 'changes_requested'
+                    ? 'bg-amber-50 text-amber-950'
+                    : 'bg-sky-50 text-sky-950'
+              }`}
+            >
+              <p className="font-semibold">
+                Package & address · Round {packageAddressReview.round} ·{' '}
+                {PACKAGE_ADDRESS_REVIEW_STATUS_LABELS[packageAddressReview.status]}
+              </p>
+              {packageAddressReview.status === 'changes_requested' &&
+              packageAddressReview.remarks ? (
+                <p className="mt-1 text-xs opacity-90">
+                  Customer note: {packageAddressReview.remarks}
+                </p>
+              ) : null}
+              {packageAddressReview.status === 'pending' ? (
+                <p className="mt-1 text-xs opacity-90">
+                  Waiting for customer to confirm package and address via email.
+                </p>
+              ) : null}
+              {packageAddressReview.history.length > 0 ? (
+                <ul className="mt-2 space-y-1 border-t border-black/5 pt-2 text-xs opacity-80">
+                  {packageAddressReview.history.map((past) => (
+                    <li key={`par-${past.round}`}>
+                      Round {past.round}: {PACKAGE_ADDRESS_REVIEW_STATUS_LABELS[past.status]}
+                      {past.remarks ? ` — ${past.remarks}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={() => handleSave(saveMediaPayload)}
@@ -1246,6 +1321,17 @@ export function OrderActions({
               Notify puja / energization
             </button>
           ) : null}
+          <button
+            type="button"
+            onClick={() =>
+              handleSave({ ...saveMediaPayload, notify_package_address: true })
+            }
+            disabled={saving || packingImageUrlList.length === 0}
+            className={btnGhost}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Notify package & address
+          </button>
         </Section>
       ) : null}
 

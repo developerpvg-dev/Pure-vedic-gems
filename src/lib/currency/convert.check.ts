@@ -9,7 +9,10 @@ import {
   convertToInr,
   setCurrencyDisplay,
 } from './display-store';
-import { suggestCurrencyFromLanguage } from './geo';
+import {
+  suggestCurrencyFromCountryCode,
+  suggestCurrencyFromLanguage,
+} from './geo';
 
 setCurrencyDisplay({
   enabled: true,
@@ -31,5 +34,12 @@ assert.equal(suggestCurrencyFromLanguage('en-US'), 'USD');
 assert.equal(suggestCurrencyFromLanguage('en-GB'), 'GBP');
 assert.equal(suggestCurrencyFromLanguage('hi-IN'), 'INR');
 assert.equal(suggestCurrencyFromLanguage('de-DE'), 'EUR');
+
+assert.equal(suggestCurrencyFromCountryCode('US'), 'USD');
+assert.equal(suggestCurrencyFromCountryCode('GB'), 'GBP');
+assert.equal(suggestCurrencyFromCountryCode('AE'), 'AED');
+assert.equal(suggestCurrencyFromCountryCode('IN'), 'INR');
+assert.equal(suggestCurrencyFromCountryCode('DE'), 'EUR');
+assert.equal(suggestCurrencyFromCountryCode(null), 'INR');
 
 console.log('currency convert check ok');
