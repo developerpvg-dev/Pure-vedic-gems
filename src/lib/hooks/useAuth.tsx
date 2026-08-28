@@ -27,6 +27,7 @@ interface AuthContextValue {
     requiresPasswordReset?: boolean;
     requiresAdminOtp?: boolean;
     adminOtpEmail?: string;
+    otpMode?: 'email' | 'fixed';
   }>;
   signUp: (data: {
     email: string;
