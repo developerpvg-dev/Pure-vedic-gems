@@ -50,7 +50,11 @@ function preferRudraksha(a: ProductRow, b: ProductRow): ProductRow {
   return score(b) > score(a) ? b : a;
 }
 
-async function findProduct(sb: ReturnType<typeof createClient>, tag: string): Promise<ProductRow | null> {
+// ponytail: one-off script — don't couple to supabase generic variance (breaks next build)
+async function findProduct(
+  sb: { from: (table: string) => any },
+  tag: string,
+): Promise<ProductRow | null> {
   const sel = 'id,name,sku,tag_number,availability_status,in_stock,stock_quantity,is_active,category,mukhi_count';
   const [{ data: byTag }, { data: bySku }] = await Promise.all([
     sb.from('products').select(sel).ilike('tag_number', tag).is('deleted_at', null).limit(20),
