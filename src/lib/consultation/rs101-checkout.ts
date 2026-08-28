@@ -12,12 +12,13 @@ export interface RazorpayPaymentResponse {
 
 export interface CreateOrderResponse {
   consultation_id: string;
-  razorpay_order_id: string;
-  amount: number;
-  currency: string;
-  key_id: string;
+  razorpay_order_id?: string;
+  amount?: number;
+  currency?: string;
+  key_id?: string;
   plan_title: string;
-  customer: {
+  free?: boolean;
+  customer?: {
     name: string;
     email: string;
     contact: string;
@@ -75,6 +76,7 @@ export async function startRs101Checkout(
   formBody: Record<string, string>,
   options: {
     currency?: string;
+    turnstileToken?: string;
     onDismiss: () => void;
     onSuccess: (consultationId: string) => void;
     onError: (error: { message: string; fieldErrors?: Record<string, string> }) => void;
@@ -87,6 +89,7 @@ export async function startRs101Checkout(
       plan_id: 'rs101',
       ...formBody,
       ...(options.currency ? { currency: options.currency } : {}),
+      ...(options.turnstileToken ? { turnstileToken: options.turnstileToken } : {}),
     }),
   });
 
@@ -101,6 +104,11 @@ export async function startRs101Checkout(
   }
 
   const payment = createData as CreateOrderResponse;
+  if (payment.free) {
+    options.onSuccess(payment.consultation_id);
+    return;
+  }
+
   if (!payment.key_id) {
     options.onError({ message: 'Payment gateway key is not configured.' });
     return;
@@ -114,11 +122,11 @@ export async function startRs101Checkout(
 
   const checkout = new window.Razorpay({
     key: payment.key_id,
-    amount: payment.amount,
-    currency: payment.currency,
+    amount: payment.amount!,
+    currency: payment.currency!,
     name: 'PureVedicGems',
     description: `Gem Recommendation - ${formatPrice(RS101_AMOUNT_INR)}`,
-    order_id: payment.razorpay_order_id,
+    order_id: payment.razorpay_order_id!,
     prefill: {
       name: formBody.full_name ?? '',
       email: formBody.email ?? '',

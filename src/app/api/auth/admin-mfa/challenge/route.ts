@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
     userId: mfa.userId,
     email: mfa.email,
     next: mfa.next,
+    mode: mfa.mode,
   });
   return res;
 }
@@ -60,5 +61,6 @@ export async function POST(req: NextRequest) {
     pending: true,
     email: maskEmail(pending.email),
     next: pending.next ?? '/admin',
+    mode: pending.mode,
   });
 }

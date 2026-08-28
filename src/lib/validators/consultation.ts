@@ -168,6 +168,8 @@ export const consultationBookingCreateOrderSchema = z
     preferred_time: optionalTime,
     message: optionalTrimmedText(5000),
     website: z.string().max(0).optional(),
+    /** Cloudflare Turnstile — required for free international rs101 bookings. */
+    turnstileToken: z.string().max(2048).optional(),
     /** Storefront currency for the Razorpay charge (ledger amount_inr stays INR). */
     currency: z
       .string()

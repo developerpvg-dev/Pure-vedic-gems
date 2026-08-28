@@ -1,6 +1,6 @@
 import type { CategoryFaq } from '@/lib/types/shop-category-page';
 import { canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
-import { certifiedGemHubTitle } from '@/lib/seo/storefront-meta';
+import { upratnaChildMeta, upratnaHubMeta } from '@/lib/seo/storefront-meta';
 import {
   BRAND,
   RichGemSections,
@@ -85,14 +85,13 @@ function defineUpratna(def: UpratnaDef): RichGemSections {
   const ved = vedicShort(def.hindi, def.name);
   const phrase = `${def.name} gemstone`;
   const stone = `${def.name} stone`;
-  const seo_title = certifiedGemHubTitle(def.name, ved);
-  const seo_description = `Certified ${phrase} and original ${stone}${ved ? ` (${ved})` : ''}. ${phrase} price with origin and treatment disclosure.`;
+  const meta = upratnaChildMeta(def.name, ved);
 
   return {
     intro: def.intro,
     hero_benefits: def.heroBenefits.map((text) => ({ text })),
-    seo_title,
-    seo_description,
+    seo_title: meta.seo_title,
+    seo_description: meta.seo_description,
     meta_keywords: baseGemKeywords(def.slug, def.name, def.hindi ?? null, planet).concat(
       def.extraKeywords ?? [],
       [phrase.toLowerCase(), stone.toLowerCase(), `${phrase} price`.toLowerCase(), ved?.toLowerCase() ?? ''],
@@ -2053,6 +2052,8 @@ function shopLink(slug: string, label: string) {
 }
 
 /** Parent /gemstones/upratna hub — substitutes from our recommendation table and per-stone Upratna pages. */
+const UPRATNA_HUB_SEO = upratnaHubMeta();
+
 export const UPRATNA_HUB_CONTENT: RichGemSections = {
   intro:
     'Upratna are traditional Vedic substitutes for Navaratna gems — the same graha, a gentler stone, chosen after chart review.',
@@ -2062,9 +2063,8 @@ export const UPRATNA_HUB_CONTENT: RichGemSections = {
     { text: 'Treatment disclosure listed' },
     { text: 'Chart review before wearing' },
   ],
-  seo_title: 'Buy 100% Natural & Certified Upratna Gems Online',
-  seo_description:
-    'Buy certified Upratna gems online in India. Natural amethyst, citrine, moonstone, zircon as planetary substitutes. Lab reports. Delhi since 1937.',
+  seo_title: UPRATNA_HUB_SEO.seo_title,
+  seo_description: UPRATNA_HUB_SEO.seo_description,
   meta_keywords: [
     'buy upratna stone online',
     'upratna gemstones',

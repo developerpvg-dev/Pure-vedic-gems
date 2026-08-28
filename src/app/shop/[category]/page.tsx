@@ -58,6 +58,7 @@ export async function generateMetadata({
       description: meta.description,
       path: meta.path,
       image: meta.image,
+      keywords: meta.keywords,
     });
   }
 

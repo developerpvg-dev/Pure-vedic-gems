@@ -7,12 +7,13 @@ import { Money } from '@/components/currency/Money';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { getRs101PaidFromHeaders } from '@/lib/consultation/rs101-eligibility.server';
 import {
   GEMS_REC_CONCERNS,
   GEMS_REC_KEYWORDS,
   GEMS_REC_META,
-  GEMS_REC_PAGE_FAQS,
   GEMS_REC_PATH,
+  GEMS_REC_PAGE_FAQS,
   GEMS_REC_PILLARS,
   GEMS_REC_PROCESS,
   GEMS_REC_SERVICES,
@@ -38,7 +39,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function GemsRecommendationsPage() {
+function processSteps(rs101Paid: boolean) {
+  if (!rs101Paid) return GEMS_REC_PROCESS;
+  return GEMS_REC_PROCESS.map((item) =>
+    item.step === '02'
+      ? {
+          ...item,
+          title: 'Pay ₹101 securely',
+          body: 'Book your remedies recommendation with Razorpay. Login is optional — guests receive email confirmation.',
+        }
+      : item
+  );
+}
+
+export default async function GemsRecommendationsPage() {
+  const rs101Paid = await getRs101PaidFromHeaders();
+  const steps = processSteps(rs101Paid);
   const faqSchema = faqJsonLd(GEMS_REC_PAGE_FAQS);
 
   return (
@@ -49,8 +65,15 @@ export default function GemsRecommendationsPage() {
             Which Gemstone Should I Wear?
           </h1>
           <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
-            Expert gemstone, Rudraksha &amp; Yagya guidance from your Kundli — not an automated tool. Book online from{' '}
-            <Money amount={RS101_AMOUNT_INR} />.
+            Expert gemstone, Rudraksha &amp; Yagya guidance from your Kundli — not an automated tool.
+            {rs101Paid ? (
+              <>
+                {' '}
+                Book online from <Money amount={RS101_AMOUNT_INR} />.
+              </>
+            ) : (
+              <> Book online — complimentary for international clients.</>
+            )}
           </p>
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
         </div>
@@ -66,10 +89,10 @@ export default function GemsRecommendationsPage() {
                   <br />
                   Recommendation
                 </h2>
-                <RecoHeroPriceCopy />
+                <RecoHeroPriceCopy rs101Paid={rs101Paid} />
               </div>
             </div>
-            <PvgRecommendationForm analyticsSource="gems-recommendations" />
+            <PvgRecommendationForm analyticsSource="gems-recommendations" rs101Paid={rs101Paid} />
           </div>
         </section>
       </div>
@@ -87,7 +110,7 @@ export default function GemsRecommendationsPage() {
           </header>
 
           <ol className="pvg-remedy-path">
-            {GEMS_REC_PROCESS.map((item, index) => (
+            {steps.map((item, index) => (
               <ScrollReveal key={item.step} delay={index * 70}>
                 <li className="pvg-remedy-path-item">
                   <div className="pvg-remedy-path-rail" aria-hidden="true">
@@ -233,7 +256,13 @@ export default function GemsRecommendationsPage() {
         <div className="pvg-remedy-finale-inner">
           <h2>Ready for your remedies recommendation?</h2>
           <p>
-            Pay <Money amount={RS101_AMOUNT_INR} />, share birth details, and receive expert guidance by email.
+            {rs101Paid ? (
+              <>
+                Pay <Money amount={RS101_AMOUNT_INR} />, share birth details, and receive expert guidance by email.
+              </>
+            ) : (
+              <>Share your birth details and receive expert guidance by email.</>
+            )}
           </p>
           <a href="#gem-recommendation">Book recommendation</a>
         </div>

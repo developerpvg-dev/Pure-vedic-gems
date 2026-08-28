@@ -3,19 +3,21 @@ import {
   suggestCurrencyFromCountryCode,
   suggestCurrencyFromLanguage,
 } from '@/lib/currency/geo';
+import { countryCodeFromHeaders, isRs101PaidCountry } from '@/lib/consultation/rs101-eligibility';
 
 /** Private — per-visitor geo; do not CDN-cache. */
 export async function GET(request: NextRequest) {
-  const country =
-    request.headers.get('x-vercel-ip-country') ||
-    request.headers.get('cf-ipcountry');
-
-  const currency = country
-    ? suggestCurrencyFromCountryCode(country)
+  const countryCode = countryCodeFromHeaders(request.headers);
+  const currency = countryCode
+    ? suggestCurrencyFromCountryCode(countryCode)
     : suggestCurrencyFromLanguage(request.headers.get('accept-language') || 'en-IN');
 
   return NextResponse.json(
-    { currency, country: country?.toUpperCase() ?? null },
+    {
+      currency,
+      country: countryCode,
+      rs101_paid: isRs101PaidCountry(countryCode),
+    },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
 }

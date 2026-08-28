@@ -1,9 +1,10 @@
+import type { CategoryFaq } from '@/lib/types/shop-category-page';
 import {
   RUDRAKSHA_FAQS,
   RUDRAKSHA_QUALITY_TIERS,
   RUDRAKSHA_TYPE_TABLE,
 } from '@/lib/constants/rudraksha-rich-content';
-import type { CategoryFaq } from '@/lib/types/shop-category-page';
+import { rudrakshaHubMeta } from '@/lib/seo/storefront-meta';
 import { BRAND, h3, p, table, ul, type RichGemSections } from './helpers';
 import { canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
 
@@ -42,6 +43,8 @@ const HUB_FAQS: CategoryFaq[] = [
 ];
 
 /** Parent /shop/rudraksha hub — facts from /knowledge/rudraksha-qualities, the mukhi library, and our published FAQs. */
+const RUDRAKSHA_HUB_SEO = rudrakshaHubMeta();
+
 export const RUDRAKSHA_HUB_CONTENT: RichGemSections = {
   intro:
     'Buy original Nepal Rudraksha online — natural 1–21 Mukhi beads, X-ray certified where the piece warrants it, purified and energized at PureVedicGems since 1937.',
@@ -51,9 +54,8 @@ export const RUDRAKSHA_HUB_CONTENT: RichGemSections = {
     { text: 'Purified & energized' },
     { text: 'Chart-guided mukhi pick' },
   ],
-  seo_title: 'Buy 100% Natural & Certified Rudraksha Online',
-  seo_description:
-    'Buy original Nepal Rudraksha online — 1 to 21 Mukhi, X-ray certified, purified & energized. Natural beads from PureVedicGems, Delhi since 1937.',
+  seo_title: RUDRAKSHA_HUB_SEO.seo_title,
+  seo_description: RUDRAKSHA_HUB_SEO.seo_description,
   meta_keywords: [
     'buy original rudraksha online',
     'buy rudraksha online',

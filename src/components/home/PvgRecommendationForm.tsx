@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCurrency } from '@/lib/hooks/useCurrency';
+import { useRs101Eligibility } from '@/lib/hooks/useRs101Eligibility';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { useTurnstile } from '@/components/turnstile/use-turnstile';
 import { startRs101Checkout } from '@/lib/consultation/rs101-checkout';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS } from '@/lib/constants/recommendation-purposes';
@@ -40,12 +42,21 @@ const INITIAL_FORM: Rs101FormState = {
 type PvgRecommendationFormProps = {
   /** Analytics source for consultation_payment_success (homepage default). */
   analyticsSource?: string;
+  /** Server geo when available. */
+  rs101Paid?: boolean;
 };
 
-export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecommendationFormProps = {}) {
+export function PvgRecommendationForm({
+  analyticsSource = 'homepage',
+  rs101Paid: rs101PaidProp,
+}: PvgRecommendationFormProps = {}) {
   const { user, profile, isAuthenticated } = useAuth();
   const { format, currency } = useCurrency();
+  const { paid: paidHook, ready: eligibilityReady } = useRs101Eligibility();
+  const rs101Paid = rs101PaidProp ?? paidHook;
+  const showPrice = rs101PaidProp !== undefined ? rs101Paid : eligibilityReady && rs101Paid;
   const priceLabel = format(RS101_AMOUNT_INR);
+  const turnstile = useTurnstile({ className: 'reco-form-turnstile' });
   const [form, setForm] = useState<Rs101FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
@@ -141,7 +152,11 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
       return;
     }
 
-    // Logged-in: pay immediately. Guest: offer login OR continue without account.
+    if (!rs101Paid && turnstile.enabled && !turnstile.token) {
+      setErrors({ _form: 'Please complete the security check below.' });
+      return;
+    }
+
     if (!isAuthenticated) {
       setGuestChoiceOpen(true);
       return;
@@ -165,13 +180,15 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
 
     try {
       await startRs101Checkout(body, {
-        currency,
+        currency: rs101Paid ? currency : undefined,
+        turnstileToken: !rs101Paid ? turnstile.token : undefined,
         onDismiss: () => setPaying(false),
         onSuccess: (consultationId) => {
           trackStorefrontEvent('consultation_payment_success', {
             consultation_id: consultationId,
             plan_id: 'rs101',
             source: analyticsSource,
+            free_international: !rs101Paid,
           });
           setSuccess({ id: consultationId });
           setPaying(false);
@@ -180,11 +197,13 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
         onError: ({ message, fieldErrors }) => {
           applyApiErrors(fieldErrors, message);
           setPaying(false);
+          turnstile.reset();
         },
       });
     } catch {
-      setErrors({ _form: 'Something went wrong while starting payment.' });
+      setErrors({ _form: 'Something went wrong while submitting your request.' });
       setPaying(false);
+      turnstile.reset();
     }
   }
 
@@ -196,7 +215,13 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
         </div>
         <h3 className="reco-form-success-title">Recommendation Booked</h3>
         <p className="reco-form-success-copy">
-          Your details and {priceLabel} payment are confirmed. A confirmation email has been sent with your booking reference.
+          {showPrice ? (
+            <>
+              Your details and {priceLabel} payment are confirmed. A confirmation email has been sent with your booking reference.
+            </>
+          ) : (
+            <>Your details are confirmed. A confirmation email has been sent with your booking reference.</>
+          )}{' '}
           Our Vedic experts will review your birth chart and share your personalized gemstone recommendation.
         </p>
         <p className="reco-form-success-ref">Booking reference: {success.id.slice(0, 8).toUpperCase()}</p>
@@ -215,9 +240,24 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
     );
   }
 
+  const submitLabel = paying
+    ? showPrice
+      ? 'Opening Payment...'
+      : 'Submitting...'
+    : showPrice
+      ? `Proceed to Pay ${priceLabel}`
+      : 'Submit Request';
+
   return (
     <form id="gem-recommendation-form" className="reco-form-panel" onSubmit={handlePayment} aria-busy={paying} noValidate>
-      <p className="reco-form-price">Expert remedies recommendation — just {priceLabel}</p>
+      {turnstile.script}
+      <p className="reco-form-price">
+        {showPrice ? (
+          <>Expert remedies recommendation — just {priceLabel}</>
+        ) : (
+          <>Expert remedies recommendation — complimentary</>
+        )}
+      </p>
 
       <input
         type="text"
@@ -371,13 +411,15 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
         </div>
       </div>
 
+      {!rs101Paid ? turnstile.field : null}
+
       {guestChoiceOpen ? (
         <div className="reco-form-guest-choice" role="dialog" aria-labelledby="recoGuestChoiceTitle">
           <p id="recoGuestChoiceTitle" className="reco-form-guest-title">
             Have an account?
           </p>
           <p className="reco-form-note" style={{ marginTop: 0 }}>
-            Log in or sign up to track this booking in your account — or continue and pay as a guest.
+            Log in or sign up to track this booking in your account — or continue{showPrice ? ' and pay' : ''} as a guest.
           </p>
           <div className="reco-form-guest-actions">
             <button
@@ -411,11 +453,15 @@ export function PvgRecommendationForm({ analyticsSource = 'homepage' }: PvgRecom
         </div>
       ) : (
         <button type="submit" className="reco-form-cta" disabled={paying}>
-          {paying ? 'Opening Payment...' : `Proceed to Pay ${priceLabel}`}
+          {submitLabel}
         </button>
       )}
 
-      <p className="reco-form-note">Secure payment via Razorpay. Confirmation email sent after booking. Login not required.</p>
+      <p className="reco-form-note">
+        {showPrice
+          ? 'Secure payment via Razorpay. Confirmation email sent after booking. Login not required.'
+          : 'Confirmation email sent after booking. Login not required.'}
+      </p>
       {errors._form ? <p className="reco-form-status" role="alert">{errors._form}</p> : null}
       <LoginModal
         open={authModalOpen}

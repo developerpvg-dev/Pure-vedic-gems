@@ -4,7 +4,15 @@ import { compactHeroBenefits, compactHeroIntro } from '@/lib/categories/shop-cat
 import { NAVARATNA_SET_HERO } from '@/lib/constants/navaratna-category-images';
 import { RUDRAKSHA_FEATURE_IMAGES } from '@/lib/constants/rudraksha-category-images';
 import { UPRATNA_HUB_HERO } from '@/lib/constants/upratna-category-images';
-import { gemEnglishName, navaratnaChildMeta, upratnaChildMeta, vedicNameFromLabel } from '@/lib/seo/storefront-meta';
+import {
+  gemEnglishName,
+  navaratnaChildMeta,
+  navaratnaHubMeta,
+  rudrakshaHubMeta,
+  upratnaChildMeta,
+  upratnaHubMeta,
+  vedicNameFromLabel,
+} from '@/lib/seo/storefront-meta';
 import type { CategoryFaq, HeroBenefit, ShopCategoryPageContent } from '@/lib/types/shop-category-page';
 
 const BRAND = 'PureVedicGems';
@@ -164,11 +172,12 @@ function buildGemDefaults(
     category === 'upratna'
       ? upratnaChildMeta(shortName, vedicNameFromLabel(label))
       : navaratnaChildMeta(shortName, vedicNameFromLabel(label));
+  const useRichSeo = slug === 'exclusive-gems' && rich?.seo_title;
   return {
     ...merged,
     ...meta,
-    seo_title: rich?.seo_title ?? meta.seo_title,
-    seo_description: rich?.seo_description ?? meta.seo_description,
+    seo_title: useRichSeo ? rich!.seo_title! : meta.seo_title,
+    seo_description: useRichSeo && rich?.seo_description ? rich.seo_description : meta.seo_description,
   };
 }
 
@@ -262,15 +271,23 @@ export function buildGenericShopCategoryDraft(input: {
 export function getDefaultShopCategoryPage(slug: string): ShopCategoryPageContent | null {
   if (slug === 'navaratna' || slug === 'navratna') {
     const parent = BASE_CATEGORY_MAP.navaratna;
+    const hub = navaratnaHubMeta();
     const page = buildCatalogDefaults('navaratna', parent.label, parent.category ?? 'navaratna');
-    return { ...page, image_url: NAVARATNA_SET_HERO, hero_image_url: NAVARATNA_SET_HERO };
+    return {
+      ...page,
+      ...hub,
+      image_url: NAVARATNA_SET_HERO,
+      hero_image_url: NAVARATNA_SET_HERO,
+    };
   }
 
   if (slug === 'rudraksha') {
     const parent = BASE_CATEGORY_MAP.rudraksha;
+    const hub = rudrakshaHubMeta();
     const page = buildCatalogDefaults('rudraksha', parent.label, parent.category ?? 'rudraksha');
     return {
       ...page,
+      ...hub,
       image_url: RUDRAKSHA_FEATURE_IMAGES.collection,
       hero_image_url: RUDRAKSHA_FEATURE_IMAGES.collection,
     };
@@ -278,8 +295,9 @@ export function getDefaultShopCategoryPage(slug: string): ShopCategoryPageConten
 
   if (slug === 'upratna') {
     const parent = BASE_CATEGORY_MAP.upratna;
+    const hub = upratnaHubMeta();
     const page = buildCatalogDefaults('upratna', parent.label, parent.category ?? 'upratna');
-    return { ...page, image_url: UPRATNA_HUB_HERO, hero_image_url: UPRATNA_HUB_HERO };
+    return { ...page, ...hub, image_url: UPRATNA_HUB_HERO, hero_image_url: UPRATNA_HUB_HERO };
   }
 
   const gem = KNOWN_GEM_SUBCATEGORIES[slug];

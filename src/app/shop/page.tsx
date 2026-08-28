@@ -11,6 +11,7 @@ import { ShopPagination } from '@/components/shop/ShopPagination';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import type { Metadata } from 'next';
 import type { ProductCard } from '@/lib/types/product';
+import { gemstonesHubMeta } from '@/lib/seo/storefront-meta';
 import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
@@ -18,10 +19,10 @@ export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refr
 export async function generateMetadata({ searchParams }: ShopPageProps): Promise<Metadata> {
   const rawParams = await searchParams;
   const q = (Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q)?.trim();
+  const hub = gemstonesHubMeta();
   return buildMetadata({
-    title: 'Buy Certified Vedic Gemstones Online | PureVedicGems',
-    description:
-      'Buy certified natural Vedic gemstones, Rudraksha, and malas online in India. Lab reports, origin disclosure, and Jyotish consultation. Ships worldwide from Delhi since 1937.',
+    title: hub.seo_title,
+    description: hub.seo_description,
     path: '/gemstones',
     noIndex: Boolean(q),
   });
@@ -168,8 +169,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </div>
       ) : (
         <KnowledgePageHero
-          title="Buy Certified Vedic Gemstones Online"
-          subtitle="Lab-disclosed natural gemstones, Rudraksha, and malas from our Delhi house — with origin, treatment, and certification on every listing. Ships across India and worldwide."
+          title="Buy Gemstones Online in India"
+          subtitle="Explore genuine lab-certified gemstones, Rudraksha, and malas — with origin, treatment, and quality details on every listing. Ships across India and worldwide."
           breadcrumbs={[
             { label: 'Home', href: '/' },
             { label: 'Gemstones' },

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText, Trash2 } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText, Trash2, Tags } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
@@ -35,6 +35,7 @@ const NAV_GROUPS = [
       { href: '/admin/products/import', label: 'Bulk Import', icon: UploadCloud, match: 'prefix' as const },
       { href: '/admin/stock', label: 'Stock Dashboard', icon: LayoutDashboard, match: 'exact' as const },
       { href: '/admin/stock/completeness', label: 'Content Gaps', icon: ClipboardList, match: 'prefix' as const },
+      { href: '/admin/item-status', label: 'Item Status', icon: Tags, match: 'prefix' as const },
       { href: '/admin/erp-sync', label: 'Store ERP Sync', icon: Store, match: 'prefix' as const },
     ],
   },

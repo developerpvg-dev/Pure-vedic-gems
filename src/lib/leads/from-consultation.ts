@@ -3,15 +3,23 @@ import type { Consultation } from '@/lib/types/database';
 import { logLeadActivity } from '@/lib/leads/assign';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { duplicateNotifySuffix, findPriorDuplicateMatches } from '@/lib/leads/duplicates';
-import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { isRs101GemRecommendation } from '@/lib/consultation/rs101-eligibility';
 import { formatChargedMoney } from '@/lib/currency/format-charged';
 
 type Admin = ReturnType<typeof createAdminClient>;
 
 function isRs101Lead(consultation: Consultation) {
-  const title = (consultation.plan_title_snapshot || '').toLowerCase();
-  const amount = Number(consultation.amount_inr ?? 0);
-  return consultation.plan_id == null && (title.includes('gem recommendation') || amount === RS101_AMOUNT_INR);
+  return isRs101GemRecommendation(consultation);
+}
+
+function rs101PaymentNote(consultation: Consultation, paid: boolean) {
+  if (paid && isRs101Lead(consultation) && Number(consultation.amount_inr) === 0) {
+    return 'Free remedies recommendation (international)';
+  }
+  if (paid) {
+    return `${formatChargedMoney(consultation)} received via Razorpay`;
+  }
+  return `${formatChargedMoney(consultation)} payment pending`;
 }
 
 function isPaymentCaptured(consultation: Consultation) {
@@ -58,7 +66,7 @@ async function backfillEnquiryFromConsultation(
   // Proceed-to-pay creates the lead early; verify flips pending → paid here
   if (isPaymentCaptured(consultation) && !row.payment_received) {
     patch.payment_received = true;
-    patch.payment_note = `${formatChargedMoney(consultation)} received via Razorpay`;
+    patch.payment_note = rs101PaymentNote(consultation, true);
     patch.payment_received_at = now;
   }
 
@@ -160,9 +168,7 @@ export async function ensureLeadFromConsultation(
       area_of_concern: consultation.life_situation,
       ip_location: opts?.ipLocation || null,
       payment_received: paid,
-      payment_note: paid
-        ? `${formatChargedMoney(consultation)} received via Razorpay`
-        : `${formatChargedMoney(consultation)} payment pending`,
+      payment_note: rs101PaymentNote(consultation, paid),
       payment_received_at: paid ? now : null,
       consultation_id: consultation.id,
     })
@@ -224,6 +230,8 @@ export async function ensureLeadFromConsultation(
     });
   }
 
+  const rs101Free = rs101 && paid && Number(consultation.amount_inr) === 0;
+
   await createInAppNotifications([
     {
       audience: 'admin',
@@ -233,7 +241,9 @@ export async function ensureLeadFromConsultation(
         ? `${dupeNote.split(' ·')[0]} — assign telecaller`
         : paid
           ? rs101
-            ? 'New remedies lead (₹101) — assign telecaller'
+            ? rs101Free
+              ? 'New remedies lead (free, international) — assign telecaller'
+              : 'New remedies lead (₹101) — assign telecaller'
             : 'New consultation lead — assign telecaller'
           : rs101
             ? 'New remedies lead (₹101, payment pending) — assign telecaller'

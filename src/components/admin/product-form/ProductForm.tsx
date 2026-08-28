@@ -12,6 +12,7 @@ import { MediaUploader, type MediaFile } from '@/components/admin/MediaUploader'
 import { productHref } from '@/lib/categories/storefront';
 import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
 import { caratToRatti, isNoCertification } from '@/lib/utils/format';
+import { absoluteUrl } from '@/lib/utils/seo';
 import {
   CharCounter,
   FaqEditor,
@@ -343,7 +344,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     return Array.isArray(v) ? v : [];
   });
   const [focusKeyword, setFocusKeyword] = useState(String((initialSeoData['focus_keyword'] as string | undefined) ?? ''));
-  const [canonicalUrl, setCanonicalUrl] = useState((get<string>(initialProduct, 'canonical_url')) ?? '');
+  const [canonicalUrl, setCanonicalUrl] = useState(() => {
+    const raw = get<string>(initialProduct, 'canonical_url') ?? '';
+    return raw ? absoluteUrl(raw.split('?')[0]) : '';
+  });
   const [ogImage, setOgImage] = useState((get<string>(initialProduct, 'og_image')) ?? '');
   const [quickAnswer, setQuickAnswer] = useState(String((initialSeoData['quick_answer'] as string | undefined) ?? ''));
   const [faqs, setFaqs] = useState<FaqItem[]>(() => {
@@ -714,7 +718,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       meta_title: metaTitle || defaultMetaTitle,
       meta_description: metaDescription || defaultMetaDescription,
       meta_keywords: metaKeywords.length ? metaKeywords : undefined,
-      canonical_url: canonicalUrl || defaultCanonicalUrl,
+      canonical_url: canonicalUrl.trim()
+        ? absoluteUrl(canonicalUrl.trim().split('?')[0])
+        : defaultCanonicalUrl,
       // blank/invalid OG must not be sent — zod rejects "" and bad strings as Invalid URL
       og_image: optionalAbsoluteUrl(ogImage) || optionalAbsoluteUrl(images[0]),
       seo_data,

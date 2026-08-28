@@ -16,6 +16,7 @@ type TurnstileApi = {
       sitekey: string;
       action: string;
       appearance?: 'always' | 'execute' | 'interaction-only';
+      size?: 'normal' | 'compact';
       callback: (token: string) => void;
       'error-callback'?: () => void;
     }
@@ -29,7 +30,14 @@ declare global {
   }
 }
 
-export function useTurnstile() {
+type TurnstileOptions = {
+  /** Smaller widget — use on dense forms (reco booking). */
+  size?: 'normal' | 'compact';
+  className?: string;
+};
+
+export function useTurnstile(options: TurnstileOptions = {}) {
+  const { size = 'normal', className = '' } = options;
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null);
   const [token, setToken] = useState('');
@@ -50,13 +58,14 @@ export function useTurnstile() {
       sitekey: TURNSTILE_SITE_KEY,
       action: TURNSTILE_ENQUIRY_ACTION,
       appearance: 'always',
+      size,
       callback: (value) => {
         setLoadError(false);
         setToken(value);
       },
       'error-callback': () => setLoadError(true),
     });
-  }, [enabled]);
+  }, [enabled, size]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -88,8 +97,8 @@ export function useTurnstile() {
   ) : null;
 
   const field = enabled ? (
-    <div className="space-y-1">
-      <div ref={containerRef} className="min-h-[65px]" />
+    <div className={className ? `${className} space-y-1`.trim() : 'space-y-1'}>
+      <div ref={containerRef} className={className ? 'reco-turnstile-slot' : 'min-h-[65px]'} />
       {loadError ? (
         <p className="text-sm text-red-700" role="alert">
           Security check failed to load. Refresh the page and try again.

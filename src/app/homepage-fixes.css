@@ -1965,3 +1965,27 @@
 .pvg-react-home-root .rudra-layout.rudra-layout--shop {
   grid-template-columns: 1fr !important;
 }
+
+/* Reco form — stable height when Turnstile / intl copy differs from ₹101 */
+.pvg-react-home-root .reco-form-price {
+  min-height: 1.35em;
+  line-height: 1.35;
+}
+
+.pvg-react-home-root .reco-form-turnstile {
+  flex-shrink: 0;
+  min-height: 65px;
+  max-height: 65px;
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+
+.pvg-react-home-root .reco-form-turnstile .reco-turnstile-slot {
+  min-height: 65px;
+  max-height: 65px;
+  overflow: hidden;
+}
+
+.pvg-react-home-root .reco-form-panel {
+  gap: 0;
+}

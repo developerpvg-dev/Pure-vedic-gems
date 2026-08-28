@@ -8,6 +8,7 @@ import { AdminOtpForm } from '@/components/auth/AdminOtpForm';
 function AdminOtpContent() {
   const searchParams = useSearchParams();
   const [emailLabel, setEmailLabel] = useState('');
+  const [otpMode, setOtpMode] = useState<'email' | 'fixed'>('email');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -27,6 +28,7 @@ function AdminOtpContent() {
         return;
       }
       setEmailLabel(data.email || 'your email');
+      setOtpMode(data.mode === 'fixed' ? 'fixed' : 'email');
     })();
   }, [searchParams]);
 
@@ -61,6 +63,7 @@ function AdminOtpContent() {
         ) : (
           <AdminOtpForm
             emailLabel={emailLabel}
+            mode={otpMode}
             onVerified={(redirectTo) => {
               window.location.href = redirectTo;
             }}

@@ -4,7 +4,12 @@ import {
   productOfferAvailability,
   productStructuredOfferPrice,
 } from '@/lib/shop/product-pricing';
-import { gemProductMeta, stripPriceFromTitle, vedicNameFromSlug } from '@/lib/seo/storefront-meta';
+import {
+  gemProductMeta,
+  isStaleMarketingTitle,
+  stripPriceFromTitle,
+  vedicNameFromSlug,
+} from '@/lib/seo/storefront-meta';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { ORGANIZATION_ADDRESSES } from '@/lib/constants/company-addresses';
 
@@ -165,7 +170,8 @@ export function productMetadata(
   let title: string;
   let description: string;
 
-  if (cmsTitle) {
+  const useCmsTitle = cmsTitle && !isStaleMarketingTitle(cmsTitle);
+  if (useCmsTitle) {
     title = stripPriceFromTitle(cmsTitle);
     description = cmsDescription || productDescription(product);
   } else if (isGemOrRudrakshaSku(product)) {

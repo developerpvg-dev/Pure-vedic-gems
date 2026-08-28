@@ -69,6 +69,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       '/admin/yagya-bookings',
       '/admin/stock',
       '/admin/erp-sync',
+      '/admin/item-status',
       '/admin/hero',
       '/admin/categories',
       '/admin/shop-category-pages',
@@ -91,6 +92,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/products/import', label: 'Bulk import', match: 'prefix' },
       { href: '/admin/stock', label: 'Stock dashboard', match: 'exact' },
       { href: '/admin/stock/completeness', label: 'Content gaps', match: 'prefix' },
+      { href: '/admin/item-status', label: 'Item status', match: 'prefix' },
       { href: '/admin/erp-sync', label: 'Store ERP sync', match: 'prefix' },
       { href: '/admin/hero', label: 'Hero slideshow', match: 'prefix' },
       { href: '/admin/categories', label: 'Section categories', match: 'prefix' },
@@ -175,6 +177,7 @@ export function assertRoleDashboardAllowlists() {
   if (isScopedRolePathAllowed('inventory', '/admin/leads')) throw new Error('inventory must not open leads');
   if (!isScopedRolePathAllowed('inventory', '/admin/hero')) throw new Error('inventory hero');
   if (!isScopedRolePathAllowed('inventory', '/admin/erp-sync')) throw new Error('inventory erp');
+  if (!isScopedRolePathAllowed('inventory', '/admin/item-status')) throw new Error('inventory item-status');
   if (!isScopedRolePathAllowed('inventory', '/admin/settings')) throw new Error('inventory settings/currency');
   if (isScopedRolePathAllowed('inventory', '/admin/finance')) throw new Error('inventory must not open finance');
   if (isScopedRolePathAllowed('inventory', '/admin/commissions')) throw new Error('inventory must not open commissions');

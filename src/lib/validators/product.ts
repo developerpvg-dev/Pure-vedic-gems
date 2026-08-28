@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { absoluteUrl } from '@/lib/utils/seo';
 import {
   AVAILABILITY_STATUSES,
   CATALOG_FAMILIES,
@@ -28,6 +29,19 @@ const optionalText = z.preprocess(emptyToUndefined, z.string().trim().optional()
 const optionalUrl = z.preprocess(
   emptyToUndefined,
   z.string().trim().url().optional()
+);
+
+// ponytail: legacy imports stored path-only (/shop/rudraksha/...) — normalize before z.url()
+const optionalCanonicalUrl = z.preprocess(
+  (value) => {
+    const cleaned = emptyToUndefined(value);
+    if (typeof cleaned !== 'string') return cleaned;
+    const trimmed = cleaned.trim();
+    if (!trimmed) return undefined;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return absoluteUrl(trimmed.split('?')[0] || '/');
+  },
+  z.string().url().optional()
 );
 
 const optionalFilterBoolean = z.preprocess((value) => {
@@ -319,7 +333,7 @@ const productBaseSchema = z.object({
     meta_title: optionalString(200),
     meta_description: optionalString(500),
     meta_keywords: stringArraySchema.optional(),
-    canonical_url: optionalUrl,
+    canonical_url: optionalCanonicalUrl,
     og_image: optionalUrl,
     seo_data: jsonObjectSchema.optional(),
     legacy_seo: jsonObjectSchema.optional(),

@@ -5,11 +5,12 @@ import { Loader2, Mail, ShieldCheck } from 'lucide-react';
 
 type Props = {
   emailLabel: string;
+  mode?: 'email' | 'fixed';
   onVerified: (redirectTo: string) => void;
   onBack?: () => void;
 };
 
-export function AdminOtpForm({ emailLabel, onVerified, onBack }: Props) {
+export function AdminOtpForm({ emailLabel, mode = 'email', onVerified, onBack }: Props) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,8 +58,14 @@ export function AdminOtpForm({ emailLabel, onVerified, onBack }: Props) {
           Verify team access
         </h2>
         <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--pvg-muted, #7A6250)' }}>
-          Enter the 6-digit code sent to{' '}
-          <strong style={{ color: 'var(--pvg-text)' }}>{emailLabel}</strong>
+          {mode === 'fixed' ? (
+            <>Enter your shared team code to continue as <strong style={{ color: 'var(--pvg-text)' }}>{emailLabel}</strong></>
+          ) : (
+            <>
+              Enter the 6-digit code sent to{' '}
+              <strong style={{ color: 'var(--pvg-text)' }}>{emailLabel}</strong>
+            </>
+          )}
         </p>
       </div>
 
@@ -68,7 +75,7 @@ export function AdminOtpForm({ emailLabel, onVerified, onBack }: Props) {
           className="block text-[13px] font-semibold uppercase tracking-wider"
           style={{ color: 'var(--pvg-primary)' }}
         >
-          Email code
+          {mode === 'fixed' ? 'Team code' : 'Email code'}
         </label>
         <div className="relative">
           <Mail
@@ -108,9 +115,13 @@ export function AdminOtpForm({ emailLabel, onVerified, onBack }: Props) {
       </button>
 
       <div className="flex items-center justify-between text-xs" style={{ color: 'var(--pvg-muted)' }}>
-        <button type="button" onClick={resend} disabled={resending} className="hover:underline disabled:opacity-50">
-          {resending ? 'Sending…' : 'Resend code'}
-        </button>
+        {mode === 'email' ? (
+          <button type="button" onClick={resend} disabled={resending} className="hover:underline disabled:opacity-50">
+            {resending ? 'Sending…' : 'Resend code'}
+          </button>
+        ) : (
+          <span>Use the code shared by your team lead</span>
+        )}
         {onBack ? (
           <button type="button" onClick={onBack} className="hover:underline">
             Back to sign in

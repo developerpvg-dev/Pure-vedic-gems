@@ -1,7 +1,7 @@
 import { sendBrandedEmail, sendBrandedEmailToAdmin } from '@/lib/resend/send-email';
 import { getEmailSiteUrl, VEDIC_DISCLAIMER } from '@/lib/resend/email-config';
 import { TransactionalEmail } from '@/lib/resend/templates/TransactionalEmail';
-import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { isRs101GemRecommendation } from '@/lib/consultation/rs101-eligibility';
 import { formatChargedMoney } from '@/lib/currency/format-charged';
 import type { ConsultationCreateInput } from '@/lib/validators/consultation';
 
@@ -39,8 +39,15 @@ export interface ConsultationEmailResult {
 }
 
 function isRs101Booking(input: PaidConsultationEmailInput) {
-  const title = (input.plan_title || '').toLowerCase();
-  return Number(input.amount_inr) === RS101_AMOUNT_INR || title.includes('gem recommendation');
+  return isRs101GemRecommendation({
+    plan_id: null,
+    plan_title_snapshot: input.plan_title,
+    amount_inr: input.amount_inr,
+  });
+}
+
+function isFreeRs101Booking(input: PaidConsultationEmailInput) {
+  return isRs101Booking(input) && Number(input.amount_inr) === 0;
 }
 
 function consultationDetails(input: PaidConsultationEmailInput) {
@@ -67,6 +74,7 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
   const accountUrl = `${getEmailSiteUrl()}/account/consultations`;
   const adminUrl = `${getEmailSiteUrl()}/admin/leads?type=consultation`;
   const remedies = isRs101Booking(input);
+  const freeRemedies = isFreeRs101Booking(input);
 
   const [adminId, customerId] = await Promise.all([
     sendBrandedEmailToAdmin(
@@ -80,7 +88,9 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
         heading: remedies ? 'Remedies Recommendation Booked' : 'Vedic Consultation Booked',
         paragraphs: [
           remedies
-            ? `A remedies recommendation payment (${formatChargedMoney(input)}) has been verified. Please assign a telecaller and review birth details.`
+            ? freeRemedies
+              ? 'A free international remedies recommendation has been submitted. Please assign a telecaller and review birth details.'
+              : `A remedies recommendation payment (${formatChargedMoney(input)}) has been verified. Please assign a telecaller and review birth details.`
             : `A Vedic Consultation payment (${formatChargedMoney(input)}) has been verified for plan: ${input.plan_title}. Please review birth details and coordinate scheduling.`,
         ],
         highlight: { label: 'Booking ID', value: input.id },
@@ -107,10 +117,15 @@ export async function sendConsultationBookingEmails(input: PaidConsultationEmail
         heading: remedies ? 'Remedies Recommendation Confirmed' : 'Vedic Consultation Confirmed',
         greeting: `Namaste ${input.full_name},`,
         paragraphs: remedies
-          ? [
-              'Thank you for requesting a remedies recommendation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
-              'Our Vedic experts will review your birth details and share your personalized gemstone recommendation.',
-            ]
+          ? freeRemedies
+            ? [
+                'Thank you for requesting a remedies recommendation with Pure Vedic Gems. Your booking is confirmed and our team will review your birth details.',
+                'Our Vedic experts will share your personalized gemstone recommendation by email.',
+              ]
+            : [
+                'Thank you for requesting a remedies recommendation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
+                'Our Vedic experts will review your birth details and share your personalized gemstone recommendation.',
+              ]
           : [
               'Thank you for booking a Vedic Consultation with Pure Vedic Gems. Your payment has been verified and your booking is now visible in your account dashboard.',
               `Plan booked: ${input.plan_title}${input.plan_description ? ` — ${input.plan_description}` : ''}`,

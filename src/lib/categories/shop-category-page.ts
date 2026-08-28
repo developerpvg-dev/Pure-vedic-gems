@@ -52,6 +52,8 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     return {
       ...merged,
       name: defaults.name,
+      seo_title: defaults.seo_title,
+      seo_description: defaults.seo_description,
       intro_text: defaults.intro_text,
       image_url: defaults.image_url,
       hero_image_url: defaults.hero_image_url,

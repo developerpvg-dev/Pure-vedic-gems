@@ -1,13 +1,13 @@
 import type { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { maskEmail, safeAdminNext } from '@/lib/admin/mfa';
+import { isAdminFixedOtpRole, maskEmail, safeAdminNext } from '@/lib/admin/mfa';
 import { sendAdminMfaOtpEmail } from '@/lib/resend/send-admin-mfa-otp';
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
 export type TeamMfaStartResult =
   | { required: false }
-  | { required: true; userId: string; email: string; next?: string }
+  | { required: true; userId: string; email: string; next?: string; mode: 'email' | 'fixed' }
   | { error: string };
 
 /**
@@ -57,10 +57,12 @@ export async function startTeamEmailMfaIfNeeded(
     return { error: 'Account has no email for verification.' };
   }
 
+  const email = user.email;
+
   const admin = createAdminClient();
   const { data: member } = await admin
     .from('team_members')
-    .select('is_active')
+    .select('is_active, role')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -68,8 +70,16 @@ export async function startTeamEmailMfaIfNeeded(
     return { required: false };
   }
 
-  const email = user.email;
-  const userId = user.id;
+  if (isAdminFixedOtpRole(member.role)) {
+    return {
+      required: true,
+      userId: user.id,
+      email,
+      next: safeAdminNext(next),
+      mode: 'fixed',
+    };
+  }
+
   const safeNext = safeAdminNext(next);
 
   await supabase.auth.signOut();
@@ -79,7 +89,7 @@ export async function startTeamEmailMfaIfNeeded(
     return { error: sent.error };
   }
 
-  return { required: true, userId, email, next: safeNext };
+  return { required: true, userId: user.id, email, next: safeNext, mode: 'email' };
 }
 
 export async function resendTeamEmailMfaCode(email: string): Promise<{ ok: true } | { ok: false; error: string }> {

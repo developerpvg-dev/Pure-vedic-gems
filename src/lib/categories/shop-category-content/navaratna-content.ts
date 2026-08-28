@@ -11,6 +11,7 @@ import {
   type RichGemSections,
 } from './helpers';
 import { canonicalSubcategoryHref } from '@/lib/categories/canonical-storefront-path';
+import { navaratnaHubMeta } from '@/lib/seo/storefront-meta';
 
 type GemDef = RichGemSections & {
   slug: string;
@@ -2130,6 +2131,8 @@ function shopLink(slug: string, label: string) {
   return `<a href="${canonicalSubcategoryHref(slug) ?? `/shop/${slug}`}">${label}</a>`;
 }
 
+const NAVARATNA_HUB_SEO = navaratnaHubMeta();
+
 export const NAVARATNA_HUB_CONTENT: RichGemSections = {
   intro:
     'Navaratna (Navratna) are the nine primary Vedic gems — one ratna for each graha. At PureVedicGems, stones are certified, treatment-disclosed, and selected only after Jyotish suitability is considered.',
@@ -2139,9 +2142,8 @@ export const NAVARATNA_HUB_CONTENT: RichGemSections = {
     { text: 'Buy one prescribed gem or a jewellery set' },
     { text: 'Chart review before combining inimical stones' },
   ],
-  seo_title: 'Buy Navaratna Gems Online in India | Vedic Gemstones',
-  seo_description:
-    'Buy certified Navratna (Navaratna) stones and nine-gem sets online in India. Natural ruby, pukhraj, neelam, diamond or white sapphire. Delhi since 1937.',
+  seo_title: NAVARATNA_HUB_SEO.seo_title,
+  seo_description: NAVARATNA_HUB_SEO.seo_description,
   meta_keywords: [
     'buy navratna stone online',
     'buy navaratna set online',

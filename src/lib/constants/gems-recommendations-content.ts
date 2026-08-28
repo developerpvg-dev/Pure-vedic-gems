@@ -21,7 +21,7 @@ export const GEMS_REC_PAGE_FAQS: Array<{ question: string; answer: string }> = [
   {
     question: 'How do I get my remedies recommendation?',
     answer:
-      'Share your date, time, and place of birth, pay the booking fee, and a Pure Vedic Gems astrologer reviews your Kundli. You receive personalized gemstone, Rudraksha, and/or Yagya guidance by email — not an automated software report.',
+      'Share your date, time, and place of birth, complete your booking, and a Pure Vedic Gems astrologer reviews your Kundli. You receive personalized gemstone, Rudraksha, and/or Yagya guidance by email — not an automated software report.',
   },
   {
     question: 'Is date of birth alone enough for a gemstone recommendation?',
@@ -51,7 +51,7 @@ export const GEMS_REC_PAGE_FAQS: Array<{ question: string; answer: string }> = [
   {
     question: 'How is the recommendation report sent?',
     answer:
-      'After payment confirmation, our team emails your personalized remedies recommendation and related product links. Login is optional for booking.',
+      'After booking confirmation, our team emails your personalized remedies recommendation and related product links. Login is optional for booking.',
   },
   {
     question: 'Why choose Pure Vedic Gems?',
@@ -190,8 +190,8 @@ export const GEMS_REC_PROCESS = [
   },
   {
     step: '02',
-    title: 'Pay ₹101 securely',
-    body: 'Book your remedies recommendation with Razorpay. Login is optional — guests receive email confirmation.',
+    title: 'Confirm your booking',
+    body: 'Complete your remedies recommendation booking. Login is optional — guests receive email confirmation.',
   },
   {
     step: '03',

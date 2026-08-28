@@ -1,5 +1,5 @@
 import type { CategoryFaq, HeroBenefit } from '@/lib/types/shop-category-page';
-import { certifiedRudrakshaHubTitle, mukhiMeta } from '@/lib/seo/storefront-meta';
+import { mukhiMeta, rudrakshaHubTitle } from '@/lib/seo/storefront-meta';
 import { BRAND, h2, h3, mergeKeywords, p, ul, type RichGemSections } from './helpers';
 
 type MukhiMeta = {
@@ -816,8 +816,8 @@ function buildSpecialRudrakshaContent(slug: string, label: string): RichGemSecti
   return {
     intro: `Original ${phrase} — ${meta.formDescription} ${BRAND} lists certified ${phrase} with natural-formation checks, never glued fakes.`,
     hero_benefits: toHeroBenefits(meta.heroBenefits),
-    seo_title: certifiedRudrakshaHubTitle(phrase),
-    seo_description: `Certified ${low} and original ${low}. ${low} price with natural-formation checks and energization.`,
+    seo_title: rudrakshaHubTitle(phrase),
+    seo_description: `Shop ${phrase} online in India at Pure Vedic Gems. Explore quality, authenticity, origin and Vedic suitability.`,
     meta_keywords: rudrakshaKeywords(slug, label, [low, `original ${low}`, `${low} price`, 'certified rudraksha']),
     about_html: [
       p(meta.formDescription, meta.significance, meta.rarityNote ?? `${BRAND} inspects each original ${phrase} before listing.`),

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Archive, RotateCcw, Lock, Unlock, Star, Upload, Download, PackageCheck, Package, AlertTriangle, BarChart3, Trash2 } from 'lucide-react';
+import { Plus, Archive, RotateCcw, Lock, Unlock, Star, Upload, Download, PackageCheck, Package, AlertTriangle, BarChart3, Trash2, Gem } from 'lucide-react';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminAnalyticsPanel, AdminStatCard } from '@/components/admin/AdminPageShell';
 import { MetricBars, RevenueTrendChart, fmtInr } from '@/components/admin/AdminCharts';
@@ -441,10 +441,33 @@ function AdminProductsPageInner() {
                               if (note === undefined) return;
                               void runOperation(p.id, { action: 'reserve', note }, 'Failed to reserve product');
                             }}
-                            disabled={busyProduct === p.id || p.availability_status === 'archived'}
+                            disabled={busyProduct === p.id || p.availability_status === 'archived' || p.availability_status === 'sold'}
                             className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 transition hover:bg-blue-50 disabled:opacity-50"
                           >
                             <Lock className="h-3.5 w-3.5" /> Reserve
+                          </button>
+                        )}
+                        {p.availability_status !== 'sold' ? (
+                          <button
+                            onClick={() => {
+                              if (!confirm(`Mark "${p.name}" as sold?`)) return;
+                              void runOperation(p.id, { action: 'sold', note: 'Marked sold from product list' }, 'Failed to mark product sold');
+                            }}
+                            disabled={busyProduct === p.id}
+                            className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <Gem className="h-3.5 w-3.5" /> Mark sold
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (!confirm(`Make "${p.name}" active and available again?`)) return;
+                              void runOperation(p.id, { action: 'activate' }, 'Failed to reactivate product');
+                            }}
+                            disabled={busyProduct === p.id}
+                            className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" /> Make active
                           </button>
                         )}
                         <button

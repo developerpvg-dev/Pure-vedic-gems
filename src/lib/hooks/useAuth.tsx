@@ -125,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requiresPasswordReset?: boolean;
       requiresAdminOtp?: boolean;
       adminOtpEmail?: string;
+      otpMode?: 'email' | 'fixed';
     }> => {
       if (!supabase) return { error: missingSupabaseConfigMessage };
 
@@ -141,14 +142,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (json.requiresAdminOtp) {
-        setUser(null);
-        setProfile(null);
-        setIsLoading(false);
-        // Clear any client-cached session left from an older login path
-        await supabase.auth.signOut().catch(() => undefined);
+        const otpMode = json.otpMode === 'fixed' ? 'fixed' : 'email';
+        if (otpMode !== 'fixed') {
+          setUser(null);
+          setProfile(null);
+          setIsLoading(false);
+          // Email OTP clears server session; fixed-code login keeps it
+          await supabase.auth.signOut().catch(() => undefined);
+        }
         return {
           requiresAdminOtp: true,
           adminOtpEmail: typeof json.email === 'string' ? json.email : email,
+          otpMode,
         };
       }
 

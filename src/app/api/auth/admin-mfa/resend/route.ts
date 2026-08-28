@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Verification expired. Sign in again.' }, { status: 400 });
   }
 
+  if (pending.mode === 'fixed') {
+    return NextResponse.json({ error: 'Team codes are fixed — ask your manager if you forgot yours.' }, { status: 400 });
+  }
+
   const sent = await resendTeamEmailMfaCode(pending.email);
   if (!sent.ok) {
     return NextResponse.json({ error: sent.error }, { status: 400 });
@@ -32,6 +36,7 @@ export async function POST(req: NextRequest) {
     userId: pending.userId,
     email: pending.email,
     next: pending.next,
+    mode: pending.mode,
   });
   return res;
 }

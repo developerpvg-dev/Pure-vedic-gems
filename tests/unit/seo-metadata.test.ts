@@ -5,7 +5,7 @@ import { UPRATNA_STOREFRONT_SLUGS } from '@/lib/categories/canonical-storefront-
 import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import { shopCategoryLabel } from '@/lib/categories/shop-category-page';
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
-import { gemProductMeta, mukhiMeta, stripPriceFromTitle } from '@/lib/seo/storefront-meta';
+import { gemProductMeta, isStaleMarketingTitle, mukhiMeta, stripPriceFromTitle } from '@/lib/seo/storefront-meta';
 import { fitDescription, fitTitle, productMetadata } from '@/lib/utils/seo';
 import type { ProductCard } from '@/lib/types/product';
 
@@ -72,15 +72,15 @@ describe('SEO metadata limits', () => {
 describe('storefront SEO templates', () => {
   it('uses the Manik formula on the Ruby hub', () => {
     const page = getDefaultShopCategoryPage('ruby');
-    expect(page?.seo_title).toBe('Buy 100% Natural & Certified Ruby (Manik Stone) Online');
+    expect(page?.seo_title).toBe('Buy Ruby Online in India | Natural Manik | Pure Vedic Gems');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page?.seo_description).toMatch(/ruby gemstone/i);
+    expect(page?.seo_description).toMatch(/shop ruby \(manik\) gemstones online in india/i);
   });
 
   it('uses the Upratna child formula on Zircon', () => {
     const page = getDefaultShopCategoryPage('zircon');
-    expect(page?.seo_title).toBe('Buy 100% Natural & Certified Zircon (Jarkan Stone) Online');
+    expect(page?.seo_title).toMatch(/Buy Zircon Online in India \| Natural Jarkan/);
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
   });
@@ -92,10 +92,11 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_title!.toLowerCase()).toContain(name.toLowerCase());
-    expect(page.seo_title!.toLowerCase()).toMatch(/certified|natural/);
+    expect(page.seo_title!.toLowerCase()).toContain('online in india');
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
-    expect(page.seo_description!.toLowerCase()).toContain(phrase);
+    expect(page.seo_description!.toLowerCase()).toContain('explore');
+    expect(page.seo_description!.toLowerCase()).toContain(name.toLowerCase());
     expect(shopCategoryLabel(page).toLowerCase()).toContain(phrase);
     expect(page.about_html).not.toMatch(/<img /i);
     if (slug !== 'opal') {
@@ -109,7 +110,7 @@ describe('storefront SEO templates', () => {
 
   it('uses the mukhi formula on 1 Mukhi', () => {
     const page = getDefaultShopCategoryPage('1-mukhi');
-    expect(page?.seo_title).toBe('Buy 100% Natural & Certified 1 Mukhi Rudraksha Online');
+    expect(page?.seo_title).toBe('Buy 1 Mukhi Rudraksha Online in India | Pure Vedic Gems');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(fitTitle(mukhiMeta(1).seo_title).length).toBeLessThanOrEqual(60);
@@ -121,10 +122,10 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_title!.toLowerCase()).toContain(phrase);
+    expect(page.seo_title!.toLowerCase()).toContain('online in india');
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(page.seo_description!.toLowerCase()).toContain(phrase);
-    expect(page.seo_description!.toLowerCase()).toContain(`${phrase} price`);
     expect(shopCategoryLabel(page).toLowerCase()).toBe(phrase);
   });
 
@@ -165,7 +166,7 @@ describe('storefront SEO templates', () => {
     const page = getDefaultShopCategoryPage('yellow-sapphire');
     expect(page?.seo_title).toMatch(/yellow sapphire/i);
     expect(page?.seo_title).toMatch(/pukhraj/i);
-    expect(page?.seo_title).toMatch(/certified/i);
+    expect(page?.seo_title).toMatch(/online in india/i);
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page?.seo_title).not.toMatch(/price/i);
@@ -197,18 +198,12 @@ describe('storefront SEO templates', () => {
 
     expect(title).toMatch(/neelam/i);
     expect(title).toMatch(/blue sapphire/i);
-    expect(title).toMatch(/certified/i);
+    expect(title).toMatch(/online in india/i);
     expect(title).not.toMatch(/price/i);
     expect(title.length).toBeGreaterThanOrEqual(30);
     expect(title.length).toBeLessThanOrEqual(60);
-    expect(description).toMatch(/blue sapphire stone/i);
-    expect(description).toMatch(/natural blue sapphire/i);
-    expect(description).toMatch(/cornflower blue sapphire/i);
-    expect(description).toMatch(/neelam stone price/i);
-    expect(description).toMatch(/blue sapphire price/i);
-    expect(description).toMatch(/royal blue sapphire/i);
-    expect(description).toMatch(/light blue sapphire/i);
-    expect(description).toMatch(/blue star sapphire/i);
+    expect(description).toMatch(/shop blue sapphire \(neelam\) gemstones online in india/i);
+    expect(description).toMatch(/vedic suitability/i);
     expect(description.length).toBeGreaterThanOrEqual(50);
     expect(description.length).toBeLessThanOrEqual(160);
     expect(label).toMatch(/blue sapphire stone/i);
@@ -268,13 +263,11 @@ describe('storefront SEO templates', () => {
 
     expect(title).toMatch(/emerald/i);
     expect(title).toMatch(/panna/i);
-    expect(title).toMatch(/certified/i);
+    expect(title).toMatch(/online in india/i);
     expect(title.length).toBeGreaterThanOrEqual(30);
     expect(title.length).toBeLessThanOrEqual(60);
-    expect(description).toMatch(/emerald stone/i);
-    expect(description).toMatch(/emerald gemstone/i);
-    expect(description).toMatch(/natural emerald/i);
-    expect(description).toMatch(/real emerald/i);
+    expect(description).toMatch(/shop emerald \(panna\) gemstones online in india/i);
+    expect(description).toMatch(/vedic suitability/i);
     expect(description.length).toBeGreaterThanOrEqual(50);
     expect(description.length).toBeLessThanOrEqual(160);
     expect(label).toMatch(/emerald stone/i);
@@ -300,13 +293,11 @@ describe('storefront SEO templates', () => {
     const body = hubBody(page);
     expect(page.seo_title).toMatch(/ruby/i);
     expect(page.seo_title).toMatch(/manik/i);
-    expect(page.seo_title).toMatch(/certified/i);
+    expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page.seo_description).toMatch(/ruby gemstone/i);
-    expect(page.seo_description).toMatch(/ruby stone/i);
-    expect(page.seo_description).toMatch(/ruby stone price/i);
-    expect(page.seo_description).toMatch(/natural ruby/i);
+    expect(page.seo_description).toMatch(/shop ruby \(manik\) gemstones online in india/i);
+    expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/ruby gemstone/i);
@@ -330,10 +321,8 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title).toMatch(/yellow sapphire/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page.seo_description).toMatch(/yellow sapphire stone/i);
-    expect(page.seo_description).toMatch(/yellow sapphire price/i);
-    expect(page.seo_description).toMatch(/natural yellow sapphire/i);
-    expect(page.seo_description).toMatch(/yellow sapphires for sale/i);
+    expect(page.seo_description).toMatch(/shop yellow sapphire \(pukhraj\) gemstones online in india/i);
+    expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/yellow sapphire/i);
@@ -357,10 +346,8 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title).toMatch(/white sapphire/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page.seo_description).toMatch(/white sapphire gemstone/i);
-    expect(page.seo_description).toMatch(/natural white sapphire/i);
-    expect(page.seo_description).toMatch(/white sapphire stone/i);
-    expect(page.seo_description).toMatch(/ceylon white sapphire/i);
+    expect(page.seo_description).toMatch(/shop white sapphire \(safed pukhraj\) gemstones online in india/i);
+    expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/white sapphire/i);
@@ -382,13 +369,11 @@ describe('storefront SEO templates', () => {
     const body = hubBody(page);
     expect(page.seo_title).toMatch(/catseye/i);
     expect(page.seo_title).toMatch(/lehsunia/i);
-    expect(page.seo_title).toMatch(/certified/i);
+    expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page.seo_description).toMatch(/catseye gem/i);
-    expect(page.seo_description).toMatch(/original cats eye stone/i);
-    expect(page.seo_description).toMatch(/cat's eye chrysoberyl/i);
-    expect(page.seo_description).toMatch(/cats eye gemstone price/i);
+    expect(page.seo_description).toMatch(/shop catseye \(lehsunia\) gemstones online in india/i);
+    expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/catseye gemstone/i);
@@ -409,13 +394,10 @@ describe('storefront SEO templates', () => {
     const page = getDefaultShopCategoryPage('opal')!;
     const body = hubBody(page);
     expect(page.seo_title).toMatch(/opal/i);
-    expect(page.seo_title).toMatch(/certified|natural/i);
+    expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
     expect(page.seo_title!.length).toBeLessThanOrEqual(60);
-    expect(page.seo_description).toMatch(/opal stone/i);
-    expect(page.seo_description).toMatch(/fire opal/i);
-    expect(page.seo_description).toMatch(/opal price/i);
-    expect(page.seo_description).toMatch(/opals for sale/i);
+    expect(page.seo_description).toMatch(/explore opal gemstones online in india/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/opal gemstone/i);
@@ -437,7 +419,7 @@ describe('storefront SEO templates', () => {
     [
       'pearl',
       /pearl/i,
-      ['pearl stone', 'natural pearl', 'moti stone', 'moti stone price'],
+      ['shop pearl (moti) gemstones online in india', 'vedic suitability'],
       '<h2>What is a Pearl Gemstone</h2>',
       'pearl gemstone',
       20,
@@ -445,7 +427,7 @@ describe('storefront SEO templates', () => {
     [
       'red-coral',
       /red coral/i,
-      ['red coral gemstone', 'moonga stone price', 'natural red coral'],
+      ['shop red coral (moonga) gemstones online in india', 'vedic suitability'],
       '<h2>What is a Red Coral Stone</h2>',
       'red coral stone',
       20,
@@ -453,7 +435,7 @@ describe('storefront SEO templates', () => {
     [
       'diamond',
       /diamond/i,
-      ['diamond stone', 'natural diamond'],
+      ['shop diamond (heera) gemstones online in india', 'vedic suitability'],
       '<h2>What is a Diamond Gemstone</h2>',
       'diamond gemstone',
       20,
@@ -461,7 +443,7 @@ describe('storefront SEO templates', () => {
     [
       'hessonite',
       /hessonite/i,
-      ['hessonite gemstone', 'gomed stone price', 'hessonite garnet'],
+      ['shop hessonite (gomed) gemstones online in india', 'vedic suitability'],
       '<h2>What is a Hessonite Stone</h2>',
       'hessonite stone',
       20,
@@ -469,7 +451,7 @@ describe('storefront SEO templates', () => {
     [
       'pitambari',
       /pitambari sapphire/i,
-      ['natural pitambari', 'pitambari neelam', 'sri lankan pitambari'],
+      ['shop pitambari', 'vedic suitability'],
       '<h2>What is Pitambari Sapphire</h2>',
       'pitambari sapphire',
       20,
@@ -534,6 +516,38 @@ describe('storefront SEO templates', () => {
 
   it('strips prices from CMS titles', () => {
     expect(stripPriceFromTitle('Buy Ruby @2200 per. ct. | Natural Manik')).toMatch(/Buy Ruby \| Natural Manik/);
+  });
+
+  it('ignores stale marketing CMS titles on products', () => {
+    const title = absTitle(
+      productMetadata(
+        gemCard({
+          name: 'African Ruby',
+          category: 'navaratna',
+          origin: 'African',
+          carat_weight: 7.58,
+          treatment: 'unheated',
+          certification: 'GIA',
+        }),
+        '/gemstones/navaratna/ruby/african-ruby-7-58ct',
+        { title: 'Premium African Ruby 7.58 Carat | Exceptional Quality at' },
+      ),
+    );
+    expect(title).toMatch(/African Ruby 7\.58ct/i);
+    expect(title).not.toMatch(/Premium|Exceptional/i);
+    expect(isStaleMarketingTitle('Premium African Ruby 7.58 Carat | Exceptional Quality at')).toBe(true);
+  });
+
+  it('uses main hub formulas', () => {
+    expect(getDefaultShopCategoryPage('navaratna')?.seo_title).toBe(
+      'Buy Navaratna Gems Online in India | Vedic Gemstones',
+    );
+    expect(getDefaultShopCategoryPage('rudraksha')?.seo_title).toBe(
+      'Buy Original Rudraksha Online in India | Pure Vedic Gems',
+    );
+    expect(getDefaultShopCategoryPage('upratna')?.seo_title).toBe(
+      'Buy Upratna Gems Online in India | Vedic Gemstones',
+    );
   });
 
   it('leaves jewellery titles on the old path', () => {

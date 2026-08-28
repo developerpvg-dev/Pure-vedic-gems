@@ -12,6 +12,10 @@ import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import { ensureLeadFromConsultation } from '@/lib/leads/from-consultation';
 import { formatChargedMoney } from '@/lib/currency/format-charged';
+import { countryCodeFromHeaders, isRs101PaidCountry } from '@/lib/consultation/rs101-eligibility';
+import { finalizeFreeRs101Consultation } from '@/lib/consultation/finalize-free-rs101';
+import { isTurnstileProductionHost } from '@/lib/enquiry/turnstile-host';
+import { turnstileConfigured, verifyTurnstileToken } from '@/lib/enquiry/verify-turnstile';
 import type { Consultation, ConsultationPlan } from '@/lib/types/database';
 
 interface RazorpayOrderResult {
@@ -64,6 +68,91 @@ export async function POST(request: NextRequest) {
 
   if (parsed.data.website) {
     return NextResponse.json({ error: 'Invalid submission' }, { status: 400 });
+  }
+
+  const ipCountry = countryCodeFromHeaders(request.headers);
+  const rs101FreeInternational =
+    parsed.data.plan_id === 'rs101' && !isRs101PaidCountry(ipCountry);
+
+  if (rs101FreeInternational) {
+    const emailKey = parsed.data.email.trim().toLowerCase();
+    if (!rateLimit(`consult-rs101-free:${emailKey}`, 2, 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    const host = request.headers.get('host') ?? '';
+    const skipTurnstile = !isTurnstileProductionHost(host);
+    const remoteIp = ip !== 'unknown' ? ip : undefined;
+    const token = parsed.data.turnstileToken?.trim();
+    if (turnstileConfigured() && !skipTurnstile && (!token || !(await verifyTurnstileToken(token, remoteIp)))) {
+      return NextResponse.json(
+        { error: 'Please complete the security check and try again.' },
+        { status: 403 }
+      );
+    }
+
+    const admin = createAdminClient();
+    const planTitle = 'Gem Recommendation';
+    const planDescription = 'Personalized gemstone recommendation from our Vedic experts';
+
+    const { data: consultation, error: insertError } = await admin
+      .from('consultations')
+      .insert({
+        customer_id: user?.id ?? null,
+        plan_id: null,
+        plan_title_snapshot: planTitle,
+        plan_description_snapshot: planDescription,
+        full_name: parsed.data.full_name,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        date_of_birth: parsed.data.date_of_birth || null,
+        birth_time: parsed.data.birth_time || null,
+        birth_place: parsed.data.birth_place || null,
+        customer_city: parsed.data.customer_city || null,
+        customer_state: parsed.data.customer_state || null,
+        customer_country: parsed.data.customer_country || null,
+        life_situation: parsed.data.life_situation || null,
+        consultation_type: 'paid_plan',
+        mode: null,
+        preferred_date: parsed.data.preferred_date || null,
+        preferred_time: parsed.data.preferred_time || null,
+        message: parsed.data.message || null,
+        amount_inr: 0,
+        amount_paise: 0,
+        currency: 'INR',
+        payment_status: 'captured',
+        status: 'confirmed',
+        payment_method: 'free_international',
+        amount_verified_at: new Date().toISOString(),
+      })
+      .select('*')
+      .single();
+
+    if (insertError || !consultation) {
+      console.error('[Consultation rs101 free] Insert failed:', insertError);
+      return NextResponse.json({ error: 'Failed to create consultation booking' }, { status: 500 });
+    }
+
+    const booking = consultation as Consultation;
+    const ipLocation = geoFromRequest(request);
+    let enquiryId: string | null = null;
+    try {
+      enquiryId = await finalizeFreeRs101Consultation(admin, booking, ipLocation);
+    } catch (err) {
+      console.error('[Consultation rs101 free] Finalize failed:', err);
+    }
+
+    const response = NextResponse.json({
+      consultation_id: booking.id,
+      enquiry_id: enquiryId,
+      free: true,
+      plan_title: planTitle,
+    });
+    setBookingTokenCookie(response, 'consultation', booking.id);
+    return response;
   }
 
   const currency = normalizeChargeCurrency(parsed.data.currency);

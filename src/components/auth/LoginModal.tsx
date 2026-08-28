@@ -41,6 +41,7 @@ export function LoginModal({
   const [error, setError] = useState('');
   const [showLegacyResetHint, setShowLegacyResetHint] = useState(false);
   const [adminOtpEmail, setAdminOtpEmail] = useState('');
+  const [adminOtpMode, setAdminOtpMode] = useState<'email' | 'fixed'>('email');
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -59,6 +60,7 @@ export function LoginModal({
       setMagicEmail('');
       setShowLegacyResetHint(false);
       setAdminOtpEmail('');
+      setAdminOtpMode('email');
     }, 300);
 
     return () => clearTimeout(timeoutId);
@@ -97,6 +99,7 @@ export function LoginModal({
     }
     if (result.requiresAdminOtp) {
       setAdminOtpEmail(result.adminOtpEmail || email);
+      setAdminOtpMode(result.otpMode ?? 'email');
       setView('admin-otp');
       return;
     }
@@ -269,6 +272,7 @@ export function LoginModal({
               {view === 'admin-otp' && (
                 <AdminOtpForm
                   emailLabel={adminOtpEmail || 'your email'}
+                  mode={adminOtpMode}
                   onBack={() => {
                     setView('login');
                     setAdminOtpEmail('');

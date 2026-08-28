@@ -35,11 +35,13 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({
     required: true,
     email: maskEmail(mfa.email),
+    mode: mfa.mode,
   });
   setAdminMfaPendingCookie(res, {
     userId: mfa.userId,
     email: mfa.email,
     next: mfa.next,
+    mode: mfa.mode,
   });
   return res;
 }

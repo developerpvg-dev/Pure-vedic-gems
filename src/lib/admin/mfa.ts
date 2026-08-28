@@ -8,18 +8,45 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import type { NextRequest, NextResponse } from 'next/server';
+import { normalizeAdminRole, type CanonicalAdminRole } from '@/lib/admin/rbac';
+
+/** Products Uploading staff use shared fixed codes (see INVENTORY_ADMIN_OTP_CODES). */
+const FIXED_OTP_ROLES: ReadonlySet<CanonicalAdminRole> = new Set(['inventory']);
+
+export function isAdminFixedOtpRole(role: string | null | undefined): boolean {
+  const normalized = normalizeAdminRole(role);
+  return normalized !== null && FIXED_OTP_ROLES.has(normalized);
+}
+
+/** ponytail: defaults for small team; override via INVENTORY_ADMIN_OTP_CODES in production. */
+function getFixedInventoryOtpCodes(): string[] {
+  const raw = process.env.INVENTORY_ADMIN_OTP_CODES ?? '847291,392018,615473';
+  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+export function verifyFixedInventoryOtp(code: string): boolean {
+  const normalized = code.trim();
+  if (!normalized) return false;
+  return getFixedInventoryOtpCodes().some((candidate) => {
+    if (candidate.length !== normalized.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(normalized));
+  });
+}
+
+export type AdminMfaMode = 'email' | 'fixed';
 
 export const ADMIN_MFA_COOKIE = 'pvg_admin_mfa';
 export const ADMIN_MFA_PENDING_COOKIE = 'pvg_admin_mfa_pending';
 
 const PENDING_MAX_AGE_SEC = 10 * 60;
-const MFA_MAX_AGE_SEC = 12 * 60 * 60;
+const MFA_MAX_AGE_SEC = 15 * 24 * 60 * 60;
 
 export type AdminMfaPending = {
   userId: string;
   email: string;
   exp: number;
   next?: string;
+  mode: AdminMfaMode;
 };
 
 function getSigningSecret(): string {
@@ -90,9 +117,10 @@ export function clearAdminMfaCookies(response: NextResponse): void {
 export function setAdminMfaPendingCookie(response: NextResponse, pending: Omit<AdminMfaPending, 'exp'>): void {
   const exp = Math.floor(Date.now() / 1000) + PENDING_MAX_AGE_SEC;
   const next = pending.next ?? '';
+  const mode = pending.mode ?? 'email';
   response.cookies.set({
     name: ADMIN_MFA_PENDING_COOKIE,
-    value: encodeSigned([pending.userId, pending.email.toLowerCase(), String(exp), next]),
+    value: encodeSigned([pending.userId, pending.email.toLowerCase(), String(exp), next, mode]),
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -112,12 +140,20 @@ export async function readAdminMfaPendingFromCookies(): Promise<AdminMfaPending 
 
 function parsePending(raw: string | undefined): AdminMfaPending | null {
   if (!raw) return null;
-  const parts = decodeSigned(raw, 4);
-  if (!parts) return null;
-  const [userId, email, expStr, next = ''] = parts;
+  const withMode = decodeSigned(raw, 5);
+  if (withMode) {
+    const [userId, email, expStr, next = '', modeRaw] = withMode;
+    const exp = Number(expStr);
+    const mode: AdminMfaMode = modeRaw === 'fixed' ? 'fixed' : 'email';
+    if (!userId || !email || !Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+    return { userId, email, exp, next: next || undefined, mode };
+  }
+  const legacy = decodeSigned(raw, 4);
+  if (!legacy) return null;
+  const [userId, email, expStr, next = ''] = legacy;
   const exp = Number(expStr);
   if (!userId || !email || !Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
-  return { userId, email, exp, next: next || undefined };
+  return { userId, email, exp, next: next || undefined, mode: 'email' };
 }
 
 export function hasValidAdminMfaCookie(request: NextRequest, userId: string): boolean {

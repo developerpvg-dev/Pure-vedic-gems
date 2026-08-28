@@ -25,8 +25,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
 import { LayeredCategoryImage } from '@/components/home/LayeredCategoryImage';
 import { DirectorPickPrice } from '@/components/home/DirectorPickPrice';
-import { Money } from '@/components/currency/Money';
-import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { Rs101CtaLabel } from '@/components/consultation/Rs101CtaLabel';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 
@@ -740,11 +739,13 @@ export function NavaratnaHomeSection({
   showCta = true,
   showHeading = true,
   srHeading = 'Shop the nine Navaratna gems',
+  rs101Paid = true,
 }: {
   categories: HomeManagedCategory[];
   showCta?: boolean;
   showHeading?: boolean;
   srHeading?: string;
+  rs101Paid?: boolean;
 }) {
   const visibleCategories = showCta ? categories.slice(0, NAVARATNA_HOME_GRID_LIMIT) : categories;
   const rows: HomeManagedCategory[][] = [];
@@ -820,7 +821,7 @@ export function NavaratnaHomeSection({
           title="Not sure which gemstone is good for you?"
           copy="Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy."
           primary={{
-            label: <>Get Navaratna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+            label: <Rs101CtaLabel base="Get Navaratna Recommendation" paid={rs101Paid} />,
             href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Navaratna Collection', href: '/gems-recommendations' }}
@@ -838,11 +839,13 @@ export function RudrakshaHomeSection({
   featureCards = RUDRAKSHA_FEATURE_FALLBACK,
   showCta = true,
   showHeading = true,
+  rs101Paid = true,
 }: {
   categories: HomeManagedCategory[];
   featureCards?: HomeCatalogCategory[];
   showCta?: boolean;
   showHeading?: boolean;
+  rs101Paid?: boolean;
 }) {
   const visibleCategories = showCta ? categories.slice(0, 12) : categories;
   const visibleFeatureCards = featureCards;
@@ -914,7 +917,7 @@ export function RudrakshaHomeSection({
           title="Not sure which Rudraksha is right for you?"
           copy="Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy."
           primary={{
-            label: <>Get Rudraksha Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+            label: <Rs101CtaLabel base="Get Rudraksha Recommendation" paid={rs101Paid} />,
             href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Rudraksha Collection', href: '/rudraksha' }}
@@ -1137,9 +1140,11 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
 export function SemipreciousHomeSection({
   categories,
   showCta = true,
+  rs101Paid = true,
 }: {
   categories: HomeManagedCategory[];
   showCta?: boolean;
+  rs101Paid?: boolean;
 }) {
   return (
     <>
@@ -1186,7 +1191,7 @@ export function SemipreciousHomeSection({
           title="Need a practical gemstone alternative?"
           copy="Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget."
           primary={{
-            label: <>Get Uparatna Recommendation — <Money amount={RS101_AMOUNT_INR} /></>,
+            label: <Rs101CtaLabel base="Get Uparatna Recommendation" paid={rs101Paid} />,
             href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Uparatna Collection', href: '/gemstones/upratna' }}

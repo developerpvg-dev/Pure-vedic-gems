@@ -6,8 +6,7 @@ import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
 import { RecoHeroPriceCopy } from '@/components/home/RecoHeroPriceCopy';
 import { HomeTestimonialSlider } from '@/components/home/HomeTestimonialSlider';
 import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySections';
-import { Money } from '@/components/currency/Money';
-import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
+import { Rs101CtaLabel } from '@/components/consultation/Rs101CtaLabel';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import { urlFor, isSanityConfigured } from '@/lib/sanity/client';
 import { TrustCardsSection } from '@/components/home/TrustCardsSection';
@@ -78,6 +77,7 @@ type PvgReferenceSectionsProps = {
   directorsPickSection: ReactNode;
   testimonials: HomeTestimonial[];
   knowledgeBlogCategories?: KhubCategory[];
+  rs101Paid?: boolean;
 };
 
 export type HomeTestimonial = {
@@ -181,6 +181,7 @@ export function PvgReferenceSections({
   directorsPickSection,
   testimonials,
   knowledgeBlogCategories,
+  rs101Paid = true,
 }: PvgReferenceSectionsProps) {
   const renderLegacyFallback = false;
   const featuredTestimonials = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS;
@@ -976,7 +977,7 @@ export function PvgReferenceSections({
     title="Need a Vedic Yagya guided by trusted experts?"
     copy="Book a personalized Vedic Yagya service aligned to your birth chart, life goals, and current planetary periods with guidance from our in-house experts."
     primary={{
-      label: <>Book a Yagya Consultation — <Money amount={RS101_AMOUNT_INR} /></>,
+      label: <Rs101CtaLabel base="Book a Yagya Consultation" paid={rs101Paid} />,
       href: '/gems-recommendations',
     }}
     secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas-service' }}
@@ -1042,11 +1043,11 @@ export function PvgReferenceSections({
       <div className="reco-copy-panel">
         <div className="reco-copy-surface">
           <h2 className="reco-img-heading" id="reco-heading">Get Your remedies<br />Recommendation</h2>
-          <RecoHeroPriceCopy />
+          <RecoHeroPriceCopy rs101Paid={rs101Paid} />
         </div>
       </div>
 
-      <PvgRecommendationForm />
+      <PvgRecommendationForm rs101Paid={rs101Paid} />
 
     </div>
   </section>

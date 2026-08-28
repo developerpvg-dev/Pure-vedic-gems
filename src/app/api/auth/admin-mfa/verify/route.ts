@@ -4,8 +4,10 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import {
   ADMIN_MFA_PENDING_COOKIE,
+  isAdminFixedOtpRole,
   readAdminMfaPendingFromRequest,
   setAdminMfaCookie,
+  verifyFixedInventoryOtp,
 } from '@/lib/admin/mfa';
 
 export async function POST(req: NextRequest) {
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as { token?: string } | null;
   const token = body?.token?.trim();
   if (!token || token.length < 6) {
-    return NextResponse.json({ error: 'Enter the 6-digit code from your email.' }, { status: 400 });
+    return NextResponse.json({ error: 'Enter your 6-digit team code.' }, { status: 400 });
   }
 
   const pending = readAdminMfaPendingFromRequest(req);
@@ -26,6 +28,43 @@ export async function POST(req: NextRequest) {
       { error: 'Verification expired. Sign in again.' },
       { status: 400 },
     );
+  }
+
+  if (pending.mode === 'fixed') {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || user.id !== pending.userId) {
+      return NextResponse.json(
+        { error: 'Verification expired. Sign in again.' },
+        { status: 400 },
+      );
+    }
+
+    if (!verifyFixedInventoryOtp(token)) {
+      return NextResponse.json({ error: 'Invalid team code. Try again.' }, { status: 400 });
+    }
+
+    const admin = createAdminClient();
+    const { data: member } = await admin
+      .from('team_members')
+      .select('is_active, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!member?.is_active || !isAdminFixedOtpRole(member.role)) {
+      return NextResponse.json({ error: 'Not authorized for team code login.' }, { status: 403 });
+    }
+
+    const res = NextResponse.json({
+      success: true,
+      redirectTo: pending.next || '/admin',
+    });
+    res.cookies.set({ name: ADMIN_MFA_PENDING_COOKIE, value: '', path: '/', maxAge: 0 });
+    setAdminMfaCookie(res, user.id);
+    return res;
   }
 
   const supabase = await createClient();

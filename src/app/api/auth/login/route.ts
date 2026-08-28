@@ -123,7 +123,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: mfa.error }, { status: 400 });
     }
     if (!mfa.required) {
-      // shouldn't happen after team check; treat as normal
       return NextResponse.json({
         success: true,
         requiresAdminOtp: false,
@@ -134,12 +133,14 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({
       success: true,
       requiresAdminOtp: true,
+      otpMode: mfa.mode,
       email: maskEmail(mfa.email),
     });
     setAdminMfaPendingCookie(res, {
       userId: mfa.userId,
       email: mfa.email,
       next: mfa.next,
+      mode: mfa.mode,
     });
     return res;
   }

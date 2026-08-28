@@ -69,6 +69,9 @@ const LEGACY_ROLE_MAP: Record<string, CanonicalAdminRole> = {
   director: 'owner',
   manager: 'admin',
   accounts: 'finance',
+  product_upload: 'inventory',
+  products_uploading: 'inventory',
+  website_maintenance: 'content',
 };
 
 export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
