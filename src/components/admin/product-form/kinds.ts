@@ -305,7 +305,18 @@ export const SHAPES = ['Round', 'Oval', 'Cushion', 'Emerald Cut', 'Pear', 'Heart
 export const CERTIFICATIONS = ['IGI', 'IGI-GTL Delhi', 'GTL Jaipur', 'GIA', 'GJEPC', 'IIGJ', 'GRS', 'Gübelin', 'SSEF', 'AGL', 'HRD Antwerp', 'GII', 'GFCO', 'None'] as const;
 export const QUALITIES = ['Economy', 'Good', 'Premium', 'Super Premium', 'Luxury', 'Super Luxury', 'Collector'] as const;
 export const GEM_TREATMENTS = ['Natural', 'Unheated', 'Heated', 'Minor Oil', 'No Oil', 'No Treatment', 'None'] as const;
-export const METALS = ['Gold 22K', 'Gold 18K', 'Gold 14K', 'Silver 925', 'Platinum', 'Panchdhatu', 'Ashtadhatu', 'Copper (Tamba)', 'Brass'] as const;
+export const METALS = [
+  'Gold 22K',
+  'Gold 18K',
+  'Gold 14K',
+  'Silver 925',
+  'Platinum',
+  'Panchdhatu',
+  'Ashtadhatu',
+  'Copper (Tamba)',
+  'Brass',
+  'Elastic / Thread',
+] as const;
 export const ORIGINS = [
   'Ceylon (Sri Lanka)',
   'Burma (Myanmar)',
@@ -339,6 +350,47 @@ export const JEWELLERY_TYPE_OPTS = [
   { value: 'ready_stock', label: 'Ready Stock Setting' },
   { value: 'custom', label: 'Custom Design' },
 ];
+
+const JEWELLERY_TYPE_VALUES = new Set(JEWELLERY_TYPE_OPTS.map((option) => option.value));
+
+/** ponytail: legacy/migrated jewellery often has sub_category (e.g. bracelets) but null jewellery_type */
+const SUB_CATEGORY_JEWELLERY_TYPE_ALIASES: Record<string, string> = {
+  bracelets: 'bracelet',
+  rings: 'ring',
+  pendants: 'pendant',
+  earrings: 'earring',
+  necklaces: 'necklace',
+  malas: 'mala',
+  'exclusive-rudraksha-malas': 'mala',
+  'rudraksha-jewelry': 'ready_stock',
+  'astro-gems-stock': 'ready_stock',
+  'custom-design': 'custom',
+  'diamond-jewellery': 'necklace',
+};
+
+export function inferJewelleryTypeFromSubCategory(subCategory: string): string {
+  const slug = subCategory.trim().toLowerCase();
+  if (!slug) return '';
+  if (JEWELLERY_TYPE_VALUES.has(slug)) return slug;
+  if (SUB_CATEGORY_JEWELLERY_TYPE_ALIASES[slug]) return SUB_CATEGORY_JEWELLERY_TYPE_ALIASES[slug];
+  for (const type of ['bracelet', 'ring', 'pendant', 'necklace', 'earring', 'mala'] as const) {
+    if (slug.includes(type)) return type;
+  }
+  return '';
+}
+
+export function resolveJewelleryType(stored: string | null | undefined, subCategory: string): string {
+  const trimmed = (stored ?? '').trim();
+  return trimmed || inferJewelleryTypeFromSubCategory(subCategory);
+}
+
+export function resolveBaseMetal(
+  stored: string | null | undefined,
+  wearingMetal: string | null | undefined
+): string {
+  return (stored ?? '').trim() || (wearingMetal ?? '').trim();
+}
+
 export const RING_SIZE_SYSTEM_OPTS = [
   { value: 'india', label: 'India' },
   { value: 'us', label: 'US' },

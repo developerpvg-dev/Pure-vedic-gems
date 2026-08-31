@@ -38,7 +38,7 @@ function cleanGemName(englishName: string) {
 }
 
 function pickTitle(...candidates: string[]) {
-  return candidates.find((title) => title.length <= 60) ?? candidates[candidates.length - 1]!.slice(0, 60);
+  return candidates[0]!;
 }
 
 /** Main /gemstones hub. */

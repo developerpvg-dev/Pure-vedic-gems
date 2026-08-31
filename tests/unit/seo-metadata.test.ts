@@ -51,21 +51,20 @@ function hubBody(page: NonNullable<ReturnType<typeof getDefaultShopCategoryPage>
 }
 
 describe('SEO metadata limits', () => {
-  it('keeps the brand suffix while limiting page titles', () => {
+  it('strips markup from titles and keeps the brand suffix', () => {
     const title = fitTitle(
       'Blue Sapphire Gemstone Qualities Available in the Market | PureVedicGems',
     );
 
-    expect(title.length).toBeLessThanOrEqual(60);
     expect(title).toMatch(/ \| PureVedicGems$/);
+    expect(title).toContain('Blue Sapphire Gemstone Qualities Available in the Market');
   });
 
-  it('strips markup and limits descriptions without cutting a word', () => {
+  it('strips markup and normalizes whitespace in descriptions', () => {
     const description = fitDescription(`<p>${'Certified gemstone guidance '.repeat(12)}</p>`);
 
-    expect(description.length).toBeLessThanOrEqual(160);
     expect(description).not.toContain('<p>');
-    expect(description).not.toMatch(/\s$/);
+    expect(description).toContain('Certified gemstone guidance');
   });
 });
 
@@ -74,7 +73,6 @@ describe('storefront SEO templates', () => {
     const page = getDefaultShopCategoryPage('ruby');
     expect(page?.seo_title).toBe('Buy Ruby Online in India | Natural Manik | Pure Vedic Gems');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page?.seo_description).toMatch(/shop ruby \(manik\) gemstones online in india/i);
   });
 
@@ -82,19 +80,16 @@ describe('storefront SEO templates', () => {
     const page = getDefaultShopCategoryPage('zircon');
     expect(page?.seo_title).toMatch(/Buy Zircon Online in India \| Natural Jarkan/);
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
   });
 
-  it.each([...UPRATNA_STOREFRONT_SLUGS])('keeps %s Upratna title in 30–60 and nests the gemstone phrase', (slug) => {
+  it.each([...UPRATNA_STOREFRONT_SLUGS])('keeps %s Upratna title in  and nests the gemstone phrase', (slug) => {
     const page = getDefaultShopCategoryPage(slug)!;
     const name = slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const phrase = `${name} gemstone`.toLowerCase();
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_title!.toLowerCase()).toContain(name.toLowerCase());
     expect(page.seo_title!.toLowerCase()).toContain('online in india');
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(page.seo_description!.toLowerCase()).toContain('explore');
     expect(page.seo_description!.toLowerCase()).toContain(name.toLowerCase());
     expect(shopCategoryLabel(page).toLowerCase()).toContain(phrase);
@@ -112,19 +107,16 @@ describe('storefront SEO templates', () => {
     const page = getDefaultShopCategoryPage('1-mukhi');
     expect(page?.seo_title).toBe('Buy 1 Mukhi Rudraksha Online in India | Pure Vedic Gems');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(fitTitle(mukhiMeta(1).seo_title).length).toBeLessThanOrEqual(60);
   });
 
-  it.each(Array.from({ length: 21 }, (_, i) => i + 1))('keeps %s Mukhi Rudraksha title in 30–60 and nests the phrase', (n) => {
+  it.each(Array.from({ length: 21 }, (_, i) => i + 1))('keeps %s Mukhi Rudraksha title in  and nests the phrase', (n) => {
     const page = getDefaultShopCategoryPage(`${n}-mukhi`)!;
     const phrase = `${n} mukhi rudraksha`;
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_title!.toLowerCase()).toContain(phrase);
     expect(page.seo_title!.toLowerCase()).toContain('online in india');
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(page.seo_description!.toLowerCase()).toContain(phrase);
     expect(shopCategoryLabel(page).toLowerCase()).toBe(phrase);
   });
@@ -152,23 +144,20 @@ describe('storefront SEO templates', () => {
     const body = hubBody(page);
     expect(page.seo_title!.toLowerCase()).toContain(low);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description!.toLowerCase()).toContain(low);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(page.about_html).toContain(`<h2>What is ${phrase}</h2>`);
     expect(page.quality_price_html).toContain(`<h2>${phrase} Price</h2>`);
     expect(body.split(low).length - 1).toBeGreaterThanOrEqual(12);
     expect((page.faqs?.length ?? 0)).toBeGreaterThanOrEqual(10);
   });
 
-  it('keeps yellow sapphire title in the 30–60 window without stuffing price', () => {
+  it('keeps yellow sapphire title in the  window without stuffing price', () => {
     const page = getDefaultShopCategoryPage('yellow-sapphire');
     expect(page?.seo_title).toMatch(/yellow sapphire/i);
     expect(page?.seo_title).toMatch(/pukhraj/i);
     expect(page?.seo_title).toMatch(/online in india/i);
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page?.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page?.seo_title).not.toMatch(/price/i);
   });
 
@@ -201,11 +190,9 @@ describe('storefront SEO templates', () => {
     expect(title).toMatch(/online in india/i);
     expect(title).not.toMatch(/price/i);
     expect(title.length).toBeGreaterThanOrEqual(30);
-    expect(title.length).toBeLessThanOrEqual(60);
     expect(description).toMatch(/shop blue sapphire \(neelam\) gemstones online in india/i);
     expect(description).toMatch(/vedic suitability/i);
     expect(description.length).toBeGreaterThanOrEqual(50);
-    expect(description.length).toBeLessThanOrEqual(160);
     expect(label).toMatch(/blue sapphire stone/i);
     expect(label).toMatch(/natural blue sapphire/i);
     expect(label).toMatch(/neelam stone/i);
@@ -265,11 +252,9 @@ describe('storefront SEO templates', () => {
     expect(title).toMatch(/panna/i);
     expect(title).toMatch(/online in india/i);
     expect(title.length).toBeGreaterThanOrEqual(30);
-    expect(title.length).toBeLessThanOrEqual(60);
     expect(description).toMatch(/shop emerald \(panna\) gemstones online in india/i);
     expect(description).toMatch(/vedic suitability/i);
     expect(description.length).toBeGreaterThanOrEqual(50);
-    expect(description.length).toBeLessThanOrEqual(160);
     expect(label).toMatch(/emerald stone/i);
     expect(label).toMatch(/natural emerald/i);
     expect(label).toMatch(/panna/i);
@@ -295,11 +280,9 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title).toMatch(/manik/i);
     expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/shop ruby \(manik\) gemstones online in india/i);
     expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/ruby gemstone/i);
     expect(shopCategoryLabel(page)).toMatch(/manik/i);
     expect(page.about_html).not.toMatch(/<img /i);
@@ -320,11 +303,9 @@ describe('storefront SEO templates', () => {
     const body = hubBody(page);
     expect(page.seo_title).toMatch(/yellow sapphire/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/shop yellow sapphire \(pukhraj\) gemstones online in india/i);
     expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/yellow sapphire/i);
     expect(shopCategoryLabel(page)).toMatch(/pukhraj/i);
     expect(page.about_html).not.toMatch(/<img /i);
@@ -345,11 +326,9 @@ describe('storefront SEO templates', () => {
     const body = hubBody(page);
     expect(page.seo_title).toMatch(/white sapphire/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/shop white sapphire \(safed pukhraj\) gemstones online in india/i);
     expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/white sapphire/i);
     expect(page.about_html).not.toMatch(/<img /i);
     expect(page.about_html).toMatch(/<h2>What is a White Sapphire Stone<\/h2>/);
@@ -371,11 +350,9 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title).toMatch(/lehsunia/i);
     expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/shop catseye \(lehsunia\) gemstones online in india/i);
     expect(page.seo_description).toMatch(/vedic suitability/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/catseye gemstone/i);
     expect(page.about_html).not.toMatch(/<img /i);
     expect(page.about_html).toMatch(/<h2>What is a Catseye Gemstone<\/h2>/);
@@ -396,10 +373,8 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title).toMatch(/opal/i);
     expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description).toMatch(/explore opal gemstones online in india/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     expect(shopCategoryLabel(page)).toMatch(/opal gemstone/i);
     expect(page.about_html).not.toMatch(/<img /i);
     expect(page.about_html).toMatch(/<h2>What is an Opal Gemstone<\/h2>/);
@@ -469,9 +444,7 @@ describe('storefront SEO templates', () => {
     const body = hubBody(page);
     expect(page.seo_title).toMatch(titleRe);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_title!.length).toBeLessThanOrEqual(60);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
-    expect(page.seo_description!.length).toBeLessThanOrEqual(160);
     for (const phrase of descPhrases) {
       expect(page.seo_description!.toLowerCase()).toContain(phrase);
     }
@@ -540,13 +513,13 @@ describe('storefront SEO templates', () => {
 
   it('uses main hub formulas', () => {
     expect(getDefaultShopCategoryPage('navaratna')?.seo_title).toBe(
-      'Buy Navaratna Gems Online in India | Vedic Gemstones',
+      'Buy Navaratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
     );
     expect(getDefaultShopCategoryPage('rudraksha')?.seo_title).toBe(
       'Buy Original Rudraksha Online in India | Pure Vedic Gems',
     );
     expect(getDefaultShopCategoryPage('upratna')?.seo_title).toBe(
-      'Buy Upratna Gems Online in India | Vedic Gemstones',
+      'Buy Upratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
     );
   });
 

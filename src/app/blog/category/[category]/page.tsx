@@ -15,7 +15,7 @@ import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/utils/seo';
 import '../../blog-page.css';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ category: string }>;

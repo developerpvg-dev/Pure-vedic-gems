@@ -14,7 +14,7 @@ import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/utils/seo';
 import './blog-page.css';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata: Metadata = buildMetadata({
   title: 'Vedic Gemstone Guides & Astrology Insights | PureVedicGems',

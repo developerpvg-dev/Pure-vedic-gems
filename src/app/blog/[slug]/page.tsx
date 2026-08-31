@@ -21,7 +21,7 @@ import { inferRelatedProductCategory } from '@/lib/blog/related-product-category
 import { blogMetadata, faqJsonLd } from '@/lib/utils/seo';
 import '../blog-page.css';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ slug: string }>;

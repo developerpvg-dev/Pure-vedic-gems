@@ -43,6 +43,7 @@ for (const url of [
   'https://www.facebook.com/puregems.vm',
   'https://www.instagram.com/purevedicgems',
   'https://www.youtube.com/@purevedicgems',
+  'https://www.linkedin.com/company/pure-vedic-gems',
 ]) {
   if (!sameAs.includes(url)) throw new Error(`sameAs missing ${url}`);
 }

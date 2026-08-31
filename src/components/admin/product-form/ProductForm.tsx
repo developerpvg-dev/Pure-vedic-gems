@@ -14,7 +14,6 @@ import { AVAILABILITY_STATUS_OPTIONS } from '@/lib/constants/product-taxonomy';
 import { caratToRatti, isNoCertification } from '@/lib/utils/format';
 import { absoluteUrl } from '@/lib/utils/seo';
 import {
-  CharCounter,
   FaqEditor,
   FormCheckbox,
   FormInput,
@@ -35,6 +34,8 @@ import {
   ORIGINS,
   PLANETS,
   QUALITIES,
+  resolveBaseMetal,
+  resolveJewelleryType,
   RING_SIZE_SYSTEM_OPTS,
   RUDRAKSHA_ORIGINS,
   RUDRAKSHA_TYPES,
@@ -109,12 +110,6 @@ function parsePositiveInteger(value: string) {
 
 function stripHtml(value: string) {
   return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function truncateText(value: string, max: number) {
-  const text = value.replace(/\s+/g, ' ').trim();
-  if (text.length <= max) return text;
-  return text.slice(0, max - 1).trimEnd();
 }
 
 function siteOrigin() {
@@ -194,9 +189,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   const [name, setName] = useState((get<string>(initialProduct, 'name')) ?? searchParams.get('name') ?? '');
   const [sku, setSku] = useState((get<string>(initialProduct, 'sku')) ?? '');
   const [slug, setSlug] = useState((get<string>(initialProduct, 'slug')) ?? '');
-  const [subCategory, setSubCategory] = useState(
-    (get<string>(initialProduct, 'sub_category')) ?? searchParams.get('sub_category') ?? ''
-  );
+  const initialSubCategory =
+    (get<string>(initialProduct, 'sub_category')) ?? searchParams.get('sub_category') ?? '';
+  const initialWearingMetal = (get<string>(initialProduct, 'wearing_metal')) ?? '';
+  const [subCategory, setSubCategory] = useState(initialSubCategory);
   const [tagNumber, setTagNumber] = useState((get<string>(initialProduct, 'tag_number')) ?? searchParams.get('tag_number') ?? '');
   const [shortDesc, setShortDesc] = useState(
     (get<string>(initialProduct, 'short_desc')) ?? searchParams.get('short_desc') ?? ''
@@ -248,8 +244,12 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   );
 
   // ── Jewellery ─────────────────────────────────────────
-  const [jewelleryType, setJewelleryType] = useState((get<string>(initialProduct, 'jewellery_type')) ?? '');
-  const [baseMetal, setBaseMetal] = useState((get<string>(initialProduct, 'base_metal')) ?? '');
+  const [jewelleryType, setJewelleryType] = useState(() =>
+    resolveJewelleryType(get<string>(initialProduct, 'jewellery_type'), initialSubCategory)
+  );
+  const [baseMetal, setBaseMetal] = useState(() =>
+    resolveBaseMetal(get<string>(initialProduct, 'base_metal'), initialWearingMetal)
+  );
   const [metalPurity, setMetalPurity] = useState((get<string>(initialProduct, 'metal_purity')) ?? '');
   const [metalWeightGrams, setMetalWeightGrams] = useState(
     String((get<number>(initialProduct, 'metal_weight_grams')) ?? searchParams.get('metal_weight_grams') ?? '')
@@ -536,6 +536,13 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     return !price.trim();
   }
 
+  function resolvedJewelleryFields() {
+    return {
+      jewelleryType: resolveJewelleryType(jewelleryType, subCategory),
+      baseMetal: resolveBaseMetal(baseMetal, wearingMetal),
+    };
+  }
+
   function validateRequiredFields() {
     if (!name.trim() || !sku.trim() || !slug.trim()) {
       return { message: 'Name, SKU and slug are required.', section: 'basic' as SectionKey };
@@ -549,8 +556,14 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     if (config.kind === 'idol' && (!deity.trim() || !composition.trim())) {
       return { message: 'Deity / symbol and material are required for Spiritual Idols.', section: 'idol' as SectionKey };
     }
-    if (config.kind === 'jewellery' && (!jewelleryType || !baseMetal)) {
-      return { message: 'Jewellery type and base metal are required for Vedic Jewellery.', section: 'jewellery' as SectionKey };
+    if (config.kind === 'jewellery') {
+      const { jewelleryType: resolvedType, baseMetal: resolvedMetal } = resolvedJewelleryFields();
+      if (!resolvedType || !resolvedMetal) {
+        return {
+          message: 'Jewellery type and base metal are required for Vedic Jewellery.',
+          section: 'jewellery' as SectionKey,
+        };
+      }
     }
     // Empty price fields intentionally mean on-demand — no sale price required
     if (!isOnDemandFromPricing() && !price.trim()) {
@@ -565,6 +578,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
   }
 
   function buildBody() {
+    const { jewelleryType: resolvedJewelleryType, baseMetal: resolvedBaseMetal } = resolvedJewelleryFields();
     const images = mediaFiles
       .filter((f) => f.type === 'image')
       .map((f) => absoluteMediaUrl(f.url))
@@ -574,10 +588,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     const isGemKind = config.kind === 'navratna' || config.kind === 'upratna';
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
-    const defaultMetaTitle = truncateText(`${trimmedName} | PureVedicGems`, 60);
-    const defaultMetaDescription = truncateText(
-      stripHtml(shortDesc || description || `Buy ${trimmedName} from PureVedicGems with expert guidance and secure checkout.`),
-      155,
+    const defaultMetaTitle = `${trimmedName} | PureVedicGems`;
+    const defaultMetaDescription = stripHtml(
+      shortDesc || description || `Buy ${trimmedName} from PureVedicGems with expert guidance and secure checkout.`,
     );
     const defaultCanonicalUrl = productCanonicalUrl(config.category, trimmedSlug);
     const effectiveOrigin = config.kind === 'rudraksha' ? rudrakshaOrigin || undefined : origin || undefined;
@@ -667,8 +680,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         config.kind === 'idol' || config.kind === 'rudraksha' ? energizationEligible : undefined,
 
       // Jewellery
-      jewellery_type: config.kind === 'jewellery' ? jewelleryType || undefined : undefined,
-      base_metal: config.kind === 'jewellery' ? baseMetal || undefined : undefined,
+      jewellery_type: config.kind === 'jewellery' ? resolvedJewelleryType || undefined : undefined,
+      base_metal: config.kind === 'jewellery' ? resolvedBaseMetal || undefined : undefined,
       metal_purity: config.kind === 'jewellery' ? metalPurity || undefined : undefined,
       metal_weight_grams: config.kind === 'jewellery' || config.kind === 'idol' ? parsePositiveNumber(metalWeightGrams) : undefined,
       size_label: config.kind === 'jewellery' ? sizeLabel || undefined : undefined,
@@ -1480,17 +1493,15 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
           <div>
             <Label htmlFor="meta_title">
               <span>Meta Title</span>
-              <CharCounter value={metaTitle} max={60} />
             </Label>
-            <FormInput id="meta_title" value={metaTitle} onChange={setMetaTitle} placeholder={`e.g. ${config.label} — ${name || 'Astrologically Approved'} | PureVedicGems`} maxLength={75} />
+            <FormInput id="meta_title" value={metaTitle} onChange={setMetaTitle} placeholder={`e.g. ${config.label} — ${name || 'Astrologically Approved'} | PureVedicGems`} />
           </div>
 
           <div>
             <Label htmlFor="meta_description">
               <span>Meta Description</span>
-              <CharCounter value={metaDescription} max={160} />
             </Label>
-            <FormTextarea id="meta_description" value={metaDescription} onChange={setMetaDescription} rows={3} placeholder="A clear 150–160 character summary of the product, benefits, and a CTA." maxLength={200} />
+            <FormTextarea id="meta_description" value={metaDescription} onChange={setMetaDescription} rows={3} placeholder="A clear summary of the product, benefits, and a CTA." />
           </div>
 
           <div>

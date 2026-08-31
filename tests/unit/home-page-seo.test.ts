@@ -5,17 +5,13 @@ import type { ProductCard } from '@/lib/types/product';
 import { expectOwnBrandCopy } from './expect-own-brand-copy';
 
 describe('homepage SEO (head + JSON-LD only)', () => {
-  it('nests buy gemstones and natural gemstones in a 30–60 title and 50–160 description', () => {
+  it('nests buy gemstones and natural gemstones in the homepage title and description', () => {
     const title = fitTitle(HOME_PAGE_TITLE);
     const description = fitDescription(HOME_PAGE_DESCRIPTION);
-    expect(title.length).toBeGreaterThanOrEqual(30);
-    expect(title.length).toBeLessThanOrEqual(60);
     expect(title.toLowerCase()).toContain('buy gemstones');
     expect(title.toLowerCase()).toContain('buy gemstones online');
     expect(title.toLowerCase()).toContain('natural gemstones');
     expect(title.toLowerCase()).toContain('gemstones for sale');
-    expect(description.length).toBeGreaterThanOrEqual(50);
-    expect(description.length).toBeLessThanOrEqual(160);
     expect(description.toLowerCase()).toContain('buy gemstones');
     expect(description.toLowerCase()).toContain('natural gemstones');
     expect(description.toLowerCase()).toContain('loose gemstones');

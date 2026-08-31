@@ -45,33 +45,19 @@ const OFFICIAL_SAME_AS = [
   'https://www.instagram.com/purevedicgems',
   'https://www.youtube.com/@purevedicgems',
   'https://twitter.com/PurevedicGems',
+  'https://www.linkedin.com/company/pure-vedic-gems',
 ] as const;
 
 function cleanSeoText(value: string) {
   return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function truncateAtWord(value: string, maxLength: number) {
-  if (value.length <= maxLength) return value;
-  const truncated = value.slice(0, maxLength + 1);
-  const lastSpace = truncated.lastIndexOf(' ');
-  return (lastSpace > 0 ? truncated.slice(0, lastSpace) : value.slice(0, maxLength)).trim();
+export function fitTitle(value: string) {
+  return cleanSeoText(value);
 }
 
-export function fitTitle(value: string, maxLength = 60) {
-  const title = cleanSeoText(value);
-  if (title.length <= maxLength) return title;
-
-  const brandSuffix = ` | ${BRAND_NAME}`;
-  if (title.endsWith(brandSuffix) && brandSuffix.length < maxLength) {
-    return `${truncateAtWord(title.slice(0, -brandSuffix.length), maxLength - brandSuffix.length)}${brandSuffix}`;
-  }
-
-  return truncateAtWord(title, maxLength);
-}
-
-export function fitDescription(value: string, maxLength = 160) {
-  return truncateAtWord(cleanSeoText(value), maxLength);
+export function fitDescription(value: string) {
+  return cleanSeoText(value);
 }
 
 function productDescription(product: Product | ProductCard) {
