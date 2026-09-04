@@ -36,21 +36,29 @@ function siteStaticDestPrefix(): string | null {
   return `${base}/storage/v1/object/public/${siteStaticOffload.bucket}`;
 }
 
+type SiteStaticRewrite = { source: string; destination: string };
+type SiteStaticRedirect = { source: string; destination: string; statusCode: number };
+
+function siteStaticAssetRules(kind: 'rewrite'): SiteStaticRewrite[];
+function siteStaticAssetRules(kind: 'redirect'): SiteStaticRedirect[];
 function siteStaticAssetRules(
   kind: 'rewrite' | 'redirect',
-): { source: string; destination: string; statusCode?: number }[] {
+): SiteStaticRewrite[] | SiteStaticRedirect[] {
   const prefix = siteStaticDestPrefix();
   if (!prefix) return [];
   // ponytail: with R2 CDN, skip Next rewrites (they proxy bytes through Vercel). Redirects + proxy.ts 308 instead.
   if (kind === 'rewrite' && publicCdnOriginFromEnv()) return [];
   if (kind === 'redirect' && !publicCdnOriginFromEnv()) return [];
 
-  const out: { source: string; destination: string; statusCode?: number }[] = [];
+  const out: (SiteStaticRewrite | SiteStaticRedirect)[] = [];
   const ext = ':path*.:ext(webp|jpg|jpeg|png|gif|svg|avif|css)';
   const pageColliding = new Set(['knowledge']);
-  const status = kind === 'redirect' ? 308 : undefined;
   const push = (source: string, destination: string) => {
-    out.push(status ? { source, destination, statusCode: status } : { source, destination });
+    out.push(
+      kind === 'redirect'
+        ? { source, destination, statusCode: 308 }
+        : { source, destination },
+    );
   };
 
   for (const dir of siteStaticOffload.topLevelDirs) {
@@ -68,11 +76,11 @@ function siteStaticAssetRules(
       push(`/home/${enc}/:path*`, `${prefix}/home/${enc}/:path*`);
     }
   }
-  return out;
+  return out as SiteStaticRewrite[] | SiteStaticRedirect[];
 }
 
-function siteStaticAssetRewrites(): { source: string; destination: string }[] {
-  return siteStaticAssetRules('rewrite') as { source: string; destination: string }[];
+function siteStaticAssetRewrites(): SiteStaticRewrite[] {
+  return siteStaticAssetRules('rewrite');
 }
 
 const contentSecurityPolicy = [
