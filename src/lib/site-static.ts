@@ -95,15 +95,44 @@ export function isOffloadedSiteAssetPath(pathname: string): boolean {
   return false;
 }
 
-/** Fully-encoded public Supabase URL for an offloaded site path, or null. */
-export function siteStaticPublicUrl(pathname: string, supabaseUrl: string): string | null {
-  const p = pathname.split('?')[0] ?? pathname;
-  if (!isOffloadedSiteAssetPath(p)) return null;
-  const base = supabaseUrl.replace(/\/$/, '');
-  const encoded = p
+/** HTTPS origin for public media CDN (R2 custom domain), or null. */
+export function publicCdnOrigin(raw = process.env.NEXT_PUBLIC_CDN_URL): string | null {
+  const t = raw?.trim();
+  if (!t) return null;
+  try {
+    const u = new URL(t.includes('://') ? t : `https://${t}`);
+    if (u.protocol !== 'https:' || !u.hostname) return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
+
+function encodedObjectKey(pathname: string): string {
+  return pathname
     .replace(/^\//, '')
     .split('/')
     .map((seg) => encodeURIComponent(decodeSeg(seg)))
     .join('/');
+}
+
+/**
+ * Public URL for an offloaded site path.
+ * CDN (R2): `{cdn}/site-static/{key}` — browser hits R2, not Vercel/Supabase.
+ * Fallback: Supabase Storage public object URL.
+ */
+export function siteStaticPublicUrl(
+  pathname: string,
+  supabaseUrl: string,
+  cdnUrl?: string | null,
+): string | null {
+  const p = pathname.split('?')[0] ?? pathname;
+  if (!isOffloadedSiteAssetPath(p)) return null;
+  const encoded = encodedObjectKey(p);
+  const cdnBase =
+    cdnUrl === undefined ? publicCdnOrigin() : publicCdnOrigin(cdnUrl ?? undefined);
+  if (cdnBase) return `${cdnBase}/${SITE_STATIC_BUCKET}/${encoded}`;
+  const base = supabaseUrl.replace(/\/$/, '');
+  if (!base) return null;
   return `${base}/storage/v1/object/public/${SITE_STATIC_BUCKET}/${encoded}`;
 }

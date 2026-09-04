@@ -1,5 +1,5 @@
 /**
- * Verify Phase-4 offloaded images are reachable on Supabase Storage.
+ * Verify offloaded images are reachable (Supabase Storage, or R2 when NEXT_PUBLIC_CDN_URL is set).
  *
  * A) Lists every image in bucket `site-static` → HEAD/GET public URL
  * B) Scans src/ for hardcoded offloaded paths → HEAD/GET those URLs
@@ -38,7 +38,19 @@ if (!base || !key) {
 }
 
 const bucket = manifest.bucket;
-const publicBase = `${base}/storage/v1/object/public/${bucket}`;
+const cdnOrigin = (() => {
+  const raw = process.env.NEXT_PUBLIC_CDN_URL?.trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.includes('://') ? raw : `https://${raw}`);
+    return u.protocol === 'https:' ? u.origin : null;
+  } catch {
+    return null;
+  }
+})();
+const publicBase = cdnOrigin
+  ? `${cdnOrigin}/${bucket}`
+  : `${base}/storage/v1/object/public/${bucket}`;
 const supabase = createClient(base, key, { auth: { persistSession: false, autoRefreshToken: false } });
 const IMAGE_EXT = new Set(['.webp', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.avif', '.css']);
 

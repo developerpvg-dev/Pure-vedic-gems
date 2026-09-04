@@ -26,4 +26,10 @@ const sanity = resolveImageOptimizerTarget(
 );
 assert.equal(sanity.ok, true);
 
+const r2 = resolveImageOptimizerTarget(
+  'https://cdn.purevedicgems.com/site-static/home/ctas/cta2.webp',
+  origin,
+);
+assert.equal(r2.ok, true);
+
 console.log('optimizer-passthrough.selfcheck: ok');

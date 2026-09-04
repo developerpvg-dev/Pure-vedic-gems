@@ -1,4 +1,5 @@
 export const TURNSTILE_ENQUIRY_ACTION = 'enquiry';
+export const TURNSTILE_COMMENT_ACTION = 'blog_comment';
 
 type SiteverifyResult = {
   success?: boolean;
@@ -18,7 +19,8 @@ function expectedHostnames(): Set<string> {
 /** Canonical Cloudflare siteverify — returns true when Turnstile is not configured. */
 export async function verifyTurnstileToken(
   token: string,
-  remoteip?: string
+  remoteip?: string,
+  expectedAction: string = TURNSTILE_ENQUIRY_ACTION
 ): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
   if (!secret) return true;
@@ -42,7 +44,7 @@ export async function verifyTurnstileToken(
     const result = (await res.json()) as SiteverifyResult;
     return (
       result.success === true &&
-      result.action === TURNSTILE_ENQUIRY_ACTION &&
+      result.action === expectedAction &&
       typeof result.hostname === 'string' &&
       hostnames.has(result.hostname)
     );

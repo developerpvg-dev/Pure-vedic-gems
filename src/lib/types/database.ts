@@ -2630,6 +2630,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      blog_comments: {
+        Row: {
+          id: string;
+          blog_slug: string;
+          customer_id: string;
+          author_name: string;
+          body: string;
+          is_approved: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          blog_slug: string;
+          customer_id: string;
+          author_name: string;
+          body: string;
+          is_approved?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          blog_slug?: string;
+          customer_id?: string;
+          author_name?: string;
+          body?: string;
+          is_approved?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       category_reviews: {
         Row: {
           id: string;

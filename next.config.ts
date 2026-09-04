@@ -8,7 +8,7 @@ import siteStaticOffload from './scripts/site-static-offload.json';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-/** ponytail: offloaded public/ folders live in Supabase Storage — same URL paths via rewrite (not DB). */
+/** ponytail: offloaded public/ folders live on Storage or R2 — same site paths (not DB). */
 function encodePathSegments(p: string) {
   return p
     .split('/')
@@ -16,42 +16,63 @@ function encodePathSegments(p: string) {
     .join('/');
 }
 
-function siteStaticAssetRewrites(): { source: string; destination: string }[] {
+function publicCdnOriginFromEnv(): string | null {
+  const raw = process.env.NEXT_PUBLIC_CDN_URL?.trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.includes('://') ? raw : `https://${raw}`);
+    if (u.protocol !== 'https:' || !u.hostname) return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
+
+function siteStaticDestPrefix(): string | null {
+  const cdn = publicCdnOriginFromEnv();
+  if (cdn) return `${cdn}/${siteStaticOffload.bucket}`;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-  if (!base) return [];
-  const prefix = `${base}/storage/v1/object/public/${siteStaticOffload.bucket}`;
-  const out: { source: string; destination: string }[] = [];
+  if (!base) return null;
+  return `${base}/storage/v1/object/public/${siteStaticOffload.bucket}`;
+}
+
+function siteStaticAssetRules(
+  kind: 'rewrite' | 'redirect',
+): { source: string; destination: string; statusCode?: number }[] {
+  const prefix = siteStaticDestPrefix();
+  if (!prefix) return [];
+  // ponytail: with R2 CDN, skip Next rewrites (they proxy bytes through Vercel). Redirects + proxy.ts 308 instead.
+  if (kind === 'rewrite' && publicCdnOriginFromEnv()) return [];
+  if (kind === 'redirect' && !publicCdnOriginFromEnv()) return [];
+
+  const out: { source: string; destination: string; statusCode?: number }[] = [];
   const ext = ':path*.:ext(webp|jpg|jpeg|png|gif|svg|avif|css)';
-  // `knowledge` is also an App Router page tree — only rewrite files, never /knowledge itself
   const pageColliding = new Set(['knowledge']);
+  const status = kind === 'redirect' ? 308 : undefined;
+  const push = (source: string, destination: string) => {
+    out.push(status ? { source, destination, statusCode: status } : { source, destination });
+  };
+
   for (const dir of siteStaticOffload.topLevelDirs) {
     const destDir = encodePathSegments(dir);
     if (pageColliding.has(dir)) {
-      out.push({
-        source: `/${dir}/${ext}`,
-        destination: `${prefix}/${destDir}/${ext}`,
-      });
+      push(`/${dir}/${ext}`, `${prefix}/${destDir}/${ext}`);
       continue;
     }
-    out.push({
-      source: `/${dir}/:path*`,
-      destination: `${prefix}/${destDir}/:path*`,
-    });
+    push(`/${dir}/:path*`, `${prefix}/${destDir}/:path*`);
   }
   for (const sub of siteStaticOffload.homeSubdirs) {
     const enc = encodePathSegments(sub);
-    out.push({
-      source: `/home/${sub}/:path*`,
-      destination: `${prefix}/home/${enc}/:path*`,
-    });
+    push(`/home/${sub}/:path*`, `${prefix}/home/${enc}/:path*`);
     if (enc !== sub) {
-      out.push({
-        source: `/home/${enc}/:path*`,
-        destination: `${prefix}/home/${enc}/:path*`,
-      });
+      push(`/home/${enc}/:path*`, `${prefix}/home/${enc}/:path*`);
     }
   }
   return out;
+}
+
+function siteStaticAssetRewrites(): { source: string; destination: string }[] {
+  return siteStaticAssetRules('rewrite') as { source: string; destination: string }[];
 }
 
 const contentSecurityPolicy = [
@@ -73,12 +94,12 @@ const contentSecurityPolicy = [
     .join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com",
-  "media-src 'self' blob: data: https://*.supabase.co https://cdn.sanity.io",
+  "img-src 'self' blob: data: https://*.supabase.co https://cdn.purevedicgems.com https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com",
+  "media-src 'self' blob: data: https://*.supabase.co https://cdn.purevedicgems.com https://cdn.sanity.io",
   "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com https://www.facebook.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://cdn.sanity.io https://sanity-cdn.com https://*.api.sanity.io https://api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://www.google.com https://stats.g.doubleclick.net https://www.facebook.com https://connect.facebook.net https://challenges.cloudflare.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.purevedicgems.com https://*.sentry.io https://cdn.sanity.io https://sanity-cdn.com https://*.api.sanity.io https://api.sanity.io https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://www.google.com https://stats.g.doubleclick.net https://www.facebook.com https://connect.facebook.net https://challenges.cloudflare.com",
   isProduction ? 'upgrade-insecure-requests' : '',
 ]
   .filter(Boolean)
@@ -152,6 +173,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'cdn.purevedicgems.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'cdn.sanity.io',
       },
       {
@@ -171,7 +196,7 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     return [
-      // Phase 4: large static assets → Supabase Storage (same path, no Vercel origin bytes)
+      // Phase 4: large static assets → Storage (or R2 when NEXT_PUBLIC_CDN_URL is set)
       ...siteStaticAssetRewrites(),
       // Legacy WP product-category URLs map to current shop routes (no redirect — keep old URLs working)
       // /product-category/navratan/<gem>           -> listing  /shop/<gem>
@@ -198,6 +223,7 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      ...siteStaticAssetRules('redirect'),
       { source: '/terms-and-conditions', destination: '/policies/terms', statusCode: 301 },
       { source: '/terms-and-conditions/', destination: '/policies/terms', statusCode: 301 },
       { source: '/returns-policy', destination: '/policies/returns', statusCode: 301 },

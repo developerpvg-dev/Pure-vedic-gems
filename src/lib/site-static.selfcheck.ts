@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {
   isKeepLocalAssetPath,
   isOffloadedSiteAssetPath,
+  publicCdnOrigin,
   siteStaticPublicUrl,
 } from './site-static';
 
@@ -26,5 +27,16 @@ const spaced = siteStaticPublicUrl('/home/rudrakhshas images/x.webp', 'https://x
 assert.ok(spaced?.includes('rudrakhshas%20images'));
 
 assert.equal(siteStaticPublicUrl('/pvg-emblem.webp', 'https://xyz.supabase.co'), null);
+
+assert.equal(publicCdnOrigin('cdn.purevedicgems.com'), 'https://cdn.purevedicgems.com');
+assert.equal(publicCdnOrigin('https://cdn.purevedicgems.com/'), 'https://cdn.purevedicgems.com');
+assert.equal(publicCdnOrigin('http://insecure.example'), null);
+
+const cdn = siteStaticPublicUrl(
+  '/home/ctas/cta2.webp',
+  'https://xyz.supabase.co',
+  'https://cdn.purevedicgems.com',
+);
+assert.equal(cdn, 'https://cdn.purevedicgems.com/site-static/home/ctas/cta2.webp');
 
 console.log('site-static.selfcheck: ok');

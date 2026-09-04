@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
 import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
-import { siteStaticPublicUrl } from '@/lib/site-static';
+import { publicCdnOrigin, siteStaticPublicUrl } from '@/lib/site-static';
 
 const PROTECTED_PREFIXES = ['/account', '/admin', '/studio'];
 
@@ -46,9 +46,12 @@ export function resolveImageOptimizerTarget(
     return { ok: false, status: 400 };
   }
 
+  const cdnHost = publicCdnOrigin()?.replace(/^https:\/\//, '') ?? '';
   const allowed =
     host === originHost ||
     host.endsWith('.supabase.co') ||
+    host === 'cdn.purevedicgems.com' ||
+    (cdnHost !== '' && host === cdnHost) ||
     host === 'cdn.sanity.io' ||
     host === 'images.unsplash.com' ||
     host === 'img.youtube.com' ||
@@ -72,12 +75,13 @@ function passthroughNextImage(request: NextRequest): NextResponse | null {
 }
 
 function passthroughSiteStatic(request: NextRequest): NextResponse | null {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return null;
-  const target = siteStaticPublicUrl(request.nextUrl.pathname, supabaseUrl);
+  const cdn = publicCdnOrigin();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  if (!cdn && !supabaseUrl) return null;
+  const target = siteStaticPublicUrl(request.nextUrl.pathname, supabaseUrl, cdn);
   if (!target) return null;
-  // ponytail: 307 to Storage CDN — corrects space/apostrophe URLs rewrites mishandle
-  return NextResponse.redirect(target, 307);
+  // ponytail: 308 to R2 when CDN is set (browser caches redirect); 307 to Supabase otherwise
+  return NextResponse.redirect(target, cdn ? 308 : 307);
 }
 
 export async function proxy(request: NextRequest) {

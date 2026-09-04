@@ -2,7 +2,10 @@
 
 import Script from 'next/script';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { TURNSTILE_ENQUIRY_ACTION } from '@/lib/enquiry/verify-turnstile';
+import {
+  TURNSTILE_COMMENT_ACTION,
+  TURNSTILE_ENQUIRY_ACTION,
+} from '@/lib/enquiry/verify-turnstile';
 import { isTurnstileProductionHost } from '@/lib/enquiry/turnstile-host';
 
 export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || '';
@@ -34,10 +37,11 @@ type TurnstileOptions = {
   /** Smaller widget — use on dense forms (reco booking). */
   size?: 'normal' | 'compact';
   className?: string;
+  action?: typeof TURNSTILE_ENQUIRY_ACTION | typeof TURNSTILE_COMMENT_ACTION | string;
 };
 
 export function useTurnstile(options: TurnstileOptions = {}) {
-  const { size = 'normal', className = '' } = options;
+  const { size = 'normal', className = '', action = TURNSTILE_ENQUIRY_ACTION } = options;
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null);
   const [token, setToken] = useState('');
@@ -56,7 +60,7 @@ export function useTurnstile(options: TurnstileOptions = {}) {
     }
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
-      action: TURNSTILE_ENQUIRY_ACTION,
+      action,
       appearance: 'always',
       size,
       callback: (value) => {
@@ -65,7 +69,7 @@ export function useTurnstile(options: TurnstileOptions = {}) {
       },
       'error-callback': () => setLoadError(true),
     });
-  }, [enabled, size]);
+  }, [action, enabled, size]);
 
   useEffect(() => {
     if (!enabled) return;

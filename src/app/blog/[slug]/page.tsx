@@ -13,6 +13,7 @@ import { ShareButtons } from '@/components/blog/ShareButtons';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { BlogConversionRail } from '@/components/blog/BlogConversionRail';
 import { BlogLeadPopup } from '@/components/blog/BlogLeadPopup';
+import { BlogComments } from '@/components/blog/BlogComments';
 import type { SanityBlogPost } from '@/lib/types/blog';
 import type { Metadata } from 'next';
 import { auditedBlogEnrichment } from '@/lib/blog/audit-enrichment';
@@ -227,6 +228,8 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="mb-8">
           <PortableText value={post.body as unknown[]} />
         </div>
+
+        <BlogComments blogSlug={slug} />
 
         {relatedProductCategoryHref && relatedProductCategoryLabel ? (
           <section className="pvg-blog-product-category" aria-labelledby="related-products-heading">

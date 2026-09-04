@@ -23,6 +23,7 @@ function ok(cond, msg) {
 ok(nextConfig.includes('siteStaticAssetRewrites'), 'next.config has siteStaticAssetRewrites');
 ok(nextConfig.includes('site-static-offload.json'), 'next.config loads offload manifest');
 ok(upload.includes(manifest.bucket), 'upload script targets site-static bucket');
+ok(existsSync(join(root, 'scripts/copy-site-static-to-r2.mjs')), 'R2 copy script exists');
 ok(existsSync(join(root, 'public/home/hero')), 'public/home/hero kept local');
 ok(!manifest.homeSubdirs.includes('hero'), 'hero is not in offload homeSubdirs');
 ok(manifest.keepLocal.includes('home/hero'), 'manifest documents keepLocal home/hero');
