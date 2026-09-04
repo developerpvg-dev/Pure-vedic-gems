@@ -59,7 +59,10 @@ export async function putPublicMediaObject(opts: {
     throw new Error(`Bucket not allowed for public CDN: ${opts.bucket}`);
   }
   const key = `${opts.bucket}/${opts.path.replace(/^\/+/, '')}`;
-  const body = Buffer.isBuffer(opts.body) ? opts.body : Buffer.from(opts.body);
+  // ArrayBuffer isn't a Buffer.from overload under current @types/node
+  const body = Buffer.isBuffer(opts.body)
+    ? opts.body
+    : Buffer.from(opts.body instanceof ArrayBuffer ? new Uint8Array(opts.body) : opts.body);
 
   if (useR2ForPublicMedia()) {
     await r2Client().send(
