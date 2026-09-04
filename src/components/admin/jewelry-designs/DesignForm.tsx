@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase/client';
 import {
   JEWELRY_DESIGN_SETTING_TYPES,
   JEWELRY_GST_RATE_PERCENT,
@@ -197,19 +196,16 @@ export default function DesignForm({ design, onClose, onSuccess, onCatalogChange
 
     setUploading(true);
     try {
-      const supabase = createClient();
-      const ext = file.name.split('.').pop() ?? 'jpg';
-      const safeName = `design_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('jewelry-designs')
-        .upload(safeName, file, { cacheControl: '3600', upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('jewelry-designs').getPublicUrl(safeName);
+      const form = new FormData();
+      form.append('files', file);
+      form.append('bucket', 'jewelry-designs');
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload.error || payload.errors?.[0] || 'Upload failed');
+      }
+      const publicUrl = Array.isArray(payload.urls) ? payload.urls[0] : null;
+      if (!publicUrl) throw new Error('Upload returned no URL');
 
       setImageUrl(publicUrl);
       toast.success('Image uploaded to storage');

@@ -140,6 +140,7 @@ async function uploadProofFiles(orderId: string, files: File[], folder: 'refunds
       continue;
     }
 
+    // Refund proofs stay on Supabase (sensitive) — not public R2 catalog
     const { error } = await admin.storage.from('products').upload(path, await file.arrayBuffer(), {
       contentType: file.type,
       upsert: false,

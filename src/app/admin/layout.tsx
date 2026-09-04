@@ -61,6 +61,7 @@ const NAV_GROUPS = [
       { href: '/admin/consultation-plans', label: 'Consultation Plans', icon: CalendarClock, match: 'prefix' as const },
       { href: '/admin/reviews', label: 'Product Reviews', icon: Star, match: 'prefix' as const },
       { href: '/admin/category-reviews', label: 'Category Reviews', icon: Star, match: 'prefix' as const },
+      { href: '/admin/blog-comments', label: 'Blog Comments', icon: MessageSquare, match: 'prefix' as const },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell, match: 'prefix' as const },
       { href: '/admin/finance', label: 'Finance', icon: IndianRupee, match: 'prefix' as const },
       { href: '/admin/compliance', label: 'Compliance', icon: Scale, match: 'prefix' as const },

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { putPublicMediaObject } from '@/lib/media/r2';
 
-const BUCKET = 'reviews';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -35,12 +35,15 @@ export async function POST(request: NextRequest) {
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `customer/${user.id}/${Date.now()}-${safeName}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, await file.arrayBuffer(), {
-    contentType: file.type,
-    upsert: false,
-  });
-
-  if (error) return NextResponse.json({ error: 'Review image upload failed' }, { status: 500 });
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return NextResponse.json({ url: data.publicUrl });
+  try {
+    const url = await putPublicMediaObject({
+      bucket: 'reviews',
+      path,
+      body: await file.arrayBuffer(),
+      contentType: file.type,
+    });
+    return NextResponse.json({ url });
+  } catch {
+    return NextResponse.json({ error: 'Review image upload failed' }, { status: 500 });
+  }
 }

@@ -12,8 +12,9 @@ interface ProductGalleryProps {
 }
 
 function youtubeId(url: string): string | null {
+  // studio.youtube.com/video/ID/edit is a common paste mistake from creators
   const m = url.match(
-    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i,
+    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|studio\.youtube\.com\/video\/|youtu\.be\/)([\w-]{11})/i,
   );
   return m?.[1] ?? null;
 }

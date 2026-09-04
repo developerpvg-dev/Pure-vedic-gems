@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { hasAdminPermission } from '@/lib/admin/rbac';
+import { putPublicMediaObject, deletePublicMediaObject } from '@/lib/media/r2';
 import { storageObjectFromPublicUrl } from '@/lib/supabase/storage-public-url';
+import type { PublicMediaBucket } from '@/lib/media/public-url';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const BUCKET = 'products';
 
-/** Ensure the storage bucket exists; create it if missing. */
-async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
-  const { data } = await admin.storage.getBucket(BUCKET);
-  if (!data) {
-    const { error } = await admin.storage.createBucket(BUCKET, {
-      public: true,
-      fileSizeLimit: MAX_FILE_SIZE,
-      allowedMimeTypes: ALLOWED_TYPES,
-    });
-    if (error) console.error('[upload] Failed to create bucket:', error.message);
-  }
-}
+const ALLOWED_BUCKETS = new Set<PublicMediaBucket>(['products', 'jewelry-designs']);
 
 async function requireUploadAccess() {
   const auth = await requireAdminAccess();
@@ -42,9 +31,21 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const files = formData.getAll('files') as File[];
   const requestedFolder = formData.get('folder');
-  const baseFolder = typeof requestedFolder === 'string'
-    ? requestedFolder.toLowerCase().replace(/[^a-z0-9/_-]/g, '-').replace(/-+/g, '-').replace(/^\/|\/$/g, '')
-    : '';
+  const requestedBucket = formData.get('bucket');
+  const bucketRaw = typeof requestedBucket === 'string' ? requestedBucket.trim() : 'products';
+  if (!ALLOWED_BUCKETS.has(bucketRaw as PublicMediaBucket)) {
+    return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 });
+  }
+  const bucket = bucketRaw as PublicMediaBucket;
+
+  const baseFolder =
+    typeof requestedFolder === 'string'
+      ? requestedFolder
+          .toLowerCase()
+          .replace(/[^a-z0-9/_-]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^\/|\/$/g, '')
+      : '';
 
   if (!files.length) {
     return NextResponse.json({ error: 'No files provided' }, { status: 400 });
@@ -53,9 +54,6 @@ export async function POST(request: NextRequest) {
   if (files.length > 20) {
     return NextResponse.json({ error: 'Max 20 files per upload' }, { status: 400 });
   }
-
-  const admin = createAdminClient();
-  await ensureBucket(admin);
 
   const urls: string[] = [];
   const errors: string[] = [];
@@ -73,26 +71,23 @@ export async function POST(request: NextRequest) {
     const folder = ALLOWED_VIDEO_TYPES.includes(file.type) ? 'videos' : 'images';
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = [baseFolder, folder, `${timestamp}-${safeName}`].filter(Boolean).join('/');
+    // jewelry-designs historically used flat keys; keep optional folder for products
+    const path =
+      bucket === 'jewelry-designs' && !baseFolder
+        ? `${timestamp}-${safeName}`
+        : [baseFolder, folder, `${timestamp}-${safeName}`].filter(Boolean).join('/');
 
-    const arrayBuffer = await file.arrayBuffer();
-    const { error } = await admin.storage
-      .from(BUCKET)
-      .upload(path, arrayBuffer, {
+    try {
+      const url = await putPublicMediaObject({
+        bucket,
+        path,
+        body: await file.arrayBuffer(),
         contentType: file.type,
-        upsert: false,
       });
-
-    if (error) {
-      errors.push(`${file.name}: upload failed - ${error.message}`);
-      continue;
+      urls.push(url);
+    } catch (e) {
+      errors.push(`${file.name}: upload failed - ${e instanceof Error ? e.message : 'error'}`);
     }
-
-    const { data: urlData } = admin.storage
-      .from(BUCKET)
-      .getPublicUrl(path);
-
-    urls.push(urlData.publicUrl);
   }
 
   return NextResponse.json({ urls, errors }, { status: urls.length > 0 ? 200 : 400 });
@@ -101,7 +96,7 @@ export async function POST(request: NextRequest) {
 /**
  * DELETE /api/admin/upload
  * Body: { url } | { urls: string[] }
- * Removes objects from products / custom-uploads when URL is ours; external URLs are ignored.
+ * Removes objects from public CDN/R2 or Supabase when URL is ours.
  */
 export async function DELETE(request: NextRequest) {
   const auth = await requireUploadAccess();
@@ -118,21 +113,24 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'url or urls required' }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const removed: string[] = [];
   const skipped: string[] = [];
 
   for (const url of urls) {
     const obj = storageObjectFromPublicUrl(url);
-    if (!obj) {
+    if (!obj || obj.bucket === 'custom-uploads') {
       skipped.push(url);
       continue;
     }
-    const { error } = await admin.storage.from(obj.bucket).remove([obj.path]);
-    if (error) {
-      return NextResponse.json({ error: error.message, removed, skipped }, { status: 500 });
+    try {
+      await deletePublicMediaObject(obj.bucket, obj.path);
+      removed.push(url);
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : 'delete failed', removed, skipped },
+        { status: 500 },
+      );
     }
-    removed.push(url);
   }
 
   return NextResponse.json({ removed, skipped });

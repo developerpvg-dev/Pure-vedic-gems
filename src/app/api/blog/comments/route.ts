@@ -111,17 +111,15 @@ export async function POST(request: NextRequest) {
       customer_id: user.id,
       author_name: authorName,
       body: parsed.data.body,
-      is_approved: false,
+      is_approved: true,
     })
-    .select('id, is_approved')
+    .select('id, author_name, body, created_at')
     .single();
 
   if (error || !comment) {
+    console.error('[blog/comments] insert failed', error?.message, error?.code);
     return NextResponse.json({ error: 'Failed to submit comment' }, { status: 500 });
   }
 
-  return NextResponse.json(
-    { comment, status: 'pending_moderation' },
-    { status: 201 }
-  );
+  return NextResponse.json({ comment }, { status: 201 });
 }

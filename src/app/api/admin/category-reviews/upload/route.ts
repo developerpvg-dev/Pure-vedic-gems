@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAccess } from '@/lib/admin/api';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { putPublicMediaObject } from '@/lib/media/r2';
 
-const BUCKET = 'reviews';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -20,15 +19,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Image must be 5MB or smaller' }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `category-reviews/${Date.now()}-${safeName}`;
-  const { error } = await admin.storage.from(BUCKET).upload(path, await file.arrayBuffer(), {
-    contentType: file.type,
-    upsert: false,
-  });
-
-  if (error) return NextResponse.json({ error: 'Review image upload failed' }, { status: 500 });
-  const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
-  return NextResponse.json({ url: data.publicUrl });
+  try {
+    const url = await putPublicMediaObject({
+      bucket: 'reviews',
+      path,
+      body: await file.arrayBuffer(),
+      contentType: file.type,
+    });
+    return NextResponse.json({ url });
+  } catch {
+    return NextResponse.json({ error: 'Review image upload failed' }, { status: 500 });
+  }
 }

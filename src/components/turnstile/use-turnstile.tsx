@@ -25,6 +25,7 @@ type TurnstileApi = {
     }
   ) => TurnstileWidgetId;
   reset: (widgetId: TurnstileWidgetId) => void;
+  remove?: (widgetId: TurnstileWidgetId) => void;
 };
 
 declare global {
@@ -82,6 +83,11 @@ export function useTurnstile(options: TurnstileOptions = {}) {
     tick();
     return () => {
       cancelled = true;
+      if (widgetIdRef.current !== null && window.turnstile?.remove) {
+        window.turnstile.remove(widgetIdRef.current);
+      }
+      widgetIdRef.current = null;
+      setToken('');
     };
   }, [enabled, renderWidget]);
 

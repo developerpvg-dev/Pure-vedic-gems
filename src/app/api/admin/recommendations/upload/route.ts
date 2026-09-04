@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { putPublicMediaObject } from '@/lib/media/r2';
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX = 10 * 1024 * 1024;
-const BUCKET = 'products';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdminAccess('leads.write');
@@ -22,16 +21,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Max 10MB' }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `recommendation-charts/${Date.now()}-${safeName}`;
-  const { error } = await admin.storage.from(BUCKET).upload(path, await file.arrayBuffer(), {
-    contentType: file.type,
-    upsert: false,
-  });
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const url = await putPublicMediaObject({
+      bucket: 'products',
+      path,
+      body: await file.arrayBuffer(),
+      contentType: file.type,
+    });
+    return NextResponse.json({ url });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'Upload failed' },
+      { status: 500 },
+    );
   }
-  const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
-  return NextResponse.json({ url: data.publicUrl });
 }

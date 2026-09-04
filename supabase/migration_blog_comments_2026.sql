@@ -1,4 +1,4 @@
--- Blog comments from registered customers (moderated before public display).
+-- Blog comments from registered customers (live on post; admins can delete).
 
 BEGIN;
 
@@ -8,10 +8,9 @@ CREATE TABLE IF NOT EXISTS blog_comments (
     customer_id     UUID REFERENCES auth.users(id) NOT NULL,
     author_name     VARCHAR(200) NOT NULL,
     body            TEXT NOT NULL CHECK (char_length(trim(body)) >= 3),
-    is_approved     BOOLEAN DEFAULT FALSE,
+    is_approved     BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_blog_comments_slug_approved
     ON blog_comments (blog_slug, is_approved, created_at);
 
@@ -27,6 +26,10 @@ CREATE POLICY "Public reads approved blog comments"
 CREATE POLICY "Users insert own blog comments"
     ON blog_comments FOR INSERT
     WITH CHECK (auth.uid() = customer_id);
+
+CREATE POLICY "Users read own blog comments"
+    ON blog_comments FOR SELECT
+    USING (auth.uid() = customer_id);
 
 CREATE POLICY "Admin manages blog comments"
     ON blog_comments FOR ALL

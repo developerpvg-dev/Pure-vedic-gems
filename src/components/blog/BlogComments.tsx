@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Loader2, MessageSquare, UserPlus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTurnstile } from '@/components/turnstile/use-turnstile';
 import { LoginModal } from '@/components/auth/LoginModal';
@@ -60,7 +60,7 @@ export function BlogComments({ blogSlug }: BlogCommentsProps) {
       return;
     }
     if (!turnstileReady) {
-      setError('Please complete the security check first.');
+      setError('Please complete the security check.');
       return;
     }
 
@@ -77,7 +77,11 @@ export function BlogComments({ blogSlug }: BlogCommentsProps) {
           turnstileToken: turnstile.token || undefined,
         }),
       });
-      const data = (await response.json()) as { error?: string; code?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        code?: string;
+        comment?: BlogComment;
+      };
 
       if (response.status === 401 || data.code === 'auth_required') {
         setAuthView('register');
@@ -88,25 +92,21 @@ export function BlogComments({ blogSlug }: BlogCommentsProps) {
         throw new Error(data.error || 'Unable to post your comment.');
       }
 
+      const posted = data.comment;
       setBody('');
       turnstile.reset();
       setStatus('success');
+      if (posted) {
+        setComments((prev) => [...prev, posted]);
+      } else {
+        void loadComments();
+      }
     } catch (submissionError) {
       setStatus('error');
       setError(
         submissionError instanceof Error ? submissionError.message : 'Unable to post your comment.'
       );
     }
-  }
-
-  function openSignup() {
-    setAuthView('register');
-    setAuthModalOpen(true);
-  }
-
-  function openLogin() {
-    setAuthView('login');
-    setAuthModalOpen(true);
   }
 
   const displayName = profile?.full_name?.trim() || 'there';
@@ -116,110 +116,100 @@ export function BlogComments({ blogSlug }: BlogCommentsProps) {
       {turnstile.script}
 
       <div className="pvg-blog-comments-head">
-        <MessageSquare className="h-5 w-5" aria-hidden="true" />
-        <div>
-          <p className="pvg-blog-section-eyebrow">Community</p>
-          <h2 id="blog-comments-heading">Comments</h2>
-        </div>
+        <h2 id="blog-comments-heading">
+          Comments
+          {!loadingComments && comments.length > 0 ? (
+            <span className="pvg-blog-comments-count">({comments.length})</span>
+          ) : null}
+        </h2>
       </div>
 
-      <div className="pvg-blog-comments-security">
-        <p className="pvg-blog-comments-security-label">Step 1 — Security check</p>
-        {turnstile.field}
-        {turnstile.enabled && !turnstile.token ? (
-          <p className="pvg-blog-comments-hint">Complete the check above to continue.</p>
-        ) : null}
-      </div>
-
-      {turnstileReady ? (
-        authLoading ? (
-          <p className="pvg-blog-comments-loading" aria-live="polite">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Checking your account…
-          </p>
-        ) : !isAuthenticated ? (
-          <div className="pvg-blog-comments-auth">
-            <UserPlus className="h-5 w-5" aria-hidden="true" />
-            <div>
-              <p className="pvg-blog-comments-auth-title">Step 2 — Sign up to comment</p>
-              <p className="pvg-blog-comments-auth-copy">
-                Only registered customers can leave comments. Create a free account or sign in to join the discussion.
-              </p>
-            </div>
-            <div className="pvg-blog-comments-auth-actions">
-              <button type="button" className="pvg-blog-cta-link" onClick={openSignup}>
-                Sign up free
-              </button>
-              <button
-                type="button"
-                className="pvg-blog-cta-link pvg-blog-cta-link--outline"
-                onClick={openLogin}
-              >
-                Log in
-              </button>
-            </div>
-          </div>
-        ) : (
-          <form className="pvg-blog-comments-form" onSubmit={onSubmit}>
-            <p className="pvg-blog-comments-welcome">
-              Step 2 — Commenting as <strong>{displayName}</strong>
-            </p>
-            <label htmlFor={`blog-comment-${blogSlug}`}>
-              Your comment
-              <textarea
-                id={`blog-comment-${blogSlug}`}
-                name="body"
-                rows={4}
-                required
-                minLength={3}
-                maxLength={2000}
-                value={body}
-                onChange={(event) => {
-                  setBody(event.target.value);
-                  if (status === 'success') setStatus('idle');
-                }}
-                disabled={status === 'submitting'}
-                placeholder="Share your thoughts or questions about this article…"
-              />
-            </label>
-            {status === 'success' ? (
-              <p className="pvg-blog-form-success" role="status">
-                Thank you! Your comment was submitted and will appear after review.
-              </p>
-            ) : null}
-            {status === 'error' && error ? (
-              <p className="pvg-blog-form-error" role="alert">
-                {error}
-              </p>
-            ) : null}
+      {authLoading ? (
+        <p className="pvg-blog-comments-loading" aria-live="polite">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          Checking account…
+        </p>
+      ) : !isAuthenticated ? (
+        <div className="pvg-blog-comments-auth">
+          <p>Sign up free to leave a comment.</p>
+          <div className="pvg-blog-comments-auth-actions">
             <button
-              type="submit"
-              disabled={status === 'submitting' || body.trim().length < 3}
+              type="button"
+              className="pvg-blog-cta-link"
+              onClick={() => {
+                setAuthView('register');
+                setAuthModalOpen(true);
+              }}
             >
-              {status === 'submitting' ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Posting…
-                </>
-              ) : (
-                'Post comment'
-              )}
+              Sign up
             </button>
-          </form>
-        )
-      ) : null}
+            <button
+              type="button"
+              className="pvg-blog-cta-link pvg-blog-cta-link--outline"
+              onClick={() => {
+                setAuthView('login');
+                setAuthModalOpen(true);
+              }}
+            >
+              Log in
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form className="pvg-blog-comments-form" onSubmit={onSubmit}>
+          <label htmlFor={`blog-comment-${blogSlug}`}>
+            Comment as {displayName}
+            <textarea
+              id={`blog-comment-${blogSlug}`}
+              name="body"
+              rows={2}
+              required
+              minLength={3}
+              maxLength={2000}
+              value={body}
+              onChange={(event) => {
+                setBody(event.target.value);
+                if (status === 'success') setStatus('idle');
+              }}
+              disabled={status === 'submitting'}
+              placeholder="Share your thoughts…"
+            />
+          </label>
+          <div className="pvg-blog-comments-turnstile-wrap">{turnstile.field}</div>
+          {status === 'success' ? (
+            <p className="pvg-blog-form-success" role="status">
+              Comment posted.
+            </p>
+          ) : null}
+          {status === 'error' && error ? (
+            <p className="pvg-blog-form-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={status === 'submitting' || body.trim().length < 3 || !turnstileReady}
+          >
+            {status === 'submitting' ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                Posting…
+              </>
+            ) : (
+              'Post comment'
+            )}
+          </button>
+        </form>
+      )}
 
       <div className="pvg-blog-comments-list" aria-live="polite">
-        <h3 className="pvg-blog-comments-list-title">
-          {comments.length === 0 ? 'No comments yet' : `${comments.length} comment${comments.length === 1 ? '' : 's'}`}
-        </h3>
         {loadingComments ? (
           <p className="pvg-blog-comments-loading">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Loading comments…
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            Loading…
           </p>
         ) : comments.length === 0 ? (
-          <p className="pvg-blog-comments-empty">Be the first to share your thoughts.</p>
+          <p className="pvg-blog-comments-empty">No comments yet.</p>
         ) : (
           <ul>
             {comments.map((comment) => (
