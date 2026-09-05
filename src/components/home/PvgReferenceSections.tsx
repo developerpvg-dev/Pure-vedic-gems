@@ -223,7 +223,6 @@ export function PvgReferenceSections({
                   alt={item.alt}
                   loading="lazy"
                   decoding="async"
-                  {...('fetchPriority' in item ? { fetchPriority: item.fetchPriority } : {})}
                 />
               </div>
             ))}
