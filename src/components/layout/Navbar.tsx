@@ -119,7 +119,7 @@ export function Navbar() {
             >
               <div className="relative h-[42px] w-[42px] md:h-[52px] md:w-[52px]">
                 <Image
-                  src="/pvg-emblem.webp"
+                  src="/pvg-emblem.sm.webp"
                   alt="PureVedicGems Logo"
                   fill
                   className="object-contain"
@@ -134,7 +134,6 @@ export function Navbar() {
                   fill
                   className="object-contain"
                   sizes="(max-width: 768px) 120px, 160px"
-                  priority
                 />
               </div>
               <div className="mt-0.5 hidden text-[7px] uppercase tracking-[3px] text-[var(--pvg-accent)] sm:block">

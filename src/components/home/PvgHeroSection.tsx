@@ -133,9 +133,10 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
               alt={item.alt}
               fill
               className="pvg-hero-carousel__img pvg-hero-img-desktop"
-              priority={index === 0}
-              loading="eager"
-              sizes="(max-width: 767px) 100vw, 100vw"
+              // HeroPreloadLinks already media-preloads the active breakpoint — avoid dual priority download
+              priority={false}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              sizes="(max-width: 767px) 1px, 100vw"
             />
             <Image
               src={item.mobileImage}
@@ -143,8 +144,8 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
               aria-hidden="true"
               fill
               className="pvg-hero-carousel__img pvg-hero-img-mobile"
-              priority={index === 0}
-              loading="eager"
+              priority={false}
+              loading={index === 0 ? 'eager' : 'lazy'}
               sizes="(max-width: 767px) 100vw, 1px"
             />
           </>

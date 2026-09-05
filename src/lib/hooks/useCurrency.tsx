@@ -90,7 +90,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       let rates: Record<string, number> = { INR: 1 };
 
       const [ratesRes, suggested] = await Promise.all([
-        fetch('/api/currency/rates')
+        fetch('/api/currency/rates', { cache: 'force-cache' })
           .then(async (res) => {
             if (!res.ok) return null;
             return (await res.json()) as {

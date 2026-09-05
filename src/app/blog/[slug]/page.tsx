@@ -96,7 +96,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   // ponytail: width-only so Sanity doesn't crop; height comes from the image
   const heroImage = post.mainImage
-    ? urlFor(post.mainImage).width(1200).quality(85).auto('format').url()
+    ? urlFor(post.mainImage).width(800).quality(75).auto('format').url()
     : null;
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';

@@ -3,11 +3,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PvgRecommendationForm } from '@/components/home/PvgRecommendationForm';
 import { RecoHeroPriceCopy } from '@/components/home/RecoHeroPriceCopy';
-import { Money } from '@/components/currency/Money';
+import { GemsRecFinaleCopy, GemsRecHeroLead } from '@/components/home/GemsRecGeoCopy';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { ScrollReveal } from '@/components/ui/scroll-reveal';
-import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
-import { getRs101PaidFromHeaders } from '@/lib/consultation/rs101-eligibility.server';
 import {
   GEMS_REC_CONCERNS,
   GEMS_REC_KEYWORDS,
@@ -19,8 +16,17 @@ import {
   GEMS_REC_SERVICES,
   gemsRecInternalJsonLd,
 } from '@/lib/constants/gems-recommendations-content';
+import { siteStaticPublicUrl } from '@/lib/site-static';
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata, faqJsonLd, serviceJsonLd } from '@/lib/utils/seo';
 import './gems-recommendations.css';
+
+/** Prefer CDN direct URL so Next/Image does not chase Vercel→CDN redirects. */
+function remedyImg(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return (
+    siteStaticPublicUrl(decodeURIComponent(p), process.env.NEXT_PUBLIC_SUPABASE_URL || '') ?? p
+  );
+}
 
 const baseMeta = buildMetadata({
   title: GEMS_REC_META.title,
@@ -39,22 +45,10 @@ export const metadata: Metadata = {
   },
 };
 
-function processSteps(rs101Paid: boolean) {
-  if (!rs101Paid) return GEMS_REC_PROCESS;
-  return GEMS_REC_PROCESS.map((item) =>
-    item.step === '02'
-      ? {
-          ...item,
-          title: 'Pay ₹101 securely',
-          body: 'Book your remedies recommendation with Razorpay. Login is optional — guests receive email confirmation.',
-        }
-      : item
-  );
-}
+// ponytail: static HTML + edge cache — geo price is client-only (was headers() → no-store MISS every hit)
+export const revalidate = 86400;
 
-export default async function GemsRecommendationsPage() {
-  const rs101Paid = await getRs101PaidFromHeaders();
-  const steps = processSteps(rs101Paid);
+export default function GemsRecommendationsPage() {
   const faqSchema = faqJsonLd(GEMS_REC_PAGE_FAQS);
 
   return (
@@ -66,14 +60,7 @@ export default async function GemsRecommendationsPage() {
           </h1>
           <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: 0 }}>
             Expert gemstone, Rudraksha &amp; Yagya guidance from your Kundli — not an automated tool.
-            {rs101Paid ? (
-              <>
-                {' '}
-                Book online from <Money amount={RS101_AMOUNT_INR} />.
-              </>
-            ) : (
-              <> Book online — complimentary for international clients.</>
-            )}
+            <GemsRecHeroLead />
           </p>
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
         </div>
@@ -89,10 +76,10 @@ export default async function GemsRecommendationsPage() {
                   <br />
                   Recommendation
                 </h2>
-                <RecoHeroPriceCopy rs101Paid={rs101Paid} />
+                <RecoHeroPriceCopy />
               </div>
             </div>
-            <PvgRecommendationForm analyticsSource="gems-recommendations" rs101Paid={rs101Paid} />
+            <PvgRecommendationForm analyticsSource="gems-recommendations" />
           </div>
         </section>
       </div>
@@ -110,18 +97,16 @@ export default async function GemsRecommendationsPage() {
           </header>
 
           <ol className="pvg-remedy-path">
-            {steps.map((item, index) => (
-              <ScrollReveal key={item.step} delay={index * 70}>
-                <li className="pvg-remedy-path-item">
-                  <div className="pvg-remedy-path-rail" aria-hidden="true">
-                    <span className="pvg-remedy-path-orb">{item.step}</span>
-                  </div>
-                  <article className="pvg-remedy-path-card">
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                  </article>
-                </li>
-              </ScrollReveal>
+            {GEMS_REC_PROCESS.map((item) => (
+              <li key={item.step} className="pvg-remedy-path-item">
+                <div className="pvg-remedy-path-rail" aria-hidden="true">
+                  <span className="pvg-remedy-path-orb">{item.step}</span>
+                </div>
+                <article className="pvg-remedy-path-card">
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </article>
+              </li>
             ))}
           </ol>
         </div>
@@ -141,27 +126,29 @@ export default async function GemsRecommendationsPage() {
 
           <div className="pvg-remedy-bands">
             {GEMS_REC_CONCERNS.map((item, index) => (
-              <ScrollReveal key={item.slug} delay={index * 80}>
-                <article className={`pvg-remedy-band ${index % 2 === 1 ? 'pvg-remedy-band--flip' : ''}`}>
-                  <div className="pvg-remedy-band-media">
-                    <Image
-                      src={item.image}
-                      alt={`${item.title} — Vedic remedies recommendation`}
-                      fill
-                      sizes="(max-width: 900px) 100vw, 48vw"
-                      className="object-contain object-center"
-                    />
-                  </div>
-                  <div className="pvg-remedy-band-copy">
-                    <span className="pvg-remedy-band-index">0{index + 1}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                    <a href="#gem-recommendation" className="pvg-remedy-inline-cta">
-                      Book remedies review
-                    </a>
-                  </div>
-                </article>
-              </ScrollReveal>
+              <article
+                key={item.slug}
+                className={`pvg-remedy-band ${index % 2 === 1 ? 'pvg-remedy-band--flip' : ''}`}
+              >
+                <div className="pvg-remedy-band-media">
+                  <Image
+                    src={remedyImg(item.image)}
+                    alt={`${item.title} — Vedic remedies recommendation`}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 48vw"
+                    className="object-contain object-center"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="pvg-remedy-band-copy">
+                  <span className="pvg-remedy-band-index">0{index + 1}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                  <a href="#gem-recommendation" className="pvg-remedy-inline-cta">
+                    Book remedies review
+                  </a>
+                </div>
+              </article>
             ))}
           </div>
         </div>
@@ -180,24 +167,23 @@ export default async function GemsRecommendationsPage() {
           </header>
 
           <div className="pvg-remedy-triptych">
-            {GEMS_REC_SERVICES.map((item, index) => (
-              <ScrollReveal key={item.slug} delay={index * 90}>
-                <Link href={item.href} className="pvg-remedy-shrine">
-                  <div className="pvg-remedy-shrine-media">
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      fill
-                      sizes="(max-width: 900px) 100vw, 33vw"
-                      className="object-contain object-center"
-                    />
-                  </div>
-                  <div className="pvg-remedy-shrine-body">
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                  </div>
-                </Link>
-              </ScrollReveal>
+            {GEMS_REC_SERVICES.map((item) => (
+              <Link key={item.slug} href={item.href} className="pvg-remedy-shrine">
+                <div className="pvg-remedy-shrine-media">
+                  <Image
+                    src={remedyImg(item.image)}
+                    alt={item.title}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 33vw"
+                    className="object-contain object-center"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="pvg-remedy-shrine-body">
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -216,17 +202,15 @@ export default async function GemsRecommendationsPage() {
           </header>
 
           <div className="pvg-remedy-constellation">
-            {GEMS_REC_PILLARS.map((item, index) => (
-              <ScrollReveal key={item.title} delay={index * 60}>
-                <article className="pvg-remedy-star">
-                  <span className="pvg-remedy-star-mark" aria-hidden="true" />
-                  <h3>{item.title}</h3>
-                  <p className="pvg-remedy-star-hi" lang="hi">
-                    {item.titleHi}
-                  </p>
-                  <p>{item.body}</p>
-                </article>
-              </ScrollReveal>
+            {GEMS_REC_PILLARS.map((item) => (
+              <article key={item.title} className="pvg-remedy-star">
+                <span className="pvg-remedy-star-mark" aria-hidden="true" />
+                <h3>{item.title}</h3>
+                <p className="pvg-remedy-star-hi" lang="hi">
+                  {item.titleHi}
+                </p>
+                <p>{item.body}</p>
+              </article>
             ))}
           </div>
         </div>
@@ -256,13 +240,7 @@ export default async function GemsRecommendationsPage() {
         <div className="pvg-remedy-finale-inner">
           <h2>Ready for your remedies recommendation?</h2>
           <p>
-            {rs101Paid ? (
-              <>
-                Pay <Money amount={RS101_AMOUNT_INR} />, share birth details, and receive expert guidance by email.
-              </>
-            ) : (
-              <>Share your birth details and receive expert guidance by email.</>
-            )}
+            <GemsRecFinaleCopy />
           </p>
           <a href="#gem-recommendation">Book recommendation</a>
         </div>

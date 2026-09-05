@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft, ThumbsUp, Share2, MessageCircle } from 'lucide-react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import type { LibraryVideo, VideoCategory } from '@/lib/types/database';
-import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { canonicalUrl, fitDescription, fitTitle } from '@/lib/utils/seo';
 
@@ -124,39 +123,37 @@ export default async function VideoDetailPage({ params }: Props) {
       {/* Video player */}
       <section className="bg-background py-10 md:py-14">
         <div className="mx-auto max-w-5xl px-6">
-          <ScrollReveal>
-            <h1 className="mb-6 font-heading text-2xl font-bold text-primary md:text-3xl lg:text-4xl">
-              {video.title}
-            </h1>
+          <h1 className="mb-6 font-heading text-2xl font-bold text-primary md:text-3xl lg:text-4xl">
+            {video.title}
+          </h1>
 
-            <div className="overflow-hidden rounded-sm border border-border shadow-md">
-              <div className="relative aspect-video w-full bg-black">
-                <iframe
-                  className="h-full w-full"
-                  src={`https://www.youtube-nocookie.com/embed/${video.youtube_id}?rel=0`}
-                  title={video.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              </div>
+          <div className="overflow-hidden rounded-sm border border-border shadow-md">
+            <div className="relative aspect-video w-full bg-black">
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube-nocookie.com/embed/${video.youtube_id}?rel=0`}
+                title={video.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
             </div>
+          </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <a href={youtubePageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/10">
-                <ThumbsUp className="h-4 w-4" /> Like on YouTube
-              </a>
-              <a href={youtubePageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/10">
-                <MessageCircle className="h-4 w-4" /> Comment on YouTube
-              </a>
-              <a href={youtubePageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/10">
-                <Share2 className="h-4 w-4" /> Share
-              </a>
-            </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <a href={youtubePageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/10">
+              <ThumbsUp className="h-4 w-4" /> Like on YouTube
+            </a>
+            <a href={youtubePageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/10">
+              <MessageCircle className="h-4 w-4" /> Comment on YouTube
+            </a>
+            <a href={youtubePageUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-sm border border-border px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/10">
+              <Share2 className="h-4 w-4" /> Share
+            </a>
+          </div>
 
-            {video.description && (
-              <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{video.description}</p>
-            )}
-          </ScrollReveal>
+          {video.description && (
+            <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{video.description}</p>
+          )}
         </div>
       </section>
 

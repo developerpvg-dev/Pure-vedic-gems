@@ -25,6 +25,7 @@ import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
 import { LayeredCategoryImage } from '@/components/home/LayeredCategoryImage';
 import { DirectorPickPrice } from '@/components/home/DirectorPickPrice';
+import { toPublicAssetUrl } from '@/lib/site-static';
 import { Rs101CtaLabel } from '@/components/consultation/Rs101CtaLabel';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
@@ -632,7 +633,7 @@ export function IntegratedCategoryCta({
             <Image
               fill
               className="pvg-rcta-v2-person-img"
-              src={image}
+              src={toPublicAssetUrl(image)}
               alt={imageAlt}
               unoptimized
               loading="lazy"
@@ -682,16 +683,16 @@ function directorMeta(product: HomeDirectorPick) {
 
 function directorFallbackImage(product: HomeDirectorPick) {
   const comparable = `${product.slug} ${product.name} ${product.sub_category ?? ''}`.toLowerCase();
-  if (comparable.includes('ruby') || comparable.includes('manik')) return '/home/navratnaimg/stone1.webp';
-  if (comparable.includes('pearl') || comparable.includes('moti')) return '/home/navratnaimg/stone2.webp';
-  if (comparable.includes('blue-sapphire') || comparable.includes('blue sapphire') || comparable.includes('neelam')) return '/home/navratnaimg/stone3.webp';
-  if (comparable.includes('emerald') || comparable.includes('panna')) return '/home/navratnaimg/stone4.webp';
-  if (comparable.includes('yellow-sapphire') || comparable.includes('yellow sapphire') || comparable.includes('pukhraj')) return '/home/navratnaimg/stone5.webp';
-  if (comparable.includes('diamond') || comparable.includes('heera')) return '/home/navratnaimg/stone6.webp';
-  if (comparable.includes('coral') || comparable.includes('moonga')) return '/home/navratnaimg/stone7.webp';
-  if (comparable.includes('hessonite') || comparable.includes('gomed')) return '/home/navratnaimg/stone8.webp';
-  if (comparable.includes('eye') || comparable.includes('lehsun')) return '/home/navratnaimg/stone9.webp';
-  return '/home/navratnaimg/stone1.webp';
+  if (comparable.includes('ruby') || comparable.includes('manik')) return toPublicAssetUrl('/home/navratnaimg/stone1.webp');
+  if (comparable.includes('pearl') || comparable.includes('moti')) return toPublicAssetUrl('/home/navratnaimg/stone2.webp');
+  if (comparable.includes('blue-sapphire') || comparable.includes('blue sapphire') || comparable.includes('neelam')) return toPublicAssetUrl('/home/navratnaimg/stone3.webp');
+  if (comparable.includes('emerald') || comparable.includes('panna')) return toPublicAssetUrl('/home/navratnaimg/stone4.webp');
+  if (comparable.includes('yellow-sapphire') || comparable.includes('yellow sapphire') || comparable.includes('pukhraj')) return toPublicAssetUrl('/home/navratnaimg/stone5.webp');
+  if (comparable.includes('diamond') || comparable.includes('heera')) return toPublicAssetUrl('/home/navratnaimg/stone6.webp');
+  if (comparable.includes('coral') || comparable.includes('moonga')) return toPublicAssetUrl('/home/navratnaimg/stone7.webp');
+  if (comparable.includes('hessonite') || comparable.includes('gomed')) return toPublicAssetUrl('/home/navratnaimg/stone8.webp');
+  if (comparable.includes('eye') || comparable.includes('lehsun')) return toPublicAssetUrl('/home/navratnaimg/stone9.webp');
+  return toPublicAssetUrl('/home/navratnaimg/stone1.webp');
 }
 
 function directorNote(product: HomeDirectorPick) {
@@ -739,7 +740,7 @@ export function NavaratnaHomeSection({
   showCta = true,
   showHeading = true,
   srHeading = 'Shop the nine Navaratna gems',
-  rs101Paid = true,
+  rs101Paid,
 }: {
   categories: HomeManagedCategory[];
   showCta?: boolean;
@@ -839,7 +840,7 @@ export function RudrakshaHomeSection({
   featureCards = RUDRAKSHA_FEATURE_FALLBACK,
   showCta = true,
   showHeading = true,
-  rs101Paid = true,
+  rs101Paid,
 }: {
   categories: HomeManagedCategory[];
   featureCards?: HomeCatalogCategory[];
@@ -1096,7 +1097,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
         <div className="director-layout">
           <aside className="director-profile" aria-label="Personally selected by Shri Vikas Mehra">
             <div className="director-portrait">
-              <Image src="/home/director'spick/vikasmehra.png" alt="Shri Vikas Mehra, Director of Pure Vedic Gems" width={340} height={480} loading="lazy" unoptimized />
+              <Image src={toPublicAssetUrl("/home/director'spick/vikasmehra.png")} alt="Shri Vikas Mehra, Director of Pure Vedic Gems" width={340} height={480} loading="lazy" unoptimized />
             </div>
             <div className="director-profile-note">Personally selected by Shri Vikas Mehra</div>
           </aside>
@@ -1140,7 +1141,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
 export function SemipreciousHomeSection({
   categories,
   showCta = true,
-  rs101Paid = true,
+  rs101Paid,
 }: {
   categories: HomeManagedCategory[];
   showCta?: boolean;

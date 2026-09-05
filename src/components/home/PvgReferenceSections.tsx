@@ -14,6 +14,7 @@ import { CredentialsMarqueeBanner } from '@/components/home/CredentialsMarqueeBa
 import { CertBisMarquee } from '@/components/home/CertBisMarquee';
 import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-services';
 import { HeritageLegacyMedia } from '@/components/home/HeritageLegacyMedia';
+import { toPublicAssetUrl } from '@/lib/site-static';
 
 const WHO_WE_ARE_IMG_VERSION = '20260810';
 
@@ -42,7 +43,6 @@ const WHO_WE_ARE_STACK_IMAGES = [
     src: '/home/whoweare/powerful-vedic-talisman.jpeg',
     alt: 'Powerful Vedic talismans according to ancient sacred texts',
     pos: '0',
-    fetchPriority: 'high' as const,
   },
 ] as const;
 const CONFIGURATOR_STEPS_IMG_VERSION = '20260810a';
@@ -181,7 +181,7 @@ export function PvgReferenceSections({
   directorsPickSection,
   testimonials,
   knowledgeBlogCategories,
-  rs101Paid = true,
+  rs101Paid,
 }: PvgReferenceSectionsProps) {
   const renderLegacyFallback = false;
   const featuredTestimonials = testimonials.length > 0 ? testimonials : FALLBACK_TESTIMONIALS;
@@ -219,9 +219,9 @@ export function PvgReferenceSections({
               <div key={item.src} className="about-stack-card" data-pos={item.pos}>
                 <img
                   className="about-stack-img"
-                  src={`${item.src}?v=${WHO_WE_ARE_IMG_VERSION}`}
+                  src={toPublicAssetUrl(`${item.src}?v=${WHO_WE_ARE_IMG_VERSION}`)}
                   alt={item.alt}
-                  loading={item.pos === '0' ? 'eager' : 'lazy'}
+                  loading="lazy"
                   decoding="async"
                   {...('fetchPriority' in item ? { fetchPriority: item.fetchPriority } : {})}
                 />
@@ -229,7 +229,7 @@ export function PvgReferenceSections({
             ))}
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src={`/home/whoweare/87yeara.webp?v=${WHO_WE_ARE_IMG_VERSION}`} alt="" loading="lazy" />
+            <img className="about-exp-img" src={toPublicAssetUrl(`/home/whoweare/87yeara.webp?v=${WHO_WE_ARE_IMG_VERSION}`)} alt="" loading="lazy" />
           </div>
         </div>
 
@@ -325,31 +325,31 @@ export function PvgReferenceSections({
 
             <div className="cert-stack-card" data-pos="3">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`} alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`)} alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`} alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`)} alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`} alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`)} alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="0">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={`/home/certificates/certi4.png?v=${CERT_STACK_IMG_VERSION}`} alt="Multiple gemstone certification reports from global labs" loading="eager" decoding="async" fetchPriority="high" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi4.png?v=${CERT_STACK_IMG_VERSION}`)} alt="Multiple gemstone certification reports from global labs" loading="lazy" decoding="async" />
               </div>
             </div>
 
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src="/home/certificates/6globallabs.png?v=20260810" alt="6+ Global Labs" loading="lazy" />
+            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.png?v=20260810')} alt="6+ Global Labs" loading="lazy" />
           </div>
         </div>
 
@@ -675,7 +675,7 @@ export function PvgReferenceSections({
               <div className="cfg-lin-circle">
                 <img
                   className="cfg-lin-img"
-                  src={`/home/configuratorsteps/step${index + 1}.webp?v=${CONFIGURATOR_STEPS_IMG_VERSION}`}
+                  src={toPublicAssetUrl(`/home/configuratorsteps/step${index + 1}.webp?v=${CONFIGURATOR_STEPS_IMG_VERSION}`)}
                   alt={label}
                   loading="lazy"
                   decoding="async"
@@ -908,7 +908,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mr. Vikash Mehra.webp" alt="Mr. Vikas Mehra" loading="lazy" />
+              <img src={toPublicAssetUrl('/our_expets_img/Mr. Vikash Mehra.webp')} alt="Mr. Vikas Mehra" loading="lazy" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -929,7 +929,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mrs . Tanya Mehra.webp" alt="Mrs. Tanya Mehra" loading="lazy" />
+              <img src={toPublicAssetUrl('/our_expets_img/Mrs . Tanya Mehra.webp')} alt="Mrs. Tanya Mehra" loading="lazy" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>
@@ -950,7 +950,7 @@ export function PvgReferenceSections({
         <div className="expert-card-v1">
           <div className="expert-av-wrap">
             <div className="expert-av">
-              <img src="/our_expets_img/Mr. Vrayas Mehra.webp" alt="Mr. Vrayas Mehra" loading="lazy" />
+              <img src={toPublicAssetUrl('/our_expets_img/Mr. Vrayas Mehra.webp')} alt="Mr. Vrayas Mehra" loading="lazy" />
             </div>
             <div className="expert-av-badge"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5"/></svg></div>
           </div>

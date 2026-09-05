@@ -58,6 +58,7 @@ export function isKeepLocalAssetPath(pathname: string): boolean {
   const p = pathname.split('?')[0] ?? pathname;
   if (
     p === '/pvg-emblem.webp' ||
+    p === '/pvg-emblem.sm.webp' ||
     p === '/pvg-logo.png' ||
     p === '/ringsizeguide.png' ||
     p === '/Algerian.webp' ||
@@ -135,4 +136,17 @@ export function siteStaticPublicUrl(
   const base = supabaseUrl.replace(/\/$/, '');
   if (!base) return null;
   return `${base}/storage/v1/object/public/${SITE_STATIC_BUCKET}/${encoded}`;
+}
+
+/**
+ * Browser-facing URL for a site path or already-absolute URL.
+ * Offloaded /home/* etc. → CDN (skip Vercel 308 on first visit).
+ */
+export function toPublicAssetUrl(src: string): string {
+  if (!src || src.startsWith('data:') || src.startsWith('blob:')) return src;
+  if (/^https?:\/\//i.test(src)) return src;
+  const q = src.includes('?') ? src.slice(src.indexOf('?')) : '';
+  const path = (src.startsWith('/') ? src : `/${src}`).split('?')[0] ?? src;
+  const cdn = siteStaticPublicUrl(path, process.env.NEXT_PUBLIC_SUPABASE_URL || '');
+  return cdn ? `${cdn}${q}` : src;
 }

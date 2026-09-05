@@ -2,13 +2,14 @@
 
 import Image from 'next/image';
 import { LAB_LOGOS } from '@/lib/constants/trust-credentials';
+import { toPublicAssetUrl } from '@/lib/site-static';
 
 function MarqueeRow({ copyIndex }: { copyIndex: number }) {
   return (
     <div className="pvg-cred-marquee-row">
       <div className="pvg-cred-marquee-logo pvg-cred-marquee-bis">
         <Image
-          src="/home/heri/bis.jpg"
+          src={toPublicAssetUrl('/home/heri/bis.jpg')}
           alt="BIS Hallmarked — Govt. Certified Purity, HUID Verifiable"
           width={48}
           height={48}

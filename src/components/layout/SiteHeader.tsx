@@ -10,7 +10,7 @@ import {
   BLOG_CATEGORY_LINKS,
 } from '@/lib/constants/nav-items';
 import { findStorefrontGroup, type StorefrontCategoryGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
-import { resolveCategoryNavImage, collectGemstoneNavImageUrls } from '@/lib/constants/category-nav-images';
+import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
 import { useCart } from '@/lib/hooks/useCart';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { UserAuthButton } from '@/components/auth/UserAuthButton';
@@ -117,7 +117,7 @@ function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
   if (thumbImage) {
     return (
       <span style={shellStyle} aria-hidden="true">
-        <Image src={thumbImage} alt="" width={48} height={48} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <Image src={thumbImage} alt="" width={48} height={48} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }
@@ -422,14 +422,6 @@ export function SiteHeader() {
     root.style.removeProperty('--pvg-site-header-offset');
     root.style.removeProperty('--pvg-site-header-sticky-top');
   }, []);
-
-  useEffect(() => {
-    for (const src of collectGemstoneNavImageUrls(categoryGroups)) {
-      const img = new window.Image();
-      img.decoding = 'async';
-      img.src = src;
-    }
-  }, [categoryGroups]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -1198,10 +1190,10 @@ export function SiteHeader() {
           >
             {/* Logo */}
             <Link href="/" aria-label="Pure Vedic Gems — Home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
-              <Image src="/pvg-emblem.webp" alt="Pure Vedic Gems emblem" width={48} height={48} priority
+              <Image src="/pvg-emblem.sm.webp" alt="Pure Vedic Gems emblem" width={48} height={48} priority
                 style={{ width: '48px', height: '48px', objectFit: 'contain', flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
-                <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30} priority
+                <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30}
                   style={{ width: '150px', height: '30px', objectFit: 'contain', display: 'block' }} />
                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6f4f00', marginTop: '4px', paddingLeft: '16px' }}>
                   Since 1937
@@ -1261,10 +1253,10 @@ export function SiteHeader() {
           {/* Mobile/tablet — visible below 1360px */}
           <div className="pvg-mob-nav" style={{ height: '62px', alignItems: 'center', padding: '0 16px' }}>
             <Link href="/" aria-label="Pure Vedic Gems home" className="pvg-mob-brand">
-              <Image src="/pvg-emblem.webp" alt="Pure Vedic Gems" width={40} height={40} priority
+              <Image src="/pvg-emblem.sm.webp" alt="Pure Vedic Gems" width={40} height={40}
                 className="pvg-mob-logo" />
               <div className="pvg-mob-brand-text">
-                <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24} priority
+                <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={120} height={24}
                   className="pvg-mob-wordmark" />
                 <span className="pvg-mob-since">Since 1937</span>
               </div>

@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toPublicAssetUrl } from '@/lib/site-static';
 
 const PHOTOS = [
   {
-    src: '/home/heri/heri0.jpeg',
+    src: toPublicAssetUrl('/home/heri/heri0.jpeg'),
     alt: 'Three generations of the Pure Vedic Gems family behind the jewellery counter',
   },
   {
-    src: '/home/heri/heri1.jpeg',
+    src: toPublicAssetUrl('/home/heri/heri1.jpeg'),
     alt: 'Pure Vedic Gems family continuing the jewellery heritage in the showroom',
   },
 ] as const;
@@ -19,11 +20,6 @@ export function HeritageLegacyMedia() {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    PHOTOS.forEach((photo) => {
-      const img = new window.Image();
-      img.src = photo.src;
-    });
-
     const id = window.setInterval(() => {
       setActive((i) => (i + 1) % PHOTOS.length);
     }, INTERVAL_MS);

@@ -1,5 +1,7 @@
 'use client';
 
+import { toPublicAssetUrl } from '@/lib/site-static';
+
 function BisCore({ duplicate = false }: { duplicate?: boolean }) {
   return (
     <div
@@ -8,7 +10,7 @@ function BisCore({ duplicate = false }: { duplicate?: boolean }) {
     >
       <img
         className="cert-bis-logo"
-        src="/home/heri/bis.jpg"
+        src={toPublicAssetUrl('/home/heri/bis.jpg')}
         alt=""
         width={20}
         height={18}

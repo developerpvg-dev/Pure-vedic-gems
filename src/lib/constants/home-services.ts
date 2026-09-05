@@ -1,3 +1,5 @@
+import { toPublicAssetUrl } from '@/lib/site-static';
+
 export type HomeService = {
   slug: string;
   title: string;
@@ -54,5 +56,5 @@ export const HOME_SERVICES: HomeService[] = [
 export const HOME_SERVICE_IMAGE_VERSION = '20260611';
 
 export function homeServiceImageSrc(slug: string): string {
-  return `/home/ourservicesimg/${slug}.webp?v=${HOME_SERVICE_IMAGE_VERSION}`;
+  return toPublicAssetUrl(`/home/ourservicesimg/${slug}.webp?v=${HOME_SERVICE_IMAGE_VERSION}`);
 }

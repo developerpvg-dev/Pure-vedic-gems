@@ -19,7 +19,6 @@ import { getKhubCategoriesWithPosts } from '@/lib/sanity/queries';
 import type { Metadata } from 'next';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { HOME_PAGE_DESCRIPTION, HOME_PAGE_KEYWORDS, HOME_PAGE_TITLE, homePageJsonLd } from '@/lib/seo/home-page';
-import { getRs101PaidFromHeaders } from '@/lib/consultation/rs101-eligibility.server';
 import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
@@ -50,13 +49,13 @@ async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
 }
 
 export default async function HomePage() {
-  const [heroSlides, categories, sectionCatalog, testimonials, khubCategories, rs101Paid] = await Promise.all([
+  // ponytail: no headers()/getRs101PaidFromHeaders — that forced no-store MISS on every cold visit
+  const [heroSlides, categories, sectionCatalog, testimonials, khubCategories] = await Promise.all([
     getActiveHeroSlides(),
     getHomeManagedCategories(),
     getHomeSectionCatalog(),
     getHomeTestimonials(),
     getKhubCategoriesWithPosts(3),
-    getRs101PaidFromHeaders(),
   ]);
 
   return (
@@ -66,10 +65,9 @@ export default async function HomePage() {
       <div className="pvg-react-home-root">
         <PvgHeroSection slides={heroSlides} />
         <PvgReferenceSections
-          rs101Paid={rs101Paid}
-          navaratnaSection={<NavaratnaHomeSection categories={categories.navaratna} rs101Paid={rs101Paid} />}
-          rudrakshaSection={<RudrakshaHomeSection categories={categories.rudraksha} featureCards={sectionCatalog.rudrakshaFeatures} rs101Paid={rs101Paid} />}
-          semipreciousSection={<SemipreciousHomeSection categories={categories.upratna} rs101Paid={rs101Paid} />}
+          navaratnaSection={<NavaratnaHomeSection categories={categories.navaratna} />}
+          rudrakshaSection={<RudrakshaHomeSection categories={categories.rudraksha} featureCards={sectionCatalog.rudrakshaFeatures} />}
+          semipreciousSection={<SemipreciousHomeSection categories={categories.upratna} />}
           exploreSection={<ExploreByCategorySection idols={sectionCatalog.exploreIdols} jewelry={sectionCatalog.exploreJewelry} />}
           directorsPickSection={<DirectorsPickSection products={sectionCatalog.directorPicks} />}
           testimonials={testimonials}

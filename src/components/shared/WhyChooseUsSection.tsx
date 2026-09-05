@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { WHY_CHOOSE_US_PROMISES } from '@/lib/constants/why-choose-us';
+import { toPublicAssetUrl } from '@/lib/site-static';
 
 export function WhyChooseUsSection() {
   return (
@@ -25,7 +26,7 @@ export function WhyChooseUsSection() {
                 <div className="flex h-full flex-col items-center rounded-2xl border border-[#d8bd65]/70 bg-[#fff4cf] px-4 py-6 text-center shadow-[0_8px_24px_rgba(61,43,31,0.06)] transition hover:-translate-y-1 hover:border-[#c9a84c] hover:bg-[#fffaf0] hover:shadow-[0_12px_30px_rgba(201,168,76,0.18)]">
                   <div className="relative h-16 w-16">
                     <Image
-                      src={item.icon}
+                      src={toPublicAssetUrl(item.icon)}
                       alt={item.title}
                       fill
                       className="object-contain"

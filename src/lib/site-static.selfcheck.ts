@@ -8,6 +8,7 @@ import {
   isOffloadedSiteAssetPath,
   publicCdnOrigin,
   siteStaticPublicUrl,
+  toPublicAssetUrl,
 } from './site-static';
 
 assert.equal(isKeepLocalAssetPath('/pvg-emblem.webp'), true);
@@ -38,5 +39,18 @@ const cdn = siteStaticPublicUrl(
   'https://cdn.purevedicgems.com',
 );
 assert.equal(cdn, 'https://cdn.purevedicgems.com/site-static/home/ctas/cta2.webp');
+
+const prev = process.env.NEXT_PUBLIC_CDN_URL;
+process.env.NEXT_PUBLIC_CDN_URL = 'https://cdn.purevedicgems.com';
+assert.equal(
+  toPublicAssetUrl('/home/ctas/cta2.webp?v=1'),
+  'https://cdn.purevedicgems.com/site-static/home/ctas/cta2.webp?v=1',
+);
+assert.equal(toPublicAssetUrl('/pvg-emblem.sm.webp'), '/pvg-emblem.sm.webp');
+assert.equal(
+  toPublicAssetUrl('https://cdn.purevedicgems.com/products/x.webp'),
+  'https://cdn.purevedicgems.com/products/x.webp',
+);
+process.env.NEXT_PUBLIC_CDN_URL = prev;
 
 console.log('site-static.selfcheck: ok');

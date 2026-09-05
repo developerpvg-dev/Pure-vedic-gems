@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { CategoryGemImage } from '@/components/home/CategoryGemImage';
+import { toPublicAssetUrl } from '@/lib/site-static';
 
 type LayeredCategoryImageProps = {
   mainUrl: string | null;
@@ -28,10 +29,10 @@ export function LayeredCategoryImage({
     return (
       <>
         {mainUrl ? (
-          <span className="semi-circ-layer pvg-main-bg" style={{ backgroundImage: `url('${mainUrl}')` }} />
+          <span className="semi-circ-layer pvg-main-bg" style={{ backgroundImage: `url('${toPublicAssetUrl(mainUrl)}')` }} />
         ) : null}
         {hoverUrl ? (
-          <span className="semi-circ-layer pvg-hover-bg" style={{ backgroundImage: `url('${hoverUrl}')` }} />
+          <span className="semi-circ-layer pvg-hover-bg" style={{ backgroundImage: `url('${toPublicAssetUrl(hoverUrl)}')` }} />
         ) : null}
       </>
     );
@@ -57,7 +58,7 @@ export function LayeredCategoryImage({
           />
         ) : (
           <Image
-            src={mainUrl}
+            src={toPublicAssetUrl(mainUrl)}
             alt={alt}
             width={400}
             height={400}
@@ -71,13 +72,13 @@ export function LayeredCategoryImage({
       )}
       {hoverUrl ? (
         <Image
-          src={hoverUrl}
+          src={toPublicAssetUrl(hoverUrl)}
           alt=""
           aria-hidden="true"
           width={400}
           height={400}
           className={hoverClassName}
-          loading="eager"
+          loading="lazy"
           sizes="(max-width: 768px) 120px, 180px"
         />
       ) : null}
