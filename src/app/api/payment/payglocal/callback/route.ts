@@ -28,12 +28,57 @@ function redirectTo(req: NextRequest, path: string, status = 303) {
 }
 
 function extractToken(req: NextRequest, form: FormData | null, json: Record<string, unknown> | null) {
+  const fromForm = form?.get('x-gl-token') ?? form?.get('xGlToken') ?? form?.get('token');
+  const formToken = typeof fromForm === 'string' ? fromForm.trim() : '';
   return (
     req.headers.get('x-gl-token') ||
-    (typeof form?.get('x-gl-token') === 'string' ? String(form.get('x-gl-token')) : '') ||
-    (typeof json?.['x-gl-token'] === 'string' ? String(json['x-gl-token']) : '') ||
-    (typeof json?.xGlToken === 'string' ? String(json.xGlToken) : '')
+    formToken ||
+    (typeof json?.['x-gl-token'] === 'string' ? String(json['x-gl-token']).trim() : '') ||
+    (typeof json?.xGlToken === 'string' ? String(json.xGlToken).trim() : '') ||
+    (typeof json?.token === 'string' ? String(json.token).trim() : '') ||
+    req.nextUrl.searchParams.get('x-gl-token') ||
+    req.nextUrl.searchParams.get('token') ||
+    ''
   );
+}
+
+async function readCallbackBody(req: NextRequest) {
+  const contentType = req.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    const parsed = await req.json().catch(() => null);
+    return {
+      form: null as FormData | null,
+      json: parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null,
+    };
+  }
+
+  // Clone so we can fall back to raw urlencoded parse if formData fails (some proxies).
+  const raw = await req.text().catch(() => '');
+  if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded') || raw.includes('x-gl-token')) {
+    try {
+      const form = await new Request(req.url, {
+        method: 'POST',
+        headers: { 'content-type': contentType || 'application/x-www-form-urlencoded' },
+        body: raw,
+      }).formData();
+      return { form, json: null as Record<string, unknown> | null };
+    } catch {
+      /* fall through */
+    }
+  }
+
+  if (raw) {
+    try {
+      const params = new URLSearchParams(raw);
+      const json: Record<string, unknown> = {};
+      for (const [k, v] of params.entries()) json[k] = v;
+      if (Object.keys(json).length) return { form: null, json };
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return { form: null, json: null };
 }
 
 async function settleFromClaims(req: NextRequest, claims: Record<string, unknown>) {
@@ -67,18 +112,16 @@ async function handleCallback(req: NextRequest) {
     return redirectTo(req, '/pay/result?status=failed&reason=not_configured');
   }
 
-  const contentType = req.headers.get('content-type') ?? '';
-  let form: FormData | null = null;
-  let json: Record<string, unknown> | null = null;
-  if (contentType.includes('application/json')) {
-    const parsed = await req.json().catch(() => null);
-    json = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
-  } else {
-    form = await req.formData().catch(() => null);
-  }
-
+  const { form, json } = await readCallbackBody(req);
   const token = extractToken(req, form, json);
   if (!token) {
+    console.error('[PayGlocal callback] missing token', {
+      method: req.method,
+      contentType: req.headers.get('content-type'),
+      formKeys: form ? [...form.keys()] : [],
+      jsonKeys: json ? Object.keys(json) : [],
+      query: Object.fromEntries(req.nextUrl.searchParams.entries()),
+    });
     return redirectTo(req, '/pay/result?status=failed&reason=missing_token');
   }
 

@@ -41,9 +41,15 @@ export type PayGlocalStatusResult = {
 };
 
 function callbackUrl() {
-  // ponytail: local/tunnel UAT without rewriting NEXT_PUBLIC_SITE_URL (SEO/emails).
-  const base = (process.env.PAYGLOCAL_CALLBACK_BASE_URL || getSiteUrl()).replace(/\/$/, '');
-  return `${base}/api/payment/payglocal/callback`;
+  // Explicit override for tunnels / fixed Preview host.
+  const override = process.env.PAYGLOCAL_CALLBACK_BASE_URL?.trim();
+  if (override) return `${override.replace(/\/$/, '')}/api/payment/payglocal/callback`;
+  // Preview only: post back to this deployment, not NEXT_PUBLIC_SITE_URL (live www).
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel && process.env.VERCEL_ENV === 'preview') {
+    return `https://${vercel.replace(/^https?:\/\//i, '').replace(/\/$/, '')}/api/payment/payglocal/callback`;
+  }
+  return `${getSiteUrl().replace(/\/$/, '')}/api/payment/payglocal/callback`;
 }
 
 function authHeaders(jws: string) {
