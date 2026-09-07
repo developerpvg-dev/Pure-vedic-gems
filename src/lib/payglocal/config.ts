@@ -84,6 +84,6 @@ export function parseMerchantTxnId(id: string): PayGlocalKind | null {
   return m ? (KIND_FROM_CODE[m[1].toUpperCase()] ?? null) : null;
 }
 
-export function isPayGlocalMerchantTxnId(id: string | null | undefined) {
+export function isPayGlocalMerchantTxnId(id: string | null | undefined): id is string {
   return !!id && parseMerchantTxnId(id) != null;
 }
