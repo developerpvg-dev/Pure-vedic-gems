@@ -29,6 +29,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useCurrency, useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
+import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import type { ConsultationPlan } from '@/lib/types/database';
 import '@/app/consultation/consultation-page.css';
@@ -41,10 +43,12 @@ interface RazorpayResponse {
 
 interface CreateOrderResponse {
   consultation_id: string;
-  razorpay_order_id: string;
+  razorpay_order_id?: string;
+  redirect_url?: string;
+  gateway?: string;
   amount: number;
   currency: string;
-  key_id: string;
+  key_id?: string;
   plan_title: string;
   customer: {
     name: string;
@@ -195,6 +199,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
+  const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
   const [success, setSuccess] = useState<{ id: string } | null>(null);
 
   const selectedPlan = useMemo(
@@ -292,7 +297,11 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   }
 
   function buildBookingBody() {
-    const body: Record<string, string> = { plan_id: selectedPlan?.id ?? '', currency };
+    const body: Record<string, string> = {
+      plan_id: selectedPlan?.id ?? '',
+      currency,
+      gateway: payGateway,
+    };
     for (const [key, value] of Object.entries(form)) {
       const trimmed = value.trim();
       if (trimmed) body[key] = trimmed;
@@ -360,7 +369,11 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
       }
 
       const payment = createData as CreateOrderResponse;
-      if (!payment.key_id) {
+      if (payment.redirect_url) {
+        window.location.assign(payment.redirect_url);
+        return;
+      }
+      if (!payment.key_id || !payment.razorpay_order_id) {
         setErrors({ _form: 'Payment gateway key is not configured.' });
         setPaying(false);
         return;
@@ -446,7 +459,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
             Book a Vedic Consultation
           </h1>
           <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.75rem auto 0', maxWidth: '36rem' }}>
-            Choose your consultation service, add birth and contact details, then confirm with secure Razorpay payment.
+            Choose your consultation service, add birth and contact details, then confirm with secure payment.
           </p>
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
         </div>
@@ -595,6 +608,33 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
 
                 {errors._form && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{errors._form}</p>}
 
+                {isPayGlocalUiEnabled() ? (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPayGateway('razorpay')}
+                      className={`flex items-center justify-center rounded-lg border px-2 py-2 ${
+                        payGateway === 'razorpay'
+                          ? 'border-[#C9A84C] bg-[#C9A84C]/10'
+                          : 'border-slate-200'
+                      }`}
+                    >
+                      <PayGatewayMark kind="razorpay" className="h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPayGateway('payglocal')}
+                      className={`flex items-center justify-center rounded-lg border px-2 py-2 ${
+                        payGateway === 'payglocal'
+                          ? 'border-[#C9A84C] bg-[#C9A84C]/10'
+                          : 'border-slate-200'
+                      }`}
+                    >
+                      <PayGatewayMark kind="payglocal" className="h-4" />
+                    </button>
+                  </div>
+                ) : null}
+
                 <button
                   type="button"
                   disabled={paying || !selectedPlan}
@@ -606,7 +646,9 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
                 </button>
 
                 <p className="mt-3 text-[10px] leading-5 text-slate-400">
-                  Processed by Razorpay. Not medical, legal, or financial advice.
+                  {payGateway === 'payglocal'
+                    ? 'Processed by PayGlocal. Not medical, legal, or financial advice.'
+                    : 'Processed by Razorpay. Not medical, legal, or financial advice.'}
                 </p>
               </aside>
             </section>

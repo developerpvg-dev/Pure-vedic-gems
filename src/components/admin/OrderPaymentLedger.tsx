@@ -309,7 +309,11 @@ export function OrderPaymentLedger({
                       ) : null}
                     </td>
                     <td className="py-2 pr-3 capitalize">
-                      {p.provider === 'razorpay' ? 'Online' : 'Counter'}
+                      {p.provider === 'payglocal'
+                        ? 'PayGlocal'
+                        : p.provider === 'razorpay'
+                          ? 'Online'
+                          : 'Counter'}
                     </td>
                     <td className="py-2 pr-3 uppercase">{p.method.replace(/_/g, ' ')}</td>
                     <td className="py-2 pr-3 font-semibold tabular-nums">

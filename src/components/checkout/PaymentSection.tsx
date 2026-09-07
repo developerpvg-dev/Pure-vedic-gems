@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Building2, CreditCard, Copy, Check, Loader2, ShieldCheck, Upload } from 'lucide-react';
+import { Building2, Copy, Check, Loader2, ShieldCheck, Upload } from 'lucide-react';
 import type { CartItem } from '@/lib/types/cart';
 import type {
   ContactInfo,
@@ -18,8 +18,10 @@ import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemp
 import { BANK_ACCOUNTS, type BankAccountId } from '@/lib/constants/bank-accounts';
 import { ADVANCE_MIN_PERCENT } from '@/lib/orders/counter-payments';
 import { runRazorpayCheckout } from '@/lib/razorpay/checkout-client';
+import { isPayGlocalUiEnabled, runPayGlocalCheckout } from '@/lib/payglocal/checkout-client';
+import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 
-type PayMethod = 'razorpay' | 'bank_transfer';
+type PayMethod = 'razorpay' | 'payglocal' | 'bank_transfer';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +42,8 @@ interface PaymentSectionProps {
   setIsProcessing: (v: boolean) => void;
   onOrderCreated: (orderId: string) => void;
   onPaymentSuccess: (orderId: string) => void;
+  /** PayGlocal leaves the page — clear the cart here so it is not still full on return. */
+  onGatewayRedirect?: (orderId: string) => void;
 }
 
 export function PaymentSection({
@@ -58,6 +62,7 @@ export function PaymentSection({
   setIsProcessing,
   onOrderCreated,
   onPaymentSuccess,
+  onGatewayRedirect,
 }: PaymentSectionProps) {
   useCurrencySubscription();
   const { currency } = useCurrency();
@@ -299,6 +304,22 @@ export function PaymentSection({
         ? Math.min(serverTotal, Math.max(serverFloor, Math.round(advanceAmount * ratio)))
         : null;
 
+      if (payMethod === 'payglocal') {
+        onGatewayRedirect?.(order_id);
+        await runPayGlocalCheckout({
+          orderId: order_id,
+          payAmount,
+          currency,
+          onStage: setStep,
+          onError: (message) => {
+            setIsProcessing(false);
+            setStep('idle');
+            setError(message);
+          },
+        });
+        return;
+      }
+
       await runRazorpayCheckout({
         orderId: order_id,
         orderNumber: order_number,
@@ -347,7 +368,7 @@ export function PaymentSection({
   const stepLabels: Record<string, string> = {
     creating_order: 'Creating your order...',
     creating_payment: 'Connecting to payment gateway...',
-    paying: 'Complete payment in the Razorpay window',
+    paying: payMethod === 'payglocal' ? 'Redirecting to PayGlocal checkout...' : 'Complete payment in the Razorpay window',
     verifying: 'Verifying your payment...',
     submitting_proof: 'Uploading payment proof...',
   };
@@ -358,7 +379,7 @@ export function PaymentSection({
     termsAccepted &&
     returnsAccepted &&
     !isProcessing &&
-    (payMethod === 'razorpay' || bankReady);
+    (payMethod === 'razorpay' || payMethod === 'payglocal' || bankReady);
 
   return (
     <div className="pvg-checkout-step pvg-checkout-step--active">
@@ -369,20 +390,33 @@ export function PaymentSection({
         </div>
       </div>
 
-      <div className="mb-3 grid grid-cols-2 gap-2">
+      <div className={`mb-3 grid gap-2 ${isPayGlocalUiEnabled() ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
         <button
           type="button"
           onClick={() => setPayMethod('razorpay')}
           disabled={isProcessing}
-          className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${
+          className={`flex items-center justify-center rounded-lg border px-3 py-2 transition ${
             payMethod === 'razorpay'
-              ? 'border-[#C9A84C] bg-[#C9A84C]/10 text-[#3d2b1f]'
-              : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+              ? 'border-[#C9A84C] bg-[#C9A84C]/10'
+              : 'border-stone-200 bg-white hover:bg-stone-50'
           }`}
         >
-          <CreditCard className="h-4 w-4" />
-          Razorpay
+          <PayGatewayMark kind="razorpay" />
         </button>
+        {isPayGlocalUiEnabled() ? (
+          <button
+            type="button"
+            onClick={() => setPayMethod('payglocal')}
+            disabled={isProcessing}
+            className={`flex items-center justify-center rounded-lg border px-3 py-2 transition ${
+              payMethod === 'payglocal'
+                ? 'border-[#C9A84C] bg-[#C9A84C]/10'
+                : 'border-stone-200 bg-white hover:bg-stone-50'
+            }`}
+          >
+            <PayGatewayMark kind="payglocal" />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => setPayMethod('bank_transfer')}
@@ -525,11 +559,36 @@ export function PaymentSection({
         </p>
       ) : null}
 
-      {payMethod === 'razorpay' ? (
+      {payMethod === 'payglocal' ? (
         <div className="pvg-checkout-panel mb-4">
           <div className="mb-3 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-[#8a6400]" />
-            <span className="text-sm font-semibold text-[#3d2b1f]">Razorpay secure payment</span>
+            <PayGatewayMark kind="payglocal" className="h-4" />
+          </div>
+          <p className="pvg-checkout-hint mb-3">
+            You will be redirected to PayGlocal&apos;s secure page for cards, Apple Pay, and other methods. Card details never touch our servers.
+          </p>
+          {showFxNote ? (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+              <p className="font-semibold">Order total: {formatPrice(estimate.totalInr)}</p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+                PayGlocal will charge <strong>{formatPrice(chargeNow)}</strong> in {currency}.
+              </p>
+            </div>
+          ) : (
+            <p className="mb-3 text-sm font-semibold text-[#3d2b1f]">
+              Order total: {formatPrice(estimate.totalInr, 'INR')}
+            </p>
+          )}
+          <div className="pvg-checkout-pay-methods">
+            <span className="pvg-checkout-pay-tag">Cards</span>
+            <span className="pvg-checkout-pay-tag">Apple Pay</span>
+            <span className="pvg-checkout-pay-tag">3-D Secure</span>
+          </div>
+        </div>
+      ) : payMethod === 'razorpay' ? (
+        <div className="pvg-checkout-panel mb-4">
+          <div className="mb-3 flex items-center gap-2">
+            <PayGatewayMark kind="razorpay" className="h-4" />
           </div>
           <p className="pvg-checkout-hint mb-3">
             Complete payment in Razorpay&apos;s window — card and UPI details never touch our servers.
@@ -770,7 +829,11 @@ export function PaymentSection({
           ? payingPartial
             ? `Transfer exactly ${formatPrice(chargeNow)} now. We verify the amount against your proof before confirming the order.`
             : 'Order stays on hold until we verify your transfer (usually within 1 business day).'
-          : payingPartial
+          : payMethod === 'payglocal'
+            ? payingPartial
+              ? `PayGlocal will charge ${formatPrice(chargeNow)} now. You will return here after checkout.`
+              : `You will be redirected to PayGlocal to pay ${formatPrice(chargeNow)}.`
+            : payingPartial
             ? `Razorpay will charge ${formatPrice(chargeNow)} now. The advance amount is re-verified on our server against the final order total before the payment window opens.`
             : showFxNote
               ? `Payment window shows ${formatPrice(chargeNow)}. Order totals are verified on our server before Razorpay opens.`

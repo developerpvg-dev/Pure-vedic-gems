@@ -9,6 +9,8 @@ import { useRs101Eligibility } from '@/lib/hooks/useRs101Eligibility';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useTurnstile } from '@/components/turnstile/use-turnstile';
 import { startRs101Checkout } from '@/lib/consultation/rs101-checkout';
+import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
+import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS } from '@/lib/constants/recommendation-purposes';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
@@ -60,6 +62,7 @@ export function PvgRecommendationForm({
   const [form, setForm] = useState<Rs101FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
+  const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
   const [success, setSuccess] = useState<{ id: string } | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [guestChoiceOpen, setGuestChoiceOpen] = useState(false);
@@ -182,6 +185,7 @@ export function PvgRecommendationForm({
       await startRs101Checkout(body, {
         currency: rs101Paid ? currency : undefined,
         turnstileToken: !rs101Paid ? turnstile.token : undefined,
+        gateway: rs101Paid ? payGateway : undefined,
         onDismiss: () => setPaying(false),
         onSuccess: (consultationId) => {
           trackStorefrontEvent('consultation_payment_success', {
@@ -452,14 +456,40 @@ export function PvgRecommendationForm({
           </div>
         </div>
       ) : (
-        <button type="submit" className="reco-form-cta" disabled={paying}>
-          {submitLabel}
-        </button>
+        <>
+          {showPrice && isPayGlocalUiEnabled() ? (
+            <div className="mb-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPayGateway('razorpay')}
+                className={`flex items-center justify-center rounded-lg border px-2 py-2 ${
+                  payGateway === 'razorpay' ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
+                }`}
+              >
+                <PayGatewayMark kind="razorpay" className="h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayGateway('payglocal')}
+                className={`flex items-center justify-center rounded-lg border px-2 py-2 ${
+                  payGateway === 'payglocal' ? 'border-[#C9A84C] bg-[#C9A84C]/10' : 'border-stone-200'
+                }`}
+              >
+                <PayGatewayMark kind="payglocal" className="h-4" />
+              </button>
+            </div>
+          ) : null}
+          <button type="submit" className="reco-form-cta" disabled={paying}>
+            {submitLabel}
+          </button>
+        </>
       )}
 
       <p className="reco-form-note">
         {showPrice
-          ? 'Secure payment via Razorpay. Confirmation email sent after booking. Login not required.'
+          ? payGateway === 'payglocal'
+            ? 'Secure payment via PayGlocal. Confirmation email sent after booking. Login not required.'
+            : 'Secure payment via Razorpay. Confirmation email sent after booking. Login not required.'
           : 'Confirmation email sent after booking. Login not required.'}
       </p>
       {errors._form ? <p className="reco-form-status" role="alert">{errors._form}</p> : null}

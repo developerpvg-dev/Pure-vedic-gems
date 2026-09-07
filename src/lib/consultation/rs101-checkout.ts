@@ -13,6 +13,7 @@ export interface RazorpayPaymentResponse {
 export interface CreateOrderResponse {
   consultation_id: string;
   razorpay_order_id?: string;
+  redirect_url?: string;
   amount?: number;
   currency?: string;
   key_id?: string;
@@ -77,6 +78,7 @@ export async function startRs101Checkout(
   options: {
     currency?: string;
     turnstileToken?: string;
+    gateway?: 'razorpay' | 'payglocal';
     onDismiss: () => void;
     onSuccess: (consultationId: string) => void;
     onError: (error: { message: string; fieldErrors?: Record<string, string> }) => void;
@@ -90,6 +92,7 @@ export async function startRs101Checkout(
       ...formBody,
       ...(options.currency ? { currency: options.currency } : {}),
       ...(options.turnstileToken ? { turnstileToken: options.turnstileToken } : {}),
+      ...(options.gateway ? { gateway: options.gateway } : {}),
     }),
   });
 
@@ -106,6 +109,11 @@ export async function startRs101Checkout(
   const payment = createData as CreateOrderResponse;
   if (payment.free) {
     options.onSuccess(payment.consultation_id);
+    return;
+  }
+
+  if (payment.redirect_url) {
+    window.location.assign(payment.redirect_url);
     return;
   }
 

@@ -18,6 +18,8 @@ import { isPaidPaymentStatus } from '@/lib/constants/order-status';
 import { canPayOrder } from '@/lib/orders/order-ownership';
 import { resolveOnlinePaymentAmount } from '@/lib/orders/counter-payments';
 import { findPendingAttempt, openPaymentAttempt } from '@/lib/orders/online-payments';
+import { isPayGlocalConfigured, newMerchantTxnId } from '@/lib/payglocal/config';
+import { initiatePayGlocalPayment, type PayGlocalPayer } from '@/lib/payglocal/client';
 
 /**
  * POST /api/payment/create-order
@@ -53,13 +55,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { order_id, pay_amount } = parsed.data;
+  const { order_id, pay_amount, gateway: paymentGateway } = parsed.data;
 
   const supabase = createAdminClient();
   const { data: order, error: fetchError } = await supabase
     .from('orders')
     .select(
-      'id, order_number, total, amount_paid, payment_status, status, razorpay_order_id, payment_attempts, customer_id, guest_access_token, compliance_flags',
+      'id, order_number, total, amount_paid, payment_status, status, razorpay_order_id, payment_attempts, customer_id, guest_access_token, compliance_flags, shipping_address, guest_name, guest_email, guest_phone',
     )
     .eq('id', order_id)
     .single();
@@ -156,6 +158,7 @@ export async function POST(req: NextRequest) {
   const pending = await findPendingAttempt(order.id);
   const pendingGateway = parseGatewayReference(pending?.reference);
   const samePending =
+    paymentGateway !== 'payglocal' &&
     !!pending?.razorpay_order_id &&
     Number(pending.amount) === Number(charge.amount) &&
     (pendingGateway
@@ -173,6 +176,98 @@ export async function POST(req: NextRequest) {
       amount: amountMinor,
       currency: gateway.currency,
       key_id: razorpayKeyId,
+      order_number: order.order_number,
+      pay_amount: charge.amount,
+      payment_kind: charge.kind,
+    });
+  }
+
+  if (paymentGateway === 'payglocal') {
+    if (!isPayGlocalConfigured()) {
+      return NextResponse.json(
+        { error: 'PayGlocal is not configured yet. Please use Razorpay or add the PayGlocal keys.' },
+        { status: 503 },
+      );
+    }
+
+    const ship = (order as { shipping_address?: Record<string, string | null> | null }).shipping_address;
+    const payer: PayGlocalPayer = {
+      fullName: String((order as { guest_name?: string | null }).guest_name || 'Customer'),
+      email: String((order as { guest_email?: string | null }).guest_email || ''),
+      phone: (order as { guest_phone?: string | null }).guest_phone,
+      country: ship?.country_code || ship?.country,
+      address1: ship?.line1,
+      address2: ship?.line2,
+      city: ship?.city,
+      state: ship?.state,
+      postalCode: ship?.pincode,
+    };
+    if (!payer.email.includes('@')) {
+      return NextResponse.json({ error: 'A billing email is required for PayGlocal.' }, { status: 400 });
+    }
+
+    const merchantTxnId = newMerchantTxnId('order');
+    let initiated;
+    try {
+      initiated = await initiatePayGlocalPayment({
+        merchantTxnId,
+        amountMajor: gateway.major,
+        currency: gateway.currency,
+        payer,
+      });
+    } catch (err) {
+      console.error('[Payment] PayGlocal initiate failed:', err);
+      return NextResponse.json(
+        { error: 'PayGlocal could not start the payment. Please try again or use Razorpay.' },
+        { status: 502 },
+      );
+    }
+
+    try {
+      await openPaymentAttempt({
+        orderId: order.id,
+        amount: charge.amount,
+        kind: charge.kind,
+        razorpayOrderId: merchantTxnId,
+        reference: gatewayRef,
+        provider: 'payglocal',
+        method: 'payglocal',
+      });
+    } catch (err) {
+      console.error('[Payment] Failed to open PayGlocal attempt:', err);
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Could not start the payment.' },
+        { status: 500 },
+      );
+    }
+
+    const nextPayFlags =
+      gateway.currency !== 'INR'
+        ? withPaymentChargeFlags(order.compliance_flags, {
+            currency: gateway.currency,
+            rate: gateway.rate,
+          })
+        : null;
+
+    await asUntypedSupabase(supabase)
+      .from('orders')
+      .update({
+        razorpay_order_id: merchantTxnId,
+        razorpay_payment_id: initiated.gid,
+        payment_method: 'payglocal',
+        payment_attempts: (order.payment_attempts ?? 0) + 1,
+        ...(nextPayFlags ? { compliance_flags: nextPayFlags } : {}),
+        ...(charge.kind === 'balance' ? {} : { payment_status: 'pending', status: 'pending_payment' }),
+      })
+      .eq('id', order_id);
+
+    return NextResponse.json({
+      gateway: 'payglocal',
+      redirect_url: initiated.redirectUrl,
+      merchant_txn_id: merchantTxnId,
+      gid: initiated.gid,
+      amount: amountMinor,
+      currency: gateway.currency,
       order_number: order.order_number,
       pay_amount: charge.amount,
       payment_kind: charge.kind,

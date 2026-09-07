@@ -94,8 +94,11 @@ export async function openPaymentAttempt(input: {
   razorpayOrderId: string;
   /** `CURRENCY:minor` from encodeGatewayReference. */
   reference: string;
+  provider?: 'razorpay' | 'payglocal';
+  method?: string;
 }) {
   const client = db();
+  const provider = input.provider ?? 'razorpay';
   await client
     .from('order_payments')
     .update({ status: 'failed', notes: 'Superseded by a newer payment attempt' })
@@ -107,9 +110,9 @@ export async function openPaymentAttempt(input: {
     .insert({
       order_id: input.orderId,
       amount: roundMoney(input.amount),
-      method: 'razorpay',
+      method: input.method ?? provider,
       kind: input.kind,
-      provider: 'razorpay',
+      provider,
       status: 'pending',
       razorpay_order_id: input.razorpayOrderId,
       reference: input.reference,

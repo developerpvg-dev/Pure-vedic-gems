@@ -9,6 +9,8 @@ import {
   type OrderChargeContext,
 } from '@/lib/currency/format-charged';
 import { runRazorpayCheckout, type CheckoutStage } from '@/lib/razorpay/checkout-client';
+import { isPayGlocalUiEnabled, runPayGlocalCheckout } from '@/lib/payglocal/checkout-client';
+import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
 export type CustomerPaymentRow = {
@@ -30,7 +32,7 @@ const KIND_LABELS: Record<string, string> = {
 
 const STAGE_LABELS: Record<CheckoutStage, string> = {
   creating_payment: 'Connecting to payment gateway…',
-  paying: 'Complete payment in the Razorpay window',
+  paying: 'Complete payment with the gateway',
   verifying: 'Verifying your payment…',
 };
 
@@ -81,8 +83,25 @@ export function OrderBalancePanel({
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<CheckoutStage | null>(null);
   const [error, setError] = useState('');
-  const [payMethod, setPayMethod] = useState<'razorpay' | 'bank_transfer' | null>(null);
+  const [payMethod, setPayMethod] = useState<'razorpay' | 'payglocal' | 'bank_transfer' | null>(null);
   const settled = payments.filter((p) => p.status === 'paid');
+
+  async function payBalancePayGlocal() {
+    setBusy(true);
+    setError('');
+    setPayMethod('payglocal');
+    await runPayGlocalCheckout({
+      orderId,
+      payAmount: null,
+      currency: payCurrency,
+      onStage: setStage,
+      onError: (message) => {
+        setStage(null);
+        setBusy(false);
+        setError(message);
+      },
+    });
+  }
 
   async function payBalanceOnline() {
     setBusy(true);
@@ -167,6 +186,21 @@ export function OrderBalancePanel({
               )}
               Pay online {money(amountDue)}
             </button>
+            {isPayGlocalUiEnabled() ? (
+              <button
+                type="button"
+                onClick={() => void payBalancePayGlocal()}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#C9A84C] bg-white px-4 py-2.5 text-xs font-semibold text-[#3d2b1f] transition hover:bg-[#C9A84C]/10 disabled:opacity-50"
+              >
+                {busy && payMethod === 'payglocal' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <PayGatewayMark kind="payglocal" className="h-3.5" />
+                )}
+                {money(amountDue)}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {

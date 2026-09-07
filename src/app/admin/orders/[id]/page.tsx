@@ -1255,7 +1255,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                     </Field>
                   </div>
                   {o.razorpay_order_id ? (
-                    <Field label="Razorpay order">
+                    <Field label={String(o.razorpay_order_id).startsWith('PVG') ? 'PayGlocal txn' : 'Razorpay order'}>
                       <code className="block break-all font-mono text-[11px] text-stone-600">
                         {o.razorpay_order_id}
                       </code>

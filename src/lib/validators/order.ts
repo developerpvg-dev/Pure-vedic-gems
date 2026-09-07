@@ -166,7 +166,7 @@ export const OrderCreateSchema = z.object({
   reward_points_to_redeem: z.coerce.number().int().min(0).max(1000000).optional().default(0),
   checkout_consent: CheckoutConsentSchema,
   /** Longer inventory hold when customer will pay via bank transfer. */
-  payment_method: z.enum(['razorpay', 'bank_transfer']).optional().default('razorpay'),
+  payment_method: z.enum(['razorpay', 'payglocal', 'bank_transfer']).optional().default('razorpay'),
 });
 
 // ─── Payment Verification ───────────────────────────────────────────────────
@@ -189,6 +189,7 @@ export const PaymentCreateOrderSchema = z.object({
     .toUpperCase()
     .regex(/^[A-Z]{3}$/)
     .optional(),
+  gateway: z.enum(['razorpay', 'payglocal']).optional().default('razorpay'),
 });
 
 // ─── Type exports ───────────────────────────────────────────────────────────

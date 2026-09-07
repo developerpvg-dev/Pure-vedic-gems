@@ -9,6 +9,8 @@ import { yagyaBookingCreateOrderSchema } from '@/lib/validators/yagya';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { setBookingTokenCookie } from '@/lib/security/booking-token';
 import { formatChargedMoney } from '@/lib/currency/format-charged';
+import { isPayGlocalConfigured, newMerchantTxnId } from '@/lib/payglocal/config';
+import { initiatePayGlocalPayment } from '@/lib/payglocal/client';
 
 interface RazorpayOrderResult {
   id: string;
@@ -129,6 +131,72 @@ export async function POST(request: NextRequest) {
   if (insertError || !booking) {
     console.error('[Yagya payment] Insert failed:', insertError);
     return NextResponse.json({ error: 'Failed to create yagya booking' }, { status: 500 });
+  }
+
+  if (parsed.data.gateway === 'payglocal') {
+    if (!isPayGlocalConfigured()) {
+      await admin
+        .from('yagya_bookings')
+        .update({ payment_status: 'failed', payment_failure_reason: 'PayGlocal is not configured' })
+        .eq('id', booking.id);
+      return NextResponse.json(
+        { error: 'PayGlocal is not configured yet. Please use Razorpay or add the PayGlocal keys.' },
+        { status: 503 },
+      );
+    }
+
+    const merchantTxnId = newMerchantTxnId('yagya');
+    let initiated;
+    try {
+      initiated = await initiatePayGlocalPayment({
+        merchantTxnId,
+        amountMajor: gateway.major,
+        currency: gateway.currency,
+        payer: {
+          fullName: parsed.data.full_name,
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+        },
+      });
+    } catch (error) {
+      console.error('[Yagya payment] PayGlocal initiate failed:', error);
+      await admin
+        .from('yagya_bookings')
+        .update({ payment_status: 'failed', payment_failure_reason: 'PayGlocal initiate failed' })
+        .eq('id', booking.id);
+      return NextResponse.json(
+        { error: 'PayGlocal could not start the payment. Please try Razorpay.' },
+        { status: 502 },
+      );
+    }
+
+    await admin
+      .from('yagya_bookings')
+      .update({
+        razorpay_order_id: merchantTxnId,
+        razorpay_payment_id: initiated.gid,
+        payment_method: 'payglocal',
+        payment_attempts: 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', booking.id);
+
+    const payGlocalResponse = NextResponse.json({
+      booking_id: booking.id,
+      gateway: 'payglocal',
+      redirect_url: initiated.redirectUrl,
+      merchant_txn_id: merchantTxnId,
+      amount: amountMinor,
+      currency: gateway.currency,
+      yagya_title: yagya.name,
+      customer: {
+        name: parsed.data.full_name,
+        email: parsed.data.email,
+        contact: parsed.data.phone,
+      },
+    });
+    setBookingTokenCookie(payGlocalResponse, 'yagya', booking.id);
+    return payGlocalResponse;
   }
 
   let razorpayOrder: RazorpayOrderResult;

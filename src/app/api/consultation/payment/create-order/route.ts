@@ -17,6 +17,8 @@ import { finalizeFreeRs101Consultation } from '@/lib/consultation/finalize-free-
 import { isTurnstileProductionHost } from '@/lib/enquiry/turnstile-host';
 import { turnstileConfigured, verifyTurnstileToken } from '@/lib/enquiry/verify-turnstile';
 import type { Consultation, ConsultationPlan } from '@/lib/types/database';
+import { isPayGlocalConfigured, newMerchantTxnId } from '@/lib/payglocal/config';
+import { initiatePayGlocalPayment } from '@/lib/payglocal/client';
 
 interface RazorpayOrderResult {
   id: string;
@@ -263,6 +265,76 @@ export async function POST(request: NextRequest) {
     });
   } catch (leadErr) {
     console.error('[Consultation payment] Pending lead create failed:', leadErr);
+  }
+
+  if (parsed.data.gateway === 'payglocal') {
+    if (!isPayGlocalConfigured()) {
+      await admin
+        .from('consultations')
+        .update({ payment_status: 'failed', payment_failure_reason: 'PayGlocal is not configured' })
+        .eq('id', booking.id);
+      return NextResponse.json(
+        { error: 'PayGlocal is not configured yet. Please use Razorpay or add the PayGlocal keys.' },
+        { status: 503 },
+      );
+    }
+
+    const merchantTxnId = newMerchantTxnId('consultation');
+    let initiated;
+    try {
+      initiated = await initiatePayGlocalPayment({
+        merchantTxnId,
+        amountMajor: gateway.major,
+        currency: gateway.currency,
+        payer: {
+          fullName: parsed.data.full_name,
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+          country: parsed.data.customer_country,
+          city: parsed.data.customer_city,
+          state: parsed.data.customer_state,
+        },
+      });
+    } catch (error) {
+      console.error('[Consultation payment] PayGlocal initiate failed:', error);
+      await admin
+        .from('consultations')
+        .update({ payment_status: 'failed', payment_failure_reason: 'PayGlocal initiate failed' })
+        .eq('id', booking.id);
+      return NextResponse.json(
+        { error: 'PayGlocal could not start the payment. Please try Razorpay.' },
+        { status: 502 },
+      );
+    }
+
+    await admin
+      .from('consultations')
+      .update({
+        razorpay_order_id: merchantTxnId,
+        razorpay_payment_id: initiated.gid,
+        payment_method: 'payglocal',
+        payment_attempts: 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', booking.id);
+
+    const payGlocalResponse = NextResponse.json({
+      consultation_id: booking.id,
+      enquiry_id: enquiryId,
+      gateway: 'payglocal',
+      redirect_url: initiated.redirectUrl,
+      merchant_txn_id: merchantTxnId,
+      amount: amountMinor,
+      currency: gateway.currency,
+      plan_title: planTitle,
+      customer: {
+        name: parsed.data.full_name,
+        email: parsed.data.email,
+        contact: parsed.data.phone,
+      },
+    });
+    setBookingTokenCookie(payGlocalResponse, 'consultation', booking.id);
+    return payGlocalResponse;
   }
 
   let razorpayOrder: RazorpayOrderResult;

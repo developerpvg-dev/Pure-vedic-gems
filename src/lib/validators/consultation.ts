@@ -177,6 +177,7 @@ export const consultationBookingCreateOrderSchema = z
       .toUpperCase()
       .regex(/^[A-Z]{3}$/)
       .optional(),
+    gateway: z.enum(['razorpay', 'payglocal']).optional().default('razorpay'),
   })
   .superRefine((value, ctx) => {
     // Location required for CRM lead cards (homepage ₹101 + detailed consultation).

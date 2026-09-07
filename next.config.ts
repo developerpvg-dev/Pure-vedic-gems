@@ -88,7 +88,7 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "form-action 'self' https://www.facebook.com",
+  "form-action 'self' https://www.facebook.com https://*.payglocal.in https://api.uat.payglocal.in https://api.payglocal.in",
   [
     "script-src 'self' 'unsafe-inline'",
     isProduction ? '' : "'unsafe-eval'",

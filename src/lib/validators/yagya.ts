@@ -81,6 +81,7 @@ export const yagyaBookingCreateOrderSchema = z.object({
     .toUpperCase()
     .regex(/^[A-Z]{3}$/)
     .optional(),
+  gateway: z.enum(['razorpay', 'payglocal']).optional().default('razorpay'),
 });
 
 export type YagyaBookingCreateOrderInput = z.infer<typeof yagyaBookingCreateOrderSchema>;

@@ -125,11 +125,15 @@ export default async function AccountYagyasPage() {
 
               <div className="pvg-account-info-box mt-5 grid gap-3 text-xs sm:grid-cols-2">
                 <div>
-                  <span className="font-semibold text-[#2c0404]">Razorpay Order:</span>{' '}
+                  <span className="font-semibold text-[#2c0404]">
+                    {booking.payment_method === 'payglocal' ? 'PayGlocal order' : 'Razorpay Order'}:
+                  </span>{' '}
                   <span className="text-[#6b5b4e]">{booking.razorpay_order_id || '-'}</span>
                 </div>
                 <div>
-                  <span className="font-semibold text-[#2c0404]">Razorpay Payment:</span>{' '}
+                  <span className="font-semibold text-[#2c0404]">
+                    {booking.payment_method === 'payglocal' ? 'PayGlocal payment' : 'Razorpay Payment'}:
+                  </span>{' '}
                   <span className="text-[#6b5b4e]">{booking.razorpay_payment_id || '-'}</span>
                 </div>
               </div>

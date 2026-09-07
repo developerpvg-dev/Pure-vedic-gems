@@ -8,6 +8,9 @@ import type { Metadata } from 'next';
 import { OrderConfirmationClient } from './OrderConfirmationClient';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { resolveOrderChargeContext } from '@/lib/currency/format-charged';
+import { isPaidPaymentStatus } from '@/lib/constants/order-status';
+import { isPayGlocalMerchantTxnId } from '@/lib/payglocal/config';
+import { reconcilePayGlocalPayment } from '@/lib/payglocal/reconcile';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,13 +62,30 @@ export default async function OrderConfirmationPage({ params }: Props) {
   const { data: order, error } = await adminDb
     .from('orders')
     .select(
-      'id, order_number, items, subtotal, jewelry_charges, metal_charges, certification_charges, energization_charges, shipping_cost, discount, coupon_discount, coupon_code, reward_discount, reward_points_redeemed, gst_amount, tax_breakdown, total, amount_paid, amount_due, shipping_address, payment_status, payment_method, payment_review_reason, compliance_flags, status, guest_name, guest_email, customer_id, guest_access_token, created_at',
+      'id, order_number, items, subtotal, jewelry_charges, metal_charges, certification_charges, energization_charges, shipping_cost, discount, coupon_discount, coupon_code, reward_discount, reward_points_redeemed, gst_amount, tax_breakdown, total, amount_paid, amount_due, shipping_address, payment_status, payment_method, payment_review_reason, compliance_flags, status, guest_name, guest_email, customer_id, guest_access_token, created_at, razorpay_order_id',
     )
     .eq('id', orderId)
     .single();
 
   if (error || !order) {
     notFound();
+  }
+
+  const payGlocalTxn = (order as { razorpay_order_id?: string | null }).razorpay_order_id;
+  if (
+    isPayGlocalMerchantTxnId(payGlocalTxn) &&
+    !isPaidPaymentStatus(order.payment_status) &&
+    order.payment_status !== 'amount_mismatch'
+  ) {
+    await reconcilePayGlocalPayment(payGlocalTxn, 'webhook');
+    const { data: settled } = await adminDb
+      .from('orders')
+      .select(
+        'id, order_number, items, subtotal, jewelry_charges, metal_charges, certification_charges, energization_charges, shipping_cost, discount, coupon_discount, coupon_code, reward_discount, reward_points_redeemed, gst_amount, tax_breakdown, total, amount_paid, amount_due, shipping_address, payment_status, payment_method, payment_review_reason, compliance_flags, status, guest_name, guest_email, customer_id, guest_access_token, created_at, razorpay_order_id',
+      )
+      .eq('id', orderId)
+      .single();
+    if (settled) Object.assign(order, settled);
   }
 
   const { data: paymentRows } = await asUntypedSupabase(adminDb)

@@ -21,6 +21,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useCurrency } from '@/lib/hooks/useCurrency';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { formatPrice } from '@/lib/utils/format';
+import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
+import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 
 export interface YagyaBuyData {
   id: string;
@@ -39,10 +41,11 @@ interface RazorpayResponse {
 
 interface CreateOrderResponse {
   booking_id: string;
-  razorpay_order_id: string;
+  razorpay_order_id?: string;
+  redirect_url?: string;
   amount: number;
   currency: string;
-  key_id: string;
+  key_id?: string;
   yagya_title: string;
   customer: { name: string; email: string; contact: string };
 }
@@ -106,6 +109,7 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
+  const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
   const [success, setSuccess] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
@@ -141,7 +145,7 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
   }
 
   function buildBody() {
-    const body: Record<string, string> = { yagya_id: yagya.id, currency };
+    const body: Record<string, string> = { yagya_id: yagya.id, currency, gateway: payGateway };
     for (const [key, value] of Object.entries(form)) {
       const trimmed = value.trim();
       if (trimmed) body[key] = trimmed;
@@ -189,7 +193,11 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
       }
 
       const payment = createData as CreateOrderResponse;
-      if (!payment.key_id) {
+      if (payment.redirect_url) {
+        window.location.assign(payment.redirect_url);
+        return;
+      }
+      if (!payment.key_id || !payment.razorpay_order_id) {
         setErrors({ _form: 'Payment gateway key is not configured.' });
         setPaying(false);
         return;
@@ -307,6 +315,33 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
 
         {errors._form && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{errors._form}</p>}
 
+        {isPayGlocalUiEnabled() ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setPayGateway('razorpay')}
+              className={`flex items-center justify-center rounded-lg border px-2 py-2 ${
+                payGateway === 'razorpay'
+                  ? 'border-[#C9A84C] bg-[#C9A84C]/10'
+                  : 'border-slate-200'
+              }`}
+            >
+              <PayGatewayMark kind="razorpay" className="h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPayGateway('payglocal')}
+              className={`flex items-center justify-center rounded-lg border px-2 py-2 ${
+                payGateway === 'payglocal'
+                  ? 'border-[#C9A84C] bg-[#C9A84C]/10'
+                  : 'border-slate-200'
+              }`}
+            >
+              <PayGatewayMark kind="payglocal" className="h-4" />
+            </button>
+          </div>
+        ) : null}
+
         <button
           type="button"
           disabled={paying || yagya.price <= 0}
@@ -318,7 +353,9 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
         </button>
 
         <p className="mt-3 text-[10px] leading-5 text-slate-400">
-          Processed securely by Razorpay. Final samagri and pandit dakshina are coordinated after booking.
+          {payGateway === 'payglocal'
+            ? 'Processed securely by PayGlocal. Final samagri and pandit dakshina are coordinated after booking.'
+            : 'Processed securely by Razorpay. Final samagri and pandit dakshina are coordinated after booking.'}
         </p>
       </aside>
     </div>

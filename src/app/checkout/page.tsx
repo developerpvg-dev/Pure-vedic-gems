@@ -380,6 +380,7 @@ export default function CheckoutPage() {
                   setIsProcessing={setIsProcessing}
                   onOrderCreated={setOrderId}
                   onPaymentSuccess={handlePaymentSuccess}
+                  onGatewayRedirect={() => clearCart()}
                 />
               </>
             ) : null}

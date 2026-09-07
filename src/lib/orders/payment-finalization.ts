@@ -51,6 +51,7 @@ export interface PaymentEventInput {
   expectedPaise?: number | null;
   status?: string;
   payload?: Json;
+  provider?: 'razorpay' | 'payglocal';
 }
 
 function orderItems(order: Order): OrderItemSnapshot[] {
@@ -71,10 +72,11 @@ function emailHash(email: string | null) {
 
 export async function upsertPaymentEvent(input: PaymentEventInput) {
   const supabase = createAdminClient();
+  const provider = input.provider ?? 'razorpay';
   const { data: existing } = await supabase
     .from('payment_events')
     .select('*')
-    .eq('provider', 'razorpay')
+    .eq('provider', provider)
     .eq('event_id', input.eventId)
     .maybeSingle();
 
@@ -86,7 +88,7 @@ export async function upsertPaymentEvent(input: PaymentEventInput) {
   const { data, error } = await supabase
     .from('payment_events')
     .insert({
-      provider: 'razorpay',
+      provider,
       event_id: input.eventId,
       event_type: input.eventType,
       order_id: input.orderId ?? null,
@@ -105,7 +107,7 @@ export async function upsertPaymentEvent(input: PaymentEventInput) {
     const { data: raced } = await supabase
       .from('payment_events')
       .select('*')
-      .eq('provider', 'razorpay')
+      .eq('provider', provider)
       .eq('event_id', input.eventId)
       .single();
     if (raced) {

@@ -232,7 +232,7 @@ export async function reconcileUnfinalizedConsultationPayments(admin: Admin) {
     (rows ?? []).map(async (row) => {
       const consultation = row as Consultation;
       const orderId = consultation.razorpay_order_id;
-      if (!orderId) return { consultation, facts: null };
+      if (!orderId || orderId.startsWith('PVG')) return { consultation, facts: null };
       try {
         return { consultation, facts: await findCapturedPaymentOnOrder(orderId) };
       } catch (error) {
