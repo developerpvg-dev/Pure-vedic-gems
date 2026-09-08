@@ -92,27 +92,79 @@ const CATEGORY_LABELS = Object.fromEntries(CANONICAL_CATEGORY_OPTIONS.map((optio
 const PRODUCT_TYPE_LABELS = Object.fromEntries(PRODUCT_TYPE_OPTIONS.map((option) => [option.value, option.label]));
 const AVAILABILITY_LABELS = Object.fromEntries(AVAILABILITY_STATUS_OPTIONS.map((option) => [option.value, option.label]));
 
-const PRICE_RANGE_PRESETS = [
-  { label: 'Under ₹25,000', value: '0-25000', min: 0, max: 25000 },
-  { label: '₹25,000 - ₹1,00,000', value: '25000-100000', min: 25000, max: 100000 },
-  { label: '₹1,00,000 - ₹5,00,000', value: '100000-500000', min: 100000, max: 500000 },
-  { label: '₹5,00,000+', value: '500000-', min: 500000, max: null },
-];
+type RangePreset = { label: string; value: string; min: number; max: number | null };
 
-const CARAT_RANGE_PRESETS = [
+const CARAT_RANGE_PRESETS: RangePreset[] = [
   { label: 'Under 2 ct', value: '0-2', min: 0, max: 2 },
   { label: '2 - 5 ct', value: '2-5', min: 2, max: 5 },
   { label: '5 - 10 ct', value: '5-10', min: 5, max: 10 },
   { label: '10 ct+', value: '10-', min: 10, max: null },
 ];
 
-const RATTI_RANGE_PRESETS = [
+const RATTI_RANGE_PRESETS: RangePreset[] = [
   { label: 'Under 3 ratti', value: '0-3', min: 0, max: 3 },
   { label: '3 - 5 ratti', value: '3-5', min: 3, max: 5 },
   { label: '5 - 7 ratti', value: '5-7', min: 5, max: 7 },
   { label: '7 - 10 ratti', value: '7-10', min: 7, max: 10 },
   { label: '10 ratti+', value: '10-', min: 10, max: null },
 ];
+
+function formatInr(n: number) {
+  return `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+
+function nicePriceStep(span: number): number {
+  if (span <= 5_000) return 1_000;
+  if (span <= 25_000) return 5_000;
+  if (span <= 100_000) return 10_000;
+  if (span <= 500_000) return 50_000;
+  if (span <= 2_000_000) return 100_000;
+  if (span <= 10_000_000) return 500_000;
+  return 1_000_000;
+}
+
+/** Build 2–5 price buckets from the scoped catalog min/max (category-aware). */
+export function buildDynamicPriceRangePresets(values: number[]): RangePreset[] {
+  if (values.length === 0) return [];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  if (!(max > min)) {
+    const hi = Math.ceil(max);
+    return [{ label: `Up to ${formatInr(hi)}`, value: `0-${hi}`, min: 0, max: hi }];
+  }
+
+  // ponytail: equal nice-INR steps from min/max; percentile buckets if one step eats most SKUs
+  let step = nicePriceStep(max - min);
+  let start = Math.floor(min / step) * step;
+  let end = Math.ceil(max / step) * step;
+  let bucketCount = Math.max(1, Math.round((end - start) / step));
+  while (bucketCount > 5) {
+    step *= 2;
+    start = Math.floor(min / step) * step;
+    end = Math.ceil(max / step) * step;
+    bucketCount = Math.max(1, Math.round((end - start) / step));
+  }
+
+  const presets: RangePreset[] = [];
+  for (let i = 0; i < bucketCount; i++) {
+    const lo = start + i * step;
+    const hi = lo + step;
+    const isLast = i === bucketCount - 1;
+    if (isLast) {
+      presets.push({ label: `${formatInr(lo)}+`, value: `${lo}-`, min: lo, max: null });
+    } else if (lo === 0) {
+      presets.push({ label: `Under ${formatInr(hi)}`, value: `0-${hi}`, min: 0, max: hi });
+    } else {
+      presets.push({
+        label: `${formatInr(lo)} - ${formatInr(hi)}`,
+        value: `${lo}-${hi}`,
+        min: lo,
+        max: hi,
+      });
+    }
+  }
+  return presets;
+}
 
 function titleize(value: string) {
   return value
@@ -153,7 +205,9 @@ function collectOriginOptions(rows: FacetRow[]) {
 function rangeOptions(
   rows: FacetRow[],
   key: 'price' | 'carat_weight' | 'ratti_weight',
-  ranges: typeof PRICE_RANGE_PRESETS,
+  ranges: RangePreset[],
+  /** Half-open [min, max) so adjacent buckets don't double-count the boundary. */
+  exclusiveUpper = false,
 ) {
   const values = rows
     .map((row) => row[key])
@@ -163,10 +217,22 @@ function rangeOptions(
 
   return ranges
     .map((range) => {
-      const count = values.filter((value) => value >= range.min && (range.max == null || value <= range.max)).length;
+      const count = values.filter((value) => {
+        if (value < range.min) return false;
+        if (range.max == null) return true;
+        return exclusiveUpper ? value < range.max : value <= range.max;
+      }).length;
       return { value: range.value, label: range.label, count };
     })
     .filter((option) => option.count > 0);
+}
+
+function priceRangeOptions(rows: FacetRow[]) {
+  const values = rows
+    .map((row) => row.price)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
+  if (values.length < 2) return [];
+  return rangeOptions(rows, 'price', buildDynamicPriceRangePresets(values), true);
 }
 
 function configuratorOptions(rows: FacetRow[]) {
@@ -267,7 +333,7 @@ export async function getShopFilterOptions(
     subcategories: scope.subCategory ? [] : collectOptions(rows, 'sub_category'),
     productTypes: collectOptions(rows, 'product_type', PRODUCT_TYPE_LABELS),
     availabilityStatuses: collectOptions(rows, 'availability_status', AVAILABILITY_LABELS),
-    priceRanges: rangeOptions(rows, 'price', PRICE_RANGE_PRESETS),
+    priceRanges: priceRangeOptions(rows),
     caratRanges: rangeOptions(rows, 'carat_weight', CARAT_RANGE_PRESETS),
     rattiRanges: rangeOptions(rows, 'ratti_weight', RATTI_RANGE_PRESETS),
     origins: collectOriginOptions(rows),

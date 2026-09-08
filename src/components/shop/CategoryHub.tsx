@@ -104,9 +104,8 @@ function CategoryHubNav({
             <button
               type="button"
               onClick={() => onSelectTab('faqs')}
-              aria-expanded={activeTab === 'faqs'}
               aria-controls="faqs"
-              className={`category-hub-nav__link ${activeTab === 'faqs' ? 'category-hub-nav__link--active' : ''}`}
+              className="category-hub-nav__link"
             >
               {TAB_LABELS.faqs}
             </button>
@@ -152,6 +151,11 @@ export function CategoryHubHeader({
   const [activeTab, setActiveTab] = useState<ShopCategorySectionKey | null>(null);
 
   const selectTab = (id: ShopCategorySectionKey) => {
+    if (id === 'faqs') {
+      setActiveTab(null);
+      document.getElementById('faqs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     setActiveTab((current) => (current === id ? null : id));
   };
 
@@ -165,9 +169,9 @@ export function CategoryHubHeader({
               {secondary ? <span className="category-hub-hero__title-secondary">{secondary}</span> : null}
             </h1>
 
-            <span className="category-hub-hero__rule" aria-hidden />
+            {heroIntro ? <p className="category-hub-hero__intro">{heroIntro}</p> : null}
 
-            <p className="category-hub-hero__intro">{heroIntro}</p>
+            <span className="category-hub-hero__rule" aria-hidden />
 
             {heroBenefits.length > 0 ? (
               <div className="category-hub-hero__benefits-wrap">
@@ -209,7 +213,7 @@ export function CategoryHubHeader({
           />
         ) : null}
 
-        {availableSections.length > 0 || hasFaqs ? (
+        {availableSections.length > 0 ? (
           <div className="category-hub-panels">
             {availableSections.map((section) => (
               <div
@@ -229,28 +233,6 @@ export function CategoryHubHeader({
                 />
               </div>
             ))}
-
-            {hasFaqs ? (
-              <div
-                id="faqs"
-                role="region"
-                aria-label="FAQs"
-                hidden={activeTab !== 'faqs'}
-                className="category-hub-panel"
-              >
-                <h2 className="category-hub-panel__title">{TAB_LABELS.faqs}</h2>
-                <div className="category-hub-faq-list">
-                  {faqs.map((faq) => (
-                    <details key={faq.question} className="category-hub-faq-item">
-                      <summary className="category-hub-faq-question">
-                        <h3>{faq.question}</h3>
-                      </summary>
-                      <p className="category-hub-faq-answer">{faq.answer}</p>
-                    </details>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
         ) : null}
       </header>

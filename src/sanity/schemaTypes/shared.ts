@@ -5,14 +5,12 @@ export const seoFields = [
     name: 'seoTitle',
     title: 'SEO Title',
     type: 'string',
-    validation: (rule) => rule.max(70),
   }),
   defineField({
     name: 'seoDescription',
     title: 'SEO Description',
     type: 'text',
     rows: 3,
-    validation: (rule) => rule.max(160),
   }),
   defineField({
     name: 'ogImage',
@@ -83,5 +81,10 @@ export const richTextBlocks = [
     name: 'imageBlock',
     title: 'Image',
     ...imageWithAlt,
+  }),
+  defineArrayMember({
+    name: 'table',
+    title: 'Table',
+    type: 'table',
   }),
 ];

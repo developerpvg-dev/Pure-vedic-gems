@@ -80,14 +80,14 @@
 }
 
 .category-hub-hero__intro {
-  margin-top: 0.35rem;
+  margin-top: 0.4rem;
   max-width: none;
   margin-inline: 0;
-  font-size: 0.7rem;
-  line-height: 1.4;
-  color: var(--pvg-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--pvg-text);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -228,8 +228,9 @@
   .category-hub-hero__intro {
     margin-top: 0.7rem;
     max-width: 30rem;
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
     line-height: 1.5;
+    color: var(--pvg-text);
     display: block;
     -webkit-line-clamp: unset;
     overflow: visible;
@@ -631,6 +632,20 @@
 }
 
 /* FAQ list within the FAQs panel */
+.category-hub-faq-section {
+  margin: 2.5rem 0 1rem;
+  padding: 0 0 1rem;
+}
+
+.category-hub-faq-section__title {
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--pvg-primary);
+  margin: 0 0 1rem;
+  line-height: 1.25;
+}
+
 .category-hub-faq-list {
   border: 1px solid var(--pvg-border);
   border-radius: var(--radius-md, 0.5rem);
@@ -686,6 +701,23 @@
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--pvg-border);
+}
+
+@media (max-width: 767px) {
+  .category-hub-collection {
+    margin-top: 1rem;
+  }
+
+  .category-hub-collection__head {
+    gap: 0.25rem;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .category-hub-collection__meta {
+    margin-top: 0.15rem;
+  }
 }
 
 /* Clears the fixed call/WhatsApp rail pinned to the viewport edge so the

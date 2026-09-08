@@ -1607,6 +1607,38 @@
   color: #6b5b4e;
 }
 
+.prose-pvg-table-wrap {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose-pvg table {
+  width: 100%;
+  min-width: 28rem;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.prose-pvg th,
+.prose-pvg td {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #e4d9c4;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose-pvg th {
+  background: #f7f1e4;
+  font-weight: 700;
+  color: #3a2f24;
+}
+
+.prose-pvg tbody tr:nth-child(even) td {
+  background: #fcfaf5;
+}
+
 .pvg-blog-pagination {
   display: flex;
   flex-wrap: wrap;

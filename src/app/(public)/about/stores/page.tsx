@@ -101,7 +101,8 @@ export default function StoresPage() {
           {stores.map((store) => (
             <article
               key={store.id}
-              className="overflow-hidden rounded-xl border border-[#ede6d5] bg-white shadow-[0_10px_32px_rgba(44,4,4,0.06)]"
+              id={store.id}
+              className="scroll-mt-28 overflow-hidden rounded-xl border border-[#ede6d5] bg-white shadow-[0_10px_32px_rgba(44,4,4,0.06)]"
             >
               {store.image ? (
                 <div className="relative aspect-[4/3] bg-[#faf8f4]">

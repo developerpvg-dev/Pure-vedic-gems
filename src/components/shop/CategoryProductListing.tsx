@@ -4,7 +4,9 @@ import { getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyExclusiveGemsShelfFilter, isExclusiveGemsShelf } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
-import { ProductGrid } from '@/components/shop/ProductGrid';
+import { ProductCatalog } from '@/components/shop/ProductCatalog';
+import { BackToTopButton } from '@/components/shop/BackToTopButton';
+import { ShopCollectionCta } from '@/components/shop/ShopCollectionCta';
 import { ShopPagination } from '@/components/shop/ShopPagination';
 import type { ResolvedShopCategory } from '@/lib/categories/shop';
 import type { ProductCard } from '@/lib/types/product';
@@ -95,10 +97,12 @@ export async function CategoryProductListing({
         showCategoryFilter={!meta.category}
         showSubcategoryFilter={Boolean(meta.category && !meta.sub_category && !meta.seoLanding)}
       />
-      <div className="mt-6">
-        <ProductGrid products={products} />
+      <div className="mt-2 md:mt-4">
+        <ProductCatalog products={products} />
       </div>
       <ShopPagination page={filters.page} totalPages={totalPages} searchParams={searchParams} basePath={basePath} />
+      <ShopCollectionCta categorySlug={meta.sub_category ?? meta.category} />
+      <BackToTopButton />
     </>
   );
 }

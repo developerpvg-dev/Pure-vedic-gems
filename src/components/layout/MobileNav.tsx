@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { findStorefrontGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
-import { BLOG_CATEGORY_LINKS } from '@/lib/constants/nav-items';
+import { BLOG_CATEGORY_LINKS, type BlogCategoryNavLink } from '@/lib/constants/nav-items';
 import { useStorefrontCategories } from '@/lib/hooks/useStorefrontCategories';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CurrencySelector } from './CurrencySelector';
@@ -13,6 +13,7 @@ import { CurrencySelector } from './CurrencySelector';
 interface MobileNavProps {
   open: boolean;
   onClose: () => void;
+  blogCategoryLinks?: readonly BlogCategoryNavLink[];
 }
 
 const KNOWLEDGE_LINKS = [
@@ -89,7 +90,7 @@ function AccordionTrigger({ label, isOpen, onToggle }: { label: string; isOpen: 
   );
 }
 
-export function MobileNav({ open, onClose }: MobileNavProps) {
+export function MobileNav({ open, onClose, blogCategoryLinks = BLOG_CATEGORY_LINKS }: MobileNavProps) {
   const [expanded, setExpanded] = useState<'gemstones' | 'rudraksha' | 'knowledge' | 'blog' | null>(null);
   const categoryGroups = useStorefrontCategories();
   const { user } = useAuth();
@@ -312,7 +313,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             <AccordionTrigger label="Blog" isOpen={expanded === 'blog'} onToggle={() => toggle('blog')} />
             {expanded === 'blog' && (
               <div style={{ padding: '0 20px 12px' }}>
-                {BLOG_CATEGORY_LINKS.map((link) => (
+                {blogCategoryLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

@@ -5,7 +5,7 @@ import '@/app/shop-filter-bar.css';
 import { FormEvent, useCallback, useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, ChevronRight, LayoutGrid, List, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -434,6 +434,7 @@ export function FilterBar({
   const { get, updateParam, clearAll } = useFilters();
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [desktopSheetOpen, setDesktopSheetOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
   const [searchText, setSearchText] = useState(get('q'));
 
   useEffect(() => {
@@ -536,31 +537,55 @@ export function FilterBar({
     return count;
   }, [getFilterValue, sheetDefinitions]);
 
+  const viewMode = get('view') === 'list' ? 'list' : 'grid';
+
   const inlineSearch = (
-    <form onSubmit={submitSearch} className="shop-filter-bar__search">
-      <input
-        value={searchText}
-        onChange={(event) => setSearchText(event.target.value)}
-        placeholder="Search name, SKU, 5.76ct, tag..."
-        aria-label="Search products"
-      />
-      {searchText ? (
+    <div className="shop-filter-bar__search-row">
+      <form onSubmit={submitSearch} className="shop-filter-bar__search">
+        <input
+          value={searchText}
+          onChange={(event) => setSearchText(event.target.value)}
+          placeholder="Search name, SKU, 5.76ct, tag..."
+          aria-label="Search products"
+        />
+        {searchText ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchText('');
+              updateParam({ q: '' });
+            }}
+            className="shop-filter-bar__search-clear"
+            aria-label="Clear search"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+        <button type="submit" className="shop-filter-bar__search-submit" aria-label="Search">
+          <Search className="shop-filter-bar__search-icon" aria-hidden />
+        </button>
+      </form>
+      <div className="shop-filter-bar__view" role="group" aria-label="Product layout">
         <button
           type="button"
-          onClick={() => {
-            setSearchText('');
-            updateParam({ q: '' });
-          }}
-          className="shop-filter-bar__search-clear"
-          aria-label="Clear search"
+          aria-label="Grid view"
+          aria-pressed={viewMode === 'grid'}
+          onClick={() => updateParam({ view: '' })}
+          className={`shop-filter-bar__view-btn${viewMode === 'grid' ? ' is-active' : ''}`}
         >
-          <X className="h-3.5 w-3.5" />
+          <LayoutGrid className="h-4 w-4" aria-hidden />
         </button>
-      ) : null}
-      <button type="submit" className="shop-filter-bar__search-submit" aria-label="Search">
-        <Search className="shop-filter-bar__search-icon" aria-hidden />
-      </button>
-    </form>
+        <button
+          type="button"
+          aria-label="List view"
+          aria-pressed={viewMode === 'list'}
+          onClick={() => updateParam({ view: 'list' })}
+          className={`shop-filter-bar__view-btn${viewMode === 'list' ? ' is-active' : ''}`}
+        >
+          <List className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+    </div>
   );
 
   const filterFields = (items: FilterDefinition[]) => (
@@ -580,26 +605,6 @@ export function FilterBar({
     </div>
   );
 
-  const sortField = (
-    <div>
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-brand-muted">Sort by</p>
-      <select
-        value={sortValue}
-        onChange={(event) => {
-          const selectedSort = event.target.value || 'catalog-asc';
-          const [sortBy, sortOrder] = selectedSort.split('-');
-          updateParam({ sort: selectedSort, sort_by: sortBy ?? 'catalog', sort_order: sortOrder ?? 'asc' });
-        }}
-        aria-label="Sort products"
-        className="shop-filter-panel-select__input"
-      >
-        {SORT_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-    </div>
-  );
-
   const filterSheetContent = (items: FilterDefinition[], includeBrowse = false) => (
     <>
       {includeBrowse ? (
@@ -610,7 +615,6 @@ export function FilterBar({
         </div>
       ) : null}
       {filterFields(items)}
-      <div className="mt-4 lg:hidden">{sortField}</div>
     </>
   );
 
@@ -639,7 +643,7 @@ export function FilterBar({
         </>
       )}
     >
-      {filterSheetContent(visibleDefinitions, true)}
+      {filterSheetContent(visibleDefinitions, showCategoryFilter)}
     </FilterSheetPanel>
   );
 
@@ -661,26 +665,12 @@ export function FilterBar({
   );
 
   return (
-    <div className="shop-filter-bar space-y-2">
+    <div className="shop-filter-bar">
       <div className="shop-filter-bar__grid">
         {inlineSearch}
 
         <div className="shop-filter-bar__controls">
           <div className="shop-filter-bar__actions">
-          <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
-            <SheetTrigger
-              className="shop-filter-more-btn shop-filter-bar__sheet-btn shop-filter-bar__sheet-btn--mobile relative"
-              aria-label="Open filters"
-            >
-              <SlidersHorizontal className="shop-filter-more-btn__icon" aria-hidden />
-              <span className="shop-filter-more-btn__label">Filters</span>
-              {filterOnlyCount > 0 ? (
-                <span className="shop-filter-bar__icon-btn-badge">{filterOnlyCount}</span>
-              ) : null}
-            </SheetTrigger>
-            {mobileFilterSheet}
-          </Sheet>
-
           <Sheet open={desktopSheetOpen} onOpenChange={setDesktopSheetOpen}>
             <SheetTrigger
               className="shop-filter-more-btn shop-filter-bar__sheet-btn shop-filter-bar__sheet-btn--desktop relative"
@@ -741,6 +731,68 @@ export function FilterBar({
         getValue={readFilterValue}
         onClear={clearFilter}
       />
+
+      {/* Phone + tablet sticky Filter / Sort dock */}
+      <div className="shop-filter-mobile-dock" role="toolbar" aria-label="Filter and sort">
+        <button
+          type="button"
+          className="shop-filter-mobile-dock__btn"
+          onClick={() => setMobileSheetOpen(true)}
+        >
+          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          Filters
+          {filterOnlyCount > 0 ? (
+            <span className="shop-filter-mobile-dock__badge">{filterOnlyCount}</span>
+          ) : null}
+        </button>
+        <span className="shop-filter-mobile-dock__divider" aria-hidden />
+        <button
+          type="button"
+          className="shop-filter-mobile-dock__btn"
+          onClick={() => setSortSheetOpen(true)}
+        >
+          <ArrowUpDown className="h-4 w-4" aria-hidden />
+          Sort By
+        </button>
+      </div>
+
+      <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+        {mobileFilterSheet}
+      </Sheet>
+
+      <Sheet open={sortSheetOpen} onOpenChange={setSortSheetOpen}>
+        <SheetContent side="bottom" className="shop-filter-sheet max-h-[70vh] rounded-t-xl">
+          <SheetHeader>
+            <SheetTitle>Sort By</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-1 pb-6">
+            {SORT_OPTIONS.map((option) => {
+              const selected = option.value === sortValue;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    const [sortBy, sortOrder] = option.value.split('-');
+                    updateParam({
+                      sort: option.value,
+                      sort_by: sortBy ?? 'catalog',
+                      sort_order: sortOrder ?? 'asc',
+                    });
+                    setSortSheetOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-3 text-left text-[13px] ${
+                    selected ? 'bg-[#f7f1ea] font-semibold text-[#7A1515]' : 'text-[#1a1a1a]'
+                  }`}
+                >
+                  {option.label}
+                  {selected ? <span aria-hidden>✓</span> : null}
+                </button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

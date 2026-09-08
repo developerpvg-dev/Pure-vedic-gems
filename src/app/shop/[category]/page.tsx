@@ -18,7 +18,10 @@ import { emptyShopFilterOptions, getShopFilterOptions } from '@/lib/shop/filters
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { applyExclusiveGemsShelfFilter, applyQuoteOnlyListingFilter, isExclusiveGemsShelf } from '@/lib/shop/catalog-scope';
 import { FilterBar } from '@/components/shop/FilterBar';
-import { ProductGrid } from '@/components/shop/ProductGrid';
+import { ProductCatalog } from '@/components/shop/ProductCatalog';
+import { BackToTopButton } from '@/components/shop/BackToTopButton';
+import { ShopCollectionCta } from '@/components/shop/ShopCollectionCta';
+import { CategoryFaqSection } from '@/components/shop/CategoryFaqSection';
 import { ShopPagination } from '@/components/shop/ShopPagination';
 import { CategoryHubHeader } from '@/components/shop/CategoryHub';
 import { NavaratnaHomeSection, RudrakshaHomeSection, getHomeManagedCategories, getShopBrowseCategories } from '@/components/home/PvgManagedCategorySections';
@@ -126,6 +129,7 @@ async function CategoryProducts({
         meta?.category ?? filters.category,
         meta?.sub_category ?? filters.sub_category,
         filters.quality_label,
+        filters.price_mode,
       );
       query = applyShopProductFilters(query, filters);
 
@@ -218,7 +222,7 @@ async function CategoryProducts({
       <section id="collection" className="category-hub-collection scroll-mt-40">
         <div className="category-hub-collection__head">
           <div>
-            <h2 className="category-hub-collection__title">{displayLabel} Online Collection</h2>
+            <h2 className="category-hub-collection__title">{displayLabel} Collection</h2>
             <p className="category-hub-collection__meta">
               {total} certified products · Expert consultation available
             </p>
@@ -235,10 +239,12 @@ async function CategoryProducts({
           showCategoryFilter={!meta?.category}
           showSubcategoryFilter={false}
         />
-        <div className="mt-6">
-          <ProductGrid products={products} />
+        <div className="mt-2 md:mt-4">
+          <ProductCatalog products={products} />
         </div>
       </section>
+
+      <BackToTopButton />
 
       {meta?.seoLanding ? <SeoLandingFooter landing={meta.seoLanding} products={products} /> : null}
 
@@ -287,6 +293,8 @@ async function CategoryProducts({
       ) : null}
 
       <ShopPagination page={filters.page} totalPages={totalPages} searchParams={searchParams} basePath={basePath} />
+      <ShopCollectionCta categorySlug={categorySlug} />
+      {faqs.length > 0 ? <CategoryFaqSection faqs={faqs} /> : null}
     </>
   );
 }

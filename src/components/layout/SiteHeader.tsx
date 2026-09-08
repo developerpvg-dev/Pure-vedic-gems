@@ -8,6 +8,7 @@ import {
   HEADER_NAV_ITEMS,
   SERVICE_NAV_LINKS,
   BLOG_CATEGORY_LINKS,
+  type BlogCategoryNavLink,
 } from '@/lib/constants/nav-items';
 import { findStorefrontGroup, type StorefrontCategoryGroup, type StorefrontSubCategory } from '@/lib/categories/storefront';
 import { resolveCategoryNavImage } from '@/lib/constants/category-nav-images';
@@ -19,6 +20,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { MobileNav } from './MobileNav';
 import { CurrencySelector } from './CurrencySelector';
+import { StoreLocationSelector } from './StoreLocationSelector';
 
 type HeaderNavItem = (typeof HEADER_NAV_ITEMS)[number];
 
@@ -192,7 +194,15 @@ function SimpleLinkDropdown({ links }: { links: readonly { label: string; href: 
   );
 }
 
-function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; categoryGroups: StorefrontCategoryGroup[] }) {
+function DropdownContent({
+  item,
+  categoryGroups,
+  blogCategoryLinks,
+}: {
+  item: HeaderNavItem;
+  categoryGroups: StorefrontCategoryGroup[];
+  blogCategoryLinks: readonly BlogCategoryNavLink[];
+}) {
   const dropStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #DDD0B4',
@@ -259,8 +269,8 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
 
   if (item.dropdown === 'blog') {
     return (
-      <div style={{ ...dropStyle, minWidth: '230px', padding: '8px 0' }}>
-        <SimpleLinkDropdown links={BLOG_CATEGORY_LINKS} />
+      <div style={{ ...dropStyle, minWidth: '230px', maxHeight: '70vh', overflowY: 'auto', padding: '8px 0' }}>
+        <SimpleLinkDropdown links={blogCategoryLinks} />
       </div>
     );
   }
@@ -272,7 +282,15 @@ function DropdownContent({ item, categoryGroups }: { item: HeaderNavItem; catego
   );
 }
 
-function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categoryGroups: StorefrontCategoryGroup[] }) {
+function DesktopNavLink({
+  item,
+  categoryGroups,
+  blogCategoryLinks,
+}: {
+  item: HeaderNavItem;
+  categoryGroups: StorefrontCategoryGroup[];
+  blogCategoryLinks: readonly BlogCategoryNavLink[];
+}) {
   const hasDropdown = Boolean(item.dropdown);
   const isWide = item.dropdown === 'gemstones' || item.dropdown === 'collections';
   const pathname = usePathname();
@@ -337,7 +355,7 @@ function DesktopNavLink({ item, categoryGroups }: { item: HeaderNavItem; categor
             boxSizing: 'border-box',
           }}
         >
-          <DropdownContent item={item} categoryGroups={categoryGroups} />
+          <DropdownContent item={item} categoryGroups={categoryGroups} blogCategoryLinks={blogCategoryLinks} />
         </div>
       ) : null}
     </li>
@@ -403,7 +421,11 @@ function TopbarMarqueeItems() {
   );
 }
 
-export function SiteHeader() {
+export function SiteHeader({
+  blogCategoryLinks = BLOG_CATEGORY_LINKS,
+}: {
+  blogCategoryLinks?: readonly BlogCategoryNavLink[];
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -1205,7 +1227,12 @@ export function SiteHeader() {
             <div className="pvg-desk-nav-center">
               <ul style={{ display: 'flex', alignItems: 'center', listStyle: 'none', height: '74px', margin: 0, padding: 0 }}>
                 {HEADER_NAV_ITEMS.map((item) => (
-                  <DesktopNavLink key={item.label} item={item} categoryGroups={categoryGroups} />
+                  <DesktopNavLink
+                    key={item.label}
+                    item={item}
+                    categoryGroups={categoryGroups}
+                    blogCategoryLinks={blogCategoryLinks}
+                  />
                 ))}
               </ul>
             </div>
@@ -1231,6 +1258,7 @@ export function SiteHeader() {
                   </span>
                 </Link>
               </div>
+              <StoreLocationSelector variant="nav" />
               <div aria-hidden="true" className="pvg-action-divider" />
               <div className="pvg-account-shell">
                 <Suspense fallback={<span style={{ width: '64px', height: '40px', display: 'inline-flex' }} />}>
@@ -1280,6 +1308,7 @@ export function SiteHeader() {
                   </span>
                 ) : null}
               </Link>
+              <StoreLocationSelector variant="mobile" />
               <div aria-hidden="true" className="pvg-mob-action-divider" />
               <div className="pvg-mob-account-shell">
                 <Suspense fallback={<span style={{ width: '38px', height: '38px' }} />}>
@@ -1299,7 +1328,7 @@ export function SiteHeader() {
         </nav>
       </header>
 
-      <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} blogCategoryLinks={blogCategoryLinks} />
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );

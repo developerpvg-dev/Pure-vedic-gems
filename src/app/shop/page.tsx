@@ -5,8 +5,10 @@ import { productFiltersSchema } from '@/lib/validators/product';
 import { getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { FilterBar } from '@/components/shop/FilterBar';
-import { ProductGrid } from '@/components/shop/ProductGrid';
+import { ProductCatalog } from '@/components/shop/ProductCatalog';
+import { BackToTopButton } from '@/components/shop/BackToTopButton';
 import { ShopCategoryBrowse } from '@/components/shop/ShopCategoryBrowse';
+import { ShopCollectionCta } from '@/components/shop/ShopCollectionCta';
 import { ShopPagination } from '@/components/shop/ShopPagination';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import type { Metadata } from 'next';
@@ -88,7 +90,7 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
   const isSearch = Boolean(filters.q?.trim());
 
   return (
-    <section className="px-4 pb-16 sm:px-6 lg:px-10" aria-labelledby={isSearch ? undefined : 'shop-catalog-heading'}>
+    <section className="px-4 pb-24 sm:px-6 lg:px-10 lg:pb-16" aria-labelledby={isSearch ? undefined : 'shop-catalog-heading'}>
       <div className="mx-auto max-w-350">
         {!isSearch ? (
           <div className="section-head mb-8">
@@ -105,10 +107,12 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
           showCategoryFilter={isSearch}
           showSubcategoryFilter={isSearch}
         />
-        <div className="mt-6">
-          <ProductGrid products={products} />
+        <div className="mt-2 md:mt-4">
+          <ProductCatalog products={products} />
         </div>
         <ShopPagination page={page} totalPages={totalPages} searchParams={searchParams} basePath="/gemstones" />
+        <ShopCollectionCta />
+        <BackToTopButton />
       </div>
     </section>
   );
@@ -116,7 +120,7 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
 
 function ShopSkeleton() {
   return (
-    <section className="px-4 pb-16 sm:px-6 lg:px-10">
+    <section className="px-4 pb-24 sm:px-6 lg:px-10 lg:pb-16">
       <div className="mx-auto max-w-350 space-y-6">
         <div className="h-14 w-full animate-pulse rounded-xl bg-brand-border" />
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">

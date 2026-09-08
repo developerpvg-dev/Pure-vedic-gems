@@ -9,6 +9,8 @@ import { LayoutShell } from '@/components/layout/LayoutShell';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { MetaPixel } from '@/components/analytics/MetaPixel';
 import { JsonLd } from '@/components/seo/JsonLd';
+import { toBlogCategoryNavLinks } from '@/lib/constants/nav-items';
+import { getAllBlogCategories } from '@/lib/sanity/queries';
 import { organizationJsonLd, websiteJsonLd } from '@/lib/utils/seo';
 import './globals.css';
 
@@ -67,11 +69,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const blogCategories = await getAllBlogCategories();
+  const blogCategoryLinks = toBlogCategoryNavLinks(blogCategories);
+
   return (
     <html
       lang="en"
@@ -88,7 +93,7 @@ export default function RootLayout({
           <AuthProvider>
             <SavedItemsProvider>
               <CartProvider>
-                <LayoutShell>{children}</LayoutShell>
+                <LayoutShell blogCategoryLinks={blogCategoryLinks}>{children}</LayoutShell>
                 <Toaster richColors position="top-right" />
               </CartProvider>
             </SavedItemsProvider>

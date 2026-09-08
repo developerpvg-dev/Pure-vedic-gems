@@ -221,7 +221,7 @@ export function PvgReferenceSections({
                   className="about-stack-img"
                   src={toPublicAssetUrl(`${item.src}?v=${WHO_WE_ARE_IMG_VERSION}`)}
                   alt={item.alt}
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                 />
               </div>
@@ -987,32 +987,35 @@ export function PvgReferenceSections({
 
   <section className="remedy-section" id="our-legacy" aria-labelledby="remedy-heading">
     <div className="container">
+      <div className="section-head">
+        <h2 className="section-title" id="remedy-heading">87 Years of Vedic Remedies</h2>
+        <p className="navratna-subtitle">
+          Four generations of expertise in sourcing, certifying, and energizing Vedic remedies for a global clientele.
+        </p>
+        <div className="section-rule-center" />
+      </div>
+
       <div className="remedy-shell">
         <HeritageLegacyMedia />
 
-        <div className="remedy-content">
-          <h2 id="remedy-heading">87 Years of<br />Vedic Remedies</h2>
-          <p>Four generations of expertise in sourcing, certifying, and energizing Vedic remedies for a global clientele.</p>
-
-          <ol className="remedy-timeline" aria-label="Pure Vedic Gems milestones">
-            {[
-              ['1937', "Founded in Old Delhi's Gem Quarter"],
-              ['1960', '2nd Generation Expands Nationwide'],
-              ['1985', '3rd Gen — Pan-India Presence'],
-              ['2005', 'Digital & International Presence'],
-              ['2015', 'E-Commerce & Global Clientele'],
-              ['2026', '50K+ Customers — Next-Gen Platform'],
-            ].map(([year, title], index) => (
-              <li key={year} className="remedy-step">
-                <span className="remedy-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-                <span>
-                  <span className="remedy-year">{year}</span>
-                  <strong>{title}</strong>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
+        <ol className="remedy-timeline" aria-label="Pure Vedic Gems milestones">
+          {[
+            ['1937', 'Started much before 1937 in Lahore (now in Pakistan)'],
+            ['1965', '2nd generation continued the legacy in Dariba (Chandni Chowk) (now Old Delhi)'],
+            ['1995', '3rd generation joined the business — pan-India presence'],
+            ['2002', 'Expanded at new locations in India & digital presence'],
+            ['2010', 'E-commerce presence & global clientele'],
+            ['2015', '1 lakh plus customers handled · Opened Vedic Research Centre'],
+          ].map(([year, title], index) => (
+            <li key={year} className="remedy-step">
+              <span className="remedy-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+              <span>
+                <span className="remedy-year">{year}</span>
+                <strong>{title}</strong>
+              </span>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   </section>

@@ -601,12 +601,49 @@ export function SliderButton({ target, direction, label }: { target: string; dir
   );
 }
 
+export type IntegratedCategoryCtaButton = {
+  label: ReactNode;
+  href: string;
+  /** chat = primary brand, call = gold, whatsapp = green */
+  tone?: 'chat' | 'call' | 'whatsapp';
+};
+
+function CtaActionLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: ReactNode;
+}) {
+  const external = href.startsWith('http') || href.startsWith('tel:');
+  if (external) {
+    return (
+      <a
+        href={href}
+        className={className}
+        target={href.startsWith('http') ? '_blank' : undefined}
+        rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+      >
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export function IntegratedCategoryCta({
   variant,
   title,
   copy,
   primary,
   secondary,
+  buttons,
   image,
   imageAlt,
   imageSide = 'left',
@@ -614,12 +651,22 @@ export function IntegratedCategoryCta({
   variant: 'navaratna' | 'rudraksha' | 'uparatna';
   title: string;
   copy: string;
-  primary: { label: ReactNode; href: string };
-  secondary: { label: ReactNode; href: string };
+  primary?: { label: ReactNode; href: string };
+  secondary?: { label: ReactNode; href: string };
+  /** When set, replaces primary/secondary (e.g. Call + WhatsApp + Recommendation). */
+  buttons?: IntegratedCategoryCtaButton[];
   image: string;
   imageAlt: string;
   imageSide?: 'left' | 'right';
 }) {
+  const actions: IntegratedCategoryCtaButton[] =
+    buttons?.length
+      ? buttons
+      : [
+          ...(primary ? [{ label: primary.label, href: primary.href, tone: 'chat' as const }] : []),
+          ...(secondary ? [{ label: secondary.label, href: secondary.href, tone: 'call' as const }] : []),
+        ];
+
   return (
     <section
       className={`pvg-rcta-v2 pvg-rcta-v2-${variant}${imageSide === 'right' ? ' pvg-rcta-v2-reverse' : ''}`}
@@ -651,16 +698,42 @@ export function IntegratedCategoryCta({
             <p className="pvg-rcta-v2-copy">{copy}</p>
 
             <div className="pvg-rcta-v2-btns">
-              <Link href={primary.href} className="pvg-rcta-v2-btn-chat">{primary.label}</Link>
-              <Link href={secondary.href} className="pvg-rcta-v2-btn-call">{secondary.label}</Link>
+              {actions.map((action, index) => (
+                <CtaActionLink
+                  key={`${action.href}-${index}`}
+                  href={action.href}
+                  className={
+                    action.tone === 'whatsapp'
+                      ? 'pvg-rcta-v2-btn-whatsapp'
+                      : action.tone === 'call'
+                        ? 'pvg-rcta-v2-btn-call'
+                        : 'pvg-rcta-v2-btn-chat'
+                  }
+                >
+                  {action.label}
+                </CtaActionLink>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
       <div className="pvg-rcta-v2-mobile-actions">
-        <Link href={primary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary">{primary.label}</Link>
-        <Link href={secondary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-secondary">{secondary.label}</Link>
+        {actions.map((action, index) => (
+          <CtaActionLink
+            key={`m-${action.href}-${index}`}
+            href={action.href}
+            className={
+              action.tone === 'whatsapp'
+                ? 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-whatsapp'
+                : action.tone === 'call'
+                  ? 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-secondary'
+                  : 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary'
+            }
+          >
+            {action.label}
+          </CtaActionLink>
+        ))}
       </div>
     </section>
   );

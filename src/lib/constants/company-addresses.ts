@@ -23,20 +23,21 @@ export type OfficeLocation = {
   hours: string;
 };
 
-const DELHI_SHOWROOM_MAP_QUERY =
-  'FF-32%20MGF%20Metropolitan%20Mall%20Saket%20New%20Delhi%20110017';
-const UK_OFFICE_MAP_QUERY = 'Juniper%20Court%20Hanworth%20Road%20Hounslow%20TW3%203TL%20UK';
-const SULTANPUR_RESEARCH_MAP_QUERY =
-  'Pure%20Vedic%20Science%20and%20Research%20Centre%20CRC%20Design%20Centre%20Road%20Sultanpur%20Delhi%20110030';
+/** Exact pins (lat,lng) — address text alone can resolve to the wrong city. */
+const UK_OFFICE_MAP_QUERY = '51.4682%2C-0.3668'; // Juniper Court / Hanworth Rd, Hounslow
 
-export const DELHI_MAP_URL = `https://www.google.com/maps/search/?api=1&query=${DELHI_SHOWROOM_MAP_QUERY}`;
+/** Google Business pin — Pure Vedic Gems Flagship Showroom, MGF Metropolitan Mall, Saket. */
+export const DELHI_MAP_URL =
+  'https://www.google.com/maps/place/Pure+Vedic+Gems/@28.529568,77.2201721,17z/data=!3m1!4b1!4m6!3m5!1s0x390ce18afc01aba5:0x57470bdb5e481055!8m2!3d28.529568!4d77.2201721!16s%2Fg%2F11b6hvdgm2';
 export const UK_OFFICE_MAP_URL = `https://www.google.com/maps/search/?api=1&query=${UK_OFFICE_MAP_QUERY}`;
-/** Shared Google Maps pin for the Sultanpur research centre. */
-export const SULTANPUR_MAP_URL = 'https://share.google/8B7MTrj66sHDXIzOd';
+/** Google Business pin — Pure Vedic Gems, near Sultanpur Metro, New Delhi. */
+export const SULTANPUR_MAP_URL =
+  'https://www.google.com/maps/place/Pure+Vedic+Gems/@28.4969206,77.1574556,17z/data=!3m1!4b1!4m6!3m5!1s0x390d1fbb2c6dedd9:0xefdb5473f4994295!8m2!3d28.4969206!4d77.1600305!16s%2Fg%2F11yqs18sjt';
 
-export const DELHI_MAP_EMBED = `https://maps.google.com/maps?hl=en&q=${DELHI_SHOWROOM_MAP_QUERY}&z=15&output=embed`;
-export const UK_OFFICE_MAP_EMBED = `https://maps.google.com/maps?hl=en&q=${UK_OFFICE_MAP_QUERY}&z=14&output=embed`;
-export const SULTANPUR_MAP_EMBED = `https://maps.google.com/maps?hl=en&q=${SULTANPUR_RESEARCH_MAP_QUERY}&z=15&output=embed`;
+export const DELHI_MAP_EMBED = 'https://maps.google.com/maps?hl=en&q=28.529568,77.2201721&z=17&output=embed';
+export const UK_OFFICE_MAP_EMBED = `https://maps.google.com/maps?hl=en&q=${UK_OFFICE_MAP_QUERY}&z=15&output=embed`;
+export const SULTANPUR_MAP_EMBED =
+  'https://maps.google.com/maps?hl=en&q=28.4969206,77.1600305&z=17&output=embed';
 
 export const DELHI_REGISTERED_ADDRESS: AddressBlock = {
   label: 'Registered Address (Delhi)',
@@ -131,6 +132,13 @@ export const FOOTER_LOCATIONS = [
     city: 'London – Hounslow (Office)',
     address: UK_OFFICE_ADDRESS.lines.join(', '),
   },
+] as const;
+
+/** Header store-picker rows (Brahma-style location dropdown). */
+export const HEADER_STORE_LOCATIONS = [
+  { id: 'delhi', label: 'Delhi – Saket (Showroom)', mapUrl: DELHI_MAP_URL },
+  { id: 'sultanpur', label: 'Delhi – Sultanpur (Research Centre)', mapUrl: SULTANPUR_MAP_URL },
+  { id: 'uk', label: 'London – Hounslow (Office)', mapUrl: UK_OFFICE_MAP_URL },
 ] as const;
 
 /** About page location cards */

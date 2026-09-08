@@ -9,6 +9,10 @@ import { ThemeSwitcher } from '@/components/ui/theme-switcher';
 import { AgentChatWidget } from '@/components/agent/AgentChatWidget';
 import { isAgentUiEnabled } from '@/lib/agent/config';
 import { CurrencyProvider } from '@/lib/hooks/useCurrency';
+import {
+  BLOG_CATEGORY_LINKS,
+  type BlogCategoryNavLink,
+} from '@/lib/constants/nav-items';
 
 /** Clears Base UI dialog scroll-lock leftovers after search → navigate races.
  *  Always reset — the attribute can be gone while body position/height remain. */
@@ -68,7 +72,13 @@ function pageHasBuiltInHeaderOffset(pathname: string): boolean {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-export function LayoutShell({ children }: { children: React.ReactNode }) {
+export function LayoutShell({
+  children,
+  blogCategoryLinks = BLOG_CATEGORY_LINKS,
+}: {
+  children: React.ReactNode;
+  blogCategoryLinks?: BlogCategoryNavLink[];
+}) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
   const isStudio = pathname.startsWith('/studio');
@@ -111,7 +121,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   // One shared spacer. Pages with .pvg-owns-header-offset hide it in CSS so it cannot stack.
   return (
     <CurrencyProvider>
-      <SiteHeader />
+      <SiteHeader blogCategoryLinks={blogCategoryLinks} />
       {showHeaderSpacer ? <div className="pvg-header-spacer" aria-hidden="true" /> : null}
       <main className={shellClassName}>{children}</main>
       <StickyContactRail />

@@ -65,6 +65,8 @@ function fallbackGroup(slug: StorefrontCategoryGroupSlug) {
 }
 
 function gemLabel(category: GemCategoryRow) {
+  // Neeli is Iolite's name; Tanzanite has no vernacular alias in the gemstones nav.
+  if (category.slug === 'tanzanite') return category.name;
   return category.sanskrit_name ? `${category.name} (${category.sanskrit_name})` : category.name;
 }
 

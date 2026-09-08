@@ -60,15 +60,25 @@ interface ProductGridProps {
   loading?: boolean;
   /** Number of skeleton cards to show while loading */
   skeletonCount?: number;
+  layout?: 'grid' | 'list';
 }
 
 export function ProductGrid({
   products,
   loading = false,
   skeletonCount = 12,
+  layout = 'grid',
 }: ProductGridProps) {
+  const isList = layout === 'list';
+
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <div
+      className={
+        isList
+          ? 'flex flex-col gap-2.5'
+          : 'grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+      }
+    >
       {loading
         ? Array.from({ length: skeletonCount }).map((_, i) => (
             <SkeletonCard key={i} />
@@ -76,7 +86,7 @@ export function ProductGrid({
         : products.length === 0
         ? <EmptyState />
         : products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} layout={layout} />
           ))}
     </div>
   );

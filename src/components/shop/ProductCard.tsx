@@ -40,9 +40,10 @@ function getImageSrc(product: ProductCardType): string {
 
 interface ProductCardProps {
   product: ProductCardType;
+  layout?: 'grid' | 'list';
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   useCurrencySubscription();
   const { addItem, isInCart, getCartItem } = useCart();
   const gradeLabel = resolveProductGradeLabel(product.quality_label, product.name);
@@ -112,6 +113,53 @@ export function ProductCard({ product }: ProductCardProps) {
   ]
     .filter(Boolean)
     .join(' · ');
+
+  if (layout === 'list') {
+    return (
+      <div className="group relative flex min-w-0 overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)]">
+        <Link href={href} className="relative block h-[96px] w-[96px] shrink-0 bg-[#f2f2f2] sm:h-[112px] sm:w-[120px]">
+          <ResilientImage
+            src={imageSrc}
+            fallbackSrc="/placeholder-gem.png"
+            alt={displayName}
+            fill
+            className={`object-cover${isUnavailable ? ' opacity-60' : ''}`}
+            sizes="120px"
+          />
+        </Link>
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-3 py-2.5 sm:px-4">
+          <h3 className="m-0 line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 sm:text-[14px]">
+            <Link href={href} className="transition-colors hover:text-brand-accent">
+              {displayName}
+            </Link>
+          </h3>
+          {gradeLabel ? (
+            <p className="m-0 text-[11px] font-medium text-[#9A7B2F]">({gradeLabel})</p>
+          ) : null}
+          {meta ? <p className="m-0 truncate text-[11px] text-brand-muted">{meta}</p> : null}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className={`text-[14px] font-semibold ${isOnRequest ? 'text-[#7A1515]' : 'text-gray-900'}`}>
+              {priceDisplay.label}
+            </span>
+            {isOnRequest ? (
+              <Link href={href} className="text-[11px] font-semibold text-[#7A1515] underline-offset-2 hover:underline">
+                Enquire
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isUnavailable || inCart}
+                className="text-[11px] font-semibold text-[#7A1515] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isUnavailable ? unavailableLabel : inCart ? 'In cart' : 'Add to cart'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group relative flex min-w-0 flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)] transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]">
@@ -216,7 +264,7 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* ── Info Strip ── */}
       <div className="flex min-w-0 flex-col px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
         {/* Name — H3 so category pages match catalog heading/keyword scoring */}
-        <h3 className="m-0 line-clamp-2 min-h-8 text-[11px] font-semibold leading-snug text-gray-900 sm:line-clamp-1 sm:min-h-0 sm:text-[13px]">
+        <h3 className="m-0 line-clamp-2 text-[11px] font-semibold leading-snug text-gray-900 sm:line-clamp-1 sm:text-[13px]">
           <Link href={href} className="transition-colors hover:text-brand-accent">
             {displayName}
           </Link>
@@ -228,7 +276,7 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {gradeLabel && (
-          <p className="mt-0.5 text-[10px] font-medium text-[#9A7B2F] sm:text-[11px]">({gradeLabel})</p>
+          <p className="mt-0 text-[10px] font-medium leading-tight text-[#9A7B2F] sm:text-[11px]">({gradeLabel})</p>
         )}
 
         {/* Price row */}

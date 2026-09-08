@@ -17,11 +17,50 @@
     'controls';
 }
 
+.shop-filter-bar__search-row {
+  grid-area: search;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 /* Inline search — icon inside field only */
 .shop-filter-bar__search {
   position: relative;
-  grid-area: search;
+  flex: 1;
   min-width: 0;
+}
+
+.shop-filter-bar__view {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.shop-filter-bar__view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border: 1px solid #d4d0cb;
+  border-radius: 2px;
+  background: #fff;
+  color: #5a5043;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.shop-filter-bar__view-btn.is-active {
+  border-color: #7a1515;
+  background: #7a1515;
+  color: #fff;
+}
+
+.shop-filter-bar__view-btn:hover:not(.is-active) {
+  border-color: #7a1515;
 }
 
 .shop-filter-bar__search-icon {
@@ -372,32 +411,8 @@
   opacity: 0.7;
 }
 
-/* Tablet: search + sort on one row, filters below */
-@media (min-width: 640px) {
-  .shop-filter-bar__grid {
-    gap: 0.75rem;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'search sort'
-      'actions actions';
-  }
-
-  .shop-filter-bar__controls {
-    display: contents;
-  }
-
-  .shop-filter-bar__actions {
-    grid-area: actions;
-  }
-
-  .shop-filter-bar__sort-wrap {
-    grid-area: sort;
-    justify-content: flex-end;
-  }
-}
-
-/* Tablet landscape: inline chips + more filters (not full mobile sheet) */
-@media (min-width: 768px) {
+/* Desktop: inline chips + more filters; single row */
+@media (min-width: 1024px) {
   .shop-filter-bar__chips {
     display: flex;
   }
@@ -409,11 +424,9 @@
   .shop-filter-more-btn.shop-filter-bar__sheet-btn--desktop {
     display: inline-flex;
   }
-}
 
-/* Desktop: single row layout */
-@media (min-width: 1024px) {
   .shop-filter-bar__grid {
+    gap: 0.75rem;
     align-items: center;
     grid-template-columns: minmax(11rem, 1.25fr) minmax(0, 2fr) auto;
     grid-template-areas: 'search actions sort';
@@ -476,5 +489,85 @@
 
   .shop-filter-bar__count {
     display: none;
+  }
+}
+
+/* Sticky mobile Filter / Sort dock */
+.shop-filter-mobile-dock {
+  display: none;
+}
+
+/* Phone + tablet: search/view only; Filter/Sort in bottom dock */
+@media (max-width: 1023px) {
+  .shop-filter-bar__grid {
+    gap: 0;
+    padding: 0;
+    border-bottom: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'search';
+    grid-template-rows: auto;
+  }
+
+  .shop-filter-bar__controls {
+    display: none;
+  }
+
+  .shop-filter-active {
+    padding-top: 0.25rem;
+    padding-bottom: 0;
+  }
+
+  .shop-filter-mobile-dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 910;
+    display: flex;
+    align-items: stretch;
+    min-height: 52px;
+    padding: 0 env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    background: linear-gradient(135deg, #7a1515 0%, #4d0a0a 100%);
+    color: #fff;
+    box-shadow: 0 -8px 24px rgba(122, 21, 21, 0.28);
+  }
+
+  .shop-filter-mobile-dock__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 52px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-roboto), 'Roboto', sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .shop-filter-mobile-dock__divider {
+    width: 1px;
+    align-self: stretch;
+    margin: 10px 0;
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .shop-filter-mobile-dock__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: #fff;
+    color: #7a1515;
+    font-size: 0.65rem;
+    font-weight: 700;
   }
 }

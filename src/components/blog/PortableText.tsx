@@ -6,7 +6,7 @@ import { urlFor } from '@/lib/sanity/client';
 /* ─────────────────────────────────────────────────────────────────────────
  *  Lightweight Portable Text renderer for blog body content.
  *  Handles: blocks (p, h1-h4, blockquote), marks (strong, em, underline,
- *  code, link), lists (bullet/number), and images.
+ *  code, link), lists (bullet/number), images, and @sanity/table blocks.
  * ────────────────────────────────────────────────────────────────────────*/
 
 interface Block {
@@ -20,6 +20,12 @@ interface Block {
   asset?: { _ref: string };
   alt?: string;
   caption?: string;
+  rows?: TableRow[];
+}
+
+interface TableRow {
+  _key?: string;
+  cells?: string[];
 }
 
 interface Span {
@@ -102,6 +108,40 @@ function renderBlock(block: Block) {
   }
 }
 
+/** @sanity/table stores plain strings; first row is the header. */
+function renderTable(block: Block, key: string | number) {
+  const rows = (block.rows ?? []).filter((row) => Array.isArray(row.cells));
+  if (!rows.length) return null;
+
+  const [header, ...body] = rows;
+  return (
+    <div key={key} className="prose-pvg-table-wrap">
+      <table>
+        {header ? (
+          <thead>
+            <tr>
+              {(header.cells ?? []).map((cell, i) => (
+                <th key={i}>{cell}</th>
+              ))}
+            </tr>
+          </thead>
+        ) : null}
+        {body.length > 0 ? (
+          <tbody>
+            {body.map((row, ri) => (
+              <tr key={row._key ?? ri}>
+                {(row.cells ?? []).map((cell, ci) => (
+                  <td key={ci}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        ) : null}
+      </table>
+    </div>
+  );
+}
+
 /** Group consecutive list items of the same type */
 function groupLists(blocks: Block[]): (Block | { _type: 'list'; listItem: string; items: Block[] })[] {
   const result: (Block | { _type: 'list'; listItem: string; items: Block[] })[] = [];
@@ -163,6 +203,10 @@ export function PortableText({ value }: { value: unknown[] | undefined | null })
               {block.caption && <figcaption>{block.caption}</figcaption>}
             </figure>
           );
+        }
+
+        if (block._type === 'table') {
+          return renderTable(block, block._key ?? i);
         }
 
         // Text block

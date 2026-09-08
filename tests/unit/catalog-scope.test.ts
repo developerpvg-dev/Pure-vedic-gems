@@ -47,6 +47,18 @@ describe('catalog listing scope', () => {
     expect(calls).toEqual([]);
   });
 
+  it('keeps quote-only rows when price_mode=on_demand is selected', () => {
+    const calls: string[] = [];
+    const query = {
+      not(column: string, operator: string, value: string) {
+        calls.push(`${column} ${operator} ${value}`);
+        return this;
+      },
+    };
+    applyQuoteOnlyListingFilter(query, 'navaratna', 'ruby', undefined, 'on_demand');
+    expect(calls).toEqual([]);
+  });
+
   it('exclusive shelf includes remapped quality_label Exclusive', () => {
     expect(isExclusiveGemsShelf('exclusive-gems')).toBe(true);
     const calls: string[] = [];

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { catalogFamilyToStorefrontGroupSlug, storefrontGroupHref, storefrontSubcategoryHref } from '@/lib/categories/storefront';
 import { RUDRAKSHA_FEATURE_IMAGES } from '@/lib/constants/rudraksha-category-images';
+import { toPublicAssetUrl } from '@/lib/site-static';
 import type { HomeCatalogCategory } from '@/components/home/PvgManagedCategorySections';
 
 const AUTO_ADVANCE_MS = 4200;
@@ -21,15 +22,15 @@ function catalogCategoryHref(category: HomeCatalogCategory) {
 }
 
 function rudrakshaFeatureImage(card: HomeCatalogCategory) {
-  if (card.image_url) return card.image_url;
+  if (card.image_url) return toPublicAssetUrl(card.image_url);
   if (card.slug.includes('mukhi') || card.slug.includes('collection')) {
-    return RUDRAKSHA_FEATURE_IMAGES.collection;
+    return toPublicAssetUrl(RUDRAKSHA_FEATURE_IMAGES.collection);
   }
-  if (card.slug.includes('mala')) return RUDRAKSHA_FEATURE_IMAGES.malas;
+  if (card.slug.includes('mala')) return toPublicAssetUrl(RUDRAKSHA_FEATURE_IMAGES.malas);
   if (card.slug.includes('jewelry') || card.slug.includes('jeweller')) {
-    return RUDRAKSHA_FEATURE_IMAGES.jewellery;
+    return toPublicAssetUrl(RUDRAKSHA_FEATURE_IMAGES.jewellery);
   }
-  return RUDRAKSHA_FEATURE_IMAGES.jewellery;
+  return toPublicAssetUrl(RUDRAKSHA_FEATURE_IMAGES.jewellery);
 }
 
 type RudrakshaFeatureCarouselProps = {
@@ -129,7 +130,8 @@ export function RudrakshaFeatureCarousel({ cards }: RudrakshaFeatureCarouselProp
                   fill
                   src={featureImage}
                   alt={card.name}
-                  loading={index === 0 ? 'eager' : 'lazy'}
+                  // ponytail: inactive cards use visibility:hidden — native lazy never fetches them
+                  loading="eager"
                   sizes="(max-width: 768px) 100vw, 500px"
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                 />

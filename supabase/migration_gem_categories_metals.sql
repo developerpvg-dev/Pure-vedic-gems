@@ -121,7 +121,7 @@ INSERT INTO gem_categories (name, slug, type, sanskrit_name, planet, emoji, colo
 ('Moonstone',     'moonstone',     'upratna', 'Chandrakant',      'Moon',    '🌙', '#E0E7FF', 'Natural Chandrakant Mani. Semi-precious stone for Moon — enhances emotional balance.', 4),
 ('Garnet',        'garnet',        'upratna', 'Tamra',            'Rahu',    '🔴', '#B91C1C', 'Natural Garnet. Semi-precious stone for Rahu — provides stability and grounding.', 5),
 ('Peridot',       'peridot',       'upratna', 'Zabarjad',         'Mercury', '💚', '#65A30D', 'Natural Peridot. Semi-precious stone for Mercury — aids communication and learning.', 6),
-('Tanzanite',     'tanzanite',     'upratna', 'Neeli',            'Saturn',  '🔮', '#6D28D9', 'Natural Tanzanite. Semi-precious alternative for Saturn — spiritual awakening.', 7),
+('Tanzanite',     'tanzanite',     'upratna', NULL,               'Saturn',  '🔮', '#6D28D9', 'Natural Tanzanite. Semi-precious alternative for Saturn — spiritual awakening.', 7),
 ('Lapis Lazuli',  'lapis-lazuli',  'upratna', 'Lajward',          'Saturn',  '🫐', '#1E40AF', 'Natural Lajward. Semi-precious stone for Saturn — wisdom and truth.', 8),
 ('Citrine',       'citrine',       'upratna', 'Sunela',           'Jupiter', '🌟', '#F59E0B', 'Natural Sunela. Semi-precious stone for Jupiter — prosperity and positivity.', 9),
 ('Aquamarine',    'aquamarine',    'upratna', 'Beruj',            'Moon',    '🧊', '#67E8F9', 'Natural Beruj. Semi-precious stone for Moon — courage and calming energies.', 10);

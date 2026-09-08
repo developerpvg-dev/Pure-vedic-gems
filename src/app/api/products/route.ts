@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
       listingFilters.category,
       listingFilters.sub_category,
       listingFilters.quality_label,
+      listingFilters.price_mode,
     );
     query = applyShopProductFilters(query, listingFilters);
     if (listingFilters.featured !== undefined) {

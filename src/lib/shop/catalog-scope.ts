@@ -55,8 +55,12 @@ export function applyQuoteOnlyListingFilter<T extends FilterableQuery>(
   subCategory?: string | null,
   // ponytail: Exclusive filter IS the on-request shelf — don't hide the rows it selects.
   qualityLabel?: string | null,
+  priceMode?: string | null,
 ): T {
   if (isExclusiveQualityFilter(qualityLabel)) return query;
+  // Explicit on_demand / quote_required must not fight the default hide.
+  const mode = priceMode?.trim().toLowerCase();
+  if (mode === 'on_demand' || mode === 'quote_required') return query;
   if (!shouldHideQuoteOnlyFromListing(category, subCategory)) {
     return query;
   }

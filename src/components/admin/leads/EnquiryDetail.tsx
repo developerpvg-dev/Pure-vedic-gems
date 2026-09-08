@@ -1506,6 +1506,9 @@ export function EnquiryDetail({
               <ResponseField label="IP location" value={lead.ip_location || ''} />
               {isCallDesk ? (
                 <>
+                  <ResponseField label="DOB" value={formatDob(lead.date_of_birth)} />
+                  <ResponseField label="Birth time" value={(lead.birth_time || '').slice(0, 5)} />
+                  <ResponseField label="Birth place" value={lead.birth_place || ''} />
                   {isBlog && lead.subject ? <ResponseField label="Blog / subject" value={lead.subject} wide /> : null}
                   <ResponseField label="Enquiry type" value={lead.enquiry_type || ''} wide />
                 </>

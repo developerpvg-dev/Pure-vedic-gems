@@ -88,14 +88,26 @@ export const NAV_ITEMS = [
   { label: 'Contact', href: '/contact' },
 ] as const;
 
-/** Blog category dropdown shown on hover over the "Blog" nav item. */
-export const BLOG_CATEGORY_LINKS = [
+export type BlogCategoryNavLink = { label: string; href: string };
+
+/** Fallback when Sanity categories aren't available yet. */
+export const BLOG_CATEGORY_LINKS: BlogCategoryNavLink[] = [
   { label: 'All Blogs', href: '/blog' },
-  { label: 'Navratnas', href: '/blog/category/navratnas' },
-  { label: 'Spirituality', href: '/blog/category/spirituality' },
-  { label: 'Astrology', href: '/blog/category/astrology' },
-  { label: 'Our Products', href: '/blog/category/our-products' },
-] as const;
+];
+
+/** Build Blog nav links from Sanity categories (All Blogs + every created category). */
+export function toBlogCategoryNavLinks(
+  categories: Array<{ title?: string | null; slug?: { current?: string | null } | string | null }> | null | undefined,
+): BlogCategoryNavLink[] {
+  const links: BlogCategoryNavLink[] = [{ label: 'All Blogs', href: '/blog' }];
+  for (const cat of categories ?? []) {
+    const slug = typeof cat.slug === 'string' ? cat.slug : cat.slug?.current;
+    const title = cat.title?.trim();
+    if (!slug || !title) continue;
+    links.push({ label: title, href: `/blog/category/${slug}` });
+  }
+  return links;
+}
 
 export const SOCIAL_LINKS = {
   whatsapp: '',
