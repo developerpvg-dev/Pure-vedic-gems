@@ -57,10 +57,15 @@ export function BackToTopButton() {
           stroke-width: 2.5;
           fill: none;
         }
+        /* Above Filter/Sort dock (52px + gap) on phone + tablet */
+        @media (max-width: 1023px) {
+          .pvg-shop-scroll-top {
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+          }
+        }
         @media (max-width: 767px) {
           .pvg-shop-scroll-top {
             left: max(10px, env(safe-area-inset-left, 0px));
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
             width: 48px;
             height: 48px;
           }

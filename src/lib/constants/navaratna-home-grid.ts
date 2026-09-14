@@ -1,4 +1,4 @@
-/** Legacy homepage Navaratna grid order (includes Pitambari after the nine classics). */
+/** Legacy homepage Navaratna grid order (includes Pitambari + Padparadscha after the nine classics). */
 export const NAVARATNA_HOME_GRID_SLUGS = [
   'ruby',
   'pearl',
@@ -10,6 +10,7 @@ export const NAVARATNA_HOME_GRID_SLUGS = [
   'hessonite',
   'cats-eye',
   'pitambari',
+  'padparadscha-sapphire',
 ] as const;
 
 export const NAVARATNA_HOME_GRID_LIMIT = NAVARATNA_HOME_GRID_SLUGS.length;

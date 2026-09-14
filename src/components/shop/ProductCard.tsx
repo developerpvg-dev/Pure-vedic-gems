@@ -18,6 +18,7 @@ import { formatCarats, formatPrice } from '@/lib/utils/format';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { productHref } from '@/lib/categories/storefront';
+import { resolveLabLogo } from '@/lib/constants/trust-credentials';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
@@ -105,6 +106,11 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   };
 
   const configuratorEnabled = isGemConfiguratorEnabled(product.category, product.configurator_enabled);
+  const labLogo = resolveLabLogo(
+    product.certificate_lab,
+    product.certification,
+    product.certificate_number,
+  );
 
   const meta = [
     product.carat_weight ? formatCarats(product.carat_weight) : null,
@@ -184,9 +190,24 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
           </div>
         )}
 
-        {/* Status badges — prominent top-left overlay */}
+        {/* Lab cert badge — top-left, matches storefront card reference */}
+        {labLogo ? (
+          <div className="pointer-events-none absolute left-1.5 top-1.5 z-10 bg-white px-1 py-0.5 shadow-sm sm:left-2 sm:top-2 sm:px-1.5 sm:py-1">
+            <img
+              src={labLogo.logo}
+              alt={`${labLogo.name} certified`}
+              className="h-3.5 w-auto max-w-[52px] object-contain sm:h-4 sm:max-w-[68px]"
+            />
+          </div>
+        ) : null}
+
+        {/* Status badges — top-left under lab logo when both present */}
         {!isUnavailable && isOnRequest && (
-          <div className="absolute left-1.5 top-1.5 z-10 rounded bg-[#7A1515]/95 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-md sm:left-2 sm:top-2 sm:rounded-md sm:px-2.5 sm:py-1 sm:text-[10px]">
+          <div
+            className={`absolute left-1.5 z-10 rounded bg-[#7A1515]/95 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow-md sm:left-2 sm:rounded-md sm:px-2.5 sm:py-1 sm:text-[10px] ${
+              labLogo ? 'top-7 sm:top-9' : 'top-1.5 sm:top-2'
+            }`}
+          >
             On Request
           </div>
         )}

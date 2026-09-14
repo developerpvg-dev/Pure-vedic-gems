@@ -65,7 +65,8 @@ export const metadata: Metadata = {
     follow: true,
   },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
+    // ponytail: public Search Console token; env override if you rotate
+    google: process.env.GOOGLE_SITE_VERIFICATION || '0tN8vmGS3ZJVlz99v_fhAIvwDX7K9aGu6CnFf8-RR_8',
   },
 };
 

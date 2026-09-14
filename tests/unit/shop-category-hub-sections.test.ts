@@ -135,6 +135,7 @@ describe('shop-category-hub-sections', () => {
     ['diamond', /diamond gemstone/i],
     ['hessonite', /hessonite stone/i],
     ['pitambari', /pitambari sapphire/i],
+    ['padparadscha-sapphire', /padparadscha sapphire/i],
     ['exclusive-gems', /exclusive gems/i],
   ] as const)('puts %s phrase in H2s while keeping short tab labels', (slug, phrase) => {
     const sections = buildCategoryHubSections(

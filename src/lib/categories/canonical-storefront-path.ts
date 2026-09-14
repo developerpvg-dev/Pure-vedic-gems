@@ -14,6 +14,7 @@ export const NAVARATNA_STOREFRONT_SLUGS = new Set([
   'white-sapphire',
   'exclusive-gems',
   'pitambari',
+  'padparadscha-sapphire',
 ]);
 
 export const UPRATNA_STOREFRONT_SLUGS = new Set([

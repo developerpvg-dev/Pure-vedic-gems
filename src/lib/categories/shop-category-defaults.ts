@@ -193,6 +193,7 @@ const PLANET_BY_SLUG: Record<string, string> = {
   'cats-eye': 'Ketu',
   'white-sapphire': 'Venus (Shukra)',
   pitambari: 'Jupiter & Saturn',
+  'padparadscha-sapphire': 'Venus (Shukra)',
 };
 
 function buildCatalogDefaults(slug: string, label: string, category: string): ShopCategoryPageContent {

@@ -87,6 +87,7 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     'hessonite',
     'pitambari',
     'exclusive-gems',
+    'padparadscha-sapphire',
   ]);
   if (CODE_OWNED_SEO.has(slug) || isRudrakshaStorefrontSlug(slug) || UPRATNA_STOREFRONT_SLUGS.has(slug)) {
     return {

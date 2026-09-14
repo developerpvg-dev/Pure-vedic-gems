@@ -30,6 +30,8 @@ export default function robots(): MetadataRoute.Robots {
           '/configure/',
           '/*?*min_price=',
           '/*?*max_price=',
+          '/*?*min_price_per_carat=',
+          '/*?*max_price_per_carat=',
           '/*?*sort_by=',
           '/*?*per_page=',
           '/*?*page=',

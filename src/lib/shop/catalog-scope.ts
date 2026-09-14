@@ -17,6 +17,7 @@ export const NAVARATNA_PRICED_SUBCATEGORIES = new Set([
   'white-sapphire',
   'diamond',
   'pitambari',
+  'padparadscha-sapphire',
 ]);
 
 export const QUOTE_ONLY_PRICE_MODES = ['on_demand', 'quote_required'] as const;

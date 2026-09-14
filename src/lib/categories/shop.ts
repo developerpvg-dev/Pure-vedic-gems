@@ -178,6 +178,12 @@ export const KNOWN_GEM_SUBCATEGORIES: Record<string, KnownGemSubcategoryMeta> = 
     seoTitle: certifiedGemHubTitle('Pitambari', 'Neelam'),
     desc: 'Natural pitambari and pitambari sapphire (Pitambari Neelam) for Guru and Shani. Sri Lankan pitambari with dual yellow-blue zoning.',
   },
+  'padparadscha-sapphire': {
+    category: 'navaratna',
+    label: 'Natural Padparadscha Sapphire (Padmaraga)',
+    seoTitle: certifiedGemHubTitle('Padparadscha Sapphire', 'Padmaraga'),
+    desc: 'Natural padparadscha sapphire (Padmaraga) for Shukra. Lotus pink-orange corundum with lab colour and heat disclosure.',
+  },
   amethyst: {
     category: 'upratna',
     label: 'Natural Amethyst Gemstone (Katela)',

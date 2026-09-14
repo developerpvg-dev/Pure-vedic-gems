@@ -432,6 +432,14 @@ describe('storefront SEO templates', () => {
       20,
     ],
     [
+      'padparadscha-sapphire',
+      /padparadscha sapphire/i,
+      ['shop padparadscha', 'vedic suitability'],
+      '<h2>What is Padparadscha Sapphire</h2>',
+      'padparadscha sapphire',
+      20,
+    ],
+    [
       'exclusive-gems',
       /exclusive gems/i,
       ['rare navaratna'],

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canClaimProductForOrder,
   collectOrderProductIds,
   paidHoldNote,
   paymentHoldNote,
@@ -23,5 +24,38 @@ describe('order-availability', () => {
       ],
     });
     expect(ids).toEqual(['a', 'b']);
+  });
+
+  it('allows reclaim after cancel / expired hold, blocks active foreign hold', () => {
+    expect(
+      canClaimProductForOrder(
+        { id: 'p', availability_status: 'in_stock', reservation_note: null, reserved_until: null },
+        'PVG-2',
+      ),
+    ).toBe(true);
+
+    expect(
+      canClaimProductForOrder(
+        {
+          id: 'p',
+          availability_status: 'reserved',
+          reservation_note: paidHoldNote('PVG-1'),
+          reserved_until: new Date(Date.now() + 60_000).toISOString(),
+        },
+        'PVG-2',
+      ),
+    ).toBe(false);
+
+    expect(
+      canClaimProductForOrder(
+        {
+          id: 'p',
+          availability_status: 'reserved',
+          reservation_note: paymentHoldNote('PVG-1'),
+          reserved_until: new Date(Date.now() - 1000).toISOString(),
+        },
+        'PVG-2',
+      ),
+    ).toBe(true);
   });
 });

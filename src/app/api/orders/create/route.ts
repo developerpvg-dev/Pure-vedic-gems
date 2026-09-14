@@ -13,7 +13,7 @@ import { TAX_POLICY_VERSION } from '@/lib/utils/tax';
 import { cancelRewardRedemption, reserveRewardRedemption } from '@/lib/rewards/service';
 import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-display';
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
-import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
+import { reserveProductsForPaymentHold } from '@/lib/inventory/order-availability';
 
 function createGuestOrderToken() {
   const token = crypto.randomBytes(32).toString('hex');
@@ -74,7 +74,6 @@ async function reserveUniquePhysicalProducts({
   configuredSnapshots?: unknown[];
 }) {
   const supabase = createAdminClient();
-  const now = new Date().toISOString();
 
   const reserveTargets = new Map<string, { name: string; quantity: number }>();
   for (const item of items) {
@@ -104,34 +103,32 @@ async function reserveUniquePhysicalProducts({
     }
   }
 
-  for (const [productId, target] of reserveTargets) {
-    const { data, error } = await supabase
-      .from('products')
+  if (reserveTargets.size === 0) return;
+
+  const hold = await reserveProductsForPaymentHold({
+    orderNumber,
+    customerId,
+    holdUntil,
+    productIds: [...reserveTargets.entries()].map(([id, target]) => ({
+      id,
+      quantity: target.quantity,
+    })),
+  });
+
+  if (hold.failedIds.length > 0) {
+    const failedName =
+      [...reserveTargets.entries()].find(([id]) => hold.failedIds.includes(id))?.[1]?.name ??
+      'item';
+    await supabase
+      .from('orders')
       .update({
-        availability_status: 'reserved',
-        reserved_until: holdUntil,
-        reserved_by_customer_id: customerId,
-        reserved_quantity: target.quantity,
-        reservation_note: `Payment hold for ${orderNumber}`,
+        status: 'cancelled',
+        payment_status: 'cancelled',
+        payment_failure_reason: 'Product reservation failed before payment.',
       })
-      .eq('id', productId)
-      .or(`reserved_until.is.null,reserved_until.lt.${now}`)
-      .select('id');
-
-    if (error || !data || data.length === 0) {
-      await supabase
-        .from('orders')
-        .update({
-          status: 'cancelled',
-          payment_status: 'cancelled',
-          payment_failure_reason: 'Product reservation failed before payment.',
-        })
-        .eq('id', orderId);
-      throw new Error(`Product "${target.name}" was just reserved by another customer.`);
-    }
+      .eq('id', orderId);
+    throw new Error(`Product "${failedName}" was just reserved by another customer.`);
   }
-
-  if (reserveTargets.size) revalidateProductSurfaces();
 }
 
 /**

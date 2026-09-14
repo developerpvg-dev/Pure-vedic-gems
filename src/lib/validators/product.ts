@@ -157,6 +157,8 @@ export const productFiltersSchema = z
     availability_status: z.enum(AVAILABILITY_STATUSES).optional(),
     min_price: optionalNonNegativeNumber,
     max_price: optionalNonNegativeNumber,
+    min_price_per_carat: optionalNonNegativeNumber,
+    max_price_per_carat: optionalNonNegativeNumber,
     min_carat: optionalNonNegativeNumber,
     max_carat: optionalNonNegativeNumber,
     min_ratti: optionalNonNegativeNumber,
@@ -181,6 +183,13 @@ export const productFiltersSchema = z
   .refine(
     (data) => data.min_price === undefined || data.max_price === undefined || data.min_price <= data.max_price,
     { message: 'min_price must be less than or equal to max_price', path: ['min_price'] }
+  )
+  .refine(
+    (data) =>
+      data.min_price_per_carat === undefined
+      || data.max_price_per_carat === undefined
+      || data.min_price_per_carat <= data.max_price_per_carat,
+    { message: 'min_price_per_carat must be less than or equal to max_price_per_carat', path: ['min_price_per_carat'] }
   )
   .refine(
     (data) => data.min_carat === undefined || data.max_carat === undefined || data.min_carat <= data.max_carat,

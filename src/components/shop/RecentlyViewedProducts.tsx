@@ -6,9 +6,11 @@ import Image from 'next/image';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { ProductHorizontalScroller } from '@/components/shop/ProductHorizontalScroller';
 
 const STORAGE_KEY = 'pvg_recently_viewed_products';
-const MAX_ITEMS = 8;
+const MAX_ITEMS = 12;
+const SHOW_ITEMS = 10;
 const LEGACY_WORDPRESS_UPLOAD_RE = /^https?:\/\/(?:www\.)?purevedicgems\.(?:com|in)\/wp-content\/uploads\//i;
 
 export interface RecentlyViewedProduct {
@@ -47,7 +49,7 @@ export function RecentlyViewedProducts({ current }: { current: RecentlyViewedPro
     const stored = readStoredProducts()
       .map(sanitizeProduct)
       .filter((item) => item.id !== safeCurrent.id);
-    startTransition(() => setItems(stored.slice(0, 4)));
+    startTransition(() => setItems(stored.slice(0, SHOW_ITEMS)));
 
     const next = [safeCurrent, ...stored].slice(0, MAX_ITEMS);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -63,14 +65,14 @@ export function RecentlyViewedProducts({ current }: { current: RecentlyViewedPro
           Continue exploring
         </h2>
       </div>
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <ProductHorizontalScroller ariaLabel="Recently viewed products">
         {items.map((item) => (
           <Link
             key={item.id}
             href={item.href}
-            className="group relative flex min-w-0 flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)] transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]"
+            role="listitem"
+            className="group relative flex w-[42vw] max-w-[180px] shrink-0 flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)] transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)] sm:w-[160px] sm:max-w-none md:w-[180px] lg:w-[200px]"
           >
-            {/* Image — matches ProductCard 115% portrait ratio */}
             <div className="relative overflow-hidden bg-[#f2f2f2]" style={{ paddingBottom: '115%' }}>
               {item.imageUrl ? (
                 <Image
@@ -78,10 +80,12 @@ export function RecentlyViewedProducts({ current }: { current: RecentlyViewedPro
                   alt={item.name}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                  sizes="(max-width: 640px) 46vw, (max-width: 1024px) 33vw, 25vw"
+                  sizes="200px"
                 />
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-xs text-brand-accent sm:text-sm">PVG</div>
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-brand-accent sm:text-sm">
+                  PVG
+                </div>
               )}
             </div>
             <div className="flex min-w-0 flex-1 flex-col px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
@@ -89,13 +93,17 @@ export function RecentlyViewedProducts({ current }: { current: RecentlyViewedPro
                 {item.name}
               </h3>
               {item.meta && (
-                <p className="mt-0.5 truncate text-[9px] font-normal text-brand-muted sm:text-[10px]">{item.meta}</p>
+                <p className="mt-0.5 truncate text-[9px] font-normal text-brand-muted sm:text-[10px]">
+                  {item.meta}
+                </p>
               )}
-              <p className="mt-1 text-[12px] font-semibold text-gray-900 sm:text-[14px]">{formatPrice(item.price)}</p>
+              <p className="mt-1 text-[12px] font-semibold text-gray-900 sm:text-[14px]">
+                {formatPrice(item.price)}
+              </p>
             </div>
           </Link>
         ))}
-      </div>
+      </ProductHorizontalScroller>
     </section>
   );
 }

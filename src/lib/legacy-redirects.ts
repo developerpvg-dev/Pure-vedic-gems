@@ -19,7 +19,7 @@ const FLAT_PARENTS = new Set([
 // Same slug list as next.config flat-category redirects (keep in sync).
 const FLAT_CATEGORY_SLUGS = new Set([
   'ruby', 'pearl', 'red-coral', 'emerald', 'yellow-sapphire', 'diamond', 'blue-sapphire',
-  'hessonite', 'cats-eye', 'white-sapphire', 'pitambari', 'exclusive-gems',
+  'hessonite', 'cats-eye', 'white-sapphire', 'pitambari', 'padparadscha-sapphire', 'exclusive-gems',
   'opal', 'turquoise', 'amethyst', 'moonstone', 'garnet', 'peridot', 'tanzanite',
   'lapis-lazuli', 'citrine', 'aquamarine', 'blue-topaz', 'white-topaz', 'zircon',
   'iolite', 'tourmaline', 'diopside', 'malachite', 'tiger-eye', 'kyanite', 'sunstone',

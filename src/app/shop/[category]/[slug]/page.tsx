@@ -2,21 +2,23 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { cache } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { BadgeCheck, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { resolveShopCategoryPath } from '@/lib/categories/shop';
-import { productHref, storefrontGroupHref } from '@/lib/categories/storefront';
+import { productHref } from '@/lib/categories/storefront';
 import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { CategoryProductListing } from '@/components/shop/CategoryProductListing';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { ProductGallery } from '@/components/shop/ProductGallery';
+import { ProductAssuranceStrip } from '@/components/shop/ProductAssuranceStrip';
 import { ProductTabs } from '@/components/shop/ProductTabs';
 import { PriceDisplay } from '@/components/shop/PriceDisplay';
 import { AddToCartBar } from '@/components/shop/AddToCartBar';
-import { ProductCard } from '@/components/shop/ProductCard';
+import { ShopCollectionCta } from '@/components/shop/ShopCollectionCta';
+import { ProductPurchasePolicies } from '@/components/shop/ProductPurchasePolicies';
+import { ProductVisitStores } from '@/components/shop/ProductVisitStores';
+import { RelatedProductsCarousel } from '@/components/shop/RelatedProductsCarousel';
 import { RecentlyViewedProducts, type RecentlyViewedProduct } from '@/components/shop/RecentlyViewedProducts';
-import { OrnamentalDivider } from '@/components/ui/ornamental-divider';
 import { JsonLd } from '@/components/seo/JsonLd';
 import type { Product, ProductCard as ProductCardType } from '@/lib/types/product';
 import type { Json } from '@/lib/types/database';
@@ -26,6 +28,7 @@ import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/revie
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
 import { isNoCertification } from '@/lib/utils/format';
+import { resolveLabLogo } from '@/lib/constants/trust-credentials';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
@@ -121,115 +124,6 @@ interface ProductDetailPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-function ProductCategoryCta({ product }: { product: Product }) {
-  const category = product.category?.toLowerCase() ?? '';
-  const variant =
-    category === 'rudraksha'
-      ? 'rudraksha'
-      : category === 'upratna' || category === 'uparatna'
-        ? 'uparatna'
-        : 'navaratna';
-  const config =
-    variant === 'rudraksha'
-      ? {
-          title: 'Not sure which Rudraksha is right for you?',
-          copy: 'Share your birth details or spiritual goal with our experts and get a clear, mukhi-led Rudraksha recommendation before you buy.',
-          image: '/home/ctas/cta2.webp',
-          imageAlt: 'Rudraksha expert offering personalised guidance',
-          primary: { label: 'Get Rudraksha Guidance', href: '/consultation' },
-          secondary: { label: 'See Rudraksha Collection', href: storefrontGroupHref('rudraksha') },
-          imageSide: 'left' as const,
-        }
-      : variant === 'uparatna'
-        ? {
-            title: 'Need a practical gemstone alternative?',
-            copy: 'Share your birth details with our experts and get a practical Uparatna recommendation for planetary support, comfort, and budget.',
-            image: '/home/ctas/cta3.webp',
-            imageAlt: 'Vedic astrologer reviewing semi-precious gemstone alternatives',
-            primary: { label: 'Get Uparatna Guidance', href: '/consultation' },
-            secondary: { label: 'See Uparatna Collection', href: storefrontGroupHref('upratna') },
-            imageSide: 'right' as const,
-          }
-        : {
-            title: 'Not sure which gemstone is good for you?',
-            copy: 'Share your birth details with our experts and get a clear, horoscope-led gemstone recommendation before you buy.',
-            image: '/home/ctas/cta1.webp',
-            imageAlt: 'Vedic gemstone consultants preparing a horoscope recommendation',
-            primary: { label: 'Get Gem Recommendation', href: '/consultation' },
-            secondary: { label: 'See Navaratna Collection', href: storefrontGroupHref('navaratna') },
-            imageSide: 'right' as const,
-          };
-  const isReverse = config.imageSide === 'right';
-
-  return (
-    <div className="pvg-react-home-root mt-12 overflow-x-clip">
-      <section
-        className={`pvg-rcta-v2 pvg-rcta-v2-${variant}${isReverse ? ' pvg-rcta-v2-reverse' : ''}`}
-        aria-label={config.title}
-      >
-        <div className="pvg-rcta-v2-circle" aria-hidden="true" />
-
-        <div className="pvg-rcta-v2-layout">
-          <div className="pvg-rcta-v2-person-col" aria-hidden="true">
-            <div className="pvg-rcta-v2-person-wrap">
-              <Image
-                fill
-                className="pvg-rcta-v2-person-img"
-                src={config.image}
-                alt={config.imageAlt}
-                loading="lazy"
-                sizes="(max-width: 768px) 300px, 500px"
-              />
-            </div>
-          </div>
-
-          <div className="pvg-rcta-v2-card">
-            <div className="pvg-rcta-v2-top">
-              <h2 className="pvg-rcta-v2-heading">{config.title}</h2>
-            </div>
-
-            <div className="pvg-rcta-v2-bottom">
-              <p className="pvg-rcta-v2-copy">{config.copy}</p>
-
-              <div className="pvg-rcta-v2-btns">
-                <Link href={config.primary.href} className="pvg-rcta-v2-btn-chat">{config.primary.label}</Link>
-                <Link href={config.secondary.href} className="pvg-rcta-v2-btn-call">{config.secondary.label}</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="pvg-rcta-v2-mobile-actions">
-          <Link href={config.primary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary">{config.primary.label}</Link>
-          <Link href={config.secondary.href} className="pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-secondary">{config.secondary.label}</Link>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ProductAssuranceStrip() {
-  const items = [
-    { icon: ShieldCheck, label: 'Lab Certified' },
-    { icon: BadgeCheck, label: 'Natural & Genuine' },
-    { icon: Sparkles, label: 'Vedic Energization' },
-    { icon: Truck, label: 'Insured Delivery' },
-  ];
-
-  return (
-    <div className="product-assurance-strip grid grid-cols-2 gap-1.5 rounded-lg border border-brand-border bg-white/80 p-2 lg:grid-cols-4 lg:gap-2 lg:p-3">
-      {items.map((item) => (
-        <div key={item.label} className="flex min-w-0 items-center gap-1.5 rounded-md bg-[#fffaf2] px-2 py-1.5 lg:gap-2 lg:px-3 lg:py-2">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#7A1515]/10 text-[#7A1515] lg:h-7 lg:w-7">
-            <item.icon className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
-          </span>
-          <span className="min-w-0 text-[10px] font-normal leading-tight text-brand-text lg:text-[12px] lg:leading-4">{item.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default async function ProductDetailPage({ params, searchParams }: ProductDetailPageProps) {
   const { category, slug } = await params;
   const rawSearchParams = await searchParams;
@@ -294,7 +188,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         .eq('is_active', true)
         .neq('slug', slug)
         .order('in_stock', { ascending: false })
-        .limit(8)
+        .limit(10)
     : supabase
         .from('products')
         .select(relatedSelect)
@@ -302,7 +196,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         .eq('is_active', true)
         .neq('slug', slug)
         .order('in_stock', { ascending: false })
-        .limit(8);
+        .limit(10);
 
   const reviewPromise = getDisplayReviewsForProduct(supabase, product);
 
@@ -354,6 +248,28 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         ? product.category.charAt(0).toUpperCase() + product.category.slice(1) + 's'
         : 'Shop';
 
+  const productSpecs = [
+    { label: 'Availability', value: formatLabel(product.availability_status) },
+    { label: 'Weight', value: product.carat_weight ? `${product.carat_weight.toFixed(2)} ct` : null },
+    { label: 'Ratti', value: product.ratti_weight ? `${product.ratti_weight.toFixed(2)} rt` : null },
+    { label: 'Origin Region', value: product.origin_region ?? product.origin_display ?? product.origin },
+    { label: 'Shape', value: product.shape },
+    { label: 'Quality', value: product.quality_label ?? product.commercial_quality_grade },
+    { label: 'Treatment', value: product.treatment_summary ?? formatLabel(product.treatment) },
+    { label: 'Colour', value: product.color_grade },
+    { label: 'Clarity', value: product.clarity },
+    { label: 'Dimensions', value: formatDimensions(product.dimensions_mm) },
+    ...(!isNoCertification(product.certification)
+      ? [{ label: 'Lab', value: product.certificate_lab ?? product.certification }]
+      : []),
+    {
+      label: 'Jewellery',
+      value: isGemConfiguratorEnabled(product.category, product.configurator_enabled)
+        ? 'Configurable'
+        : null,
+    },
+  ].filter((row): row is { label: string; value: string } => Boolean(row.value));
+
   return (
     <>
       <JsonLd
@@ -396,7 +312,17 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
             {/* ─── Left: Gallery ─── */}
             <div className="min-w-0 md:sticky md:top-24 md:self-start lg:top-22.5">
-              <ProductGallery images={galleryImages} productName={displayName} videoUrl={product.video_url} />
+              <ProductGallery
+                images={galleryImages}
+                productName={displayName}
+                videoUrl={product.video_url}
+                certificateUrl={product.certificate_url || product.certificate_file_url}
+                labLogo={resolveLabLogo(
+                  product.certificate_lab,
+                  product.certification,
+                  product.certificate_number,
+                )}
+              />
             </div>
 
             {/* ─── Right: Info panel ─── */}
@@ -440,48 +366,20 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                 priceMode={product.price_mode}
               />
 
-              {/* Gemstone quick specs */}
-              <div className="product-spec-grid grid grid-cols-2 gap-x-2 gap-y-1.5 rounded-lg border border-brand-border bg-brand-bg p-2 md:gap-x-2.5 md:gap-y-2 md:p-2.5 lg:grid-cols-3 lg:gap-3 lg:p-4">
-                {[
-                  { label: 'Tag', value: product.tag_number },
-                  { label: 'Availability', value: formatLabel(product.availability_status) },
-                  { label: 'Weight', value: product.carat_weight ? `${product.carat_weight.toFixed(2)} ct` : null },
-                  { label: 'Ratti', value: product.ratti_weight ? `${product.ratti_weight.toFixed(2)} rt` : null },
-                  { label: 'Origin', value: product.origin },
-                  { label: 'Origin Region', value: product.origin_region ?? product.origin_display },
-                  { label: 'Shape', value: product.shape },
-                  { label: 'Colour', value: product.color_grade },
-                  { label: 'Clarity', value: product.clarity },
-                  { label: 'Quality', value: product.quality_label ?? product.commercial_quality_grade },
-                  { label: 'Treatment', value: product.treatment_summary ?? formatLabel(product.treatment) },
-                  { label: 'Dimensions', value: formatDimensions(product.dimensions_mm) },
-                  ...(!isNoCertification(product.certification)
-                    ? [
-                        { label: 'Lab', value: product.certificate_lab ?? product.certification },
-                        { label: 'Certificate No.', value: product.certificate_number },
-                      ]
-                    : []),
-                  { label: 'Planet', value: product.planet },
-                  { label: 'Rashi', value: product.rashi },
-                  { label: 'Vedic Name', value: product.vedic_name },
-                  { label: 'Energization', value: product.energization_eligible ? 'Eligible' : null },
-                  { label: 'Jewellery', value: isGemConfiguratorEnabled(product.category, product.configurator_enabled) ? 'Configurable' : null },
-                ]
-                  .filter(({ value }) => !!value)
-                  .map(({ label, value }) => (
+              {productSpecs.length > 0 && (
+                <div className="product-spec-grid grid grid-cols-2 gap-x-3 gap-y-2.5 rounded-lg border border-brand-border bg-brand-bg p-3 md:gap-x-4 md:p-3.5 lg:grid-cols-3 lg:gap-3 lg:p-4">
+                  {productSpecs.map(({ label, value }) => (
                     <div key={label} className="min-w-0">
-                      <p className="text-[9px] font-normal text-brand-muted lg:text-[10px]">
-                        {label}
+                      <p className="text-[9px] font-normal text-brand-muted lg:text-[10px]">{label}</p>
+                      <p className="product-spec-value mt-0.5 break-words text-[12px] font-medium leading-snug text-brand-text lg:mt-1 lg:text-[13px]">
+                        {value}
                       </p>
-                      <p className="product-spec-value mt-0.5 break-words text-[11px] font-normal leading-snug text-brand-text lg:mt-1 lg:text-[13px]">{value}</p>
                     </div>
                   ))}
-              </div>
+                </div>
+              )}
 
-              {/* Add to Cart */}
               <AddToCartBar product={product} />
-
-              <ProductAssuranceStrip />
 
               {/* Expert Note */}
               {(product.expert_note || expert) && (
@@ -516,7 +414,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
             </div>
           </div>
 
-          {/* ── Tabs: Description, Vedic, Certificate, Wearing, Reviews ── */}
+          {/* ── Product detail + reviews (no tabs) ── */}
           <div className="product-tabs-section mt-8 lg:mt-16">
             <ProductTabs
               product={product}
@@ -527,27 +425,18 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
             />
           </div>
 
-          {/* ── Expert Guidance CTA — below the tabs ── */}
-          <ProductCategoryCta product={product} />
+          {/* ── Expert Guidance CTA ── */}
+          <ShopCollectionCta categorySlug={product.category} />
+
+          <ProductPurchasePolicies />
+
+          <ProductAssuranceStrip />
 
           <RecentlyViewedProducts current={recentlyViewedProduct} />
 
-          {/* ── Related Products ── */}
-          {related.length > 0 && (
-            <section className="mt-10 lg:mt-16">
-              <OrnamentalDivider className="mb-4 lg:mb-6" />
-              <div className="mb-3 text-center lg:mb-5">
-                <h2 className="text-xl font-medium text-[#7A1515] lg:text-2xl">
-                  Related Gemstones
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {related.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            </section>
-          )}
+          {related.length > 0 && <RelatedProductsCarousel products={related} />}
+
+          <ProductVisitStores />
         </div>
       </main>
     </>

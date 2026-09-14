@@ -39,6 +39,7 @@ type FilterKey =
   | 'product_type'
   | 'availability_status'
   | 'price'
+  | 'price_per_carat'
   | 'carat'
   | 'ratti'
   | 'origin'
@@ -66,6 +67,7 @@ const FILTER_LABELS: Record<FilterKey | 'q', string> = {
   product_type: 'Type',
   availability_status: 'Availability',
   price: 'Price',
+  price_per_carat: 'Price / ct',
   carat: 'Weight (ct)',
   ratti: 'Ratti',
   origin: 'Country',
@@ -92,6 +94,7 @@ const INLINE_FILTER_ORDER: FilterKey[] = [
 
 const INLINE_FILTER_LABELS: Partial<Record<FilterKey, string>> = {
   price: 'Price',
+  price_per_carat: 'Price per Carat',
   carat: 'Weight (Carat)',
   ratti: 'Weight (Ratti)',
   certification: 'Certification',
@@ -377,6 +380,7 @@ function ActiveFilters({
 function shouldRenderFilter(definition: FilterDefinition, currentValue: string) {
   if (
     definition.key === 'price'
+    || definition.key === 'price_per_carat'
     || definition.key === 'carat'
     || definition.key === 'ratti'
     || definition.key === 'configurator_enabled'
@@ -458,6 +462,7 @@ export function FilterBar({
     { key: 'origin', label: 'Country', placeholder: 'Any country', options: facets.origins },
     { key: 'ratti', label: 'Ratti', placeholder: 'Any ratti', options: facets.rattiRanges },
     { key: 'price', label: 'Price', placeholder: 'Any price', options: facets.priceRanges },
+    { key: 'price_per_carat', label: 'Price / ct', placeholder: 'Any price / ct', options: facets.pricePerCaratRanges },
     { key: 'carat', label: 'Weight (ct)', placeholder: 'Any weight', options: facets.caratRanges },
     { key: 'planet', label: 'Planet', placeholder: 'Any planet', options: facets.planets },
     { key: 'shape', label: 'Shape', placeholder: 'Any shape', options: facets.shapes },
@@ -484,6 +489,15 @@ export function FilterBar({
       updateParam({ price: nextValue, min_price: minPrice ?? '', max_price: maxPrice ?? '' });
       return;
     }
+    if (definition.key === 'price_per_carat') {
+      const [minPpc, maxPpc] = nextValue.split('-');
+      updateParam({
+        price_per_carat: nextValue,
+        min_price_per_carat: minPpc ?? '',
+        max_price_per_carat: maxPpc ?? '',
+      });
+      return;
+    }
     if (definition.key === 'carat') {
       const [minCarat, maxCarat] = nextValue.split('-');
       updateParam({ carat: nextValue, min_carat: minCarat ?? '', max_carat: maxCarat ?? '' });
@@ -507,6 +521,9 @@ export function FilterBar({
 
   function clearFilter(key: FilterKey | 'q') {
     if (key === 'price') updateParam({ price: '', min_price: '', max_price: '' });
+    else if (key === 'price_per_carat') {
+      updateParam({ price_per_carat: '', min_price_per_carat: '', max_price_per_carat: '' });
+    }
     else if (key === 'carat') updateParam({ carat: '', min_carat: '', max_carat: '' });
     else if (key === 'ratti') updateParam({ ratti: '', min_ratti: '', max_ratti: '' });
     else if (key === 'category') updateParam({ category: '', sub_category: '' });

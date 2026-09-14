@@ -91,6 +91,7 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
       { label: 'Terms of Service', href: '/policies/terms' },
       { label: 'Shipping Policy', href: '/policies/shipping' },
       { label: 'Returns Policy', href: '/policies/returns' },
+      { label: 'Payment Methods', href: '/policies/payment' },
       { label: 'Certificate & Trust Center', href: '/policies/certification-trust' },
       { label: 'Treatment Disclosure', href: '/policies/treatment-disclosure' },
       { label: 'No-Franchise Notice', href: '/policies/legal-notice' },

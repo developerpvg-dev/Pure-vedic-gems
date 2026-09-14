@@ -4,11 +4,15 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Play, Maximize2 } from 'lucide-react';
+import type { LabLogo } from '@/lib/constants/trust-credentials';
 
 interface ProductGalleryProps {
   images: string[];
   productName: string;
   videoUrl?: string | null;
+  labLogo?: LabLogo | null;
+  /** Certificate / lab-report slide URL — logo hidden on this slide. */
+  certificateUrl?: string | null;
 }
 
 function youtubeId(url: string): string | null {
@@ -32,7 +36,13 @@ function ytThumb(url: string): string | null {
   return yt ? `https://img.youtube.com/vi/${yt}/hqdefault.jpg` : null;
 }
 
-export function ProductGallery({ images, productName, videoUrl }: ProductGalleryProps) {
+export function ProductGallery({
+  images,
+  productName,
+  videoUrl,
+  labLogo,
+  certificateUrl,
+}: ProductGalleryProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
@@ -59,6 +69,9 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
   const totalSlides = imgs.length + (videoUrl ? 1 : 0);
   const videoIdx = videoUrl ? imgs.length : -1;
   const isVideoActive = activeIdx === videoIdx;
+  const certSlideUrl = certificateUrl?.trim() || null;
+  const isCertSlide = Boolean(certSlideUrl && !isVideoActive && imgs[activeIdx] === certSlideUrl);
+  const showLabLogo = Boolean(labLogo && !isVideoActive && !isCertSlide);
 
   const prevImg = () => setActiveIdx((i) => (i === 0 ? totalSlides - 1 : i - 1));
   const nextImg = () => setActiveIdx((i) => (i === totalSlides - 1 ? 0 : i + 1));
@@ -210,6 +223,18 @@ export function ProductGallery({ images, productName, videoUrl }: ProductGallery
               />
             )}
           </div>
+
+          {/* Lab cert badge — product photos only (not cert scan / video) */}
+          {showLabLogo && labLogo ? (
+            <div className="pointer-events-none absolute left-2 top-2 z-10 bg-white px-1.5 py-1 shadow-sm lg:left-3 lg:top-3 lg:px-2 lg:py-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element -- same as ProductCard */}
+              <img
+                src={labLogo.logo}
+                alt={`${labLogo.name} certified`}
+                className="h-4 w-auto max-w-[68px] object-contain lg:h-5 lg:max-w-[84px]"
+              />
+            </div>
+          ) : null}
 
           {/* Zoom button — top-right, hidden on video slide */}
           {!isVideoActive && (

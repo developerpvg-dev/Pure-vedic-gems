@@ -26,6 +26,7 @@ export type ShopFilterOptions = {
   productTypes: ShopFilterOption[];
   availabilityStatuses: ShopFilterOption[];
   priceRanges: ShopFilterOption[];
+  pricePerCaratRanges: ShopFilterOption[];
   caratRanges: ShopFilterOption[];
   rattiRanges: ShopFilterOption[];
   origins: ShopFilterOption[];
@@ -54,6 +55,7 @@ type FacetRow = {
   product_type: string | null;
   availability_status: string | null;
   price: number | null;
+  price_per_carat: number | null;
   carat_weight: number | null;
   ratti_weight: number | null;
   origin: string | null;
@@ -74,6 +76,7 @@ export const emptyShopFilterOptions: ShopFilterOptions = {
   productTypes: [],
   availabilityStatuses: [],
   priceRanges: [],
+  pricePerCaratRanges: [],
   caratRanges: [],
   rattiRanges: [],
   origins: [],
@@ -204,7 +207,7 @@ function collectOriginOptions(rows: FacetRow[]) {
 
 function rangeOptions(
   rows: FacetRow[],
-  key: 'price' | 'carat_weight' | 'ratti_weight',
+  key: 'price' | 'price_per_carat' | 'carat_weight' | 'ratti_weight',
   ranges: RangePreset[],
   /** Half-open [min, max) so adjacent buckets don't double-count the boundary. */
   exclusiveUpper = false,
@@ -227,12 +230,23 @@ function rangeOptions(
     .filter((option) => option.count > 0);
 }
 
-function priceRangeOptions(rows: FacetRow[]) {
-  const values = rows
-    .map((row) => row.price)
+function numericFacetValues(rows: FacetRow[], key: 'price' | 'price_per_carat') {
+  return rows
+    .map((row) => row[key])
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
+}
+
+function priceRangeOptions(rows: FacetRow[]) {
+  const values = numericFacetValues(rows, 'price');
   if (values.length < 2) return [];
   return rangeOptions(rows, 'price', buildDynamicPriceRangePresets(values), true);
+}
+
+function pricePerCaratRangeOptions(rows: FacetRow[]) {
+  const values = numericFacetValues(rows, 'price_per_carat');
+  if (values.length < 2) return [];
+  // ponytail: reuse total-price bucket builder; /ct amounts share INR scale
+  return rangeOptions(rows, 'price_per_carat', buildDynamicPriceRangePresets(values), true);
 }
 
 function configuratorOptions(rows: FacetRow[]) {
@@ -290,7 +304,7 @@ async function loadFacetRows(
 
   let query = supabase
     .from('products')
-    .select('category, sub_category, product_type, availability_status, price, carat_weight, ratti_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, name, price_mode, configurator_enabled')
+    .select('category, sub_category, product_type, availability_status, price, price_per_carat, carat_weight, ratti_weight, origin, planet, shape, certification, certificate_lab, treatment, quality_label, name, price_mode, configurator_enabled')
     .eq('is_active', true)
     .limit(1500);
 
@@ -334,6 +348,7 @@ export async function getShopFilterOptions(
     productTypes: collectOptions(rows, 'product_type', PRODUCT_TYPE_LABELS),
     availabilityStatuses: collectOptions(rows, 'availability_status', AVAILABILITY_LABELS),
     priceRanges: priceRangeOptions(rows),
+    pricePerCaratRanges: pricePerCaratRangeOptions(rows),
     caratRanges: rangeOptions(rows, 'carat_weight', CARAT_RANGE_PRESETS),
     rattiRanges: rangeOptions(rows, 'ratti_weight', RATTI_RANGE_PRESETS),
     origins: collectOriginOptions(rows),

@@ -48,11 +48,11 @@ export function StickyContactRail() {
           -webkit-tap-highlight-color: transparent;
           /* Soft attention cue — brief nudge, long pause */
           animation: pvg-fab-shake 2.8s ease-in-out infinite,
-            pvg-fab-glow-maroon 2.2s ease-out infinite !important;
+            pvg-fab-glow-blue 2.2s ease-out infinite !important;
         }
 
         .pvg-sticky-contact-call {
-          background: linear-gradient(145deg, #9c1e1e 0%, #7a1515 48%, #4d0a0a 100%) !important;
+          background: linear-gradient(145deg, #3b82f6 0%, #2563eb 48%, #1d4ed8 100%) !important;
         }
 
         .pvg-sticky-contact-whatsapp {
@@ -77,7 +77,7 @@ export function StickyContactRail() {
         }
 
         .pvg-sticky-contact-call .pvg-sticky-contact-ring {
-          color: #7a1515;
+          color: #2563eb;
         }
 
         .pvg-sticky-contact-whatsapp .pvg-sticky-contact-ring {
@@ -141,10 +141,10 @@ export function StickyContactRail() {
           94% { transform: translate(1px, 0) rotate(2deg); }
         }
 
-        @keyframes pvg-fab-glow-maroon {
-          0% { box-shadow: 0 0 0 0 rgba(122, 21, 21, 0.4), 0 6px 16px rgba(122, 21, 21, 0.35); }
-          70% { box-shadow: 0 0 0 10px rgba(122, 21, 21, 0), 0 6px 16px rgba(122, 21, 21, 0.35); }
-          100% { box-shadow: 0 0 0 0 rgba(122, 21, 21, 0), 0 6px 16px rgba(122, 21, 21, 0.35); }
+        @keyframes pvg-fab-glow-blue {
+          0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4), 0 6px 16px rgba(37, 99, 235, 0.35); }
+          70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0), 0 6px 16px rgba(37, 99, 235, 0.35); }
+          100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0), 0 6px 16px rgba(37, 99, 235, 0.35); }
         }
 
         @keyframes pvg-fab-glow-green {

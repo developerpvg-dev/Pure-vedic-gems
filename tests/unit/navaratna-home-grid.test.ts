@@ -5,8 +5,8 @@ import {
 } from '@/lib/constants/navaratna-home-grid';
 
 describe('navaratna homepage grid', () => {
-  it('includes pitambari as the tenth homepage card', () => {
-    const items = NAVARATNA_HOME_GRID_SLUGS.slice(0, 9).map((slug, index) => ({
+  it('includes padparadscha after pitambari on the homepage grid', () => {
+    const items = NAVARATNA_HOME_GRID_SLUGS.slice(0, -1).map((slug, index) => ({
       slug,
       name: slug,
       featured_on_homepage: true,
@@ -14,26 +14,34 @@ describe('navaratna homepage grid', () => {
     }));
 
     const fallback = new Map([
-      ['pitambari', { slug: 'pitambari', name: 'Pitambari', featured_on_homepage: true, sort_order: 10 }],
+      [
+        'padparadscha-sapphire',
+        {
+          slug: 'padparadscha-sapphire',
+          name: 'Padparadscha Sapphire',
+          featured_on_homepage: true,
+          sort_order: 11,
+        },
+      ],
     ]);
 
     const picked = pickNavaratnaHomeGridCategories(items, fallback);
 
-    expect(picked).toHaveLength(10);
-    expect(picked.at(-1)?.slug).toBe('pitambari');
+    expect(picked).toHaveLength(NAVARATNA_HOME_GRID_SLUGS.length);
+    expect(picked.at(-1)?.slug).toBe('padparadscha-sapphire');
   });
 
   it('respects admin homepage visibility', () => {
     const items = NAVARATNA_HOME_GRID_SLUGS.map((slug, index) => ({
       slug,
       name: slug,
-      featured_on_homepage: slug !== 'pitambari',
+      featured_on_homepage: slug !== 'padparadscha-sapphire',
       sort_order: index + 1,
     }));
 
     const picked = pickNavaratnaHomeGridCategories(items, new Map());
 
-    expect(picked.some((item) => item.slug === 'pitambari')).toBe(false);
-    expect(picked).toHaveLength(9);
+    expect(picked.some((item) => item.slug === 'padparadscha-sapphire')).toBe(false);
+    expect(picked).toHaveLength(NAVARATNA_HOME_GRID_SLUGS.length - 1);
   });
 });

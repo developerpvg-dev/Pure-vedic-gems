@@ -16,6 +16,7 @@ const VEDIC_BY_SLUG: Record<string, string> = {
   'cats-eye': 'Lehsunia',
   'white-sapphire': 'Safed Pukhraj',
   pitambari: 'Pitambari Neelam',
+  'padparadscha-sapphire': 'Padmaraga',
 };
 
 export function vedicNameFromSlug(slug?: string | null) {

@@ -11,6 +11,8 @@ export const NAVARATNA_NAV_IMAGE_BY_SLUG: Record<string, string> = {
   hessonite: '/home/navratnaimg/stone8.webp',
   'cats-eye': '/home/navratnaimg/stone9.webp',
   pitambari: '/home/upratna-cards/pitambari.webp',
+  // ponytail: reuse yellow-sapphire cut until a dedicated padparadscha card is shot; admin CDN image wins when set
+  'padparadscha-sapphire': '/home/navratnaimg/stone5.webp',
 };
 
 export function navaratnaNavImage(slug: string): string | null {

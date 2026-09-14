@@ -76,6 +76,9 @@ describe('Phase 4 keyword-gap map', () => {
     const pita = NAVARATNA_RICH_CONTENT.pitambari?.faqs ?? [];
     expect(pita.some((faq) => /pitambari sapphire/i.test(faq.question))).toBe(true);
     expect(pita.some((faq) => /sri lankan pitambari/i.test(faq.question))).toBe(true);
+    const padpara = NAVARATNA_RICH_CONTENT['padparadscha-sapphire']?.faqs ?? [];
+    expect(padpara.some((faq) => /padparadscha sapphire/i.test(faq.question))).toBe(true);
+    expect(padpara.some((faq) => /padmaraga/i.test(faq.question))).toBe(true);
     const exclusive = NAVARATNA_RICH_CONTENT['exclusive-gems']?.faqs ?? [];
     expect(exclusive.some((faq) => /exclusive gems/i.test(faq.question))).toBe(true);
   });

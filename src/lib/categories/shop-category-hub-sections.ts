@@ -200,6 +200,7 @@ const RED_CORAL_HEADINGS = phraseHeadings('Natural Red Coral Stone');
 const DIAMOND_HEADINGS = phraseHeadings('Natural Diamond Gemstone');
 const HESSONITE_HEADINGS = phraseHeadings('Natural Hessonite Stone');
 const PITAMBARI_HEADINGS = phraseHeadings('Natural Pitambari Sapphire');
+const PADPARADSCHA_HEADINGS = phraseHeadings('Natural Padparadscha Sapphire');
 const EXCLUSIVE_GEMS_HEADINGS = phraseHeadings('Exclusive Gems');
 
 export function categoryHubSeoHeadings(slug: string) {
@@ -216,6 +217,7 @@ export function categoryHubSeoHeadings(slug: string) {
     diamond: DIAMOND_HEADINGS,
     hessonite: HESSONITE_HEADINGS,
     pitambari: PITAMBARI_HEADINGS,
+    'padparadscha-sapphire': PADPARADSCHA_HEADINGS,
     'exclusive-gems': EXCLUSIVE_GEMS_HEADINGS,
   };
   const special: Record<string, string> = {

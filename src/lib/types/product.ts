@@ -230,6 +230,8 @@ export interface ProductFilters {
   availability_status?: AvailabilityStatus;
   min_price?: number;
   max_price?: number;
+  min_price_per_carat?: number;
+  max_price_per_carat?: number;
   min_carat?: number;
   max_carat?: number;
   min_ratti?: number;

@@ -1865,6 +1865,154 @@ export const NAVARATNA_RICH_CONTENT: Record<string, RichGemSections> = {
     ],
   }),
 
+  'padparadscha-sapphire': defineGem({
+    slug: 'padparadscha-sapphire',
+    name: 'Natural Padparadscha Sapphire',
+    hindi: 'Padmaraga',
+    planet: 'Venus',
+    extraKeywords: [
+      'padparadscha sapphire',
+      'padparadscha',
+      'natural padparadscha',
+      'padmaraga',
+      'padmaraga sapphire',
+      'lotus sapphire',
+      'pink orange sapphire',
+      'ceylon padparadscha',
+    ],
+    seo_description:
+      'Natural padparadscha sapphire (Padmaraga) for Shukra. Lotus pink-orange corundum with lab colour and heat disclosure.',
+    intro:
+      'Natural Padparadscha Sapphire (Padmaraga) is lotus pink-orange corundum for Shukra. A padparadscha sapphire needs a chart reading, lab colour naming, and honest heat or diffusion disclosure. PureVedicGems will not sell orange sapphire as padparadscha without the report line.',
+    hero_benefits: [
+      { text: 'Shukra / Venus' },
+      { text: 'Lotus pink-orange' },
+      { text: 'Friday wear' },
+      { text: 'Lab colour named' },
+    ],
+    about_html: [
+      p(
+        'A natural padparadscha sapphire is corundum with a balanced pink-orange “lotus” body colour. The Sinhalese name padmaraga points to that dawn hue. In Hindi trade talk it is often called Padmaraga.',
+        'It is not one of the classical nine Navaratna species. Modern Jyotish still uses a padparadscha sapphire for Venus (Shukra) when the tone stays soft pink-orange — not neon orange, not hot pink alone.',
+        'Sri Lanka (Ceylon), Madagascar, and rarer African lots supply most natural padparadscha we grade. Top labs (GIA, GRS, SSEF, Gübelin, Lotus) decide whether the colour name is earned.',
+      ),
+      h3('Vedic Significance'),
+      p(
+        'Venus rules Taurus and Libra — love, arts, harmony, and refined comfort. A padparadscha sapphire is named when Shukra needs support and the wearer wants a rarer Venus stone than white sapphire or diamond.',
+        'Some charts lean Jupiter if the body is strongly yellow-orange. That call belongs to the astrologer, not a product page. First get a Jyotish reading.',
+      ),
+      h2('What is Padparadscha Sapphire'),
+      p(
+        'Padparadscha sapphire is a colour variety of natural sapphire (corundum), Mohs 9. The market insists on a delicate blend of pink and orange — the lotus blossom range — not a fancy orange sapphire rebranded for the invoice.',
+        'Heat may be accepted when disclosed. Beryllium diffusion that paints orange onto pink sapphire is not Jyotish-grade padparadscha.',
+      ),
+      h2('What customers say about padparadscha'),
+      p(
+        'People write about wanting the rare lotus colour after Venus was named — not a fashion pink stone without a chart.',
+        'Read our <a href="/testimonials">customer testimonials</a> or <a href="/consultation">book a consultation</a> before you pick a padparadscha sapphire.',
+      ),
+    ].join('\n'),
+    how_to_wear_html: [
+      p('Wear a natural padparadscha sapphire only after the chart check. The table is the PureVedicGems Venus pattern for Padmaraga.'),
+      table([
+        ['Weight', 'Generally 3–6 carats. Confirm with Jyotish.'],
+        ['Colour', 'Balanced pink-orange lotus. Avoid neon orange or washed pink sold as padparadscha.'],
+        ['Metal', 'Yellow gold or rose gold; white metal only if prescribed.'],
+        ['Finger', 'Ring finger of the right hand (working hand).'],
+        ['Day', 'Friday morning'],
+        ['Time', 'Morning during Shukra hora'],
+        ['Mantra', 'Chant “Om Dram Drim Droum Sah Shukraya Namah” 108 times'],
+        ['Purification', 'Rose water, raw milk, Gangajal; pink or orange flowers'],
+      ]),
+      p('Set the padparadscha sapphire so it can touch skin. Prefer unheated lots when the astrologer asks for them.'),
+    ].join('\n'),
+    who_should_wear_html: [
+      p(
+        'A natural padparadscha sapphire suits Taurus and Libra charts when Venus should be strengthened and a lotus-toned stone is preferred over diamond or white sapphire.',
+        'Artists, relationship seekers, and collectors often wear Padmaraga after a reading.',
+      ),
+      h3('When Padparadscha Sapphire May Help'),
+      ul([
+        'Shukra dasha after an astrologer confirms padparadscha',
+        'Venus support when diamond or white sapphire is not the chosen stone',
+        'Creative and harmony-focused work with chart approval',
+      ]),
+      h3('When Not to Wear'),
+      p('If the astrologer names only Heera or only Safed Pukhraj, a padparadscha sapphire is the wrong swap. Avoid if Venus is already strong, or if the lab will not call the colour padparadscha.'),
+      h3('Mandatory Consultation'),
+      p(
+        `${BRAND} helps choose diamond, white sapphire, or padparadscha. Book a <a href="/consultation">consultation</a>. Then shop certified lots with the colour name on the report.`,
+      ),
+    ].join('\n'),
+    benefits_html: [
+      p('People wear a natural padparadscha sapphire for Shukra’s themes: love, creativity, emotional ease, and refined taste. These are traditional associations, not medical claims.'),
+      h3('Relationships and harmony'),
+      p('A padparadscha sapphire is worn for softer Venus balance — pink for affection, orange for warmth. Effort still does the work.'),
+      h3('Creativity'),
+      p('Artists and designers use Padmaraga when Venus should support craft and presence.'),
+      h3('Collector rarity'),
+      p('True padparadscha is scarce. Rarity is not potency by itself — the chart and the lab line matter more than the invoice poetry.'),
+    ].join('\n'),
+    types_html: [
+      p('Not every pink-orange sapphire is padparadscha. Origin, saturation, and treatment change both beauty and Jyotish fitness.'),
+      h2('Padparadscha Sapphire Origins'),
+      ul([
+        '<a href="/gemstones/navaratna/padparadscha-sapphire?origin=Ceylon">Ceylon Padparadscha</a>: classic soft lotus tones — the usual collector benchmark',
+        '<a href="/gemstones/navaratna/padparadscha-sapphire?origin=Madagascar">Madagascar Padparadscha</a>: strong pink-orange when the lab agrees on the name',
+      ]),
+      h2('Natural Padparadscha vs Lookalikes'),
+      p(
+        'Fancy orange sapphire, pink sapphire, and beryllium-diffused stones are sold as padparadscha. Demand the colour call on a reputable report.',
+        'Prefer unheated natural padparadscha when available. Disclosed heat-only is a different buy from diffusion.',
+      ),
+    ].join('\n'),
+    quality_price_html: [
+      p('Padparadscha sapphire price follows colour balance, size, clarity, origin, and treatment — not a flat “pink sapphire” band. Unheated Ceylon lots with a clear padparadscha call sit at the top.'),
+      h2('How labs grade Padmaraga'),
+      p(
+        'GIA, GRS, SSEF, and similar labs use narrow colour windows. If the report says “fancy sapphire” or only “pink sapphire,” do not pay padparadscha prices.',
+        'Budget for the report and for Jyotish weight, not for a marketing name alone.',
+      ),
+      h3('Certification'),
+      p('The report must say natural corundum and, for the claim, padparadscha (or an equivalent lab phrase). Heat and diffusion must be named.'),
+    ].join('\n'),
+    jewellery_html: [
+      p('A natural padparadscha sapphire is often set in yellow or rose gold so the lotus colour stays warm against skin. Open-back rings suit Jyotish wear.'),
+      h3('Setting'),
+      ul(['Friday energisation', 'Open culet', 'Disclose heat or diffusion on the sales note']),
+    ].join('\n'),
+    cleaning_care_html: [
+      h3('Cleaning'),
+      p('Warm water and mild soap. A padparadscha sapphire is Mohs 9 — hard, but the setting is not.'),
+      h3('Re-Energisation'),
+      p('Friday Shukra mantra and a rose-water rinse on the padparadscha sapphire.'),
+    ].join('\n'),
+    buyer_beware_html: [
+      p('Orange sapphire and diffusion stock are sold as padparadscha sapphire. If the price looks like commercial pink sapphire, demand the lab colour line.'),
+      h2('Padparadscha vs Pink or Orange Sapphire'),
+      p('Pink sapphire alone is not Padmaraga. Neon orange is not lotus. A natural padparadscha needs both tones in balance.'),
+      h3('Red Flags'),
+      ul([
+        'No padparadscha colour call on the report',
+        'Undisclosed beryllium diffusion',
+        'Hot pink or pure orange sold as Ceylon padparadscha',
+      ]),
+      p(`${BRAND} lists natural padparadscha sapphire only with transparent lab naming.`),
+    ].join('\n'),
+    faqs: [
+      { question: 'What is padparadscha sapphire?', answer: 'Padparadscha sapphire is natural corundum with a balanced pink-orange lotus colour (Padmaraga). Top labs decide whether the colour name applies.' },
+      { question: 'What is Padmaraga?', answer: 'Padmaraga is the traditional lotus-colour name linked to padparadscha. In trade it means the same pink-orange sapphire variety.' },
+      { question: 'Is padparadscha a Navaratna?', answer: 'No. It is not one of the classical nine. PureVedicGems still lists it with Navaratna sapphires because it is rare corundum used for Venus when prescribed.' },
+      { question: 'Which planet is padparadscha for?', answer: 'Usually Venus (Shukra). Some charts use Jupiter if the tone is strongly yellow-orange — confirm with Jyotish.' },
+      { question: 'How to wear padparadscha sapphire?', answer: 'After a chart reading: Friday, ring finger, gold or rose gold, Shukra mantra, stone touching skin.' },
+      { question: 'Heated padparadscha OK?', answer: 'Unheated is preferred. Disclosed heat-only may be accepted. Avoid undisclosed diffusion.' },
+      { question: 'Padparadscha vs pink sapphire?', answer: 'Pink sapphire lacks the orange blend. Only a lab padparadscha call supports the name and the price.' },
+      { question: 'Ceylon or Madagascar padparadscha?', answer: 'Ceylon soft lotus tones are classic. Fine Madagascar lots work when the report agrees.' },
+      { question: 'How many carats?', answer: 'Generally 3–6 carats for Jyotish wear — confirm with your astrologer.' },
+      { question: 'Padparadscha sapphire price drivers?', answer: 'Colour balance, size, clarity, origin, heat vs diffusion, and whether the lab actually names padparadscha.' },
+    ],
+  }),
+
   pitambari: defineGem({
     slug: 'pitambari',
     name: 'Natural Pitambari Sapphire',

@@ -64,6 +64,7 @@ export const NAVRATNA_SUB_CATEGORIES = [
   { value: 'diamond', label: 'Diamond (Heera)' },
   { value: 'white-sapphire', label: 'White Sapphire (Safed Pukhraj)' },
   { value: 'pitambari', label: 'Pitambari Neelam' },
+  { value: 'padparadscha-sapphire', label: 'Padparadscha Sapphire (Padmaraga)' },
 ];
 
 export const UPRATNA_SUB_CATEGORIES = [

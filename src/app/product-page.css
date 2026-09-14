@@ -70,10 +70,6 @@
     min-height: 34px;
   }
 
-  .pvg-product-page .product-assurance-strip {
-    margin-top: -2px;
-  }
-
   .pvg-product-page .product-spec-grid {
     max-height: none;
   }
@@ -145,34 +141,24 @@
   }
 
   .pvg-product-page .product-spec-value {
-    font-size: 10px !important;
-    margin-top: 0.125rem !important;
+    font-size: 11px !important;
   }
 
   .pvg-product-page .product-cart-bar {
     gap: 0.375rem;
   }
 
-  .pvg-product-page .product-cart-bar button {
-    font-size: 11px;
+  .pvg-product-page .product-cart-bar .h-10 {
+    height: 2.25rem !important;
   }
 
-  .pvg-product-page .product-cart-bar .h-9.w-9 {
-    height: 2rem !important;
-    width: 2rem !important;
-  }
-
-  .pvg-product-page .product-cart-bar .w-7 {
-    width: 1.375rem !important;
+  .pvg-product-page .product-cart-bar .w-10 {
+    width: 2.25rem !important;
   }
 
   .pvg-product-page .product-assurance-strip {
-    padding: 0.375rem !important;
-    gap: 0.375rem !important;
-  }
-
-  .pvg-product-page .product-assurance-strip span:last-child {
-    font-size: 9px !important;
+    margin-top: 1rem;
+    padding: 0.65rem 0.75rem;
   }
 
   .pvg-product-page .product-tabs-section {
@@ -184,4 +170,65 @@
   .pvg-product-page .prose {
     overflow-wrap: anywhere;
   }
+}
+
+/* Reviews carousel: never show native scrollbar; arrows + swipe only */
+.pvg-product-page .product-reviews-scroller {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.pvg-product-page .product-reviews-scroller::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+/* Shop CTA: match product AddToCartBar pills (icons + soft fills) */
+.pvg-shop-cta-pills .pvg-rcta-v2-btns {
+  gap: 8px !important;
+  align-items: stretch;
+}
+
+.pvg-shop-cta-pills .pvg-rcta-v2-mobile-actions {
+  gap: 8px !important;
+  max-width: 100% !important;
+}
+
+/* Force readable contrast — home CTA link styles override Tailwind text-* */
+.pvg-shop-cta-pills .pvg-cta-pill-call {
+  background: #f0c14b !important;
+  color: #2a1810 !important;
+  box-shadow: 0 4px 14px rgba(240, 193, 75, 0.28) !important;
+}
+.pvg-shop-cta-pills .pvg-cta-pill-call:hover {
+  background: #e5b33a !important;
+}
+
+.pvg-shop-cta-pills .pvg-cta-pill-whatsapp {
+  background: #25d366 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.32) !important;
+}
+.pvg-shop-cta-pills .pvg-cta-pill-whatsapp:hover {
+  background: #1ebe57 !important;
+  color: #ffffff !important;
+}
+.pvg-shop-cta-pills .pvg-cta-pill-whatsapp svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.pvg-shop-cta-pills .pvg-cta-pill-remedies {
+  background: #ffffff !important;
+  color: #7a1515 !important;
+  box-shadow: 0 4px 14px rgba(44, 4, 4, 0.16) !important;
+}
+.pvg-shop-cta-pills .pvg-cta-pill-remedies:hover {
+  background: #fff5f3 !important;
+}
+
+.pvg-shop-cta-pills .pvg-cta-pill-call svg,
+.pvg-shop-cta-pills .pvg-cta-pill-remedies svg {
+  color: inherit !important;
+  stroke: currentColor;
 }

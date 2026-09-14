@@ -20,6 +20,7 @@ const EXTRA_ALIASES: Record<string, string[]> = {
   diamond: ['heera'],
   turquoise: ['firoza'],
   iolite: ['neeli'],
+  'padparadscha-sapphire': ['padparadscha', 'padmaraga', 'padma raga'],
 };
 
 const GEM_MATCHERS = Object.keys(KNOWN_GEM_SUBCATEGORIES).map((slug) => ({

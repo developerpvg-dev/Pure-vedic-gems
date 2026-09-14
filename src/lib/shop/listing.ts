@@ -23,6 +23,8 @@ export function applyShopProductFilters<T extends SortableQuery>(
     ProductFilters,
     | 'min_price'
     | 'max_price'
+    | 'min_price_per_carat'
+    | 'max_price_per_carat'
     | 'min_carat'
     | 'max_carat'
     | 'min_ratti'
@@ -41,6 +43,8 @@ export function applyShopProductFilters<T extends SortableQuery>(
 ): T {
   if (filters.min_price !== undefined) query = query.gte('price', filters.min_price) as T;
   if (filters.max_price !== undefined) query = query.lte('price', filters.max_price) as T;
+  if (filters.min_price_per_carat !== undefined) query = query.gte('price_per_carat', filters.min_price_per_carat) as T;
+  if (filters.max_price_per_carat !== undefined) query = query.lte('price_per_carat', filters.max_price_per_carat) as T;
   if (filters.min_carat !== undefined) query = query.gte('carat_weight', filters.min_carat) as T;
   if (filters.max_carat !== undefined) query = query.lte('carat_weight', filters.max_carat) as T;
   if (filters.min_ratti !== undefined) query = query.gte('ratti_weight', filters.min_ratti) as T;

@@ -142,6 +142,11 @@ export async function POST(
     updates.stock_status = stockQuantity > 0 ? 'in_stock' : 'out_of_stock';
     updates.availability_status = stockQuantity > 0 ? 'in_stock' : 'out_of_stock';
     updates.reservation_note = parsed.data.note ?? null;
+    // Clear leftover hold timestamps so the next order can reserve again
+    updates.reserved_until = null;
+    updates.reserved_quantity = 0;
+    updates.reserved_by_customer_id = null;
+    updates.reserved_by_admin_id = null;
   }
 
   const { data, error } = await db

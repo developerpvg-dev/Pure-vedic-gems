@@ -121,6 +121,7 @@ const NAVARATNA_FALLBACK: HomeManagedCategory[] = [
   { id: 'hessonite', name: 'Hessonite', slug: 'hessonite', type: 'navaratna', sanskrit_name: 'Gomed', planet: 'Rahu', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Africa', color: '#92400E', sort_order: 8 },
   { id: 'cats-eye', name: "Cat's Eye", slug: 'cats-eye', type: 'navaratna', sanskrit_name: 'Lehsuniya', planet: 'Ketu', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Brazil', color: '#65A30D', sort_order: 9 },
   { id: 'pitambari', name: 'Pitambari', slug: 'pitambari', type: 'navaratna', sanskrit_name: null, planet: 'Jupiter & Saturn', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lankan / Burma', color: '#E0B84C', sort_order: 10 },
+  { id: 'padparadscha-sapphire', name: 'Padparadscha Sapphire', slug: 'padparadscha-sapphire', type: 'navaratna', sanskrit_name: 'Padmaraga', planet: 'Venus', image_url: null, hover_image_url: null, description: null, display_locations: 'Sri Lanka · Madagascar', color: '#E88B6A', sort_order: 11 },
 ];
 
 const UPRATNA_FALLBACK: HomeManagedCategory[] = [
@@ -242,21 +243,25 @@ function mergeWithFallback(items: HomeManagedCategory[], fallback: HomeManagedCa
   if (!items.length) return withLocalNavImages(fallback);
 
   const fallbackBySlug = new Map(fallback.map((item) => [item.slug, item]));
-  return withLocalNavImages(
+  const merged = withLocalNavImages(
     items.map((item) => {
       const fallbackItem = fallbackBySlug.get(item.slug);
       return {
         ...item,
         name: item.name || fallbackItem?.name || item.slug,
         sanskrit_name: item.sanskrit_name ?? fallbackItem?.sanskrit_name ?? null,
+        planet: item.planet ?? fallbackItem?.planet ?? null,
         image_url: item.image_url ?? fallbackItem?.image_url ?? null,
         display_locations: item.display_locations ?? fallbackItem?.display_locations ?? (item.type === 'upratna' ? UPRATNA_DEFAULT_LOCATIONS : item.description ?? null),
         color: item.color ?? fallbackItem?.color ?? null,
+        // ponytail: sort_order 0 usually means unset in admin — prefer known fallback order
+        sort_order: item.sort_order > 0 ? item.sort_order : (fallbackItem?.sort_order ?? item.sort_order ?? 0),
         featured_on_homepage: item.featured_on_homepage ?? fallbackItem?.featured_on_homepage ?? true,
         is_rare: item.is_rare ?? fallbackItem?.is_rare ?? false,
       };
     }),
   );
+  return merged.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 }
 
 const FALLBACK_BUCKETS: CategoryBucket = {
@@ -606,6 +611,8 @@ export type IntegratedCategoryCtaButton = {
   href: string;
   /** chat = primary brand, call = gold, whatsapp = green */
   tone?: 'chat' | 'call' | 'whatsapp';
+  /** When set, replaces tone-based desktop/mobile class names. */
+  className?: string;
 };
 
 function CtaActionLink({
@@ -703,11 +710,12 @@ export function IntegratedCategoryCta({
                   key={`${action.href}-${index}`}
                   href={action.href}
                   className={
-                    action.tone === 'whatsapp'
+                    action.className ??
+                    (action.tone === 'whatsapp'
                       ? 'pvg-rcta-v2-btn-whatsapp'
                       : action.tone === 'call'
                         ? 'pvg-rcta-v2-btn-call'
-                        : 'pvg-rcta-v2-btn-chat'
+                        : 'pvg-rcta-v2-btn-chat')
                   }
                 >
                   {action.label}
@@ -724,11 +732,12 @@ export function IntegratedCategoryCta({
             key={`m-${action.href}-${index}`}
             href={action.href}
             className={
-              action.tone === 'whatsapp'
+              action.className ??
+              (action.tone === 'whatsapp'
                 ? 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-whatsapp'
                 : action.tone === 'call'
                   ? 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-secondary'
-                  : 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary'
+                  : 'pvg-rcta-v2-btn-mobile pvg-rcta-v2-btn-mobile-primary')
             }
           >
             {action.label}

@@ -293,8 +293,8 @@ async function CategoryProducts({
       ) : null}
 
       <ShopPagination page={filters.page} totalPages={totalPages} searchParams={searchParams} basePath={basePath} />
-      <ShopCollectionCta categorySlug={categorySlug} />
       {faqs.length > 0 ? <CategoryFaqSection faqs={faqs} /> : null}
+      <ShopCollectionCta categorySlug={categorySlug} />
     </>
   );
 }
