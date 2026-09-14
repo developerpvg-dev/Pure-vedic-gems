@@ -224,6 +224,7 @@ export async function getAdminFilterOptions(category?: string): Promise<AdminFil
     productTypes: collectOptions(rows, 'product_type', PRODUCT_TYPE_LABELS),
     availabilityStatuses: collectOptions(rows, 'availability_status', AVAILABILITY_LABELS),
     priceRanges: rangeOptions(rows, 'price', PRICE_RANGE_PRESETS),
+    pricePerCaratRanges: [],
     caratRanges: rangeOptions(rows, 'carat_weight', CARAT_RANGE_PRESETS),
     rattiRanges: [],
     origins: collectOptions(rows, 'origin'),
