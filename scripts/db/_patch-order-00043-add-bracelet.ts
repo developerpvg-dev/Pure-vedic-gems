@@ -36,7 +36,7 @@ async function main() {
 
   const items = Array.isArray(order.items) ? [...order.items] : [];
   const already = items.some(
-    (i: { name?: string; sku?: string; configuration_snapshot?: { marker?: string } }) =>
+    (i: { name?: string; sku?: string; unit_price?: number; configuration_snapshot?: { marker?: string } }) =>
       i.configuration_snapshot?.marker === MARKER ||
       (i.name === ITEM_NAME && i.sku === 'MANUAL-DESIGN' && Number(i.unit_price) === ITEM_PRICE),
   );
