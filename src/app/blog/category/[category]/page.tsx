@@ -15,62 +15,66 @@ import type { Metadata } from 'next';
 import { buildMetadata } from '@/lib/utils/seo';
 import '../../blog-page.css';
 
-export const revalidate = 3600;
+// ponytail: Next 16 ISR + empty generateStaticParams + searchParams was 500ing this nested route
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ category: string }>;
   searchParams: Promise<{ page?: string }>;
 }
 
-// ponytail: skip build-time Sanity slug crawl (402 quota was failing Vercel). ISR on first request.
-export function generateStaticParams() {
-  return [];
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { category: slug } = await params;
-  const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
-  if (!cat) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}): Promise<Metadata> {
+  try {
+    const { category: slug } = await params;
+    const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
+    const description =
+      typeof cat?.description === 'string' && cat.description
+        ? cat.description
+        : `Read our latest articles about ${cat?.title ?? slug}.`;
     return buildMetadata({
-      title: 'Blog Category Not Found | PureVedicGems',
-      description: 'The requested blog category could not be found.',
+      title: cat ? `${cat.title} Guides & Insights | PureVedicGems` : 'Blog Category Not Found | PureVedicGems',
+      description,
       path: `/blog/category/${slug}`,
-      noIndex: true,
+      noIndex: !cat,
+    });
+  } catch {
+    return buildMetadata({
+      title: 'Blog | PureVedicGems',
+      description: 'Vedic gemstone guides and astrology insights from PureVedicGems.',
+      path: '/blog',
     });
   }
-
-  return buildMetadata({
-    title: `${cat.title} Guides & Insights | PureVedicGems`,
-    description: cat.description || `Read our latest articles about ${cat.title}.`,
-    path: `/blog/category/${slug}`,
-  });
 }
 
-// Mirror /blog: keep searchParams behind Suspense so ISR document render doesn't 500.
-export default function BlogCategoryPage({ params, searchParams }: PageProps) {
+export default async function BlogCategoryPage({ params, searchParams }: PageProps) {
+  const { category: slug } = await params;
+  const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
+  if (!cat) notFound();
+
   return (
     <Suspense fallback={<main className="pvg-blog-page font-body text-[#15110d]" />}>
-      <BlogCategoryIndex params={params} searchParams={searchParams} />
+      <BlogCategoryIndex slug={slug} category={cat} searchParams={searchParams} />
     </Suspense>
   );
 }
 
 async function BlogCategoryIndex({
-  params,
+  slug,
+  category,
   searchParams,
 }: {
-  params: Promise<{ category: string }>;
+  slug: string;
+  category: SanityCategory;
   searchParams: Promise<{ page?: string }>;
 }) {
-  const { category: slug } = await params;
-  const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
-  if (!cat) notFound();
-
   const { page: pageParam } = await searchParams;
   const requestedPage = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
 
   const totalCount = Number(await getBlogPostCountByCategory(slug)) || 0;
-
   const totalPages = Math.max(1, Math.ceil(totalCount / BLOG_POSTS_PER_PAGE));
   const currentPage = Math.min(requestedPage, totalPages);
   const offset = (currentPage - 1) * BLOG_POSTS_PER_PAGE;
@@ -86,7 +90,7 @@ async function BlogCategoryIndex({
           <span aria-hidden="true">/</span>
           <Link href="/blog">Blog</Link>
           <span aria-hidden="true">/</span>
-          <span aria-current="page">{cat.title}</span>
+          <span aria-current="page">{category.title}</span>
         </nav>
 
         <Link href="/blog" className="pvg-blog-back">
@@ -95,12 +99,12 @@ async function BlogCategoryIndex({
         </Link>
 
         <header className="pvg-blog-hero">
-          <h1 className="section-title">{cat.title}</h1>
-          {cat.description && (
+          <h1 className="section-title">{category.title}</h1>
+          {typeof category.description === 'string' && category.description ? (
             <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.5rem auto 0', maxWidth: '40rem' }}>
-              {cat.description}
+              {category.description}
             </p>
-          )}
+          ) : null}
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
           <p className="pvg-blog-hero-count">
             {totalCount} article{totalCount !== 1 ? 's' : ''}
@@ -112,12 +116,12 @@ async function BlogCategoryIndex({
             {allPosts.length > 0 ? (
               <>
                 <div className="pvg-blog-section-head">
-                  <h2>{cat.title} Articles</h2>
+                  <h2>{category.title} Articles</h2>
                   <p>
                     Page {currentPage} of {totalPages}
                   </p>
                 </div>
-                <section className="pvg-blog-row-list" aria-label={`${cat.title} articles`}>
+                <section className="pvg-blog-row-list" aria-label={`${category.title} articles`}>
                   {allPosts.map((post) => (
                     <BlogPostRow key={post._id} post={post} />
                   ))}

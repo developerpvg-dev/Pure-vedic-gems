@@ -3,11 +3,10 @@ import Link from 'next/link';
 import { getBlogCategoryProducts, getBlogGemRailData } from '@/lib/blog/blog-rail-data';
 
 export async function BlogChooseGemRail({ categorySlug }: { categorySlug?: string }) {
-  const { copy, gems } = await getBlogGemRailData(categorySlug);
-  const products = await getBlogCategoryProducts(copy.productCategory);
-
-  return (
-    <>
+  try {
+    const { copy, gems } = await getBlogGemRailData(categorySlug);
+    const products = await getBlogCategoryProducts(copy.productCategory);
+    return (
       <aside className="pvg-blog-rail-stack" aria-label={copy.title}>
         <section className="pvg-blog-gem-card">
           <header className="pvg-blog-gem-head">
@@ -74,6 +73,9 @@ export async function BlogChooseGemRail({ categorySlug }: { categorySlug?: strin
           </section>
         ) : null}
       </aside>
-    </>
-  );
+    );
+  } catch {
+    // ponytail: rail must not 500 the category page
+    return null;
+  }
 }
