@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 import { urlFor } from '@/lib/sanity/client';
 import { PortableText } from '@/components/blog/PortableText';
-import { getAllKnowledgeArticleSlugs, getKnowledgeArticleBySlug } from '@/lib/sanity/queries';
+import { getKnowledgeArticleBySlug } from '@/lib/sanity/queries';
 import type { PortableTextBlock, SanityKnowledgeArticle } from '@/lib/types/content';
 
 export const revalidate = 3600;
@@ -46,12 +46,9 @@ async function getArticle(slug: string) {
   return (await getKnowledgeArticleBySlug(slug)) as SanityKnowledgeArticle | null;
 }
 
-export async function generateStaticParams() {
-  const sanitySlugs = await getAllKnowledgeArticleSlugs();
-  return (sanitySlugs ?? [])
-    .map((item) => item.slug?.current)
-    .filter((slug): slug is string => Boolean(slug))
-    .map((slug) => ({ slug }));
+// ponytail: skip build-time Sanity slug crawl (402 quota was failing Vercel). ISR on first request.
+export function generateStaticParams() {
+  return [];
 }
 
 export async function generateMetadata({ params }: KnowledgeArticleProps): Promise<Metadata> {

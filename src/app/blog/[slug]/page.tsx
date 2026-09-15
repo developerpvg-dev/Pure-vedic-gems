@@ -6,7 +6,6 @@ import { urlFor } from '@/lib/sanity/client';
 import {
   getBlogPostBySlug,
   getRelatedBlogPosts,
-  getAllBlogPostSlugs,
 } from '@/lib/sanity/queries';
 import { PortableText } from '@/components/blog/PortableText';
 import { ShareButtons } from '@/components/blog/ShareButtons';
@@ -28,9 +27,9 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  const slugs = await getAllBlogPostSlugs();
-  return (slugs ?? []).map((s) => ({ slug: s.slug.current }));
+// ponytail: skip build-time Sanity slug crawl (402 quota was failing Vercel). ISR on first request.
+export function generateStaticParams() {
+  return [];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

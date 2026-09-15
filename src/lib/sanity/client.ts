@@ -34,9 +34,14 @@ const builder = sanityClient ? createImageUrlBuilder(sanityClient) : null;
 
 export async function sanityFetch<T>(query: string, params?: Record<string, unknown>, fallback: T = null as T) {
   if (!sanityClient) return fallback;
-  return sanityClient.fetch<T>(query, params ?? {}, {
-    next: { tags: [SANITY_CONTENT_CACHE_TAG] },
-  });
+  try {
+    return await sanityClient.fetch<T>(query, params ?? {}, {
+      next: { tags: [SANITY_CONTENT_CACHE_TAG] },
+    });
+  } catch {
+    // ponytail: 402 quota / outage must not fail `next build`; ISR fills in when Sanity is back
+    return fallback;
+  }
 }
 
 export function urlFor(source: SanityImageSource) {

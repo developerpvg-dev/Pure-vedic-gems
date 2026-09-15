@@ -5,7 +5,6 @@ import { ArrowLeft } from 'lucide-react';
 import {
   getBlogPostsByCategory,
   getBlogCategoryBySlug,
-  getAllBlogCategorySlugs,
   getBlogPostCountByCategory,
 } from '@/lib/sanity/queries';
 import { BlogPostRow } from '@/components/blog/BlogPostRow';
@@ -23,9 +22,9 @@ interface PageProps {
   searchParams: Promise<{ page?: string }>;
 }
 
-export async function generateStaticParams() {
-  const slugs = await getAllBlogCategorySlugs();
-  return (slugs ?? []).map((s) => ({ category: s.slug.current }));
+// ponytail: skip build-time Sanity slug crawl (402 quota was failing Vercel). ISR on first request.
+export function generateStaticParams() {
+  return [];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
