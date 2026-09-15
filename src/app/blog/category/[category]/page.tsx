@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import {
   getBlogPostsByCategory,
@@ -48,16 +49,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BlogCategoryPage({ params, searchParams }: PageProps) {
   const { category: slug } = await params;
+  const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
+  if (!cat) notFound();
+
+  return (
+    <Suspense fallback={<main className="pvg-blog-page font-body text-[#15110d]" />}>
+      <BlogCategoryIndex slug={slug} category={cat} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function BlogCategoryIndex({
+  slug,
+  category,
+  searchParams,
+}: {
+  slug: string;
+  category: SanityCategory;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { page: pageParam } = await searchParams;
   const requestedPage = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
 
-  const [cat, totalCount] = await Promise.all([
-    getBlogCategoryBySlug(slug),
-    getBlogPostCountByCategory(slug),
-  ]);
-
-  const category = cat as SanityCategory | null;
-  if (!category) notFound();
+  const totalCount = await getBlogPostCountByCategory(slug);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / BLOG_POSTS_PER_PAGE));
   const currentPage = Math.min(requestedPage, totalPages);

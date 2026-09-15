@@ -288,7 +288,7 @@ function InlineFilterChip({
         sideOffset={6}
       >
         <SelectItem value="">{definition.placeholder}</SelectItem>
-        {definition.options.map((option) => (
+        {filterOptions(definition).map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.label}{option.count > 0 ? ` (${option.count})` : ''}
           </SelectItem>
@@ -316,7 +316,7 @@ function PanelFilterSelect({
         className="shop-filter-panel-select__input"
       >
         <option value="">{definition.placeholder}</option>
-        {definition.options.map((option) => (
+        {filterOptions(definition).map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}{option.count > 0 ? ` (${option.count})` : ''}
           </option>
@@ -335,7 +335,7 @@ function ActiveFilters({
   getValue: (key: FilterKey | 'q') => string;
   onClear: (key: FilterKey | 'q') => void;
 }) {
-  const optionMap = new Map(definitions.map((definition) => [definition.key, definition.options]));
+  const optionMap = new Map(definitions.map((definition) => [definition.key, filterOptions(definition)]));
   const qualityTierValues = new Set(
     (optionMap.get('quality_tier') ?? []).map((option) => option.value.toLowerCase()),
   );
@@ -377,7 +377,12 @@ function ActiveFilters({
   );
 }
 
+function filterOptions(definition: FilterDefinition) {
+  return definition.options ?? [];
+}
+
 function shouldRenderFilter(definition: FilterDefinition, currentValue: string) {
+  const n = filterOptions(definition).length;
   if (
     definition.key === 'price'
     || definition.key === 'price_per_carat'
@@ -386,9 +391,9 @@ function shouldRenderFilter(definition: FilterDefinition, currentValue: string) 
     || definition.key === 'configurator_enabled'
     || definition.key === 'origin'
   ) {
-    return definition.options.length > 0 || currentValue !== '';
+    return n > 0 || currentValue !== '';
   }
-  return definition.options.length > 1 || currentValue !== '';
+  return n > 1 || currentValue !== '';
 }
 
 function getFilterParamKey(key: FilterKey) {

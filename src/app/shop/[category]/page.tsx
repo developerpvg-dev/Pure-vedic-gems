@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { resolveShopCategoryPath, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
+import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
 import {
   buildCategoryHubSections,
   getHowToStructuredDataMeta,
@@ -89,13 +90,17 @@ async function CategoryProducts({
   hubPage,
 }: {
   categorySlug: string;
-  searchParams: Record<string, string>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
   label: string;
   desc: string;
   hubPage: Awaited<ReturnType<typeof fetchShopCategoryPage>>;
 }) {
+  const rawParams = await searchParams;
+  const sParams = Object.fromEntries(
+    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')]),
+  ) as Record<string, string>;
   const meta = await resolveCategory(categorySlug);
-  const parsed = productFiltersSchema.safeParse(searchParams);
+  const parsed = productFiltersSchema.safeParse(sParams);
   const filters = parsed.success ? parsed.data : productFiltersSchema.parse({});
 
   const supabase = createOptionalPublicClient();
@@ -292,7 +297,7 @@ async function CategoryProducts({
         />
       ) : null}
 
-      <ShopPagination page={filters.page} totalPages={totalPages} searchParams={searchParams} basePath={basePath} />
+      <ShopPagination page={filters.page} totalPages={totalPages} searchParams={sParams} basePath={basePath} />
       {faqs.length > 0 ? <CategoryFaqSection faqs={faqs} /> : null}
       <ShopCollectionCta categorySlug={categorySlug} />
     </>
@@ -429,15 +434,16 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   }
 
   const hubPage = await fetchShopCategoryPage(category);
-  const rawParams = await searchParams;
-  const sParams = Object.fromEntries(
-    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')]),
-  ) as Record<string, string>;
   const currentPath = shopCategoryHref(category);
-
-  if (meta.canonicalPath && meta.canonicalPath !== currentPath) {
-    const query = new URLSearchParams(sParams).toString();
-      permanentRedirect(`${meta.canonicalPath}${query ? `?${query}` : ''}`);
+  const requestInternal = `/shop/${category}`;
+  const canonicalInternal = toInternalShopPath(meta.canonicalPath) ?? meta.canonicalPath;
+  // ponytail: skip 301 when proxy already rewrote the public URL onto this /shop page (loop → 500)
+  if (
+    meta.canonicalPath
+    && meta.canonicalPath !== currentPath
+    && canonicalInternal !== requestInternal
+  ) {
+    permanentRedirect(meta.canonicalPath);
   }
 
   const displayLabel = hubPage ? shopCategoryLabel(hubPage) : meta.label;
@@ -474,7 +480,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         >
           <CategoryProducts
             categorySlug={category}
-            searchParams={sParams}
+            searchParams={searchParams}
             label={meta.label}
             desc={meta.desc}
             hubPage={hubPage}

@@ -52,6 +52,23 @@ describe('Phase 5 canonical storefront paths', () => {
     expect(storefrontGroupHref('jewelry')).toBe('/shop/jewelry');
   });
 
+  it('rewritten facade URLs land on the same /shop slug the page renders', () => {
+    expect(toInternalShopPath('/gemstones')).toBe('/shop');
+    expect(toInternalShopPath('/gemstones/navaratna')).toBe('/shop/navaratna');
+    expect(toInternalShopPath('/gemstones/upratna')).toBe('/shop/upratna');
+    expect(toInternalShopPath('/rudraksha')).toBe('/shop/rudraksha');
+
+    for (const [slug, meta] of Object.entries(KNOWN_GEM_SUBCATEGORIES)) {
+      const href = `/gemstones/${meta.category}/${slug}`;
+      expect(canonicalSubcategoryHref(slug)).toBe(href);
+      expect(toInternalShopPath(href)).toBe(`/shop/${slug}`);
+    }
+    for (const slug of RUDRAKSHA_STOREFRONT_SLUG_SET) {
+      const href = `/rudraksha/${slug}`;
+      expect(toInternalShopPath(href)).toBe(`/shop/${slug}`);
+    }
+  });
+
   it('rewrites facade URLs onto existing /shop pages', () => {
     expect(toInternalShopPath('/gemstones/navaratna')).toBe('/shop/navaratna');
     expect(toInternalShopPath('/gemstones/navaratna/ruby')).toBe('/shop/ruby');

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import { productFiltersSchema } from '@/lib/validators/product';
-import { getShopFilterOptions } from '@/lib/shop/filters';
+import { emptyShopFilterOptions, getShopFilterOptions } from '@/lib/shop/filters';
 import { applyShopAvailabilityFilter, applyShopListingSort, applyShopProductFilters } from '@/lib/shop/listing';
 import { FilterBar } from '@/components/shop/FilterBar';
 import { ProductCatalog } from '@/components/shop/ProductCatalog';
@@ -18,15 +18,12 @@ import { buildMetadata } from '@/lib/utils/seo';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
-export async function generateMetadata({ searchParams }: ShopPageProps): Promise<Metadata> {
-  const rawParams = await searchParams;
-  const q = (Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q)?.trim();
+export async function generateMetadata(): Promise<Metadata> {
   const hub = gemstonesHubMeta();
   return buildMetadata({
     title: hub.seo_title,
     description: hub.seo_description,
     path: '/gemstones',
-    noIndex: Boolean(q),
   });
 }
 
@@ -86,7 +83,12 @@ async function ProductResults({ searchParams }: { searchParams: Record<string, s
     }
   }
   const totalPages = Math.ceil(total / perPage);
-  const facets = await getShopFilterOptions({}, filters);
+  let facets = emptyShopFilterOptions;
+  try {
+    facets = await getShopFilterOptions({}, filters);
+  } catch (error) {
+    console.warn('[shop] filter facets unavailable:', error instanceof Error ? error.message : error);
+  }
   const isSearch = Boolean(filters.q?.trim());
 
   return (
@@ -140,16 +142,15 @@ function ShopSkeleton() {
   );
 }
 
-export default async function ShopPage({ searchParams }: ShopPageProps) {
+async function ShopHub({ searchParams }: ShopPageProps) {
   const rawParams = await searchParams;
   const params = Object.fromEntries(
-    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')])
+    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? '')]),
   ) as Record<string, string>;
-
   const searchQuery = params.q?.trim();
 
   return (
-    <main className="pvg-owns-header-offset min-h-screen overflow-hidden bg-[#faf8f4] pb-20 font-body text-[#15110d]">
+    <>
       {searchQuery ? (
         <div className="px-4 pt-[calc(var(--pvg-site-header-offset)+0.35rem)] pb-2 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
@@ -203,9 +204,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       )}
 
       {!searchQuery ? <ShopCategoryBrowse /> : null}
+      <ProductResults searchParams={params} />
+    </>
+  );
+}
 
+export default function ShopPage({ searchParams }: ShopPageProps) {
+  return (
+    <main className="pvg-owns-header-offset min-h-screen overflow-hidden bg-[#faf8f4] pb-20 font-body text-[#15110d]">
       <Suspense fallback={<ShopSkeleton />}>
-        <ProductResults searchParams={params} />
+        <ShopHub searchParams={searchParams} />
       </Suspense>
     </main>
   );

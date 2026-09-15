@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import {
   getAllBlogPosts,
   getFeaturedBlogPost,
@@ -23,7 +24,19 @@ export const metadata: Metadata = buildMetadata({
   path: '/blog',
 });
 
-export default async function BlogPage({
+export default function BlogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  return (
+    <Suspense fallback={<main className="pvg-blog-page font-body text-[#15110d]" />}>
+      <BlogIndex searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function BlogIndex({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string }>;

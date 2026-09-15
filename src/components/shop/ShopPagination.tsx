@@ -17,7 +17,7 @@ export function ShopPagination({
   searchParams: Record<string, string>;
   basePath: string;
 }) {
-  if (totalPages <= 1) return null;
+  if (!Number.isFinite(totalPages) || totalPages <= 1) return null;
 
   const buildHref = (pageNumber: number) => {
     const params = new URLSearchParams(searchParams);

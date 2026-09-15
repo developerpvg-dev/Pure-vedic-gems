@@ -1,9 +1,9 @@
 import { notFound, permanentRedirect } from 'next/navigation';
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
-import { resolveShopCategoryPath } from '@/lib/categories/shop';
+import { resolveShopCategoryPath, type ResolvedShopCategory } from '@/lib/categories/shop';
 import { productHref } from '@/lib/categories/storefront';
 import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
@@ -124,20 +124,31 @@ interface ProductDetailPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+async function NestedCategoryListing({
+  meta,
+  searchParams,
+}: {
+  meta: ResolvedShopCategory;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const rawSearchParams = await searchParams;
+  const sParams = Object.fromEntries(
+    Object.entries(rawSearchParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : (value ?? '')]),
+  ) as Record<string, string>;
+  return (
+    <CategoryProductListing meta={meta} searchParams={sParams} basePath={meta.canonicalPath} />
+  );
+}
+
 export default async function ProductDetailPage({ params, searchParams }: ProductDetailPageProps) {
   const { category, slug } = await params;
-  const rawSearchParams = await searchParams;
   const nestedCategoryMeta = await resolveShopCategoryPath(category, slug);
-  const sParams = Object.fromEntries(
-    Object.entries(rawSearchParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : (value ?? '')])
-  ) as Record<string, string>;
 
   if (nestedCategoryMeta) {
     const requestPath = `/shop/${category}/${slug}`;
     const internal = toInternalShopPath(nestedCategoryMeta.canonicalPath) ?? nestedCategoryMeta.canonicalPath;
     if (requestPath !== internal) {
-      const query = new URLSearchParams(sParams).toString();
-      permanentRedirect(`${nestedCategoryMeta.canonicalPath}${query ? `?${query}` : ''}`);
+      permanentRedirect(nestedCategoryMeta.canonicalPath);
     }
 
     return (
@@ -154,7 +165,9 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           <div className="flex gap-7">
             <ShopSidebar />
             <div className="min-w-0 flex-1">
-              <CategoryProductListing meta={nestedCategoryMeta} searchParams={sParams} basePath={nestedCategoryMeta.canonicalPath} />
+              <Suspense fallback={<div className="h-48 animate-pulse rounded-2xl bg-brand-border" />}>
+                <NestedCategoryListing meta={nestedCategoryMeta} searchParams={searchParams} />
+              </Suspense>
             </div>
           </div>
         </div>
