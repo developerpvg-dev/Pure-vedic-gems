@@ -95,6 +95,13 @@ const CONTENT_HIDDEN_HREFS = new Set([
   '/admin/compliance',
 ]);
 
+const LAB_LOGOS_NAV_LINK = {
+  href: '/admin/lab-logos',
+  label: 'Lab Logos',
+  icon: Award,
+  match: 'prefix' as const,
+};
+
 const STUDIO_NAV_LINK = {
   href: '/studio',
   label: 'Sanity Studio',
@@ -143,12 +150,27 @@ function AdminNavContent({
         ...group,
         links: group.links.filter((link) => !CONTENT_HIDDEN_HREFS.has(link.href)),
       }))
+        .map((group) => {
+          // Pin Lab Logos next to Products — primary tool for assigning badges
+          if (group.label === 'Commerce') {
+            const links = group.links.filter((link) => link.href !== '/admin/lab-logos');
+            const productsIdx = links.findIndex((link) => link.href === '/admin/products');
+            const next = [...links];
+            next.splice(productsIdx >= 0 ? productsIdx + 1 : links.length, 0, LAB_LOGOS_NAV_LINK);
+            return { ...group, links: next };
+          }
+          if (group.label === 'Content Pages') {
+            return {
+              ...group,
+              links: [
+                ...group.links.filter((link) => link.href !== '/admin/lab-logos'),
+                STUDIO_NAV_LINK,
+              ],
+            };
+          }
+          return group;
+        })
         .filter((group) => group.links.length > 0)
-        .map((group) =>
-          group.label === 'Content Pages'
-            ? { ...group, links: [...group.links, STUDIO_NAV_LINK] }
-            : group,
-        )
     : NAV_GROUPS;
 
   return (

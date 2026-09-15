@@ -74,7 +74,7 @@ export default function AdminLabLogosPage() {
     void fetch(`/api/admin/products/filter-options?category=${encodeURIComponent(category)}`)
       .then((res) => res.json())
       .then((data) => {
-        const options = (data.sub_categories ?? []) as Array<{ value: string; label: string }>;
+        const options = (data.subcategories ?? []) as Array<{ value: string; label: string }>;
         setSubOptions(options);
         if (!options.some((opt) => opt.value === subCategory)) setSubCategory('');
       })
