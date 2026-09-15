@@ -4,13 +4,13 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Play, Maximize2 } from 'lucide-react';
-import type { LabLogo } from '@/lib/constants/trust-credentials';
+import type { StorefrontLabBadge } from '@/lib/types/product';
 
 interface ProductGalleryProps {
   images: string[];
   productName: string;
   videoUrl?: string | null;
-  labLogo?: LabLogo | null;
+  labLogo?: StorefrontLabBadge | null;
   /** Certificate / lab-report slide URL — logo hidden on this slide. */
   certificateUrl?: string | null;
 }

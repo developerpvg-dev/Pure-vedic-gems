@@ -224,6 +224,9 @@ export type ProductCard = Pick<
   lab_logo?: { name: string; image_url: string } | null;
 };
 
+/** Badge shown on product cards / gallery when admin assigns a lab logo */
+export type StorefrontLabBadge = { name: string; logo: string };
+
 // Filter parameters for product listing API
 export interface ProductFilters {
   category?: string;
