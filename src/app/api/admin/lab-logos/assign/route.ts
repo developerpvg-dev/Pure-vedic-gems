@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest) {
 
   if (parsed.data.lab_logo_id) {
     const { data: lab } = await db
-      .from('storefront_lab_logos')
+      .from<{ id: string; is_active: boolean }>('storefront_lab_logos')
       .select('id, is_active')
       .eq('id', parsed.data.lab_logo_id)
       .maybeSingle();
@@ -34,7 +34,15 @@ export async function PATCH(request: NextRequest) {
   }
 
   const { data, error } = await db
-    .from('products')
+    .from<{
+      id: string;
+      sku: string | null;
+      name: string;
+      lab_logo_id: string | null;
+      category: string | null;
+      sub_category: string | null;
+      slug: string;
+    }>('products')
     .update({ lab_logo_id: parsed.data.lab_logo_id })
     .eq('id', parsed.data.product_id)
     .select('id, sku, name, lab_logo_id, category, sub_category, slug')
