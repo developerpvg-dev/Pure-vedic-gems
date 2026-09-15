@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
     .select('id, sku, name, lab_logo_id, category, sub_category, slug')
     .single();
 
-  if (error) return NextResponse.json({ error: 'Failed to assign lab logo' }, { status: 500 });
+  if (error || !data) return NextResponse.json({ error: 'Failed to assign lab logo' }, { status: 500 });
 
   revalidateProductSurfaces({
     slug: data.slug,
