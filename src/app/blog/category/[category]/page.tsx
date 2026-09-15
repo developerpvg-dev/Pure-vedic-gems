@@ -46,31 +46,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function BlogCategoryPage({ params, searchParams }: PageProps) {
-  const { category: slug } = await params;
-  const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
-  if (!cat) notFound();
-
+// Mirror /blog: keep searchParams behind Suspense so ISR document render doesn't 500.
+export default function BlogCategoryPage({ params, searchParams }: PageProps) {
   return (
     <Suspense fallback={<main className="pvg-blog-page font-body text-[#15110d]" />}>
-      <BlogCategoryIndex slug={slug} category={cat} searchParams={searchParams} />
+      <BlogCategoryIndex params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
 async function BlogCategoryIndex({
-  slug,
-  category,
+  params,
   searchParams,
 }: {
-  slug: string;
-  category: SanityCategory;
+  params: Promise<{ category: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
+  const { category: slug } = await params;
+  const cat = (await getBlogCategoryBySlug(slug)) as SanityCategory | null;
+  if (!cat) notFound();
+
   const { page: pageParam } = await searchParams;
   const requestedPage = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
 
-  const totalCount = await getBlogPostCountByCategory(slug);
+  const totalCount = Number(await getBlogPostCountByCategory(slug)) || 0;
 
   const totalPages = Math.max(1, Math.ceil(totalCount / BLOG_POSTS_PER_PAGE));
   const currentPage = Math.min(requestedPage, totalPages);
@@ -87,7 +86,7 @@ async function BlogCategoryIndex({
           <span aria-hidden="true">/</span>
           <Link href="/blog">Blog</Link>
           <span aria-hidden="true">/</span>
-          <span aria-current="page">{category.title}</span>
+          <span aria-current="page">{cat.title}</span>
         </nav>
 
         <Link href="/blog" className="pvg-blog-back">
@@ -96,10 +95,10 @@ async function BlogCategoryIndex({
         </Link>
 
         <header className="pvg-blog-hero">
-          <h1 className="section-title">{category.title}</h1>
-          {category.description && (
+          <h1 className="section-title">{cat.title}</h1>
+          {cat.description && (
             <p className="navratna-subtitle !text-[#5a5043]" style={{ margin: '0.5rem auto 0', maxWidth: '40rem' }}>
-              {category.description}
+              {cat.description}
             </p>
           )}
           <div className="section-rule-center" style={{ margin: '15px auto 5px' }} aria-hidden="true" />
@@ -113,12 +112,12 @@ async function BlogCategoryIndex({
             {allPosts.length > 0 ? (
               <>
                 <div className="pvg-blog-section-head">
-                  <h2>{category.title} Articles</h2>
+                  <h2>{cat.title} Articles</h2>
                   <p>
                     Page {currentPage} of {totalPages}
                   </p>
                 </div>
-                <section className="pvg-blog-row-list" aria-label={`${category.title} articles`}>
+                <section className="pvg-blog-row-list" aria-label={`${cat.title} articles`}>
                   {allPosts.map((post) => (
                     <BlogPostRow key={post._id} post={post} />
                   ))}
