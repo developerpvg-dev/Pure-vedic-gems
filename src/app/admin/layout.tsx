@@ -74,6 +74,7 @@ const NAV_GROUPS = [
       { href: '/admin/events', label: 'Events & Videos', icon: Video, match: 'prefix' as const },
       { href: '/admin/videos', label: 'Video Library', icon: Video, match: 'prefix' as const },
       { href: '/admin/lab-certificates', label: 'Lab Certificates', icon: FileBadge2, match: 'prefix' as const },
+      { href: '/admin/lab-logos', label: 'Lab Logos', icon: Award, match: 'prefix' as const },
       { href: '/admin/testimonials', label: 'Testimonials', icon: Star, match: 'prefix' as const },
       { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare, match: 'prefix' as const },
     ],

@@ -14,8 +14,8 @@ export const sanityClient = isSanityConfigured
       projectId,
       dataset,
       apiVersion: '2024-01-01',
-      // ponytail: CDN can serve a stale GROQ hit for ~60s after publish; webhook ISR needs the API
-      useCdn: false,
+      // ponytail: CDN uses the separate (larger) APICDN quota; ~60s stale ok — webhook ISR still tags revalidate
+      useCdn: true,
     })
   : null;
 

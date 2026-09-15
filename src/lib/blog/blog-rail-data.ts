@@ -41,7 +41,8 @@ const PRODUCT_CARD_SELECT = `
   carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url,
   in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick,
   treatment, planet, created_at, configurator_enabled, product_type, tag_number,
-  availability_status, price_mode, quality_label, certificate_lab, certificate_number
+  availability_status, price_mode, quality_label, certificate_lab, certificate_number,
+  lab_logo:storefront_lab_logos!lab_logo_id(name, image_url)
 `;
 
 export function railKindForCategory(categorySlug?: string): BlogRailKind {

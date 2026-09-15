@@ -239,6 +239,7 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
     pathname.startsWith('/admin/events') ||
     pathname.startsWith('/admin/videos') ||
     pathname.startsWith('/admin/lab-certificates') ||
+    pathname.startsWith('/admin/lab-logos') ||
     pathname.startsWith('/admin/hero') ||
     pathname.startsWith('/admin/shop-category-pages') ||
     pathname.startsWith('/admin/directors-pick') ||

@@ -18,7 +18,6 @@ import { formatCarats, formatPrice } from '@/lib/utils/format';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { resolveProductGradeLabel } from '@/lib/utils/quality-tier';
 import { productHref } from '@/lib/categories/storefront';
-import { resolveLabLogo } from '@/lib/constants/trust-credentials';
 import { toast } from 'sonner';
 import type { ProductCard as ProductCardType } from '@/lib/types/product';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
@@ -106,11 +105,11 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   };
 
   const configuratorEnabled = isGemConfiguratorEnabled(product.category, product.configurator_enabled);
-  const labLogo = resolveLabLogo(
-    product.certificate_lab,
-    product.certification,
-    product.certificate_number,
-  );
+  // Only show when admin assigned a lab logo — never auto-infer from cert text
+  const labLogo =
+    product.lab_logo?.image_url && product.lab_logo.name
+      ? { name: product.lab_logo.name, logo: product.lab_logo.image_url }
+      : null;
 
   const meta = [
     product.carat_weight ? formatCarats(product.carat_weight) : null,

@@ -28,7 +28,6 @@ import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/revie
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
 import { isNoCertification } from '@/lib/utils/format';
-import { resolveLabLogo } from '@/lib/constants/trust-credentials';
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 
@@ -73,18 +72,18 @@ function formatDimensions(dimensions: Product['dimensions_mm']) {
   return `${parts.join(' x ')} ${dimensions.unit ?? 'mm'}`;
 }
 
-const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+const getProductBySlug = cache(async (slug: string): Promise<(Product & { lab_logo?: { name: string; image_url: string } | null }) | null> => {
   const supabase = createOptionalPublicClient();
   if (!supabase) return null;
 
   const { data } = await supabase
     .from('products')
-    .select('*')
+    .select('*, lab_logo:storefront_lab_logos!lab_logo_id(name, image_url)')
     .eq('slug', slug)
     .eq('is_active', true)
     .maybeSingle();
 
-  return data ? (data as unknown as Product) : null;
+  return data ? (data as unknown as Product & { lab_logo?: { name: string; image_url: string } | null }) : null;
 });
 
 // ─── generateMetadata ────────────────────────────────────────────────────────
@@ -191,7 +190,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     permanentRedirect(href);
   }
 
-  const relatedSelect = 'id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number';
+  const relatedSelect = 'id, sku, slug, name, category, sub_category, price, price_per_carat, compare_price, carat_weight, ratti_weight, origin, shape, certification, images, thumbnail_url, in_stock, stock_quantity, stock_status, sold_individually, featured, is_directors_pick, treatment, planet, created_at, configurator_enabled, product_type, tag_number, availability_status, price_mode, quality_label, certificate_lab, certificate_number, lab_logo:storefront_lab_logos!lab_logo_id(name, image_url)';
   const relatedPromise = product.sub_category
     ? supabase
         .from('products')
@@ -330,11 +329,11 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                 productName={displayName}
                 videoUrl={product.video_url}
                 certificateUrl={product.certificate_url || product.certificate_file_url}
-                labLogo={resolveLabLogo(
-                  product.certificate_lab,
-                  product.certification,
-                  product.certificate_number,
-                )}
+                labLogo={
+                  product.lab_logo?.image_url && product.lab_logo.name
+                    ? { name: product.lab_logo.name, logo: product.lab_logo.image_url }
+                    : null
+                }
               />
             </div>
 

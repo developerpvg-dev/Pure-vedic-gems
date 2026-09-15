@@ -220,6 +220,8 @@ export type ProductCard = Pick<
   certificate_lab?: string | null;
   certificate_number?: string | null;
   mukhi_count?: number | null;
+  /** Admin-assigned storefront badge; only set when chosen in /admin/lab-logos */
+  lab_logo?: { name: string; image_url: string } | null;
 };
 
 // Filter parameters for product listing API
