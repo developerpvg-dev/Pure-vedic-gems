@@ -1,6 +1,9 @@
 /**
  * INR subtracted from live API rate (1 FX = N INR) before store/use.
- * Lowers charged FX so FX→INR collection covers payment/FX loss.
+ * Lowers the stored rate → storefront/checkout charge MORE foreign currency
+ * for the same ₹ price, covering payment/FX loss.
+ *
+ * Contract: stored = applyLossOffset(api_rate, code); convert with amountInr / stored.
  */
 
 export const FX_LOSS_OFFSETS_INR: Readonly<Record<string, number>> = {
@@ -27,4 +30,10 @@ export function applyLossOffset(apiRate: number, code: string): number {
   const adjusted = apiRate - offset;
   // ponytail: floor at 0.0001 if offset ever exceeds mid-market (won't for current map)
   return Number(Math.max(adjusted, 0.0001).toFixed(6));
+}
+
+/** True when stored rate matches api − configured offset (within 1e-6). */
+export function isBufferedRate(apiRate: number, storedRate: number, code: string): boolean {
+  if (!Number.isFinite(apiRate) || !Number.isFinite(storedRate)) return false;
+  return Math.abs(applyLossOffset(apiRate, code) - storedRate) < 1e-6;
 }

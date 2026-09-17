@@ -61,20 +61,35 @@ export function convertToInr(amount: number, currency?: string): number {
   return amount * rate;
 }
 
+/**
+ * Locale for currency price labels.
+ *
+ * Rule: always use an English locale whose decimal is `.` (never `,`).
+ * European locales (de-DE, fr-FR, …) format €24.15 as "24,15 €", which
+ * en-IN readers misread as 2415. Keep symbol regional where safe (en-IE/GB/AE).
+ */
 export function localeForCurrency(code: string): string {
   switch (code.toUpperCase()) {
     case 'INR':
       return 'en-IN';
     case 'EUR':
-      return 'de-DE';
+      return 'en-IE';
     case 'GBP':
       return 'en-GB';
     case 'AED':
     case 'QAR':
     case 'SAR':
       return 'en-AE';
+    case 'CAD':
+      return 'en-CA';
+    case 'AUD':
+      return 'en-AU';
+    case 'SGD':
+      return 'en-SG';
+    case 'USD':
+    case 'NPR':
     case 'JPY':
-      return 'ja-JP';
+    case 'CHF':
     default:
       return 'en-US';
   }

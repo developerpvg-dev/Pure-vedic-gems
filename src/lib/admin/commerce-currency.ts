@@ -12,6 +12,7 @@ export type NormalizedCurrencyRate = {
 };
 
 import { FX_CURRENCY_CODES } from '@/lib/currency/catalog';
+import { lossOffsetInr } from '@/lib/currency/loss-offsets';
 
 export const FX_CURRENCY_OPTIONS = FX_CURRENCY_CODES;
 
@@ -72,10 +73,20 @@ export function rateComparison(rate: NormalizedCurrencyRate): {
     };
   }
   const diff = Number((rate.api_rate - rate.rate).toFixed(4));
+  const configured = lossOffsetInr(rate.currency);
+  const matchesConfigured =
+    !rate.manual_override && configured > 0 && Math.abs(diff - configured) < 0.0001;
   return {
     apiLabel: formatInr(rate.api_rate),
     storedLabel,
-    bufferLabel: diff !== 0 ? `−${formatInr(Math.abs(diff))} loss buffer` : 'no buffer',
+    bufferLabel:
+      diff === 0
+        ? 'no buffer'
+        : matchesConfigured
+          ? `−${formatInr(configured)} loss buffer`
+          : rate.manual_override
+            ? `−${formatInr(Math.abs(diff))} manual vs API`
+            : `−${formatInr(Math.abs(diff))} loss buffer`,
     missingApi: false,
   };
 }

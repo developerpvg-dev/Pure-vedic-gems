@@ -17,7 +17,16 @@ async function loadStorefrontRates() {
 
   const db = asUntypedSupabase(client);
   const { data } = await db.from('currency_rates').select('*');
-  const rates = normalizeCurrencyRates(data ?? []).filter((row) => row.is_active);
+  const rows = normalizeCurrencyRates(data ?? []).filter((row) => row.is_active);
+
+  // Storefront/checkout must use buffered `rate` only — never expose api_rate here
+  // or a client could convert at mid-market and skip the loss buffer.
+  const rates = rows.map((row) => ({
+    currency: row.currency,
+    rate: row.rate,
+    is_active: row.is_active,
+    base_currency: row.base_currency,
+  }));
 
   return {
     rates: rates.length

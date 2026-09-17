@@ -68,6 +68,7 @@ function ratesFromPayload(rows: Array<{ currency: string; rate: number; is_activ
   for (const row of rows) {
     if (row.is_active === false) continue;
     const code = String(row.currency).toUpperCase();
+    // Always the buffered/used `rate` from /api/currency/rates (not api_rate).
     const rate = Number(row.rate);
     if (code && Number.isFinite(rate) && rate > 0) rates[code] = rate;
   }

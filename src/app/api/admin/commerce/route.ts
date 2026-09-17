@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
     // Explicit admin refresh: overwrite every storefront FX + any other active DB currencies.
     const { fetchLiveRatesToInr } = await import('@/lib/currency/fetch-live-rates');
     const { FX_CURRENCY_CODES } = await import('@/lib/currency/catalog');
-    const { applyLossOffset, lossOffsetInr } = await import('@/lib/currency/loss-offsets');
+    const { applyLossOffset, isBufferedRate, lossOffsetInr } = await import('@/lib/currency/loss-offsets');
     try {
       const existing = normalizeCurrencyRates(await readTable(db, 'currency_rates', []));
       const byCode = new Map(existing.map((row) => [row.currency, row]));
@@ -373,6 +373,11 @@ export async function POST(request: NextRequest) {
         }
         const rate = applyLossOffset(apiRate, code);
         const prev = byCode.get(code);
+        // Guard: never persist mid-market as the used rate when an offset is configured.
+        if (!isBufferedRate(apiRate, rate, code)) {
+          failed.push({ currency: code, error: 'Loss buffer math failed' });
+          continue;
+        }
         const { error } = await saveCurrencyRate(
           db,
           {

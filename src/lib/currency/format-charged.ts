@@ -11,6 +11,7 @@ import {
   parseGatewayReference,
   razorpayMinorFactor,
 } from '@/lib/razorpay/charge-currency';
+import { localeForCurrency } from '@/lib/currency/display-store';
 
 export type ChargedMoneyInput = {
   amount_inr?: number | null;
@@ -30,16 +31,19 @@ export function formatInrMoney(amount: number | null | undefined): string {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(Number(amount ?? 0));
 }
 
 export function formatFxMoney(amountMajor: number, currency: string): string {
   const code = currency.toUpperCase();
-  return new Intl.NumberFormat(code === 'JPY' ? 'ja-JP' : 'en-US', {
+  const maxFrac = code === 'JPY' ? 0 : 2;
+  return new Intl.NumberFormat(localeForCurrency(code), {
     style: 'currency',
     currency: code,
-    maximumFractionDigits: code === 'JPY' ? 0 : 2,
+    minimumFractionDigits: maxFrac,
+    maximumFractionDigits: maxFrac,
   }).format(amountMajor);
 }
 
