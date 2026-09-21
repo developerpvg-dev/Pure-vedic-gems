@@ -124,7 +124,7 @@ async function upsertDraft(
     console.error('[lead-funnel] draft update failed', updErr);
     return;
   }
-  if (updated?.length) return;
+  if (Array.isArray(updated) && updated.length) return;
 
   const { error: insErr } = await db.from('enquiries').insert(row);
   if (insErr && insErr.code !== '23505') {

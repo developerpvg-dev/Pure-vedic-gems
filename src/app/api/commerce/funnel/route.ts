@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       .select('id');
     if (updErr) {
       console.error('[product-funnel] draft update failed', updErr);
-    } else if (!updated?.length) {
+    } else if (!Array.isArray(updated) || !updated.length) {
       const { error: insErr } = await db.from('checkout_abandon_drafts').insert(row);
       if (insErr && insErr.code !== '23505') {
         console.error('[product-funnel] draft insert failed', insErr);
