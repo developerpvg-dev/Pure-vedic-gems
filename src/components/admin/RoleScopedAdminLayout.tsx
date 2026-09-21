@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Award,
+  BarChart3,
   Bell,
   Bot,
   CalendarClock,
@@ -65,6 +66,7 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/feedback': MessageSquare,
   '/admin/agent-sessions': Bot,
   '/admin/products': Package,
+  '/admin/products/journey': BarChart3,
   '/admin/products?status=inactive': FileEdit,
   '/admin/products?status=trash': Trash2,
   '/admin/products/import': UploadCloud,
@@ -80,6 +82,7 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   '/admin/yagyas': Flame,
   '/admin/design-jobs': Palette,
   '/admin/leads': MessageSquare,
+  '/admin/leads/metrics': BarChart3,
   '/admin/customers': Users,
   '/admin/rewards': Gift,
   '/admin/shipping': Truck,
@@ -92,6 +95,7 @@ function navActive(pathname: string | null, searchParams: URLSearchParams, link:
   if (link.match === 'products') {
     if (!pathname?.startsWith('/admin/products')) return false;
     if (pathname.startsWith('/admin/products/import')) return false;
+    if (pathname.startsWith('/admin/products/journey')) return false;
     const status = searchParams.get('status');
     return !(pathname === '/admin/products' && (status === 'inactive' || status === 'trash'));
   }

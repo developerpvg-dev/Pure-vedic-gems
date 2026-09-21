@@ -5,6 +5,9 @@ import { useState, type FormEvent } from 'react';
 import { ArrowRight, Clock, Diamond, Globe, Headphones, Mail, Phone, Send, Shield } from 'lucide-react';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { useTurnstile } from '@/components/turnstile/use-turnstile';
+import { LeadFunnelPageView } from '@/components/leads/LeadFunnelPageView';
+import { useLeadFunnelForm } from '@/lib/hooks/useLeadFunnelForm';
+import { getLeadFunnelSessionId } from '@/lib/utils/lead-funnel-client';
 import {
   DELHI_MAP_EMBED,
   DELHI_MAP_URL,
@@ -126,6 +129,25 @@ export default function ContactPage() {
   const [honeypot, setHoneypot] = useState('');
   const [formStartedAt] = useState(() => Date.now());
   const turnstile = useTurnstile();
+  const funnel = useLeadFunnelForm({
+    funnel: 'contact',
+    getDraft: () => {
+      const dial = COUNTRY_CODES.find((c) => c.id === formState.countryCode)?.dial ?? '+91';
+      const rawPhone = formState.phone.trim();
+      const phone = rawPhone
+        ? rawPhone.startsWith('+')
+          ? rawPhone
+          : `${dial}${rawPhone.replace(/^0+/, '')}`
+        : '';
+      return {
+        name: formState.name,
+        email: formState.email,
+        phone,
+        message: formState.message,
+        subject: 'Contact enquiry',
+      };
+    },
+  });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,6 +174,7 @@ export default function ContactPage() {
           message: formState.message.trim(),
           source: 'contact_form',
           enquiry_type: 'Enquiry',
+          draft_session_id: getLeadFunnelSessionId() || undefined,
           _hp: honeypot,
           _startedAt: formStartedAt,
           turnstileToken: turnstile.token || undefined,
@@ -163,6 +186,7 @@ export default function ContactPage() {
         throw new Error(body.error || 'Failed to submit enquiry');
       }
 
+      funnel.markSubmitted();
       setStatus('sent');
       setFormState(initialForm);
     } catch (error) {
@@ -175,6 +199,7 @@ export default function ContactPage() {
 
   return (
     <main className="pvg-contact-page min-h-screen overflow-hidden bg-[#faf8f4] pb-20 pt-28 font-body text-[#15110d]">
+      <LeadFunnelPageView funnel="contact" />
       {turnstile.script}
 
       <section className="px-4 pb-6 pt-10 sm:px-6 lg:pt-14" aria-labelledby="contact-hero-heading">
@@ -204,7 +229,12 @@ export default function ContactPage() {
                   <p>Share your query and we&apos;ll get back to you shortly.</p>
                 </div>
               </div>
-              <form onSubmit={handleSubmit} className="pvg-contact-form">
+              <form
+                onSubmit={handleSubmit}
+                className="pvg-contact-form"
+                onFocus={funnel.onFormFocus}
+                onInput={funnel.scheduleDraft}
+              >
                 <label className="sr-only" aria-hidden="true">
                   Website
                   <input

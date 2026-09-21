@@ -23,6 +23,7 @@ import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
 import { RewardPointsRedemption, type CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
 import { trackEcommerceEvent } from '@/lib/utils/analytics';
+import { trackProductFunnel } from '@/lib/utils/product-funnel-client';
 import Link from 'next/link';
 
 type CheckoutStep = 'contact' | 'shipping' | 'payment';
@@ -65,7 +66,42 @@ export default function CheckoutPage() {
       currency: 'INR',
       num_items: cart.items.reduce((sum, item) => sum + item.quantity, 0),
     });
+    trackProductFunnel({
+      event: 'begin_checkout',
+      source: 'checkout',
+      meta: { num_items: cart.items.reduce((sum, item) => sum + item.quantity, 0), value: cartSubtotal },
+    });
   }, [cart.items, cartSubtotal]);
+
+  // Flush abandon at most once per page lifetime (pagehide can fire twice)
+  useEffect(() => {
+    let sent = false;
+    function flushAbandon() {
+      if (sent || !contactData) return;
+      sent = true;
+      trackProductFunnel({
+        event: 'checkout_abandon',
+        source: 'checkout',
+        meta: { step: currentStep },
+        checkout_draft: {
+          step: currentStep,
+          full_name: contactData.full_name,
+          email: contactData.email,
+          phone: contactData.phone,
+          cart_snapshot: cart.items.slice(0, 20).map((i) => ({
+            product_id: i.product_id,
+            sku: i.sku,
+            name: i.name,
+            quantity: i.quantity,
+            price: i.price,
+          })),
+          shipping_snapshot: shippingData,
+        },
+      });
+    }
+    window.addEventListener('pagehide', flushAbandon);
+    return () => window.removeEventListener('pagehide', flushAbandon);
+  }, [contactData, currentStep, cart.items, shippingData]);
 
   useEffect(() => {
     let active = true;
@@ -111,6 +147,24 @@ export default function CheckoutPage() {
   const handleContactComplete = (data: ContactInfo) => {
     setContactData(data);
     setCurrentStep('shipping');
+    trackProductFunnel({
+      event: 'checkout_step',
+      source: 'checkout',
+      meta: { step: 'shipping' },
+      checkout_draft: {
+        step: 'shipping',
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        cart_snapshot: cart.items.slice(0, 20).map((i) => ({
+          product_id: i.product_id,
+          sku: i.sku,
+          name: i.name,
+          quantity: i.quantity,
+          price: i.price,
+        })),
+      },
+    });
   };
 
   const handleShippingComplete = (
@@ -122,9 +176,29 @@ export default function CheckoutPage() {
     setShippingMethod(method);
     setSelectedShippingPlan(plan);
     setCurrentStep('payment');
+    trackProductFunnel({
+      event: 'checkout_step',
+      source: 'checkout',
+      meta: { step: 'payment' },
+      checkout_draft: {
+        step: 'payment',
+        full_name: contactData?.full_name,
+        email: contactData?.email,
+        phone: contactData?.phone,
+        cart_snapshot: cart.items.slice(0, 20).map((i) => ({
+          product_id: i.product_id,
+          sku: i.sku,
+          name: i.name,
+          quantity: i.quantity,
+          price: i.price,
+        })),
+        shipping_snapshot: data,
+      },
+    });
   };
 
   const handlePaymentSuccess = (resultOrderId: string) => {
+    trackProductFunnel({ event: 'purchase', source: 'checkout', clear_checkout_draft: true });
     clearCart();
     router.push(`/order-confirmation/${resultOrderId}`);
   };

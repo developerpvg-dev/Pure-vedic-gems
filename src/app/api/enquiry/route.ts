@@ -80,6 +80,9 @@ export async function POST(request: NextRequest) {
       birth_place: parsed.data.birth_place || null,
       area_of_concern: parsed.data.area_of_concern || null,
       ip_location: geo,
+      blog_slug: parsed.data.blog_slug || null,
+      is_draft: false,
+      draft_session_id: null,
     })
     .select('id, lead_number, date_of_birth, birth_time, birth_place, created_at')
     .single();
@@ -87,6 +90,16 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error('Enquiry insert error:', error);
     return NextResponse.json({ error: 'Failed to submit enquiry' }, { status: 500 });
+  }
+
+  // Drop matching incomplete draft for this browser session
+  if (parsed.data.draft_session_id) {
+    await admin
+      .from('enquiries')
+      .delete()
+      .eq('is_draft', true)
+      .eq('draft_session_id', parsed.data.draft_session_id)
+      .eq('source', parsed.data.source);
   }
 
   const matches = await findPriorDuplicateMatches(admin, {

@@ -3,9 +3,13 @@
 import { Phone, Sparkles } from 'lucide-react';
 import { Rs101CtaLabel } from '@/components/consultation/Rs101CtaLabel';
 import { IntegratedCategoryCta } from '@/components/home/PvgManagedCategorySections';
+import {
+  trackCallClick,
+  trackedWhatsAppHref,
+  trackWhatsAppClick,
+} from '@/lib/utils/product-funnel-client';
 
 const CALL_HREF = 'tel:+919310172512';
-const WHATSAPP_HREF = 'https://wa.me/919310172512';
 
 /** Matches product-page AddToCartBar pills */
 const pill =
@@ -63,6 +67,8 @@ const CTA_BY_VARIANT: Record<
 export function ShopCollectionCta({ categorySlug }: { categorySlug?: string | null }) {
   const variant = resolveVariant(categorySlug);
   const config = CTA_BY_VARIANT[variant];
+  const categoryLabel = (categorySlug || variant).replace(/-/g, ' ');
+  const waHref = trackedWhatsAppHref('category', { category: categoryLabel });
 
   return (
     <div className="pvg-react-home-root pvg-shop-cta-pills mt-10 mb-4 overflow-x-clip md:mt-14">
@@ -83,6 +89,7 @@ export function ShopCollectionCta({ categorySlug }: { categorySlug?: string | nu
             ),
             href: CALL_HREF,
             className: `${pill} pvg-cta-pill-call`,
+            onClick: () => trackCallClick({ source: 'category_cta', category: categoryLabel }),
           },
           {
             label: (
@@ -91,8 +98,14 @@ export function ShopCollectionCta({ categorySlug }: { categorySlug?: string | nu
                 <span className="truncate">WhatsApp</span>
               </>
             ),
-            href: WHATSAPP_HREF,
+            href: waHref,
             className: `${pill} pvg-cta-pill-whatsapp`,
+            onClick: () =>
+              trackWhatsAppClick({
+                context: 'category',
+                source: 'category_cta',
+                category: categoryLabel,
+              }),
           },
           {
             label: (

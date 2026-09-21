@@ -9,6 +9,11 @@ export function isLeadManager(role: string | null | undefined) {
   return role === 'owner' || role === 'admin' || role === 'sales' || role === 'fulfillment';
 }
 
+/** Storefront / lead funnel dashboards (read-only aggregates). SEO & CMS included. */
+export function canViewFunnelMetrics(role: string | null | undefined) {
+  return isLeadManager(role) || role === 'seo_cms';
+}
+
 export function isTelecomRole(role: string | null | undefined) {
   return role === 'telecom';
 }

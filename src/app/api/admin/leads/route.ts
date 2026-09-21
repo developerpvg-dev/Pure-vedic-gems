@@ -125,13 +125,17 @@ function applyKindFilter(
 async function fetchLeadSummary(
   admin: ReturnType<typeof createAdminClient>,
   scope: ReturnType<typeof leadListScope>,
-  enquiryType: string | null
+  enquiryType: string | null,
+  includeDrafts: boolean
 ) {
   const withKind = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     q: any
   ) => {
     if (scope) q = q.eq(scope.column, scope.value);
+    // ponytail: eq not or — kind filter uses .or()
+    if (!includeDrafts) q = q.eq('is_draft', false);
+    else q = q.eq('is_draft', true);
     return applyKindFilter(q, enquiryType);
   };
 
@@ -233,10 +237,14 @@ function applyEnquiryFilters(
     detailsConfirmed: string | null;
     conversionStatus: string | null;
     searchTerm: string | null;
+    draft: string | null;
   }
 ) {
   let q = query;
   if (opts.scope) q = q.eq(opts.scope.column, opts.scope.value);
+  // ponytail: use eq not or — applyKindFilter also uses .or() and PostgREST keeps only one
+  if (opts.draft === '1') q = q.eq('is_draft', true);
+  else q = q.eq('is_draft', false);
   if (opts.status) q = q.eq('status', opts.status);
   if (opts.pipeline) q = q.eq('pipeline_stage', opts.pipeline);
   else if (opts.pipelineIn?.length) q = q.in('pipeline_stage', opts.pipelineIn);
@@ -499,6 +507,7 @@ export async function GET(request: NextRequest) {
     detailsConfirmed: searchParams.get('details_confirmed'),
     conversionStatus: searchParams.get('conversion') || searchParams.get('conversion_status'),
     searchTerm,
+    draft: searchParams.get('draft'),
   };
 
   const format = searchParams.get('format');
@@ -538,7 +547,12 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const summary = await fetchLeadSummary(admin, scope, filterOpts.enquiryType);
+  const summary = await fetchLeadSummary(
+    admin,
+    scope,
+    filterOpts.enquiryType,
+    filterOpts.draft === '1'
+  );
   const capabilities = {
     canAssign: isLeadManager(auth.member.normalizedRole),
     canForwardAstrologer: isLeadManager(auth.member.normalizedRole),

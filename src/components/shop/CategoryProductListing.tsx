@@ -8,6 +8,7 @@ import { ProductCatalog } from '@/components/shop/ProductCatalog';
 import { BackToTopButton } from '@/components/shop/BackToTopButton';
 import { ShopCollectionCta } from '@/components/shop/ShopCollectionCta';
 import { ShopPagination } from '@/components/shop/ShopPagination';
+import { CategoryFunnelView } from '@/components/shop/CategoryFunnelView';
 import type { ResolvedShopCategory } from '@/lib/categories/shop';
 import type { ProductCard } from '@/lib/types/product';
 
@@ -91,6 +92,7 @@ export async function CategoryProductListing({
 
   return (
     <>
+      <CategoryFunnelView category={meta.sub_category ?? meta.category ?? meta.label} />
       <CategoryHeader label={meta.label} desc={meta.desc} />
       <FilterBar
         total={total}

@@ -46,11 +46,13 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
   },
   seo_cms: {
     title: 'SEO & CMS',
-    subtitle: 'Product SEO, category hubs & Sanity',
+    subtitle: 'Product SEO, category hubs, Sanity & funnels',
     home: '/admin/products',
-    allowPrefixes: ['/admin/products', '/admin/shop-category-pages'],
+    allowPrefixes: ['/admin/products', '/admin/shop-category-pages', '/admin/leads/metrics'],
     nav: [
       { href: '/admin/products', label: 'Products', match: 'products' },
+      { href: '/admin/products/journey', label: 'Product journey', match: 'prefix' },
+      { href: '/admin/leads/metrics', label: 'Lead funnels', match: 'prefix' },
       { href: '/admin/shop-category-pages', label: 'Category hub pages', match: 'prefix' },
       { href: '/studio', label: 'Sanity Studio', match: 'prefix' },
     ],
@@ -170,7 +172,10 @@ export function assertRoleDashboardAllowlists() {
   if (isScopedRolePathAllowed('finance', '/admin/products')) throw new Error('finance must not open products');
   if (getScopedRoleDashboard('content')) throw new Error('content uses full admin shell');
   if (!isScopedRolePathAllowed('seo_cms', '/admin/products')) throw new Error('seo_cms products');
+  if (!isScopedRolePathAllowed('seo_cms', '/admin/products/journey')) throw new Error('seo_cms product journey');
   if (!isScopedRolePathAllowed('seo_cms', '/admin/shop-category-pages')) throw new Error('seo_cms hubs');
+  if (!isScopedRolePathAllowed('seo_cms', '/admin/leads/metrics')) throw new Error('seo_cms lead funnels');
+  if (isScopedRolePathAllowed('seo_cms', '/admin/leads')) throw new Error('seo_cms must not open leads inbox');
   if (isScopedRolePathAllowed('seo_cms', '/admin/orders')) throw new Error('seo_cms must not open orders');
   if (!isScopedRolePathAllowed('inventory', '/admin/products/import')) throw new Error('inventory import');
   if (!isScopedRolePathAllowed('inventory', '/admin/orders')) throw new Error('inventory orders');

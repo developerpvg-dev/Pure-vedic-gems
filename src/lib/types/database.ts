@@ -2377,6 +2377,9 @@ export interface Database {
           conversion_recorded_by: string | null;
           conversion_recorded_by_name: string | null;
           consultation_id: string | null;
+          blog_slug: string | null;
+          is_draft: boolean;
+          draft_session_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -2438,6 +2441,9 @@ export interface Database {
           conversion_recorded_by?: string | null;
           conversion_recorded_by_name?: string | null;
           consultation_id?: string | null;
+          blog_slug?: string | null;
+          is_draft?: boolean;
+          draft_session_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -2499,8 +2505,47 @@ export interface Database {
           conversion_recorded_by?: string | null;
           conversion_recorded_by_name?: string | null;
           consultation_id?: string | null;
+          blog_slug?: string | null;
+          is_draft?: boolean;
+          draft_session_id?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      lead_funnel_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          funnel: string;
+          event: string;
+          session_id: string;
+          page_path: string | null;
+          blog_slug: string | null;
+          country_hint: string | null;
+          meta: Record<string, unknown>;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          funnel: string;
+          event: string;
+          session_id: string;
+          page_path?: string | null;
+          blog_slug?: string | null;
+          country_hint?: string | null;
+          meta?: Record<string, unknown>;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          funnel?: string;
+          event?: string;
+          session_id?: string;
+          page_path?: string | null;
+          blog_slug?: string | null;
+          country_hint?: string | null;
+          meta?: Record<string, unknown>;
         };
         Relationships: [];
       };

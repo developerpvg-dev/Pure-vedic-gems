@@ -31,6 +31,30 @@ type MetricsPayload = {
   trend: { month: string; converted: number; not_converted: number }[];
 };
 
+type FunnelStage = {
+  page_views: number;
+  form_starts: number;
+  drafts: number;
+  submitted: number;
+  pay_started: number;
+  pay_abandoned: number;
+  pay_success: number;
+  free_international: number;
+  paid_pending: number;
+};
+
+type FunnelsPayload = {
+  funnels: Record<'remedies' | 'contact' | 'consultation' | 'blog', FunnelStage>;
+  by_blog: { slug: string; page_views: number; form_starts: number; drafts: number; submitted: number }[];
+};
+
+const FUNNEL_LABELS: Record<keyof FunnelsPayload['funnels'], string> = {
+  remedies: 'Remedies (/gems-recommendations)',
+  contact: 'Contact us',
+  consultation: 'Detailed consultation',
+  blog: 'Blog Ask-an-expert',
+};
+
 function buildHref(base: Record<string, string>, extra: Record<string, string>) {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries({ ...base, ...extra })) {
@@ -51,6 +75,7 @@ export default function LeadMetricsPage() {
     astrologers: [],
   });
   const [data, setData] = useState<MetricsPayload | null>(null);
+  const [funnels, setFunnels] = useState<FunnelsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,13 +97,26 @@ export default function LeadMetricsPage() {
     if (assignedTo) params.set('assigned_to', assignedTo);
     if (astrologerId) params.set('astrologer_id', astrologerId);
     if (kind) params.set('enquiry_type', kind);
+    const funnelParams = new URLSearchParams();
+    if (dateFrom) funnelParams.set('date_from', dateFrom);
+    if (dateTo) funnelParams.set('date_to', dateTo);
     try {
-      const res = await fetch(`/api/admin/leads/analytics?${params}`);
+      const [res, funnelRes] = await Promise.all([
+        fetch(`/api/admin/leads/analytics?${params}`),
+        fetch(`/api/admin/leads/funnels?${funnelParams}`),
+      ]);
       const json = (await res.json().catch(() => null)) as (MetricsPayload & { error?: string }) | null;
-      if (!res.ok) throw new Error(json?.error || 'Unable to load metrics');
-      setData(json as MetricsPayload);
+      const funnelJson = (await funnelRes.json().catch(() => null)) as (FunnelsPayload & { error?: string }) | null;
+      if (res.ok && json) setData(json as MetricsPayload);
+      else setData(null);
+      if (funnelRes.ok && funnelJson) setFunnels(funnelJson);
+      else setFunnels(null);
+      if (!res.ok && !funnelRes.ok) {
+        throw new Error(json?.error || funnelJson?.error || 'Unable to load metrics');
+      }
     } catch (e) {
       setData(null);
+      setFunnels(null);
       setError(e instanceof Error ? e.message : 'Unable to load metrics');
     }
     setLoading(false);
@@ -210,102 +248,184 @@ export default function LeadMetricsPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
         </div>
-      ) : data ? (
+      ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <AdminStatCard label="In window" value={data.summary.explained_total.toLocaleString('en-IN')} icon={BarChart3} tone="text-gray-900" bg="bg-gray-50" />
-            <AdminStatCard label="Converted" value={data.summary.converted.toLocaleString('en-IN')} icon={BarChart3} tone="text-emerald-700" bg="bg-emerald-50" />
-            <AdminStatCard label="Not converted" value={data.summary.not_converted.toLocaleString('en-IN')} icon={BarChart3} tone="text-amber-700" bg="bg-amber-50" />
-            <AdminStatCard label="Pending outcome" value={data.summary.pending_outcome.toLocaleString('en-IN')} icon={BarChart3} tone="text-lime-700" bg="bg-lime-50" />
-            <AdminStatCard label="Conversion rate" value={`${data.summary.conversion_rate}%`} icon={BarChart3} tone="text-indigo-700" bg="bg-indigo-50" />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <RankTable
-              title="By telecaller"
-              rows={data.by_telecaller}
-              hrefFor={(row, conversion) =>
-                buildHref(filterBase, {
-                  assigned_to: row.id || '',
-                  conversion,
-                })
-              }
-            />
-            <RankTable
-              title="By astrologer"
-              rows={data.by_astrologer}
-              hrefFor={(row, conversion) =>
-                buildHref(filterBase, {
-                  astrologer_id: row.id || '',
-                  conversion,
-                })
-              }
-            />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Not converted reasons</p>
-              {data.not_converted_reasons.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No not-converted leads in this window.</p>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  {data.not_converted_reasons.map((row) => {
-                    const label =
-                      LEAD_NOT_CONVERTED_BY_CODE[row.code as LeadNotConvertedReason]?.label || row.code;
-                    const pct = Math.round((row.count / reasonMax) * 100);
-                    return (
-                      <Link
-                        key={row.code}
-                        href={buildHref(filterBase, { conversion: 'not_converted' })}
-                        className="block rounded-lg p-1 hover:bg-gray-50"
-                      >
-                        <div className="mb-1 flex justify-between gap-2 text-[11px] text-gray-600">
-                          <span className="truncate">{label}</span>
-                          <span className="font-semibold text-gray-800">{row.count}</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                          <div className="h-full rounded-full bg-amber-500" style={{ width: `${pct}%` }} />
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Monthly trend</p>
-              {data.trend.length === 0 ? (
-                <p className="mt-3 text-sm text-gray-500">No conversion outcomes in this window.</p>
-              ) : (
-                <div className="mt-3 space-y-3">
-                  {data.trend.map((row) => (
-                    <div key={row.month}>
-                      <div className="mb-1 flex justify-between text-[11px] text-gray-600">
-                        <span className="font-semibold text-gray-800">{row.month}</span>
-                        <span>
-                          {row.converted} converted · {row.not_converted} not
+          {funnels ? (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Lead funnels</h2>
+                <p className="text-sm text-gray-500">
+                  Page views → form start → incomplete drafts → submitted → payment (date filters above).
+                </p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {(Object.keys(FUNNEL_LABELS) as (keyof typeof FUNNEL_LABELS)[]).map((key) => {
+                  const f = funnels.funnels[key];
+                  return (
+                    <div key={key} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-gray-900">{FUNNEL_LABELS[key]}</p>
+                        <span className="text-xs font-semibold text-amber-700">
+                          {f.drafts} incomplete
                         </span>
                       </div>
-                      <div className="flex h-2 overflow-hidden rounded-full bg-gray-100">
-                        <div
-                          className="h-full bg-emerald-500"
-                          style={{ width: `${Math.round((row.converted / trendMax) * 100)}%` }}
-                        />
-                        <div
-                          className="h-full bg-amber-400"
-                          style={{ width: `${Math.round((row.not_converted / trendMax) * 100)}%` }}
-                        />
+                      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+                        <FunnelStat label="Page views" value={f.page_views} />
+                        <FunnelStat label="Form starts" value={f.form_starts} />
+                        <FunnelStat label="Incomplete" value={f.drafts} />
+                        <FunnelStat label="Submitted" value={f.submitted} />
+                        {(key === 'remedies' || key === 'consultation') && (
+                          <>
+                            <FunnelStat label="Pay started" value={f.pay_started} />
+                            <FunnelStat label="Pay abandoned" value={f.pay_abandoned} />
+                            <FunnelStat label="Pay success" value={f.pay_success} />
+                            <FunnelStat label="Paid pending" value={f.paid_pending} />
+                            {key === 'remedies' ? (
+                              <FunnelStat label="Free intl success" value={f.free_international} />
+                            ) : null}
+                          </>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+              {funnels.by_blog.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b border-gray-100 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                      <tr>
+                        <th className="px-4 py-2 font-semibold">Blog slug</th>
+                        <th className="px-4 py-2 font-semibold">Views</th>
+                        <th className="px-4 py-2 font-semibold">Starts</th>
+                        <th className="px-4 py-2 font-semibold">Drafts</th>
+                        <th className="px-4 py-2 font-semibold">Submitted</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {funnels.by_blog.map((row) => (
+                        <tr key={row.slug} className="border-b border-gray-50">
+                          <td className="px-4 py-2 font-medium text-gray-800">{row.slug}</td>
+                          <td className="px-4 py-2">{row.page_views}</td>
+                          <td className="px-4 py-2">{row.form_starts}</td>
+                          <td className="px-4 py-2">{row.drafts}</td>
+                          <td className="px-4 py-2">{row.submitted}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </div>
-          </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {data ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <AdminStatCard label="In window" value={data.summary.explained_total.toLocaleString('en-IN')} icon={BarChart3} tone="text-gray-900" bg="bg-gray-50" />
+                <AdminStatCard label="Converted" value={data.summary.converted.toLocaleString('en-IN')} icon={BarChart3} tone="text-emerald-700" bg="bg-emerald-50" />
+                <AdminStatCard label="Not converted" value={data.summary.not_converted.toLocaleString('en-IN')} icon={BarChart3} tone="text-amber-700" bg="bg-amber-50" />
+                <AdminStatCard label="Pending outcome" value={data.summary.pending_outcome.toLocaleString('en-IN')} icon={BarChart3} tone="text-lime-700" bg="bg-lime-50" />
+                <AdminStatCard label="Conversion rate" value={`${data.summary.conversion_rate}%`} icon={BarChart3} tone="text-indigo-700" bg="bg-indigo-50" />
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <RankTable
+                  title="By telecaller"
+                  rows={data.by_telecaller}
+                  hrefFor={(row, conversion) =>
+                    buildHref(filterBase, {
+                      assigned_to: row.id || '',
+                      conversion,
+                    })
+                  }
+                />
+                <RankTable
+                  title="By astrologer"
+                  rows={data.by_astrologer}
+                  hrefFor={(row, conversion) =>
+                    buildHref(filterBase, {
+                      astrologer_id: row.id || '',
+                      conversion,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Not converted reasons</p>
+                  {data.not_converted_reasons.length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">No not-converted leads in this window.</p>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      {data.not_converted_reasons.map((row) => {
+                        const label =
+                          LEAD_NOT_CONVERTED_BY_CODE[row.code as LeadNotConvertedReason]?.label || row.code;
+                        const pct = Math.round((row.count / reasonMax) * 100);
+                        return (
+                          <Link
+                            key={row.code}
+                            href={buildHref(filterBase, { conversion: 'not_converted' })}
+                            className="block rounded-lg p-1 hover:bg-gray-50"
+                          >
+                            <div className="mb-1 flex justify-between gap-2 text-[11px] text-gray-600">
+                              <span className="truncate">{label}</span>
+                              <span className="font-semibold text-gray-800">{row.count}</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                              <div className="h-full rounded-full bg-amber-500" style={{ width: `${pct}%` }} />
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Monthly trend</p>
+                  {data.trend.length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">No conversion outcomes in this window.</p>
+                  ) : (
+                    <div className="mt-3 space-y-3">
+                      {data.trend.map((row) => (
+                        <div key={row.month}>
+                          <div className="mb-1 flex justify-between text-[11px] text-gray-600">
+                            <span className="font-semibold text-gray-800">{row.month}</span>
+                            <span>
+                              {row.converted} converted · {row.not_converted} not
+                            </span>
+                          </div>
+                          <div className="flex h-2 overflow-hidden rounded-full bg-gray-100">
+                            <div
+                              className="h-full bg-emerald-500"
+                              style={{ width: `${Math.round((row.converted / trendMax) * 100)}%` }}
+                            />
+                            <div
+                              className="h-full bg-amber-400"
+                              style={{ width: `${Math.round((row.not_converted / trendMax) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : null}
         </>
-      ) : null}
+      )}
+    </div>
+  );
+}
+
+function FunnelStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg bg-gray-50 px-2.5 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="mt-0.5 text-sm font-bold text-gray-900">{value.toLocaleString('en-IN')}</p>
     </div>
   );
 }

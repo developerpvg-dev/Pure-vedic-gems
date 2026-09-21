@@ -8,6 +8,7 @@ import { X } from 'lucide-react';
 import { BlogEnquiryForm } from './BlogEnquiryForm';
 import type { BlogRelatedProduct } from '@/lib/blog/blog-rail-data';
 import { blogScrollRatio } from './blog-scroll-ratio';
+import { trackLeadFunnel } from '@/lib/utils/lead-funnel-client';
 
 // ponytail: v4 clears phones that auto-opened+ghost-dismissed on Google cold loads (v3 max<=0→1 bug)
 function enquiryDismissKey(slug: string) {
@@ -88,7 +89,8 @@ export function BlogLeadPopup({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    trackLeadFunnel({ funnel: 'blog', event: 'page_view', blog_slug: slug });
+  }, [slug]);
 
   useEffect(() => {
     if (localStorage.getItem(enquiryDismissKey(slug))) {
@@ -202,6 +204,7 @@ export function BlogLeadPopup({
           <p>Get clear guidance from our team before choosing a certified stone.</p>
           <BlogEnquiryForm
             postTitle={postTitle}
+            blogSlug={slug}
             variant="popup"
             onDirtyChange={(dirty) => {
               formDirtyRef.current = dirty;

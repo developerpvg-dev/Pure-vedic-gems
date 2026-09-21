@@ -29,6 +29,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useCurrency, useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import { trackLeadFunnel } from '@/lib/utils/lead-funnel-client';
+import { useLeadFunnelForm } from '@/lib/hooks/useLeadFunnelForm';
 import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
 import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
@@ -197,6 +199,26 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? '');
   const [detailsPlanId, setDetailsPlanId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
+  const funnel = useLeadFunnelForm({
+    funnel: 'consultation',
+    getDraft: () => ({
+      name: form.full_name,
+      email: form.email,
+      phone: form.phone,
+      date_of_birth: form.date_of_birth,
+      birth_time: form.birth_time,
+      birth_place: form.birth_place,
+      customer_city: form.customer_city,
+      customer_state: form.customer_state,
+      customer_country: form.customer_country,
+      area_of_concern: form.life_situation,
+      message: form.message || form.life_situation,
+    }),
+  });
+
+  useEffect(() => {
+    trackLeadFunnel({ funnel: 'consultation', event: 'page_view' });
+  }, []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
   const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
@@ -239,6 +261,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
 
   function updateField(field: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    funnel.scheduleDraft();
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -369,6 +392,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
       }
 
       const payment = createData as CreateOrderResponse;
+      trackLeadFunnel({ funnel: 'consultation', event: 'pay_started' });
       if (payment.redirect_url) {
         window.location.assign(payment.redirect_url);
         return;
@@ -397,12 +421,17 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
         notes: { consultation_id: payment.consultation_id },
         theme: { color: '#7A1515' },
         modal: {
-          ondismiss: () => setPaying(false),
+          ondismiss: () => {
+            trackLeadFunnel({ funnel: 'consultation', event: 'pay_abandoned' });
+            setPaying(false);
+          },
         },
         handler: (response) => {
           void (async () => {
             try {
               const verified = await verifyPayment(payment.consultation_id, response);
+              trackLeadFunnel({ funnel: 'consultation', event: 'pay_success' });
+              funnel.markSubmitted();
               trackStorefrontEvent('consultation_payment_success', {
                 consultation_id: verified.consultation_id,
                 plan_id: selectedPlan?.id,
@@ -541,7 +570,11 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
               })}
             </section>
 
-            <section id="consultation-booking" className="pvg-consultation-booking mt-6 scroll-mt-28">
+            <section
+              id="consultation-booking"
+              className="pvg-consultation-booking mt-6 scroll-mt-28"
+              onFocusCapture={funnel.onFormFocus}
+            >
               <div className="pvg-consultation-booking-card p-4 sm:p-5">
                 <div className="pvg-consultation-booking-head">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">

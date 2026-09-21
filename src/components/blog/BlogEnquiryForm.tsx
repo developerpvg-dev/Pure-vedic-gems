@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useTurnstile } from '@/components/turnstile/use-turnstile';
+import { useLeadFunnelForm } from '@/lib/hooks/useLeadFunnelForm';
+import { getLeadFunnelSessionId } from '@/lib/utils/lead-funnel-client';
 
 type BlogEnquiryFormProps = {
   postTitle: string;
+  blogSlug: string;
   variant?: 'sidebar' | 'popup';
   onDirtyChange?: (dirty: boolean) => void;
   onSuccess?: () => void;
@@ -12,6 +15,7 @@ type BlogEnquiryFormProps = {
 
 export function BlogEnquiryForm({
   postTitle,
+  blogSlug,
   variant = 'sidebar',
   onDirtyChange,
   onSuccess,
@@ -21,6 +25,19 @@ export function BlogEnquiryForm({
   const [honeypot, setHoneypot] = useState('');
   const [formStartedAt] = useState(() => Date.now());
   const turnstile = useTurnstile();
+  const draftRef = useRef({ name: '', email: '', phone: '', message: '' });
+  const source = variant === 'sidebar' ? 'blog_sidebar' : 'blog_popup';
+  const funnel = useLeadFunnelForm({
+    funnel: 'blog',
+    blogSlug,
+    source,
+    getDraft: () => ({
+      ...draftRef.current,
+      subject: postTitle,
+      blog_slug: blogSlug,
+    }),
+  });
+  // Page view is fired from BlogLeadPopup; form_start on focus here.
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,8 +51,10 @@ export function BlogEnquiryForm({
       phone: String(form.get('phone') ?? ''),
       message: String(form.get('message') ?? ''),
       subject: postTitle,
-      source: 'blog_popup',
+      source,
       enquiry_type: 'Blog enquiry',
+      blog_slug: blogSlug,
+      draft_session_id: getLeadFunnelSessionId() || undefined,
       _hp: honeypot,
       _startedAt: formStartedAt,
       turnstileToken: turnstile.token || undefined,
@@ -49,6 +68,7 @@ export function BlogEnquiryForm({
       });
       const body = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(body.error || 'Unable to send your query.');
+      funnel.markSubmitted();
       onDirtyChange?.(false);
       onSuccess?.();
       setStatus('success');
@@ -70,7 +90,16 @@ export function BlogEnquiryForm({
       <form
         className={`pvg-blog-query-form pvg-blog-query-form--${variant}`}
         onSubmit={onSubmit}
-        onInput={() => onDirtyChange?.(true)}
+        onFocus={funnel.onFormFocus}
+        onInput={(event) => {
+          onDirtyChange?.(true);
+          const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+          const name = target.name;
+          if (name === 'name' || name === 'email' || name === 'phone' || name === 'message') {
+            draftRef.current = { ...draftRef.current, [name]: target.value };
+          }
+          funnel.scheduleDraft();
+        }}
       >
         <label className="sr-only" aria-hidden="true">
           Website
@@ -101,7 +130,11 @@ export function BlogEnquiryForm({
             required
             rows={3}
             defaultValue={`I would like guidance about ${postTitle}.`}
-            onChange={() => onDirtyChange?.(true)}
+            onChange={(event) => {
+              draftRef.current = { ...draftRef.current, message: event.target.value };
+              onDirtyChange?.(true);
+              funnel.scheduleDraft();
+            }}
           />
         </label>
         {turnstile.field}

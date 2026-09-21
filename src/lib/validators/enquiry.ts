@@ -21,6 +21,8 @@ export const enquiryCreateSchema = z.object({
   birth_place: z.string().max(500).optional(),
   area_of_concern: z.string().max(5000).optional(),
   ip_location: z.string().max(160).optional(),
+  blog_slug: z.string().max(200).optional(),
+  draft_session_id: z.string().max(80).optional(),
   /** Honeypot — must stay empty */
   _hp: z.string().max(200).optional(),
   /** Client form mount time (ms) for timing check */

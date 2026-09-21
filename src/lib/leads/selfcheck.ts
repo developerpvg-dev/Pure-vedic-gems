@@ -5,13 +5,19 @@ import { assertRoleDashboardAllowlists } from '@/lib/admin/role-dashboards';
 import {
   canMarkConverted,
   canMarkNotConverted,
+  canViewFunnelMetrics,
   isLeadManager,
 } from '@/lib/leads/permissions';
+import { assertLeadFunnelHelpers } from '@/lib/leads/funnel';
+import { assertDraftUpsertKey, assertFunnelAggregation } from '@/lib/leads/funnel-aggregate';
 
 assertLeadConstants();
 assertHydrateParse();
 assertDuplicateScoring();
 assertRoleDashboardAllowlists();
+assertLeadFunnelHelpers();
+assertFunnelAggregation();
+assertDraftUpsertKey();
 
 // Conversion permissions
 if (!canMarkNotConverted('telecom')) throw new Error('telecom can mark not converted');
@@ -22,6 +28,10 @@ if (!canMarkConverted('fulfillment')) throw new Error('fulfillment can mark conv
 if (!canMarkConverted('admin')) throw new Error('admin can mark converted');
 if (canMarkConverted('telecom')) throw new Error('telecom must not mark converted');
 if (!isLeadManager('fulfillment')) throw new Error('fulfillment is lead manager');
+if (!canViewFunnelMetrics('seo_cms')) throw new Error('seo_cms can view funnel metrics');
+if (!canViewFunnelMetrics('sales')) throw new Error('sales can view funnel metrics');
+if (canViewFunnelMetrics('telecom')) throw new Error('telecom must not view funnel metrics');
+if (canViewFunnelMetrics('content')) throw new Error('content must not view funnel metrics');
 // Converted requires a real order_id — enforced in DB check + API lookup
 function assertConvertedNeedsOrder(status: string, orderId: string | null) {
   if (status === 'converted' && !orderId) throw new Error('converted requires order_id');

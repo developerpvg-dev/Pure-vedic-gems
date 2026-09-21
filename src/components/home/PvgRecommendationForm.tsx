@@ -14,6 +14,8 @@ import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS } from '@/lib/constants/recommendation-purposes';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import { trackLeadFunnel } from '@/lib/utils/lead-funnel-client';
+import { useLeadFunnelForm } from '@/lib/hooks/useLeadFunnelForm';
 
 type Rs101FormState = {
   full_name: string;
@@ -67,6 +69,28 @@ export function PvgRecommendationForm({
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [guestChoiceOpen, setGuestChoiceOpen] = useState(false);
 
+  const countryHint = form.customer_country.trim() || undefined;
+  const funnel = useLeadFunnelForm({
+    funnel: 'remedies',
+    countryHint: form.customer_country.trim() || undefined,
+    getDraft: () => ({
+      name: form.full_name,
+      email: form.email,
+      phone: form.phone,
+      date_of_birth: form.date_of_birth,
+      birth_time: form.birth_time,
+      birth_place: form.birth_place,
+      customer_state: form.customer_state,
+      customer_country: form.customer_country,
+      area_of_concern: form.life_situation,
+      message: form.life_situation,
+    }),
+  });
+
+  useEffect(() => {
+    trackLeadFunnel({ funnel: 'remedies', event: 'page_view' });
+  }, []);
+
   useEffect(() => {
     if (!user && !profile) return;
     setForm((current) => ({
@@ -82,6 +106,7 @@ export function PvgRecommendationForm({
 
   function updateField(field: keyof Rs101FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    funnel.scheduleDraft();
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -186,8 +211,31 @@ export function PvgRecommendationForm({
         currency: rs101Paid ? currency : undefined,
         turnstileToken: !rs101Paid ? turnstile.token : undefined,
         gateway: rs101Paid ? payGateway : undefined,
+        onPayStarted: () => {
+          trackLeadFunnel({
+            funnel: 'remedies',
+            event: 'pay_started',
+            country_hint: form.customer_country.trim() || (rs101Paid ? 'IN' : undefined),
+            meta: { paid_path: rs101Paid },
+          });
+        },
+        onPayAbandoned: () => {
+          trackLeadFunnel({
+            funnel: 'remedies',
+            event: 'pay_abandoned',
+            country_hint: form.customer_country.trim() || (rs101Paid ? 'IN' : undefined),
+          });
+          setPaying(false);
+        },
         onDismiss: () => setPaying(false),
         onSuccess: (consultationId) => {
+          trackLeadFunnel({
+            funnel: 'remedies',
+            event: 'pay_success',
+            country_hint: form.customer_country.trim() || (rs101Paid ? 'IN' : undefined),
+            meta: { free_international: !rs101Paid },
+          });
+          funnel.markSubmitted();
           trackStorefrontEvent('consultation_payment_success', {
             consultation_id: consultationId,
             plan_id: 'rs101',
@@ -253,7 +301,14 @@ export function PvgRecommendationForm({
       : 'Submit Request';
 
   return (
-    <form id="gem-recommendation-form" className="reco-form-panel" onSubmit={handlePayment} aria-busy={paying} noValidate>
+    <form
+      id="gem-recommendation-form"
+      className="reco-form-panel"
+      onSubmit={handlePayment}
+      aria-busy={paying}
+      noValidate
+      onFocus={funnel.onFormFocus}
+    >
       {turnstile.script}
       <p className="reco-form-price">
         {showPrice ? (

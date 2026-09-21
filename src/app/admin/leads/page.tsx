@@ -44,7 +44,16 @@ type LeadKind = 'remedies' | 'consultation' | 'contact' | 'blog';
 
 function readLeadQuery() {
   if (typeof window === 'undefined') {
-    return { assigned_to: '', astrologer_id: '', conversion: '', date_from: '', date_to: '', kind: '' as '' | LeadKind, id: '' };
+    return {
+      assigned_to: '',
+      astrologer_id: '',
+      conversion: '',
+      date_from: '',
+      date_to: '',
+      kind: '' as '' | LeadKind,
+      id: '',
+      draft: false,
+    };
   }
   const q = new URLSearchParams(window.location.search);
   const kindRaw = q.get('kind') || '';
@@ -60,6 +69,7 @@ function readLeadQuery() {
     date_to: q.get('date_to') || '',
     kind,
     id: q.get('id') || '',
+    draft: q.get('draft') === '1',
   };
 }
 
@@ -159,10 +169,11 @@ export default function LeadsPage() {
   const [dateTo, setDateTo] = useState(initialQ.date_to);
   const [followUp, setFollowUp] = useState('');
   const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [draftOnly, setDraftOnly] = useState(initialQ.draft);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showFilters, setShowFilters] = useState(
-    Boolean(initialQ.conversion || initialQ.assigned_to || initialQ.astrologer_id)
+    Boolean(initialQ.conversion || initialQ.assigned_to || initialQ.astrologer_id || initialQ.draft)
   );
   const [expandedId, setExpandedId] = useState<string | null>(initialQ.id || null);
   const [saving, setSaving] = useState<string | null>(null);
@@ -259,6 +270,7 @@ export default function LeadsPage() {
     if (dateTo) params.set('date_to', dateTo);
     if (followUp) params.set('follow_up', followUp);
     if (unassignedOnly) params.set('unassigned', '1');
+    if (draftOnly) params.set('draft', '1');
     if (debouncedSearch) params.set('search', debouncedSearch);
 
     try {
@@ -298,6 +310,7 @@ export default function LeadsPage() {
     dateTo,
     followUp,
     unassignedOnly,
+    draftOnly,
     debouncedSearch,
   ]);
 
@@ -445,6 +458,7 @@ export default function LeadsPage() {
     if (dateTo) params.set('date_to', dateTo);
     if (followUp) params.set('follow_up', followUp);
     if (unassignedOnly) params.set('unassigned', '1');
+    if (draftOnly) params.set('draft', '1');
     if (debouncedSearch) params.set('search', debouncedSearch);
     return params.toString();
   }
@@ -644,6 +658,14 @@ export default function LeadsPage() {
               Unassigned only
             </label>
           )}
+          <label className="flex items-center gap-2 pb-2 text-xs font-medium text-amber-800">
+            <input
+              type="checkbox"
+              checked={draftOnly}
+              onChange={(e) => { setDraftOnly(e.target.checked); setPage(1); }}
+            />
+            Incomplete forms only
+          </label>
         </div>
 
         {showFilters && (
@@ -792,6 +814,16 @@ export default function LeadsPage() {
                           ? leadStageLabel(stage as string, { source: lead.source, enquiryType: lead.enquiry_type })
                           : stage}
                       </span>
+                      {isEnquiry && lead.is_draft ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
+                          Incomplete
+                        </span>
+                      ) : null}
+                      {isEnquiry && lead.blog_slug ? (
+                        <span className="truncate rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-800" title={lead.blog_slug}>
+                          /{lead.blog_slug}
+                        </span>
+                      ) : null}
                       {isEnquiry && lead.details_confirmed && (
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Details OK</span>
                       )}

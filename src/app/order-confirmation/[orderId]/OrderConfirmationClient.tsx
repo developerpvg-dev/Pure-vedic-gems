@@ -29,6 +29,7 @@ import {
 } from '@/lib/orders/bank-transfer-proof';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 import { trackEcommerceEvent } from '@/lib/utils/analytics';
+import { trackProductFunnel } from '@/lib/utils/product-funnel-client';
 
 const CONFETTI_COLORS = ['#C9A84C', '#3D2B1F', '#E0A830', '#50C878', '#FF6B6B', '#4ECDC4'];
 const CONFETTI_PIECES = Array.from({ length: 40 }, (_, i) => ({
@@ -142,6 +143,15 @@ export function OrderConfirmationClient({ order, isLoggedIn }: Props) {
       currency: 'INR',
       transaction_id: order.order_number,
       num_items: order.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+    });
+    trackProductFunnel({
+      event: 'purchase',
+      source: 'order_confirmation',
+      meta: {
+        order_number: order.order_number,
+        value: Number(order.amount_paid ?? order.total ?? 0),
+      },
+      clear_checkout_draft: true,
     });
   }, [isPaid, order.amount_paid, order.id, order.items, order.order_number, order.total]);
 

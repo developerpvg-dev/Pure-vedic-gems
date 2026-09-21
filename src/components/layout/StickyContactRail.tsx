@@ -1,10 +1,22 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+import {
+  trackCallClick,
+  trackedWhatsAppHref,
+  trackWhatsAppClick,
+} from '@/lib/utils/product-funnel-client';
+import { whatsappContextFromPath } from '@/lib/commerce/product-funnel';
+
 /** Clears the fixed scroll-to-top control plus rail gap. */
 const STICKY_CONTACT_BOTTOM_OFFSET = 'calc(env(safe-area-inset-bottom, 0px) + 82px)';
 const STICKY_CONTACT_BOTTOM_OFFSET_MOBILE = 'calc(env(safe-area-inset-bottom, 0px) + 76px)';
 
 export function StickyContactRail() {
+  const pathname = usePathname() || '/';
+  const { context, category } = whatsappContextFromPath(pathname);
+  const waHref = trackedWhatsAppHref(context, { category });
+
   return (
     <>
       <style>{`
@@ -197,7 +209,14 @@ export function StickyContactRail() {
       `}</style>
 
       <div className="pvg-sticky-contact-rail" aria-label="Quick contact actions">
-        <a href="tel:+919310172512" className="pvg-sticky-contact-link pvg-sticky-contact-call" aria-label="Call us">
+        <a
+          href="tel:+919310172512"
+          className="pvg-sticky-contact-link pvg-sticky-contact-call"
+          aria-label="Call us"
+          onClick={() =>
+            trackCallClick({ source: 'sticky_rail', category: category ?? null })
+          }
+        >
           <span className="pvg-sticky-contact-ring" aria-hidden="true" />
           <span className="pvg-sticky-contact-ring pvg-sticky-contact-ring--delay" aria-hidden="true" />
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -206,11 +225,18 @@ export function StickyContactRail() {
         </a>
 
         <a
-          href="https://wa.me/919310172512"
+          href={waHref}
           className="pvg-sticky-contact-link pvg-sticky-contact-whatsapp"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp"
+          onClick={() =>
+            trackWhatsAppClick({
+              context,
+              source: 'sticky_rail',
+              category: category ?? null,
+            })
+          }
         >
           <span className="pvg-sticky-contact-ring" aria-hidden="true" />
           <span className="pvg-sticky-contact-ring pvg-sticky-contact-ring--delay" aria-hidden="true" />

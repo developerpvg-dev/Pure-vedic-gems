@@ -8,6 +8,12 @@ import { useCart } from '@/lib/hooks/useCart';
 import { useCurrencySubscription } from '@/lib/hooks/useCurrency';
 import { WishlistButton } from '@/components/shop/WishlistButton';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import {
+  trackCallClick,
+  trackProductFunnel,
+  trackedWhatsAppHref,
+  trackWhatsAppClick,
+} from '@/lib/utils/product-funnel-client';
 import { toast } from 'sonner';
 import type { Product } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
@@ -118,15 +124,30 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       category: product.category,
       source: 'product_detail',
     });
+    trackProductFunnel({
+      event: 'add_to_cart',
+      category: product.category,
+      product_id: product.id,
+      product_sku: product.sku,
+      product_name: displayName,
+      source: 'product_detail',
+    });
     toast.success(`${displayName} added to cart`, {
       description: 'View your cart to proceed to checkout.',
       action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
     });
   }, [addItem, cartPrice, displayName, inCart, isUnavailable, product]);
 
-  const waLink = `https://wa.me/919871582404?text=${encodeURIComponent(
-    `Hi, I'm interested in: ${displayName} (SKU: ${product.sku}). Please share more details.`
-  )}`;
+  const waLink = trackedWhatsAppHref('product', {
+    product: { name: displayName, sku: product.sku },
+  });
+
+  const productContactBits = {
+    category: product.category,
+    product_id: product.id,
+    product_sku: product.sku,
+    product_name: displayName,
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -164,6 +185,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       </Link>
       <a
         href={PHONE_TEL}
+        onClick={() => trackCallClick({ source: 'product_detail', ...productContactBits })}
         className={`${secondaryPill} min-w-0 flex-1 bg-[#F0C14B] text-[#2A1810] shadow-[0_2px_8px_rgba(240,193,75,0.28)] hover:bg-[#E5B33A]`}
       >
         <Phone className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" strokeWidth={1.75} />
@@ -176,6 +198,9 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
         href={waLink}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() =>
+          trackWhatsAppClick({ context: 'product', source: 'product_detail', ...productContactBits })
+        }
         className={`${secondaryPill} min-w-0 flex-1 bg-[#25D366] text-white shadow-[0_2px_8px_rgba(37,211,102,0.32)] hover:bg-[#1EBE57]`}
       >
         <WhatsAppIcon className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
@@ -261,6 +286,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
             <a
               href={PHONE_TEL}
               tabIndex={stickyVisible ? 0 : -1}
+              onClick={() => trackCallClick({ source: 'product_detail_sticky', ...productContactBits })}
               className={`${stickyPill} !flex-none w-10 bg-[#F0C14B] px-0 text-[#2A1810] sm:w-auto sm:min-w-[6.5rem] sm:px-4 lg:min-w-[8.5rem] lg:px-6`}
               aria-label="Call us"
             >
@@ -272,6 +298,13 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
               target="_blank"
               rel="noopener noreferrer"
               tabIndex={stickyVisible ? 0 : -1}
+              onClick={() =>
+                trackWhatsAppClick({
+                  context: 'product',
+                  source: 'product_detail_sticky',
+                  ...productContactBits,
+                })
+              }
               className={`${stickyPill} !flex-none w-10 bg-[#25D366] px-0 text-white sm:w-auto sm:min-w-[7.5rem] sm:px-4 lg:min-w-[9.5rem] lg:px-6`}
               aria-label="Chat on WhatsApp"
             >

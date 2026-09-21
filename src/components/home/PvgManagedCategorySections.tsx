@@ -613,15 +613,18 @@ export type IntegratedCategoryCtaButton = {
   tone?: 'chat' | 'call' | 'whatsapp';
   /** When set, replaces tone-based desktop/mobile class names. */
   className?: string;
+  onClick?: () => void;
 };
 
 function CtaActionLink({
   href,
   className,
+  onClick,
   children,
 }: {
   href: string;
   className: string;
+  onClick?: () => void;
   children: ReactNode;
 }) {
   const external = href.startsWith('http') || href.startsWith('tel:');
@@ -632,13 +635,14 @@ function CtaActionLink({
         className={className}
         target={href.startsWith('http') ? '_blank' : undefined}
         rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+        onClick={onClick}
       >
         {children}
       </a>
     );
   }
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} onClick={onClick}>
       {children}
     </Link>
   );
@@ -709,6 +713,7 @@ export function IntegratedCategoryCta({
                 <CtaActionLink
                   key={`${action.href}-${index}`}
                   href={action.href}
+                  onClick={action.onClick}
                   className={
                     action.className ??
                     (action.tone === 'whatsapp'
@@ -731,6 +736,7 @@ export function IntegratedCategoryCta({
           <CtaActionLink
             key={`m-${action.href}-${index}`}
             href={action.href}
+            onClick={action.onClick}
             className={
               action.className ??
               (action.tone === 'whatsapp'

@@ -47,6 +47,8 @@ export type EnquiryLead = {
   pipeline_stage?: string;
   enquiry_type?: string | null;
   consultation_id?: string | null;
+  blog_slug?: string | null;
+  is_draft?: boolean | null;
   ip_location?: string | null;
   date_of_birth?: string | null;
   birth_time?: string | null;

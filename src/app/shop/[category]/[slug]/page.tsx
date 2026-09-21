@@ -247,6 +247,8 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
     imageUrl: product.thumbnail_url ?? images[0] ?? null,
     price: product.price,
     meta: skuMeta || null,
+    sku: product.sku,
+    category: product.category,
   };
 
   const categoryLabel =

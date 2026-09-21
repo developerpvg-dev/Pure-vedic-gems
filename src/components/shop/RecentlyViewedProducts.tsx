@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
+import { trackProductFunnel } from '@/lib/utils/product-funnel-client';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { ProductHorizontalScroller } from '@/components/shop/ProductHorizontalScroller';
 
@@ -20,6 +21,8 @@ export interface RecentlyViewedProduct {
   imageUrl: string | null;
   price: number;
   meta: string | null;
+  sku?: string | null;
+  category?: string | null;
 }
 
 function readStoredProducts(): RecentlyViewedProduct[] {
@@ -54,6 +57,14 @@ export function RecentlyViewedProducts({ current }: { current: RecentlyViewedPro
     const next = [safeCurrent, ...stored].slice(0, MAX_ITEMS);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     trackStorefrontEvent('product_view', { product_id: safeCurrent.id, product_name: safeCurrent.name });
+    trackProductFunnel({
+      event: 'product_view',
+      product_id: safeCurrent.id,
+      product_name: safeCurrent.name,
+      product_sku: safeCurrent.sku,
+      category: safeCurrent.category,
+      source: 'product_detail',
+    });
   }, [current]);
 
   if (items.length === 0) return null;

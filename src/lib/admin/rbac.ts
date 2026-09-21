@@ -123,8 +123,8 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'content.manage',
     'settings.commerce',
   ],
-  // Products (SEO/copy), category hubs, Sanity Studio.
-  seo_cms: ['dashboard.read', 'products.read', 'products.write', 'content.manage'],
+  // Products (SEO/copy), category hubs, Sanity Studio, funnel tracking dashboards.
+  seo_cms: ['dashboard.read', 'products.read', 'products.write', 'content.manage', 'leads.read'],
   inventory: [
     'dashboard.read',
     'products.read',

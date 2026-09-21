@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText, Trash2, Tags } from 'lucide-react';
+import { Package, LayoutDashboard, LogOut, Gem, CircleDollarSign, Menu, X, Palette, Award, Sparkles, ShoppingCart, MessageSquare, IndianRupee, Settings, UploadCloud, SlidersHorizontal, Star, Bell, Users, CalendarClock, Scale, Video, FileBadge2, Flame, Gift, Images, Loader2, Store, Bot, ClipboardList, FileEdit, HandCoins, FileText, Trash2, Tags, BarChart3 } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { DesignerAdminLayout } from '@/components/admin/DesignerAdminLayout';
 import { StockManagerAdminLayout } from '@/components/admin/StockManagerAdminLayout';
@@ -26,6 +26,7 @@ const NAV_GROUPS = [
       { href: '/admin/customers', label: 'Customers', icon: Users, match: 'prefix' as const },
       { href: '/admin/rewards', label: 'Rewards', icon: Gift, match: 'prefix' as const },
       { href: '/admin/products', label: 'Products', icon: Package, match: 'products' as const },
+      { href: '/admin/products/journey', label: 'Product Journey', icon: BarChart3, match: 'prefix' as const },
       { href: '/admin/products?status=inactive', label: 'Drafts', icon: FileEdit, match: 'drafts' as const },
       { href: '/admin/products?status=trash', label: 'Trash', icon: Trash2, match: 'trash' as const },
       { href: '/admin/catalog-order', label: 'Catalog Order', icon: SlidersHorizontal, match: 'prefix' as const },
@@ -121,6 +122,7 @@ function navLinkActive(
   if (match === 'products') {
     if (!pathname?.startsWith('/admin/products')) return false;
     if (pathname.startsWith('/admin/products/import')) return false;
+    if (pathname.startsWith('/admin/products/journey')) return false;
     const status = searchParams.get('status');
     return !(pathname === '/admin/products' && (status === 'inactive' || status === 'trash'));
   }

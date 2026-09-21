@@ -79,6 +79,8 @@ export async function startRs101Checkout(
     currency?: string;
     turnstileToken?: string;
     gateway?: 'razorpay' | 'payglocal';
+    onPayStarted?: () => void;
+    onPayAbandoned?: () => void;
     onDismiss: () => void;
     onSuccess: (consultationId: string) => void;
     onError: (error: { message: string; fieldErrors?: Record<string, string> }) => void;
@@ -112,6 +114,8 @@ export async function startRs101Checkout(
     return;
   }
 
+  options.onPayStarted?.();
+
   if (payment.redirect_url) {
     window.location.assign(payment.redirect_url);
     return;
@@ -143,7 +147,10 @@ export async function startRs101Checkout(
     notes: { consultation_id: payment.consultation_id },
     theme: { color: '#7A1515' },
     modal: {
-      ondismiss: options.onDismiss,
+      ondismiss: () => {
+        options.onPayAbandoned?.();
+        options.onDismiss();
+      },
     },
     handler: (response: RazorpayPaymentResponse) => {
       void (async () => {
