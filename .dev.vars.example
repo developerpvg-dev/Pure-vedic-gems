@@ -1,0 +1,3 @@
+# Cloudflare Workers local secrets (wrangler / opennext preview).
+# Copy values from .env.local — never commit this file.
+NEXTJS_ENV=development

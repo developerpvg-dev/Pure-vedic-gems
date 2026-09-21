@@ -55,7 +55,7 @@ describe('homepage SEO (head + JSON-LD only)', () => {
       is_directors_pick: false,
       created_at: '2026-01-01',
       thumbnail_url: '/gems/ruby.jpg',
-    } as ProductCard;
+    } as unknown as ProductCard;
 
     const schema = productJsonLd(product, '/gemstones/navaratna/ruby/ruby-1', {
       reviews: [

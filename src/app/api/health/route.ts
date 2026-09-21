@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getDeployCommitSha, getDeployEnv } from '@/lib/deploy-env';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,8 +40,8 @@ export async function GET() {
       service: 'purevedicgems',
       status,
       timestamp: new Date().toISOString(),
-      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? 'unknown',
-      version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? 'local',
+      environment: getDeployEnv(),
+      version: getDeployCommitSha().slice(0, 12),
       response_time_ms: Date.now() - startedAt,
       checks,
     },

@@ -1,4 +1,5 @@
 import { getSiteUrl } from '@/lib/utils/seo';
+import { getDeployHostname, isPreviewDeploy } from '@/lib/deploy-env';
 import { getPayGlocalConfig, requirePayGlocalConfig } from './config';
 import { generateJweAndJws, signJws } from './jose';
 import { formatPayGlocalAmount } from './status';
@@ -45,9 +46,11 @@ function callbackUrl() {
   const override = process.env.PAYGLOCAL_CALLBACK_BASE_URL?.trim();
   if (override) return `${override.replace(/\/$/, '')}/api/payment/payglocal/callback`;
   // Preview only: post back to this deployment, not NEXT_PUBLIC_SITE_URL (live www).
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel && process.env.VERCEL_ENV === 'preview') {
-    return `https://${vercel.replace(/^https?:\/\//i, '').replace(/\/$/, '')}/api/payment/payglocal/callback`;
+  if (isPreviewDeploy()) {
+    const host = getDeployHostname();
+    if (host && !/purevedicgems\.com$/i.test(host)) {
+      return `https://${host.replace(/\/$/, '')}/api/payment/payglocal/callback`;
+    }
   }
   return `${getSiteUrl().replace(/\/$/, '')}/api/payment/payglocal/callback`;
 }

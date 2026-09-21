@@ -1,8 +1,11 @@
 /**
- * HTML → PDF via Chromium. Serverless uses @sparticuz/chromium; local uses system Chrome.
+ * HTML → PDF via Chromium.
+ * - Local: system Chrome
+ * - Vercel/Lambda: @sparticuz/chromium
+ * - Cloudflare Workers: Browser Rendering (@cloudflare/puppeteer + BROWSER binding)
  *
  * ponytail: one shared browser per warm isolate + serialized jobs.
- * Ceiling: Vercel may still cold-start Chromium per new isolate; Fly/VPS worker if volume grows.
+ * Ceiling: serverless cold-starts still hurt; Browser Rendering is the CF path.
  */
 const PDF_OPTS = {
   format: 'A4' as const,
@@ -31,6 +34,27 @@ let sharedBrowser: PuppeteerBrowser | null = null;
 let launching: Promise<PuppeteerBrowser> | null = null;
 /** Serialize PDF jobs — one page at a time on the shared browser. */
 let pdfQueue: Promise<unknown> = Promise.resolve();
+
+function isCloudflareWorkers(): boolean {
+  return Boolean(
+    process.env.CF_PAGES ||
+      process.env.CF_WORKER ||
+      process.env.CLOUDFLARE === '1' ||
+      process.env.WORKERS_CI,
+  );
+}
+
+async function launchCloudflare(): Promise<PuppeteerBrowser> {
+  const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+  const puppeteer = await import('@cloudflare/puppeteer');
+  const { env } = await getCloudflareContext({ async: true });
+  const browserBinding = (env as { BROWSER?: unknown }).BROWSER;
+  if (!browserBinding) {
+    throw new Error('BROWSER binding missing — enable Browser Rendering in wrangler.jsonc');
+  }
+  // @cloudflare/puppeteer.launch expects Fetcher binding
+  return puppeteer.default.launch(browserBinding as never) as unknown as Promise<PuppeteerBrowser>;
+}
 
 async function launchServerless() {
   const chromium = (await import('@sparticuz/chromium')).default;
@@ -69,8 +93,12 @@ async function launchLocal() {
 async function getBrowser(): Promise<PuppeteerBrowser> {
   if (sharedBrowser?.connected) return sharedBrowser;
   if (!launching) {
-    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-    launching = (isServerless ? launchServerless() : launchLocal())
+    const launcher = isCloudflareWorkers()
+      ? launchCloudflare
+      : process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
+        ? launchServerless
+        : launchLocal;
+    launching = launcher()
       .then((browser) => {
         sharedBrowser = browser;
         browser.on('disconnected', () => {

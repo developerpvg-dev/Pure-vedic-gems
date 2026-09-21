@@ -1,0 +1,9 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "pvg-cron-purge",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-19",
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  }
+}

@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { withSentryConfig } from '@sentry/nextjs';
 import path from 'path';
 import siteStaticOffload from './scripts/site-static-offload.json';
 
@@ -1121,30 +1120,35 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
-      // Public catalog listings use URL filters only; cache each exact URL at Vercel's CDN.
-      // ponytail: 15m safety ceiling for one-of-one gems; extend only after edge purging is available.
+      // Public catalog listings — cache at Cloudflare edge (CDN-Cache-Control).
+      // ponytail: 15m safety ceiling for one-of-one gems; purge via OpenNext cache purge on revalidate.
       {
         source: '/shop',
         headers: [
-          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          // CDN-Cache-Control: Cloudflare; Cache-Control: shared caches / browsers.
+          { key: 'CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
         ],
       },
       {
         source: '/gemstones',
         headers: [
-          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
         ],
       },
       {
         source: '/shop/:category',
         headers: [
-          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
         ],
       },
       {
         source: '/gemstones/:category',
         headers: [
-          { key: 'Vercel-CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
+          { key: 'Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
         ],
       },
       // Long-lived cache for all static assets in /public
@@ -1225,16 +1229,31 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default isProduction && process.env.SENTRY_DSN
-  ? withSentryConfig(nextConfig, {
-      org: process.env.SENTRY_ORG,
-      project: process.env.SENTRY_PROJECT,
-      silent: !process.env.CI,
-      webpack: {
-        treeshake: {
-          removeDebugLogging: true,
-        },
+function withOptionalSentry(config: NextConfig): NextConfig {
+  // Skip Sentry webpack plugin on OpenNext Workers builds (OPENNEXT_BUILD=1).
+  if (!(isProduction && process.env.SENTRY_DSN && process.env.OPENNEXT_BUILD !== '1')) {
+    return config;
+  }
+  // Lazy require so OpenNext builds never load @sentry/nextjs → @opentelemetry/api.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { withSentryConfig } = require('@sentry/nextjs') as typeof import('@sentry/nextjs');
+  return withSentryConfig(config, {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    silent: !process.env.CI,
+    webpack: {
+      treeshake: {
+        removeDebugLogging: true,
       },
-      widenClientFileUpload: true,
-    })
-  : nextConfig;
+    },
+    widenClientFileUpload: true,
+  });
+}
+
+export default withOptionalSentry(nextConfig);
+
+// OpenNext Cloudflare: bindings during `next dev` only (skip production build).
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+if (process.env.NODE_ENV === 'development') {
+  initOpenNextCloudflareForDev();
+}

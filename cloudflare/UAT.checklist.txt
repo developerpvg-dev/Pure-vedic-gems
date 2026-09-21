@@ -1,0 +1,16 @@
+# Staging UAT checklist (after npm run deploy:preview + custom domain staging.purevedicgems.com)
+#
+# 1. Homepage, /shop, PDP, /blog, /knowledge
+# 2. Legacy WP: one /product-category/... and one /tag/...
+# 3. Customer login → /account
+# 4. Admin login + MFA
+# 5. Razorpay test payment
+# 6. PayGlocal international card (not GPay) — set PAYGLOCAL_CALLBACK_BASE_URL to staging
+# 7. Admin upload (10MB+) and product Excel import
+# 8. Recommendation PDF generate/send (needs Browser Rendering)
+# 9. Sanity publish → page updates (ISR)
+# 10. curl -H "Authorization: Bearer $CRON_SECRET" https://staging…/api/cron/purge-product-trash
+# 11. Agent chat stream if AGENT_ENABLED
+# 12. Guest order confirmation cookie
+#
+# Then: npm run cf:dns-cutover  and follow production DNS steps.

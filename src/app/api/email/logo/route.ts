@@ -1,21 +1,13 @@
-import { readFile } from 'fs/promises';
-import path from 'path';
 import { NextResponse } from 'next/server';
+import { getEmailAssetBaseUrl } from '@/lib/resend/email-config';
 
 export const runtime = 'nodejs';
 
-/** Public email logo — remote HTTPS img (not a CID attachment). */
+/**
+ * Back-compat for old emails that still point at /api/email/logo.
+ * Serves a redirect to the static emblem (no fs — Workers-safe).
+ */
 export async function GET() {
-  const file = path.join(process.cwd(), 'public', 'email', 'pvg-emblem.png');
-  try {
-    const buf = await readFile(file);
-    return new NextResponse(buf, {
-      headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    });
-  } catch {
-    return new NextResponse('Logo not found', { status: 404 });
-  }
+  const dest = `${getEmailAssetBaseUrl()}/pvg-emblem.webp`;
+  return NextResponse.redirect(dest, 308);
 }

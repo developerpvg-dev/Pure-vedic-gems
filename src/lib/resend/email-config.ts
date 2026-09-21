@@ -42,15 +42,16 @@ export function getEmailAssetBaseUrl(): string {
 /**
  * Logo as a remote HTTPS image — never a CID attachment (Gmail shows those as paperclips).
  * Override with EMAIL_LOGO_URL if you host the mark on a CDN.
+ * Default: static /pvg-emblem.webp (Workers Assets / CDN) — no /api/email/logo fs read.
  */
 export function getEmailLogoUrl(): string {
   if (process.env.EMAIL_LOGO_URL) return process.env.EMAIL_LOGO_URL;
-  return `${getEmailAssetBaseUrl()}/api/email/logo`;
+  return `${getEmailAssetBaseUrl()}/pvg-emblem.webp`;
 }
 
 export function getEmailWordmarkUrl(): string {
   if (process.env.EMAIL_WORDMARK_URL) return process.env.EMAIL_WORDMARK_URL;
-  return `${getEmailAssetBaseUrl()}/api/email/logo`;
+  return getEmailLogoUrl();
 }
 
 export function getFromAddress(channel: EmailChannel = 'general'): string {
