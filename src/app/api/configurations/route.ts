@@ -463,6 +463,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'One or more combo beads are not available.' }, { status: 400 });
       }
     }
+
+    // Mountings exist for 1 bead or 3+ only
+    const beadCount = 1 + comboProducts.length;
+    if (beadCount === 2) {
+      return NextResponse.json(
+        {
+          error:
+            'Rudraksha pendants can be configured with one bead or three or more. Two beads are not supported.',
+        },
+        { status: 400 }
+      );
+    }
   }
 
   const [designResult, certificationResult, energizationResult, metalPricing, commerceResult] =

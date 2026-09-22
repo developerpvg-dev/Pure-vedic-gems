@@ -675,6 +675,12 @@ export default function GemBrowser({
                     type="button"
                     size="sm"
                     className="h-10 w-full px-4 text-xs sm:h-9 sm:w-auto"
+                    disabled={selectedBeadCount === 2}
+                    title={
+                      selectedBeadCount === 2
+                        ? 'Add a third bead, or continue with one. Designs exist for 1 or 3+ only.'
+                        : undefined
+                    }
                     onClick={onContinueRudraksha}
                   >
                     Continue with {selectedBeadCount} bead{selectedBeadCount === 1 ? '' : 's'}

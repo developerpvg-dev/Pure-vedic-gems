@@ -7,6 +7,7 @@ import {
   getRudrakshaDesignCategoriesForProduct,
   getRudrakshaDesignCategoriesForSelection,
   isRudrakshaConfiguratorContext,
+  isValidRudrakshaBeadCount,
 } from '@/lib/utils/rudraksha-design-rules';
 import type { ProductCard } from '@/lib/types/product';
 
@@ -80,5 +81,18 @@ describe('rudraksha-design-rules', () => {
     expect(getRudrakshaDesignCategoriesForSelection(primary, combo)).toEqual(['multiple_beads']);
     expect(designMatchesRudrakshaSelection('multiple_beads', primary, combo)).toBe(true);
     expect(designMatchesRudrakshaSelection('standard_mukhi', primary, combo)).toBe(false);
+  });
+
+  it('rejects exactly 2 beads — designs exist for 1 or 3+ only', () => {
+    const primary = product({ id: 'a', sub_category: '5-mukhi' });
+    const combo = [product({ id: 'b', sub_category: '7-mukhi' })];
+
+    expect(isValidRudrakshaBeadCount(1)).toBe(true);
+    expect(isValidRudrakshaBeadCount(2)).toBe(false);
+    expect(isValidRudrakshaBeadCount(3)).toBe(true);
+    expect(countRudrakshaBeadsInSelection(primary, combo)).toBe(2);
+    expect(getRudrakshaDesignCategoriesForSelection(primary, combo)).toEqual([]);
+    expect(designMatchesRudrakshaSelection('standard_mukhi', primary, combo)).toBe(false);
+    expect(designMatchesRudrakshaSelection('multiple_beads', primary, combo)).toBe(false);
   });
 });

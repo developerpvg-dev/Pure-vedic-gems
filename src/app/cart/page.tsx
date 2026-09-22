@@ -315,8 +315,9 @@ export default function CartPage() {
   const rudrakshaWithoutConfig = RUDRAKSHA_CONFIGURATOR_ENABLED
     ? items.filter((item) => item.category === 'rudraksha' && !item.configuration_id)
     : [];
+  // Multi-bead mountings are 3+ only (no 2-bead designs)
   const comboConfigureHref =
-    rudrakshaWithoutConfig.length >= 2
+    rudrakshaWithoutConfig.length >= 3
       ? `/configure/${rudrakshaWithoutConfig[0].product_id}?combo=${rudrakshaWithoutConfig
           .map((item) => item.product_id)
           .join(',')}`

@@ -114,6 +114,11 @@ export function countRudrakshaBeadsInSelection(
   return ids.size;
 }
 
+/** Mountings exist for a single bead or 3+ only — never exactly 2. */
+export function isValidRudrakshaBeadCount(beadCount: number): boolean {
+  return beadCount === 1 || beadCount >= 3;
+}
+
 /** Design categories allowed for a primary bead plus optional combo beads. */
 export function getRudrakshaDesignCategoriesForSelection(
   primary: (Pick<
@@ -130,6 +135,9 @@ export function getRudrakshaDesignCategoriesForSelection(
   })[] = []
 ): RudrakshaDesignCategory[] {
   const beadCount = countRudrakshaBeadsInSelection(primary, combo);
+
+  // ponytail: no 2-bead mountings in catalog; add when designs exist
+  if (!isValidRudrakshaBeadCount(beadCount)) return [];
 
   if (beadCount >= 3) return ['multiple_beads'];
 
