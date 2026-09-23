@@ -7,6 +7,7 @@ import {
   canMarkNotConverted,
   canViewFunnelMetrics,
   isLeadManager,
+  redactLeadContactForRole,
 } from '@/lib/leads/permissions';
 import { assertLeadFunnelHelpers } from '@/lib/leads/funnel';
 import { assertDraftUpsertKey, assertFunnelAggregation } from '@/lib/leads/funnel-aggregate';
@@ -32,6 +33,16 @@ if (!canViewFunnelMetrics('seo_cms')) throw new Error('seo_cms can view funnel m
 if (!canViewFunnelMetrics('sales')) throw new Error('sales can view funnel metrics');
 if (canViewFunnelMetrics('telecom')) throw new Error('telecom must not view funnel metrics');
 if (canViewFunnelMetrics('content')) throw new Error('content must not view funnel metrics');
+{
+  const redacted = redactLeadContactForRole('seo_cms', {
+    name: 'A',
+    email: 'a@b.com',
+    phone: '999',
+    additional_phones: ['1'],
+    additional_emails: ['x@y.com'],
+  });
+  if (redacted.email || redacted.phone) throw new Error('seo_cms must redact contact');
+}
 // Converted requires a real order_id — enforced in DB check + API lookup
 function assertConvertedNeedsOrder(status: string, orderId: string | null) {
   if (status === 'converted' && !orderId) throw new Error('converted requires order_id');

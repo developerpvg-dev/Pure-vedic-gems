@@ -319,13 +319,17 @@ export default function LeadsPage() {
   }, [fetchLeads]);
 
   useEffect(() => {
+    if (caps.role === 'seo_cms') {
+      setExpandedId(null);
+      return;
+    }
     if (typeof window === 'undefined') return;
     const id = new URLSearchParams(window.location.search).get('id');
     if (id) setExpandedId(id);
-  }, []);
+  }, [caps.role]);
 
   useEffect(() => {
-    if (!expandedId) {
+    if (caps.role === 'seo_cms' || !expandedId) {
       setRemarks([]);
       return;
     }
@@ -405,7 +409,8 @@ export default function LeadsPage() {
 
   const isAstroDesk = caps.role === 'astrologer';
   const isTelecomDesk = !isAstroDesk && (caps.role === 'telecom' || (caps.scoped && !caps.canAssign));
-  const isManagerDesk = !isAstroDesk && !isTelecomDesk;
+  const isSeoDesk = caps.role === 'seo_cms';
+  const isManagerDesk = !isAstroDesk && !isTelecomDesk && !isSeoDesk;
 
   const stageChips: LeadPipelineStage[] = isAstroDesk
     ? [...ASTRO_STAGE_CHIPS]
@@ -479,10 +484,12 @@ export default function LeadsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isAstroDesk ? 'Astrologer desk' : isTelecomDesk ? 'Telecaller desk' : 'Leads pipeline'}
+            {isAstroDesk ? 'Astrologer desk' : isTelecomDesk ? 'Telecaller desk' : isSeoDesk ? 'Leads overview' : 'Leads pipeline'}
           </h1>
           <p className="mt-0.5 text-sm text-gray-500">
-            {isAstroDesk
+            {isSeoDesk
+              ? 'Pipeline view without contact details — names and stages only (cannot open leads).'
+              : isAstroDesk
               ? 'Write remedies for charts forwarded to you, then submit to the leads manager'
               : kind === 'contact'
                 ? isTelecomDesk
@@ -628,7 +635,7 @@ export default function LeadsPage() {
               <input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                placeholder="Name, email, phone..."
+                placeholder={isSeoDesk ? 'Search by name…' : 'Name, email, phone...'}
                 className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm"
               />
             </div>
@@ -777,8 +784,12 @@ export default function LeadsPage() {
               <div key={`${lead._type}-${lead.id}`} className="rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-sm">
                 <button
                   type="button"
-                  onClick={() => setExpandedId(expanded ? null : lead.id)}
-                  className="flex w-full items-center gap-3 p-4 text-left"
+                  onClick={() => {
+                    if (isSeoDesk) return;
+                    setExpandedId(expanded ? null : lead.id);
+                  }}
+                  disabled={isSeoDesk}
+                  className={`flex w-full items-center gap-3 p-4 text-left ${isSeoDesk ? 'cursor-default' : ''}`}
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
                     {isEnquiry && lead.lead_number ? `#${lead.lead_number}` : <User className="h-4 w-4" />}
@@ -868,7 +879,9 @@ export default function LeadsPage() {
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      {isAstroDesk && isEnquiry ? (
+                      {isSeoDesk ? (
+                        <span className="text-gray-400">Contact hidden</span>
+                      ) : isAstroDesk && isEnquiry ? (
                         <>
                           <span>DOB: {formatDob(lead.date_of_birth)}</span>
                           <span>Time: {(lead.birth_time || '—').slice(0, 5)}</span>
@@ -887,10 +900,10 @@ export default function LeadsPage() {
                     </div>
                   </div>
                   <span className="hidden text-xs text-gray-400 sm:block">{fmtDate(lead.created_at)}</span>
-                  {expanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  {isSeoDesk ? null : expanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
                 </button>
 
-                {expanded && isEnquiry && (
+                {expanded && !isSeoDesk && isEnquiry && (
                   <EnquiryDetail
                     lead={lead}
                     remarks={remarks}
@@ -931,7 +944,7 @@ export default function LeadsPage() {
                   />
                 )}
 
-                {expanded && !isEnquiry && (
+                {expanded && !isSeoDesk && !isEnquiry && (
                   <div className="border-t border-gray-100 p-4 text-sm text-gray-600">
                     <p className="font-medium text-gray-800">{lead.plan_title_snapshot || 'Consultation'}</p>
                     <p className="mt-1">Payment: {lead.payment_status} · {lead.amount_inr != null ? formatChargedMoney(lead) : '—'}</p>

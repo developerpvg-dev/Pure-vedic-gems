@@ -114,6 +114,27 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   cancelled: 'text-red-600',
 };
 
+function orderLineSummary(items: unknown): { name: string; sku: string | null; design: string | null }[] {
+  if (!Array.isArray(items)) return [];
+  return items.slice(0, 8).map((row) => {
+    const item = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+    const snap =
+      item.configuration_snapshot && typeof item.configuration_snapshot === 'object'
+        ? (item.configuration_snapshot as Record<string, unknown>)
+        : null;
+    const design =
+      (typeof item.design_name === 'string' && item.design_name) ||
+      (typeof item.configuration_summary === 'string' && item.configuration_summary) ||
+      (snap && typeof snap.design_name === 'string' && snap.design_name) ||
+      null;
+    return {
+      name: typeof item.name === 'string' ? item.name : 'Item',
+      sku: typeof item.sku === 'string' ? item.sku : null,
+      design: design ? String(design) : null,
+    };
+  });
+}
+
 function label(value: string) {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
@@ -167,6 +188,8 @@ export default function AdminOrdersPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(true);
   const [canWriteOrders, setCanWriteOrders] = useState(false);
+  const [sessionRole, setSessionRole] = useState<string | null>(null);
+  const isSeoDesk = sessionRole === 'seo_cms';
 
   const syncUrl = useCallback((nextFilters: AdminOrderFilterState) => {
     const params = adminOrderFiltersToParams(nextFilters, 1, ORDERS_PER_PAGE);
@@ -188,6 +211,7 @@ export default function AdminOrdersPage() {
       if (!res.ok) return;
       const data = await res.json().catch(() => ({}));
       setCanWriteOrders(Boolean(data.canWriteOrders));
+      setSessionRole(typeof data.role === 'string' ? data.role : null);
     })();
   }, []);
 
@@ -486,10 +510,23 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="max-w-[180px] px-4 py-3">
                         <p className="truncate font-medium text-gray-900">{customer.name}</p>
-                        <p className="truncate text-xs text-gray-400">{customer.email || customer.phone || 'No contact saved'}</p>
+                        {isSeoDesk ? null : (
+                          <p className="truncate text-xs text-gray-400">{customer.email || customer.phone || 'No contact saved'}</p>
+                        )}
                       </td>
-                      <td className="max-w-[200px] px-4 py-3 text-gray-600">
+                      <td className="max-w-[220px] px-4 py-3 text-gray-600">
                         {Array.isArray(order.items) ? (
+                          isSeoDesk ? (
+                            <ul className="space-y-1 text-xs">
+                              {orderLineSummary(order.items).map((line, idx) => (
+                                <li key={`${order.id}-line-${idx}`}>
+                                  <span className="font-medium text-gray-800">{line.name}</span>
+                                  {line.sku ? <span className="block text-gray-400">SKU: {line.sku}</span> : null}
+                                  {line.design ? <span className="block text-amber-800">Design: {line.design}</span> : null}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
                           <div>
                             <p>{order.items.length} item{order.items.length === 1 ? '' : 's'}</p>
                             {(() => {
@@ -508,6 +545,7 @@ export default function AdminOrdersPage() {
                               );
                             })()}
                           </div>
+                          )
                         ) : (
                           0
                         )}
@@ -550,13 +588,17 @@ export default function AdminOrdersPage() {
                         })}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Link
-                          href={`/admin/orders/${order.id}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-50"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </Link>
+                        {isSeoDesk ? (
+                          <span className="text-xs text-gray-400">—</span>
+                        ) : (
+                          <Link
+                            href={`/admin/orders/${order.id}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-50"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            View
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );

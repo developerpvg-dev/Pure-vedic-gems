@@ -57,6 +57,9 @@ export async function GET(
 ) {
   const auth = await requireAdminAccess('leads.read');
   if ('error' in auth) return auth.error;
+  if (auth.member.normalizedRole === 'seo_cms') {
+    return NextResponse.json({ error: 'Lead detail is not available for this role' }, { status: 403 });
+  }
 
   const { id } = await params;
   const admin = createAdminClient();

@@ -111,12 +111,26 @@ export async function GET(request: NextRequest) {
   const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile as CustomerProfileRow]));
 
   const returnedOrders = (data ?? []) as unknown as Array<OrderRow & Record<string, unknown>>;
+  const redactSeo = auth.member.normalizedRole === 'seo_cms';
 
   return NextResponse.json({
-    orders: returnedOrders.map((order) => ({
-      ...order,
-      customer_display: customerDisplay(order, order.customer_id ? profileById.get(order.customer_id) : undefined),
-    })),
+    orders: returnedOrders.map((order) => {
+      const display = customerDisplay(order, order.customer_id ? profileById.get(order.customer_id) : undefined);
+      if (!redactSeo) {
+        return { ...order, customer_display: display };
+      }
+      // ponytail: SEO list — name + line items only; strip contact + address PII
+      return {
+        ...order,
+        guest_email: null,
+        guest_phone: null,
+        shipping_address: null,
+        billing_address: null,
+        guest_access_token: null,
+        special_instructions: null,
+        customer_display: { name: display.name, email: '', phone: '' },
+      };
+    }),
     total: count ?? 0,
     page,
     limit,

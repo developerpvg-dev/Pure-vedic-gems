@@ -14,6 +14,10 @@ export function canViewFunnelMetrics(role: string | null | undefined) {
   return isLeadManager(role) || role === 'seo_cms';
 }
 
+export function isSeoCmsRole(role: string | null | undefined) {
+  return role === 'seo_cms';
+}
+
 export function isTelecomRole(role: string | null | undefined) {
   return role === 'telecom';
 }
@@ -95,15 +99,37 @@ export function canMarkConverted(role: string | null | undefined) {
   return isLeadManager(role);
 }
 
-/** Astrologers get chart fields only — never customer phone/email */
+/** Astrologers get chart fields only — never customer phone/email.
+ *  SEO & CMS may see name on lists but never email/phone. */
 export function redactLeadContactForRole<
   T extends {
     phone?: string | null;
     email?: string | null;
     additional_phones?: string[] | null;
     additional_emails?: string[] | null;
+    duplicate_matches?: Array<{
+      phone?: string | null;
+      email?: string | null;
+      [key: string]: unknown;
+    }> | null;
   },
 >(role: string | null | undefined, lead: T): T {
-  if (!isAstrologerRole(role)) return lead;
-  return { ...lead, phone: null, email: '', additional_phones: [], additional_emails: [] };
+  if (isAstrologerRole(role) || isSeoCmsRole(role)) {
+    const next = {
+      ...lead,
+      phone: null,
+      email: '',
+      additional_phones: [],
+      additional_emails: [],
+    } as T;
+    if (Array.isArray(lead.duplicate_matches)) {
+      (next as T).duplicate_matches = lead.duplicate_matches.map((m) => ({
+        ...m,
+        phone: null,
+        email: '',
+      }));
+    }
+    return next;
+  }
+  return lead;
 }

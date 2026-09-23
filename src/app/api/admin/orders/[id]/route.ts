@@ -40,6 +40,9 @@ export async function GET(
 ) {
   const auth = await requireAdminAccess('orders.read');
   if ('error' in auth) return auth.error;
+  if (auth.member.normalizedRole === 'seo_cms') {
+    return NextResponse.json({ error: 'Order detail is not available for this role' }, { status: 403 });
+  }
 
   const { id } = await params;
   const supabase = createAdminClient();

@@ -7,6 +7,7 @@ assert.ok(canAccessStudio('owner'));
 assert.ok(canAccessStudio('admin'));
 assert.ok(hasAdminPermission('seo_cms', 'products.read'));
 assert.ok(hasAdminPermission('seo_cms', 'leads.read'));
+assert.ok(hasAdminPermission('seo_cms', 'orders.read'));
 assert.ok(canAccessStudio('seo_cms'));
 assert.ok(canAccessStudio('content'));
 assert.ok(!canAccessStudio('sales'));
