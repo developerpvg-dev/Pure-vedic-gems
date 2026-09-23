@@ -48,10 +48,11 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
     title: 'SEO & CMS',
     subtitle: 'Product SEO, category hubs, Sanity & funnels',
     home: '/admin/products',
-    allowPrefixes: ['/admin/products', '/admin/shop-category-pages', '/admin/leads/metrics'],
+    allowPrefixes: ['/admin/products', '/admin/shop-category-pages', '/admin/leads/metrics', '/admin/insights'],
     nav: [
       { href: '/admin/products', label: 'Products', match: 'products' },
       { href: '/admin/products/journey', label: 'Product journey', match: 'prefix' },
+      { href: '/admin/insights', label: 'Orders & leads', match: 'prefix' },
       { href: '/admin/leads/metrics', label: 'Lead funnels', match: 'prefix' },
       { href: '/admin/shop-category-pages', label: 'Category hub pages', match: 'prefix' },
       { href: '/studio', label: 'Sanity Studio', match: 'prefix' },
@@ -72,6 +73,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       '/admin/stock',
       '/admin/erp-sync',
       '/admin/item-status',
+      '/admin/lab-logos',
       '/admin/hero',
       '/admin/categories',
       '/admin/shop-category-pages',
@@ -86,6 +88,7 @@ export const SCOPED_ROLE_DASHBOARDS: Partial<Record<CanonicalAdminRole, RoleDash
       { href: '/admin/products', label: 'Products', match: 'products' },
       { href: '/admin/products?status=inactive', label: 'Drafts', match: 'drafts' },
       { href: '/admin/products?status=trash', label: 'Trash', match: 'trash' },
+      { href: '/admin/lab-logos', label: 'Lab Logos', match: 'prefix' },
       { href: '/admin/orders', label: 'Orders', match: 'prefix' },
       { href: '/admin/catalog-order', label: 'Catalog order', match: 'prefix' },
       { href: '/admin/directors-pick', label: "Director's pick", match: 'prefix' },
@@ -175,10 +178,12 @@ export function assertRoleDashboardAllowlists() {
   if (!isScopedRolePathAllowed('seo_cms', '/admin/products/journey')) throw new Error('seo_cms product journey');
   if (!isScopedRolePathAllowed('seo_cms', '/admin/shop-category-pages')) throw new Error('seo_cms hubs');
   if (!isScopedRolePathAllowed('seo_cms', '/admin/leads/metrics')) throw new Error('seo_cms lead funnels');
+  if (!isScopedRolePathAllowed('seo_cms', '/admin/insights')) throw new Error('seo_cms insights');
   if (isScopedRolePathAllowed('seo_cms', '/admin/leads')) throw new Error('seo_cms must not open leads inbox');
   if (isScopedRolePathAllowed('seo_cms', '/admin/orders')) throw new Error('seo_cms must not open orders');
   if (!isScopedRolePathAllowed('inventory', '/admin/products/import')) throw new Error('inventory import');
   if (!isScopedRolePathAllowed('inventory', '/admin/orders')) throw new Error('inventory orders');
+  if (!isScopedRolePathAllowed('inventory', '/admin/lab-logos')) throw new Error('inventory lab logos');
   if (isScopedRolePathAllowed('inventory', '/admin/leads')) throw new Error('inventory must not open leads');
   if (!isScopedRolePathAllowed('inventory', '/admin/hero')) throw new Error('inventory hero');
   if (!isScopedRolePathAllowed('inventory', '/admin/erp-sync')) throw new Error('inventory erp');
