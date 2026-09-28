@@ -237,11 +237,14 @@ function applyEnquiryFilters(
     detailsConfirmed: string | null;
     conversionStatus: string | null;
     searchTerm: string | null;
+    leadNumber: number | null;
     draft: string | null;
   }
 ) {
   let q = query;
   if (opts.scope) q = q.eq(opts.scope.column, opts.scope.value);
+  // SR # lookup ignores tab/stage/draft filters so any number can be located
+  if (opts.leadNumber) return q.eq('lead_number', opts.leadNumber);
   // ponytail: use eq not or — applyKindFilter also uses .or() and PostgREST keeps only one
   if (opts.draft === '1') q = q.eq('is_draft', true);
   else q = q.eq('is_draft', false);
@@ -424,6 +427,9 @@ export async function GET(request: NextRequest) {
   const searchTerm = searchParams.get('search')?.trim()
     ? `%${sanitizeSearchTerm(searchParams.get('search')!.trim())}%`
     : null;
+  // ponytail: 1–5 digits (or #N) = SR No.; longer digit strings stay phone searches
+  const leadNumberMatch = searchParams.get('search')?.trim().match(/^#\s*(\d+)$|^(\d{1,5})$/);
+  const leadNumber = leadNumberMatch ? Number(leadNumberMatch[1] ?? leadNumberMatch[2]) : null;
 
   // ponytail: null pipeline_stage breaks the New filter — normalize once per list load
   await admin.from('enquiries').update({ pipeline_stage: 'new' }).is('pipeline_stage', null);
@@ -507,6 +513,7 @@ export async function GET(request: NextRequest) {
     detailsConfirmed: searchParams.get('details_confirmed'),
     conversionStatus: searchParams.get('conversion') || searchParams.get('conversion_status'),
     searchTerm,
+    leadNumber,
     draft: searchParams.get('draft'),
   };
 

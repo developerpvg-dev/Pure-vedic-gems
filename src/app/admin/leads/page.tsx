@@ -635,7 +635,7 @@ export default function LeadsPage() {
               <input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                placeholder={isSeoDesk ? 'Search by name…' : 'Name, email, phone...'}
+                placeholder={isSeoDesk ? 'Search by name…' : 'Name, email, phone, or SR No. (e.g. 271)'}
                 className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm"
               />
             </div>

@@ -2334,7 +2334,7 @@ export interface Database {
           assigned_to: string | null;
           follow_up_date: string | null;
           internal_notes: string | null;
-          lead_number: number;
+          lead_number: number | null;
           pipeline_stage: string;
           enquiry_type: string | null;
           ip_location: string | null;
