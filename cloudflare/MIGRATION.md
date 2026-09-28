@@ -8,9 +8,10 @@ The domain does not change, so webhook URLs, Supabase auth URLs and payment retu
 | Vercel feature | Workers replacement |
 | --- | --- |
 | `vercel.json` cron (03:00 UTC purge) | `triggers.crons` + `scheduled()` in `cloudflare/worker.ts` |
-| Region `bom1` | `placement` pinned to the Supabase host in `wrangler.jsonc` |
+| Region `bom1` | `placement.region: "aws:ap-south-1"` (Supabase's region) in `wrangler.jsonc` |
 | `x-forwarded-for`, `x-vercel-ip-*` headers | set from `cf-connecting-ip` / `request.cf` in `cloudflare/worker.ts` |
-| ISR / `revalidatePath` / `revalidateTag` | R2 bucket `pvg-next-cache` + Durable Objects (`open-next.config.ts`) |
+| ISR / `revalidatePath` / `revalidateTag` | R2 bucket `pvg-next-cache` + KV tag cache `pvg-tag-cache` (`open-next.config.ts`); on-demand revalidation applies within ~60s |
+| CDN caching of `public, s-maxage` responses (shop listings, public APIs) | Cache API in `cloudflare/edge-cache.ts` (a Worker runs in front of Cloudflare's CDN, so nothing is cached otherwise) |
 | Recommendation PDFs (`@sparticuz/chromium`) | Browser Rendering binding `BROWSER` |
 | Admin media uploads (S3 SDK) | R2 binding `PUBLIC_MEDIA` → bucket `pvg-public` |
 | Background work after response (`void promise`) | `after()` (mapped to `waitUntil`) |
@@ -22,10 +23,11 @@ Verified locally in `workerd`: pages, auth redirects, legacy redirects, security
 
 1. **Workers Paid** plan ($5/mo): Dashboard → Workers & Pages → Plans.
 2. **R2 cache buckets** (`pvg-public` already exists):
-   `npx wrangler login` then `npm run cf:setup-cache-bucket`
+   `npx wrangler login` then `npm run cf:setup-cache-bucket`.
+   KV tag-cache namespaces `pvg-tag-cache` / `pvg-tag-cache-preview` already exist (IDs in `wrangler.jsonc`).
 3. **Browser Rendering**: included on Workers Paid; nothing to enable.
 4. **Cache purge API token**: My Profile → API Tokens → Create → permission *Zone → Cache Purge → Purge*, zone `purevedicgems.com`. Keep it for `CACHE_PURGE_API_TOKEN`; the zone ID (Zone Overview page, right column) is `CACHE_PURGE_ZONE_ID`.
-5. If the first deploy fails on `placement` (targeted placement not available on the account), change it in `wrangler.jsonc` to `"placement": { "mode": "smart" }`.
+5. After deploying, check `curl -sI https://<worker>/api/health | findstr /i cf-placement` shows a `BOM` (Mumbai) data center. Don't use a `placement.hostname` probe on `*.supabase.co`: it sits behind Cloudflare and placed the Worker in Miami.
 
 ## 2. Connect GitHub (Workers Builds)
 

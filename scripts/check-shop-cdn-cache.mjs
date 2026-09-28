@@ -1,5 +1,5 @@
 /**
- * ponytail: shop listings must be cached at the Vercel CDN, without caching PDPs.
+ * ponytail: shop listings must be edge-cached (cloudflare/edge-cache.ts), without caching PDPs.
  * Run: node scripts/check-shop-cdn-cache.mjs
  */
 import { readFileSync } from 'node:fs';
@@ -7,7 +7,7 @@ import { join } from 'node:path';
 
 const config = readFileSync(join(process.cwd(), 'next.config.ts'), 'utf8');
 const revalidation = readFileSync(join(process.cwd(), 'src/lib/shop/revalidate.ts'), 'utf8');
-const cacheHeader = "Vercel-CDN-Cache-Control";
+const cacheHeader = "CDN-Cache-Control";
 const cacheValue = 'public, s-maxage=900, stale-while-revalidate=60';
 
 let failed = false;
@@ -22,7 +22,7 @@ function check(condition, message) {
 
 check(config.includes("source: '/shop'"), '/shop has a dedicated header rule');
 check(config.includes("source: '/shop/:category'"), '/shop/:category has a dedicated header rule');
-check(config.includes(cacheHeader), 'Vercel CDN cache header is configured');
+check(config.includes(cacheHeader), 'CDN cache header is configured');
 check(config.includes(cacheValue), 'cache window is fifteen minutes with stale revalidation');
 check(!config.includes("source: '/shop/:category/:slug'"), 'PDPs are not CDN-cached by this rule');
 check(revalidation.includes("revalidatePath('/shop/[category]', 'page')"), 'all category routes invalidate after catalog changes');

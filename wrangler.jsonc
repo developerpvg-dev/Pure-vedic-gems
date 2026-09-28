@@ -11,10 +11,10 @@
   "observability": {
     "enabled": true
   },
-  // Run next to Supabase (was Vercel region bom1) — every page does several DB round trips.
+  // Run next to Supabase (AWS ap-south-1, was Vercel bom1) — every page does several DB round trips.
+  // Not a hostname probe: *.supabase.co is behind Cloudflare's anycast, which placed the Worker in Miami.
   "placement": {
-    "mode": "targeted",
-    "hostname": "kjsyhuybvzzfpybtlvei.supabase.co"
+    "region": "aws:ap-south-1"
   },
   // Env vars are managed in the dashboard; don't let deploys wipe them.
   "keep_vars": true,
@@ -42,6 +42,12 @@
   "browser": {
     "binding": "BROWSER"
   },
+  "kv_namespaces": [
+    {
+      "binding": "NEXT_TAG_CACHE_KV",
+      "id": "da86d2a6c35149eba6992df3baba70e5"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
@@ -49,15 +55,12 @@
         "class_name": "DOQueueHandler"
       },
       {
-        "name": "NEXT_TAG_CACHE_DO_SHARDED",
-        "class_name": "DOShardedTagCache"
-      },
-      {
         "name": "NEXT_CACHE_DO_PURGE",
         "class_name": "BucketCachePurge"
       }
     ]
   },
+  // DOShardedTagCache is unused (KV tag cache) but stays declared: OpenNext still exports it.
   "migrations": [
     {
       "tag": "v1",
@@ -90,15 +93,17 @@
       "browser": {
         "binding": "BROWSER"
       },
+      "kv_namespaces": [
+        {
+          "binding": "NEXT_TAG_CACHE_KV",
+          "id": "ccc2f3af179347b39ad1d9dece289739"
+        }
+      ],
       "durable_objects": {
         "bindings": [
           {
             "name": "NEXT_CACHE_DO_QUEUE",
             "class_name": "DOQueueHandler"
-          },
-          {
-            "name": "NEXT_TAG_CACHE_DO_SHARDED",
-            "class_name": "DOShardedTagCache"
           },
           {
             "name": "NEXT_CACHE_DO_PURGE",
