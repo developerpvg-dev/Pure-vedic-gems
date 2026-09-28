@@ -11,7 +11,8 @@ The domain does not change, so webhook URLs, Supabase auth URLs and payment retu
 | Region `bom1` | `placement.region: "aws:ap-south-1"` (Supabase's region) in `wrangler.jsonc` |
 | `x-forwarded-for`, `x-vercel-ip-*` headers | set from `cf-connecting-ip` / `request.cf` in `cloudflare/worker.ts` |
 | ISR / `revalidatePath` / `revalidateTag` | R2 bucket `pvg-next-cache` + KV tag cache `pvg-tag-cache` (`open-next.config.ts`); on-demand revalidation applies within ~60s |
-| CDN caching of `public, s-maxage` responses (shop listings, public APIs) | Cache API in `cloudflare/edge-cache.ts` (a Worker runs in front of Cloudflare's CDN, so nothing is cached otherwise) |
+| CDN caching of `public, s-maxage` responses (shop listings, blog, public APIs) | Cache API in `cloudflare/edge-cache.ts` (a Worker runs in front of Cloudflare's CDN, so nothing is cached otherwise); ISR pages kept ≤60s |
+| (new) keeping caches warm on a low-traffic site | `*/5 * * * *` cron re-fetches the top pages (`WARM_PATHS` in `cloudflare/worker.ts`) |
 | Recommendation PDFs (`@sparticuz/chromium`) | Browser Rendering binding `BROWSER` |
 | Admin media uploads (S3 SDK) | R2 binding `PUBLIC_MEDIA` → bucket `pvg-public` |
 | Background work after response (`void promise`) | `after()` (mapped to `waitUntil`) |

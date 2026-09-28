@@ -1158,6 +1158,25 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=60' },
         ],
       },
+      // Same-for-everyone pages that are dynamic only because they read ?page= / filter params.
+      // 60s where the URL shape can also be a product page (/gemstones/navaratna/<product>).
+      ...(
+        [
+          ['/rudraksha', 900],
+          ['/gemstones/:group/:category', 60],
+          ['/rudraksha/:category', 60],
+          ['/blog', 300],
+          ['/blog/category/:category', 300],
+          ['/videos', 300],
+          ['/testimonials', 300],
+        ] as const
+      ).map(([source, seconds]) => ({
+        source,
+        headers: [
+          { key: 'CDN-Cache-Control', value: `public, s-maxage=${seconds}, stale-while-revalidate=60` },
+          { key: 'Cache-Control', value: `public, s-maxage=${seconds}, stale-while-revalidate=60` },
+        ],
+      })),
       // Long-lived cache for all static assets in /public
       {
         source: '/rudraksha-knowledge/:path*',

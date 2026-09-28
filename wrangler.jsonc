@@ -19,8 +19,8 @@
   // Env vars are managed in the dashboard; don't let deploys wipe them.
   "keep_vars": true,
   "triggers": {
-    // Daily product-trash purge (was vercel.json cron). Handled by scheduled() in cloudflare/worker.ts.
-    "crons": ["0 3 * * *"]
+    // Daily product-trash purge (was vercel.json cron) + 5-minute cache warm-up. Both in scheduled(), cloudflare/worker.ts.
+    "crons": ["0 3 * * *", "*/5 * * * *"]
   },
   "services": [
     {
@@ -70,9 +70,9 @@
   "env": {
     "preview": {
       "name": "pure-vedic-gems-preview",
-      // Only production purges trash.
+      // Only production purges trash; preview only warms caches.
       "triggers": {
-        "crons": []
+        "crons": ["*/5 * * * *"]
       },
       "services": [
         {
