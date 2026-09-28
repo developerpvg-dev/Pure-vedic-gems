@@ -47,13 +47,11 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     seo_description: dbRow.seo_description || defaults.seo_description,
   };
 
-  // ponytail: parent hubs keep body/hero code-owned; CMS seo_title/description wins when set.
+  // ponytail: parent hubs keep body/hero code-owned; CMS seo_title/description wins when set (SEO sheet rule).
   if (slug === 'navaratna' || slug === 'navratna' || slug === 'rudraksha' || slug === 'upratna') {
     return {
       ...merged,
       name: defaults.name,
-      seo_title: defaults.seo_title,
-      seo_description: defaults.seo_description,
       intro_text: defaults.intro_text,
       image_url: defaults.image_url,
       hero_image_url: defaults.hero_image_url,
@@ -72,7 +70,7 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     };
   }
 
-  // ponytail: money pages are code-owned so CMS stale titles cannot zero the target keyword.
+  // ponytail: money-page bodies are code-owned; SEO title/description still follow CMS-over-template.
   const CODE_OWNED_SEO = new Set([
     'blue-sapphire',
     'emerald',
@@ -94,8 +92,6 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
       ...merged,
       name: defaults.name,
       sanskrit_name: defaults.sanskrit_name,
-      seo_title: defaults.seo_title,
-      seo_description: defaults.seo_description,
       meta_keywords: defaults.meta_keywords,
       intro_text: defaults.intro_text,
       hero_benefits: defaults.hero_benefits,

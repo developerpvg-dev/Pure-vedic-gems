@@ -23,7 +23,11 @@ const RichTextEditor = dynamic(
   { ssr: false, loading: () => <div className="h-40 animate-pulse rounded-lg bg-gray-100" /> },
 );
 
-type AdminPage = ShopCategoryPageContent & { hasDbRow?: boolean };
+type AdminPage = ShopCategoryPageContent & {
+  hasDbRow?: boolean;
+  default_seo_title?: string | null;
+  default_seo_description?: string | null;
+};
 
 const NEW_CATEGORY_SENTINEL = '__new__';
 
@@ -97,6 +101,7 @@ export default function ShopCategoryPagesAdmin() {
         p.product_category.toLowerCase().includes(q),
     );
   }, [pages, search]);
+  const selectedDefaults = pages.find((p) => p.slug === selectedSlug);
 
   const selectPage = (page: AdminPage) => {
     setIsCreatingNew(false);
@@ -421,10 +426,11 @@ export default function ShopCategoryPagesAdmin() {
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-gray-700">SEO Title</span>
+                  <span className="mb-1 block font-medium text-gray-700">SEO Title (leave blank to use the SEO formula)</span>
                   <input
                     value={form.seo_title ?? ''}
                     onChange={(e) => updateField('seo_title', e.target.value)}
+                    placeholder={selectedDefaults?.default_seo_title ?? ''}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2"
                   />
                 </label>
@@ -505,10 +511,11 @@ export default function ShopCategoryPagesAdmin() {
               </div>
 
               <label className="block text-sm">
-                <span className="mb-1 block font-medium text-gray-700">SEO Description</span>
+                <span className="mb-1 block font-medium text-gray-700">SEO Description (leave blank to use the SEO formula)</span>
                 <textarea
                   value={form.seo_description ?? ''}
                   onChange={(e) => updateField('seo_description', e.target.value)}
+                  placeholder={selectedDefaults?.default_seo_description ?? ''}
                   rows={3}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2"
                 />

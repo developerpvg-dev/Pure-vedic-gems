@@ -339,8 +339,9 @@ const productBaseSchema = z.object({
     configurator_enabled: z.coerce.boolean().default(false),
     display_order: z.coerce.number().int().default(0),
 
-    meta_title: optionalString(200),
-    meta_description: optionalString(500),
+    // null clears a custom override so the storefront SEO formula applies again.
+    meta_title: z.preprocess((v) => (v === '' ? null : v), z.string().trim().max(200).nullable().optional()),
+    meta_description: z.preprocess((v) => (v === '' ? null : v), z.string().trim().max(500).nullable().optional()),
     meta_keywords: stringArraySchema.optional(),
     canonical_url: optionalCanonicalUrl,
     og_image: optionalUrl,

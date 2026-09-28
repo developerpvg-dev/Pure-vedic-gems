@@ -72,3 +72,6 @@ scripts/legacy-import/blogs/.image-cache.json
 .open-next/
 .wrangler/
 
+
+# one-off DB backups from scripts/db
+scripts/db/_backup-*.json

@@ -38,6 +38,7 @@ import {
   howToJsonLd,
 } from '@/lib/utils/seo';
 import type { SeoLandingPage } from '@/lib/constants/seo-landing-pages';
+import { categoryTemplateMeta } from '@/lib/seo/storefront-meta';
 import type { ProductCard } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { MessageCircleQuestion } from 'lucide-react';
@@ -68,9 +69,10 @@ export async function generateMetadata({
 
   const meta = await resolveCategory(category);
   if (!meta) return {};
+  const template = meta.seoLanding || !meta.sub_category ? null : categoryTemplateMeta(meta.category, meta.label);
   return buildMetadata({
-    title: meta.seoLanding?.seoTitle ?? meta.seoTitle ?? `${meta.label} | PureVedicGems`,
-    description: meta.desc,
+    title: meta.seoLanding?.seoTitle ?? meta.seoTitle ?? template?.seo_title ?? `${meta.label} | PureVedicGems`,
+    description: meta.seoLanding ? meta.desc : template?.seo_description ?? meta.desc,
     path: meta.canonicalPath ?? shopCategoryHref(category),
   });
 }

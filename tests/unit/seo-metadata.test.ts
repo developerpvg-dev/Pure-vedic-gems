@@ -2,10 +2,10 @@ import { expectOwnBrandCopy } from './expect-own-brand-copy';
 import { describe, expect, it } from 'vitest';
 import type { Metadata } from 'next';
 import { UPRATNA_STOREFRONT_SLUGS } from '@/lib/categories/canonical-storefront-path';
-import { getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
+import { getAllDefaultCategorySlugs, getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
 import { shopCategoryLabel } from '@/lib/categories/shop-category-page';
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
-import { gemProductMeta, isStaleMarketingTitle, mukhiMeta, stripPriceFromTitle } from '@/lib/seo/storefront-meta';
+import { gemProductMeta, gemstonesHubMeta, mukhiMeta, stripPriceFromTitle } from '@/lib/seo/storefront-meta';
 import { fitDescription, fitTitle, productMetadata } from '@/lib/utils/seo';
 import type { ProductCard } from '@/lib/types/product';
 
@@ -78,7 +78,7 @@ describe('storefront SEO templates', () => {
 
   it('uses the Upratna child formula on Zircon', () => {
     const page = getDefaultShopCategoryPage('zircon');
-    expect(page?.seo_title).toMatch(/Buy Zircon Online in India \| Natural Jarkan/);
+    expect(page?.seo_title).toBe('Buy Zircon Gemstone Online in India | Natural Upratna | Pure Vedic Gems');
     expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
   });
 
@@ -105,9 +105,8 @@ describe('storefront SEO templates', () => {
 
   it('uses the mukhi formula on 1 Mukhi', () => {
     const page = getDefaultShopCategoryPage('1-mukhi');
-    expect(page?.seo_title).toBe('Buy 1 Mukhi Rudraksha Online in India | Pure Vedic Gems');
-    expect(page?.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(fitTitle(mukhiMeta(1).seo_title).length).toBeLessThanOrEqual(60);
+    expect(page?.seo_title).toBe('Buy 1 Mukhi Rudraksha Online in India | Certified Original Bead');
+    expect(fitTitle(mukhiMeta(1).seo_title)).toBe(mukhiMeta(1).seo_title);
   });
 
   it.each(Array.from({ length: 21 }, (_, i) => i + 1))('keeps %s Mukhi Rudraksha title in  and nests the phrase', (n) => {
@@ -373,7 +372,7 @@ describe('storefront SEO templates', () => {
     expect(page.seo_title).toMatch(/opal/i);
     expect(page.seo_title).toMatch(/online in india/i);
     expect(page.seo_title!.length).toBeGreaterThanOrEqual(30);
-    expect(page.seo_description).toMatch(/explore opal gemstones online in india/i);
+    expect(page.seo_description).toMatch(/buy opal gemstone online in india/i);
     expect(page.seo_description!.length).toBeGreaterThanOrEqual(50);
     expect(shopCategoryLabel(page)).toMatch(/opal gemstone/i);
     expect(page.about_html).not.toMatch(/<img /i);
@@ -499,24 +498,62 @@ describe('storefront SEO templates', () => {
     expect(stripPriceFromTitle('Buy Ruby @2200 per. ct. | Natural Manik')).toMatch(/Buy Ruby \| Natural Manik/);
   });
 
-  it('ignores stale marketing CMS titles on products', () => {
-    const title = absTitle(
-      productMetadata(
-        gemCard({
-          name: 'African Ruby',
-          category: 'navaratna',
-          origin: 'African',
-          carat_weight: 7.58,
-          treatment: 'unheated',
-          certification: 'GIA',
-        }),
-        '/gemstones/navaratna/ruby/african-ruby-7-58ct',
-        { title: 'Premium African Ruby 7.58 Carat | Exceptional Quality at' },
-      ),
+  it('lets a custom CMS title/description override the formula, minus prices', () => {
+    const meta = productMetadata(
+      gemCard({ name: 'African Ruby', category: 'navaratna', origin: 'African', carat_weight: 7.58, treatment: 'unheated' }),
+      '/gemstones/navaratna/ruby/african-ruby-7-58ct',
+      { title: 'African Ruby for Surya ₹3,200 per Carat | Pure Vedic Gems', description: 'Custom copy.' },
     );
-    expect(title).toMatch(/African Ruby 7\.58ct/i);
-    expect(title).not.toMatch(/Premium|Exceptional/i);
-    expect(isStaleMarketingTitle('Premium African Ruby 7.58 Carat | Exceptional Quality at')).toBe(true);
+    expect(absTitle(meta)).toBe('African Ruby for Surya | Pure Vedic Gems');
+    expect(meta.description).toBe('Custom copy.');
+  });
+
+  it('matches every recommended row in the SEO sheet exactly', () => {
+    const rows: Array<[string, { seo_title?: string | null; seo_description?: string | null } | null, string, string]> = [
+      ['gemstones', gemstonesHubMeta(), 'Buy Gemstones Online in India | Lab Certified | Pure Vedic Gems', 'Explore 100% genuine gemstones online in India at Pure Vedic Gems. Browse gemstones by type, quality, origin and price to find the right stone for your needs.'],
+      ['rudraksha', getDefaultShopCategoryPage('rudraksha'), 'Buy Original Rudraksha Online in India | Pure Vedic Gems', 'Explore original and certified Rudraksha online in India at Pure Vedic Gems. Discover Mukhi-wise Rudraksha, authenticity, quality, origin and traditional significance.'],
+      ['upratna', getDefaultShopCategoryPage('upratna'), 'Buy Upratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems', 'Explore Upratna gemstones online in India at Pure Vedic Gems. Browse natural and traditional Vedic gem options by gemstone type, quality, origin and price.'],
+      ['navaratna', getDefaultShopCategoryPage('navaratna'), 'Buy Navaratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems', "Shop Navaratna gemstones online in India at Pure Vedic Gems. Explore Ruby, Pearl, Emerald, Pukhraj, Neelam, Coral, Gomed and Cat's Eye with quality details."],
+      ['1-mukhi', getDefaultShopCategoryPage('1-mukhi'), 'Buy 1 Mukhi Rudraksha Online in India | Certified Original Bead', 'Shop 1 Mukhi Rudraksha online in India from Pure Vedic Gems. Explore original Rudraksha with details on authenticity, quality, certification and traditional significance.'],
+      ['zircon', getDefaultShopCategoryPage('zircon'), 'Buy Zircon Gemstone Online in India | Natural Upratna | Pure Vedic Gems', 'Buy Zircon gemstone online in India from Pure Vedic Gems. Explore Zircon as an Upratna with information on quality, colour, origin, treatment and available options.'],
+      ['ruby', getDefaultShopCategoryPage('ruby'), 'Buy Ruby Online in India | Natural Manik | Pure Vedic Gems', 'Shop Ruby (Manik) gemstones online in India at Pure Vedic Gems. Explore Ruby options with information on quality, colour, origin, treatment and Vedic suitability.'],
+    ];
+    for (const [slug, page, title, description] of rows) {
+      expect(page?.seo_title, slug).toBe(title);
+      expect(page?.seo_description, slug).toBe(description);
+    }
+  });
+
+  it('gives every category page its own title and description', () => {
+    const pages = getAllDefaultCategorySlugs()
+      .filter((slug) => slug !== 'navratna')
+      .map((slug) => getDefaultShopCategoryPage(slug)!);
+    const titles = pages.map((p) => p.seo_title);
+    const descriptions = pages.map((p) => p.seo_description);
+    expect(new Set(titles).size).toBe(titles.length);
+    expect(new Set(descriptions).size).toBe(descriptions.length);
+  });
+
+  it('builds product titles from product-level attributes like the sheet example', () => {
+    const meta = gemProductMeta({
+      name: 'African Ruby 7.58ct.@3200 per. ct. (Premium)',
+      carat: 7.58,
+      vedicName: 'Manik',
+      category: 'navaratna',
+      treatment: 'Natural',
+    });
+    expect(meta.title).toBe('Buy African Ruby 7.58ct. Online in India | Natural Manik');
+    expect(gemProductMeta({ name: 'Emerald 6.58ct.On-Demand', vedicName: 'Panna', category: 'navaratna', treatment: 'Natural' }).title)
+      .toBe('Buy Emerald 6.58ct. Online in India | Natural Panna');
+  });
+
+  it('only claims Natural / Certified / Original when product data supports it', () => {
+    const bead = (certification: string | null, treatment: string | null) =>
+      gemProductMeta({ name: '5 Mukhi Rudraksha (6.666g)', category: 'rudraksha', certification, treatment }).title;
+    expect(bead('X-Ray report', 'Natural')).toMatch(/\| Certified Original Bead$/);
+    expect(bead(null, 'none')).toMatch(/\| Original Bead$/);
+    expect(bead(null, null)).toMatch(/\| Bead$/);
+    expect(gemProductMeta({ name: 'Hakik 7.46ct.', category: 'upratna', treatment: null }).title).toMatch(/\| Upratna$/);
   });
 
   it('uses main hub formulas', () => {

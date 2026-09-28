@@ -24,6 +24,7 @@ import type { Product, ProductCard as ProductCardType } from '@/lib/types/produc
 import type { Json } from '@/lib/types/database';
 import { breadcrumbJsonLd, buildMetadata, productJsonLd, productMetadata } from '@/lib/utils/seo';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { categoryTemplateMeta } from '@/lib/seo/storefront-meta';
 import { getDisplayReviewsForProduct, usesCategoryReviewPool } from '@/lib/reviews/category-pool';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import { buildProductGalleryImages } from '@/lib/shop/gallery-media';
@@ -96,9 +97,10 @@ export async function generateMetadata({
   const { category, slug } = await params;
   const categoryMeta = await resolveShopCategoryPath(category, slug);
   if (categoryMeta) {
+    const template = categoryMeta.sub_category ? categoryTemplateMeta(categoryMeta.category, categoryMeta.label) : null;
     return buildMetadata({
-      title: `${categoryMeta.label} | PureVedicGems`,
-      description: categoryMeta.desc,
+      title: categoryMeta.seoTitle ?? template?.seo_title ?? `${categoryMeta.label} | PureVedicGems`,
+      description: template?.seo_description ?? categoryMeta.desc,
       path: categoryMeta.canonicalPath,
     });
   }
@@ -113,7 +115,23 @@ export async function generateMetadata({
     title: product.meta_title,
     description: product.meta_description,
     image: imageUrl,
+    hasTitleSibling: product.meta_title ? false : await hasTitleSibling(product),
   });
+}
+
+/** Same stone + carat (or same bead name) listed more than once → formula title needs the SKU to stay unique. */
+async function hasTitleSibling(product: Product) {
+  const supabase = createOptionalPublicClient();
+  if (!supabase || !product.sub_category) return false;
+  let query = supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_active', true)
+    .eq('sub_category', product.sub_category)
+    .neq('id', product.id);
+  query = product.carat_weight ? query.eq('carat_weight', product.carat_weight) : query.eq('name', product.name);
+  const { count } = await query;
+  return (count ?? 0) > 0;
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────

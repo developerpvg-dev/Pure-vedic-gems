@@ -1,7 +1,12 @@
+import { stripProductGradeFromName } from '@/lib/utils/product-display-name';
+
+/**
+ * Storefront meta templates from "SEO Meta Data Formulas - Pure Vedic Gems.xlsx".
+ * Page type → template → dynamic variables. Custom CMS title/description override these at the call site.
+ */
+
 /** SERP-facing brand (spaced) per SEO formula sheet. */
 export const SERP_BRAND = 'Pure Vedic Gems';
-
-const BRAND = 'PureVedicGems';
 
 /** ponytail: navaratna slug → hindi, same parens as KNOWN_GEM_SUBCATEGORIES. Upratna SKUs use "Upratna", not this map. */
 const VEDIC_BY_SLUG: Record<string, string> = {
@@ -38,8 +43,8 @@ function cleanGemName(englishName: string) {
     .trim();
 }
 
-function pickTitle(...candidates: string[]) {
-  return candidates[0]!;
+function cleanVedicName(vedicName?: string | null) {
+  return vedicName?.replace(/\s+(Stone|Gemstone)$/i, '').trim() || null;
 }
 
 /** Main /gemstones hub. */
@@ -56,109 +61,83 @@ export function rudrakshaHubMeta() {
   return {
     seo_title: 'Buy Original Rudraksha Online in India | Pure Vedic Gems',
     seo_description:
-      'Explore original Rudraksha online in India at Pure Vedic Gems. Discover Mukhi-wise beads, authenticity, quality, origin and traditional significance.',
+      'Explore original and certified Rudraksha online in India at Pure Vedic Gems. Discover Mukhi-wise Rudraksha, authenticity, quality, origin and traditional significance.',
   };
 }
 
 /** Main /gemstones/navaratna hub. */
 export function navaratnaHubMeta() {
   return {
-    seo_title: pickTitle(
-      'Buy Navaratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
-      'Buy Navaratna Gems Online in India | Vedic Gemstones',
-      'Buy Navaratna Gems Online in India | Pure Vedic Gems',
-    ),
+    seo_title: 'Buy Navaratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
     seo_description:
-      'Shop Navaratna gems online in India at Pure Vedic Gems. Explore Ruby, Pearl, Emerald, Pukhraj, Neelam, Coral, Gomed and Cat\'s Eye.',
+      "Shop Navaratna gemstones online in India at Pure Vedic Gems. Explore Ruby, Pearl, Emerald, Pukhraj, Neelam, Coral, Gomed and Cat's Eye with quality details.",
   };
 }
 
 /** Main /gemstones/upratna hub. */
 export function upratnaHubMeta() {
   return {
-    seo_title: pickTitle(
-      'Buy Upratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
-      'Buy Upratna Gems Online in India | Vedic Gemstones',
-      'Buy Upratna Gems Online in India | Pure Vedic Gems',
-    ),
+    seo_title: 'Buy Upratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
     seo_description:
       'Explore Upratna gemstones online in India at Pure Vedic Gems. Browse natural and traditional Vedic gem options by gemstone type, quality, origin and price.',
   };
 }
 
-/** Navaratna / Upratna child hub: Buy Ruby Online in India | Natural Manik | Pure Vedic Gems */
+/** Specific gemstone child: Buy Ruby Online in India | Natural Manik | Pure Vedic Gems */
 export function gemChildHubTitle(englishName: string, vedicName?: string | null) {
   const name = cleanGemName(englishName);
-  if (!vedicName) {
-    return pickTitle(`Buy ${name} Online in India | ${SERP_BRAND}`, `Buy ${name} Online in India`);
-  }
-  const hindi = vedicName.replace(/\s+(Stone|Gemstone)$/i, '').trim();
-  return pickTitle(
-    `Buy ${name} Online in India | Natural ${hindi} | ${SERP_BRAND}`,
-    `Buy ${name} Online in India | Natural ${hindi}`,
-    `Buy ${name} Online in India | ${hindi} | ${SERP_BRAND}`,
-  );
+  const alt = cleanVedicName(vedicName);
+  return alt
+    ? `Buy ${name} Online in India | Natural ${alt} | ${SERP_BRAND}`
+    : `Buy ${name} Online in India | ${SERP_BRAND}`;
 }
 
-/** @deprecated Use gemChildHubTitle — kept for imports that have not been renamed yet. */
-export const certifiedGemHubTitle = gemChildHubTitle;
-
-export function gemChildHubDescription(name: string, vedicName?: string | null) {
-  const core = cleanGemName(name);
-  const hindi = vedicName?.replace(/\s+(Stone|Gemstone)$/i, '').trim();
-  if (hindi) {
-    return `Shop ${core} (${hindi}) gemstones online in India at ${SERP_BRAND}. Explore quality, colour, origin, treatment and Vedic suitability.`;
-  }
-  return `Shop ${core} gemstones online in India at ${SERP_BRAND}. Explore quality, colour, origin, treatment and Vedic suitability.`;
+export function gemChildHubDescription(englishName: string, vedicName?: string | null) {
+  const name = cleanGemName(englishName);
+  const alt = cleanVedicName(vedicName);
+  return `Shop ${name}${alt ? ` (${alt})` : ''} gemstones online in India at ${SERP_BRAND}. Explore ${name} options with information on quality, colour, origin, treatment and Vedic suitability.`;
 }
 
-export function navaratnaChildMeta(name: string, vedicName: string | null) {
+export function navaratnaChildMeta(englishName: string, vedicName: string | null) {
   return {
-    seo_title: gemChildHubTitle(name, vedicName),
-    seo_description: gemChildHubDescription(name, vedicName),
+    seo_title: gemChildHubTitle(englishName, vedicName),
+    seo_description: gemChildHubDescription(englishName, vedicName),
   };
 }
 
-export function upratnaChildHubDescription(name: string) {
-  const core = cleanGemName(name);
-  return `Explore ${core} gemstones online in India at ${SERP_BRAND}. Browse natural and traditional Vedic gem options by gemstone type, quality, origin and price.`;
-}
-
-export function upratnaChildMeta(name: string, vedicName?: string | null) {
+/** Upratna child: Buy Zircon Gemstone Online in India | Natural Upratna | Pure Vedic Gems */
+export function upratnaChildMeta(englishName: string) {
+  const name = cleanGemName(englishName);
   return {
-    seo_title: gemChildHubTitle(name, vedicName),
-    seo_description: upratnaChildHubDescription(name),
+    seo_title: `Buy ${name} Gemstone Online in India | Natural Upratna | ${SERP_BRAND}`,
+    seo_description: `Buy ${name} gemstone online in India from ${SERP_BRAND}. Explore ${name} as an Upratna with information on quality, colour, origin, treatment and available options.`,
   };
 }
 
-/** Mukhi / special Rudraksha hub titles. */
-export function rudrakshaHubTitle(name: string) {
-  return pickTitle(
-    `Buy ${name} Online in India | ${SERP_BRAND}`,
-    `Buy Original ${name} Online in India | ${SERP_BRAND}`,
-    `Buy ${name} Online in India`,
-  );
-}
-
-/** @deprecated Use rudrakshaHubTitle */
-export const certifiedRudrakshaHubTitle = rudrakshaHubTitle;
-
-export function mukhiHubDescription(n: number) {
-  const name = `${n} Mukhi Rudraksha`;
-  return `Shop ${name} online in India at ${SERP_BRAND}. Explore quality, authenticity, origin and Vedic suitability.`;
+/** Rudraksha subcategory (Mukhi or special formation): Buy 1 Mukhi Rudraksha Online in India | Certified Original Bead */
+export function rudrakshaSubcategoryMeta(phrase: string) {
+  return {
+    seo_title: `Buy ${phrase} Online in India | Certified Original Bead`,
+    seo_description: `Shop ${phrase} online in India from ${SERP_BRAND}. Explore original Rudraksha with details on authenticity, quality, certification and traditional significance.`,
+  };
 }
 
 export function mukhiMeta(n: number) {
-  const name = `${n} Mukhi Rudraksha`;
-  return {
-    seo_title: rudrakshaHubTitle(name),
-    seo_description: mukhiHubDescription(n),
-  };
+  return rudrakshaSubcategoryMeta(`${n} Mukhi Rudraksha`);
+}
+
+/** Picks the child template by page type (navaratna / upratna / rudraksha); null for other catalog families. */
+export function categoryTemplateMeta(category: string | null | undefined, label: string) {
+  const name = gemEnglishName(label);
+  if (category === 'navaratna') return navaratnaChildMeta(name, vedicNameFromLabel(label));
+  if (category === 'upratna') return upratnaChildMeta(name);
+  if (category === 'rudraksha') return rudrakshaSubcategoryMeta(name);
+  return null;
 }
 
 export function supportsNaturalClaim(treatment?: string | null) {
   const t = treatment?.trim() ?? '';
-  if (!t) return true;
+  if (!t) return false;
   if (/\b(heat(?:ed)?|fill|glass|synth|diffuse|irradiat|coated|treated)\b/i.test(t) && !/\b(unheated|untreated|no\s*heat)\b/i.test(t)) {
     return false;
   }
@@ -171,66 +150,31 @@ export function supportsCertifiedClaim(certification?: string | null, lab?: stri
   return !/^(none|n\/a|not\s*certified|unverified)$/i.test(c);
 }
 
-/** Legacy WP/marketing CMS titles that should not override the dynamic formula. */
-export function isStaleMarketingTitle(title: string) {
-  const t = title.trim();
-  if (!t) return true;
-  if (/[@₹$£€]|\b(?:rs\.?|inr)\s*[\d,]+/i.test(t)) return true;
-  if (/\b(?:per\s*\.?\s*ct|per\s*carat|total\s*price)\b/i.test(t)) return true;
-  if (/\bat\s*$/i.test(t)) return true;
-  if (
-    /\b(?:premium|luxury redefined|captivating|radiant|shop for elegance|unlock the power|elevate your|experience opulent|harness the power|embrace the power|discover the natural beauty|exceptional quality)\b/i.test(
-      t,
-    )
-  ) {
-    return true;
-  }
-  return false;
-}
-
+/** Sheet rule: no prices in titles. Also catches legacy import names like "7.58ct.@2200 per. ct." */
 export function stripPriceFromTitle(title: string) {
   return title
-    .replace(/@\s*[\d,]+(?:\.\d+)?\s*(?:per\s*\.?\s*ct|perct)?\.?/gi, ' ')
-    .replace(/[₹$£€]\s*[\d,]+(?:\.\d+)?/g, ' ')
+    .replace(/@\s*[\d,]+(?:\.\d+)?\s*(?:per\s*\.?\s*(?:ct|carat)|perct)?\.?/gi, ' ')
+    .replace(/(?:[₹₨$£€]\s*|\b(?:rs\.?|inr)\s*)?[\d,]+(?:\.\d+)?\s*per\s*\.?\s*(?:ct|carat)\b\.?/gi, ' ')
+    .replace(/[₹₨$£€]\s*[\d,]+(?:\.\d+)?/g, ' ')
     .replace(/\b(?:rs\.?|inr)\s*[\d,]+(?:\.\d+)?/gi, ' ')
     .replace(/\s{2,}/g, ' ')
     .replace(/\s+\|\s+/g, ' | ')
     .trim();
 }
 
-function formatCarat(n: number) {
-  return `${n}ct.`;
+const ON_DEMAND_IN_NAME = /[\s-]*\bOn[\s-]?Demand\b/gi;
+
+function productTail(category: string, vedicName: string | null | undefined, natural: boolean, certified: boolean) {
+  if (category === 'rudraksha') return [certified && 'Certified', natural && 'Original', 'Bead'].filter(Boolean).join(' ');
+  if (category === 'upratna' || category === 'uparatna') return natural ? 'Natural Upratna' : 'Upratna';
+  if (vedicName) return natural ? `Natural ${vedicName}` : vedicName;
+  return natural ? 'Natural Gemstone' : 'Gemstone';
 }
 
-function productDescriptionTail(input: {
-  category?: string | null;
-  vedicName?: string | null;
-  treatment?: string | null;
-  certification?: string | null;
-  certificateLab?: string | null;
-}) {
-  const cat = (input.category || '').toLowerCase();
-  const natural = supportsNaturalClaim(input.treatment);
-  const certified = supportsCertifiedClaim(input.certification, input.certificateLab);
-
-  if (cat === 'rudraksha') {
-    const bits = [certified ? 'Certified' : null, natural ? 'Original' : null, 'Bead'].filter(Boolean);
-    return bits.join(' ');
-  }
-  if (cat === 'upratna' || cat === 'uparatna') {
-    if (natural && certified) return '100% Natural & Certified Gemstone';
-    if (natural) return 'Natural Upratna';
-    return 'Upratna';
-  }
-  if (input.vedicName) {
-    if (natural && certified) return `100% Natural & Genuine ${input.vedicName}`;
-    if (natural) return `Natural ${input.vedicName}`;
-    return input.vedicName;
-  }
-  if (natural && certified) return '100% Natural & Certified Gemstone';
-  return '';
-}
-
+/**
+ * Individual product: product name + unique attribute (origin, carat / weight) + category.
+ * Pass `sku` only when a sibling shares the same name + carat, so every product URL keeps a unique title.
+ */
 export function gemProductMeta(input: {
   name: string;
   origin?: string | null;
@@ -241,25 +185,30 @@ export function gemProductMeta(input: {
   treatment?: string | null;
   certification?: string | null;
   certificateLab?: string | null;
+  sku?: string | null;
 }) {
+  const category = (input.category || '').toLowerCase();
   const origin = input.origin?.trim() || '';
-  const carat = input.carat != null && input.carat > 0 ? formatCarat(input.carat) : '';
+  const carat = input.carat != null && input.carat > 0 ? `${input.carat}ct.` : '';
   const size = !carat && input.sizeMm ? `${input.sizeMm}mm` : '';
-  let core = input.name.trim();
+  let core = stripProductGradeFromName(stripPriceFromTitle(input.name).replace(ON_DEMAND_IN_NAME, '')).trim();
   if (origin && !core.toLowerCase().includes(origin.toLowerCase())) core = `${origin} ${core}`;
   if (carat && !/\d+(?:\.\d+)?\s*ct\.?/i.test(core)) core = `${core} ${carat}`;
   else if (size && !/\d+(?:\.\d+)?\s*mm/i.test(core)) core = `${core} ${size}`;
 
-  const tail = productDescriptionTail(input);
-  const title = pickTitle(
-    tail ? `Buy ${core} Online in India | ${tail}` : `Buy ${core} Online in India`,
-    tail ? `Buy ${core} Online in India | ${tail} | ${BRAND}` : `Buy ${core} Online in India | ${BRAND}`,
-  );
+  const natural = supportsNaturalClaim(input.treatment);
+  const certified = supportsCertifiedClaim(input.certification, input.certificateLab);
+  const sku = input.sku?.replace(/\.+$/, '').trim();
+  const title = `Buy ${core} Online in India | ${productTail(category, input.vedicName, natural, certified)}${sku ? ` | SKU ${sku}` : ''}`;
 
-  const descCore = cleanGemName(core);
-  const description =
-    (input.category || '').toLowerCase() === 'rudraksha'
-      ? `Shop ${descCore} online in India at ${SERP_BRAND}. Explore quality, authenticity, origin and Vedic suitability.`
-      : `Shop ${descCore} gemstones online in India at ${SERP_BRAND}. Explore quality, colour, origin, treatment and Vedic suitability.`;
-  return { title, description };
+  let description: string;
+  if (category === 'rudraksha') {
+    description = `Shop ${core} online in India from ${SERP_BRAND}. Explore this Rudraksha with details on authenticity, quality, certification and traditional significance.`;
+  } else if (category === 'upratna' || category === 'uparatna') {
+    const noun = /\bgem(?:stone)?\b/i.test(core) ? '' : ' gemstone';
+    description = `Buy ${core}${noun} online in India from ${SERP_BRAND}. Explore this Upratna with information on quality, colour, origin, treatment and available options.`;
+  } else {
+    description = `Shop ${core}${input.vedicName ? ` (${input.vedicName})` : ''} online in India at ${SERP_BRAND}. Explore this gemstone with information on quality, colour, origin, treatment and Vedic suitability.`;
+  }
+  return { title, description: sku ? `${description} SKU ${sku}.` : description };
 }

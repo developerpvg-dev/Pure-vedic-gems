@@ -6,7 +6,6 @@ import {
 } from '@/lib/shop/product-pricing';
 import {
   gemProductMeta,
-  isStaleMarketingTitle,
   stripPriceFromTitle,
   vedicNameFromSlug,
 } from '@/lib/seo/storefront-meta';
@@ -53,7 +52,7 @@ function cleanSeoText(value: string) {
 }
 
 export function fitTitle(value: string) {
-  return cleanSeoText(value);
+  return stripPriceFromTitle(cleanSeoText(value));
 }
 
 export function fitDescription(value: string) {
@@ -138,7 +137,7 @@ function isGemOrRudrakshaSku(product: Product | ProductCard) {
 export function productMetadata(
   product: Product | ProductCard,
   path: string,
-  overrides?: { title?: string | null; description?: string | null; image?: string | null },
+  overrides?: { title?: string | null; description?: string | null; image?: string | null; hasTitleSibling?: boolean },
 ): Metadata {
   const displayName = formatProductDisplayName(product.name);
   const detailedProduct = product as Product;
@@ -156,11 +155,7 @@ export function productMetadata(
   let title: string;
   let description: string;
 
-  const useCmsTitle = cmsTitle && !isStaleMarketingTitle(cmsTitle);
-  if (useCmsTitle) {
-    title = stripPriceFromTitle(cmsTitle);
-    description = cmsDescription || productDescription(product);
-  } else if (isGemOrRudrakshaSku(product)) {
+  if (isGemOrRudrakshaSku(product)) {
     const meta = gemProductMeta({
       name: displayName,
       origin: product.origin,
@@ -171,18 +166,21 @@ export function productMetadata(
       treatment: product.treatment,
       certification: product.certification,
       certificateLab: detailedProduct.certificate_lab,
+      sku: overrides?.hasTitleSibling ? product.sku : null,
     });
     title = meta.title;
-    description = cmsDescription || meta.description;
+    description = meta.description;
   } else {
     title = `${displayName}${gemDetails ? ` - ${gemDetails}` : ''} | ${BRAND_NAME}`;
-    description =
-      cmsDescription ||
-      productDescription(product) ||
-      `Shop ${displayName}${gemDetails ? ` (${gemDetails})` : ''} from ${BRAND_NAME}. Certified gemstone details, pricing, and expert guidance.`;
+    description = productDescription(product);
   }
 
-  return buildMetadata({ title, description, path, image: overrides?.image ?? product.thumbnail_url });
+  return buildMetadata({
+    title: cmsTitle || title,
+    description: cmsDescription || description,
+    path,
+    image: overrides?.image ?? product.thumbnail_url,
+  });
 }
 
 export function categoryMetadata({ title, description, path, image }: MetadataInput): Metadata {

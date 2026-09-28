@@ -108,10 +108,6 @@ function parsePositiveInteger(value: string) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
-function stripHtml(value: string) {
-  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
 function siteOrigin() {
   const raw = (process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com').trim().replace(/\/$/, '');
   if (/^https?:\/\//i.test(raw)) return raw;
@@ -588,10 +584,6 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     const isGemKind = config.kind === 'navratna' || config.kind === 'upratna';
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
-    const defaultMetaTitle = `${trimmedName} | PureVedicGems`;
-    const defaultMetaDescription = stripHtml(
-      shortDesc || description || `Buy ${trimmedName} from PureVedicGems with expert guidance and secure checkout.`,
-    );
     const defaultCanonicalUrl = productCanonicalUrl(config.category, trimmedSlug);
     const effectiveOrigin = config.kind === 'rudraksha' ? rudrakshaOrigin || undefined : origin || undefined;
     const onDemandPricing = isOnDemandFromPricing();
@@ -728,8 +720,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       configurator_enabled: effectiveConfiguratorEnabled,
 
       // SEO / AEO / GEO
-      meta_title: metaTitle || defaultMetaTitle,
-      meta_description: metaDescription || defaultMetaDescription,
+      // Blank = storefront SEO formula; only typed values override it.
+      meta_title: metaTitle.trim() || null,
+      meta_description: metaDescription.trim() || null,
       meta_keywords: metaKeywords.length ? metaKeywords : undefined,
       canonical_url: canonicalUrl.trim()
         ? absoluteUrl(canonicalUrl.trim().split('?')[0])
@@ -1494,14 +1487,14 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
             <Label htmlFor="meta_title">
               <span>Meta Title</span>
             </Label>
-            <FormInput id="meta_title" value={metaTitle} onChange={setMetaTitle} placeholder={`e.g. ${config.label} — ${name || 'Astrologically Approved'} | PureVedicGems`} />
+            <FormInput id="meta_title" value={metaTitle} onChange={setMetaTitle} placeholder="Leave blank to use the SEO formula (e.g. Buy Burma Ruby 7.90ct. Online in India | Natural Manik)" />
           </div>
 
           <div>
             <Label htmlFor="meta_description">
               <span>Meta Description</span>
             </Label>
-            <FormTextarea id="meta_description" value={metaDescription} onChange={setMetaDescription} rows={3} placeholder="A clear summary of the product, benefits, and a CTA." />
+            <FormTextarea id="meta_description" value={metaDescription} onChange={setMetaDescription} rows={3} placeholder="Leave blank to use the SEO formula description." />
           </div>
 
           <div>

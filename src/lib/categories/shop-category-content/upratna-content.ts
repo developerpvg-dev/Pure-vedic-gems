@@ -85,7 +85,7 @@ function defineUpratna(def: UpratnaDef): RichGemSections {
   const ved = vedicShort(def.hindi, def.name);
   const phrase = `${def.name} gemstone`;
   const stone = `${def.name} stone`;
-  const meta = upratnaChildMeta(def.name, ved);
+  const meta = upratnaChildMeta(def.name);
 
   return {
     intro: def.intro,

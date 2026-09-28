@@ -24,8 +24,9 @@ export async function POST() {
       planet: page.planet ?? null,
       image_url: page.image_url ?? null,
       hero_image_url: page.hero_image_url ?? null,
-      seo_title: page.seo_title ?? null,
-      seo_description: page.seo_description ?? null,
+      // Formula SEO renders from code; the DB columns hold only human overrides.
+      seo_title: null,
+      seo_description: null,
       meta_keywords: page.meta_keywords ?? [],
       intro_text: page.intro_text ?? null,
       hero_benefits: page.hero_benefits ?? [],

@@ -5,11 +5,10 @@ import { NAVARATNA_SET_HERO } from '@/lib/constants/navaratna-category-images';
 import { RUDRAKSHA_FEATURE_IMAGES } from '@/lib/constants/rudraksha-category-images';
 import { UPRATNA_HUB_HERO } from '@/lib/constants/upratna-category-images';
 import {
+  categoryTemplateMeta,
   gemEnglishName,
-  navaratnaChildMeta,
   navaratnaHubMeta,
   rudrakshaHubMeta,
-  upratnaChildMeta,
   upratnaHubMeta,
   vedicNameFromLabel,
 } from '@/lib/seo/storefront-meta';
@@ -168,10 +167,7 @@ function buildGemDefaults(
 
   const rich = getRichCategoryContent(slug, label, category);
   const merged = mergeRichContent(base, rich);
-  const meta =
-    category === 'upratna'
-      ? upratnaChildMeta(shortName, vedicNameFromLabel(label))
-      : navaratnaChildMeta(shortName, vedicNameFromLabel(label));
+  const meta = categoryTemplateMeta(category === 'upratna' ? 'upratna' : 'navaratna', label)!;
   const useRichSeo = slug === 'exclusive-gems' && rich?.seo_title;
   return {
     ...merged,

@@ -95,6 +95,11 @@ export async function GET() {
     return {
       ...(defaults ?? { slug, name: slug, product_category: 'gemstone' }),
       ...db,
+      // Only human-entered SEO is "custom"; the formula output is shown as a placeholder so saving never freezes it.
+      seo_title: db?.seo_title ?? null,
+      seo_description: db?.seo_description ?? null,
+      default_seo_title: defaults?.seo_title ?? null,
+      default_seo_description: defaults?.seo_description ?? null,
       hasDbRow: Boolean(db),
     };
   });
