@@ -117,7 +117,7 @@ The cron runs only on production. To test the route by hand:
 ## 5. Production go-live
 
 1. Merge `cloudflare-workers` into `main` and push. Vercel keeps serving www and still builds fine.
-2. The production Worker builds from `main`. Smoke-test `https://pure-vedic-gems.<your-subdomain>.workers.dev/api/health` and a few pages.
+2. The production Worker `pure-vedic-gems` already exists (first deploy was from a laptop build with Vercel's production values; runtime secrets are uploaded). Connect it to GitHub as in section 2 (branch `main`, build variables pasted in), otherwise nothing deploys once Vercel's Git link is disconnected in step 7. Let it build from `main`, then smoke-test `https://pure-vedic-gems.<your-subdomain>.workers.dev/api/health` and a few pages.
 3. **Cutover (zero downtime, instant rollback)**, zone `purevedicgems.com`:
    1. SSL/TLS → Overview: mode **Full (strict)**.
    2. Worker `pure-vedic-gems` → Settings → Domains & Routes → Add **Route**: `www.purevedicgems.com/*`. (Inactive until the record is proxied.)
@@ -126,8 +126,9 @@ The cron runs only on production. To test the route by hand:
 4. Verify on www: `curl -sI https://www.purevedicgems.com/ | findstr /i "x-opennext cf-ray"` shows both headers.
 5. Webhooks keep their URLs (same domain). Confirm one of each arrives: Razorpay (`/api/webhooks/razorpay`), PayGlocal (`/api/webhooks/payglocal`, `/api/payment/payglocal/callback`), Sanity (`/api/webhooks/sanity`), WhatsApp (`/api/agent/whatsapp`).
 6. Watch the first real order, Workers metrics/logs, and Sentry for 24h.
-7. Next morning: Workers → `pure-vedic-gems` → Settings → Trigger events shows the 03:00 UTC cron ran (Logs show `GET /api/cron/purge-product-trash 200`).
-8. Vercel → Settings → Cron Jobs → **Disable**, and Settings → Git → **Disconnect** (stops new Vercel builds). Do not delete the project yet.
+7. Vercel → Settings → Cron Jobs → **Disable**, and Settings → Git → **Disconnect** (stops new Vercel builds). Do not delete the project yet.
+   Same moment: add `"0 3 * * *"` to the top-level `triggers.crons` in `wrangler.jsonc` and deploy (kept off until now so the purge never runs from both platforms). Uses the Worker's own `CRON_SECRET` (already set; Vercel production never had one).
+8. Next morning: Workers → `pure-vedic-gems` → Settings → Trigger events shows the 03:00 UTC cron ran (Logs show `GET /api/cron/purge-product-trash 200`).
 
 ## 6. Rollback (any time in the first 14 days)
 

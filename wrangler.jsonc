@@ -19,8 +19,9 @@
   // Env vars are managed in the dashboard; don't let deploys wipe them.
   "keep_vars": true,
   "triggers": {
-    // Daily product-trash purge (was vercel.json cron) + 5-minute cache warm-up. Both in scheduled(), cloudflare/worker.ts.
-    "crons": ["0 3 * * *", "*/5 * * * *"]
+    // 5-minute cache warm-up, handled by scheduled() in cloudflare/worker.ts.
+    // GO-LIVE: add "0 3 * * *" (daily product-trash purge, was vercel.json cron) when the Vercel cron is disabled.
+    "crons": ["*/5 * * * *"]
   },
   "services": [
     {
