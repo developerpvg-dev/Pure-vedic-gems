@@ -133,7 +133,6 @@ type StorefrontPayload = {
 
 let storefrontCache: { expiresAt: number; payload: StorefrontPayload } | null = null;
 let storefrontFailureUntil = 0;
-let storefrontInflight: Promise<StorefrontPayload> | null = null;
 
 function readStorefrontCache(): StorefrontPayload | null {
   if (!storefrontCache || Date.now() > storefrontCache.expiresAt) return null;
@@ -235,12 +234,8 @@ async function fetchStorefrontPayload(
 async function loadStorefrontPayload(
   supabase: ReturnType<typeof createPublicClient>
 ): Promise<StorefrontPayload> {
-  if (!storefrontInflight) {
-    storefrontInflight = fetchStorefrontPayload(supabase).finally(() => {
-      storefrontInflight = null;
-    });
-  }
-  return storefrontInflight;
+  // Workers: a promise started by one request must not be awaited by another (it hangs if the first request ends).
+  return fetchStorefrontPayload(supabase);
 }
 
 /**

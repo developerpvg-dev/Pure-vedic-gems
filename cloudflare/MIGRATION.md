@@ -54,6 +54,8 @@ Copy **every** variable from Vercel → Settings → Environment Variables into 
 
 Plus, on both Workers (runtime only): `CACHE_PURGE_API_TOKEN`, `CACHE_PURGE_ZONE_ID`.
 
+**`SANITY_WEBHOOK_SECRET` is missing on Vercel today** (`POST /api/webhooks/sanity` answers "Webhook not configured"), so Sanity publishes don't refresh pages now. Pick a random string, set it on the Workers, and put the same value in Sanity → API → Webhooks → the webhook's *Secret*.
+
 Variables the code reads (check none are missing):
 
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_FETCH_TIMEOUT_MS`

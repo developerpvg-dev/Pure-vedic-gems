@@ -31,7 +31,6 @@ type PublicNotificationsPayload = {
 
 let publicNotificationsCache: { expiresAt: number; payload: PublicNotificationsPayload } | null = null;
 let publicNotificationsFailureUntil = 0;
-let publicNotificationsInflight: Promise<PublicNotificationsPayload> | null = null;
 let lastPublicFailureLogAt = 0;
 
 function isSupabaseUnavailableError(error: unknown) {
@@ -110,18 +109,11 @@ async function loadPublicNotifications(limit: number): Promise<NotificationRecor
     return [];
   }
 
-  if (!publicNotificationsInflight) {
-    publicNotificationsInflight = queryPublicNotifications(Math.max(limit, 50))
-      .then((rows) => ({ rows }))
-      .finally(() => {
-        publicNotificationsInflight = null;
-      });
-  }
-
+  // Workers: no shared in-flight promise across requests (it hangs if the originating request ends).
   try {
-    const payload = await publicNotificationsInflight;
-    writePublicNotificationsCache(payload.rows);
-    return payload.rows.slice(0, limit);
+    const rows = await queryPublicNotifications(Math.max(limit, 50));
+    writePublicNotificationsCache(rows);
+    return rows.slice(0, limit);
   } catch (error) {
     markPublicNotificationsFailure();
     logPublicNotificationsFailure(error);
