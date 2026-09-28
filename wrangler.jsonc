@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pure-vedic-gems",
-  "main": ".open-next/worker.js",
+  "main": "cloudflare/worker.ts",
   "compatibility_date": "2026-09-19",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -10,6 +10,17 @@
   },
   "observability": {
     "enabled": true
+  },
+  // Run next to Supabase (was Vercel region bom1) — every page does several DB round trips.
+  "placement": {
+    "mode": "targeted",
+    "hostname": "kjsyhuybvzzfpybtlvei.supabase.co"
+  },
+  // Env vars are managed in the dashboard; don't let deploys wipe them.
+  "keep_vars": true,
+  "triggers": {
+    // Daily product-trash purge (was vercel.json cron). Handled by scheduled() in cloudflare/worker.ts.
+    "crons": ["0 3 * * *"]
   },
   "services": [
     {
@@ -21,6 +32,11 @@
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
       "bucket_name": "pvg-next-cache"
+    },
+    {
+      // Public media behind cdn.purevedicgems.com (uploads via src/lib/media/r2.ts).
+      "binding": "PUBLIC_MEDIA",
+      "bucket_name": "pvg-public"
     }
   ],
   "browser": {
@@ -51,6 +67,10 @@
   "env": {
     "preview": {
       "name": "pure-vedic-gems-preview",
+      // Only production purges trash.
+      "triggers": {
+        "crons": []
+      },
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
@@ -60,7 +80,11 @@
       "r2_buckets": [
         {
           "binding": "NEXT_INC_CACHE_R2_BUCKET",
-          "bucket_name": "pvg-next-cache"
+          "bucket_name": "pvg-next-cache-preview"
+        },
+        {
+          "binding": "PUBLIC_MEDIA",
+          "bucket_name": "pvg-public"
         }
       ],
       "browser": {

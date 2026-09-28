@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
@@ -51,13 +51,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     });
   }
 
-  void logAdminAction({
+  after(logAdminAction({
     userId: auth.user.id,
     action: `review_${parsed.data.action}`,
     resourceType: 'review',
     resourceId: id,
     details: update,
-  });
+  }));
 
   return NextResponse.json({ review: data });
 }

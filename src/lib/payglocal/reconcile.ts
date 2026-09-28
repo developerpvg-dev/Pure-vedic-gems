@@ -3,6 +3,7 @@
  * Always re-reads status from PayGlocal — never trusts the inbound payload alone.
  */
 
+import { after } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import type { Consultation, Json, Order, YagyaBooking } from '@/lib/types/database';
@@ -141,7 +142,7 @@ async function finalizeYagya(booking: YagyaBooking, gid: string, facts: Razorpay
   if (error) return 'failed' as const;
   if (!updated) return 'duplicate' as const;
 
-  void sendYagyaBookingEmails({
+  after(sendYagyaBookingEmails({
     id: updated.id,
     bookingNumber: updated.booking_number,
     fullName: updated.full_name,
@@ -158,7 +159,7 @@ async function finalizeYagya(booking: YagyaBooking, gid: string, facts: Razorpay
     rashi: updated.rashi,
     nakshatra: updated.nakshatra,
     message: updated.message,
-  });
+  }));
 
   await createInAppNotifications([
     ...(updated.customer_id

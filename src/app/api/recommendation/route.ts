@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         });
         const dupeNote = duplicateNotifySuffix(matches);
         if (matches[0]) {
-          void logLeadActivity(admin, {
+          after(logLeadActivity(admin, {
             enquiryId: enquiry.id,
             action: 'duplicate_detected',
             toValue: matches[0].status,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
               prior_telecaller: matches[0].telecaller_name,
             },
             actorName: 'system',
-          });
+          }));
         }
         await Promise.allSettled([
           sendRecommendationRequestEmails({

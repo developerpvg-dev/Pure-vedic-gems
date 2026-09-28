@@ -2,7 +2,13 @@
  * ponytail: deploy-env self-check — run: npx tsx src/lib/deploy-env.selfcheck.ts
  */
 import assert from 'node:assert/strict';
-import { getDeployEnv, getDeployHostname, isPreviewDeploy, isProductionDeploy } from './deploy-env';
+import {
+  getDeployEnv,
+  getDeployHostname,
+  isCloudflareRuntime,
+  isPreviewDeploy,
+  isProductionDeploy,
+} from './deploy-env';
 
 const saved = { ...process.env };
 
@@ -39,5 +45,7 @@ process.env.CF_ENV = 'preview';
 process.env.CF_PAGES_URL = 'https://pure-vedic-gems-preview.workers.dev';
 assert.equal(getDeployEnv(), 'preview');
 assert.equal(getDeployHostname(), 'pure-vedic-gems-preview.workers.dev');
+
+assert.equal(isCloudflareRuntime(), false);
 
 console.log('deploy-env.selfcheck: ok');

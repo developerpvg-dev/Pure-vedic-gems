@@ -51,11 +51,7 @@
     "deploy:preview": "node scripts/patch-opennext-windows.mjs && cross-env OPENNEXT_BUILD=1 opennextjs-cloudflare build && opennextjs-cloudflare deploy --env preview",
     "upload": "node scripts/patch-opennext-windows.mjs && cross-env OPENNEXT_BUILD=1 opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "cf:setup-cache-bucket": "wrangler r2 bucket create pvg-next-cache",
-    "cf:cron-deploy": "wrangler deploy -c cloudflare/cron-purge/wrangler.jsonc",
-    "cf:account-setup": "node scripts/cf-account-setup.mjs",
-    "cf:dns-cutover": "node scripts/cf-dns-cutover.mjs",
-    "cf:uat-checklist": "node -e \"console.log(require('fs').readFileSync('cloudflare/UAT.checklist.txt','utf8'))\""
+    "cf:setup-cache-bucket": "wrangler r2 bucket create pvg-next-cache && wrangler r2 bucket create pvg-next-cache-preview"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.8",

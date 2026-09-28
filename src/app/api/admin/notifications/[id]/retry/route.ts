@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
@@ -39,6 +39,6 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   if (error || !retryLogData) return NextResponse.json({ error: 'Failed to queue retry' }, { status: 500 });
   const retryLog = retryLogData as NotificationLog;
 
-  void logAdminAction({ userId: auth.user.id, action: 'notification_retry_queued', resourceType: 'notification_log', resourceId: id, details: { retry_id: retryLog.id } });
+  after(logAdminAction({ userId: auth.user.id, action: 'notification_retry_queued', resourceType: 'notification_log', resourceId: id, details: { retry_id: retryLog.id } }));
   return NextResponse.json({ log: retryLog }, { status: 201 });
 }

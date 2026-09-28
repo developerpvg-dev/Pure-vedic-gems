@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { enquiryCreateSchema } from '@/lib/validators/enquiry';
 import { sendEnquiryEmails } from '@/lib/resend/send-enquiry';
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
   });
   const dupeNote = duplicateNotifySuffix(matches);
   if (matches[0]) {
-    void logLeadActivity(admin, {
+    after(logLeadActivity(admin, {
       enquiryId: data.id,
       action: 'duplicate_detected',
       toValue: matches[0].status,
@@ -125,10 +125,10 @@ export async function POST(request: NextRequest) {
         prior_telecaller: matches[0].telecaller_name,
       },
       actorName: 'system',
-    });
+    }));
   }
 
-  void Promise.allSettled([
+  after(Promise.allSettled([
     sendEnquiryEmails({
       id: data.id,
       name: parsed.data.name,
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         },
       },
     ]),
-  ]);
+  ]));
 
   return NextResponse.json({ success: true, id: data.id }, { status: 201 });
 }

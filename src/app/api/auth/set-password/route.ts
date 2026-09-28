@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logCustomerActivity } from '@/lib/customers/activity';
@@ -37,13 +37,13 @@ export async function POST() {
     );
   }
 
-  void logCustomerActivity({
+  after(logCustomerActivity({
     customerId: user.id,
     eventType: 'password_reset',
     title: 'Password set (legacy migration)',
     subtitle: user.email ?? 'Migrated account activated',
     metadata: { source: 'legacy_first_login_reset' },
-  });
+  }));
 
   return NextResponse.json({ success: true, profile });
 }

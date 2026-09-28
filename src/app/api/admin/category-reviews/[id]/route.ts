@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
@@ -35,13 +35,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (error || !data) return NextResponse.json({ error: 'Failed to update category review' }, { status: 500 });
 
-  void logAdminAction({
+  after(logAdminAction({
     userId: auth.user.id,
     action: 'category_review_update',
     resourceType: 'category_review',
     resourceId: id,
     details: parsed.data,
-  });
+  }));
 
   return NextResponse.json({ review: data });
 }
@@ -55,12 +55,12 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   const { error } = await admin.from('category_reviews').delete().eq('id', id);
   if (error) return NextResponse.json({ error: 'Failed to delete category review' }, { status: 500 });
 
-  void logAdminAction({
+  after(logAdminAction({
     userId: auth.user.id,
     action: 'category_review_delete',
     resourceType: 'category_review',
     resourceId: id,
-  });
+  }));
 
   return NextResponse.json({ success: true });
 }

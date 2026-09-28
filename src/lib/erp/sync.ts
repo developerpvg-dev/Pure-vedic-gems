@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { effectiveProductTag, estimateErpTagPrice, normalizeTagNumber } from '@/lib/erp/erp-utils';
@@ -526,11 +527,11 @@ export async function syncErpTagStockFromExcel(
   );
 
   // Notify stock managers once per upload (summary only)
-  void notifyStockManagersAfterExcelSync({
+  after(notifyStockManagersAfterExcelSync({
     stockCategoryLabel: catLabel,
     soldOfflineStillLive: soldOfflineLive.length,
     missingOnWebsite: missingForCategory.length,
-  }).catch((err) => console.error('[erp-sync] stock notify failed', err));
+  }).catch((err) => console.error('[erp-sync] stock notify failed', err)));
 
   return {
     report,
@@ -770,14 +771,14 @@ export async function queueErpOutboundSale(input: {
     status: 'pending',
   });
 
-  void notifyStockManagers({
+  after(notifyStockManagers({
     type: 'stock_sold_online',
     title: 'Sold on website — update MMI',
     message: `Tag ${tag} was sold online. Update offline software, then confirm reserved or sold on the stock dashboard.`,
     href: '/admin/stock',
     entityId: input.orderId ?? tag,
     metadata: { tagNumber: tag, productId: input.productId ?? null },
-  }).catch((err) => console.error('[erp-sync] sold-online notify failed', err));
+  }).catch((err) => console.error('[erp-sync] sold-online notify failed', err)));
 }
 
 export async function findCachedErpTag(db: ReturnType<typeof asUntypedSupabase>, tgno: string) {

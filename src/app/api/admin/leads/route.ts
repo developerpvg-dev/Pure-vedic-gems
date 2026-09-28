@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
@@ -372,17 +372,20 @@ async function hydrateEnquiryLeads(
 
     // Persist any newly filled dossier fields
     if (changed && (merged.date_of_birth || merged.birth_time || merged.birth_place || merged.area_of_concern)) {
-      void admin
-        .from('enquiries')
-        .update({
-          date_of_birth: merged.date_of_birth,
-          birth_time: merged.birth_time,
-          birth_place: merged.birth_place,
-          area_of_concern: merged.area_of_concern,
-          enquiry_type: merged.enquiry_type || (row.enquiry_type as string | null) || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
+      // Supabase builders only run when awaited — a bare `void builder` never sent this update.
+      after(async () => {
+        await admin
+          .from('enquiries')
+          .update({
+            date_of_birth: merged.date_of_birth,
+            birth_time: merged.birth_time,
+            birth_place: merged.birth_place,
+            area_of_concern: merged.area_of_concern,
+            enquiry_type: merged.enquiry_type || (row.enquiry_type as string | null) || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id);
+      });
     }
 
     return { ...row, ...merged };

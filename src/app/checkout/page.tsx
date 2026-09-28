@@ -18,13 +18,20 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import type { ContactInfo, ShippingAddress, ShippingMethodId } from '@/lib/validators/order';
 import type { SelectedShippingPlan } from '@/lib/types/shipping';
 import { ContactSection } from '@/components/checkout/ContactSection';
-import { ShippingSection } from '@/components/checkout/ShippingSection';
 import { PaymentSection } from '@/components/checkout/PaymentSection';
 import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
 import { RewardPointsRedemption, type CheckoutRewardState } from '@/components/checkout/RewardPointsRedemption';
 import { trackEcommerceEvent } from '@/lib/utils/analytics';
 import { trackProductFunnel } from '@/lib/utils/product-funnel-client';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
+
+// Client-only: country-state-city ships ~8MB of city data — keep it out of the server bundle
+// (Workers 64MiB limit). Checkout renders from client cart state anyway.
+const ShippingSection = dynamic(
+  () => import('@/components/checkout/ShippingSection').then((m) => m.ShippingSection),
+  { ssr: false },
+);
 
 type CheckoutStep = 'contact' | 'shipping' | 'payment';
 

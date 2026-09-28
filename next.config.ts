@@ -6,6 +6,10 @@ import siteStaticOffload from './scripts/site-static-offload.json';
 // (proxy lookup) — next.config redirects hit Vercel's deploy route ceiling.
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isOpenNextBuild = process.env.OPENNEXT_BUILD === '1';
+
+// Workers renders PDFs via Browser Rendering; these Node-only launchers (+ ~2MB of deps) are dead weight there.
+const nodeOnlyPdfPackages = ['@sparticuz/chromium', 'puppeteer-core'];
 
 /** ponytail: offloaded public/ folders live on Storage or R2 — same site paths (not DB). */
 function encodePathSegments(p: string) {
@@ -126,7 +130,7 @@ const nextConfig: NextConfig = {
 
   // Chromium binary is ~70MB compressed / way over Vercel’s 250MB function limit if traced in.
   // pdf.ts downloads the pack from GitHub on cold start instead (CHROMIUM_REMOTE_EXEC_PATH).
-  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  serverExternalPackages: isOpenNextBuild ? [] : nodeOnlyPdfPackages,
   outputFileTracingExcludes: {
     '/api/admin/recommendations/[id]/pdf': ['./node_modules/@sparticuz/chromium/bin/**'],
     '/api/admin/recommendations/[id]/send': ['./node_modules/@sparticuz/chromium/bin/**'],
@@ -145,6 +149,9 @@ const nextConfig: NextConfig = {
       // to resolve the raw index.css before PostCSS runs, which corrupts the output.
       'tw-animate-css': twAnimateCssPath,
       'shadcn/tailwind.css': shadcnTailwindCssPath,
+      ...(isOpenNextBuild
+        ? Object.fromEntries(nodeOnlyPdfPackages.map((p) => [p, './cloudflare/empty-module.js']))
+        : {}),
     },
   },
 

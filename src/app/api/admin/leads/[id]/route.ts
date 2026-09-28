@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { enquiryUpdateSchema } from '@/lib/validators/enquiry';
@@ -246,13 +246,13 @@ export async function PUT(
       }
     }
 
-    logAdminAction({
+    after(logAdminAction({
       userId: auth.user!.id,
       action: 'update_consultation',
       resourceType: 'consultation',
       resourceId: id,
       details: parsed.data,
-    });
+    }));
     return NextResponse.json({ lead: data });
   }
 
@@ -1288,13 +1288,13 @@ export async function PUT(
     }
   }
 
-  logAdminAction({
+  after(logAdminAction({
     userId: auth.user!.id,
     action: 'update_enquiry',
     resourceType: 'enquiry',
     resourceId: id,
     details: patch,
-  });
+  }));
   return NextResponse.json({
     lead: {
       ...data,

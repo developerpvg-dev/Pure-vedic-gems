@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
@@ -733,7 +733,7 @@ export async function POST(request: NextRequest) {
   if (hasCustomDesign && input.custom_design_brief) {
     const brief = input.custom_design_brief;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
-    void import('@/lib/resend/send-admin-alert').then(({ sendAdminOperationalAlertEmail }) =>
+    after(import('@/lib/resend/send-admin-alert').then(({ sendAdminOperationalAlertEmail }) =>
       sendAdminOperationalAlertEmail({
         subject: `Custom design request — ${product.name}`,
         heading: 'New custom design request',
@@ -755,7 +755,7 @@ export async function POST(request: NextRequest) {
           href: `${siteUrl}/admin/configurations?status=pending_custom_design_review`,
         },
       }).catch(() => null)
-    );
+    ));
   }
 
   return NextResponse.json({

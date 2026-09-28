@@ -1,5 +1,4 @@
-import { readFile } from 'fs/promises';
-import path from 'path';
+import { getEmailAssetBaseUrl } from '@/lib/resend/email-config';
 import { sendBrandedEmail } from '@/lib/resend/send-email';
 import {
   OrderConfirmationEmail,
@@ -8,8 +7,10 @@ import {
 
 async function ringSizeGuideAttachment() {
   try {
-    const filePath = path.join(process.cwd(), 'public', 'ringsizeguide.png');
-    const content = await readFile(filePath);
+    // Fetched over HTTP: Workers has no filesystem access to public/.
+    const res = await fetch(`${getEmailAssetBaseUrl()}/ringsizeguide.png`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const content = Buffer.from(await res.arrayBuffer());
     return {
       filename: 'ring-size-measurement-guide.png',
       content,

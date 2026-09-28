@@ -12,6 +12,24 @@ import {
   type PublicMediaBucket,
 } from '@/lib/media/public-url';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isCloudflareRuntime } from '@/lib/deploy-env';
+
+type R2BucketBinding = {
+  put(
+    key: string,
+    value: ArrayBuffer | ArrayBufferView,
+    options?: { httpMetadata?: { contentType?: string; cacheControl?: string } },
+  ): Promise<unknown>;
+  delete(key: string): Promise<void>;
+};
+
+/** Workers: native R2 binding (wrangler.jsonc PUBLIC_MEDIA) — no S3 SDK or access keys needed. */
+async function publicMediaBinding(): Promise<R2BucketBinding | null> {
+  if (!isCloudflareRuntime() || !publicCdnOrigin()) return null;
+  const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+  const { env } = await getCloudflareContext({ async: true });
+  return (env as { PUBLIC_MEDIA?: R2BucketBinding }).PUBLIC_MEDIA ?? null;
+}
 
 function r2Configured(): boolean {
   return Boolean(
@@ -59,10 +77,16 @@ export async function putPublicMediaObject(opts: {
     throw new Error(`Bucket not allowed for public CDN: ${opts.bucket}`);
   }
   const key = `${opts.bucket}/${opts.path.replace(/^\/+/, '')}`;
-  // ArrayBuffer isn't a Buffer.from overload under current @types/node
-  const body = Buffer.isBuffer(opts.body)
-    ? opts.body
-    : Buffer.from(opts.body instanceof ArrayBuffer ? new Uint8Array(opts.body) : opts.body);
+  // Buffer.from(ArrayBuffer) is a zero-copy view — a second copy of a big upload risks the
+  // Workers 128MB isolate limit. ponytail: whole file still sits in memory; ~40MB practical ceiling.
+  const body = Buffer.isBuffer(opts.body) ? opts.body : Buffer.from(opts.body as ArrayBuffer);
+  const cacheControl = opts.cacheControl ?? 'public, max-age=31536000, immutable';
+
+  const binding = await publicMediaBinding();
+  if (binding) {
+    await binding.put(key, body, { httpMetadata: { contentType: opts.contentType, cacheControl } });
+    return publicObjectUrl(opts.bucket, opts.path);
+  }
 
   if (useR2ForPublicMedia()) {
     await r2Client().send(
@@ -71,7 +95,7 @@ export async function putPublicMediaObject(opts: {
         Key: key,
         Body: body,
         ContentType: opts.contentType,
-        CacheControl: opts.cacheControl ?? 'public, max-age=31536000, immutable',
+        CacheControl: cacheControl,
       }),
     );
     return publicObjectUrl(opts.bucket, opts.path);
@@ -90,6 +114,11 @@ export async function putPublicMediaObject(opts: {
 }
 
 export async function deletePublicMediaObject(bucket: string, path: string): Promise<void> {
+  const binding = isPublicMediaBucket(bucket) ? await publicMediaBinding() : null;
+  if (binding) {
+    await binding.delete(`${bucket}/${path.replace(/^\/+/, '')}`);
+    return;
+  }
   if (useR2ForPublicMedia() && isPublicMediaBucket(bucket)) {
     await r2Client().send(
       new DeleteObjectCommand({

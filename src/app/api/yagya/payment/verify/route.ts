@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { captureAuthorizedRazorpayPayment, fetchRazorpayPaymentFacts } from '@/lib/razorpay/transactions';
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to finalize yagya payment' }, { status: 500 });
   }
 
-  void sendYagyaBookingEmails({
+  after(sendYagyaBookingEmails({
     id: updated.id,
     bookingNumber: updated.booking_number,
     fullName: updated.full_name,
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
     rashi: updated.rashi,
     nakshatra: updated.nakshatra,
     message: updated.message,
-  });
+  }));
 
   await createInAppNotifications([
     ...(updated.customer_id

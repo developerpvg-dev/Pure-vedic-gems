@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
@@ -87,13 +87,13 @@ export async function POST(request: NextRequest) {
 
   const review = data as { id: string; category: string; sub_category: string };
 
-  void logAdminAction({
+  after(logAdminAction({
     userId: auth.user.id,
     action: 'category_review_create',
     resourceType: 'category_review',
     resourceId: review.id,
     details: { category: review.category, sub_category: review.sub_category },
-  });
+  }));
 
   return NextResponse.json({ review: data }, { status: 201 });
 }

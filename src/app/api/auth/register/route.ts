@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { RegisterSchema } from '@/lib/validators/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimit } from '@/lib/utils/rate-limit';
@@ -79,11 +79,11 @@ export async function POST(req: NextRequest) {
       { onConflict: 'id', ignoreDuplicates: true }
     );
 
-  void sendWelcomeEmail({
+  after(sendWelcomeEmail({
     email,
     fullName: full_name,
     requiresEmailVerification: !authData.session,
-  });
+  }));
 
   return NextResponse.json({
     success: true,

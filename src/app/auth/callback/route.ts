@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logCustomerActivity } from '@/lib/customers/activity';
@@ -54,13 +54,13 @@ export async function GET(request: Request) {
     return NextResponse.redirect(challenge);
   }
 
-  void logCustomerActivity({
+  after(logCustomerActivity({
     customerId: data.user.id,
     eventType: 'login',
     title: 'Logged in',
     subtitle: data.user.email ?? 'OAuth sign-in',
     metadata: { method: 'oauth' },
-  });
+  }));
 
   return NextResponse.redirect(`${origin}${next}`);
 }

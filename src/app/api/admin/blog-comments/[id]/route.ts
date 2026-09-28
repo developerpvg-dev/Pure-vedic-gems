@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { logAdminAction } from '@/lib/utils/admin-log';
@@ -22,12 +22,12 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 });
   }
 
-  void logAdminAction({
+  after(logAdminAction({
     userId: auth.user.id,
     action: 'blog_comment_delete',
     resourceType: 'blog_comment',
     resourceId: id,
-  });
+  }));
 
   return NextResponse.json({ ok: true });
 }

@@ -1,13 +1,20 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import config from '@/sanity/config';
 
-const NextStudio = dynamic(
-  () => import('next-sanity/studio').then((mod) => mod.NextStudio),
-  { ssr: false }
+// Config is loaded inside the client-only import: a static import drags the whole `sanity`
+// package (~6MB) into the server bundle, which counts against the Workers 64MiB limit.
+const Studio = dynamic(
+  () =>
+    Promise.all([import('next-sanity/studio'), import('@/sanity/config')]).then(
+      ([{ NextStudio }, { default: config }]) =>
+        function Studio() {
+          return <NextStudio config={config} />;
+        },
+    ),
+  { ssr: false },
 );
 
 export default function StudioPage() {
-  return <NextStudio config={config} />;
+  return <Studio />;
 }

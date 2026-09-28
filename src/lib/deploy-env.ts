@@ -72,7 +72,7 @@ export function getDeployCommitSha(): string {
   );
 }
 
-/** True when running on Cloudflare Workers (Browser Rendering path, etc.). */
+/** True when running on Cloudflare Workers (Browser Rendering path, etc.). Workers sets no env var for this. */
 export function isCloudflareRuntime(): boolean {
-  return Boolean(process.env.CF_PAGES || process.env.CF_WORKER || process.env.CLOUDFLARE === '1');
+  return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
 }

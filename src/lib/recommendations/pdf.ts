@@ -7,6 +7,8 @@
  * ponytail: one shared browser per warm isolate + serialized jobs.
  * Ceiling: serverless cold-starts still hurt; Browser Rendering is the CF path.
  */
+import { isCloudflareRuntime } from '@/lib/deploy-env';
+
 const PDF_OPTS = {
   format: 'A4' as const,
   printBackground: true,
@@ -34,15 +36,6 @@ let sharedBrowser: PuppeteerBrowser | null = null;
 let launching: Promise<PuppeteerBrowser> | null = null;
 /** Serialize PDF jobs — one page at a time on the shared browser. */
 let pdfQueue: Promise<unknown> = Promise.resolve();
-
-function isCloudflareWorkers(): boolean {
-  return Boolean(
-    process.env.CF_PAGES ||
-      process.env.CF_WORKER ||
-      process.env.CLOUDFLARE === '1' ||
-      process.env.WORKERS_CI,
-  );
-}
 
 async function launchCloudflare(): Promise<PuppeteerBrowser> {
   const { getCloudflareContext } = await import('@opennextjs/cloudflare');
@@ -93,11 +86,8 @@ async function launchLocal() {
 async function getBrowser(): Promise<PuppeteerBrowser> {
   if (sharedBrowser?.connected) return sharedBrowser;
   if (!launching) {
-    const launcher = isCloudflareWorkers()
-      ? launchCloudflare
-      : process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
-        ? launchServerless
-        : launchLocal;
+    const launcher =
+      process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME ? launchServerless : launchLocal;
     launching = launcher()
       .then((browser) => {
         sharedBrowser = browser;
@@ -113,19 +103,29 @@ async function getBrowser(): Promise<PuppeteerBrowser> {
   return launching;
 }
 
+async function renderPdf(browser: PuppeteerBrowser, html: string): Promise<Buffer> {
+  const page = await browser.newPage();
+  try {
+    // ponytail: embedLocalAssets HTML is self-contained — skip networkidle0 (was burning CPU waiting)
+    await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready).catch(() => undefined);
+    return Buffer.from(await page.pdf(PDF_OPTS));
+  } finally {
+    await page.close().catch(() => undefined);
+  }
+}
+
 export async function htmlToPdf(html: string): Promise<Buffer> {
-  const job = pdfQueue.then(async () => {
-    const browser = await getBrowser();
-    const page = await browser.newPage();
+  // Workers forbids reusing I/O objects (the browser socket) across requests — one browser per PDF.
+  if (isCloudflareRuntime()) {
+    const browser = await launchCloudflare();
     try {
-      // ponytail: embedLocalAssets HTML is self-contained — skip networkidle0 (was burning CPU waiting)
-      await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
-      await page.evaluate(() => document.fonts.ready).catch(() => undefined);
-      return Buffer.from(await page.pdf(PDF_OPTS));
+      return await renderPdf(browser, html);
     } finally {
-      await page.close().catch(() => undefined);
+      await browser.close().catch(() => undefined);
     }
-  });
+  }
+  const job = pdfQueue.then(async () => renderPdf(await getBrowser(), html));
   pdfQueue = job.then(
     () => undefined,
     () => undefined,

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { LoginSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -95,13 +95,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      void logCustomerActivity({
+      after(logCustomerActivity({
         customerId: data.user.id,
         eventType: 'login',
         title: 'Logged in',
         subtitle: data.user.email ?? 'Email sign-in',
         metadata: { method: 'email_password' },
-      });
+      }));
 
       const { data: profileRow } = await admin
         .from('customer_profiles')
