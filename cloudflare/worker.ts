@@ -42,6 +42,8 @@ const handler = openNext as { fetch(req: Request, env: Env, ctx: Ctx): Promise<R
 
 export function withClientHeaders(request: Request): Request {
   const headers = new Headers(request.headers);
+  // Self-binding requests (warm cron, DO revalidation) have no Host; OpenNext queues ISR revalidation for headers.host.
+  if (!headers.has('host')) headers.set('host', new URL(request.url).host);
   for (const key of [...headers.keys()]) {
     if (key.startsWith('x-vercel-ip-') || key === 'x-forwarded-for' || key === 'x-real-ip') {
       headers.delete(key);

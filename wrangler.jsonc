@@ -21,6 +21,8 @@
   // Live since 29 Sep 2026 (www record proxied). Deploys replace routes with this list, so it must stay here.
   // Apex + purevedicgems.in redirect to www via Cloudflare Redirect Rules (dashboard), not this Worker.
   "routes": [{ "pattern": "www.purevedicgems.com/*", "zone_name": "purevedicgems.com" }],
+  // No second public copy of the site (skips the apex/.in redirects, duplicate content). Admin: www.purevedicgems.com/admin.
+  "workers_dev": false,
   "triggers": {
     // 5-minute cache warm-up, handled by scheduled() in cloudflare/worker.ts.
     // GO-LIVE: add "0 3 * * *" (daily product-trash purge, was vercel.json cron) when the Vercel cron is disabled.
@@ -76,6 +78,7 @@
       "name": "pure-vedic-gems-preview",
       // Never inherit the production www route.
       "routes": [],
+      "workers_dev": true,
       // Only production purges trash; preview only warms caches.
       "triggers": {
         "crons": ["*/5 * * * *"]
