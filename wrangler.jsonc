@@ -19,7 +19,7 @@
   // Env vars are managed in the dashboard; don't let deploys wipe them.
   "keep_vars": true,
   // Live since 29 Sep 2026 (www record proxied). Deploys replace routes with this list, so it must stay here.
-  // Apex + purevedicgems.in are still DNS-only and redirected to www by Vercel (MIGRATION.md section 7).
+  // Apex + purevedicgems.in redirect to www via Cloudflare Redirect Rules (dashboard), not this Worker.
   "routes": [{ "pattern": "www.purevedicgems.com/*", "zone_name": "purevedicgems.com" }],
   "triggers": {
     // 5-minute cache warm-up, handled by scheduled() in cloudflare/worker.ts.
