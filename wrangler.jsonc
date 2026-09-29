@@ -18,6 +18,9 @@
   },
   // Env vars are managed in the dashboard; don't let deploys wipe them.
   "keep_vars": true,
+  // Live since 29 Sep 2026 (www record proxied). Deploys replace routes with this list, so it must stay here.
+  // Apex + purevedicgems.in are still DNS-only and redirected to www by Vercel (MIGRATION.md section 7).
+  "routes": [{ "pattern": "www.purevedicgems.com/*", "zone_name": "purevedicgems.com" }],
   "triggers": {
     // 5-minute cache warm-up, handled by scheduled() in cloudflare/worker.ts.
     // GO-LIVE: add "0 3 * * *" (daily product-trash purge, was vercel.json cron) when the Vercel cron is disabled.
@@ -71,6 +74,8 @@
   "env": {
     "preview": {
       "name": "pure-vedic-gems-preview",
+      // Never inherit the production www route.
+      "routes": [],
       // Only production purges trash; preview only warms caches.
       "triggers": {
         "crons": ["*/5 * * * *"]
