@@ -116,17 +116,18 @@ The cron runs only on production. To test the route by hand:
 
 ## 5. Production go-live
 
-1. Merge `cloudflare-workers` into `main` and push. Vercel keeps serving www and still builds fine.
-2. The production Worker `pure-vedic-gems` already exists (first deploy was from a laptop build with Vercel's production values; runtime secrets are uploaded). Connect it to GitHub as in section 2 (branch `main`, build variables pasted in), otherwise nothing deploys once Vercel's Git link is disconnected in step 7. Let it build from `main`, then smoke-test `https://pure-vedic-gems.<your-subdomain>.workers.dev/api/health` and a few pages.
+1. Don't merge into `main` yet: Vercel deploys `main` to production, so a merge would change the live site before the switch and replace the build you'd roll back to.
+2. The production Worker `pure-vedic-gems` already exists (deployed from this branch with Vercel's production values; runtime secrets uploaded). Smoke-test `https://pure-vedic-gems.<your-subdomain>.workers.dev/api/health` and a few pages.
 3. **Cutover (zero downtime, instant rollback)**, zone `purevedicgems.com`:
    1. SSL/TLS → Overview: mode **Full (strict)**.
    2. Worker `pure-vedic-gems` → Settings → Domains & Routes → Add **Route**: `www.purevedicgems.com/*`. (Inactive until the record is proxied.)
    3. Rules → Redirect Rules → create: when hostname equals `purevedicgems.com`, dynamic redirect to `concat("https://www.purevedicgems.com", http.request.uri.path)`, 301, preserve query string. (Vercel did this in its domain settings; there is no code for it.)
    4. DNS: switch the `www` and apex `@` records to **Proxied** (orange cloud). Keep their Vercel targets. This is the switch: www traffic now hits the Worker.
 4. Verify on www: `curl -sI https://www.purevedicgems.com/ | findstr /i "x-opennext cf-ray"` shows both headers.
+   Then Vercel → Settings → Git → **Disconnect** (its current deployment stays as the rollback target), merge `cloudflare-workers` into `main`, and connect the production Worker to GitHub as in section 2 (branch `main`, build variables pasted in) so future pushes deploy.
 5. Webhooks keep their URLs (same domain). Confirm one of each arrives: Razorpay (`/api/webhooks/razorpay`), PayGlocal (`/api/webhooks/payglocal`, `/api/payment/payglocal/callback`), Sanity (`/api/webhooks/sanity`), WhatsApp (`/api/agent/whatsapp`).
 6. Watch the first real order, Workers metrics/logs, and Sentry for 24h.
-7. Vercel → Settings → Cron Jobs → **Disable**, and Settings → Git → **Disconnect** (stops new Vercel builds). Do not delete the project yet.
+7. Vercel → Settings → Cron Jobs → **Disable**. Do not delete the project yet.
    Same moment: add `"0 3 * * *"` to the top-level `triggers.crons` in `wrangler.jsonc` and deploy (kept off until now so the purge never runs from both platforms). Uses the Worker's own `CRON_SECRET` (already set; Vercel production never had one).
 8. Next morning: Workers → `pure-vedic-gems` → Settings → Trigger events shows the 03:00 UTC cron ran (Logs show `GET /api/cron/purge-product-trash 200`).
 
