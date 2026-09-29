@@ -121,8 +121,8 @@ The cron runs only on production. To test the route by hand:
 3. **Cutover (zero downtime, instant rollback)**, zone `purevedicgems.com`:
    1. SSL/TLS → Overview: mode **Full (strict)**.
    2. Worker `pure-vedic-gems` → Settings → Domains & Routes → Add **Route**: `www.purevedicgems.com/*`. (Inactive until the record is proxied.)
-   3. Rules → Redirect Rules → create: when hostname equals `purevedicgems.com`, dynamic redirect to `concat("https://www.purevedicgems.com", http.request.uri.path)`, 301, preserve query string. (Vercel did this in its domain settings; there is no code for it.)
-   4. DNS: switch the `www` and apex `@` records to **Proxied** (orange cloud). Keep their Vercel targets. This is the switch: www traffic now hits the Worker.
+   3. DNS: switch only the `www` record to **Proxied** (orange cloud). Keep its Vercel target. This is the switch: www traffic now hits the Worker.
+      The apex `purevedicgems.com` and `purevedicgems.in` / `www.purevedicgems.in` stay DNS-only: Vercel keeps redirecting them to www (its domain settings, no code), which is now the Worker. They move to Cloudflare in section 7.
 4. Verify on www: `curl -sI https://www.purevedicgems.com/ | findstr /i "x-opennext cf-ray"` shows both headers.
    Then Vercel → Settings → Git → **Disconnect** (its current deployment stays as the rollback target), merge `cloudflare-workers` into `main`, and connect the production Worker to GitHub as in section 2 (branch `main`, build variables pasted in) so future pushes deploy.
 5. Webhooks keep their URLs (same domain). Confirm one of each arrives: Razorpay (`/api/webhooks/razorpay`), PayGlocal (`/api/webhooks/payglocal`, `/api/payment/payglocal/callback`), Sanity (`/api/webhooks/sanity`), WhatsApp (`/api/agent/whatsapp`).
@@ -133,11 +133,12 @@ The cron runs only on production. To test the route by hand:
 
 ## 6. Rollback (any time in the first 14 days)
 
-1. DNS: switch `www` and `@` back to **DNS only** (grey cloud), or delete the Route. Traffic returns to Vercel within seconds.
+1. DNS: switch `www` back to **DNS only** (grey cloud), or delete the Route. Traffic returns to Vercel within seconds.
 2. Re-enable the Vercel cron and reconnect Git if you changed them.
 
 ## 7. After 14 quiet days
 
+- First move the redirects Vercel still does: in each zone (`purevedicgems.com`, `purevedicgems.in`), Rules → Redirect Rules → hostname is the apex (and `www.purevedicgems.in`) → dynamic redirect to `concat("https://www.purevedicgems.com", http.request.uri.path)`, 301, preserve query string. Then set those DNS records to **Proxied**. Check `curl -sI https://purevedicgems.in/x` shows a 301 to `https://www.purevedicgems.com/x` without `server: Vercel`.
 - Delete the Vercel project.
 - Delete `vercel.json` from the repo.
 - Optionally switch `www` from Route to a Worker Custom Domain and remove the Vercel DNS targets.
