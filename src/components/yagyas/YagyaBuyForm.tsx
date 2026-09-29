@@ -21,7 +21,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useCurrency } from '@/lib/hooks/useCurrency';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { formatPrice } from '@/lib/utils/format';
-import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
+import { usePayGlocalUi } from '@/lib/payglocal/checkout-client';
 import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 
 export interface YagyaBuyData {
@@ -110,6 +110,7 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
   const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
+  const payGlocalUi = usePayGlocalUi();
   const [success, setSuccess] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
@@ -315,7 +316,7 @@ export function YagyaBuyForm({ yagya }: { yagya: YagyaBuyData }) {
 
         {errors._form && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{errors._form}</p>}
 
-        {isPayGlocalUiEnabled() ? (
+        {payGlocalUi ? (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"

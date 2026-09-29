@@ -31,7 +31,7 @@ import { formatPrice } from '@/lib/utils/format';
 import { trackStorefrontEvent } from '@/lib/utils/storefront-analytics';
 import { trackLeadFunnel } from '@/lib/utils/lead-funnel-client';
 import { useLeadFunnelForm } from '@/lib/hooks/useLeadFunnelForm';
-import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
+import { usePayGlocalUi } from '@/lib/payglocal/checkout-client';
 import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { consultationModeFromPlan, stripSkype } from '@/lib/consultation/plan-display';
 import type { ConsultationPlan } from '@/lib/types/database';
@@ -222,6 +222,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
   const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
+  const payGlocalUi = usePayGlocalUi();
   const [success, setSuccess] = useState<{ id: string } | null>(null);
 
   const selectedPlan = useMemo(
@@ -641,7 +642,7 @@ export function ConsultationBookingForm({ plans }: { plans: ConsultationPlan[] }
 
                 {errors._form && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{errors._form}</p>}
 
-                {isPayGlocalUiEnabled() ? (
+                {payGlocalUi ? (
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <button
                       type="button"

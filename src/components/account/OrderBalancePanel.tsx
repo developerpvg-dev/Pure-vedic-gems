@@ -9,7 +9,7 @@ import {
   type OrderChargeContext,
 } from '@/lib/currency/format-charged';
 import { runRazorpayCheckout, type CheckoutStage } from '@/lib/razorpay/checkout-client';
-import { isPayGlocalUiEnabled, runPayGlocalCheckout } from '@/lib/payglocal/checkout-client';
+import { usePayGlocalUi, runPayGlocalCheckout } from '@/lib/payglocal/checkout-client';
 import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { BankTransferResubmitForm } from '@/components/orders/BankTransferResubmitForm';
 
@@ -78,6 +78,7 @@ export function OrderBalancePanel({
   chargeContext?: OrderChargeContext | null;
 }) {
   const router = useRouter();
+  const payGlocalUi = usePayGlocalUi();
   const money = (n: number) => formatOrderMoney(n, chargeContext);
   const payCurrency = chargeContext?.currency ?? 'INR';
   const [busy, setBusy] = useState(false);
@@ -186,7 +187,7 @@ export function OrderBalancePanel({
               )}
               Pay online {money(amountDue)}
             </button>
-            {isPayGlocalUiEnabled() ? (
+            {payGlocalUi ? (
               <button
                 type="button"
                 onClick={() => void payBalancePayGlocal()}

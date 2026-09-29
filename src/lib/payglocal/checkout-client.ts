@@ -1,5 +1,7 @@
 'use client';
 
+import { useRs101Eligibility } from '@/lib/hooks/useRs101Eligibility';
+
 export type PayGlocalCheckoutInput = {
   orderId: string;
   payAmount?: number | null;
@@ -37,4 +39,14 @@ export async function runPayGlocalCheckout(input: PayGlocalCheckoutInput): Promi
 
 export function isPayGlocalUiEnabled() {
   return process.env.NEXT_PUBLIC_PAYGLOCAL_ENABLED === 'true';
+}
+
+/**
+ * PayGlocal is for international buyers: shown only when the visitor's IP country is known and not India.
+ * Same geo rule as the ₹101 India pricing (`paid` = India or unknown location, and until the lookup returns).
+ * ponytail: UI-only; the create-order API still accepts gateway=payglocal from any visitor. Upgrade path: same geo check there.
+ */
+export function usePayGlocalUi() {
+  const { paid } = useRs101Eligibility();
+  return isPayGlocalUiEnabled() && !paid;
 }

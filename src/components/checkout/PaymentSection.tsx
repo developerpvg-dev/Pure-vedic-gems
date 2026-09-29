@@ -18,7 +18,7 @@ import { estimateRewardDiscount } from '@/components/checkout/RewardPointsRedemp
 import { BANK_ACCOUNTS, type BankAccountId } from '@/lib/constants/bank-accounts';
 import { ADVANCE_MIN_PERCENT } from '@/lib/orders/counter-payments';
 import { runRazorpayCheckout } from '@/lib/razorpay/checkout-client';
-import { isPayGlocalUiEnabled, runPayGlocalCheckout } from '@/lib/payglocal/checkout-client';
+import { usePayGlocalUi, runPayGlocalCheckout } from '@/lib/payglocal/checkout-client';
 import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 
 type PayMethod = 'razorpay' | 'payglocal' | 'bank_transfer';
@@ -66,6 +66,7 @@ export function PaymentSection({
 }: PaymentSectionProps) {
   useCurrencySubscription();
   const { currency } = useCurrency();
+  const payGlocalUi = usePayGlocalUi();
 
   const estimate = useMemo(() => {
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -390,7 +391,7 @@ export function PaymentSection({
         </div>
       </div>
 
-      <div className={`mb-3 grid gap-2 ${isPayGlocalUiEnabled() ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
+      <div className={`mb-3 grid gap-2 ${payGlocalUi ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
         <button
           type="button"
           onClick={() => setPayMethod('razorpay')}
@@ -403,7 +404,7 @@ export function PaymentSection({
         >
           <PayGatewayMark kind="razorpay" />
         </button>
-        {isPayGlocalUiEnabled() ? (
+        {payGlocalUi ? (
           <button
             type="button"
             onClick={() => setPayMethod('payglocal')}

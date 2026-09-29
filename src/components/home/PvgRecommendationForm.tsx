@@ -9,7 +9,7 @@ import { useRs101Eligibility } from '@/lib/hooks/useRs101Eligibility';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { useTurnstile } from '@/components/turnstile/use-turnstile';
 import { startRs101Checkout } from '@/lib/consultation/rs101-checkout';
-import { isPayGlocalUiEnabled } from '@/lib/payglocal/checkout-client';
+import { usePayGlocalUi } from '@/lib/payglocal/checkout-client';
 import { PayGatewayMark } from '@/components/checkout/PayGatewayMark';
 import { RS101_AMOUNT_INR } from '@/lib/consultation/rs101-amount';
 import { GEM_RECOMMENDATION_PURPOSE_SUGGESTIONS } from '@/lib/constants/recommendation-purposes';
@@ -65,6 +65,7 @@ export function PvgRecommendationForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paying, setPaying] = useState(false);
   const [payGateway, setPayGateway] = useState<'razorpay' | 'payglocal'>('razorpay');
+  const payGlocalUi = usePayGlocalUi();
   const [success, setSuccess] = useState<{ id: string } | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [guestChoiceOpen, setGuestChoiceOpen] = useState(false);
@@ -512,7 +513,7 @@ export function PvgRecommendationForm({
         </div>
       ) : (
         <>
-          {showPrice && isPayGlocalUiEnabled() ? (
+          {showPrice && payGlocalUi ? (
             <div className="mb-3 grid grid-cols-2 gap-2">
               <button
                 type="button"
