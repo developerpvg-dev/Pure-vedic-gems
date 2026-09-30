@@ -8,7 +8,8 @@
  * 3. Edge cache for `public, s-maxage` responses and ISR pages (see edge-cache.ts).
  * 4. Cache warm-up of the busiest pages every 5 minutes, so real visitors rarely find caches empty.
  */
-import { edgeCacheCopy, isEdgeCacheableRequest } from './edge-cache';
+import { edgeCacheCopy, edgeCacheKey, withBrowserRevalidate } from './edge-cache';
+import { currencySuggestion } from '../src/lib/currency/geo';
 
 const WARM_CRON = '*/5 * * * *';
 // ponytail: fixed list of top pages. Subcategory pages left out: 60s edge TTL, re-rendering them every
@@ -33,6 +34,7 @@ export { DOQueueHandler, DOShardedTagCache, BucketCachePurge } from '../.open-ne
 type Env = Record<string, unknown> & {
   CRON_SECRET?: string;
   NEXT_PUBLIC_SITE_URL?: string;
+  CF_VERSION_METADATA?: { id: string };
   WORKER_SELF_REFERENCE?: { fetch(request: Request): Promise<Response> };
 };
 type Ctx = { waitUntil(promise: Promise<unknown>): void };
@@ -67,15 +69,26 @@ export function withClientHeaders(request: Request): Request {
   return new Request(request, { headers });
 }
 
+/** Header-only geo lookup polled by every storefront page; skips booting Next (~275ms CPU per call). */
+export function currencySuggestResponse(request: Request): Response {
+  return Response.json(currencySuggestion(withClientHeaders(request).headers), {
+    headers: { 'Cache-Control': 'private, no-store' },
+  });
+}
+
 const worker = {
   async fetch(request: Request, env: Env, ctx: Ctx) {
-    if (!isEdgeCacheableRequest(request)) return handler.fetch(withClientHeaders(request), env, ctx);
+    if (request.method === 'GET' && new URL(request.url).pathname === '/api/currency/suggest') {
+      return currencySuggestResponse(request);
+    }
+    const key = await edgeCacheKey(request, env.CF_VERSION_METADATA?.id);
+    if (!key) return handler.fetch(withClientHeaders(request), env, ctx);
     const cache = (caches as unknown as { default: Cache }).default;
-    const hit = await cache.match(request.url);
-    if (hit) return hit;
+    const hit = await cache.match(key);
+    if (hit) return withBrowserRevalidate(hit);
     const response = await handler.fetch(withClientHeaders(request), env, ctx);
     const copy = edgeCacheCopy(response);
-    if (copy) ctx.waitUntil(cache.put(request.url, copy));
+    if (copy) ctx.waitUntil(cache.put(key, copy));
     return response;
   },
 

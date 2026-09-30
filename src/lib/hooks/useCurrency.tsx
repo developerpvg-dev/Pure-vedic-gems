@@ -22,18 +22,12 @@ import {
 } from '@/lib/currency/display-store';
 import { suggestCurrencyFromLanguage } from '@/lib/currency/geo';
 import { formatPrice } from '@/lib/utils/format';
+import { fetchCurrencySuggest } from '@/lib/hooks/useRs101Eligibility';
 
 /** First visit: IP country from /api/currency/suggest, else browser language. */
 async function resolveSuggestedCurrency(): Promise<string> {
-  try {
-    const res = await fetch('/api/currency/suggest', { cache: 'no-store' });
-    if (res.ok) {
-      const data = (await res.json()) as { currency?: string };
-      if (data.currency && isStorefrontCurrency(data.currency)) return data.currency;
-    }
-  } catch {
-    // fall through
-  }
+  const data = await fetchCurrencySuggest();
+  if (data?.currency && isStorefrontCurrency(data.currency)) return data.currency;
   return suggestCurrencyFromLanguage(navigator.language || 'en-IN');
 }
 

@@ -93,7 +93,7 @@ export function useManualMetalPrices() {
   const { data, error, isLoading } = useSWR('/api/metals', fetchMetalCatalog, {
     revalidateOnFocus: true,
     dedupingInterval: 30 * 1000,
-    refreshInterval: 60 * 1000,
+    refreshInterval: 5 * 60 * 1000,
   });
 
   return {

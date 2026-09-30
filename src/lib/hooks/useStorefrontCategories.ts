@@ -30,6 +30,22 @@ function writeCachedGroups(data: unknown) {
   }
 }
 
+// Header, mobile nav, footer and sidebar mount together; share one request instead of one each.
+let inflight: Promise<unknown> | null = null;
+
+function fetchGroups(): Promise<unknown> {
+  inflight ??= fetch('/api/categories?scope=storefront')
+    .then((response) => response.json())
+    .then((data) => {
+      writeCachedGroups(data);
+      return data;
+    })
+    .finally(() => {
+      inflight = null;
+    });
+  return inflight;
+}
+
 export function useStorefrontCategories(): StorefrontCategoryGroup[] {
   // Keep the first render identical between SSR and client to avoid hydration mismatch.
   const [groups, setGroups] = useState<StorefrontCategoryGroup[]>(STORE_CATEGORY_GROUPS_FALLBACK);
@@ -45,11 +61,9 @@ export function useStorefrontCategories(): StorefrontCategoryGroup[] {
       };
     }
 
-    fetch('/api/categories?scope=storefront')
-      .then((response) => response.json())
+    fetchGroups()
       .then((data) => {
         if (!alive) return;
-        writeCachedGroups(data);
         setGroups(normalizeStorefrontGroups(data));
       })
       .catch(() => undefined);

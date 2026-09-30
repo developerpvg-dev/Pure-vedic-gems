@@ -1,4 +1,17 @@
 import { currencyFromCountry } from '@/lib/currency/catalog';
+import { countryCodeFromHeaders, isRs101PaidCountry } from '@/lib/consultation/rs101-eligibility';
+
+/** Body of /api/currency/suggest (also answered straight from cloudflare/worker.ts). */
+export function currencySuggestion(headers: { get(name: string): string | null }) {
+  const countryCode = countryCodeFromHeaders(headers);
+  return {
+    currency: countryCode
+      ? suggestCurrencyFromCountryCode(countryCode)
+      : suggestCurrencyFromLanguage(headers.get('accept-language') || 'en-IN'),
+    country: countryCode,
+    rs101_paid: isRs101PaidCountry(countryCode),
+  };
+}
 
 /** Browser language / Accept-Language → storefront currency (no network). */
 export function suggestCurrencyFromLanguage(acceptLanguage: string): string {

@@ -108,6 +108,8 @@ export function NotificationBell({ variant = 'site' }: { variant?: NotificationB
     if (variant === 'admin' && !user) return;
 
     const initial = window.setTimeout(loadNotifications, 0);
+    // Logged-out visitors only see public broadcasts; one load per page is enough, idle tabs shouldn't poll.
+    if (!user) return () => window.clearTimeout(initial);
     const interval = window.setInterval(() => {
       if (document.hidden) return;
       void loadNotifications();

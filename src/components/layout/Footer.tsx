@@ -185,7 +185,7 @@ function FooterLinkColumn({ group }: { group: FooterLinkGroup }) {
       <ul className="pvg-footer-link-list">
         {group.links.map((link) => (
           <li key={`${group.title}-${link.href}-${link.label}`}>
-            <Link href={link.href} className="pvg-footer-link">
+            <Link href={link.href} className="pvg-footer-link" prefetch={false}>
               {link.label}
             </Link>
           </li>

@@ -48,6 +48,10 @@
   "browser": {
     "binding": "BROWSER"
   },
+  // Edge-cache keys include the version id (cloudflare/edge-cache.ts) so a deploy never serves the old build.
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
   "kv_namespaces": [
     {
       "binding": "NEXT_TAG_CACHE_KV",
@@ -101,6 +105,9 @@
       ],
       "browser": {
         "binding": "BROWSER"
+      },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
       },
       "kv_namespaces": [
         {
