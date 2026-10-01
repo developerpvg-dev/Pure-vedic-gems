@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { OfflineOrderItemSchema, FulfillmentTypeSchema, ShippingAddressSchema, ShippingMethodIdSchema } from '@/lib/validators/order';
 import { formatZodValidationError } from '@/lib/utils/api-validation';
-import { recalculateOrderTotal } from '@/lib/utils/pricing';
+import { recalculateOrderTotal, type PricingOfflineOptions } from '@/lib/utils/pricing';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { asUntypedSupabase } from '@/lib/supabase/untyped';
+import { orderEditPricingOptions, type EditableOrderRow } from '@/lib/orders/admin-order-edit';
 
 const QuoteSchema = z.object({
   items: z.array(OfflineOrderItemSchema).min(1),
@@ -14,16 +17,15 @@ const QuoteSchema = z.object({
   manual_discount: z.coerce.number().min(0).optional().default(0),
   energization_type: z.string().max(200).optional(),
   customer_id: z.string().uuid().nullable().optional(),
+  /** Editing an existing order — its own reserved/sold pieces and coupon stay valid. */
+  order_id: z.string().uuid().optional(),
 });
 
 /**
  * POST /api/admin/orders/quote
- * Live server pricing for the offline POS wizard (no DB write).
+ * Live server pricing for the offline POS wizard and admin order edit (no DB write).
  */
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminAccess('orders.write');
-  if ('error' in auth) return auth.error;
-
   let body: unknown;
   try {
     body = await request.json();
@@ -37,6 +39,20 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
+  const auth = await requireAdminAccess(data.order_id ? 'orders.edit' : 'orders.write');
+  if ('error' in auth) return auth.error;
+
+  let editOptions: PricingOfflineOptions = {};
+  if (data.order_id) {
+    const { data: order } = await asUntypedSupabase(createAdminClient())
+      .from('orders')
+      .select('id, order_number, items, coupon_code, reward_points_redeemed, reward_discount')
+      .eq('id', data.order_id)
+      .maybeSingle();
+    if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    editOptions = orderEditPricingOptions(order as EditableOrderRow);
+  }
+
   const isDelivery = data.fulfillment_type === 'delivery';
   if (isDelivery && (!data.shipping_address || !data.shipping_method)) {
     return NextResponse.json(
@@ -70,6 +86,7 @@ export async function POST(request: NextRequest) {
       { state: shippingAddress.state, country_code: shippingAddress.country_code },
       { customerId: data.customer_id ?? null, pointsToRedeem: 0 },
       {
+        ...editOptions,
         manualDiscount: data.manual_discount ?? 0,
         shippingCostOverride: isDelivery ? undefined : 0,
       },

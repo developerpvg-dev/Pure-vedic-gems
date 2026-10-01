@@ -41,7 +41,8 @@ export function parseGatewayReference(
  */
 export function ceilToChargeMajor(amountMajor: number, currency: string): number {
   const factor = razorpayMinorFactor(currency);
-  return Math.ceil(Number(amountMajor) * factor - Number.EPSILON) / factor;
+  // `|| 0` turns ceil(0 - EPSILON) = -0 into 0, else Intl prints "-$0.00".
+  return (Math.ceil(Number(amountMajor) * factor - Number.EPSILON) || 0) / factor;
 }
 
 export type ChargeConversion = {

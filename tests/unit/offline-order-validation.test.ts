@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { OfflineOrderCreateSchema, isValidOfflinePhone, normalizeOfflinePhone } from '@/lib/validators/order';
+import {
+  OfflineOrderCreateSchema,
+  ShippingAddressSchema,
+  isValidOfflinePhone,
+  normalizeOfflinePhone,
+} from '@/lib/validators/order';
 import { formatZodValidationError, getApiErrorMessage } from '@/lib/utils/api-validation';
 
 const validBase = {
@@ -59,5 +64,14 @@ describe('offline order validation', () => {
     const payload = formatZodValidationError(result.error);
     expect(payload.error.toLowerCase()).toMatch(/pincode|postal/);
     expect(getApiErrorMessage(payload, 'fallback').toLowerCase()).toMatch(/pincode|postal/);
+  });
+
+  it('rejects a short address line 1 even with padding spaces, with a readable message', () => {
+    for (const line1 of ['test', 'test ', ' test ']) {
+      const result = ShippingAddressSchema.safeParse({ ...validBase.customer_address, line1 });
+      expect(result.success).toBe(false);
+      if (result.success) continue;
+      expect(formatZodValidationError(result.error).error).toMatch(/street address/i);
+    }
   });
 });

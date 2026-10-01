@@ -5,7 +5,6 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ShoppingCart, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils/format';
@@ -82,7 +81,6 @@ export default function PriceSummary({
   useCurrencySubscription();
   void goldRate;
   const { addItem, getCartItem } = useCart();
-  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
   const p = state.pricing;
@@ -231,10 +229,6 @@ export default function PriceSummary({
           state.custom_design_url && state.custom_design_brief
             ? 'We will contact you soon with custom design mounting pricing. You can pay for the gem and selected services now.'
             : state.selected_product.name,
-      });
-
-      window.requestAnimationFrame(() => {
-        router.push('/cart');
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');

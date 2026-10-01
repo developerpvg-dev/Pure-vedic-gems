@@ -29,6 +29,7 @@ export type AdminOrderFilterState = {
   refund_status: string;
   return_status: string;
   invoice_status: string;
+  bill_status: string;
   customer_type: string;
   sort_by: string;
   sort_order: string;
@@ -49,6 +50,7 @@ export const EMPTY_ADMIN_ORDER_FILTERS: AdminOrderFilterState = {
   refund_status: '',
   return_status: '',
   invoice_status: '',
+  bill_status: '',
   customer_type: '',
   sort_by: 'created_at',
   sort_order: 'desc',
@@ -125,6 +127,7 @@ export function applyAdminOrderFilters(
     refund_status?: string | null;
     return_status?: string | null;
     invoice_status?: string | null;
+    bill_status?: string | null;
     customer_type?: string | null;
     order_source?: string | null;
     matchedProfileIds?: string[];
@@ -139,6 +142,8 @@ export function applyAdminOrderFilters(
   if (filters.refund_status) nextQuery = nextQuery.eq('refund_status', filters.refund_status);
   if (filters.return_status) nextQuery = nextQuery.eq('return_status', filters.return_status);
   if (filters.invoice_status) nextQuery = nextQuery.eq('invoice_status', filters.invoice_status);
+  if (filters.bill_status === 'completed') nextQuery = nextQuery.not('billing_completed_at', 'is', null);
+  if (filters.bill_status === 'pending') nextQuery = nextQuery.is('billing_completed_at', null);
 
   const energization = parseOptionalBoolean(filters.include_energization ?? undefined);
   if (energization !== undefined) nextQuery = nextQuery.eq('include_energization', energization);
@@ -189,6 +194,7 @@ export function adminOrderFiltersToParams(filters: AdminOrderFilterState, page: 
     ['refund_status', filters.refund_status],
     ['return_status', filters.return_status],
     ['invoice_status', filters.invoice_status],
+    ['bill_status', filters.bill_status],
     ['customer_type', filters.customer_type],
     ['sort_by', filters.sort_by],
     ['sort_order', filters.sort_order],

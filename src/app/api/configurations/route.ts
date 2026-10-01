@@ -2,13 +2,16 @@ import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdminAccess } from '@/lib/admin/api';
 import {
   isCertificationAllowed,
   isEnergizationAllowed,
   isMetalAllowed,
   isSettingTypeAllowed,
+  loadDefaultAllowListIds,
   resolveConfiguratorOptionRules,
   validateRingSizeValue,
+  withDefaultConfiguratorAllowLists,
 } from '@/lib/utils/configurator-rules';
 import type { Json } from '@/lib/types/database';
 import type { ConfigurationDeliveryEta, SettingType, ConfigPricingBreakdown } from '@/lib/types/configurator';
@@ -347,7 +350,7 @@ export async function POST(request: NextRequest) {
   const input = parsed.data;
   const admin = createAdminClient();
 
-  const [productResult, rulesResult] = await Promise.all([
+  const [productResult, rulesResult, allowListDefaults] = await Promise.all([
     admin
       .from('products')
       .select('id, sku, tag_number, slug, name, category, sub_category, product_type, mukhi_count, price, price_per_carat, price_mode, carat_weight, origin, images, thumbnail_url, in_stock, is_active, availability_status, configurator_enabled, certificate_display_enabled')
@@ -358,17 +361,25 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('product_id', input.product_id)
       .maybeSingle(),
+    loadDefaultAllowListIds(admin),
   ]);
 
   const product = productResult.data as ProductForConfiguration | null;
   if (productResult.error || !product) {
     return NextResponse.json({ error: 'Product not found' }, { status: 404 });
   }
-  if (!product.is_active || !product.in_stock || ['sold', 'archived', 'out_of_stock'].includes(product.availability_status)) {
+  const unavailable =
+    !product.is_active || !product.in_stock || ['sold', 'archived', 'out_of_stock'].includes(product.availability_status);
+  // Order editors re-design pieces their order already holds; the order edit save re-checks ownership.
+  if (unavailable && 'error' in (await requireAdminAccess('orders.edit'))) {
     return NextResponse.json({ error: 'Product is not available for configuration' }, { status: 400 });
   }
 
-  const rules = resolveConfiguratorOptionRules(product, rulesResult.data);
+  // Must match /api/configurations/options or the UI offers options the save rejects.
+  const rules = withDefaultConfiguratorAllowLists(
+    resolveConfiguratorOptionRules(product, rulesResult.data),
+    allowListDefaults,
+  );
 
   const settingType = input.setting_type;
   if (!settingType) {

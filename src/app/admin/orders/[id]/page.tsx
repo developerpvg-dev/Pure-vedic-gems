@@ -36,7 +36,7 @@ import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
 import {
   ArrowLeft, Package, Truck, CreditCard, Zap, MapPin, Phone, Mail,
-  User, FileText, ExternalLink, Settings, Printer,
+  User, FileText, ExternalLink, Settings, Printer, Pencil,
 } from 'lucide-react';
 import { CustomDesignBriefCard } from '@/components/admin/CustomDesignBriefCard';
 import { OrderCustomDesignPriceEditor } from '@/components/admin/OrderCustomDesignPriceEditor';
@@ -240,6 +240,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
     'orders.write',
     (viewer?.permissions ?? null) as Json,
   );
+  const canEditOrder = hasAdminPermission(
+    viewer?.role,
+    'orders.edit',
+    (viewer?.permissions ?? null) as Json,
+  );
   const canMarkSold =
     canWriteOrders ||
     hasAdminPermission(viewer?.role, 'finance.read', (viewer?.permissions ?? null) as Json);
@@ -302,6 +307,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     puja_video_url?: string | null;
     design_completed_at?: string | null;
     products_marked_sold_at?: string | null;
+    billing_completed_at?: string | null;
     return_status?: string | null;
     payment_failure_reason?: string | null;
     balance_due_notified_at?: string | null;
@@ -573,6 +579,15 @@ export default async function OrderDetailPage({ params }: PageProps) {
               <Printer className="h-3 w-3" />
               Print all details
             </Link>
+            {canEditOrder && !['cancelled', 'refunded'].includes(o.status) ? (
+              <Link
+                href={`/admin/orders/${o.id}/edit`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-stone-900 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-stone-800"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit order
+              </Link>
+            ) : null}
             {o.invoice_url ? (
               <a
                 href={o.invoice_url}
@@ -1321,6 +1336,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
               currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
               productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
+              billingCompletedAt={orderExtras.billing_completed_at ?? null}
               orderSource={o.order_source ?? null}
               orderTotal={o.total}
               customerPhone={displayPhone}
@@ -1368,6 +1384,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               currentPujaVideoUrl={orderExtras.puja_video_url ?? null}
               currentDesignCompletedAt={orderExtras.design_completed_at ?? null}
               productsMarkedSoldAt={orderExtras.products_marked_sold_at ?? null}
+              billingCompletedAt={orderExtras.billing_completed_at ?? null}
               orderSource={o.order_source ?? null}
               orderTotal={o.total}
               customerPhone={displayPhone}

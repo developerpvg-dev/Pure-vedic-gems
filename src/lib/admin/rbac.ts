@@ -28,6 +28,8 @@ export type AdminPermission =
   | 'imports.write'
   | 'orders.read'
   | 'orders.write'
+  /** Rewrite a placed order: items, designs, charges, coupon, customer, fulfillment. */
+  | 'orders.edit'
   | 'orders.tracking'
   | 'orders.design'
   | 'leads.read'
@@ -83,6 +85,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'imports.write',
     'orders.read',
     'orders.write',
+    'orders.edit',
     'orders.tracking',
     'leads.read',
     'leads.write',
@@ -101,6 +104,7 @@ export const ROLE_PERMISSIONS: Record<CanonicalAdminRole, AdminPermission[]> = {
     'imports.write',
     'orders.read',
     'orders.write',
+    'orders.edit',
     'orders.tracking',
     'leads.read',
     'leads.write',
@@ -224,6 +228,7 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/designer')) return 'orders.design';
   if (pathname.startsWith('/admin/design-jobs')) return 'orders.read';
   if (pathname.startsWith('/admin/commissions')) return 'orders.read';
+  if (/^\/admin\/orders\/[^/]+\/edit$/.test(pathname)) return 'orders.edit';
   if (pathname.startsWith('/admin/orders')) return 'orders.read';
   if (pathname.startsWith('/admin/customers')) return 'leads.read';
   if (pathname.startsWith('/admin/insights')) return 'leads.read';

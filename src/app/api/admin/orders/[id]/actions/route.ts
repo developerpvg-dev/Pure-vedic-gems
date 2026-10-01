@@ -52,6 +52,10 @@ const actionSchema = z.discriminatedUnion('action', [
     action: z.literal('mark_sold'),
   }),
   z.object({
+    action: z.literal('set_bill_completed'),
+    completed: z.boolean(),
+  }),
+  z.object({
     action: z.literal('cancel'),
     reason: z.string().trim().max(500).optional(),
   }),
@@ -160,7 +164,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // ponytail: membership first; record_refund + mark_sold also allowed for accountants (finance.read)
+  // ponytail: membership first; record_refund + mark_sold + set_bill_completed also allowed for accountants (finance.read)
   const auth = await requireAdminAccess();
   if ('error' in auth) return auth.error;
 
@@ -222,7 +226,7 @@ export async function POST(
   const canWriteOrders = hasAdminPermission(auth.member.role, 'orders.write', auth.member.permissions);
   const canFinance =
     canWriteOrders || hasAdminPermission(auth.member.role, 'finance.read', auth.member.permissions);
-  const financeActions = new Set(['record_refund', 'mark_sold']);
+  const financeActions = new Set(['record_refund', 'mark_sold', 'set_bill_completed']);
   if (financeActions.has(parsed.data.action) ? !canFinance : !canWriteOrders) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
@@ -264,7 +268,8 @@ export async function POST(
     ['cancelled', 'refunded'].includes(orderRow.status) &&
     parsed.data.action !== 'record_refund' &&
     parsed.data.action !== 'update_return' &&
-    parsed.data.action !== 'restore_stock'
+    parsed.data.action !== 'restore_stock' &&
+    parsed.data.action !== 'set_bill_completed'
   ) {
     return NextResponse.json({ error: `Order is already ${orderRow.status}` }, { status: 400 });
   }
@@ -321,6 +326,28 @@ export async function POST(
       });
 
       return NextResponse.json({ success: true, products_marked_sold_at: now });
+    }
+
+    if (parsed.data.action === 'set_bill_completed') {
+      const billingCompletedAt = parsed.data.completed ? new Date().toISOString() : null;
+      const { error: billError } = await db
+        .from('orders')
+        .update({ billing_completed_at: billingCompletedAt })
+        .eq('id', id);
+      if (billError) {
+        return NextResponse.json({ error: 'Failed to update bill status' }, { status: 500 });
+      }
+
+      await logAdminAction({
+        userId: auth.user.id,
+        action: parsed.data.completed ? 'order_bill_completed' : 'order_bill_reopened',
+        resourceType: 'order',
+        resourceId: id,
+        details: { order_number: orderRow.order_number },
+        ipAddress: getRequestIp(request),
+      });
+
+      return NextResponse.json({ success: true, billing_completed_at: billingCompletedAt });
     }
 
     if (parsed.data.action === 'cancel') {

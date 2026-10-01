@@ -44,6 +44,7 @@ interface Order {
   payment_status: string;
   payment_method: string | null;
   return_status?: string | null;
+  billing_completed_at?: string | null;
   created_at: string;
   items: unknown;
   customer_display?: {
@@ -170,6 +171,7 @@ function readInitialFilters(): AdminOrderFilterState {
     refund_status: params.get('refund_status') ?? '',
     return_status: params.get('return_status') ?? '',
     invoice_status: params.get('invoice_status') ?? '',
+    bill_status: params.get('bill_status') ?? '',
     customer_type: params.get('customer_type') ?? '',
     sort_by: params.get('sort_by') ?? 'created_at',
     sort_order: params.get('sort_order') ?? 'desc',
@@ -568,6 +570,15 @@ export default function AdminOrdersPage() {
                               Return: {label(order.return_status)}
                             </span>
                           ) : null}
+                          {order.billing_completed_at ? (
+                            <span className="inline-block whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                              Bill completed
+                            </span>
+                          ) : (
+                            <span className="inline-block whitespace-nowrap rounded-full bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-500 ring-1 ring-stone-200">
+                              Bill pending
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">

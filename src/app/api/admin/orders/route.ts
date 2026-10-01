@@ -12,6 +12,7 @@ import { applyPaymentToBalances, inferPaymentKind } from '@/lib/orders/counter-p
 import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
+import { buildAdminOrderItems } from '@/lib/orders/admin-order-edit';
 
 type OrderRow = {
   customer_id: string | null;
@@ -86,6 +87,7 @@ export async function GET(request: NextRequest) {
     refund_status: searchParams.get('refund_status'),
     return_status: searchParams.get('return_status'),
     invoice_status: searchParams.get('invoice_status'),
+    bill_status: searchParams.get('bill_status'),
     customer_type: searchParams.get('customer_type'),
     order_source: searchParams.get('order_source'),
     matchedProfileIds,
@@ -188,56 +190,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const orderItems = pricing.items.map((pricedItem) => {
-    const clientItem = data.items.find((i) =>
-      pricedItem.line_id
-        ? i.line_id === pricedItem.line_id
-        : Boolean(pricedItem.product_id && i.product_id === pricedItem.product_id),
-    );
-    const manualSnapshot = clientItem?.manual_design
-      ? {
-          source: 'offline_manual_design',
-          manual_design: clientItem.manual_design,
-        }
-      : null;
-    const designBits =
-      clientItem?.design_id || clientItem?.design_name
-        ? {
-            design_id: clientItem.design_id ?? null,
-            design_name: clientItem.design_name ?? null,
-          }
-        : null;
-    const snapshot =
-      clientItem?.configuration_snapshot ??
-      manualSnapshot ??
-      (designBits
-        ? { source: 'offline_pos', selections: { design: designBits } }
-        : null);
-
-    return {
-      product_id: pricedItem.product_id || null,
-      name: clientItem?.name || pricedItem.name,
-      sku: pricedItem.sku,
-      tag_number: pricedItem.tag_number,
-      quantity: pricedItem.quantity,
-      unit_price: pricedItem.unit_price,
-      line_total: pricedItem.line_total,
-      carat_weight: pricedItem.carat_weight,
-      origin: pricedItem.origin,
-      image_url: pricedItem.image_url || clientItem?.image_url || '',
-      category: pricedItem.category,
-      configuration_id: clientItem?.configuration_id ?? null,
-      configuration_summary:
-        clientItem?.configuration_summary ??
-        (clientItem?.manual_design?.description
-          ? `Manual design: ${clientItem.manual_design.description}`
-          : clientItem?.manual_design
-            ? 'Customer-provided manual design'
-            : null) ??
-        (clientItem?.design_name ? `Design: ${clientItem.design_name}` : null),
-      configuration_snapshot: snapshot,
-    };
-  });
+  const orderItems = buildAdminOrderItems(pricing.items, data.items);
 
   let balances;
   try {

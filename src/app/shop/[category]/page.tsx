@@ -23,6 +23,7 @@ import { ProductCatalog } from '@/components/shop/ProductCatalog';
 import { BackToTopButton } from '@/components/shop/BackToTopButton';
 import { ShopCollectionCta } from '@/components/shop/ShopCollectionCta';
 import { CategoryFaqSection } from '@/components/shop/CategoryFaqSection';
+import { CategoryTestimonialsSection } from '@/components/shop/CategoryTestimonialsSection';
 import { ShopPagination } from '@/components/shop/ShopPagination';
 import { CategoryHubHeader } from '@/components/shop/CategoryHub';
 import { NavaratnaHomeSection, RudrakshaHomeSection, getHomeManagedCategories, getShopBrowseCategories } from '@/components/home/PvgManagedCategorySections';
@@ -302,6 +303,7 @@ async function CategoryProducts({
 
       <ShopPagination page={filters.page} totalPages={totalPages} searchParams={sParams} basePath={basePath} />
       {faqs.length > 0 ? <CategoryFaqSection faqs={faqs} /> : null}
+      <CategoryTestimonialsSection />
       <ShopCollectionCta categorySlug={categorySlug} />
     </>
   );
