@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     refund_status: searchParams.get('refund_status'),
     return_status: searchParams.get('return_status'),
     invoice_status: searchParams.get('invoice_status'),
+    bill_status: searchParams.get('bill_status'),
     customer_type: searchParams.get('customer_type'),
     order_source: searchParams.get('order_source'),
     matchedProfileIds,

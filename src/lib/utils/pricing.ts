@@ -82,6 +82,12 @@ export type PricingOfflineOptions = {
   manualDiscount?: number;
   /** Pickup / in-store: skip shipping_methods lookup and use this cost */
   shippingCostOverride?: number;
+  /** Admin order edit: pieces already held/sold by this order skip availability checks */
+  heldProductIds?: string[];
+  /** Admin order edit: coupon already on the order — skip date/usage checks (its own redemption counts) */
+  keepCouponCode?: string | null;
+  /** Admin order edit: keep the reward redemption already applied instead of re-quoting the balance */
+  rewardOverride?: { points: number; discount: number };
 };
 
 const PRODUCT_SELECT = `
@@ -279,24 +285,26 @@ export async function recalculateOrderTotal(
     if (!product) {
       throw new Error(`Product ${item.product_id} not found`);
     }
-    if (!product.is_active) {
-      throw new Error(`Product "${product.name}" is no longer available`);
-    }
-    if (!product.in_stock || product.stock_status === 'out_of_stock') {
-      throw new Error(`Product "${product.name}" is currently out of stock`);
-    }
-    if (['sold', 'archived', 'out_of_stock'].includes(product.availability_status)) {
-      throw new Error(`Product "${product.name}" is not available for purchase`);
-    }
-    if (product.availability_status === 'reserved' && isReservationActive(product.reserved_until)) {
-      throw new Error(`Product "${product.name}" is currently reserved`);
-    }
     // ponytail: each piece is unique — never more than 1
     if (item.quantity > 1) {
       throw new Error(`Only 1 unit of "${product.name}" is available`);
     }
-    if (product.stock_quantity < item.quantity) {
-      throw new Error(`"${product.name}" is no longer available`);
+    if (!offlineOptions?.heldProductIds?.includes(product.id)) {
+      if (!product.is_active) {
+        throw new Error(`Product "${product.name}" is no longer available`);
+      }
+      if (!product.in_stock || product.stock_status === 'out_of_stock') {
+        throw new Error(`Product "${product.name}" is currently out of stock`);
+      }
+      if (['sold', 'archived', 'out_of_stock'].includes(product.availability_status)) {
+        throw new Error(`Product "${product.name}" is not available for purchase`);
+      }
+      if (product.availability_status === 'reserved' && isReservationActive(product.reserved_until)) {
+        throw new Error(`Product "${product.name}" is currently reserved`);
+      }
+      if (product.stock_quantity < item.quantity) {
+        throw new Error(`"${product.name}" is no longer available`);
+      }
     }
 
     const cfg = item.configuration_id ? configMap.get(item.configuration_id) : undefined;
@@ -428,15 +436,19 @@ export async function recalculateOrderTotal(
     const meetsMinimum =
       !coupon.min_order_amount || merchandiseTotal >= coupon.min_order_amount;
 
-    if (!isDateValid) throw new Error('Coupon code is not valid for today.');
-    if (!isUsageValid) throw new Error('Coupon usage limit has been reached.');
+    const keepCoupon =
+      Boolean(offlineOptions?.keepCouponCode) &&
+      offlineOptions!.keepCouponCode!.toUpperCase() === couponCode.toUpperCase();
+
+    if (!keepCoupon && !isDateValid) throw new Error('Coupon code is not valid for today.');
+    if (!keepCoupon && !isUsageValid) throw new Error('Coupon usage limit has been reached.');
     if (!meetsMinimum) throw new Error(`Coupon requires a minimum order of Rs. ${coupon.min_order_amount}.`);
 
     // ── Per-customer + first-time coupon enforcement ──────────────────────
     // These coupon types are tied to a customer identity, so a guest checkout
     // cannot satisfy them. Require sign-in rather than silently allowing reuse.
-    const customerId = rewardOptions?.customerId ?? null;
-    if ((coupon.usage_limit_per_customer || coupon.first_time_customers_only) && !customerId) {
+    const customerId = keepCoupon ? null : rewardOptions?.customerId ?? null;
+    if (!keepCoupon && (coupon.usage_limit_per_customer || coupon.first_time_customers_only) && !customerId) {
       throw new Error('Please sign in to use this coupon.');
     }
 
@@ -490,12 +502,21 @@ export async function recalculateOrderTotal(
     }
   }
 
-  const rewardQuote = await quoteRewardRedemption({
-    customerId: rewardOptions?.customerId ?? null,
-    requestedPoints: rewardOptions?.pointsToRedeem ?? 0,
-    // Same base as shipping eligibility: full merchandise (gem + metal + making + cert + puja).
-    eligibleAmount: Math.max(0, merchandiseTotal - couponDiscount),
-  });
+  const rewardOverride = offlineOptions?.rewardOverride;
+  const rewardQuote = rewardOverride
+    ? {
+        points_to_redeem: rewardOverride.points,
+        discount_amount: Math.min(
+          Math.max(0, rewardOverride.discount),
+          Math.max(0, merchandiseTotal - couponDiscount),
+        ),
+      }
+    : await quoteRewardRedemption({
+        customerId: rewardOptions?.customerId ?? null,
+        requestedPoints: rewardOptions?.pointsToRedeem ?? 0,
+        // Same base as shipping eligibility: full merchandise (gem + metal + making + cert + puja).
+        eligibleAmount: Math.max(0, merchandiseTotal - couponDiscount),
+      });
   const rewardDiscount = rewardQuote?.discount_amount ?? 0;
   const rewardPointsRedeemed = rewardQuote?.points_to_redeem ?? 0;
   const manualDiscountRaw = Math.max(0, Number(offlineOptions?.manualDiscount) || 0);

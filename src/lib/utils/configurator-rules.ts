@@ -1,5 +1,9 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/types/database';
 import type { SettingType } from '@/lib/types/configurator';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
+import { DEFAULT_GEMSTONE_CERT_LAB_SLUGS } from '@/lib/utils/legacy-certificate-options';
+import { DEFAULT_GEMSTONE_ENERGIZATION_SLUGS } from '@/lib/utils/legacy-energization-options';
 import { isRudrakshaConfiguratorContext } from '@/lib/utils/rudraksha-design-rules';
 
 export type RingSizeSystemId = 'indian' | 'european' | 'uk_au' | 'us';
@@ -284,6 +288,34 @@ export function withDefaultConfiguratorAllowLists(
     next.allowed_energization_option_ids = [...defaults.energizationOptionIds];
   }
   return next;
+}
+
+/** Active default lab / energization ids for withDefaultConfiguratorAllowLists. */
+export async function loadDefaultAllowListIds(
+  supabase: SupabaseClient<Database>,
+): Promise<{ certificationLabIds: string[]; energizationOptionIds: string[] }> {
+  const [labsResult, energResult] = await Promise.all([
+    supabase.from('certification_labs').select('id, legacy_slug').eq('is_active', true),
+    supabase.from('energization_options').select('id, legacy_slug').eq('is_active', true),
+  ]);
+
+  const labsBySlug = new Map<string, string>();
+  for (const row of labsResult.data ?? []) {
+    if (row.legacy_slug) labsBySlug.set(String(row.legacy_slug), String(row.id));
+  }
+  const energBySlug = new Map<string, string>();
+  for (const row of energResult.data ?? []) {
+    if (row.legacy_slug) energBySlug.set(String(row.legacy_slug), String(row.id));
+  }
+
+  return {
+    certificationLabIds: DEFAULT_GEMSTONE_CERT_LAB_SLUGS.map((slug) => labsBySlug.get(slug)).filter(
+      (id): id is string => Boolean(id),
+    ),
+    energizationOptionIds: DEFAULT_GEMSTONE_ENERGIZATION_SLUGS.map((slug) =>
+      energBySlug.get(slug),
+    ).filter((id): id is string => Boolean(id)),
+  };
 }
 
 export function isSettingTypeAllowed(rules: ConfiguratorOptionRules | null, settingType: SettingType) {

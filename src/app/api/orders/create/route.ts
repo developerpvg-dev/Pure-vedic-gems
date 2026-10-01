@@ -5,6 +5,7 @@ import { recalculateOrderTotal } from '@/lib/utils/pricing';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/utils/rate-limit';
+import { formatZodValidationError } from '@/lib/utils/api-validation';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/order-status';
 import { BANK_TRANSFER_HOLD_MS } from '@/lib/constants/bank-accounts';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
@@ -168,13 +169,7 @@ export async function POST(req: NextRequest) {
   // ── Validate with Zod ────────────────────────────────────────────────
   const parsed = OrderCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: 'Validation failed',
-        details: parsed.error.flatten().fieldErrors,
-      },
-      { status: 400 }
-    );
+    return NextResponse.json(formatZodValidationError(parsed.error), { status: 400 });
   }
 
   const {

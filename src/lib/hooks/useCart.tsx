@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { Cart, CartItem, CartAction } from '@/lib/types/cart';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -144,6 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, dispatch] = useReducer(cartReducer, [] as CartItem[], readStoredCartItems);
   const [guestSessionId] = useState<string | null>(readOrCreateGuestSessionId);
   const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const previousUserIdRef = useRef<string | null>(null);
   const syncInFlightRef = useRef(false);
   const itemsRef = useRef(items);
@@ -340,8 +342,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         markGuestCartDirty();
         sendGuestEvent(existing ? 'cart_item_updated' : 'cart_item_added', { ...mergedItem, quantity: nextQuantity }, nextQuantity);
       }
+
+      router.push('/cart');
     },
-    [guestSessionId, items, sendGuestEvent, syncAuthenticatedCart, user]
+    [guestSessionId, items, router, sendGuestEvent, syncAuthenticatedCart, user]
   );
 
   const removeItem = useCallback(

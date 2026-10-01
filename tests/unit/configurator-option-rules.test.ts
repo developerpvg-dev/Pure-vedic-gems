@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isEnergizationAllowed,
   normalizeConfiguratorRules,
   resolveConfiguratorOptionRules,
   withDefaultConfiguratorAllowLists,
@@ -78,6 +79,18 @@ describe('resolveConfiguratorOptionRules', () => {
     );
     expect(filled.allowed_certification_lab_ids).toEqual(['lab-1']);
     expect(filled.allowed_energization_option_ids).toEqual(['energ-1']);
+  });
+
+  it('accepts default energization for rudraksha with an empty allow-list (save path)', () => {
+    const rules = withDefaultConfiguratorAllowLists(
+      resolveConfiguratorOptionRules(
+        { id: 'prod-6', category: 'rudraksha', sub_category: '6-mukhi', configurator_enabled: true },
+        looseOnlyRules
+      ),
+      { certificationLabIds: [], energizationOptionIds: ['energ-pooja'] }
+    );
+    expect(isEnergizationAllowed(rules, 'energ-pooja')).toBe(true);
+    expect(isEnergizationAllowed(rules, 'energ-other')).toBe(false);
   });
 
   it('keeps certificate step from option rules, not storefront display flag', () => {

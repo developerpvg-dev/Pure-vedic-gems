@@ -118,10 +118,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
       product_name: displayName,
       source: 'product_card',
     });
-    toast.success(`${displayName} added to cart`, {
-      description: 'View your cart to proceed to checkout.',
-      action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
-    });
+    toast.success(`${displayName} added to cart`);
   };
 
   const configuratorEnabled = isGemConfiguratorEnabled(product.category, product.configurator_enabled);

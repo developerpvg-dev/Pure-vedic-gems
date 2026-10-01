@@ -69,7 +69,7 @@ const EMPTY_ADDRESS = {
   country_code: 'IN',
 };
 
-type LineItem = {
+export type LineItem = {
   key: string;
   product_id: string | null;
   name: string;
@@ -99,6 +99,32 @@ type Commission = {
   name: string;
   amount: string;
 };
+
+export type FulfillmentType = 'in_store' | 'pickup' | 'delivery';
+
+/** Prefill for editing an existing online/offline order (payment step is skipped). */
+export type OfflineOrderEditInitial = {
+  orderId: string;
+  orderNumber: string;
+  previousTotal: number;
+  amountPaid: number;
+  customerId: string | null;
+  fullName: string;
+  phone: string;
+  email: string;
+  gstin: string;
+  addr: typeof EMPTY_ADDRESS;
+  items: LineItem[];
+  fulfillmentType: FulfillmentType;
+  shippingMethod: string;
+  couponCode: string;
+  manualDiscount: string;
+  notes: string;
+  commissions: Commission[];
+};
+
+const ADDITIONAL_CHARGE_LABEL = 'Additional charge';
+const PAYMENT_STEP = 4;
 
 type Pricing = {
   subtotal: number;
@@ -205,8 +231,9 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
   );
 }
 
-export function OfflineOrderPOS() {
+export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditInitial } = {}) {
   const router = useRouter();
+  const editing = Boolean(editOrder);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -214,17 +241,17 @@ export function OfflineOrderPOS() {
   // Customer
   const [customerQuery, setCustomerQuery] = useState('');
   const [customerHits, setCustomerHits] = useState<CustomerHit[]>([]);
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [gstin, setGstin] = useState('');
+  const [customerId, setCustomerId] = useState<string | null>(editOrder?.customerId ?? null);
+  const [fullName, setFullName] = useState(editOrder?.fullName ?? '');
+  const [phone, setPhone] = useState(editOrder?.phone ?? '');
+  const [email, setEmail] = useState(editOrder?.email ?? '');
+  const [gstin, setGstin] = useState(editOrder?.gstin ?? '');
 
   // Items
   const [productQuery, setProductQuery] = useState('');
   const [productHits, setProductHits] = useState<ProductHit[]>([]);
   const [searchingProducts, setSearchingProducts] = useState(false);
-  const [items, setItems] = useState<LineItem[]>([]);
+  const [items, setItems] = useState<LineItem[]>(editOrder?.items ?? []);
   const [configuringProduct, setConfiguringProduct] = useState<ProductCard | null>(null);
   const [configuringComboIds, setConfiguringComboIds] = useState<string[]>([]);
   const [loadingConfigure, setLoadingConfigure] = useState(false);
@@ -239,19 +266,21 @@ export function OfflineOrderPOS() {
   });
 
   // Charges
-  const [manualDiscount, setManualDiscount] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [manualDiscount, setManualDiscount] = useState(editOrder?.manualDiscount ?? '');
+  const [couponCode, setCouponCode] = useState(editOrder?.couponCode ?? '');
+  const [commissions, setCommissions] = useState<Commission[]>(editOrder?.commissions ?? []);
   const [pricing, setPricing] = useState<Pricing | null>(null);
   const [pricingError, setPricingError] = useState('');
   const [quoting, setQuoting] = useState(false);
+  const [chargeLabel, setChargeLabel] = useState('');
+  const [chargeAmount, setChargeAmount] = useState('');
 
   // Fulfillment
-  const [fulfillmentType, setFulfillmentType] = useState<'in_store' | 'pickup' | 'delivery'>('in_store');
-  const [shippingMethod, setShippingMethod] = useState('');
+  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>(editOrder?.fulfillmentType ?? 'in_store');
+  const [shippingMethod, setShippingMethod] = useState(editOrder?.shippingMethod ?? '');
   const [shippingPlans, setShippingPlans] = useState<ShippingPlan[]>([]);
-  const [addr, setAddr] = useState(EMPTY_ADDRESS);
-  const [notes, setNotes] = useState('');
+  const [addr, setAddr] = useState(editOrder?.addr ?? EMPTY_ADDRESS);
+  const [notes, setNotes] = useState(editOrder?.notes ?? '');
 
   // Payment
   const [payAmount, setPayAmount] = useState('');
@@ -399,6 +428,61 @@ export function OfflineOrderPOS() {
     setError('');
   }
 
+  function addAdditionalCharge() {
+    const amount = Number(chargeAmount);
+    if (chargeLabel.trim().length < 2) {
+      setError('Describe the charge (e.g. Courier, Polishing, Resizing).');
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError('Enter a charge amount greater than zero.');
+      return;
+    }
+    // ponytail: charge = fixed manual line (tax-inclusive, no auto GST) so it flows through pricing, invoices and receipts unchanged
+    setItems((prev) => [
+      ...prev,
+      {
+        key: `charge-${Date.now()}`,
+        product_id: null,
+        name: chargeLabel.trim(),
+        price: amount,
+        quantity: 1,
+        category: 'manual_design',
+        configuration_summary: ADDITIONAL_CHARGE_LABEL,
+        manual_design: {
+          description: ADDITIONAL_CHARGE_LABEL,
+          item_price: amount,
+          metal_price: 0,
+          labour_charge: 0,
+          other_charge: 0,
+        },
+      },
+    ]);
+    setChargeLabel('');
+    setChargeAmount('');
+    setError('');
+  }
+
+  async function changeDesign(item: LineItem) {
+    if (!item.product_id) return;
+    setError('');
+    setLoadingConfigure(true);
+    try {
+      // Admin endpoint: the piece is reserved/sold by this order, so the storefront API hides it.
+      const res = await fetch(`/api/admin/products/${item.product_id}`);
+      const data = await res.json().catch(() => ({}));
+      const card = (data.product ?? null) as ProductCard | null;
+      if (!res.ok || !card) {
+        setError('Could not load this product to change its design.');
+        return;
+      }
+      setConfiguringComboIds([]);
+      setConfiguringProduct({ ...card, name: formatProductDisplayName(card.name) });
+    } finally {
+      setLoadingConfigure(false);
+    }
+  }
+
   async function addProduct(p: ProductHit) {
     if (items.some((i) => i.product_id === p.id)) {
       setError('This product is already on the order (unique pieces only).');
@@ -523,8 +607,9 @@ export function OfflineOrderPOS() {
       coupon_code: couponCode.trim() || undefined,
       manual_discount: Number(manualDiscount) || 0,
       customer_id: customerId,
+      order_id: editOrder?.orderId,
     }),
-    [items, fulfillmentType, shippingMethod, addr, couponCode, manualDiscount, customerId],
+    [items, fulfillmentType, shippingMethod, addr, couponCode, manualDiscount, customerId, editOrder?.orderId],
   );
 
   const refreshQuote = useCallback(async () => {
@@ -641,7 +726,7 @@ export function OfflineOrderPOS() {
     }
     setBusy(true);
     setError('');
-    const res = await fetch('/api/admin/orders', {
+    const res = await fetch(editOrder ? `/api/admin/orders/${editOrder.orderId}/edit` : '/api/admin/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -667,47 +752,60 @@ export function OfflineOrderPOS() {
             name: entry.name.trim(),
             amount: Number(entry.amount),
           })),
-        payment: {
-          amount: Number(payAmount),
-          method: payMethod,
-          reference: payRef.trim() || undefined,
-        },
+        ...(editOrder
+          ? {}
+          : {
+              payment: {
+                amount: Number(payAmount),
+                method: payMethod,
+                reference: payRef.trim() || undefined,
+              },
+            }),
       }),
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setError(getApiErrorMessage(data, data.error || 'Failed to create order'));
+      setError(getApiErrorMessage(data, data.error || (editOrder ? 'Failed to save changes' : 'Failed to create order')));
       return;
     }
+    if (Number(data.overpaid) > 0.009) {
+      alert(`Saved. The customer has paid ${fmt(Number(data.overpaid))} more than the new total — record a refund for the difference.`);
+    }
     router.push(`/admin/orders/${data.order_id}`);
+    router.refresh();
   }
+
+  const nextStep = (from: number) => (editing && from + 1 === PAYMENT_STEP ? from + 2 : from + 1);
+  const prevStep = (from: number) => (editing && from - 1 === PAYMENT_STEP ? from - 2 : Math.max(0, from - 1));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link
-            href="/admin/orders"
+            href={editOrder ? `/admin/orders/${editOrder.orderId}` : '/admin/orders'}
             className="mb-2 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
           >
-            <ArrowLeft className="h-4 w-4" /> Orders
+            <ArrowLeft className="h-4 w-4" /> {editOrder ? `Order ${editOrder.orderNumber}` : 'Orders'}
           </Link>
           <h1 className="font-heading text-2xl font-bold text-[var(--pvg-primary)] sm:text-3xl">
-            New offline order
+            {editOrder ? `Edit order ${editOrder.orderNumber}` : 'New offline order'}
           </h1>
           <p className="mt-1 text-sm text-[var(--pvg-muted)]">
-            Walk-in / counter sale with advance or full payment. Items are reserved on create; mark sold later from the order page.
+            {editOrder
+              ? 'Change customer, products, designs, charges, coupon or fulfillment. Totals are re-priced on save; payments already received stay as recorded.'
+              : 'Walk-in / counter sale with advance or full payment. Items are reserved on create; mark sold later from the order page.'}
           </p>
         </div>
       </div>
 
       <ol className="flex flex-wrap gap-2">
-        {STEPS.map((label, i) => (
+        {STEPS.map((label, i) => (editing && i === PAYMENT_STEP ? null : (
           <li key={label}>
             <button
               type="button"
-              onClick={() => i <= step && setStep(i)}
+              onClick={() => (editing || i <= step) && setStep(i)}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                 i === step
                   ? 'bg-amber-100 text-amber-900'
@@ -716,10 +814,10 @@ export function OfflineOrderPOS() {
                     : 'bg-gray-100 text-gray-500'
               }`}
             >
-              {i + 1}. {label}
+              {editing && i > PAYMENT_STEP ? i : i + 1}. {label}
             </button>
           </li>
-        ))}
+        )))}
       </ol>
 
       {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
@@ -1021,14 +1119,26 @@ export function OfflineOrderPOS() {
                           ) : null}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setItems((prev) => prev.filter((i) => i.key !== item.key))}
-                        className="text-red-600 hover:text-red-800"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {item.product_id && (item.configuration_id || isGemConfiguratorEnabled(item.category)) ? (
+                          <button
+                            type="button"
+                            onClick={() => void changeDesign(item)}
+                            disabled={loadingConfigure}
+                            className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-1.5 text-xs font-semibold text-amber-900 disabled:opacity-50"
+                          >
+                            <Palette className="h-3.5 w-3.5" /> Change design
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setItems((prev) => prev.filter((i) => i.key !== item.key))}
+                          className="text-red-600 hover:text-red-800"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -1061,6 +1171,60 @@ export function OfflineOrderPOS() {
                   className="w-full rounded-lg border border-gray-200 px-3 py-2"
                 />
               </label>
+            </div>
+            <div className="space-y-3 border-t border-gray-100 pt-3">
+              <p className="text-sm font-semibold text-gray-900">Additional charges</p>
+              {items.some((i) => i.configuration_summary === ADDITIONAL_CHARGE_LABEL) ? (
+                <ul className="space-y-1.5">
+                  {items
+                    .filter((i) => i.configuration_summary === ADDITIONAL_CHARGE_LABEL)
+                    .map((charge) => (
+                      <li
+                        key={charge.key}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 text-sm"
+                      >
+                        <span className="min-w-0 truncate text-gray-800">{charge.name}</span>
+                        <span className="flex shrink-0 items-center gap-3">
+                          <span className="tabular-nums font-medium text-gray-900">{fmt(charge.price)}</span>
+                          <button
+                            type="button"
+                            onClick={() => setItems((prev) => prev.filter((i) => i.key !== charge.key))}
+                            aria-label={`Remove ${charge.name}`}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              ) : null}
+              <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_auto]">
+                <input
+                  aria-label="Charge description"
+                  value={chargeLabel}
+                  onChange={(e) => setChargeLabel(e.target.value)}
+                  placeholder="e.g. Courier, Resizing, Polishing"
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                />
+                <input
+                  aria-label="Charge amount"
+                  type="number"
+                  min={0}
+                  value={chargeAmount}
+                  onChange={(e) => setChargeAmount(e.target.value)}
+                  placeholder="Amount ₹"
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addAdditionalCharge}
+                  className="inline-flex items-center justify-center gap-1 rounded-lg bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-950"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add charge
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">Fixed amount added to the order total (tax-inclusive).</p>
             </div>
             <div className="space-y-3 border-t border-gray-100 pt-3">
               <div className="flex items-center justify-between gap-3">
@@ -1357,7 +1521,22 @@ export function OfflineOrderPOS() {
               <span className="text-gray-500">Fulfillment:</span> {fulfillmentType.replace('_', ' ')}
             </p>
             {pricing ? <PosPriceBreakdown pricing={pricing} couponCode={couponCode.trim()} /> : null}
-            {pricing ? (
+            {pricing && editOrder ? (
+              <div className="space-y-1 rounded-lg border border-stone-200 px-4 py-3">
+                <p>
+                  <span className="text-gray-500">Total:</span> {fmt(editOrder.previousTotal)} →{' '}
+                  <strong>{fmt(pricing.total)}</strong>
+                </p>
+                <p>
+                  <span className="text-gray-500">Already paid:</span> {fmt(editOrder.amountPaid)}
+                  {pricing.total - editOrder.amountPaid > 0.009
+                    ? ` · Due after save ${fmt(pricing.total - editOrder.amountPaid)}`
+                    : editOrder.amountPaid - pricing.total > 0.009
+                      ? ` · Overpaid ${fmt(editOrder.amountPaid - pricing.total)} — refund the difference`
+                      : ' · Fully paid'}
+                </p>
+              </div>
+            ) : pricing ? (
               <p>
                 <span className="text-gray-500">Paying now:</span> {fmt(Number(payAmount) || 0)} via{' '}
                 {payMethod}
@@ -1376,7 +1555,7 @@ export function OfflineOrderPOS() {
           disabled={step === 0 || busy}
           onClick={() => {
             setError('');
-            setStep((s) => Math.max(0, s - 1));
+            setStep(prevStep);
           }}
           className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-40"
         >
@@ -1393,7 +1572,7 @@ export function OfflineOrderPOS() {
               }
               setError('');
               if (step === 1 || step === 2 || step === 3) void refreshQuote();
-              setStep((s) => s + 1);
+              setStep(nextStep);
             }}
             className="rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white"
           >
@@ -1407,7 +1586,7 @@ export function OfflineOrderPOS() {
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Create offline order
+            {editing ? 'Save changes' : 'Create offline order'}
           </button>
         )}
       </div>

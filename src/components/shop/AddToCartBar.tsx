@@ -132,10 +132,7 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       product_name: displayName,
       source: 'product_detail',
     });
-    toast.success(`${displayName} added to cart`, {
-      description: 'View your cart to proceed to checkout.',
-      action: { label: 'View Cart', onClick: () => (window.location.href = '/cart') },
-    });
+    toast.success(`${displayName} added to cart`);
   }, [addItem, cartPrice, displayName, inCart, isUnavailable, product]);
 
   const waLink = trackedWhatsAppHref('product', {

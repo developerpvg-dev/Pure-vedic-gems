@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react';
 import {
   Loader2, Save, ChevronRight, ChevronDown, MessageCircle,
-  PackageCheck, Gem, Ban, Banknote, RotateCcw, Plus, Trash2, ShieldCheck, Truck,
+  PackageCheck, Gem, Ban, Banknote, RotateCcw, Plus, Trash2, ShieldCheck, Truck, Receipt,
 } from 'lucide-react';
 import {
   FULFILLMENT_PROFILE_LABELS,
@@ -167,6 +167,7 @@ interface OrderActionsProps {
   currentPujaVideoUrl?: string | null;
   currentDesignCompletedAt?: string | null;
   productsMarkedSoldAt?: string | null;
+  billingCompletedAt?: string | null;
   orderSource?: string | null;
   orderTotal?: number;
   customerPhone: string | null;
@@ -210,6 +211,7 @@ export function OrderActions({
   currentPujaVideoUrl,
   currentDesignCompletedAt,
   productsMarkedSoldAt = null,
+  billingCompletedAt = null,
   orderSource = null,
   orderTotal = 0,
   customerPhone,
@@ -259,6 +261,7 @@ export function OrderActions({
   const [ringSizeAdminRemarks, setRingSizeAdminRemarks] = useState('');
   const [designCompletedAt, setDesignCompletedAt] = useState(currentDesignCompletedAt ?? '');
   const [markedSoldAt, setMarkedSoldAt] = useState(productsMarkedSoldAt);
+  const [billCompletedAt, setBillCompletedAt] = useState(billingCompletedAt);
   const [returnStatus, setReturnStatus] = useState(currentReturnStatus || 'none');
   const [savedReturnStatus, setSavedReturnStatus] = useState(currentReturnStatus || 'none');
   const [returnNote, setReturnNote] = useState('');
@@ -479,11 +482,15 @@ export function OrderActions({
             return_images_verified_at: new Date().toISOString(),
           }));
         }
-        if (data.products_marked_sold_at) setMarkedSoldAt(data.products_marked_sold_at);
+        if (data.products_marked_sold_at) {
+          setMarkedSoldAt(data.products_marked_sold_at);
+          setBillCompletedAt((current) => current ?? data.products_marked_sold_at);
+        }
         const actionName =
           body instanceof FormData
             ? String(body.get('action') || '')
             : String((body as { action?: string }).action || '');
+        if (actionName === 'set_bill_completed') setBillCompletedAt(data.billing_completed_at ?? null);
         if (actionName === 'restore_stock' && Array.isArray(data.restored_ids)) {
           setRestoredLineKeys((prev) => [...new Set([...prev, ...(data.restored_ids as string[])])]);
         }
@@ -506,7 +513,11 @@ export function OrderActions({
                         ? data.restored_count
                           ? `Restored ${data.restored_count} item(s) to stock`
                           : 'Nothing to restore (already in stock or not tied to this order)'
-                        : 'Marked sold',
+                        : actionName === 'set_bill_completed'
+                          ? data.billing_completed_at
+                            ? 'Bill marked completed'
+                            : 'Bill marked pending'
+                          : 'Marked sold',
         );
         setTimeout(() => setSuccess(''), 4000);
         return true;
@@ -529,6 +540,12 @@ export function OrderActions({
   const markSoldAfterBilling = () => {
     if (!confirm('Mark all items as Sold on the website?')) return;
     void runOrderAction({ action: 'mark_sold' });
+  };
+
+  const toggleBillCompleted = () => {
+    const completed = !billCompletedAt;
+    if (!confirm(completed ? 'Mark the bill for this order as completed?' : 'Mark the bill as pending again?')) return;
+    void runOrderAction({ action: 'set_bill_completed', completed });
   };
 
   const restoreLineStock = (item: LineItemForFulfillment, lineKey: string) => {
@@ -677,6 +694,35 @@ export function OrderActions({
   const isTerminal = status === 'cancelled' || status === 'refunded';
   const showRefund = !isTerminal || status === 'cancelled';
 
+  const billCard = (
+    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">Billing</p>
+          <p className={`mt-0.5 text-sm font-semibold ${billCompletedAt ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {billCompletedAt ? 'Bill completed' : 'Bill pending'}
+          </p>
+          {billCompletedAt ? (
+            <p className="text-[11px] text-stone-400">{formatCompletedDate(billCompletedAt)}</p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={toggleBillCompleted}
+          disabled={saving}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${
+            billCompletedAt
+              ? 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+              : 'bg-stone-900 text-white hover:bg-stone-800'
+          }`}
+        >
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Receipt className="h-3.5 w-3.5" />}
+          {billCompletedAt ? 'Mark pending' : 'Mark bill completed'}
+        </button>
+      </div>
+    </div>
+  );
+
   if (markSoldOnly) {
     return (
       <div className="space-y-3">
@@ -688,6 +734,7 @@ export function OrderActions({
             {success}
           </p>
         ) : null}
+        {billCard}
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
           <div className="border-b border-stone-100 px-4 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">Inventory</p>
@@ -932,6 +979,7 @@ export function OrderActions({
       </div>
 
       <div className="space-y-2.5">
+      {billCard}
       {ringSizeConfirmation ? (
         <div
           className={`rounded-2xl border px-4 py-3 ${

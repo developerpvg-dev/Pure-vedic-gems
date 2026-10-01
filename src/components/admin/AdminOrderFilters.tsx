@@ -32,6 +32,7 @@ const FILTER_LABELS: Record<keyof AdminOrderFilterState, string> = {
   refund_status: 'Refund',
   return_status: 'Return',
   invoice_status: 'Invoice',
+  bill_status: 'Bill',
   customer_type: 'Customer',
   sort_by: 'Sort',
   sort_order: 'Order',
@@ -118,7 +119,7 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <div className="relative sm:col-span-2 lg:col-span-3 xl:col-span-2">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -148,6 +149,12 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
           <option value="">All channels</option>
           <option value="online">Online</option>
           <option value="offline">Offline</option>
+        </select>
+
+        <select value={filters.bill_status} onChange={(e) => onChange({ bill_status: e.target.value })} className={fieldClassName()}>
+          <option value="">All bills</option>
+          <option value="completed">Bill completed</option>
+          <option value="pending">Bill pending</option>
         </select>
 
         <select

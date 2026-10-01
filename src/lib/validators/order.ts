@@ -29,14 +29,14 @@ export function isValidGstin(value: string) {
 export const ContactInfoSchema = z.object({
   full_name: z
     .string()
+    .trim()
     .min(2, 'Name must be at least 2 characters')
-    .max(200, 'Name is too long')
-    .trim(),
+    .max(200, 'Name is too long'),
   email: z
     .string()
-    .email('Please enter a valid email address')
     .trim()
-    .toLowerCase(),
+    .toLowerCase()
+    .email('Please enter a valid email address'),
   phone: z
     .string()
     .regex(PHONE_REGEX, 'Please enter a valid phone number'),
@@ -66,27 +66,28 @@ export const CheckoutConsentSchema = z.object({
 // ─── Shipping address (international) ─────────────────────────────────────────
 export const ShippingAddressSchema = z
   .object({
+    // trim first: Zod v4 runs checks in order, so "test " would pass min(5) then trim to 4 chars
     line1: z
       .string()
-      .min(5, 'Address must be at least 5 characters')
-      .max(500, 'Address is too long')
-      .trim(),
+      .trim()
+      .min(5, 'Please enter your full street address (house / flat no. and street)')
+      .max(500, 'Address is too long'),
     line2: z
       .string()
-      .max(500)
       .trim()
+      .max(500)
       .optional()
       .default(''),
     city: z
       .string()
+      .trim()
       .min(2, 'City is required')
-      .max(100)
-      .trim(),
+      .max(100),
     state: z
       .string()
+      .trim()
       .min(2, 'State / province is required')
-      .max(100)
-      .trim(),
+      .max(100),
     pincode: z
       .string()
       .trim()
@@ -248,11 +249,10 @@ export const OrderCommissionSchema = z.object({
   amount: z.coerce.number().min(0).max(100_000_000),
 });
 
-export const OfflineOrderCreateSchema = z
-  .object({
+const OfflineOrderFieldsSchema = z.object({
     customer_id: z.string().uuid().nullable().optional(),
     contact: z.object({
-      full_name: z.string().min(2, 'Name must be at least 2 characters').max(200).trim(),
+      full_name: z.string().trim().min(2, 'Name must be at least 2 characters').max(200),
       email: z
         .string()
         .trim()
@@ -295,32 +295,41 @@ export const OfflineOrderCreateSchema = z
     ceremony_rashi: z.string().max(50).optional(),
     record_ceremony: z.boolean().optional().default(false),
     commissions: z.array(OrderCommissionSchema).max(20).optional().default([]),
-    payment: z.object({
-      amount: z.coerce.number().positive('Payment amount is required'),
-      method: CounterPaymentMethodSchema,
-      kind: z.enum(['advance', 'balance', 'full']).optional(),
-      reference: z.string().max(200).trim().optional(),
-      notes: z.string().max(500).trim().optional(),
-    }),
-  })
-  .superRefine((data, ctx) => {
-    if (data.fulfillment_type === 'delivery') {
-      if (!data.shipping_address) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['shipping_address'],
-          message: 'Shipping address is required for delivery',
-        });
-      }
-      if (!data.shipping_method) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['shipping_method'],
-          message: 'Shipping method is required for delivery',
-        });
-      }
-    }
-  });
+});
+
+function requireDeliveryFields(
+  data: { fulfillment_type: string; shipping_address?: unknown; shipping_method?: string },
+  ctx: z.RefinementCtx,
+) {
+  if (data.fulfillment_type !== 'delivery') return;
+  if (!data.shipping_address) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['shipping_address'],
+      message: 'Shipping address is required for delivery',
+    });
+  }
+  if (!data.shipping_method) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['shipping_method'],
+      message: 'Shipping method is required for delivery',
+    });
+  }
+}
+
+export const OfflineOrderCreateSchema = OfflineOrderFieldsSchema.extend({
+  payment: z.object({
+    amount: z.coerce.number().positive('Payment amount is required'),
+    method: CounterPaymentMethodSchema,
+    kind: z.enum(['advance', 'balance', 'full']).optional(),
+    reference: z.string().max(200).trim().optional(),
+    notes: z.string().max(500).trim().optional(),
+  }),
+}).superRefine(requireDeliveryFields);
+
+/** Admin edit of an existing order (online or offline) — same fields, payments stay in the ledger. */
+export const AdminOrderEditSchema = OfflineOrderFieldsSchema.superRefine(requireDeliveryFields);
 
 export const RecordOrderPaymentSchema = z.object({
   amount: z.coerce.number().positive(),
