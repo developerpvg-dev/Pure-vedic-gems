@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { ShoppingBag, Eye, Settings2 } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
@@ -55,6 +56,10 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   const configureHref =
     cartItem?.configuration_edit_url ?? `/configure/${product.id}`;
   const href = productHref(product);
+  const router = useRouter();
+  // Prefetch on intent, not on scroll: a listing would otherwise render every visible product server-side.
+  const warm = () => router.prefetch(href);
+  const intent = { onPointerEnter: warm, onTouchStart: warm, onFocusCapture: warm };
   const imageSrc = getImageSrc(product);
   const isOnRequest = isProductPriceOnRequest(product);
   const isUnavailable = isProductStockUnavailable(product);
@@ -138,8 +143,8 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
 
   if (layout === 'list') {
     return (
-      <div className="group relative flex min-w-0 overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)]">
-        <Link href={href} onClick={trackProductClick} className="relative block h-[96px] w-[96px] shrink-0 bg-[#f2f2f2] sm:h-[112px] sm:w-[120px]">
+      <div {...intent} className="group relative flex min-w-0 overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)]">
+        <Link prefetch={false} href={href} onClick={trackProductClick} className="relative block h-[96px] w-[96px] shrink-0 bg-[#f2f2f2] sm:h-[112px] sm:w-[120px]">
           <ResilientImage
             src={imageSrc}
             fallbackSrc="/placeholder-gem.png"
@@ -151,7 +156,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
         </Link>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-3 py-2.5 sm:px-4">
           <h3 className="m-0 line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 sm:text-[14px]">
-            <Link href={href} onClick={trackProductClick} className="transition-colors hover:text-brand-accent">
+            <Link prefetch={false} href={href} onClick={trackProductClick} className="transition-colors hover:text-brand-accent">
               {displayName}
             </Link>
           </h3>
@@ -164,7 +169,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
               {priceDisplay.label}
             </span>
             {isOnRequest ? (
-              <Link href={href} className="text-[11px] font-semibold text-[#7A1515] underline-offset-2 hover:underline">
+              <Link prefetch={false} href={href} className="text-[11px] font-semibold text-[#7A1515] underline-offset-2 hover:underline">
                 Enquire
               </Link>
             ) : (
@@ -184,10 +189,10 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   }
 
   return (
-    <div className="group relative flex min-w-0 flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)] transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]">
+    <div {...intent} className="group relative flex min-w-0 flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_2px_10px_rgba(61,43,31,0.06)] transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.10)]">
       {/* ── Image ── */}
       <div className="relative overflow-hidden bg-[#f2f2f2]" style={{ paddingBottom: '115%' }}>
-        <Link href={href} onClick={trackProductClick} className="absolute inset-0 block">
+        <Link prefetch={false} href={href} onClick={trackProductClick} className="absolute inset-0 block">
           <ResilientImage
             src={imageSrc}
             fallbackSrc="/placeholder-gem.png"
@@ -241,6 +246,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
         {/* Right-side quick-action icons — slide in on hover */}
         <div className="absolute right-2 top-12 z-10 flex flex-col gap-1.5 translate-x-3 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
           <Link
+            prefetch={false}
             href={href}
             onClick={(e) => e.stopPropagation()}
             title="Quick view"
@@ -250,6 +256,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
           </Link>
           {configuratorEnabled && (
             <Link
+              prefetch={false}
               href={configureHref}
               onClick={(e) => e.stopPropagation()}
               onClickCapture={() =>
@@ -270,6 +277,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
         <div className="absolute inset-x-0 bottom-0 z-10 translate-y-full transition-transform duration-300 group-hover:translate-y-0">
           {isOnRequest ? (
             <Link
+              prefetch={false}
               href={href}
               onClick={(e) => e.stopPropagation()}
               className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium text-white transition-colors"
@@ -302,7 +310,7 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
       <div className="flex min-w-0 flex-col px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
         {/* Name — H3 so category pages match catalog heading/keyword scoring */}
         <h3 className="m-0 line-clamp-2 text-[11px] font-semibold leading-snug text-gray-900 sm:line-clamp-1 sm:text-[13px]">
-          <Link href={href} onClick={trackProductClick} className="transition-colors hover:text-brand-accent">
+          <Link prefetch={false} href={href} onClick={trackProductClick} className="transition-colors hover:text-brand-accent">
             {displayName}
           </Link>
         </h3>

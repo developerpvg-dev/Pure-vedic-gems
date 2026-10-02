@@ -48,6 +48,14 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 const missingSupabaseConfigMessage = 'Supabase is not configured.';
 
+/**
+ * Supabase hands out a new user object on every auth event (tab refocus, hourly token refresh).
+ * Keeping the old reference stops cart / saved items / notifications from refetching each time.
+ */
+export function sameUserOrNext(prev: User | null, next: User | null): User | null {
+  return prev && next && prev.id === next.id && prev.updated_at === next.updated_at ? prev : next;
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -91,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      setUser(session?.user ?? null);
+      setUser((prev) => sameUserOrNext(prev, session?.user ?? null));
       if (session?.user) fetchProfile(session.user.id);
       setIsLoading(false);
     });
@@ -99,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (!mounted) return;
-        setUser(session?.user ?? null);
+        setUser((prev) => sameUserOrNext(prev, session?.user ?? null));
         if (session?.user) {
           fetchProfile(session.user.id);
         } else {

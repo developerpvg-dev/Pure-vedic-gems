@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { lookupLegacyRedirect } from '@/lib/legacy-redirects';
 import { toInternalShopPath } from '@/lib/categories/canonical-storefront-path';
+import { PRODUCT_FILTER_KEYS } from '@/lib/validators/product';
 import { publicCdnOrigin, siteStaticPublicUrl } from '@/lib/site-static';
 
 const PROTECTED_PREFIXES = ['/account', '/admin', '/studio'];
@@ -61,6 +62,15 @@ export function resolveImageOptimizerTarget(
   return { ok: true, href: target.href };
 }
 
+/**
+ * /shop pages are cached (ISR) and ignore the query string; filtered or paginated listings
+ * render live from /shop-live, which re-exports the same pages.
+ */
+export function shopRoutePath(internalPath: string, search: URLSearchParams): string {
+  if (!/^\/shop(\/|$)/.test(internalPath)) return internalPath;
+  return PRODUCT_FILTER_KEYS.some((key) => search.has(key)) ? internalPath.replace(/^\/shop/, '/shop-live') : internalPath;
+}
+
 function passthroughNextImage(request: NextRequest): NextResponse | null {
   if (request.nextUrl.pathname !== '/_next/image') return null;
 
@@ -101,9 +111,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
+  if (pathname === '/shop-live' || pathname.startsWith('/shop-live/')) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   // Public facade URLs → existing /shop/[category] pages (browser URL stays canonical).
-  const rewriteTo = toInternalShopPath(pathname);
-  if (rewriteTo && rewriteTo !== pathname && rewriteTo !== pathname.replace(/\/$/, '')) {
+  const rewriteTo = shopRoutePath(toInternalShopPath(pathname) ?? pathname, request.nextUrl.searchParams);
+  if (rewriteTo !== pathname && rewriteTo !== pathname.replace(/\/$/, '')) {
     const url = request.nextUrl.clone();
     url.pathname = rewriteTo;
     return NextResponse.rewrite(url);

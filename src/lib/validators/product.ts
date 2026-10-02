@@ -149,8 +149,7 @@ export const productOptionRulesSchema = z.object({
   legacy_ring_size_options: jsonArraySchema.optional(),
 });
 
-export const productFiltersSchema = z
-  .object({
+const productFiltersObject = z.object({
     category: z.enum(PRODUCT_CATEGORIES).optional(),
     sub_category: optionalString(100),
     product_type: z.enum(PRODUCT_TYPES).optional(),
@@ -179,7 +178,12 @@ export const productFiltersSchema = z
     sort_order: z.enum(SORT_ORDER).optional().default('asc'),
     page: z.coerce.number().int().min(1).optional().default(1),
     per_page: z.coerce.number().int().min(1).max(50).optional().default(20),
-  })
+  });
+
+/** Query keys the shop listings read; any other param (utm_*, gclid…) leaves the page unchanged. */
+export const PRODUCT_FILTER_KEYS: readonly string[] = Object.keys(productFiltersObject.shape);
+
+export const productFiltersSchema = productFiltersObject
   .refine(
     (data) => data.min_price === undefined || data.max_price === undefined || data.min_price <= data.max_price,
     { message: 'min_price must be less than or equal to max_price', path: ['min_price'] }
