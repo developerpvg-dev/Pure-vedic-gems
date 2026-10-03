@@ -1,8 +1,9 @@
-import * as Sentry from '@sentry/nextjs';
+import type { Instrumentation } from 'next';
 
+// Sentry (+ its OpenTelemetry setup) loads only when a DSN is configured: on Workers every
+// fresh isolate would otherwise pay its startup cost for an SDK that is disabled anyway.
 export async function register() {
-  // Skip Sentry wiring during OpenNext Workers build (keeps proxy/middleware bundle lean).
-  if (process.env.OPENNEXT_BUILD === '1') return;
+  if (!process.env.SENTRY_DSN) return;
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('../sentry.server.config');
@@ -13,5 +14,8 @@ export async function register() {
   }
 }
 
-export const onRequestError =
-  process.env.OPENNEXT_BUILD === '1' ? undefined : Sentry.captureRequestError;
+export const onRequestError: Instrumentation.onRequestError = async (...args) => {
+  if (!process.env.SENTRY_DSN) return;
+  const { captureRequestError } = await import('@sentry/nextjs');
+  captureRequestError(...args);
+};

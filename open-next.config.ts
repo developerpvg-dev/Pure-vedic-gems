@@ -3,7 +3,7 @@ import r2IncrementalCache from '@opennextjs/cloudflare/overrides/incremental-cac
 import { withRegionalCache } from '@opennextjs/cloudflare/overrides/incremental-cache/regional-cache';
 import { purgeCache } from '@opennextjs/cloudflare/overrides/cache-purge/index';
 import doQueue from '@opennextjs/cloudflare/overrides/queue/do-queue';
-import kvTagCache from '@opennextjs/cloudflare/overrides/tag-cache/kv-next-tag-cache';
+import kvTagCache from './cloudflare/tag-cache-memo';
 
 /**
  * Large catalog + on-demand revalidatePath/Tag (shop, Sanity).
