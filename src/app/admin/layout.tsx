@@ -82,7 +82,7 @@ const NAV_GROUPS = [
   },
 ];
 
-/** Website Maintenance: hide ops/finance/leads; orders stay (read-only via RBAC). Settings kept for currency rates. */
+/** Website Maintenance: hide ops/finance/leads list (Lead Metrics added back); orders stay (read-only via RBAC). Settings kept for currency rates. */
 const CONTENT_HIDDEN_HREFS = new Set([
   '/admin',
   '/admin/orders/new',
@@ -100,6 +100,13 @@ const LAB_LOGOS_NAV_LINK = {
   href: '/admin/lab-logos',
   label: 'Lab Logos',
   icon: Award,
+  match: 'prefix' as const,
+};
+
+const LEAD_METRICS_NAV_LINK = {
+  href: '/admin/leads/metrics',
+  label: 'Lead Metrics',
+  icon: BarChart3,
   match: 'prefix' as const,
 };
 
@@ -160,6 +167,9 @@ function AdminNavContent({
             const next = [...links];
             next.splice(productsIdx >= 0 ? productsIdx + 1 : links.length, 0, LAB_LOGOS_NAV_LINK);
             return { ...group, links: next };
+          }
+          if (group.label === 'Operations') {
+            return { ...group, links: [LEAD_METRICS_NAV_LINK, ...group.links] };
           }
           if (group.label === 'Content Pages') {
             return {

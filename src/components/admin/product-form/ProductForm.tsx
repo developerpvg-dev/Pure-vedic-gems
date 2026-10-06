@@ -704,7 +704,7 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
 
       // Media + status — keep fields separate for /admin/stock/completeness
       images: images.length > 0 ? images : undefined,
-      video_url: videoUrl || undefined,
+      video_url: videoUrl || null,
       certificate_url: certificateUrl || undefined,
       certificate_file_url: certificateUrl || undefined,
       thumbnail_url: images[0] || undefined,

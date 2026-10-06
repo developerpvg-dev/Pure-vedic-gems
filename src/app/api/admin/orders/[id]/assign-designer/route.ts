@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess, getRequestIp } from '@/lib/admin/api';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { sendDesignerOrderAssignedEmail } from '@/lib/resend/send-team-invite';
+import { getEmailSiteUrl } from '@/lib/resend/email-config';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { logAdminAction } from '@/lib/utils/admin-log';
 
@@ -194,9 +195,7 @@ export async function POST(
     if (portalDesigner) {
       const { data: designerUser } = await admin.auth.admin.getUserById(portalDesigner.id);
       const designerEmail = designerUser?.user?.email;
-      const siteBase =
-        process.env.EMAIL_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      const orderUrl = `${siteBase.replace(/\/$/, '')}/admin/designer/orders/${id}`;
+      const orderUrl = `${getEmailSiteUrl()}/admin/designer/orders/${id}`;
 
       if (designerEmail) {
         await sendDesignerOrderAssignedEmail({

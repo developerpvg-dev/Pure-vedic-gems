@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
+import { hasAdminPermission } from '@/lib/admin/rbac';
+import { canViewLeadMetrics } from '@/lib/leads/permissions';
 
-/** Active telecom + astrologer roster for assignment dropdowns */
+/** Active telecom + astrologer roster for assignment dropdowns + metrics filters */
 export async function GET() {
-  const auth = await requireAdminAccess('leads.read');
+  const auth = await requireAdminAccess();
   if ('error' in auth) return auth.error;
+  if (
+    !hasAdminPermission(auth.member.role, 'leads.read', auth.member.permissions) &&
+    !canViewLeadMetrics(auth.member.normalizedRole)
+  ) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
 
   const admin = createAdminClient();
   const { data, error } = await admin

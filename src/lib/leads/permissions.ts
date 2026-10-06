@@ -9,9 +9,14 @@ export function isLeadManager(role: string | null | undefined) {
   return role === 'owner' || role === 'admin' || role === 'sales' || role === 'fulfillment';
 }
 
+/** /admin/leads/metrics (aggregates only). Website Maintenance gets this without leads.read — no list/contact access. */
+export function canViewLeadMetrics(role: string | null | undefined) {
+  return isLeadManager(role) || role === 'content';
+}
+
 /** Storefront / lead funnel dashboards (read-only aggregates). SEO & CMS included. */
 export function canViewFunnelMetrics(role: string | null | undefined) {
-  return isLeadManager(role) || role === 'seo_cms';
+  return canViewLeadMetrics(role) || role === 'seo_cms';
 }
 
 export function isSeoCmsRole(role: string | null | undefined) {

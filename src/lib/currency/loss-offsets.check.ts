@@ -9,7 +9,9 @@ import {
   applyLossOffset,
   isBufferedRate,
   lossOffsetInr,
+  savedLossOffsetInr,
 } from './loss-offsets';
+import { rateComparison } from '../admin/commerce-currency';
 import {
   convertFromInr,
   setCurrencyDisplay,
@@ -59,5 +61,19 @@ for (const code of Object.keys(FX_LOSS_OFFSETS_INR)) {
   const without = 10_000 / api;
   assert.ok(withBuffer > without, `${code}: buffer must increase FX amount`);
 }
+
+// Admin-set buffer survives "Update rates from API".
+assert.equal(savedLossOffsetInr('AED', { api_rate: 26.1911, rate: 25.6911 }), 0.5);
+assert.equal(savedLossOffsetInr('AUD', { api_rate: 66.9023, rate: 65.9023 }), 1);
+assert.equal(savedLossOffsetInr('USD', { api_rate: 90, rate: 90 }), 0, 'admin may set 0');
+assert.equal(savedLossOffsetInr('USD', { api_rate: 90, rate: 91 }), 0, 'never negative');
+assert.equal(savedLossOffsetInr('USD', { api_rate: null, rate: 88 }), 1.7, 'no snapshot → default');
+assert.equal(savedLossOffsetInr('USD', null), 1.7);
+assert.equal(applyLossOffset(70, 'AUD', 1), 69);
+assert.ok(isBufferedRate(70, 69, 'AUD', 1));
+
+const base = { id: null, base_currency: 'INR', manual_override: true, is_active: true, source: null, updated_at: null };
+assert.equal(rateComparison({ ...base, currency: 'AUD', rate: 65.9023, api_rate: 66.9023 })?.bufferLabel, '−₹1 loss buffer');
+assert.equal(rateComparison({ ...base, currency: 'JPY', rate: 0.6, api_rate: 0.6 })?.bufferLabel, 'no buffer');
 
 console.log('loss-offsets check ok');

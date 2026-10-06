@@ -9,10 +9,10 @@ import { emptyFunnelStage } from '@/lib/leads/funnel-aggregate';
 /**
  * Lead funnel metrics — Postgres aggregates only (lead_funnel_metrics).
  * Defaults to last 30 days. Never pulls raw event/enquiry rows into Node.
- * Managers + SEO & CMS (read-only tracking).
+ * Managers + SEO & CMS + Website Maintenance (read-only tracking).
  */
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminAccess('leads.read');
+  const auth = await requireAdminAccess();
   if ('error' in auth) return auth.error;
   if (!canViewFunnelMetrics(auth.member.normalizedRole)) {
     return NextResponse.json({ error: 'Not allowed to view funnel metrics' }, { status: 403 });

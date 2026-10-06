@@ -27,7 +27,7 @@ const blocks = [
   },
 ] as ReportBlock[];
 
-const next = applyShopBuyUrls(blocks, 'https://pure-vedic-gems.vercel.app', [
+const next = applyShopBuyUrls(blocks, 'https://www.purevedicgems.com', [
   {
     id: 'abc',
     slug: '1-mukhi-rudraksha-2-978g-natural-rudraksha',
@@ -38,6 +38,6 @@ const next = applyShopBuyUrls(blocks, 'https://pure-vedic-gems.vercel.app', [
 
 const url = next[0].type === 'primaryStone' ? next[0].stone.product.buyUrl : null;
 const expected =
-  'https://pure-vedic-gems.vercel.app/shop/1-mukhi/1-mukhi-rudraksha-2-978g-natural-rudraksha';
+  'https://www.purevedicgems.com/shop/1-mukhi/1-mukhi-rudraksha-2-978g-natural-rudraksha';
 if (url !== expected) throw new Error(`got ${url}`);
 console.log('ok', url);

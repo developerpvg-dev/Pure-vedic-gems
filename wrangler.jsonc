@@ -24,9 +24,8 @@
   // No second public copy of the site (skips the apex/.in redirects, duplicate content). Admin: www.purevedicgems.com/admin.
   "workers_dev": false,
   "triggers": {
-    // 5-minute cache warm-up, handled by scheduled() in cloudflare/worker.ts.
-    // GO-LIVE: add "0 3 * * *" (daily product-trash purge, was vercel.json cron) when the Vercel cron is disabled.
-    "crons": ["*/5 * * * *"]
+    // 5-minute cache warm-up + daily product-trash purge, both handled by scheduled() in cloudflare/worker.ts.
+    "crons": ["*/5 * * * *", "0 3 * * *"]
   },
   "services": [
     {

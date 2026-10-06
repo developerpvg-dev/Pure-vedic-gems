@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { requireAdminAccess } from '@/lib/admin/api';
-import { isLeadManager } from '@/lib/leads/permissions';
+import { canViewLeadMetrics } from '@/lib/leads/permissions';
 
 type StaffRow = { id: string; name: string };
 
@@ -19,13 +19,13 @@ type AstrologerAgg = TelecallerAgg & { name?: string | null };
 
 /**
  * Lead conversion metrics — Postgres aggregates only (lead_conversion_metrics).
- * Manager / parcel dispatch / admin. Telecom & astrologer are 403.
+ * Manager / parcel dispatch / admin / Website Maintenance. Telecom & astrologer are 403.
  */
 export async function GET(request: NextRequest) {
-  const auth = await requireAdminAccess('leads.read');
+  const auth = await requireAdminAccess();
   if ('error' in auth) return auth.error;
-  if (!isLeadManager(auth.member.normalizedRole)) {
-    return NextResponse.json({ error: 'Only leads managers can view conversion metrics' }, { status: 403 });
+  if (!canViewLeadMetrics(auth.member.normalizedRole)) {
+    return NextResponse.json({ error: 'Not allowed to view conversion metrics' }, { status: 403 });
   }
 
   const { searchParams } = request.nextUrl;

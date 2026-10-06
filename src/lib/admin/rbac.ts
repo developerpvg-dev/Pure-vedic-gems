@@ -232,6 +232,8 @@ export function getAdminRoutePermission(pathname: string): AdminPermission {
   if (pathname.startsWith('/admin/orders')) return 'orders.read';
   if (pathname.startsWith('/admin/customers')) return 'leads.read';
   if (pathname.startsWith('/admin/insights')) return 'leads.read';
+  // Data is gated by canViewLeadMetrics in the APIs; page shell opens for Website Maintenance too
+  if (pathname.startsWith('/admin/leads/metrics')) return 'dashboard.read';
   if (pathname.startsWith('/admin/leads')) return 'leads.read';
   if (pathname.startsWith('/admin/recommendations')) return 'leads.read';
   if (

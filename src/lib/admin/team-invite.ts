@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import type { createAdminClient } from '@/lib/supabase/admin';
+import { getEmailSiteUrl } from '@/lib/resend/email-config';
 
 const INVITE_TTL_MS = 15 * 60 * 1000;
 
@@ -15,8 +16,7 @@ export function hashInviteToken(raw: string) {
 }
 
 export function buildInviteUrl(rawToken: string) {
-  const base = process.env.EMAIL_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  return `${base.replace(/\/$/, '')}/admin/join?token=${encodeURIComponent(rawToken)}`;
+  return `${getEmailSiteUrl()}/admin/join?token=${encodeURIComponent(rawToken)}`;
 }
 
 /** Paginate Auth admin users until email match (listUsers has no email filter). */

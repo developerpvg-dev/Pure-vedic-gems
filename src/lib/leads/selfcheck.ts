@@ -2,10 +2,12 @@ import { assertLeadConstants } from '@/lib/leads/constants';
 import { assertHydrateParse } from '@/lib/leads/hydrate';
 import { assertDuplicateScoring } from '@/lib/leads/duplicates';
 import { assertRoleDashboardAllowlists } from '@/lib/admin/role-dashboards';
+import { getAdminRoutePermission, hasAdminPermission } from '@/lib/admin/rbac';
 import {
   canMarkConverted,
   canMarkNotConverted,
   canViewFunnelMetrics,
+  canViewLeadMetrics,
   isLeadManager,
   redactLeadContactForRole,
 } from '@/lib/leads/permissions';
@@ -32,7 +34,12 @@ if (!isLeadManager('fulfillment')) throw new Error('fulfillment is lead manager'
 if (!canViewFunnelMetrics('seo_cms')) throw new Error('seo_cms can view funnel metrics');
 if (!canViewFunnelMetrics('sales')) throw new Error('sales can view funnel metrics');
 if (canViewFunnelMetrics('telecom')) throw new Error('telecom must not view funnel metrics');
-if (canViewFunnelMetrics('content')) throw new Error('content must not view funnel metrics');
+if (!canViewFunnelMetrics('content')) throw new Error('content can view funnel metrics');
+if (!canViewLeadMetrics('content')) throw new Error('content can view lead metrics');
+if (canViewLeadMetrics('seo_cms')) throw new Error('seo_cms must not view conversion metrics');
+if (canViewLeadMetrics('telecom')) throw new Error('telecom must not view conversion metrics');
+if (hasAdminPermission('content', 'leads.read')) throw new Error('content must not get leads list access');
+if (getAdminRoutePermission('/admin/leads/metrics') !== 'dashboard.read') throw new Error('metrics page route perm');
 {
   const redacted = redactLeadContactForRole('seo_cms', {
     name: 'A',

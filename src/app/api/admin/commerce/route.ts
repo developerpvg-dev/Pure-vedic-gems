@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
     // Explicit admin refresh: overwrite every storefront FX + any other active DB currencies.
     const { fetchLiveRatesToInr } = await import('@/lib/currency/fetch-live-rates');
     const { FX_CURRENCY_CODES } = await import('@/lib/currency/catalog');
-    const { applyLossOffset, isBufferedRate, lossOffsetInr } = await import('@/lib/currency/loss-offsets');
+    const { applyLossOffset, isBufferedRate, savedLossOffsetInr } = await import('@/lib/currency/loss-offsets');
     try {
       const existing = normalizeCurrencyRates(await readTable(db, 'currency_rates', []));
       const byCode = new Map(existing.map((row) => [row.currency, row]));
@@ -371,10 +371,12 @@ export async function POST(request: NextRequest) {
           failed.push({ currency: code, error: 'Missing from live API' });
           continue;
         }
-        const rate = applyLossOffset(apiRate, code);
         const prev = byCode.get(code);
+        // Keep the buffer admin set on this currency; default map only when no API snapshot yet.
+        const offset = savedLossOffsetInr(code, prev);
+        const rate = applyLossOffset(apiRate, code, offset);
         // Guard: never persist mid-market as the used rate when an offset is configured.
-        if (!isBufferedRate(apiRate, rate, code)) {
+        if (!isBufferedRate(apiRate, rate, code, offset)) {
           failed.push({ currency: code, error: 'Loss buffer math failed' });
           continue;
         }
@@ -392,7 +394,7 @@ export async function POST(request: NextRequest) {
           now
         );
         if (error) failed.push({ currency: code, error: error.message ?? 'Save failed' });
-        else updated.push({ currency: code, api_rate: apiRate, rate, offset: lossOffsetInr(code) });
+        else updated.push({ currency: code, api_rate: apiRate, rate, offset });
       }
 
       if (updated.length <= 1 && failed.length > 0) {
