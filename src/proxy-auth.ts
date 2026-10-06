@@ -146,7 +146,7 @@ export async function handleAuthProxy(request: NextRequest) {
         pathname.startsWith('/admin/commissions') ||
         pathname.startsWith('/admin/design-jobs') ||
         pathname.startsWith('/admin/rewards') ||
-        pathname.startsWith('/admin/leads') ||
+        (pathname.startsWith('/admin/leads') && !pathname.startsWith('/admin/leads/metrics')) ||
         pathname.startsWith('/admin/agent-sessions') ||
         pathname.startsWith('/admin/finance') ||
         pathname.startsWith('/admin/compliance');

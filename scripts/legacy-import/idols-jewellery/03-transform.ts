@@ -42,7 +42,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
 loadEnv({ path: resolve(repoRoot, '.env.local') });
 
-const SITE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pure-vedic-gems.vercel.app').replace(/\/+$/, '');
+const SITE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.purevedicgems.com').replace(/\/+$/, '');
 
 type Group = 'idols' | 'jewelry' | 'malas' | 'rudraksha';
 type ProductType = 'idol' | 'jewelry' | 'mala';

@@ -94,7 +94,7 @@ function assertSafeTarget(dbUrl: string, write: boolean, writeProd: boolean) {
   return dbHost;
 }
 
-const SITE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pure-vedic-gems.vercel.app').replace(/\/+$/, '');
+const SITE_BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.purevedicgems.com').replace(/\/+$/, '');
 
 function nonEmpty(value: string | null | undefined): string | null {
   if (value === null || value === undefined) return null;

@@ -108,10 +108,24 @@ const EMPTY_CURRENCY_FORM = {
   base_currency: 'INR',
   currency: 'USD',
   rate: '',
+  /** INR below API; only editable once an API snapshot exists. stored = api_rate − buffer. */
+  buffer: '',
   manual_override: true,
   is_active: true,
   api_rate: null as number | null,
 };
+
+function bufferFromRate(apiRate: number | null, rate: string) {
+  const r = Number(rate);
+  if (apiRate == null || !rate || !Number.isFinite(r)) return '';
+  return String(Number((apiRate - r).toFixed(6)));
+}
+
+function rateFromBuffer(apiRate: number | null, buffer: string, fallback: string) {
+  const b = Number(buffer);
+  if (apiRate == null || buffer === '' || !Number.isFinite(b)) return fallback;
+  return String(Number((apiRate - b).toFixed(6)));
+}
 
 function toDateInputValue(value: string | null | undefined) {
   if (!value) return '';
@@ -399,6 +413,7 @@ export default function SettingsPage() {
       base_currency: rate.base_currency,
       currency: rate.currency,
       rate: String(rate.rate),
+      buffer: bufferFromRate(rate.api_rate, String(rate.rate)),
       manual_override: true,
       is_active: rate.is_active,
       api_rate: rate.api_rate,
@@ -728,7 +743,7 @@ export default function SettingsPage() {
                   <BadgeIndianRupee className="h-4 w-4" /> Currency Rates
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Storefront uses these DB rates (API rate minus loss buffer). “Update rates from API” overwrites all currencies from live FX and stores both the raw API value and the adjusted rate.
+                  Storefront uses these DB rates (API rate minus loss buffer). Edit a currency to set its buffer. “Update rates from API” pulls live FX for all currencies and keeps each currency’s buffer.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -796,14 +811,46 @@ export default function SettingsPage() {
                   required
                   type="number"
                   min="0.0001"
-                  step="0.0001"
+                  step="any"
                   value={currencyForm.rate}
-                  onChange={(e) => setCurrencyForm((p) => ({ ...p, rate: e.target.value }))}
+                  onChange={(e) =>
+                    setCurrencyForm((p) => ({
+                      ...p,
+                      rate: e.target.value,
+                      buffer: bufferFromRate(p.api_rate, e.target.value),
+                    }))
+                  }
                   placeholder="INR per 1 unit"
                   disabled={currencyForm.currency === 'INR'}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:bg-gray-50"
                 />
               </div>
+              {currencyForm.currency !== 'INR' && currencyForm.api_rate != null ? (
+                <div>
+                  <label
+                    htmlFor="currency-buffer"
+                    className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500"
+                  >
+                    Loss buffer (₹ below API)
+                  </label>
+                  <input
+                    id="currency-buffer"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={currencyForm.buffer}
+                    onChange={(e) =>
+                      setCurrencyForm((p) => ({
+                        ...p,
+                        buffer: e.target.value,
+                        rate: rateFromBuffer(p.api_rate, e.target.value, p.rate),
+                      }))
+                    }
+                    placeholder="e.g. 1.5"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+              ) : null}
               <label className="inline-flex items-center gap-2 self-end pb-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
@@ -823,7 +870,12 @@ export default function SettingsPage() {
                           <strong>₹{Number(currencyForm.rate).toLocaleString('en-IN', { maximumFractionDigits: 4 })}</strong>
                         </>
                       ) : null}
-                      . Saving keeps the API value for comparison.
+                      {currencyForm.buffer ? (
+                        <>
+                          {' '}(−₹{Number(currencyForm.buffer).toLocaleString('en-IN', { maximumFractionDigits: 4 })} buffer)
+                        </>
+                      ) : null}
+                      . Stored = API − buffer. “Update rates from API” keeps this buffer for {currencyForm.currency}.
                     </p>
                   ) : (
                     <p>

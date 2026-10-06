@@ -315,7 +315,8 @@ const productBaseSchema = z.object({
 
     images: z.array(z.string().url()).optional(),
     certificate_url: optionalUrl,
-    video_url: optionalUrl,
+    // null clears a removed video; undefined would leave the old URL in place on update
+    video_url: z.preprocess((v) => (v === '' ? null : v), z.string().trim().url().nullable().optional()),
     thumbnail_url: optionalUrl,
 
     in_stock: z.coerce.boolean().default(true),

@@ -2,6 +2,8 @@
  * Shared Resend / transactional email configuration.
  */
 
+import { isProductionDeploy } from '@/lib/deploy-env';
+
 export type EmailChannel = 'orders' | 'consultations' | 'general';
 
 export function hasResendConfigured(): boolean {
@@ -15,9 +17,11 @@ export function getSiteUrl(): string {
 
 /**
  * Base URL for links inside transactional emails (CTAs, tracking).
- * Use EMAIL_SITE_URL during staging (e.g. Vercel preview) without changing NEXT_PUBLIC_SITE_URL.
+ * EMAIL_SITE_URL is a staging-only override; production always links to the live site, so a
+ * stale override (e.g. the old Vercel host) can never reach customers.
  */
 export function getEmailSiteUrl(): string {
+  if (isProductionDeploy()) return getSiteUrl();
   return (process.env.EMAIL_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://purevedicgems.com').replace(
     /\/$/,
     ''

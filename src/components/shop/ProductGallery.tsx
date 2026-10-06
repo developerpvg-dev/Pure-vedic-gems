@@ -72,7 +72,6 @@ export function ProductGallery({
   const certSlideUrl = certificateUrl?.trim() || null;
   const isCertSlide = Boolean(certSlideUrl && !isVideoActive && imgs[activeIdx] === certSlideUrl);
   const showLabLogo = Boolean(labLogo && !isVideoActive && !isCertSlide);
-
   const prevImg = () => setActiveIdx((i) => (i === 0 ? totalSlides - 1 : i - 1));
   const nextImg = () => setActiveIdx((i) => (i === totalSlides - 1 ? 0 : i + 1));
 
@@ -215,7 +214,8 @@ export function ProductGallery({
                 src={imgs[activeIdx]}
                 alt={`${productName} — image ${activeIdx + 1}`}
                 fill
-                className="object-cover lg:object-contain"
+                // ponytail: cert scans carry ~4% blank margin, so 1.08 zoom on mobile only trims margin; lower it if a cert's edge text clips
+                className={isCertSlide ? 'object-contain max-lg:scale-[1.08]' : 'object-cover lg:object-contain'}
                   sizes="(min-width: 1024px) 50vw, (min-width: 768px) 50vw, 100vw"
                 priority={activeIdx === 0}
                 loading="eager"
