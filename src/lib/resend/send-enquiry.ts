@@ -11,6 +11,8 @@ export type EnquiryEmailInput = {
   message: string;
   source: string;
   productId?: string | null;
+  /** false = team email only (Ratna leads: the team follows up, the customer gets nothing automatic) */
+  notifyCustomer?: boolean;
 };
 
 function sourceLabel(source: string) {
@@ -40,7 +42,7 @@ export async function sendEnquiryEmails(input: EnquiryEmailInput): Promise<{ cus
     'general'
   );
 
-  if (!input.email) {
+  if (!input.email || input.notifyCustomer === false) {
     return { customer: false, admin: Boolean(adminId) };
   }
 

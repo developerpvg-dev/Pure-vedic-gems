@@ -69,6 +69,7 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
         label: 'Nava Durga, Gems & Rudraksha',
         href: '/unveiling-the-mystical-connection-between-gemstones-rudrakshas-and-the-nine-forms-of-goddess-durga',
       },
+      { label: 'Mandir Mahima', href: 'https://mandirmahima.org' },
       { label: 'Account', href: '/account' },
     ],
   },
@@ -185,7 +186,12 @@ function FooterLinkColumn({ group }: { group: FooterLinkGroup }) {
       <ul className="pvg-footer-link-list">
         {group.links.map((link) => (
           <li key={`${group.title}-${link.href}-${link.label}`}>
-            <Link href={link.href} className="pvg-footer-link" prefetch={false}>
+            <Link
+              href={link.href}
+              className="pvg-footer-link"
+              prefetch={false}
+              {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}
+            >
               {link.label}
             </Link>
           </li>

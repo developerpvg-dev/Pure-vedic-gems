@@ -27,8 +27,9 @@ const chatSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  let config: ReturnType<typeof assertAgentReady>;
   try {
-    assertAgentReady();
+    config = assertAgentReady();
   } catch (err) {
     return Response.json(
       { error: err instanceof Error ? err.message : 'Agent unavailable' },
@@ -49,8 +50,8 @@ export async function POST(request: NextRequest) {
 
   const { sessionId, messages } = parsed.data;
   const session = await getAgentSession(sessionId);
-  if (!session || session.status === 'closed') {
-    return Response.json({ error: 'Invalid or closed session' }, { status: 404 });
+  if (!session) {
+    return Response.json({ error: 'Invalid session' }, { status: 404 });
   }
 
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
@@ -73,7 +74,8 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  await updateAgentSession(sessionId, { locale });
+  // A customer returning to an idle-closed chat reopens it; the next close refreshes the lead note.
+  await updateAgentSession(sessionId, { locale, ...(session.status === 'closed' ? { status: 'active' as const } : {}) });
 
   if (isAgentCircuitOpen()) {
     const busy = getAgentBusyMessage(locale);
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = streamText({
-      model: openai('gpt-4o-mini'),
+      model: openai(config.model),
       system: getRatnaSystemPrompt(locale),
       messages: await convertToModelMessages(messages),
       tools: buildAgentTools(sessionId),

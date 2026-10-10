@@ -1,7 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { productHref } from '@/lib/categories/storefront';
-import { createInAppNotifications } from '@/lib/notifications/in-app';
-import { sendEnquiryEmails } from '@/lib/resend/send-enquiry';
 import { applyProductIlikeSearch } from '@/lib/shop/product-search';
 import { applyShopAvailabilityFilter } from '@/lib/shop/listing';
 import { buildGemRecommendation } from '@/lib/utils/rashi-calculator';
@@ -91,68 +89,14 @@ export async function agentSearchKnowledge(query: string, locale?: AgentLocale) 
   }));
 }
 
-export async function agentCreateEnquiry(
+export async function agentSaveContact(
   sessionId: string,
-  input: {
-    name: string;
-    email: string;
-    phone?: string;
-    message: string;
-    productId?: string;
-  }
+  input: Pick<AgentSessionContext, 'name' | 'phone' | 'email' | 'birthTime' | 'birthPlace'>
 ) {
-  const admin = createAdminClient();
-  const { data: enquiry, error } = await admin
-    .from('enquiries')
-    .insert({
-      name: input.name,
-      email: input.email,
-      phone: input.phone ?? null,
-      subject: 'Ratna AI consultation',
-      message: input.message,
-      product_id: input.productId ?? null,
-      source: 'agent_chat',
-      status: 'new',
-      pipeline_stage: 'new',
-      enquiry_type: 'Enquiry',
-    })
-    .select('id')
-    .single();
-
-  if (error || !enquiry) throw new Error(error?.message ?? 'Failed to create enquiry');
-
-  await mergeSessionContext(sessionId, {
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-  });
-  const { updateAgentSession } = await import('@/lib/agent/session');
-  await updateAgentSession(sessionId, { enquiry_id: enquiry.id });
-
-  await Promise.allSettled([
-    sendEnquiryEmails({
-      id: enquiry.id,
-      name: input.name,
-      email: input.email,
-      phone: input.phone ?? null,
-      subject: 'Ratna AI consultation',
-      message: input.message,
-      source: 'agent_chat',
-      productId: input.productId ?? null,
-    }),
-    createInAppNotifications([
-      {
-        audience: 'admin',
-        type: 'enquiry',
-        title: 'New Ratna AI lead',
-        message: `${input.name} via AI agent`,
-        href: `/admin/leads?type=enquiry`,
-        metadata: { enquiry_id: enquiry.id, session_id: sessionId },
-      },
-    ]),
-  ]);
-
-  return { enquiryId: enquiry.id };
+  await mergeSessionContext(sessionId, input);
+  const { upsertRatnaLead } = await import('@/lib/agent/lead');
+  const lead = await upsertRatnaLead(sessionId, 'contact_shared');
+  return lead.ok ? { saved: true } : { saved: false, reason: lead.reason };
 }
 
 export async function agentRecordConsent(sessionId: string) {

@@ -33,7 +33,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const slug = decodeURIComponent((await params).slug);
   const post = (await getBlogPostBySlug(slug)) as SanityBlogPost | null;
   if (!post) return { title: 'Post Not Found — PureVedicGems' };
 
@@ -62,7 +62,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
-  const { slug } = await params;
+  // Next leaves non-ASCII (Hindi) slugs percent-encoded; Sanity stores them decoded.
+  const slug = decodeURIComponent((await params).slug);
   const post = (await getBlogPostBySlug(slug)) as SanityBlogPost | null;
 
   if (!post) notFound();

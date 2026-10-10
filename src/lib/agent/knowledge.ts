@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAgentConfig } from '@/lib/agent/config';
+import { RATNA_FAQS } from '@/lib/agent/ratna-faqs';
 import type { AgentKnowledgeRow, AgentLocale } from '@/lib/agent/types';
 
 async function embedText(text: string): Promise<number[] | null> {
@@ -98,27 +99,14 @@ export async function ingestKnowledgeChunk(input: {
   if (error) throw new Error(error.message);
 }
 
+/** Replaces all seeded rows (source 'seed' / 'faq') with the client FAQs, so re-running is safe. */
 export async function seedDefaultKnowledge() {
   const siteUrl = getAgentConfig().siteUrl;
   const seeds = [
-    {
-      title: 'What is a Vedic gemstone?',
-      content: 'Vedic gemstones are worn based on Jyotish principles to strengthen planetary energies. PureVedicGems offers certified natural gems with lab reports.',
-      language: 'en' as const,
-      source: 'seed',
-    },
-    {
-      title: 'वैदिक रत्न क्या है?',
-      content: 'वैदिक रत्न ज्योतिष के अनुसार ग्रहों की ऊर्जा को मजबूत करने के लिए धारण किए जाते हैं। PureVedicGems प्रमाणित प्राकृतिक रत्न प्रदान करता है।',
-      language: 'hi' as const,
-      source: 'seed',
-    },
-    {
-      title: 'How to choose gemstone by rashi',
-      content: 'Solar rashi from date of birth gives a preliminary guide. For moon rashi and lagna, book a consultation with our astrologer.',
-      language: 'en' as const,
-      source: 'seed',
-    },
+    ...RATNA_FAQS.flatMap((f) => [
+      { title: f.q, content: f.en, language: 'en' as const, source: 'faq' },
+      { title: f.q, content: f.hi, language: 'hi' as const, source: 'faq' },
+    ]),
     {
       title: 'Consultation booking',
       content: `Paid astrologer consultations are available at ${siteUrl}/consultation for detailed birth chart analysis.`,
@@ -127,11 +115,17 @@ export async function seedDefaultKnowledge() {
     },
   ];
 
-  for (const seed of seeds) {
-    try {
-      await ingestKnowledgeChunk(seed);
-    } catch {
-      // ponytail: skip duplicate seeds on re-run
-    }
+  const admin = createAdminClient() as unknown as {
+    from: (t: string) => {
+      delete: () => { in: (col: string, vals: string[]) => Promise<{ error: { message: string } | null }> };
+    };
+  };
+  const { error } = await admin.from('agent_knowledge').delete().in('source', ['seed', 'faq']);
+  if (error) throw new Error(error.message);
+
+  // ponytail: 8 embeddings at a time keeps an 81-row seed to a few seconds without tripping OpenAI rate limits
+  for (let i = 0; i < seeds.length; i += 8) {
+    await Promise.all(seeds.slice(i, i + 8).map((seed) => ingestKnowledgeChunk(seed)));
   }
+  return { count: seeds.length };
 }

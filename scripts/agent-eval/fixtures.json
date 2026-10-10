@@ -57,6 +57,6 @@
     "id": "en-enquiry",
     "locale": "en",
     "input": "My name is Rahul, email rahul@example.com, phone 9876543210. Please have someone call me about a yellow sapphire.",
-    "expectTools": ["createEnquiry"]
+    "expectTools": ["saveContact"]
   }
 ]

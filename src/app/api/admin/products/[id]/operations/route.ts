@@ -149,11 +149,28 @@ export async function POST(
     updates.reserved_by_admin_id = null;
   }
 
+  // Price-on-request pieces go back to "on demand", not "in stock" (matches ProductForm save).
+  let backToOnDemand = false;
+  if (parsed.data.action === 'activate' || parsed.data.action === 'release') {
+    const { data: current } = await db
+      .from<{ price_mode: string | null }>('products')
+      .select('price_mode')
+      .eq('id', id)
+      .maybeSingle();
+    backToOnDemand = current?.price_mode === 'on_demand' || current?.price_mode === 'quote_required';
+    if (backToOnDemand) {
+      updates.availability_status = 'on_demand';
+      updates.in_stock = false;
+      updates.stock_quantity = 0;
+      updates.stock_status = 'out_of_stock';
+    }
+  }
+
   const { data, error } = await db
     .from('products')
     .update(updates)
     .eq('id', id)
-    .select('id, sku, name, slug, category, sub_category, stock_quantity')
+    .select('id, sku, name, slug, category, sub_category, stock_quantity, availability_status, in_stock')
     .single();
   if (error || !data) return NextResponse.json({ error: 'Failed to update product workflow' }, { status: 500 });
 
@@ -167,10 +184,11 @@ export async function POST(
   });
 
   if (
-    parsed.data.action === 'stock_update' ||
+    !backToOnDemand &&
+    (parsed.data.action === 'stock_update' ||
     parsed.data.action === 'restore' ||
     parsed.data.action === 'sold' ||
-    parsed.data.action === 'activate'
+      parsed.data.action === 'activate')
   ) {
     await notifyLowStockProduct(data as { id: string; sku: string | null; name: string; category: string | null; stock_quantity: number | null }, `product_${parsed.data.action}`);
   }

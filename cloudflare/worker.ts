@@ -4,7 +4,7 @@
  * 1. Client IP / geo: the app reads `x-forwarded-for` (rate limits) and `x-vercel-ip-*` (geo),
  *    which Vercel used to set. Here they are overwritten from Cloudflare's own data on every
  *    request, so clients can't spoof them.
- * 2. Cron: daily product-trash purge (triggers in wrangler.jsonc), called in-process.
+ * 2. Cron: daily product-trash purge and 5-minute Ratna idle-session close (triggers in wrangler.jsonc), called in-process.
  * 3. Edge cache for `public, s-maxage` responses and ISR pages (see edge-cache.ts).
  * 4. Cache warm-up of the busiest pages every 5 minutes, so real visitors rarely find caches empty.
  */
@@ -97,7 +97,21 @@ const worker = {
     if (controller.cron === WARM_CRON) {
       // Through the service binding, not fetch(origin): a route Worker fetching its own zone would hit Vercel.
       const self = env.WORKER_SELF_REFERENCE;
-      if (self) await Promise.allSettled(WARM_PATHS.map((p) => self.fetch(new Request(origin + p)).then((r) => r.arrayBuffer())));
+      // Skipped while Ratna is off, so the cron doesn't boot Next every 5 minutes for nothing.
+      const ratnaIdle =
+        env.AGENT_ENABLED === 'true'
+          ? handler.fetch(
+              new Request(`${origin}/api/cron/ratna-idle-sessions`, {
+                headers: { authorization: `Bearer ${env.CRON_SECRET ?? ''}` },
+              }),
+              env,
+              ctx
+            )
+          : null;
+      await Promise.allSettled([
+        ratnaIdle,
+        ...(self ? WARM_PATHS.map((p) => self.fetch(new Request(origin + p)).then((r) => r.arrayBuffer())) : []),
+      ]);
       return;
     }
     const req = new Request(`${origin}/api/cron/purge-product-trash`, {

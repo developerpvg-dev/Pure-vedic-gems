@@ -20,6 +20,7 @@ import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
 import {
   formatProductListPrice,
+  getProductUnavailableLabel,
   isProductPriceOnRequest,
   isProductStockUnavailable,
   resolveProductCartPrice,
@@ -319,19 +320,15 @@ export function AddToCartBar({ product }: AddToCartBarProps) {
       <div className="product-cart-bar space-y-1.5">
         <div ref={sentinelRef} className="h-px w-full" aria-hidden />
 
-        {isOnRequest ? (
+        {isUnavailable ? (
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-red-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+            {getProductUnavailableLabel(product.availability_status)}
+          </div>
+        ) : isOnRequest ? (
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#7A1515]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#7A1515]" />
             Available on request
-          </div>
-        ) : isUnavailable ? (
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-red-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
-            {product.availability_status === 'reserved'
-              ? 'Reserved'
-              : product.availability_status === 'sold'
-                ? 'Sold'
-                : 'Out of stock'}
           </div>
         ) : null}
 

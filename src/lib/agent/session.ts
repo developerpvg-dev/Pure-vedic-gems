@@ -128,7 +128,9 @@ export async function insertAgentMessage(input: {
 export async function mergeSessionContext(sessionId: string, context: AgentSessionContext) {
   const session = await getAgentSession(sessionId);
   if (!session) throw new Error('Session not found');
-  const merged = { ...session.context, ...context };
+  // Tools pass optional fields as undefined; don't let those erase details captured earlier.
+  const defined = Object.fromEntries(Object.entries(context).filter(([, v]) => v !== undefined));
+  const merged = { ...session.context, ...defined };
   return updateAgentSession(sessionId, { context: merged });
 }
 

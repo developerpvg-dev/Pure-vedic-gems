@@ -8,6 +8,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  await seedDefaultKnowledge();
-  return NextResponse.json({ ok: true });
+  const result = await seedDefaultKnowledge();
+  return NextResponse.json({ ok: true, ...result });
 }

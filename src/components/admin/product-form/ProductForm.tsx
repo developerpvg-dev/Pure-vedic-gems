@@ -592,7 +592,9 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
     const stockQuantity =
       inStock && !unavailableStatuses.includes(availabilityStatus) && !onDemandPricing ? 1 : 0;
     const effectiveAvailabilityStatus = onDemandPricing
-      ? 'on_demand'
+      ? unavailableStatuses.includes(availabilityStatus)
+        ? availabilityStatus
+        : 'on_demand'
       : stockQuantity <= 0 && availabilityStatus === 'in_stock'
         ? 'out_of_stock'
         : availabilityStatus;

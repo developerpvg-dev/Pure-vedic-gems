@@ -134,6 +134,10 @@ export async function POST(request: NextRequest) {
   if (!body?.action) return NextResponse.json({ error: 'action is required' }, { status: 400 });
 
   if (body.action === 'update_settings') {
+    // Website Maintenance may adjust customer points but not program economics (point value, limits).
+    if (auth.member.normalizedRole === 'content') {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
     const parsed = settingsSchema.safeParse(body.payload);
     if (!parsed.success) {
       return NextResponse.json(

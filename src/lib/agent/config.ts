@@ -30,10 +30,10 @@ export function getAgentConfig() {
   return {
     enabled: isAgentEnabled(),
     openaiKey: process.env.OPENAI_API_KEY ?? '',
+    model: process.env.RATNA_MODEL || 'gpt-4o-mini',
     sessionSecret: process.env.AGENT_SESSION_SECRET ?? process.env.CRON_SECRET ?? 'dev-agent-secret',
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
     leadScoreThreshold: Number(process.env.RATNA_LEAD_SCORE_THRESHOLD ?? 70),
-    handoffPhone: process.env.RATNA_HANDOFF_PHONE ?? process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '',
     pipecatUrl: process.env.PIPECAT_SERVICE_URL ?? '',
     callNumbers: getRatnaCallNumbers(),
     whatsapp: {
@@ -41,15 +41,6 @@ export function getAgentConfig() {
       accessToken: process.env.WHATSAPP_ACCESS_TOKEN ?? '',
       verifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? '',
       businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID ?? '',
-    },
-    chatwoot: {
-      baseUrl: process.env.CHATWOOT_BASE_URL ?? '',
-      apiToken: process.env.CHATWOOT_API_TOKEN ?? '',
-      inboxId: process.env.CHATWOOT_INBOX_ID ?? '',
-    },
-    bharatVoice: {
-      apiKey: process.env.BHARATVOICE_API_KEY ?? '',
-      baseUrl: process.env.BHARATVOICE_API_BASE_URL ?? 'https://api.bharatvoice.ai',
     },
   };
 }

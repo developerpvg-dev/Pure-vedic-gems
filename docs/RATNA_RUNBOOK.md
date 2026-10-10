@@ -2,12 +2,18 @@
 
 ## Enable agent
 
-1. Run `supabase/week32_agent.sql` on production Supabase
-2. Set Vercel env: `AGENT_ENABLED=true`, `OPENAI_API_KEY`, etc.
-3. Seed knowledge: `POST /api/agent/knowledge/seed` with `Authorization: Bearer $CRON_SECRET`
-4. Deploy `ratna-voice` on Railway; set `PIPECAT_SERVICE_URL`
-5. Configure Meta WhatsApp webhook → `/api/agent/whatsapp`
-6. Configure Twilio voice → `https://<voice-service>/twilio/voice`
+1. Run `supabase/week32_agent.sql` on production Supabase (needs `week42_leads_crm.sql` already applied)
+2. Set Worker env: `AGENT_ENABLED=true`, `NEXT_PUBLIC_AGENT_ENABLED=true`, `OPENAI_API_KEY`, `CRON_SECRET`, optional `RATNA_MODEL`
+3. Seed the 40 FAQs (EN + HI): `POST /api/agent/knowledge/seed` with `Authorization: Bearer $CRON_SECRET`. Safe to re-run after FAQ edits in `src/lib/agent/ratna-faqs.ts`
+4. Invite the sales team (Admin → Settings → Team, role "Sales"): they get Ratna lead alerts and see leads in `/admin/leads`
+5. WhatsApp is off for now: don't configure the Meta webhook. Voice/phone: see `RATNA_FINAL_BUILD_PLAN.md` Phase 3
+
+## How Ratna leads reach the team
+
+- Ratna asks for name + phone (after consent) and saves them with the `saveContact` tool → a lead appears in `/admin/leads` as "1. New", with Ratna's note and the full conversation in the message, and a follow-up date (hot today, warm tomorrow, cold +3 days).
+- Hot leads (score ≥ `RATNA_LEAD_SCORE_THRESHOLD` or the customer asks for a person) alert the `sales` role in-app and by email (`SALES_NOTIFICATION_EMAIL` / admin email).
+- When the chat ends (widget "end", or 30 min idle via the 5-minute cron) the note is rewritten from the whole conversation. Chats without a phone/email stay in `/admin/agent-sessions` only.
+- The customer receives no automatic message (no email, no WhatsApp); the team follows up.
 
 ## Monthly ops
 
@@ -22,9 +28,8 @@
 |---------|-------|
 | Chat widget missing | `AGENT_ENABLED=true` on Vercel |
 | 503 busy | OpenAI quota; circuit breaker resets in 60s |
-| WA no reply | `WHATSAPP_ACCESS_TOKEN`, webhook verify token |
-| Voice dead | Railway health `/health`, `PIPECAT_SERVICE_URL` |
-| Hot leads not in Chatwoot | `CHATWOOT_*` env vars |
+| Lead missing for a chat | Customer never shared phone/email (check `/admin/agent-sessions`); else Worker logs for `[ratna-lead-note]` / Supabase errors |
+| Idle chats never closed | `CRON_SECRET` set, `AGENT_ENABLED=true` on the Worker |
 
 ## Data / privacy
 

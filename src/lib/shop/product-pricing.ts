@@ -61,17 +61,15 @@ export function getProductUnavailableLabel(availabilityStatus?: string | null): 
 }
 
 export function isProductStockUnavailable(product: ProductPricingInput): boolean {
-  if (isProductPriceOnRequest(product)) return false;
+  const blocked = ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '');
+  // On-demand pieces carry stock 0 by design — only an explicit status makes them unavailable.
+  if (isProductPriceOnRequest(product)) return blocked;
 
   // ponytail: each piece is unique — stock is 0 or 1 (null treated as available)
   const stockQuantity =
     product.stock_quantity == null ? 1 : Math.max(0, Number(product.stock_quantity));
 
-  return (
-    !product.in_stock ||
-    stockQuantity <= 0 ||
-    ['sold', 'reserved', 'out_of_stock', 'archived'].includes(product.availability_status ?? '')
-  );
+  return !product.in_stock || stockQuantity <= 0 || blocked;
 }
 
 export function isProductPurchasable(product: ProductPricingInput): boolean {

@@ -1,11 +1,11 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import {
-  agentCreateEnquiry,
   agentGetProduct,
   agentRecommendGem,
   agentRecordConsent,
   agentRecordUrgency,
+  agentSaveContact,
   agentSearchKnowledge,
   agentSearchProducts,
   agentTrackProductView,
@@ -65,16 +65,17 @@ export function buildAgentTools(sessionId: string) {
       execute: async () => agentRecordConsent(sessionId),
     }),
 
-    createEnquiry: tool({
-      description: 'Create sales enquiry when customer wants human follow-up',
+    saveContact: tool({
+      description:
+        'Save the customer\'s contact details (after consent) so a Pure Vedic Gems gem expert can call them back. Needs a phone or an email.',
       inputSchema: z.object({
-        name: z.string().min(1),
-        email: z.string().email(),
-        phone: z.string().optional(),
-        message: z.string().min(1),
-        productId: z.string().uuid().optional(),
+        name: z.string().min(1).max(200),
+        phone: z.string().min(6).max(20).optional().describe('Include country code if the customer gave one'),
+        email: z.string().email().optional(),
+        birthTime: z.string().max(40).optional(),
+        birthPlace: z.string().max(180).optional(),
       }),
-      execute: async (input) => agentCreateEnquiry(sessionId, input),
+      execute: async (input) => agentSaveContact(sessionId, input),
     }),
 
     recordUrgency: tool({
@@ -86,15 +87,14 @@ export function buildAgentTools(sessionId: string) {
     }),
 
     requestHandoff: tool({
-      description: 'Request transfer to human sales expert for hot leads',
-      inputSchema: z.object({
-        reason: z.string().optional(),
-      }),
-      execute: async ({ reason }) => {
+      description:
+        'Flag the customer as ready for a human gem expert (asked for a person, or ready to buy). Returns reason "no_contact" if you still need their phone or email.',
+      inputSchema: z.object({}),
+      execute: async () => {
         const { mergeSessionContext } = await import('@/lib/agent/session');
         await mergeSessionContext(sessionId, { handoffRequested: true });
         const { triggerHotLeadHandoff } = await import('@/lib/agent/handoff');
-        return triggerHotLeadHandoff(sessionId, reason);
+        return triggerHotLeadHandoff(sessionId);
       },
     }),
   };

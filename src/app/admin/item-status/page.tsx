@@ -119,16 +119,14 @@ export default function ItemStatusPage() {
         return;
       }
 
-      const nextStatus =
-        action === 'reserve' ? 'reserved' : action === 'sold' ? 'sold' : 'in_stock';
       setItems((rows) =>
         rows.map((row) =>
           row.id === item.id
             ? {
                 ...row,
-                availability_status: nextStatus,
+                availability_status: data.product?.availability_status ?? row.availability_status,
                 is_active: action === 'activate' ? true : row.is_active,
-                in_stock: action === 'activate',
+                in_stock: Boolean(data.product?.in_stock),
               }
             : row,
         ),
@@ -210,7 +208,7 @@ export default function ItemStatusPage() {
           const busy = busyId === item.id;
           const isSold = status === 'sold';
           const isReserved = status === 'reserved';
-          const isActiveBuyable = item.is_active && status === 'in_stock';
+          const isActiveBuyable = item.is_active && (status === 'in_stock' || status === 'on_demand');
           const meta = [item.tag_number, item.sku, item.category].filter(Boolean).join(' · ');
 
           return (

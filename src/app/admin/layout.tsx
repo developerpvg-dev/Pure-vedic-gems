@@ -88,7 +88,6 @@ const CONTENT_HIDDEN_HREFS = new Set([
   '/admin/orders/new',
   '/admin/commissions',
   '/admin/design-jobs',
-  '/admin/rewards',
   '/admin/leads',
   '/admin/recommendations',
   '/admin/agent-sessions',

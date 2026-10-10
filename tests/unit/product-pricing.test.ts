@@ -54,6 +54,15 @@ describe('product-pricing', () => {
     expect(isProductPurchasable(product)).toBe(false);
   });
 
+  it('on-demand pieces stay enquirable unless explicitly reserved / sold / out of stock', () => {
+    const onDemand = { price: 0, price_mode: 'on_demand', in_stock: false, stock_quantity: 0 };
+
+    expect(isProductStockUnavailable({ ...onDemand, availability_status: 'on_demand' })).toBe(false);
+    for (const status of ['reserved', 'sold', 'out_of_stock']) {
+      expect(isProductStockUnavailable({ ...onDemand, availability_status: status })).toBe(true);
+    }
+  });
+
   it('shows price on request when no price can be resolved', () => {
     expect(
       formatProductListPrice({
