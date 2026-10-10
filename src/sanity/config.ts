@@ -2,6 +2,7 @@ import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
 import { table } from '@sanity/table';
 import { schemaTypes } from './schemaTypes';
+import { withSlugHistory } from './slugHistory';
 
 export default defineConfig({
   name: 'purevedicgems',
@@ -12,5 +13,11 @@ export default defineConfig({
   plugins: [structureTool(), table()],
   schema: {
     types: schemaTypes,
+  },
+  document: {
+    actions: (prev, ctx) =>
+      ctx.schemaType === 'blogPost'
+        ? prev.map((action) => (action.action === 'publish' ? withSlugHistory(action) : action))
+        : prev,
   },
 });

@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, MessageCircle } from 'lucide-react';
 import { urlFor } from '@/lib/sanity/client';
 import {
+  findBlogRedirectSlug,
   getBlogPostBySlug,
   getRelatedBlogPosts,
 } from '@/lib/sanity/queries';
@@ -66,7 +67,11 @@ export default async function BlogPostPage({ params }: PageProps) {
   const slug = decodeURIComponent((await params).slug);
   const post = (await getBlogPostBySlug(slug)) as SanityBlogPost | null;
 
-  if (!post) notFound();
+  if (!post) {
+    const current = await findBlogRedirectSlug(slug);
+    if (current && current !== slug) permanentRedirect(`/blog/${encodeURIComponent(current)}`);
+    notFound();
+  }
 
   const relatedPosts = post.category?._id
     ? ((await getRelatedBlogPosts(post._id, post.category._id, 3)) as SanityBlogPost[])

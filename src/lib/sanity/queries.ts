@@ -1,5 +1,6 @@
 import type { SanityImageSource } from '@sanity/image-url';
 import { sanityFetch } from './client';
+import { matchBlogRedirectSlug, type BlogSlugRow } from '@/lib/blog/slug-redirect';
 
 // ── Blog Queries ─────────────────────────────────────────────────────
 
@@ -66,6 +67,18 @@ export async function getBlogPostBySlug(slug: string) {
     { slug },
     null
   );
+}
+
+/** Current slug for an old / renamed / title-style blog URL, or null. */
+export async function findBlogRedirectSlug(slug: string) {
+  const posts = await sanityFetch<BlogSlugRow[]>(
+    `*[_type == "blogPost" && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc) {
+      "slug": slug.current, title, previousSlugs
+    }`,
+    undefined,
+    []
+  );
+  return matchBlogRedirectSlug(slug, posts);
 }
 
 /** Blog posts by category slug */

@@ -145,17 +145,7 @@ const FORCE = new Map<string, string>([
   ['/tag/astrological-gemstones-guide', '/gems-recommendations'],
   ['/tag/astrological-gemstones-india', '/gems-recommendations'],
   ['/tag/genuine-astrological-gemstones', '/gems-recommendations'],
-  // WP truncated Hindi permalink (keys are decoded — see lookupLegacyRedirectRaw)
-  ['/blog/चैत्र-नवरात्रि-कलश-स्थाप', '/blog/चैत्र-नवरात्रि-कलश-स्थापना-विधि-(Kalash-Sthapna-Vidhi)'],
 ]);
-
-function safeDecode(path: string) {
-  try {
-    return decodeURIComponent(path);
-  } catch {
-    return path;
-  }
-}
 
 export function lookupLegacyRedirect(pathname: string): string | null {
   const bare = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
@@ -173,7 +163,7 @@ function lookupLegacyRedirectRaw(pathname: string): string | null {
   const bare = barePath(pathname);
   if (isProtectedLivePath(bare)) return null;
 
-  const forced = FORCE.get(pathname) ?? FORCE.get(bare) ?? FORCE.get(safeDecode(bare));
+  const forced = FORCE.get(pathname) ?? FORCE.get(bare);
   if (forced) return forced;
 
   // WP jewelry design landings → public configurator design catalog
