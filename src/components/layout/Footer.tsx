@@ -13,7 +13,7 @@ import {
 
 type FooterLinkGroup = {
   title: string;
-  links: Array<{ label: string; href: string }>;
+  links: Array<{ label: string; href: string; icon?: string }>;
 };
 
 const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
@@ -69,8 +69,12 @@ const STATIC_FOOTER_GROUPS: FooterLinkGroup[] = [
         label: 'Nava Durga, Gems & Rudraksha',
         href: '/unveiling-the-mystical-connection-between-gemstones-rudrakshas-and-the-nine-forms-of-goddess-durga',
       },
-      { label: 'Mandir Mahima', href: 'https://mandirmahima.org' },
       { label: 'Account', href: '/account' },
+      {
+        label: 'Mandir Mahima - Global Temples Repository',
+        href: 'https://mandirmahima.org',
+        icon: 'https://mandirmahima.org/wp-content/uploads/2026/10/updated_icon_20.png',
+      },
     ],
   },
   {
@@ -188,10 +192,14 @@ function FooterLinkColumn({ group }: { group: FooterLinkGroup }) {
           <li key={`${group.title}-${link.href}-${link.label}`}>
             <Link
               href={link.href}
-              className="pvg-footer-link"
+              className={link.icon ? 'pvg-footer-link pvg-footer-link--partner' : 'pvg-footer-link'}
               prefetch={false}
               {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}
             >
+              {link.icon ? (
+                // eslint-disable-next-line @next/next/no-img-element -- external partner icon
+                <img src={link.icon} alt="" width={20} height={20} loading="lazy" />
+              ) : null}
               {link.label}
             </Link>
           </li>

@@ -105,7 +105,7 @@ const contentSecurityPolicy = [
     .join(' '),
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' blob: data: https://*.supabase.co https://cdn.purevedicgems.com https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com",
+  "img-src 'self' blob: data: https://*.supabase.co https://cdn.purevedicgems.com https://cdn.sanity.io https://images.unsplash.com https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://img.youtube.com https://i.ytimg.com https://flagcdn.com https://mandirmahima.org",
   "media-src 'self' blob: data: https://*.supabase.co https://cdn.purevedicgems.com https://cdn.sanity.io",
   "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://*.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.google.com https://maps.google.com https://www.facebook.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",

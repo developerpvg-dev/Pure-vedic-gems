@@ -295,6 +295,25 @@ a.pvg-footer-link:hover {
   text-decoration: none;
 }
 
+a.pvg-footer-link--partner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px 0;
+  border-top: 1px solid #976d02;
+  border-bottom: 1px solid #976d02;
+  color: #976d02;
+  font-weight: 600;
+}
+
+a.pvg-footer-link--partner img {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 /* ── Locations & contact ── */
 
 .pvg-footer-service-strip {
