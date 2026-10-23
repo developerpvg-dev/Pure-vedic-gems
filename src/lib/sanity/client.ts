@@ -1,4 +1,5 @@
 import { createClient } from '@sanity/client';
+import { unstable_cache } from 'next/cache';
 import { createImageUrlBuilder } from '@sanity/image-url';
 import type { SanityImageSource } from '@sanity/image-url';
 
@@ -14,8 +15,17 @@ export const sanityClient = isSanityConfigured
       projectId,
       dataset,
       apiVersion: '2024-01-01',
-      // ponytail: CDN uses the separate (larger) APICDN quota; ~60s stale ok — webhook ISR still tags revalidate
       useCdn: true,
+    })
+  : null;
+
+/** Same dataset, live API — used when the GROQ CDN (1M/mo) returns 402. */
+export const sanityApiClient = isSanityConfigured
+  ? createClient({
+      projectId,
+      dataset,
+      apiVersion: '2024-01-01',
+      useCdn: false,
     })
   : null;
 
@@ -32,14 +42,43 @@ export const sanityWriteClient = isSanityConfigured
 
 const builder = sanityClient ? createImageUrlBuilder(sanityClient) : null;
 
+// ponytail: one flag per isolate; after a 402, skip the CDN until the Worker restarts
+let cdnExhausted = false;
+
+export function isSanityQuotaError(err: unknown) {
+  return (err as { statusCode?: number }).statusCode === 402;
+}
+
+/** Exported for tests. */
+export function resetSanityCdnSkip() {
+  cdnExhausted = false;
+}
+
+export async function groqFetch<T>(query: string, params?: Record<string, unknown>): Promise<T> {
+  const p = params ?? {};
+  if (!cdnExhausted && sanityClient) {
+    try {
+      return await sanityClient.fetch<T>(query, p);
+    } catch (err) {
+      if (!isSanityQuotaError(err) || !sanityApiClient) throw err;
+      cdnExhausted = true;
+    }
+  }
+  if (!sanityApiClient) throw new Error('Sanity is not configured');
+  return sanityApiClient.fetch<T>(query, p);
+}
+
 export async function sanityFetch<T>(query: string, params?: Record<string, unknown>, fallback: T = null as T) {
-  if (!sanityClient) return fallback;
+  if (!sanityClient && !sanityApiClient) return fallback;
   try {
-    return await sanityClient.fetch<T>(query, params ?? {}, {
-      next: { tags: [SANITY_CONTENT_CACHE_TAG] },
-    });
+    // 1h in R2 (webhook still busts via SANITY_CONTENT_CACHE_TAG) so a CDN outage doesn't burn the 250k API quota
+    return await unstable_cache(
+      () => groqFetch<T>(query, params),
+      ['sanity', query, JSON.stringify(params ?? {})],
+      { revalidate: 3600, tags: [SANITY_CONTENT_CACHE_TAG] }
+    )();
   } catch {
-    // ponytail: 402 quota / outage must not fail `next build`; ISR fills in when Sanity is back
+    // ponytail: 402 / outage must not fail `next build`; ISR fills in when Sanity is back
     return fallback;
   }
 }
