@@ -31,6 +31,15 @@ const optionalUrl = z.preprocess(
   z.string().trim().url().optional()
 );
 
+// Empty/null clears the column on update; omitted (undefined) leaves the existing value.
+const nullableUrl = z.preprocess(
+  (v) => (v === '' ? null : v),
+  z.string().trim().url().nullable().optional()
+);
+
+const nullableString = (max = 255) =>
+  z.preprocess((v) => (v === '' ? null : v), z.string().trim().max(max).nullable().optional());
+
 // ponytail: legacy imports stored path-only (/shop/rudraksha/...) — normalize before z.url()
 const optionalCanonicalUrl = z.preprocess(
   (value) => {
@@ -262,11 +271,11 @@ const productBaseSchema = z.object({
     composition: optionalString(160),
     recommendation_category_code: optionalString(100),
 
-    certificate_number: optionalString(120),
-    certificate_lab: optionalString(160),
+    certificate_number: nullableString(120),
+    certificate_lab: nullableString(160),
     certificate_status: z.enum(CERTIFICATE_STATUSES).default('not_required'),
     certificate_display_enabled: z.coerce.boolean().default(false),
-    certificate_file_url: optionalUrl,
+    certificate_file_url: nullableUrl,
 
     planet: z.enum(PLANETS).optional(),
     vedic_name: optionalString(100),
@@ -318,9 +327,9 @@ const productBaseSchema = z.object({
     allow_reviews: z.coerce.boolean().default(true),
 
     images: z.array(z.string().url()).optional(),
-    certificate_url: optionalUrl,
+    certificate_url: nullableUrl,
     // null clears a removed video; undefined would leave the old URL in place on update
-    video_url: z.preprocess((v) => (v === '' ? null : v), z.string().trim().url().nullable().optional()),
+    video_url: nullableUrl,
     thumbnail_url: optionalUrl,
 
     in_stock: z.coerce.boolean().default(true),

@@ -85,6 +85,8 @@ export function applyNoCertificationFields(payload: Record<string, unknown>): vo
   payload.certification = null;
   payload.certificate_number = null;
   payload.certificate_lab = null;
+  payload.certificate_url = null;
+  payload.certificate_file_url = null;
   payload.certificate_status = 'not_required';
   payload.certificate_display_enabled = false;
 }

@@ -7,6 +7,7 @@ import {
   ORDER_PERIOD_PRESETS,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
+  adminPaymentStatusLabel,
   type AdminOrderFilterState,
 } from '@/lib/admin/order-filters';
 
@@ -89,6 +90,7 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
       else if (key === 'customer_type') display = value === 'guest' ? 'Guest checkout' : 'Registered';
       else if (key === 'include_energization') display = value === 'true' ? 'With energization' : 'Without energization';
       else if (key === 'min_total' || key === 'max_total') display = `₹${Number(value).toLocaleString('en-IN')}`;
+      else if (key === 'payment_status') display = adminPaymentStatusLabel(value);
       else display = label(value);
 
       badges.push({ key, label: `${FILTER_LABELS[key]}: ${display}` });
@@ -140,8 +142,11 @@ export function AdminOrderFilters({ filters, onChange, onClear }: AdminOrderFilt
 
         <select value={filters.payment_status} onChange={(e) => onChange({ payment_status: e.target.value })} className={fieldClassName()}>
           <option value="">All payments</option>
-          {PAYMENT_STATUSES.map((status) => (
-            <option key={status} value={status}>{label(status)}</option>
+          {(['captured', 'partial'] as const).map((status) => (
+            <option key={status} value={status}>{adminPaymentStatusLabel(status)}</option>
+          ))}
+          {PAYMENT_STATUSES.filter((status) => status !== 'captured' && status !== 'partial').map((status) => (
+            <option key={status} value={status}>{adminPaymentStatusLabel(status)}</option>
           ))}
         </select>
 

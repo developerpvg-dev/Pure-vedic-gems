@@ -26,6 +26,7 @@ import {
   analyticsParamsFromFilters,
   type AdminOrderFilterState,
 } from '@/components/admin/AdminOrderFilters';
+import { adminPaymentStatusLabel } from '@/lib/admin/order-filters';
 
 interface Order {
   id: string;
@@ -583,7 +584,7 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <span className={`text-xs font-semibold ${PAYMENT_STATUS_COLORS[order.payment_status] || 'text-gray-600'}`}>
-                          {label(order.payment_status)}
+                          {adminPaymentStatusLabel(order.payment_status)}
                         </span>
                         {(order.amount_due ?? 0) > 0.009 && order.payment_status !== 'pending' && order.payment_status !== 'captured' ? (
                           <p className="text-xs font-medium tabular-nums text-amber-700">

@@ -649,8 +649,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         : undefined,
       // Keep "None" so the API can null out leftover lab fields on update
       certification: isNoCertification(certification) ? (certification.trim() || 'None') : certification || undefined,
-      certificate_number: isNoCertification(certification) ? undefined : certificateNumber || undefined,
-      certificate_lab: isNoCertification(certification) ? undefined : certificateLab || certification || undefined,
+      certificate_number: isNoCertification(certification) ? null : certificateNumber || null,
+      certificate_lab: isNoCertification(certification) ? null : certificateLab || certification || null,
       certificate_status: isNoCertification(certification)
         ? 'not_required'
         : certificateDisplayEnabled || certification
@@ -707,8 +707,8 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
       // Media + status — keep fields separate for /admin/stock/completeness
       images: images.length > 0 ? images : undefined,
       video_url: videoUrl || null,
-      certificate_url: certificateUrl || undefined,
-      certificate_file_url: certificateUrl || undefined,
+      certificate_url: certificateUrl || null,
+      certificate_file_url: certificateUrl || null,
       thumbnail_url: images[0] || undefined,
       availability_status: effectiveAvailabilityStatus,
       stock_status: effectiveInStock ? 'in_stock' : 'out_of_stock',

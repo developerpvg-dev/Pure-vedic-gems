@@ -333,30 +333,34 @@ export function MediaUploader({
                 </a>
               )}
 
+              <button
+                type="button"
+                onClick={() => void removeFile(i)}
+                aria-label={`Remove ${file.name}`}
+                className="absolute right-1.5 top-1.5 z-10 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+
               {/* ponytail: pointer-events-none so click falls through to open-full-size link; buttons re-enable */}
-              <div className="pointer-events-none absolute inset-0 flex items-start justify-between bg-black/0 p-1.5 opacity-0 transition-opacity group-hover:bg-black/20 group-hover:opacity-100">
-                {mode !== 'videos' && i === 0 && (
-                  <span className="rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    THUMBNAIL
-                  </span>
-                )}
-                {mode !== 'videos' && i > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => moveFile(i, 0)}
-                    className="pointer-events-auto rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 hover:bg-white"
-                  >
-                    Set as thumbnail
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void removeFile(i)}
-                  className="pointer-events-auto rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              {mode !== 'videos' && (
+                <div className="pointer-events-none absolute inset-0 flex items-start justify-between bg-black/0 p-1.5 opacity-0 transition-opacity group-hover:bg-black/20 group-hover:opacity-100">
+                  {i === 0 && (
+                    <span className="rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      THUMBNAIL
+                    </span>
+                  )}
+                  {i > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => moveFile(i, 0)}
+                      className="pointer-events-auto rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 hover:bg-white"
+                    >
+                      Set as thumbnail
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div className="truncate px-2 py-1 text-[10px] text-gray-500">{file.name}</div>
             </div>

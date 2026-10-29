@@ -1,15 +1,13 @@
-export { ORDER_STATUSES } from '@/lib/constants/order-status';
+import { PAYMENT_STATUS_LABELS, type PaymentStatus } from '@/lib/constants/order-status';
 
-export const PAYMENT_STATUSES = [
-  'pending',
-  'authorized',
-  'captured',
-  'partial',
-  'failed',
-  'refunded',
-  'amount_mismatch',
-  'cancelled',
-] as const;
+export { ORDER_STATUSES, PAYMENT_STATUSES } from '@/lib/constants/order-status';
+
+/** Admin list/filter copy — “captured” is Razorpay jargon. */
+export function adminPaymentStatusLabel(status: string) {
+  if (status === 'captured') return 'Fully paid';
+  if (status === 'partial') return 'Partially paid';
+  return PAYMENT_STATUS_LABELS[status as PaymentStatus] ?? status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export const ORDER_PERIOD_PRESETS = ['7d', '30d', '90d', '365d', 'all'] as const;
 export type OrderPeriodPreset = (typeof ORDER_PERIOD_PRESETS)[number];
