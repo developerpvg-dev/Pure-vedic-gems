@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import { urlFor } from '@/lib/sanity/client';
+import { youtubeEmbedFromText } from '@/lib/blog/youtube-embed';
+import './portable-text.css';
 
 /* ─────────────────────────────────────────────────────────────────────────
  *  Lightweight Portable Text renderer for blog body content.
@@ -103,8 +105,26 @@ function renderBlock(block: Block) {
       return <h4 id={headingId}>{children}</h4>;
     case 'blockquote':
       return <blockquote>{children}</blockquote>;
-    default:
+    default: {
+      const embed = youtubeEmbedFromText(getPlainText(block.children));
+      if (embed) {
+        return (
+          <>
+            {embed.rest ? <p>{embed.rest}</p> : null}
+            <div className={embed.portrait ? 'prose-pvg-yt prose-pvg-yt--short' : 'prose-pvg-yt'}>
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${embed.id}`}
+                title="YouTube video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+          </>
+        );
+      }
       return <p>{children}</p>;
+    }
   }
 }
 

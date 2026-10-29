@@ -1,0 +1,23 @@
+.prose-pvg-yt {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #15110d;
+}
+
+.prose-pvg-yt--short {
+  aspect-ratio: 9 / 16;
+  max-width: 22rem;
+  margin-inline: auto;
+}
+
+.prose-pvg-yt iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
