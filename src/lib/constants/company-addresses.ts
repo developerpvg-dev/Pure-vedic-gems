@@ -82,7 +82,7 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     title: 'Delhi',
     region: 'India',
     flag: '/flags/india.svg',
-    photo: '/office/saket-showroom.jpg',
+    photo: '/contact/saket-showroom.webp',
     mapUrl: DELHI_MAP_URL,
     mapEmbedUrl: DELHI_MAP_EMBED,
     addresses: [DELHI_REGISTERED_ADDRESS, DELHI_SHOWROOM_ADDRESS],
@@ -146,7 +146,7 @@ export const ABOUT_LOCATION_CARDS = [
   {
     title: 'Delhi Retail Outlet (Showroom)',
     city: 'Saket, New Delhi',
-    image: '/office/saket-showroom.jpg',
+    image: '/contact/saket-showroom.webp',
     mapUrl: DELHI_MAP_URL,
     embedUrl: DELHI_MAP_EMBED,
     copy: `${DELHI_SHOWROOM_ADDRESS.lines.join(', ')}. ${DELHI_SHOWROOM_LANDMARK}. Retail, wholesale, and export hub for ${COMPANY_LEGAL_NAME}`,
