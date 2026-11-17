@@ -134,7 +134,8 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
               src={item.desktopImage}
               alt={item.alt}
               className="pvg-hero-carousel__img"
-              loading={index === 0 ? 'eager' : 'lazy'}
+              // ponytail: lazy so React doesn't also preload desktop+mobile; HeroPreloadLinks owns LCP
+              loading="lazy"
               decoding="async"
               fetchPriority={index === 0 ? 'high' : 'auto'}
             />

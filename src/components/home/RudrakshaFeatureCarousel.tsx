@@ -130,8 +130,8 @@ export function RudrakshaFeatureCarousel({ cards }: RudrakshaFeatureCarouselProp
                   fill
                   src={featureImage}
                   alt={card.name?.trim().length >= 5 ? card.name : `${card.name || 'Rudraksha'} collection`}
-                  // ponytail: inactive cards use visibility:hidden — native lazy never fetches them
-                  loading="eager"
+                  // ponytail: lazy — eager made React preload every carousel frame into <head>
+                  loading="lazy"
                   sizes="(max-width: 768px) 100vw, 500px"
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                 />

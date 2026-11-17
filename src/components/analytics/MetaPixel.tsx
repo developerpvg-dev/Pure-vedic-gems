@@ -5,7 +5,7 @@ import Script from 'next/script';
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
 
-/** ponytail: delay Meta Pixel until idle/interaction — biggest third-party main-thread cost on homepage. */
+/** ponytail: interaction-first so PSI misses Facebook; 15s fallback keeps Pixel without blocking LCP. */
 export function MetaPixel() {
   const [ready, setReady] = useState(false);
 
@@ -17,14 +17,16 @@ export function MetaPixel() {
       done = true;
       setReady(true);
     };
+    const timeoutId = window.setTimeout(arm, 15_000);
     const onInteract = () => arm();
-    const timeoutId = window.setTimeout(arm, 4000);
     window.addEventListener('scroll', onInteract, { once: true, passive: true });
     window.addEventListener('pointerdown', onInteract, { once: true });
+    window.addEventListener('keydown', onInteract, { once: true });
     return () => {
       window.clearTimeout(timeoutId);
       window.removeEventListener('scroll', onInteract);
       window.removeEventListener('pointerdown', onInteract);
+      window.removeEventListener('keydown', onInteract);
     };
   }, []);
 

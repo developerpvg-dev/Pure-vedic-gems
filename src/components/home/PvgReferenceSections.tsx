@@ -227,7 +227,8 @@ export function PvgReferenceSections({
                   className="about-stack-img"
                   src={toPublicAssetUrl(`${item.src}?v=${WHO_WE_ARE_IMG_VERSION}`)}
                   alt={item.alt}
-                  loading="eager"
+                  // ponytail: lazy — React 19 preloads every eager <img> into <head>, starving hero LCP
+                  loading="lazy"
                   decoding="async"
                 />
               </div>
@@ -315,16 +316,16 @@ export function PvgReferenceSections({
 
           <div className="cert-logos-wrap">
             <div className="cert-logos-grid">
-              <div className="cert-logo-item"><img src="/labslogo/GIA.webp" alt="GIA — Gemological Institute of America" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IGI.webp" alt="IGI — International Gemological Institute" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GRS.webp" alt="GRS — Gem Research Swisslab" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GUBELIN.webp" alt="Gübelin Gem Lab" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII — Gemological Institute of India" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ — Indian Institute of Gems and Jewellery" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp gemological laboratory" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC — Gem and Jewellery Export Promotion Council" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF — Swiss Gemmological Institute" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO gemological certification laboratory" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GIA.webp" alt="GIA — Gemological Institute of America" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IGI.webp" alt="IGI — International Gemological Institute" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GRS.webp" alt="GRS — Gem Research Swisslab" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GUBELIN.webp" alt="Gübelin Gem Lab" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII — Gemological Institute of India" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ — Indian Institute of Gems and Jewellery" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp gemological laboratory" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC — Gem and Jewellery Export Promotion Council" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF — Swiss Gemmological Institute" loading="lazy" decoding="async" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO gemological certification laboratory" loading="lazy" decoding="async" /></div>
             </div>
           </div>
         </div>

@@ -41,7 +41,7 @@ export function HeritageLegacyMedia() {
               width={1200}
               height={800}
               decoding="async"
-              loading={index === 0 ? 'eager' : 'lazy'}
+              loading="lazy"
               aria-hidden={!isOn}
             />
           );

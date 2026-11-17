@@ -124,7 +124,6 @@ export function Navbar() {
                   fill
                   className="object-contain"
                   sizes="(max-width: 768px) 42px, 52px"
-                  priority
                 />
               </div>
               <div className="relative mt-0.5 h-[16px] w-[120px] md:h-[20px] md:w-[160px]">

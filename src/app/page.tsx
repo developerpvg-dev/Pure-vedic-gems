@@ -1,6 +1,6 @@
+import dynamic from 'next/dynamic';
 import { HeroPreloadLinks } from '@/components/home/HeroPreloadLinks';
 import { PvgHeroSection } from '@/components/home/PvgHeroSection';
-import { PvgHomeInteractions } from '@/components/home/PvgHomeInteractions';
 import { getActiveHeroSlides } from '@/lib/hero-slides';
 import { createOptionalPublicClient } from '@/lib/supabase/public';
 import {
@@ -20,6 +20,11 @@ import type { Metadata } from 'next';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { HOME_PAGE_DESCRIPTION, HOME_PAGE_KEYWORDS, HOME_PAGE_TITLE, homePageJsonLd } from '@/lib/seo/home-page';
 import { buildMetadata } from '@/lib/utils/seo';
+
+// ponytail: heavy homepage client listeners stay out of the first JS parse
+const PvgHomeInteractions = dynamic(() =>
+  import('@/components/home/PvgHomeInteractions').then((m) => m.PvgHomeInteractions),
+);
 
 export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
 

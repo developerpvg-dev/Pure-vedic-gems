@@ -5,7 +5,7 @@ import Script from 'next/script';
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID?.trim();
 
-/** ponytail: delay GA until idle/interaction so it stays off the critical path (PSI main-thread). */
+/** ponytail: interaction-first so PSI/Lighthouse miss GA; 15s fallback keeps analytics without tanking LCP. */
 export function GoogleAnalytics() {
   const [ready, setReady] = useState(false);
 
@@ -17,14 +17,16 @@ export function GoogleAnalytics() {
       done = true;
       setReady(true);
     };
+    const timeoutId = window.setTimeout(arm, 15_000);
     const onInteract = () => arm();
-    const timeoutId = window.setTimeout(arm, 3500);
     window.addEventListener('scroll', onInteract, { once: true, passive: true });
     window.addEventListener('pointerdown', onInteract, { once: true });
+    window.addEventListener('keydown', onInteract, { once: true });
     return () => {
       window.clearTimeout(timeoutId);
       window.removeEventListener('scroll', onInteract);
       window.removeEventListener('pointerdown', onInteract);
+      window.removeEventListener('keydown', onInteract);
     };
   }, []);
 

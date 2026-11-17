@@ -47,6 +47,8 @@ function FlagIN() {
       alt=""
       width={22}
       height={15}
+      loading="lazy"
+      decoding="async"
       aria-hidden="true"
       style={{ borderRadius: '2px', flexShrink: 0, display: 'block', objectFit: 'cover' }}
     />
@@ -60,6 +62,8 @@ function FlagGB() {
       alt=""
       width={22}
       height={15}
+      loading="lazy"
+      decoding="async"
       aria-hidden="true"
       style={{ borderRadius: '2px', flexShrink: 0, display: 'block', objectFit: 'cover' }}
     />
@@ -73,6 +77,8 @@ function FlagAE() {
       alt=""
       width={22}
       height={15}
+      loading="lazy"
+      decoding="async"
       aria-hidden="true"
       style={{ borderRadius: '2px', flexShrink: 0, display: 'block', objectFit: 'cover' }}
     />
@@ -1212,7 +1218,7 @@ export function SiteHeader({
           >
             {/* Logo */}
             <Link href="/" aria-label="Pure Vedic Gems — Home" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
-              <Image src="/pvg-emblem.sm.webp" alt="Pure Vedic Gems emblem" width={48} height={48} priority
+              <Image src="/pvg-emblem.sm.webp" alt="Pure Vedic Gems emblem" width={48} height={48}
                 style={{ width: '48px', height: '48px', objectFit: 'contain', flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '10px' }}>
                 <Image src="/Algerian.webp" alt="Pure Vedic Gems" width={150} height={30}

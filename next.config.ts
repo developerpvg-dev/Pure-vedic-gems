@@ -1127,6 +1127,14 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
+      // Homepage — explicit public edge TTL (matches Worker Cache API / warm cron).
+      {
+        source: '/',
+        headers: [
+          { key: 'CDN-Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=86400' },
+          { key: 'Cache-Control', value: 'public, s-maxage=900, stale-while-revalidate=86400' },
+        ],
+      },
       // Public catalog listings — cache at Cloudflare edge (CDN-Cache-Control).
       // ponytail: 15m safety ceiling for one-of-one gems; purge via OpenNext cache purge on revalidate.
       {
