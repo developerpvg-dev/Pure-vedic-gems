@@ -78,17 +78,23 @@ export function isNoCertification(value?: string | null): boolean {
   return !value?.trim() || value.trim().toLowerCase() === 'none';
 }
 
-/** Clear lab fields when certification is None (mutates; use before insert/update). */
+/**
+ * Clear lab *metadata* when certification is None (mutates; use before insert/update).
+ * Does not touch certificate_url / certificate_file_url — those are set by the Media
+ * uploader independently; wiping them made admin uploads look successful then vanish on save.
+ */
 export function applyNoCertificationFields(payload: Record<string, unknown>): void {
   if (!('certification' in payload)) return;
   if (!isNoCertification(typeof payload.certification === 'string' ? payload.certification : null)) return;
   payload.certification = null;
   payload.certificate_number = null;
   payload.certificate_lab = null;
-  payload.certificate_url = null;
-  payload.certificate_file_url = null;
   payload.certificate_status = 'not_required';
-  payload.certificate_display_enabled = false;
+  // Keep display off unless a file URL is being saved in this same payload.
+  const hasFile =
+    (typeof payload.certificate_url === 'string' && payload.certificate_url.trim()) ||
+    (typeof payload.certificate_file_url === 'string' && payload.certificate_file_url.trim());
+  if (!hasFile) payload.certificate_display_enabled = false;
 }
 
 /**

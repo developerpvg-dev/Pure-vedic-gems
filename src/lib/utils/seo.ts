@@ -319,6 +319,21 @@ export function organizationJsonLd(): JsonLd {
     alternateName: ['Pure Vedic Gems', 'PureVedic Gems'],
     legalName: 'PURE VEDIC GEMS PVT. LTD.',
     url: siteUrl,
+    slogan: 'Four Generations, One Sacred Mission',
+    brand: { '@type': 'Brand', '@id': `${siteUrl}/#brand`, name: BRAND_NAME },
+    description:
+      'PureVedicGems provides certified Vedic gemstones, Rudrakshas, crystals, Yantras, energized talismans and authentic Vedic healing remedies based on traditional Jyotish, gemology and Vedic rituals.',
+    knowsAbout: [
+      'Vedic gemstones',
+      'Planetary gemstones',
+      'Vedic astrology',
+      'Jyotish',
+      'Rudraksha',
+      'Crystals',
+      'Yantras',
+      'Vedic rituals',
+      'Gemstone certification',
+    ],
     logo: {
       '@type': 'ImageObject',
       url: logo,
@@ -331,6 +346,7 @@ export function organizationJsonLd(): JsonLd {
     telephone: SUPPORT_PHONE,
     address: ORGANIZATION_ADDRESSES,
     sameAs: [...OFFICIAL_SAME_AS],
+    areaServed: { '@type': 'Place', name: 'Worldwide' },
     contactPoint: [
       {
         '@type': 'ContactPoint',
@@ -356,6 +372,7 @@ export function websiteJsonLd(): JsonLd {
     name: BRAND_NAME,
     alternateName: 'Pure Vedic Gems',
     url: siteUrl,
+    description: 'Buy certified Vedic gemstones and authentic Vedic healing remedies online from PureVedicGems.',
     inLanguage: 'en-IN',
     publisher: { '@id': `${siteUrl}/#organization` },
     potentialAction: {

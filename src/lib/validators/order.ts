@@ -239,6 +239,10 @@ export const OfflineOrderItemSchema = z.union([
       metal_price: z.coerce.number().min(0).max(100_000_000).default(0),
       labour_charge: z.coerce.number().min(0).max(100_000_000).default(0),
       other_charge: z.coerce.number().min(0).max(100_000_000).default(0),
+      // Admin “additional charge” buckets beyond the classic manual-design fields
+      certification_fee: z.coerce.number().min(0).max(100_000_000).default(0),
+      energization_fee: z.coerce.number().min(0).max(100_000_000).default(0),
+      shipping_fee: z.coerce.number().min(0).max(100_000_000).default(0),
     }),
   }),
 ]);

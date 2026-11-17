@@ -149,6 +149,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const previousUserIdRef = useRef<string | null>(null);
   const syncInFlightRef = useRef(false);
   const itemsRef = useRef(items);
+  const guestEventTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingGuestEventRef = useRef<{
+    eventType: 'cart_item_added' | 'cart_item_updated' | 'cart_item_removed' | 'cart_cleared';
+    item?: CartItem;
+    quantity?: number;
+  } | null>(null);
   itemsRef.current = items;
 
   useEffect(() => {
@@ -238,6 +244,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, [authLoading, guestSessionId, user]);
 
+  // ponytail: latest-wins 2s debounce — guest cart analytics, not checkout truth.
   const sendGuestEvent = useCallback(
     (
       eventType: 'cart_item_added' | 'cart_item_updated' | 'cart_item_removed' | 'cart_cleared',
@@ -245,20 +252,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
       quantity?: number
     ) => {
       if (!guestSessionId || user) return;
-      void fetch('/api/cart/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guest_session_id: guestSessionId,
-          event_type: eventType,
-          product_id: item?.product_id,
-          quantity: quantity ?? item?.quantity ?? 0,
-          value: item ? item.price * (quantity ?? item.quantity) : 0,
-        }),
-      }).catch(() => undefined);
+      pendingGuestEventRef.current = { eventType, item, quantity };
+      if (guestEventTimerRef.current) clearTimeout(guestEventTimerRef.current);
+      guestEventTimerRef.current = setTimeout(() => {
+        const pending = pendingGuestEventRef.current;
+        pendingGuestEventRef.current = null;
+        guestEventTimerRef.current = null;
+        if (!pending || !guestSessionId) return;
+        const qty = pending.quantity ?? pending.item?.quantity ?? 0;
+        void fetch('/api/cart/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            guest_session_id: guestSessionId,
+            event_type: pending.eventType,
+            product_id: pending.item?.product_id,
+            quantity: qty,
+            value: pending.item ? pending.item.price * qty : 0,
+          }),
+        }).catch(() => undefined);
+      }, 2000);
     },
     [guestSessionId, user]
   );
+
+  useEffect(() => {
+    return () => {
+      if (guestEventTimerRef.current) clearTimeout(guestEventTimerRef.current);
+    };
+  }, []);
 
   const syncAuthenticatedCart = useCallback(
     async (path: string, init: RequestInit, rollbackItems: CartItem[]) => {

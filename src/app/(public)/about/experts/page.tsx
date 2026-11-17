@@ -8,7 +8,7 @@ import type { SanityExpertProfile } from '@/lib/types/content';
 import { buildMetadata } from '@/lib/utils/seo';
 import './experts-page.css';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata = buildMetadata({
   title: 'Gemstone & Jyotish Experts | PureVedicGems',

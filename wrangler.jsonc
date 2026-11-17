@@ -24,8 +24,8 @@
   // No second public copy of the site (skips the apex/.in redirects, duplicate content). Admin: www.purevedicgems.com/admin.
   "workers_dev": false,
   "triggers": {
-    // 5-minute cache warm-up + daily product-trash purge, both handled by scheduled() in cloudflare/worker.ts.
-    "crons": ["*/5 * * * *", "0 3 * * *"]
+    // 15-minute cache warm-up (skip-if-hot) + daily product-trash purge — see cloudflare/worker.ts.
+    "crons": ["*/15 * * * *", "0 3 * * *"]
   },
   "services": [
     {
@@ -84,7 +84,7 @@
       "workers_dev": true,
       // Only production purges trash; preview only warms caches.
       "triggers": {
-        "crons": ["*/5 * * * *"]
+        "crons": ["*/15 * * * *"]
       },
       "services": [
         {

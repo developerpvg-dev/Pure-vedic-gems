@@ -19,7 +19,7 @@ function fakeKv(store: Record<string, unknown>) {
 }
 
 describe('memoTagKv', () => {
-  it('reads each tag from KV once per 30s, re-reads after expiry or a local write', async () => {
+  it('reads each tag from KV once per 55s, re-reads after expiry or a local write', async () => {
     let now = 1_000_000;
     const kv = fakeKv({ 'b/a': 1, 'b/b': 2 });
     const memo = memoTagKv(kv, () => now);
@@ -30,8 +30,13 @@ describe('memoTagKv', () => {
 
     await memo.put('b/a', '5');
     expect((await memo.get(['b/a'], { type: 'json' })).get('b/a')).toBe(5);
+    expect(kv.reads).toHaveLength(3);
 
-    now += 30_000;
+    now += 54_999;
+    await memo.get(['b/b'], { type: 'json' });
+    expect(kv.reads).toHaveLength(3);
+
+    now += 1;
     await memo.get(['b/b'], { type: 'json' });
     expect(kv.reads.at(-1)).toEqual(['b/b']);
   });

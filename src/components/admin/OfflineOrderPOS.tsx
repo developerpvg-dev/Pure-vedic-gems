@@ -21,6 +21,14 @@ import { AdminPosConfigurator } from '@/components/admin/AdminPosConfigurator';
 import { OfflinePosCatalogPicker } from '@/components/admin/OfflinePosCatalogPicker';
 import type { ConfiguredOrderResult } from '@/components/configurator/PriceSummary';
 import { isGemConfiguratorEnabled } from '@/lib/shop/configurator';
+import {
+  ADDITIONAL_CHARGE_BUCKETS,
+  additionalChargeBucketLabel,
+  inferAdditionalChargeBucket,
+  isAdditionalChargeBucketId,
+  manualDesignForAdditionalCharge,
+  type AdditionalChargeBucketId,
+} from '@/lib/orders/additional-charge-buckets';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
 import type { ProductCard } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
@@ -91,6 +99,9 @@ export type LineItem = {
     metal_price: number;
     labour_charge: number;
     other_charge: number;
+    certification_fee?: number;
+    energization_fee?: number;
+    shipping_fee?: number;
   };
 };
 
@@ -274,6 +285,7 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
   const [quoting, setQuoting] = useState(false);
   const [chargeLabel, setChargeLabel] = useState('');
   const [chargeAmount, setChargeAmount] = useState('');
+  const [chargeBucket, setChargeBucket] = useState<AdditionalChargeBucketId>('stones');
 
   // Fulfillment
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>(editOrder?.fulfillmentType ?? 'in_store');
@@ -438,7 +450,9 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
       setError('Enter a charge amount greater than zero.');
       return;
     }
-    // ponytail: charge = fixed manual line (tax-inclusive, no auto GST) so it flows through pricing, invoices and receipts unchanged
+    const bucket = isAdditionalChargeBucketId(chargeBucket) ? chargeBucket : 'stones';
+    const description = `${ADDITIONAL_CHARGE_LABEL} · ${additionalChargeBucketLabel(bucket)}`;
+    // ponytail: fixed tax-inclusive ₹ routed into the chosen order bucket (subtotal/metal/cert/…)
     setItems((prev) => [
       ...prev,
       {
@@ -449,13 +463,7 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
         quantity: 1,
         category: 'manual_design',
         configuration_summary: ADDITIONAL_CHARGE_LABEL,
-        manual_design: {
-          description: ADDITIONAL_CHARGE_LABEL,
-          item_price: amount,
-          metal_price: 0,
-          labour_charge: 0,
-          other_charge: 0,
-        },
+        manual_design: manualDesignForAdditionalCharge(bucket, amount, description),
       },
     ]);
     setChargeLabel('');
@@ -1084,11 +1092,13 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
               ) : null}
             </div>
 
-            {items.length === 0 ? (
+            {items.filter((i) => i.configuration_summary !== ADDITIONAL_CHARGE_LABEL).length === 0 ? (
               <p className="text-sm text-gray-500">No items yet. Add as loose or configure a stone.</p>
             ) : (
               <ul className="space-y-3">
-                {items.map((item) => (
+                {items
+                  .filter((i) => i.configuration_summary !== ADDITIONAL_CHARGE_LABEL)
+                  .map((item) => (
                   <li key={item.key} className="rounded-lg border border-gray-100 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex min-w-0 items-start gap-3">
@@ -1178,28 +1188,52 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
                 <ul className="space-y-1.5">
                   {items
                     .filter((i) => i.configuration_summary === ADDITIONAL_CHARGE_LABEL)
-                    .map((charge) => (
-                      <li
-                        key={charge.key}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 text-sm"
-                      >
-                        <span className="min-w-0 truncate text-gray-800">{charge.name}</span>
-                        <span className="flex shrink-0 items-center gap-3">
-                          <span className="tabular-nums font-medium text-gray-900">{fmt(charge.price)}</span>
-                          <button
-                            type="button"
-                            onClick={() => setItems((prev) => prev.filter((i) => i.key !== charge.key))}
-                            aria-label={`Remove ${charge.name}`}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </span>
-                      </li>
-                    ))}
+                    .map((charge) => {
+                      const bucket = inferAdditionalChargeBucket(charge.manual_design);
+                      return (
+                        <li
+                          key={charge.key}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 text-sm"
+                        >
+                          <span className="min-w-0 truncate text-gray-800">
+                            {charge.name}
+                            <span className="ml-2 text-xs font-medium text-amber-800">
+                              → {additionalChargeBucketLabel(bucket)}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-3">
+                            <span className="tabular-nums font-medium text-gray-900">{fmt(charge.price)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setItems((prev) => prev.filter((i) => i.key !== charge.key))}
+                              aria-label={`Remove ${charge.name}`}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </span>
+                        </li>
+                      );
+                    })}
                 </ul>
               ) : null}
-              <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_auto]">
+              <div className="grid gap-2 sm:grid-cols-[1.2fr_1.3fr_1fr_auto]">
+                <select
+                  aria-label="Charge category"
+                  value={chargeBucket}
+                  onChange={(e) =>
+                    setChargeBucket(
+                      isAdditionalChargeBucketId(e.target.value) ? e.target.value : 'stones',
+                    )
+                  }
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                >
+                  {ADDITIONAL_CHARGE_BUCKETS.map((bucket) => (
+                    <option key={bucket.id} value={bucket.id}>
+                      {bucket.label}
+                    </option>
+                  ))}
+                </select>
                 <input
                   aria-label="Charge description"
                   value={chargeLabel}
@@ -1224,7 +1258,10 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
                   <Plus className="h-3.5 w-3.5" /> Add charge
                 </button>
               </div>
-              <p className="text-xs text-gray-500">Fixed amount added to the order total (tax-inclusive).</p>
+              <p className="text-xs text-gray-500">
+                Fixed tax-inclusive amount — choose which order line it adds to (product, metal, jewellery,
+                certification, energization, or shipping).
+              </p>
             </div>
             <div className="space-y-3 border-t border-gray-100 pt-3">
               <div className="flex items-center justify-between gap-3">

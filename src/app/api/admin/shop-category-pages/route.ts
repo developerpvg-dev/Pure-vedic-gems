@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireAdminAccess } from '@/lib/admin/api';
 import { SHOP_CATEGORY_PAGES_CACHE_TAG } from '@/lib/categories/shop-category-page';
 import { getAllDefaultCategorySlugs, getDefaultShopCategoryPage } from '@/lib/categories/shop-category-defaults';
+import { bumpWorkerEdgeCache } from '@/lib/cloudflare/bump-edge-cache';
 import type { ShopCategoryPageInsert, ShopCategoryPageRow } from '@/lib/types/database';
 
 function stringOrNull(value: unknown) {
@@ -62,6 +63,7 @@ function revalidateCategory(slug: string) {
   revalidatePath(`/shop/${slug}`);
   revalidatePath('/api/shop-categories');
   revalidateTag(SHOP_CATEGORY_PAGES_CACHE_TAG, 'max');
+  void bumpWorkerEdgeCache();
 }
 
 export async function GET() {

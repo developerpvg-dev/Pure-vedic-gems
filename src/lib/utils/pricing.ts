@@ -36,6 +36,9 @@ export interface OrderItemForPricing {
     metal_price: number;
     labour_charge: number;
     other_charge: number;
+    certification_fee?: number;
+    energization_fee?: number;
+    shipping_fee?: number;
   };
 }
 
@@ -364,10 +367,14 @@ export async function recalculateOrderTotal(
   let certificationCharges = 0;
   let energizationCharges = 0;
 
+  let manualShippingFees = 0;
   for (const item of items) {
     if (!item.manual_design) continue;
     metalCharges += Number(item.manual_design.metal_price) || 0;
     jewelryCharges += Number(item.manual_design.labour_charge) || 0;
+    certificationCharges += Number(item.manual_design.certification_fee) || 0;
+    energizationCharges += Number(item.manual_design.energization_fee) || 0;
+    manualShippingFees += Number(item.manual_design.shipping_fee) || 0;
   }
 
   for (const item of items) {
@@ -400,7 +407,7 @@ export async function recalculateOrderTotal(
   const merchandiseTotal =
     subtotal + jewelryCharges + metalCharges + certificationCharges + energizationCharges;
 
-  const shippingCost =
+  const baseShippingCost =
     offlineOptions?.shippingCostOverride !== undefined
       ? Math.max(0, Number(offlineOptions.shippingCostOverride) || 0)
       : (
@@ -410,6 +417,7 @@ export async function recalculateOrderTotal(
             shippingAddress?.country_code ?? null
           )
         ).cost;
+  const shippingCost = baseShippingCost + manualShippingFees;
 
   // ── 5. Coupon discount ────────────────────────────────────────────────
   let couponDiscount = 0;

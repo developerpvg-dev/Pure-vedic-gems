@@ -45,4 +45,5 @@ export const getCachedStorefrontRates = unstable_cache(loadStorefrontRates, ['cu
 export function bustCurrencyRatesCache() {
   revalidateTag(CURRENCY_RATES_CACHE_TAG, 'max');
   revalidatePath('/api/currency/rates');
+  void import('@/lib/cloudflare/bump-edge-cache').then((m) => m.bumpWorkerEdgeCache(true));
 }

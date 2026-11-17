@@ -335,9 +335,9 @@ export function Footer() {
                 +44 7831 491778 (UK)
               </a>
               <p className="pvg-footer-hours">
-                Open Mon, Tue, Thu – Sun: 11am – 8pm
+                Open Mon, Wed – Sun: 11am – 8pm
                 <br />
-                Closed on Wednesdays
+                Closed on Tuesdays
               </p>
               <a
                 href={trackedWhatsAppHref('general')}

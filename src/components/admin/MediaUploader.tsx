@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { flushSync } from 'react-dom';
-import { Upload, X, Film, Loader2 } from 'lucide-react';
+import { Upload, X, Film, FileText, Loader2 } from 'lucide-react';
 
 export interface MediaFile {
   url: string;
@@ -11,7 +11,7 @@ export interface MediaFile {
   preview?: string;
 }
 
-export type MediaUploaderMode = 'all' | 'images' | 'videos';
+export type MediaUploaderMode = 'all' | 'images' | 'videos' | 'certificates';
 
 interface MediaUploaderProps {
   value: MediaFile[];
@@ -22,8 +22,14 @@ interface MediaUploaderProps {
   maxFiles?: number;
   /** Storage folder prefix forwarded to /api/admin/upload */
   folder?: string;
+  /** Public media bucket (product certs use `certificates`). */
+  bucket?: string;
   /** Also delete our storage object when removing a tile (best-effort). */
   deleteStorageOnRemove?: boolean;
+}
+
+function isPdfUrl(url: string) {
+  return /\.pdf(\?|$)/i.test(url);
 }
 
 function isVideoUrl(url: string) {
@@ -37,6 +43,7 @@ const ACCEPT: Record<MediaUploaderMode, string> = {
   all: 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime',
   images: 'image/jpeg,image/png,image/webp,image/gif',
   videos: 'video/mp4,video/webm,video/quicktime',
+  certificates: 'image/jpeg,image/png,image/webp,image/gif,application/pdf',
 };
 
 const DROP_HINT: Record<MediaUploaderMode, { title: string; sub: string; url: string }> = {
@@ -55,6 +62,11 @@ const DROP_HINT: Record<MediaUploaderMode, { title: string; sub: string; url: st
     sub: 'MP4, WebM — or paste a YouTube / Vimeo link below',
     url: 'Or paste a YouTube / Vimeo / video URL and press Enter...',
   },
+  certificates: {
+    title: 'Drop a certificate scan or PDF here, or click to browse',
+    sub: 'JPG, PNG, WebP, or PDF — max 50MB',
+    url: 'Or paste a certificate image / PDF URL and press Enter...',
+  },
 };
 
 export function MediaUploader({
@@ -63,6 +75,7 @@ export function MediaUploader({
   mode = 'all',
   maxFiles,
   folder,
+  bucket,
   deleteStorageOnRemove = false,
 }: MediaUploaderProps) {
   const [uploading, setUploading] = useState(false);
@@ -91,8 +104,17 @@ export function MediaUploader({
 
       if (mode === 'images') files = files.filter((f) => f.type.startsWith('image/'));
       if (mode === 'videos') files = files.filter((f) => f.type.startsWith('video/'));
+      if (mode === 'certificates') {
+        files = files.filter((f) => f.type.startsWith('image/') || f.type === 'application/pdf');
+      }
       if (!files.length) {
-        setError(mode === 'videos' ? 'Only video files are allowed here' : 'Only image files are allowed here');
+        setError(
+          mode === 'videos'
+            ? 'Only video files are allowed here'
+            : mode === 'certificates'
+              ? 'Only image or PDF certificates are allowed here'
+              : 'Only image files are allowed here'
+        );
         return;
       }
 
@@ -113,6 +135,7 @@ export function MediaUploader({
         formData.append('files', file);
       }
       if (folder) formData.append('folder', folder);
+      if (bucket) formData.append('bucket', bucket);
 
       try {
         const res = await fetch('/api/admin/upload', {
@@ -129,16 +152,20 @@ export function MediaUploader({
 
         const newFiles: MediaFile[] = data.urls.map((url: string, i: number) => {
           const file = files[i];
-          const isVideo = file?.type?.startsWith('video/') || (mode === 'videos');
+          const isVideo = file?.type?.startsWith('video/') || mode === 'videos';
+          const isPdf = file?.type === 'application/pdf' || isPdfUrl(url);
           return {
             url,
             name: file?.name ?? `file-${i}`,
             type: isVideo ? ('video' as const) : ('image' as const),
-            preview: isVideo ? undefined : url,
+            preview: isVideo || isPdf ? undefined : url,
           };
         });
 
-        mergeFiles(newFiles);
+        // flushSync: Save right after upload must see certificateFiles / mediaFiles
+        flushSync(() => {
+          mergeFiles(newFiles);
+        });
 
         if (data.errors?.length) {
           setError(data.errors.join('; '));
@@ -149,7 +176,7 @@ export function MediaUploader({
         setUploading(false);
       }
     },
-    [mode, maxFiles, value.length, mergeFiles, folder],
+    [mode, maxFiles, value.length, mergeFiles, folder, bucket],
   );
 
   const handleDrop = useCallback(
@@ -187,7 +214,8 @@ export function MediaUploader({
     const url = raw.trim();
     if (!url) return false;
     const video = isVideoUrl(url);
-    if (mode === 'images' && video) {
+    const pdf = isPdfUrl(url);
+    if (mode === 'images' && (video || pdf)) {
       setError('Only image URLs are allowed here');
       return false;
     }
@@ -195,15 +223,19 @@ export function MediaUploader({
       setError('Paste a YouTube, Vimeo, or direct video URL');
       return false;
     }
+    if (mode === 'certificates' && video) {
+      setError('Paste a certificate image or PDF URL');
+      return false;
+    }
     setError('');
-    // flushSync: paste then click Save must see videoFiles before buildBody runs
+    // flushSync: paste then click Save must see files before buildBody runs
     flushSync(() => {
       mergeFiles([
         {
           url,
           name: url.split('/').pop() || 'external',
           type: video || mode === 'videos' ? 'video' : 'image',
-          preview: video || mode === 'videos' ? undefined : url,
+          preview: video || mode === 'videos' || pdf ? undefined : url,
         },
       ]);
     });
@@ -314,6 +346,19 @@ export function MediaUploader({
                   <Film className="h-8 w-8 text-gray-400" />
                   <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
                     VIDEO
+                  </span>
+                </a>
+              ) : isPdfUrl(file.url) || (mode === 'certificates' && !file.preview) ? (
+                <a
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open certificate"
+                  className="relative flex aspect-square flex-col items-center justify-center gap-1 bg-gray-100 px-2"
+                >
+                  <FileText className="h-8 w-8 text-amber-600" />
+                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                    {isPdfUrl(file.url) ? 'PDF' : 'FILE'}
                   </span>
                 </a>
               ) : (

@@ -12,7 +12,7 @@ export const metadata: Metadata = buildMetadata({
   path: '/testimonials',
 });
 
-export const revalidate = 1800; // ISR: 30 min - admin revalidatePath still refreshes on save
+export const revalidate = 86400; // static marketing — admin/path revalidate still busts
 
 const TESTIMONIALS_PER_PAGE = 8;
 

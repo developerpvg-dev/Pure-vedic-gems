@@ -554,6 +554,12 @@ function locationLabel(category: HomeManagedCategory) {
   return category.display_locations ?? category.description ?? category.planet ?? '';
 }
 
+/** Alt must be descriptive (≥5 chars); short names like "Ruby" get a gemstone suffix. */
+function categoryImageAlt(name: string, kind = 'gemstone') {
+  const base = name.trim() || kind;
+  return base.length >= 5 ? base : `${base} ${kind}`;
+}
+
 function fallbackGemBackground(category: HomeManagedCategory) {
   const color = category.color ?? '#B8861E';
   return `radial-gradient(circle at 35% 30%, ${color}, #6B4800 55%, #2A1800 100%)`;
@@ -871,7 +877,7 @@ export function NavaratnaHomeSection({
                     {layeredImage(
                       category.image_url,
                       category.hover_image_url,
-                      category.name,
+                      categoryImageAlt(category.name),
                       fallbackGemBackground(category),
                       '',
                       resolveCategoryNavImage(category.slug, null),
@@ -891,7 +897,7 @@ export function NavaratnaHomeSection({
                   {layeredImage(
                     category.image_url,
                     category.hover_image_url,
-                    category.name,
+                    categoryImageAlt(category.name),
                     fallbackGemBackground(category),
                     '',
                     resolveCategoryNavImage(category.slug, null),
@@ -913,7 +919,7 @@ export function NavaratnaHomeSection({
             label: <Rs101CtaLabel base="Get Navaratna Recommendation" paid={rs101Paid} />,
             href: '/gems-recommendations',
           }}
-          secondary={{ label: 'See Navaratna Collection', href: '/gems-recommendations' }}
+          secondary={{ label: 'See Navaratna Collection', href: '/gemstones/navaratna' }}
           image="/home/ctas/cta1.webp?v=20260810"
           imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
           imageSide="right"
@@ -1036,7 +1042,12 @@ function ExploreCard({ category }: { category: HomeCatalogCategory }) {
         {category.homepage_badge ? <div className="explore-card-sale">{category.homepage_badge}</div> : null}
         {hasImage ? (
           <div className="explore-card-photo">
-            {layeredImage(category.image_url, category.hover_image_url, category.name, category.image_url ?? '')}
+            {layeredImage(
+              category.image_url,
+              category.hover_image_url,
+              categoryImageAlt(category.name, 'collection'),
+              category.image_url ?? '',
+            )}
           </div>
         ) : (
           <div className="explore-card-art" style={{ background: exploreFallbackBackground(category) }} />
@@ -1082,7 +1093,7 @@ export function ExploreByCategorySection({
                 <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
                   <span className="pvg-category-img-wrap">
                     {category.image_url ? (
-                      <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 58vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
+                      <Image src={category.image_url} alt={categoryImageAlt(category.name, 'collection')} fill loading="lazy" sizes="(max-width: 700px) 58vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
                     ) : (
                       <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
                     )}
@@ -1111,7 +1122,7 @@ export function ExploreByCategorySection({
                 <Link key={category.id} href={catalogCategoryHref(category)} className="pvg-category-card">
                   <span className="pvg-category-img-wrap">
                     {category.image_url ? (
-                      <Image src={category.image_url} alt={category.name} fill loading="lazy" sizes="(max-width: 700px) 58vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
+                      <Image src={category.image_url} alt={categoryImageAlt(category.name, 'collection')} fill loading="lazy" sizes="(max-width: 700px) 58vw, (max-width: 1200px) 30vw, 220px" style={{ objectFit: 'cover' }} />
                     ) : (
                       <span style={{ position: 'absolute', inset: 0, background: exploreFallbackBackground(category) }} />
                     )}
@@ -1260,7 +1271,7 @@ export function SemipreciousHomeSection({
                         variant="background"
                         mainUrl={category.image_url}
                         hoverUrl={category.hover_image_url}
-                        alt={category.name}
+                        alt={categoryImageAlt(category.name)}
                         fallbackBackground={fallbackGemBackground(category)}
                       />
                     </div>

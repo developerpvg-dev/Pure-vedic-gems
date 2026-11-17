@@ -656,7 +656,14 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
         : certificateDisplayEnabled || certification
           ? 'available'
           : 'not_required',
-      certificate_display_enabled: isNoCertification(certification) ? false : certificateDisplayEnabled,
+      // File scan can exist without a named lab; keep display on when a file is attached.
+      certificate_display_enabled: certificateUrl
+        ? isNoCertification(certification)
+          ? true
+          : certificateDisplayEnabled
+        : isNoCertification(certification)
+          ? false
+          : certificateDisplayEnabled,
 
       // Rudraksha
       mukhi_count: config.kind === 'rudraksha' ? parsePositiveInteger(mukhiCount) : undefined,
@@ -1377,8 +1384,10 @@ export function ProductForm({ kind, mode, productId, initialProduct }: ProductFo
             <MediaUploader
               value={certificateFiles}
               onChange={setCertificateFiles}
-              mode="images"
+              mode="certificates"
               maxFiles={1}
+              bucket="certificates"
+              folder="product-certs"
             />
           </div>
 

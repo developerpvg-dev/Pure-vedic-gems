@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 // ponytail: plans are public; ISR so cookies() no longer force SSR every visit
-export const revalidate = 1800;
+export const revalidate = 86400;
 
 export default async function ConsultationPage() {
   const supabase = createOptionalPublicClient();

@@ -63,7 +63,18 @@ function toLineItem(raw: unknown, index: number): LineItem {
   const manual = snap?.source === 'offline_manual_design' && snap.manual_design && typeof snap.manual_design === 'object'
     ? (snap.manual_design as Row)
     : null;
-  const total = unitPrice * quantity;
+  const itemPrice = manual ? Number(manual.item_price ?? 0) || 0 : unitPrice * quantity;
+  const metalPrice = manual ? Number(manual.metal_price ?? 0) || 0 : 0;
+  const labourCharge = manual ? Number(manual.labour_charge ?? 0) || 0 : 0;
+  const otherCharge = manual ? Number(manual.other_charge ?? 0) || 0 : 0;
+  const certificationFee = manual ? Number(manual.certification_fee ?? 0) || 0 : 0;
+  const energizationFee = manual ? Number(manual.energization_fee ?? 0) || 0 : 0;
+  const shippingFee = manual ? Number(manual.shipping_fee ?? 0) || 0 : 0;
+  // Bucketed additional charges may have line_total 0 (amount lives on metal/cert/…); recover display price.
+  const bucketTotal =
+    itemPrice + metalPrice + labourCharge + otherCharge + certificationFee + energizationFee + shippingFee;
+  const total = bucketTotal > 0 ? bucketTotal : unitPrice * quantity;
+  const summary = str(it.configuration_summary);
   return {
     ...base,
     name: name.length >= 2 ? name : `Item ${index + 1}`,
@@ -71,13 +82,17 @@ function toLineItem(raw: unknown, index: number): LineItem {
     price: total,
     quantity: 1,
     category: 'manual_design',
+    configuration_summary: summary || (manual ? 'Additional charge' : undefined),
     configuration_snapshot: snap ?? undefined,
     manual_design: {
       description: str(manual?.description),
-      item_price: manual ? Number(manual.item_price ?? 0) || 0 : total,
-      metal_price: manual ? Number(manual.metal_price ?? 0) || 0 : 0,
-      labour_charge: manual ? Number(manual.labour_charge ?? 0) || 0 : 0,
-      other_charge: manual ? Number(manual.other_charge ?? 0) || 0 : 0,
+      item_price: itemPrice,
+      metal_price: metalPrice,
+      labour_charge: labourCharge,
+      other_charge: otherCharge,
+      certification_fee: certificationFee,
+      energization_fee: energizationFee,
+      shipping_fee: shippingFee,
     },
   };
 }

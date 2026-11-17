@@ -87,15 +87,15 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     mapEmbedUrl: DELHI_MAP_EMBED,
     addresses: [DELHI_REGISTERED_ADDRESS, DELHI_SHOWROOM_ADDRESS],
     landmark: DELHI_SHOWROOM_LANDMARK,
-    hours: '11:00 am – 8:00 pm · Weekly off: Wednesday',
+    hours: '11:00 am – 8:00 pm · Weekly off: Tuesday',
   },
   {
     id: 'uk',
     title: 'United Kingdom',
     region: COMPANY_LEGAL_NAME,
     flag: '/flags/uk.svg',
-    // ponytail: no dedicated UK photo yet — reuse Sultanpur until one exists
-    photo: '/office/sultanpur-office.jpg',
+    // Previous Delhi showroom photo (before saket-showroom.webp); not the current Delhi image.
+    photo: '/office/saket-showroom.jpg',
     mapUrl: UK_OFFICE_MAP_URL,
     mapEmbedUrl: UK_OFFICE_MAP_EMBED,
     addresses: [UK_OFFICE_ADDRESS, UK_REGISTERED_ADDRESS],
@@ -111,7 +111,7 @@ export const OFFICE_LOCATIONS: readonly OfficeLocation[] = [
     mapEmbedUrl: SULTANPUR_MAP_EMBED,
     addresses: [SULTANPUR_RESEARCH_ADDRESS],
     landmark: SULTANPUR_RESEARCH_LANDMARK,
-    hours: '10:00 am – 7:00 pm · Weekly off: Wednesday',
+    hours: '10:00 am – 7:00 pm · Weekly off: Tuesday',
   },
 ] as const;
 
@@ -162,8 +162,8 @@ export const ABOUT_LOCATION_CARDS = [
   {
     title: 'UK Office',
     city: 'Hounslow, London',
-    // ponytail: no dedicated UK photo yet — reuse Sultanpur until one exists
-    image: '/office/sultanpur-office.jpg',
+    // Previous Delhi showroom photo (before saket-showroom.webp); not the current Delhi image.
+    image: '/office/saket-showroom.jpg',
     mapUrl: UK_OFFICE_MAP_URL,
     embedUrl: UK_OFFICE_MAP_EMBED,
     copy: `${UK_OFFICE_ADDRESS.lines.join(', ')}. Appointment-based support for overseas clients through official Pure Vedic Gems UK channels.`,
@@ -229,7 +229,7 @@ export const ORGANIZATION_ADDRESSES = [
 export const DELHI_SHOWROOM_HOURS = [
   {
     '@type': 'OpeningHoursSpecification' as const,
-    dayOfWeek: ['Monday', 'Tuesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    dayOfWeek: ['Monday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     opens: '11:00',
     closes: '20:00',
   },
@@ -237,7 +237,7 @@ export const DELHI_SHOWROOM_HOURS = [
 const SULTANPUR_HOURS = [
   {
     '@type': 'OpeningHoursSpecification' as const,
-    dayOfWeek: ['Monday', 'Tuesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    dayOfWeek: ['Monday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     opens: '10:00',
     closes: '19:00',
   },

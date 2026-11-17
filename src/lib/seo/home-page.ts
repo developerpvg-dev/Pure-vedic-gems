@@ -14,22 +14,23 @@ import { RUDRAKSHA_STOREFRONT_SLUGS, RUDRAKSHA_SUBCATEGORY_LABELS } from '@/lib/
 import { gemEnglishName } from '@/lib/seo/storefront-meta';
 import { absoluteUrl, brandLogoUrl, getSiteUrl, itemListJsonLd, type JsonLd } from '@/lib/utils/seo';
 
-/** Commercial homepage title: buy / natural / for sale, 30–60 chars. */
-export const HOME_PAGE_TITLE = 'Buy Gemstones Online | Natural Gemstones for Sale';
+/** Homepage title (45–60 chars). Brand suffix matches live site name. */
+export const HOME_PAGE_TITLE = 'Buy Certified Vedic Gemstones Online India | PureVedicGems';
 
 export const HOME_PAGE_DESCRIPTION =
-  'Buy gemstones online — natural gemstones and original loose gemstones for sale. Navaratna, Rudraksha, and Vedic jewellery at listed gemstone prices since 1937.';
+  'Buy certified Vedic gemstones online in India from PureVedicGems. Explore authentic, lab-certified gems, energized through Vedic rituals. Shop now.';
 
 export const HOME_PAGE_KEYWORDS = [
-  'buy gemstones',
+  'certified Vedic gemstones',
+  'buy Vedic gemstones online India',
+  'authentic Vedic gemstones',
+  'planetary gemstones',
+  'Rudraksha',
+  'energized gemstones',
+  'gemstone certification',
+  'Vedic healing remedies',
   'buy gemstones online',
   'natural gemstones',
-  'loose gemstones',
-  'gemstones for sale',
-  'gemstone prices',
-  'original rudraksha',
-  'navaratna',
-  'vedic jewellery',
 ];
 
 function gemLabel(slug: string) {
@@ -63,13 +64,34 @@ export function homePageJsonLd(): JsonLd[] {
       '@type': 'WebPage',
       '@id': `${siteUrl}/#webpage`,
       url: siteUrl,
-      name: HOME_PAGE_TITLE,
+      name: 'Buy Certified Vedic Gemstones Online in India',
+      headline: 'Buy Certified Vedic Gemstones Online in India',
       description: HOME_PAGE_DESCRIPTION,
+      keywords: HOME_PAGE_KEYWORDS,
       isPartOf: { '@id': `${siteUrl}/#website` },
       about: { '@id': `${siteUrl}/#organization` },
+      publisher: { '@id': `${siteUrl}/#organization` },
+      mainEntity: { '@id': `${siteUrl}/#organization` },
       inLanguage: 'en-IN',
       primaryImageOfPage: { '@type': 'ImageObject', url: absoluteUrl('/og-default.png') },
-      mainEntity: { '@id': `${siteUrl}/#catalog` },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      '@id': `${siteUrl}/#vedic-gemstone-services`,
+      name: 'Certified Vedic Gemstone and Healing Services',
+      provider: { '@id': `${siteUrl}/#organization` },
+      areaServed: { '@type': 'Place', name: 'India and international locations' },
+      description:
+        'Customized Vedic remedies using authenticated gemstones, Rudrakshas, crystals and Yantras, prepared according to traditional Vedic rituals and sacred geometry.',
+      serviceType: [
+        'Certified Vedic gemstone consultation',
+        'Vedic gemstone sourcing',
+        'Gemstone purification and energization',
+        'Customized Vedic talisman preparation',
+        'Rudraksha and Yantra remedies',
+        'Vedic ritual and spiritual healing guidance',
+      ],
     },
     {
       '@context': 'https://schema.org',
@@ -89,7 +111,7 @@ export function homePageJsonLd(): JsonLd[] {
       '@context': 'https://schema.org',
       '@type': 'OfferCatalog',
       '@id': `${siteUrl}/#catalog`,
-      name: 'Buy gemstones, natural gemstones, Rudraksha, and Vedic jewellery',
+      name: 'Certified Vedic gemstones, Rudraksha, and Vedic jewellery',
       url: siteUrl,
       itemListElement: [
         {

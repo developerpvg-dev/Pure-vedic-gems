@@ -1159,12 +1159,13 @@ const nextConfig: NextConfig = {
         ],
       },
       // Same-for-everyone pages that are dynamic only because they read ?page= / filter params.
-      // 60s where the URL shape can also be a product page (/gemstones/navaratna/<product>).
+      // Facade subcategory URLs share the product-page shape; 900s matches shop listings. Admin
+      // / inventory saves still bust via Worker edge-cache generation (see bumpWorkerEdgeCache).
       ...(
         [
           ['/rudraksha', 900],
-          ['/gemstones/:group/:category', 60],
-          ['/rudraksha/:category', 60],
+          ['/gemstones/:group/:category', 900],
+          ['/rudraksha/:category', 900],
           ['/blog', 300],
           ['/blog/category/:category', 300],
           ['/videos', 300],

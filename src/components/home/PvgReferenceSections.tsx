@@ -158,7 +158,13 @@ function KhubBlogCard({ post, gradient }: { post: SanityBlogPost; gradient: stri
       >
         {imgUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imgUrl} alt="" className="khub-article-photo" loading="lazy" decoding="async" />
+          <img
+            src={imgUrl}
+            alt={post.title ? `Article: ${post.title}` : 'Blog article image'}
+            className="khub-article-photo"
+            loading="lazy"
+            decoding="async"
+          />
         ) : null}
         <div className="khub-article-cat">{post.category?.title ?? 'Article'}</div>
       </div>
@@ -228,7 +234,12 @@ export function PvgReferenceSections({
             ))}
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src={toPublicAssetUrl(`/home/whoweare/87yeara.webp?v=${WHO_WE_ARE_IMG_VERSION}`)} alt="" loading="lazy" />
+            <img
+              className="about-exp-img"
+              src={toPublicAssetUrl(`/home/whoweare/87yeara.webp?v=${WHO_WE_ARE_IMG_VERSION}`)}
+              alt="87 years of Pure Vedic Gems heritage"
+              loading="lazy"
+            />
           </div>
         </div>
 
@@ -308,12 +319,12 @@ export function PvgReferenceSections({
               <div className="cert-logo-item"><img src="/labslogo/IGI.webp" alt="IGI — International Gemological Institute" /></div>
               <div className="cert-logo-item"><img src="/labslogo/GRS.webp" alt="GRS — Gem Research Swisslab" /></div>
               <div className="cert-logo-item"><img src="/labslogo/GUBELIN.webp" alt="Gübelin Gem Lab" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF" /></div>
-              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GII.webp" alt="GII — Gemological Institute of India" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/IIGJ.webp" alt="IIGJ — Indian Institute of Gems and Jewellery" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/HRD ANTWERP.webp" alt="HRD Antwerp gemological laboratory" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GJEPC.webp" alt="GJEPC — Gem and Jewellery Export Promotion Council" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/SSEF.webp" alt="SSEF — Swiss Gemmological Institute" /></div>
+              <div className="cert-logo-item"><img src="/labslogo/GFCO.webp" alt="GFCO gemological certification laboratory" /></div>
             </div>
           </div>
         </div>

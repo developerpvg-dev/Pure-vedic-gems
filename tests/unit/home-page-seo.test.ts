@@ -5,23 +5,25 @@ import type { ProductCard } from '@/lib/types/product';
 import { expectOwnBrandCopy } from './expect-own-brand-copy';
 
 describe('homepage SEO (head + JSON-LD only)', () => {
-  it('nests buy gemstones and natural gemstones in the homepage title and description', () => {
+  it('uses the certified Vedic gemstones homepage title and description', () => {
     const title = fitTitle(HOME_PAGE_TITLE);
     const description = fitDescription(HOME_PAGE_DESCRIPTION);
-    expect(title.toLowerCase()).toContain('buy gemstones');
-    expect(title.toLowerCase()).toContain('buy gemstones online');
-    expect(title.toLowerCase()).toContain('natural gemstones');
-    expect(title.toLowerCase()).toContain('gemstones for sale');
-    expect(description.toLowerCase()).toContain('buy gemstones');
-    expect(description.toLowerCase()).toContain('natural gemstones');
-    expect(description.toLowerCase()).toContain('loose gemstones');
-    expect(description.toLowerCase()).toContain('gemstone prices');
-    expect(description.toLowerCase()).toContain('rudraksha');
+    expect(title.length).toBeGreaterThanOrEqual(45);
+    expect(title.length).toBeLessThanOrEqual(70);
+    expect(title.toLowerCase()).toContain('certified vedic gemstones');
+    expect(title.toLowerCase()).toContain('india');
+    expect(title.toLowerCase()).toContain('purevedicgems');
+    expect(description.length).toBeGreaterThanOrEqual(110);
+    expect(description.length).toBeLessThanOrEqual(160);
+    expect(description.toLowerCase()).toContain('certified vedic gemstones');
+    expect(description.toLowerCase()).toContain('lab-certified');
+    expect(description.toLowerCase()).toContain('vedic rituals');
   });
 
-  it('emits WebPage, JewelryStore, and OfferCatalog URLs for every storefront hub', () => {
+  it('emits WebPage, Service, JewelryStore, and OfferCatalog URLs for every storefront hub', () => {
     const graph = JSON.stringify(homePageJsonLd());
     expect(graph).toContain('"@type":"WebPage"');
+    expect(graph).toContain('"@type":"Service"');
     expect(graph).toContain('"@type":"JewelryStore"');
     expect(graph).toContain('"@type":"OfferCatalog"');
     expect(graph).toContain('/gemstones/navaratna/ruby');

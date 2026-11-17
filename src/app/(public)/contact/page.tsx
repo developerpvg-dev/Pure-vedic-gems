@@ -103,8 +103,8 @@ const CONTACT_EMAILS = ['purevedicgems@gmail.com'] as const;
 
 const WORKING_TIMINGS = [
   ['Monday', '11:00 am – 8:00 pm'],
-  ['Tuesday', '11:00 am – 8:00 pm'],
-  ['Wednesday', 'Closed'],
+  ['Tuesday', 'Closed'],
+  ['Wednesday', '11:00 am – 8:00 pm'],
   ['Thursday', '11:00 am – 8:00 pm'],
   ['Friday', '11:00 am – 8:00 pm'],
   ['Saturday', '11:00 am – 8:00 pm'],

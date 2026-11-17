@@ -61,12 +61,14 @@ type HeroSlideRow = {
 };
 
 function mapRow(row: HeroSlideRow): HeroSlide {
+  const alt = row.alt_text?.trim();
   return {
     id: row.id,
     slug: row.slug,
     desktopImage: row.desktop_image_url,
     mobileImage: row.mobile_image_url,
-    alt: row.alt_text,
+    // ponytail: empty CMS alt → descriptive fallback so crawlers/a11y aren't blank
+    alt: alt && alt.length >= 5 ? alt : `PureVedicGems homepage banner — ${row.slug}`,
     linkUrl: row.link_url?.trim() || null,
     sortOrder: row.sort_order,
   };

@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { parseBody } from 'next-sanity/webhook';
 import { SANITY_CONTENT_CACHE_TAG, SANITY_SEARCH_CACHE_TAG } from '@/lib/sanity/client';
 import { payloadSlug, sanityRevalidatePaths } from '@/lib/sanity/webhook-paths';
+import { bumpWorkerEdgeCache } from '@/lib/cloudflare/bump-edge-cache';
 
 function timingSafeEqualStr(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
   for (const path of paths) bust(path);
   revalidateTag(SANITY_CONTENT_CACHE_TAG, 'max');
   revalidateTag(SANITY_SEARCH_CACHE_TAG, 'max');
+  await bumpWorkerEdgeCache();
 
   console.log(`[sanity-webhook] Revalidated: ${paths.join(', ')} for ${docType}/${slug || payload?._id}`);
 

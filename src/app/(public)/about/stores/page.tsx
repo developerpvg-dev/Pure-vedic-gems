@@ -6,7 +6,7 @@ import { breadcrumbJsonLd, buildMetadata, getSiteUrl } from '@/lib/utils/seo';
 import { JsonLd } from '@/components/seo/JsonLd';
 import './stores-page.css';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata = buildMetadata({
   title: 'Gemstone Shop in Delhi | Saket Showroom & Stores',
@@ -63,8 +63,8 @@ const STORE_LOCATIONS: DisplayStore[] = OFFICE_LOCATIONS.map((location) => ({
     location.id === 'uk'
       ? [{ day: 'Visits', time: 'By appointment only' }]
       : [
-          { day: 'Mon – Tue, Thu – Sun', time: '11:00 am – 8:00 pm' },
-          { day: 'Wednesday', time: 'Closed' },
+          { day: 'Mon, Wed – Sun', time: '11:00 am – 8:00 pm' },
+          { day: 'Tuesday', time: 'Closed' },
         ],
 }));
 

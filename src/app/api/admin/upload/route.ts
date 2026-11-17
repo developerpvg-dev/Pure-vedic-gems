@@ -7,10 +7,11 @@ import type { PublicMediaBucket } from '@/lib/media/public-url';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
-const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+const ALLOWED_DOC_TYPES = ['application/pdf'];
+const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES, ...ALLOWED_DOC_TYPES];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-const ALLOWED_BUCKETS = new Set<PublicMediaBucket>(['products', 'jewelry-designs']);
+const ALLOWED_BUCKETS = new Set<PublicMediaBucket>(['products', 'jewelry-designs', 'certificates']);
 
 async function requireUploadAccess() {
   const auth = await requireAdminAccess();
@@ -68,14 +69,20 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    const folder = ALLOWED_VIDEO_TYPES.includes(file.type) ? 'videos' : 'images';
+    const folder = ALLOWED_VIDEO_TYPES.includes(file.type)
+      ? 'videos'
+      : ALLOWED_DOC_TYPES.includes(file.type)
+        ? 'certificates'
+        : 'images';
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     // jewelry-designs historically used flat keys; keep optional folder for products
     const path =
       bucket === 'jewelry-designs' && !baseFolder
         ? `${timestamp}-${safeName}`
-        : [baseFolder, folder, `${timestamp}-${safeName}`].filter(Boolean).join('/');
+        : bucket === 'certificates' && !baseFolder
+          ? `product-certs/${timestamp}-${safeName}`
+          : [baseFolder, folder, `${timestamp}-${safeName}`].filter(Boolean).join('/');
 
     try {
       const url = await putPublicMediaObject({

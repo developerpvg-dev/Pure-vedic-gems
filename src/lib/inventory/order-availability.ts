@@ -6,6 +6,29 @@ import { getRudrakshaProductIdsFromSnapshot } from '@/lib/utils/rudraksha-order-
 import { cancelRewardRedemption } from '@/lib/rewards/service';
 import { revalidateProductSurfaces } from '@/lib/shop/revalidate';
 
+type CatalogTouch = {
+  slug?: string | null;
+  category?: string | null;
+  sub_category?: string | null;
+};
+
+/** Scope ISR to the touched SKUs — avoids nuclear `/shop/[category]` revalidate on every hold. */
+async function revalidateInventorySurfaces(productIds: string[]) {
+  if (!productIds.length) return;
+  const supabase = createAdminClient();
+  const db = asUntypedSupabase(supabase);
+  const { data } = await db
+    .from('products')
+    .select('slug, category, sub_category')
+    .in('id', productIds);
+  const rows = (data ?? []) as CatalogTouch[];
+  if (!rows.length) {
+    revalidateProductSurfaces();
+    return;
+  }
+  for (const row of rows) revalidateProductSurfaces(row);
+}
+
 export type OrderInventoryItem = {
   product_id?: string | null;
   name?: string;
@@ -159,7 +182,7 @@ export async function keepProductsReservedAfterPayment(
     else reservedIds.push(productId);
   }
 
-  if (reservedIds.length) revalidateProductSurfaces();
+  if (reservedIds.length) await revalidateInventorySurfaces(reservedIds);
   return { reservedIds, failedIds };
 }
 
@@ -208,7 +231,7 @@ export async function reserveProductsForPaymentHold(input: {
     else reservedIds.push(target.id);
   }
 
-  if (reservedIds.length) revalidateProductSurfaces();
+  if (reservedIds.length) await revalidateInventorySurfaces(reservedIds);
   return { reservedIds, failedIds };
 }
 
@@ -219,14 +242,21 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
   const items = orderLineItems(order);
   const productIds = collectOrderProductIds(order);
 
+  const soldCatalog: CatalogTouch[] = [];
+
   for (const productId of productIds) {
     const { data: product } = await db
       .from('products')
-      .select('id, sku, name, category, tag_number')
+      .select('id, sku, name, category, sub_category, slug, tag_number')
       .eq('id', productId)
       .single();
 
     if (!product) continue;
+    soldCatalog.push({
+      slug: (product as CatalogTouch).slug,
+      category: (product as CatalogTouch).category,
+      sub_category: (product as CatalogTouch).sub_category,
+    });
 
     const row = product as {
       id: string;
@@ -281,7 +311,7 @@ export async function markProductsSoldForOrder(order: OrderInventorySource) {
     );
   }
 
-  if (productIds.length) revalidateProductSurfaces();
+  for (const row of soldCatalog) revalidateProductSurfaces(row);
 }
 
 /** Product IDs for one order line (main SKU + configured rudraksha beads). */
@@ -315,7 +345,7 @@ export async function releaseProductsForOrder(
   for (const productId of targets) {
     const { data: product } = await db
       .from('products')
-      .select('id, availability_status, reservation_note')
+      .select('id, availability_status, reservation_note, slug, category, sub_category')
       .eq('id', productId)
       .single();
 
@@ -343,10 +373,12 @@ export async function releaseProductsForOrder(
         reservation_note: null,
       })
       .eq('id', productId);
-    if (!error) restored.push(productId);
+    if (!error) {
+      restored.push(productId);
+      revalidateProductSurfaces(product as CatalogTouch);
+    }
   }
 
-  if (restored.length) revalidateProductSurfaces();
   return restored;
 }
 

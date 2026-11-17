@@ -5,14 +5,15 @@ type TagKv = {
   put(key: string, value: string): Promise<void>;
 };
 
-const TTL_MS = 30_000;
+// ponytail: 55s stays under KV's ~60s eventual-consistency window; longer would widen stale tags.
+const TTL_MS = 55_000;
 const MAX_ENTRIES = 5_000;
 const memo = new Map<string, { value: unknown; at: number }>();
 
 /**
  * Isolate-level memo of tag timestamps. KV bills every key of a bulk read and each cached page checks
  * 5-7 tags, so without this every ISR hit costs ~6 reads. KV itself serves reads up to 60s stale, so
- * 30s here does not widen the revalidation window in practice; this isolate's own writes apply at once.
+ * 55s here does not widen the revalidation window in practice; this isolate's own writes apply at once.
  */
 export function memoTagKv(kv: TagKv, clock: () => number = Date.now): TagKv {
   return {

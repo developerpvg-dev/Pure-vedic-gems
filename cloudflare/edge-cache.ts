@@ -1,11 +1,10 @@
 /**
  * Vercel's CDN cached `public, s-maxage=N` responses (shop listings / blog via next.config headers, public APIs).
  * A Worker runs in front of Cloudflare's cache, so without this every such hit re-renders.
- * ISR pages (OpenNext sends `s-maxage` without `public`) are kept at most 60s: the same window the KV tag
- * cache already allows after revalidatePath, and a hit skips Next.js entirely.
- * ponytail: TTL-only (no purge on revalidatePath). Upgrade path: Cache-Tag headers + zone purge.
+ * ISR pages (OpenNext sends `s-maxage` without `public`) are kept at most 900s; freshness after
+ * admin/Sanity edits comes from bumping the edge-cache generation in KV (see edge-cache-gen.ts).
  */
-const ISR_EDGE_TTL = 60;
+export const ISR_EDGE_TTL = 900;
 
 // Headers Next.js varies page responses on (its `Vary`). The Cache API ignores Vary, so they go into the key.
 const VARY_HEADERS = ['rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url'];
@@ -17,14 +16,15 @@ async function sha256(text: string): Promise<string> {
 
 /**
  * Cache API key, or null when the request must always reach Next.js.
- * `version` (Worker version id) keeps a deploy from serving the previous build's HTML/RSC, whose chunks are gone.
+ * `version` (Worker version id) keeps a deploy from serving the previous build's HTML/RSC.
+ * `gen` (KV edge-cache generation) busts all edge entries after revalidate without per-URL deletes.
  */
-export async function edgeCacheKey(request: Request, version = ''): Promise<string | null> {
+export async function edgeCacheKey(request: Request, version = '', gen = ''): Promise<string | null> {
   if (request.method !== 'GET' || request.headers.has('next-action') || request.headers.has('authorization')) return null;
   const url = new URL(request.url);
   const vary = VARY_HEADERS.map((h) => request.headers.get(h) ?? '').join('\n');
   const varyHash = vary.trim() ? await sha256(vary) : '';
-  if (version || varyHash) url.searchParams.set('__edge', `${version}.${varyHash}`);
+  if (version || gen || varyHash) url.searchParams.set('__edge', `${version}.${gen}.${varyHash}`);
   return url.toString();
 }
 
