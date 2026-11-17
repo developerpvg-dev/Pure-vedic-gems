@@ -6,8 +6,8 @@ import { Star, X } from 'lucide-react';
 import { TestimonialProofButton } from './TestimonialProofButton';
 import { toPublicAssetUrl } from '@/lib/site-static';
 
-const TESTIMONIAL_CARD_BG_WEBP = toPublicAssetUrl('/home/testimonial/cardbg.webp');
-const TESTIMONIAL_CARD_BG_PNG = toPublicAssetUrl('/home/testimonial/cardbg.png');
+const TESTIMONIAL_CARD_BG_WEBP = toPublicAssetUrl('/home/testimonial/cardbg.webp?v=20261118');
+const TESTIMONIAL_CARD_BG_PNG = toPublicAssetUrl('/home/testimonial/cardbg.png?v=20261118');
 
 function Stars({ rating }: { rating: number }) {
   return (

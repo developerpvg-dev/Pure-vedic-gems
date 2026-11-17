@@ -11,7 +11,7 @@ function BisCore({ duplicate = false }: { duplicate?: boolean }) {
       <img
         className="cert-bis-logo"
         src={toPublicAssetUrl('/home/heri/bis.jpg')}
-        alt={duplicate ? '' : 'BIS hallmark logo for certified gold and silver'}
+        alt="BIS hallmark logo for certified gold and silver"
         width={20}
         height={18}
         loading="lazy"

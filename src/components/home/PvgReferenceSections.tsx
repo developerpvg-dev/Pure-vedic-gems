@@ -16,7 +16,7 @@ import { HOME_SERVICES, homeServiceImageSrc } from '@/lib/constants/home-service
 import { HeritageLegacyMedia } from '@/components/home/HeritageLegacyMedia';
 import { toPublicAssetUrl } from '@/lib/site-static';
 
-const WHO_WE_ARE_IMG_VERSION = '20260810';
+const WHO_WE_ARE_IMG_VERSION = '20261118';
 
 const WHO_WE_ARE_STACK_IMAGES = [
   {
@@ -45,8 +45,8 @@ const WHO_WE_ARE_STACK_IMAGES = [
     pos: '0',
   },
 ] as const;
-const CONFIGURATOR_STEPS_IMG_VERSION = '20260810a';
-const CERT_STACK_IMG_VERSION = '20260810';
+const CONFIGURATOR_STEPS_IMG_VERSION = '20261118';
+const CERT_STACK_IMG_VERSION = '20261118';
 
 function toStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
@@ -360,7 +360,7 @@ export function PvgReferenceSections({
 
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.webp?v=20260810')} alt="Six global gemological laboratory certification partners" loading="lazy" />
+            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.webp?v=20261118')} alt="Six global gemological laboratory certification partners" loading="lazy" />
           </div>
         </div>
 
@@ -992,7 +992,7 @@ export function PvgReferenceSections({
       href: '/gems-recommendations',
     }}
     secondary={{ label: 'View All Vedic Yagyas', href: '/vedic-yagyas-service' }}
-    image="/home/ctas/cta4.webp?v=20260810"
+    image="/home/ctas/cta4.webp?v=20261118"
     imageAlt="Vedic yagyas guidance from Pure Vedic Gems experts"
     imageSide="left"
   />

@@ -921,7 +921,7 @@ export function NavaratnaHomeSection({
             href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Navaratna Collection', href: '/gemstones/navaratna' }}
-          image="/home/ctas/cta1.webp?v=20260810"
+          image="/home/ctas/cta1.webp?v=20261118"
           imageAlt="Vedic gemstone consultants preparing a horoscope recommendation"
           imageSide="right"
         />
@@ -1017,7 +1017,7 @@ export function RudrakshaHomeSection({
             href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Rudraksha Collection', href: '/rudraksha' }}
-          image="/home/ctas/cta2.webp?v=2"
+          image="/home/ctas/cta2.webp?v=20261118"
           imageAlt="Rudraksha expert offering personalised guidance"
           imageSide="left"
         />
@@ -1296,7 +1296,7 @@ export function SemipreciousHomeSection({
             href: '/gems-recommendations',
           }}
           secondary={{ label: 'See Uparatna Collection', href: '/gemstones/upratna' }}
-          image="/home/ctas/cta3.webp?v=2"
+          image="/home/ctas/cta3.webp?v=20261118"
           imageAlt="Vedic astrologer reviewing semi-precious gemstone alternatives"
           imageSide="right"
         />
