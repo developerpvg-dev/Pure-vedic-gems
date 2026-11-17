@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Star, X } from 'lucide-react';
 import { TestimonialProofButton } from './TestimonialProofButton';
+import { toPublicAssetUrl } from '@/lib/site-static';
 
-const TESTIMONIAL_CARD_BG_WEBP = '/home/testimonial/cardbg.webp';
-const TESTIMONIAL_CARD_BG_PNG = '/home/testimonial/cardbg.png';
+const TESTIMONIAL_CARD_BG_WEBP = toPublicAssetUrl('/home/testimonial/cardbg.webp');
+const TESTIMONIAL_CARD_BG_PNG = toPublicAssetUrl('/home/testimonial/cardbg.png');
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -60,8 +61,7 @@ export function TestimonialCard({ testimonial, indexString }: TestimonialCardPro
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={TESTIMONIAL_CARD_BG_WEBP}
-          alt=""
-          aria-hidden="true"
+          alt="Decorative paper-style customer testimonial card frame"
           className="block h-full w-full object-contain object-center"
           loading={isExpanded ? 'eager' : 'lazy'}
           decoding="async"

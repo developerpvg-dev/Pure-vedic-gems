@@ -557,7 +557,8 @@ function locationLabel(category: HomeManagedCategory) {
 /** Alt must be descriptive (≥5 chars); short names like "Ruby" get a gemstone suffix. */
 function categoryImageAlt(name: string, kind = 'gemstone') {
   const base = name.trim() || kind;
-  return base.length >= 5 ? base : `${base} ${kind}`;
+  if (base.length >= 12) return base;
+  return `${base} ${kind}`.trim();
 }
 
 function fallbackGemBackground(category: HomeManagedCategory) {

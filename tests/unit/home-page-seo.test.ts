@@ -5,7 +5,7 @@ import type { ProductCard } from '@/lib/types/product';
 import { expectOwnBrandCopy } from './expect-own-brand-copy';
 
 describe('homepage SEO (head + JSON-LD only)', () => {
-  it('uses the certified Vedic gemstones homepage title and description', () => {
+  it('uses the certified Vedic gemstones homepage title and audit description', () => {
     const title = fitTitle(HOME_PAGE_TITLE);
     const description = fitDescription(HOME_PAGE_DESCRIPTION);
     expect(title.length).toBeGreaterThanOrEqual(45);
@@ -13,11 +13,11 @@ describe('homepage SEO (head + JSON-LD only)', () => {
     expect(title.toLowerCase()).toContain('certified vedic gemstones');
     expect(title.toLowerCase()).toContain('india');
     expect(title.toLowerCase()).toContain('purevedicgems');
+    expect(description).toBe(
+      'Discover thoughtfully curated treasures from PureVedicGems. Explore the collection and find a meaningful piece to suit your style.',
+    );
     expect(description.length).toBeGreaterThanOrEqual(110);
     expect(description.length).toBeLessThanOrEqual(160);
-    expect(description.toLowerCase()).toContain('certified vedic gemstones');
-    expect(description.toLowerCase()).toContain('lab-certified');
-    expect(description.toLowerCase()).toContain('vedic rituals');
   });
 
   it('emits WebPage, Service, JewelryStore, and OfferCatalog URLs for every storefront hub', () => {

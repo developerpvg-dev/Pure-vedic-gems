@@ -18,7 +18,7 @@ import { absoluteUrl, brandLogoUrl, getSiteUrl, itemListJsonLd, type JsonLd } fr
 export const HOME_PAGE_TITLE = 'Buy Certified Vedic Gemstones Online India | PureVedicGems';
 
 export const HOME_PAGE_DESCRIPTION =
-  'Buy certified Vedic gemstones online in India from PureVedicGems. Explore authentic, lab-certified gems, energized through Vedic rituals. Shop now.';
+  'Discover thoughtfully curated treasures from PureVedicGems. Explore the collection and find a meaningful piece to suit your style.';
 
 export const HOME_PAGE_KEYWORDS = [
   'certified Vedic gemstones',

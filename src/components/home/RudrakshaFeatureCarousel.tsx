@@ -129,7 +129,7 @@ export function RudrakshaFeatureCarousel({ cards }: RudrakshaFeatureCarouselProp
                 <Image
                   fill
                   src={featureImage}
-                  alt={card.name}
+                  alt={card.name?.trim().length >= 5 ? card.name : `${card.name || 'Rudraksha'} collection`}
                   // ponytail: inactive cards use visibility:hidden — native lazy never fetches them
                   loading="eager"
                   sizes="(max-width: 768px) 100vw, 500px"

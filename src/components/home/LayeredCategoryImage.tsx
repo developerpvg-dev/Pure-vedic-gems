@@ -73,8 +73,7 @@ export function LayeredCategoryImage({
       {hoverUrl ? (
         <Image
           src={toPublicAssetUrl(hoverUrl)}
-          alt=""
-          aria-hidden="true"
+          alt={alt}
           width={400}
           height={400}
           className={hoverClassName}

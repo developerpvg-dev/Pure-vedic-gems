@@ -155,7 +155,19 @@
   animation: pvgHeroMediaIn 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
 
+.pvg-hero-carousel__picture {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .pvg-hero-carousel__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain !important;
   object-position: center center !important;
   transition: none !important;

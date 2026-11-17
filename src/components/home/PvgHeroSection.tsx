@@ -2,7 +2,6 @@
 
 import './pvg-hero-carousel.css';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import type { HeroSlide } from '@/lib/hero-slides';
 
@@ -126,29 +125,20 @@ export function PvgHeroSection({ slides }: PvgHeroSectionProps) {
           .filter(Boolean)
           .join(' ');
 
+        // ponytail: <picture> so the browser fetches one breakpoint image, not desktop+mobile
         const images = (
-          <>
-            <Image
+          <picture className="pvg-hero-carousel__picture">
+            <source media="(max-width: 767px)" srcSet={item.mobileImage} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={item.desktopImage}
               alt={item.alt}
-              fill
-              className="pvg-hero-carousel__img pvg-hero-img-desktop"
-              // HeroPreloadLinks already media-preloads the active breakpoint — avoid dual priority download
-              priority={false}
+              className="pvg-hero-carousel__img"
               loading={index === 0 ? 'eager' : 'lazy'}
-              sizes="(max-width: 767px) 1px, 100vw"
+              decoding="async"
+              fetchPriority={index === 0 ? 'high' : 'auto'}
             />
-            <Image
-              src={item.mobileImage}
-              alt=""
-              aria-hidden="true"
-              fill
-              className="pvg-hero-carousel__img pvg-hero-img-mobile"
-              priority={false}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              sizes="(max-width: 767px) 100vw, 1px"
-            />
-          </>
+          </picture>
         );
 
         return (

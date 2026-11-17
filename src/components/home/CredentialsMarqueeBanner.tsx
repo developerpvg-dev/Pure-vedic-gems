@@ -21,7 +21,7 @@ function MarqueeRow({ copyIndex }: { copyIndex: number }) {
         <div key={`${copyIndex}-${lab.name}`} className="pvg-cred-marquee-logo">
           <Image
             src={lab.logo}
-            alt={`${lab.name} certification`}
+            alt={`${lab.name} gemological certification laboratory logo`}
             width={96}
             height={40}
             className="pvg-cred-marquee-logo-img"

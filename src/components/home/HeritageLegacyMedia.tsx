@@ -37,7 +37,7 @@ export function HeritageLegacyMedia() {
               key={photo.src}
               className={`heritage-slide${isOn ? ' is-on' : ''}`}
               src={photo.src}
-              alt={isOn ? photo.alt : ''}
+              alt={photo.alt}
               width={1200}
               height={800}
               decoding="async"

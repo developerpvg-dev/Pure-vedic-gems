@@ -335,31 +335,31 @@ export function PvgReferenceSections({
 
             <div className="cert-stack-card" data-pos="3">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi1.png?v=${CERT_STACK_IMG_VERSION}`)} alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi1.webp?v=${CERT_STACK_IMG_VERSION}`)} alt="GIA gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="2">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi2.png?v=${CERT_STACK_IMG_VERSION}`)} alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi2.webp?v=${CERT_STACK_IMG_VERSION}`)} alt="IGI gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="1">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi3.png?v=${CERT_STACK_IMG_VERSION}`)} alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi3.webp?v=${CERT_STACK_IMG_VERSION}`)} alt="GII gemstone certificate sample" loading="lazy" decoding="async" />
               </div>
             </div>
 
             <div className="cert-stack-card" data-pos="0">
               <div className="cert-stack-frame">
-                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi4.png?v=${CERT_STACK_IMG_VERSION}`)} alt="Multiple gemstone certification reports from global labs" loading="lazy" decoding="async" />
+                <img className="cert-stack-img" src={toPublicAssetUrl(`/home/certificates/certi4.webp?v=${CERT_STACK_IMG_VERSION}`)} alt="Multiple gemstone certification reports from global labs" loading="lazy" decoding="async" />
               </div>
             </div>
 
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.png?v=20260810')} alt="6+ Global Labs" loading="lazy" />
+            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.webp?v=20260810')} alt="Six global gemological laboratory certification partners" loading="lazy" />
           </div>
         </div>
 
