@@ -46,7 +46,7 @@ const WHO_WE_ARE_STACK_IMAGES = [
   },
 ] as const;
 const CONFIGURATOR_STEPS_IMG_VERSION = '20261118';
-const CERT_STACK_IMG_VERSION = '20261118';
+const CERT_STACK_IMG_VERSION = '20261120';
 
 function toStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
@@ -360,7 +360,7 @@ export function PvgReferenceSections({
 
           </div>
           <div className="about-exp-badge" aria-hidden="true">
-            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.webp?v=20261118')} alt="Six global gemological laboratory certification partners" loading="lazy" />
+            <img className="about-exp-img" src={toPublicAssetUrl('/home/certificates/6globallabs.webp?v=20261120')} alt="Six global gemological laboratory certification partners" loading="lazy" />
           </div>
         </div>
 

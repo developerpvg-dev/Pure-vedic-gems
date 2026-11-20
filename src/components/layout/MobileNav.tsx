@@ -40,9 +40,8 @@ function MobileCategoryThumb({ link }: { link: StorefrontSubCategory }) {
     return (
       <span
         style={{ width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        aria-hidden="true"
       >
-        <Image src={thumbImage} alt="" width={28} height={28} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <Image src={thumbImage} alt={link.label} width={28} height={28} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }

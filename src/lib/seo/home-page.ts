@@ -15,7 +15,7 @@ import { gemEnglishName } from '@/lib/seo/storefront-meta';
 import { absoluteUrl, brandLogoUrl, getSiteUrl, itemListJsonLd, type JsonLd } from '@/lib/utils/seo';
 
 /** Homepage title (45–60 chars). Brand suffix matches live site name. */
-export const HOME_PAGE_TITLE = 'Buy Certified Vedic Gemstones Online India | PureVedicGems';
+export const HOME_PAGE_TITLE = 'Buy Certified Vedic Gemstones Online in India';
 
 export const HOME_PAGE_DESCRIPTION =
   'Discover thoughtfully curated treasures from PureVedicGems. Explore the collection and find a meaningful piece to suit your style.';

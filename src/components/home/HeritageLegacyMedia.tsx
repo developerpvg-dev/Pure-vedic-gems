@@ -9,7 +9,7 @@ const PHOTOS = [
     alt: 'Three generations of the Pure Vedic Gems family behind the jewellery counter',
   },
   {
-    src: toPublicAssetUrl('/home/heri/heri2b.jpeg'),
+    src: toPublicAssetUrl('/home/heri/heri2b.jpeg?v=20261120'),
     alt: 'Pure Vedic Gems family continuing the jewellery heritage in the showroom',
   },
 ] as const;

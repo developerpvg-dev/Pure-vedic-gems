@@ -1197,7 +1197,7 @@ export function DirectorsPickSection({ products }: { products: HomeDirectorPick[
         <div className="director-layout">
           <aside className="director-profile" aria-label="Personally selected by Shri Vikas Mehra">
             <div className="director-portrait">
-              <Image src={toPublicAssetUrl("/home/director'spick/vikasmehra.png")} alt="Shri Vikas Mehra, Director of Pure Vedic Gems" width={340} height={480} loading="lazy" unoptimized />
+              <Image src={toPublicAssetUrl("/home/director'spick/vikasmehra.png?v=20261120")} alt="Shri Vikas Mehra, Director of Pure Vedic Gems" width={340} height={480} loading="lazy" unoptimized />
             </div>
             <div className="director-profile-note">Personally selected by Shri Vikas Mehra</div>
           </aside>

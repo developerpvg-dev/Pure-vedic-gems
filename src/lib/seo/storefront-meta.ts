@@ -59,9 +59,9 @@ export function gemstonesHubMeta() {
 /** Main /rudraksha hub. */
 export function rudrakshaHubMeta() {
   return {
-    seo_title: 'Buy Original Rudraksha Online in India | Pure Vedic Gems',
+    seo_title: 'Buy Certified Original Rudraksha Online in India | Pure Gems',
     seo_description:
-      'Explore original and certified Rudraksha online in India at Pure Vedic Gems. Discover Mukhi-wise Rudraksha, authenticity, quality, origin and traditional significance.',
+      'Explore certified treasures from Pure Vedic Gems. Discover carefully curated pieces and learn more about their authenticity, quality, and origin.',
   };
 }
 

@@ -17,7 +17,7 @@ import sharp from 'sharp';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const dryRun = process.argv.includes('--dry-run');
-const BUST = '20261118';
+const BUST = '20261120';
 const MAX_BYTES = 150 * 1024;
 
 function loadEnvFile(name) {
@@ -54,60 +54,32 @@ const s3 = dryRun
       credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
     });
 
-/** Audit URLs (homepage large-image list). */
+/** Remaining audit URLs still over 150KB (homepage + legacy-geo). */
 const URLS = [
-  'https://cdn.purevedicgems.com/products/hero-slides/images/1785414986278-1st_banner_1920x755_-_copy.jpg',
-  'https://cdn.purevedicgems.com/products/hero-slides/images/1785415198061-1024x962_actual_size_banner7_copy.jpg',
-  'https://cdn.purevedicgems.com/products/hero-slides/images/1785421574103-4th_banner_2239x755_copy.jpg',
-  'https://cdn.purevedicgems.com/products/hero-slides/images/1785410826540-1024x962_actual_size_banner6_copy.jpg',
-  'https://cdn.purevedicgems.com/site-static/home/whoweare/1Heritage.webp',
-  'https://cdn.purevedicgems.com/site-static/home/whoweare/puja-energization.jpeg',
-  'https://cdn.purevedicgems.com/site-static/home/whoweare/genuine-rudraksha-xray-certified.jpeg',
-  'https://cdn.purevedicgems.com/site-static/home/whoweare/most-reasonable-genuine-prices.jpeg',
-  'https://cdn.purevedicgems.com/site-static/home/whoweare/powerful-vedic-talisman.jpeg',
-  'https://cdn.purevedicgems.com/site-static/home/whoweare/87yeara.webp',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781070777332-ChatGPT_Image_Jun_10__2026__11_21_30_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241374478-ChatGPT_Image_Jun_12__2026__10_32_30_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781136695321-ChatGPT_Image_Jun_11__2026__05_31_05_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241499249-ChatGPT_Image_Jun_12__2026__10_32_54_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1785246745502-red_coral_pvg1.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241552290-ChatGPT_Image_Jun_12__2026__10_32_42_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241594489-ChatGPT_Image_Jun_12__2026__10_32_36_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1785245944634-yellow_sapphire_pvg_copy_copy.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781239913294-ChatGPT_Image_Jun_12__2026__10_11_02_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781148711379-ChatGPT_Image_Jun_11__2026__08_58_05_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241636049-ChatGPT_Image_Jun_12__2026__10_45_17_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781151980462-ChatGPT_Image_Jun_11__2026__09_55_31_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241677545-ChatGPT_Image_Jun_12__2026__10_45_10_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241736059-ChatGPT_Image_Jun_12__2026__10_45_05_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781148768967-ChatGPT_Image_Jun_11__2026__09_01_01_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1781241777977-ChatGPT_Image_Jun_12__2026__10_44_59_AM.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1782546942156-f5aebf94-b92a-4a91-9f29-574218c162c8.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1786017176055-ChatGPT_Image_Jun_28__2026__06_49_23_PM__1_.png',
-  'https://cdn.purevedicgems.com/site-static/home/ctas/cta1.webp',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1783157425725-ChatGPT_Image_Jul_4__2026__02_58_33_PM.jpg',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1785247915528-rudraksha_mala_website_images_pvg_copy.jpg',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778136831125-1Mukhi_Rudraksha-523x528.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778136852114-2Mukhi_Rudraksha-523x528.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778137379619-3Mukhi_Rudraksh-523x528.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778137397561-4Mukhi_Rudraksha-523x528.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778137415430-5Mukhi_Rudraksha-523x528.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778137433185-6Mukhi_Rudraksha-523x528.png',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1778136588381-15Mukhi_Rudraksha-523x528.png',
-  'https://cdn.purevedicgems.com/site-static/home/ctas/cta2.webp',
-  'https://cdn.purevedicgems.com/site-static/home/ctas/cta3.webp',
-  'https://cdn.purevedicgems.com/site-static/home/ctas/cta4.webp',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1782201338104-ChatGPT_Image_Jun_23__2026__12_34_41_PM.jpg',
-  'https://cdn.purevedicgems.com/products/homepage-categories/images/1782201719341-da5b88c4-7a4f-475c-98cb-e2636b40264e.jpg',
+  'https://cdn.purevedicgems.com/products/homepage-categories/images/1785247649508-EMERALD_1.PNG',
+  'https://cdn.purevedicgems.com/products/homepage-categories/images/1785246399470-HESSONITE_GEMS.PNG',
+  'https://cdn.purevedicgems.com/site-static/home/certificates/6globallabs.webp',
+  "https://cdn.purevedicgems.com/site-static/home/director'spick/vikasmehra.png",
   'https://cdn.purevedicgems.com/products/images/1789739290264-7.29ct-M194-6.jpg',
-  'https://cdn.purevedicgems.com/products/images/1789723385999-4.12ct-Q250-3.jpg',
-  'https://cdn.purevedicgems.com/products/images/1789721107101-5.01ct-T162-3.jpg',
-  'https://cdn.purevedicgems.com/products/images/1789723431115-3.63ct-Q419-3.jpg',
-  'https://cdn.purevedicgems.com/products/images/1788530617079-15.55ct-A758-2.jpg',
-  'https://cdn.purevedicgems.com/site-static/home/configuratorsteps/step4.webp',
-  'https://cdn.purevedicgems.com/site-static/home/configuratorsteps/step5.webp',
   'https://cdn.purevedicgems.com/site-static/home/heri/heri2b.jpeg',
-  'https://cdn.purevedicgems.com/site-static/home/testimonial/cardbg.webp',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/blue-sapphire-gemstone-in-dubai-significance-strength-and-fortune/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/blue-sapphire-gemstone-in-dubai-significance-strength-and-fortune/img-02.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/discover-the-irresistible-and-incredible-magic-of-authentic-astrological-blue-sapphire-gemstone-in-uk/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/discover-the-irresistible-and-incredible-magic-of-authentic-astrological-blue-sapphire-gemstone-in-uk/img-02.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/discover-the-irresistible-and-incredible-magic-of-authentic-astrological-blue-sapphire-gemstone-in-uk/img-04.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/blue-sapphire-gemstone-in-usa/img-01.png',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-100-authentic-blue-sapphire-online-in-london/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-authentic-blue-sapphire-online-in-canada/img-02.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/authentic-yellow-sapphire-online-in-canada/img-03.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-100-authentic-white-sapphire-in-canada/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-100-authentic-yellow-sapphire-online-in-london/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-100-authentic-yellow-sapphire-online-in-london/img-02.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/unlocking-prosperity-and-wisdom-the-significance-of-the-yellow-sapphire-gemstone-in-dubai/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/unlocking-prosperity-and-wisdom-the-significance-of-the-yellow-sapphire-gemstone-in-dubai/img-02.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-100-authentic-white-sapphire-online-in-london/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-100-authentic-white-sapphire-online-in-london/img-03.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-authentic-yellow-sapphire-online-in-uk/img-01.jpg',
+  'https://cdn.purevedicgems.com/site-static/legacy-geo/buy-authentic-yellow-sapphire-online-in-uk/img-03.jpg',
 ];
 
 function parseKey(url) {
@@ -125,6 +97,8 @@ function maxWidthFor(key) {
   if (key.includes('whoweare') || key.includes('/ctas/')) return 1000;
   if (key.includes('testimonial/cardbg')) return 900;
   if (key.includes('/heri/')) return 1200;
+  if (key.includes("director'spick") || key.includes('certificates/')) return 800;
+  if (key.includes('legacy-geo')) return 1000;
   return 1200;
 }
 

@@ -27,7 +27,7 @@ export async function generateMetadata({
   if (!page) return { title: 'Gemstone Guide | PureVedicGems' };
 
   const base = buildMetadata({
-    title: page.title.includes('PureVedic') ? page.title : `${page.title} | PureVedicGems`,
+    title: page.title,
     description: page.description,
     path: page.path,
     image: page.ogImage,

@@ -135,6 +135,8 @@ export function CategoryHubHeader({
   benefits,
   sections,
   faqs,
+  /** ponytail: page can own the real <h1>; hub title stays visual-only */
+  titleAs = 'h1',
 }: {
   label: string;
   intro: string;
@@ -142,6 +144,7 @@ export function CategoryHubHeader({
   benefits: Array<{ text: string }>;
   sections: CategoryHubSection[];
   faqs: CategoryHubFaq[];
+  titleAs?: 'h1' | 'p';
 }) {
   const { primary, secondary } = splitCategoryTitle(label);
   const availableSections = sections.filter((section) => section.html);
@@ -149,6 +152,7 @@ export function CategoryHubHeader({
   const heroIntro = compactHeroIntro(intro);
   const heroBenefits = benefits.filter((b) => b.text?.trim());
   const [activeTab, setActiveTab] = useState<ShopCategorySectionKey | null>(null);
+  const TitleTag = titleAs;
 
   const selectTab = (id: ShopCategorySectionKey) => {
     if (id === 'faqs') {
@@ -164,10 +168,10 @@ export function CategoryHubHeader({
       <header className="category-hub-header">
         <div className="category-hub-hero">
           <div className="category-hub-hero__content">
-            <h1 className="category-hub-hero__title">
+            <TitleTag className="category-hub-hero__title">
               <span className="category-hub-hero__title-primary">{primary}</span>
               {secondary ? <span className="category-hub-hero__title-secondary">{secondary}</span> : null}
-            </h1>
+            </TitleTag>
 
             {heroIntro ? <p className="category-hub-hero__intro">{heroIntro}</p> : null}
 

@@ -124,8 +124,8 @@ function CategoryThumb({ link }: { link: StorefrontSubCategory }) {
 
   if (thumbImage) {
     return (
-      <span style={shellStyle} aria-hidden="true">
-        <Image src={thumbImage} alt="" width={48} height={48} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      <span style={shellStyle}>
+        <Image src={thumbImage} alt={link.label} width={48} height={48} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </span>
     );
   }

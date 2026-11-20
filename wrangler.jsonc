@@ -24,8 +24,9 @@
   // No second public copy of the site (skips the apex/.in redirects, duplicate content). Admin: www.purevedicgems.com/admin.
   "workers_dev": false,
   "triggers": {
-    // 15-minute cache warm-up (skip-if-hot) + daily product-trash purge — see cloudflare/worker.ts.
-    "crons": ["*/15 * * * *", "0 3 * * *"]
+    // Hourly cache warm (skip-if-hot) + daily product-trash purge — see cloudflare/worker.ts.
+    // ponytail: was */15; cold warms burn Workers CPU + R2 Class A + DO queue.
+    "crons": ["0 * * * *", "0 3 * * *"]
   },
   "services": [
     {
@@ -82,9 +83,9 @@
       // Never inherit the production www route.
       "routes": [],
       "workers_dev": true,
-      // Only production purges trash; preview only warms caches.
+      // Preview: no warm cron — was burning DO/Workers/R2 with no traffic benefit.
       "triggers": {
-        "crons": ["*/15 * * * *"]
+        "crons": []
       },
       "services": [
         {

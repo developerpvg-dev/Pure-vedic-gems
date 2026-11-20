@@ -1,5 +1,5 @@
 /**
- * Append ?v=20261118 to CDN image URLs in gem_categories / product_categories / targeted products.
+ * Append ?v=20261120 to CDN image URLs in gem_categories / product_categories / targeted products.
  * Run after compress-homepage-cdn-images.mjs.
  */
 import { createClient } from '@supabase/supabase-js';
@@ -8,13 +8,11 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BUST = '20261118';
+const BUST = '20261120';
 const PRODUCT_KEYS = [
   '1789739290264',
-  '1789723385999',
-  '1789721107101',
-  '1789723431115',
-  '1788530617079',
+  '1785247649508',
+  '1785246399470',
 ];
 
 function loadEnvFile(name) {

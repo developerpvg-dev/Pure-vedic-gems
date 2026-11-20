@@ -47,7 +47,7 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
     seo_description: dbRow.seo_description || defaults.seo_description,
   };
 
-  // ponytail: parent hubs keep body/hero code-owned; CMS seo_title/description wins when set (SEO sheet rule).
+  // ponytail: parent hubs keep body/hero + hub SEO code-owned (storefront-meta sheet).
   if (slug === 'navaratna' || slug === 'navratna' || slug === 'rudraksha' || slug === 'upratna') {
     return {
       ...merged,
@@ -67,6 +67,8 @@ function mergeWithDefaults(slug: string, dbRow: ShopCategoryPageContent | null):
       cleaning_care_html: defaults.cleaning_care_html,
       buyer_beware_html: defaults.buyer_beware_html,
       faqs: defaults.faqs,
+      seo_title: defaults.seo_title,
+      seo_description: defaults.seo_description,
     };
   }
 

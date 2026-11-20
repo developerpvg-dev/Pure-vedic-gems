@@ -19,6 +19,7 @@ export default defineCloudflareConfig({
   // (KV is eventually consistent; same window as Sanity useCdn). Upgrade path at high traffic: DO tag cache.
   tagCache: kvTagCache,
   enableCacheInterception: true,
+  // ponytail: direct CF Cache Purge API — skips BucketCachePurge DO wake (was ~$12 DO line).
   // Needs CACHE_PURGE_API_TOKEN + CACHE_PURGE_ZONE_ID secrets (custom domain / zone).
-  cachePurge: purgeCache({ type: 'durableObject' }),
+  cachePurge: purgeCache({ type: 'direct' }),
 });

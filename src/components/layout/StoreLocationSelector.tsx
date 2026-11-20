@@ -16,10 +16,9 @@ function GoogleMapsPin({ size }: { size: number }) {
   return (
     <Image
       src="/icons/google-maps-pin.png"
-      alt=""
+      alt="Google Maps location pin"
       width={size}
       height={size}
-      aria-hidden="true"
       style={{ display: 'block', width: size, height: size, objectFit: 'contain' }}
     />
   );

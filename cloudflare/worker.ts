@@ -12,7 +12,8 @@ import { edgeCacheCopy, edgeCacheKey, withBrowserRevalidate } from './edge-cache
 import { readEdgeCacheGen } from './edge-cache-gen';
 import { currencySuggestion } from '../src/lib/currency/geo';
 
-const WARM_CRON = '*/15 * * * *';
+// ponytail: hourly (was */15) — DO queue + R2 Class A from cold renders dominate the CF bill.
+const WARM_CRON = '0 * * * *';
 // ponytail: fixed list of top pages. Subcategory pages left out — warming them costs more than it saves.
 const WARM_PATHS = [
   '/',

@@ -198,7 +198,7 @@ function FooterLinkColumn({ group }: { group: FooterLinkGroup }) {
             >
               {link.icon ? (
                 // eslint-disable-next-line @next/next/no-img-element -- external partner icon
-                <img src={link.icon} alt="" width={20} height={20} loading="lazy" />
+                <img src={link.icon} alt={link.label} width={20} height={20} loading="lazy" />
               ) : null}
               {link.label}
             </Link>

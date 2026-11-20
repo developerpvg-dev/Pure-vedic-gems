@@ -2,9 +2,9 @@ import { KnowledgeHubPage } from '@/components/knowledge/KnowledgeHubPage';
 import { buildMetadata } from '@/lib/utils/seo';
 
 export const metadata = buildMetadata({
-  title: 'The Vedic Gem Library | PureVedicGems',
+  title: 'Certified Vedic Gemstones | Curated Gem Library',
   description:
-    'Vedic knowledge library — Navaratna guides, Rudraksha, gem qualities, treatments, energization, care, astrology, and buying safety from Pure Vedic Gems.',
+    'Discover certified treasures from Pure Vedic Gems. Explore our collection and learn how to choose gemstones with confidence.',
   path: '/knowledge',
 });
 

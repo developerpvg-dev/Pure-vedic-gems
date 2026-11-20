@@ -188,6 +188,13 @@ async function CategoryProducts({
 
   return (
     <>
+      {/* ponytail: server H1 so crawlers see it even when hub header is a client island */}
+      {isRudrakshaHub ? (
+        <h1 className="mb-4 font-heading text-xl text-brand-primary md:text-2xl">
+          Buy Certified Original Rudraksha Online in India
+        </h1>
+      ) : null}
+
       {meta?.seoLanding ? (
         <SeoLandingHeader landing={meta.seoLanding} total={total} />
       ) : hubPage ? (
@@ -198,8 +205,9 @@ async function CategoryProducts({
           benefits={hubPage.hero_benefits ?? []}
           sections={contentSections}
           faqs={faqs}
+          titleAs={isRudrakshaHub ? 'p' : 'h1'}
         />
-      ) : (
+      ) : isRudrakshaHub ? null : (
         <CategoryHeader label={label} desc={desc} />
       )}
 
