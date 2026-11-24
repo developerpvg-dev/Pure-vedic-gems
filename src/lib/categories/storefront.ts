@@ -112,6 +112,8 @@ export interface StorefrontSubCategory {
   href: string;
   swatch?: string | null;
   image?: string | null;
+  /** Longer image description when label is too short for alt text. */
+  imageAlt?: string | null;
   meta?: string | null;
 }
 
@@ -158,7 +160,7 @@ export const STORE_CATEGORY_GROUPS_FALLBACK: StorefrontCategoryGroup[] = withRes
     label: 'Upratna Gems',
     href: '/shop/upratna',
     subcategories: [
-      { slug: 'opal', label: 'Opal', href: '/shop/opal', swatch: '#FBBFB4', image: UPRATNA_NAV_IMAGE_BY_SLUG.opal },
+      { slug: 'opal', label: 'Opal', href: '/shop/opal', swatch: '#FBBFB4', image: UPRATNA_NAV_IMAGE_BY_SLUG.opal, imageAlt: 'Natural Opal gemstone' },
       { slug: 'turquoise', label: 'Turquoise (Firoza)', href: '/shop/turquoise', swatch: '#3CB2B2', image: UPRATNA_NAV_IMAGE_BY_SLUG.turquoise },
       { slug: 'amethyst', label: 'Amethyst', href: '/shop/amethyst', swatch: '#9B59B6', image: UPRATNA_NAV_IMAGE_BY_SLUG.amethyst },
       { slug: 'moonstone', label: 'Moonstone', href: '/shop/moonstone', swatch: '#C8D8E8', image: UPRATNA_NAV_IMAGE_BY_SLUG.moonstone },

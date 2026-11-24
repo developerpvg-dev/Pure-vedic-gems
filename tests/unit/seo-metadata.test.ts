@@ -511,7 +511,7 @@ describe('storefront SEO templates', () => {
   it('matches every recommended row in the SEO sheet exactly', () => {
     const rows: Array<[string, { seo_title?: string | null; seo_description?: string | null } | null, string, string]> = [
       ['gemstones', gemstonesHubMeta(), 'Buy Gemstones Online in India | Lab Certified | Pure Vedic Gems', 'Explore 100% genuine gemstones online in India at Pure Vedic Gems. Browse gemstones by type, quality, origin and price to find the right stone for your needs.'],
-      ['rudraksha', getDefaultShopCategoryPage('rudraksha'), 'Buy Original Rudraksha Online in India | Pure Vedic Gems', 'Explore original and certified Rudraksha online in India at Pure Vedic Gems. Discover Mukhi-wise Rudraksha, authenticity, quality, origin and traditional significance.'],
+      ['rudraksha', getDefaultShopCategoryPage('rudraksha'), 'Certified Original Rudraksha Online in India | Buy Pure Gems', 'Explore certified treasures from Pure Vedic Gems. Discover carefully curated pieces and learn more about their authenticity, quality, and origin.'],
       ['upratna', getDefaultShopCategoryPage('upratna'), 'Buy Upratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems', 'Explore Upratna gemstones online in India at Pure Vedic Gems. Browse natural and traditional Vedic gem options by gemstone type, quality, origin and price.'],
       ['navaratna', getDefaultShopCategoryPage('navaratna'), 'Buy Navaratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems', "Shop Navaratna gemstones online in India at Pure Vedic Gems. Explore Ruby, Pearl, Emerald, Pukhraj, Neelam, Coral, Gomed and Cat's Eye with quality details."],
       ['1-mukhi', getDefaultShopCategoryPage('1-mukhi'), 'Buy 1 Mukhi Rudraksha Online in India | Certified Original Bead', 'Shop 1 Mukhi Rudraksha online in India from Pure Vedic Gems. Explore original Rudraksha with details on authenticity, quality, certification and traditional significance.'],
@@ -561,7 +561,7 @@ describe('storefront SEO templates', () => {
       'Buy Navaratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',
     );
     expect(getDefaultShopCategoryPage('rudraksha')?.seo_title).toBe(
-      'Buy Original Rudraksha Online in India | Pure Vedic Gems',
+      'Certified Original Rudraksha Online in India | Buy Pure Gems',
     );
     expect(getDefaultShopCategoryPage('upratna')?.seo_title).toBe(
       'Buy Upratna Gems Online in India | Vedic Gemstones | Pure Vedic Gems',

@@ -118,12 +118,25 @@ export function LayoutShell({
     return <main className="flex-1">{children}</main>;
   }
 
+  // Layout SSR lands in the HTML shell; page-body H1 often stays in the RSC flight on CF.
+  const rudrakshaHubH1 =
+    pathname === '/rudraksha' || pathname === '/shop/rudraksha'
+      ? 'Certified Original Rudraksha Online in India'
+      : null;
+
   // One shared spacer. Pages with .pvg-owns-header-offset hide it in CSS so it cannot stack.
   return (
     <CurrencyProvider>
       <SiteHeader blogCategoryLinks={blogCategoryLinks} />
       {showHeaderSpacer ? <div className="pvg-header-spacer" aria-hidden="true" /> : null}
-      <main className={shellClassName}>{children}</main>
+      <main className={shellClassName}>
+        {rudrakshaHubH1 ? (
+          <h1 className="mx-auto mb-4 max-w-7xl px-4 pt-4 font-heading text-xl text-brand-primary md:px-6 md:text-2xl">
+            {rudrakshaHubH1}
+          </h1>
+        ) : null}
+        {children}
+      </main>
       <StickyContactRail />
       {/* ponytail: skip mount+config fetch while Ratna is off — set NEXT_PUBLIC_AGENT_ENABLED=true with AGENT_ENABLED */}
       {isAgentUiEnabled() ? <AgentChatWidget /> : null}

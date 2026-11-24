@@ -59,7 +59,7 @@ export function gemstonesHubMeta() {
 /** Main /rudraksha hub. */
 export function rudrakshaHubMeta() {
   return {
-    seo_title: 'Buy Certified Original Rudraksha Online in India | Pure Gems',
+    seo_title: 'Certified Original Rudraksha Online in India | Buy Pure Gems',
     seo_description:
       'Explore certified treasures from Pure Vedic Gems. Discover carefully curated pieces and learn more about their authenticity, quality, and origin.',
   };

@@ -188,12 +188,7 @@ async function CategoryProducts({
 
   return (
     <>
-      {/* ponytail: server H1 so crawlers see it even when hub header is a client island */}
-      {isRudrakshaHub ? (
-        <h1 className="mb-4 font-heading text-xl text-brand-primary md:text-2xl">
-          Buy Certified Original Rudraksha Online in India
-        </h1>
-      ) : null}
+      {/* Rudraksha hub H1 lives in LayoutShell so it reaches the HTML shell on CF. */}
 
       {meta?.seoLanding ? (
         <SeoLandingHeader landing={meta.seoLanding} total={total} />
