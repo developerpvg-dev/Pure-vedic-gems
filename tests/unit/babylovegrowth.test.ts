@@ -89,4 +89,24 @@ Wear [natural emerald](https://www.purevedicgems.com/shop/emerald) for Mercury.
     expect(md).toContain('- One');
     expect(md).not.toContain('script');
   });
+
+  it('converts GFM tables into portable text table blocks', () => {
+    resetPtKeys();
+    const { blocks } = markdownToPortableText(
+      `Summit guide ranges:
+
+| Setting | Typical US price |
+|---|---|
+| Sterling silver | $100 to $500 |
+| 14K gold | $400 to $2,000+ |
+`,
+    );
+    const table = blocks.find((b) => b._type === 'table');
+    expect(table).toBeDefined();
+    expect(table && 'rows' in table ? table.rows.map((r) => r.cells) : []).toEqual([
+      ['Setting', 'Typical US price'],
+      ['Sterling silver', '$100 to $500'],
+      ['14K gold', '$400 to $2,000+'],
+    ]);
+  });
 });

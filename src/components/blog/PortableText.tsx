@@ -129,10 +129,8 @@ function renderBlock(block: Block) {
 }
 
 /** @sanity/table stores plain strings; first row is the header. */
-function renderTable(block: Block, key: string | number) {
-  const rows = (block.rows ?? []).filter((row) => Array.isArray(row.cells));
+function renderTableFromRows(rows: string[][], key: string | number) {
   if (!rows.length) return null;
-
   const [header, ...body] = rows;
   return (
     <div key={key} className="prose-pvg-table-wrap">
@@ -140,7 +138,7 @@ function renderTable(block: Block, key: string | number) {
         {header ? (
           <thead>
             <tr>
-              {(header.cells ?? []).map((cell, i) => (
+              {header.map((cell, i) => (
                 <th key={i}>{cell}</th>
               ))}
             </tr>
@@ -149,8 +147,8 @@ function renderTable(block: Block, key: string | number) {
         {body.length > 0 ? (
           <tbody>
             {body.map((row, ri) => (
-              <tr key={row._key ?? ri}>
-                {(row.cells ?? []).map((cell, ci) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => (
                   <td key={ci}>{cell}</td>
                 ))}
               </tr>
@@ -160,6 +158,78 @@ function renderTable(block: Block, key: string | number) {
       </table>
     </div>
   );
+}
+
+function renderTable(block: Block, key: string | number) {
+  const rows = (block.rows ?? [])
+    .filter((row) => Array.isArray(row.cells))
+    .map((row) => row.cells ?? []);
+  return renderTableFromRows(rows, key);
+}
+
+/** Split a GFM table cell row (`| a | b |`) into cells. */
+function splitPipeRow(segment: string): string[] {
+  return segment
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((c) => c.trim());
+}
+
+function isPipeSeparator(segment: string): boolean {
+  const cells = splitPipeRow(segment);
+  return cells.length > 0 && cells.every((c) => /^:?-{3,}:?$/.test(c));
+}
+
+/**
+ * Already-published BLG posts joined GFM tables into one paragraph.
+ * Recover `| Setting | … | |---|---| | Sterling | … |` into a real table.
+ */
+function tryRecoverPipeTable(text: string): { before: string; rows: string[][]; after: string } | null {
+  if (!text.includes('|') || !/\|[\t ]*-{3,}/.test(text)) return null;
+
+  // Split on pipe-row boundaries: " | | " between rows when joiner was " ".
+  const parts = text.split(/\s*\|\s*\|\s*/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+
+  // Find the separator row, then rebuild header + body.
+  let sepIdx = -1;
+  for (let i = 0; i < parts.length; i += 1) {
+    const candidate = parts[i].includes('|') ? parts[i] : `|${parts[i]}|`;
+    if (isPipeSeparator(candidate)) {
+      sepIdx = i;
+      break;
+    }
+  }
+  if (sepIdx < 1) return null;
+
+  const headerRaw = parts[sepIdx - 1];
+  // Leading prose may sit before the first pipe on the header segment.
+  const firstPipe = headerRaw.indexOf('|');
+  const before =
+    firstPipe > 0
+      ? headerRaw.slice(0, firstPipe).trim()
+      : sepIdx >= 2
+        ? parts.slice(0, sepIdx - 1).join(' ').trim()
+        : '';
+  const headerCells = splitPipeRow(firstPipe >= 0 ? headerRaw.slice(firstPipe) : `|${headerRaw}|`);
+  if (headerCells.length < 2) return null;
+
+  const rows: string[][] = [headerCells];
+  for (let i = sepIdx + 1; i < parts.length; i += 1) {
+    const segment = parts[i];
+    if (!segment.includes('|') && !/^\S/.test(segment)) continue;
+    // Trailing prose after the last table row (no more pipes).
+    if (!segment.includes('|') && rows.length > 1) {
+      return { before, rows, after: parts.slice(i).join(' ').trim() };
+    }
+    const cells = splitPipeRow(segment.includes('|') ? segment : `|${segment}|`);
+    if (cells.length >= 2 && !isPipeSeparator(segment.includes('|') ? segment : `|${segment}|`)) {
+      rows.push(cells);
+    }
+  }
+  if (rows.length < 2) return null;
+  return { before, rows, after: '' };
 }
 
 /** Group consecutive list items of the same type */
@@ -229,8 +299,21 @@ export function PortableText({ value }: { value: unknown[] | undefined | null })
           return renderTable(block, block._key ?? i);
         }
 
-        // Text block
+        // Text block — recover pipe tables flattened into one paragraph by older BLG ingest.
         if (block._type === 'block') {
+          if (!block.listItem && (!block.style || block.style === 'normal')) {
+            const plain = getPlainText(block.children);
+            const recovered = tryRecoverPipeTable(plain);
+            if (recovered) {
+              return (
+                <div key={block._key ?? i}>
+                  {recovered.before ? <p>{recovered.before}</p> : null}
+                  {renderTableFromRows(recovered.rows, `${block._key ?? i}-tbl`)}
+                  {recovered.after ? <p>{recovered.after}</p> : null}
+                </div>
+              );
+            }
+          }
           return <div key={block._key ?? i}>{renderBlock(block)}</div>;
         }
 

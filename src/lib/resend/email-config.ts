@@ -46,11 +46,12 @@ export function getEmailAssetBaseUrl(): string {
 /**
  * Logo as a remote HTTPS image — never a CID attachment (Gmail shows those as paperclips).
  * Override with EMAIL_LOGO_URL if you host the mark on a CDN.
- * Default: static /pvg-emblem.webp (Workers Assets / CDN) — no /api/email/logo fs read.
+ * ponytail: PNG not WebP — Gmail/Outlook often fail WebP and show a white square box.
  */
 export function getEmailLogoUrl(): string {
   if (process.env.EMAIL_LOGO_URL) return process.env.EMAIL_LOGO_URL;
-  return `${getEmailAssetBaseUrl()}/pvg-emblem.webp`;
+  // ?v= busts CDN/client cache after logo asset changes (baked header bg for Outlook).
+  return `${getEmailAssetBaseUrl()}/email/pvg-emblem.png?v=20261124`;
 }
 
 export function getEmailWordmarkUrl(): string {

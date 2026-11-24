@@ -2,8 +2,8 @@
  * Markdown → Sanity Portable Text for BabyLoveGrowth articles.
  *
  * ponytail: Worker-safe (no jsdom). Covers headings, paragraphs, lists,
- * links, bold/italic, code, images, blockquotes. Nested HTML tables /
- * complex embeds → upgrade to a real HTML→PT walk if BLG content needs it.
+ * links, bold/italic, code, images, blockquotes, GFM tables. Nested HTML
+ * tables / complex embeds → upgrade to a real HTML→PT walk if BLG needs it.
  */
 
 export interface PtSpan {
@@ -36,7 +36,19 @@ export interface PtImageBlock {
   alt?: string;
 }
 
-export type PtNode = PtBlock | PtImageBlock;
+export interface PtTableRow {
+  _key: string;
+  cells: string[];
+}
+
+/** Matches @sanity/table shape used by PortableText. */
+export interface PtTableBlock {
+  _type: 'table';
+  _key: string;
+  rows: PtTableRow[];
+}
+
+export type PtNode = PtBlock | PtImageBlock | PtTableBlock;
 
 let keyCounter = 0;
 function key(prefix = 'k'): string {
@@ -147,6 +159,22 @@ function textBlock(
     children,
     ...(list ? { listItem: list.listItem, level: list.level ?? 1 } : {}),
   };
+}
+
+/** GFM table row: `| a | b |` → cells (trim empties from leading/trailing pipes). */
+function splitTableRow(line: string): string[] {
+  const raw = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return raw.split('|').map((c) => decodeEntities(c.trim()));
+}
+
+function isTableSeparator(line: string): boolean {
+  const cells = splitTableRow(line);
+  return cells.length > 0 && cells.every((c) => /^:?-{3,}:?$/.test(c));
+}
+
+function isTableRow(line: string): boolean {
+  const t = line.trim();
+  return t.includes('|') && /^\|?.+\|/.test(t);
 }
 
 /** Strip leading H1 that duplicates the post title (page already renders title). */
@@ -263,6 +291,24 @@ export function markdownToPortableText(markdown: string, title?: string): {
       continue;
     }
 
+    // GFM table: header | sep | rows…
+    if (
+      isTableRow(trimmed) &&
+      i + 1 < lines.length &&
+      isTableSeparator(lines[i + 1].trim())
+    ) {
+      const rows: PtTableRow[] = [{ _key: key('tr'), cells: splitTableRow(trimmed) }];
+      i += 2; // skip separator
+      while (i < lines.length) {
+        const next = lines[i].trim();
+        if (!next || !isTableRow(next) || isTableSeparator(next)) break;
+        rows.push({ _key: key('tr'), cells: splitTableRow(next) });
+        i += 1;
+      }
+      blocks.push({ _type: 'table', _key: key('tbl'), rows });
+      continue;
+    }
+
     // Paragraph: join continuation lines until blank / block start.
     const para: string[] = [trimmed];
     i += 1;
@@ -271,7 +317,8 @@ export function markdownToPortableText(markdown: string, title?: string): {
       if (!next) break;
       if (
         /^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>|!\[)/.test(next) ||
-        next.startsWith('```')
+        next.startsWith('```') ||
+        (isTableRow(next) && i + 1 < lines.length && isTableSeparator(lines[i + 1].trim()))
       ) {
         break;
       }

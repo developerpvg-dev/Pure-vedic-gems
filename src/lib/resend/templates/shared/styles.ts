@@ -52,6 +52,8 @@ export const logoImageStyle = {
   display: 'block' as const,
   border: 0,
   outline: 'none',
+  // Match header so any opaque image edges don't flash white in Outlook.
+  backgroundColor: emailColors.header,
 };
 
 export const wordmarkStyle = {

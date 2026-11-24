@@ -8,6 +8,6 @@ export const runtime = 'nodejs';
  * Serves a redirect to the static emblem (no fs — Workers-safe).
  */
 export async function GET() {
-  const dest = `${getEmailAssetBaseUrl()}/pvg-emblem.webp`;
+  const dest = `${getEmailAssetBaseUrl()}/email/pvg-emblem.png?v=20261124`;
   return NextResponse.redirect(dest, 308);
 }

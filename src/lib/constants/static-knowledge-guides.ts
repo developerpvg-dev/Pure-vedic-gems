@@ -15,6 +15,13 @@ export type StaticGuideFaq = {
   answer: string;
 };
 
+export type StaticGuideVerify = {
+  title: string;
+  body: string[];
+  linkHref: string;
+  linkLabel: string;
+};
+
 export type StaticKnowledgeGuide = {
   title: string;
   shortTitle: string;
@@ -37,6 +44,8 @@ export type StaticKnowledgeGuide = {
   qualityPricing: string[];
   expertCorner: string;
   faqs: StaticGuideFaq[];
+  /** Optional cert-verify block (diamond guide). */
+  verifyGuide?: StaticGuideVerify;
 };
 
 type GemstoneSeed = {
@@ -258,6 +267,31 @@ export const NAVARATNA_GUIDES: StaticKnowledgeGuide[] = gemstoneSeeds.map((gem) 
     },
   ],
 }));
+
+// Diamond-only: how to read/verify IGI & GIA reports (lab + natural).
+{
+  const diamond = NAVARATNA_GUIDES.find((g) => g.slug === 'diamond-heera-guide');
+  if (diamond) {
+    diamond.updatedAt = '2026-11-24';
+    diamond.readingTime = 8;
+    diamond.verifyGuide = {
+      title: 'How to verify an IGI or GIA diamond report',
+      body: [
+        'Before you pay for Heera (diamond)—natural or lab-grown—match the physical stone to the lab report. A PDF alone is not enough; forged or mismatched certificates show up when you check the report number on the lab site and compare carat, measurements, shape, and the plotted diagram to the stone in hand.',
+        '1. Find the report number on the document (and on the girdle laser inscription when present). 2. Open the lab’s official verify page—GIA Report Check or IGI Verify—and enter that number. 3. Confirm the online record matches weight, color, clarity, cut/polish/symmetry, fluorescence, and proportions. 4. For lab-grown stones, confirm the report explicitly says laboratory-grown (or equivalent) and that the growth method matches what you were sold. 5. Reject any stone whose inscription, weight, or plot does not match the verified report.',
+        'Use the same habit for jewellery: ask for the report PDF, the tag number, and a clear photo of the girdle inscription. If anything fails the online check, pause the purchase and ask your jeweller to resolve it before setting or shipping.',
+      ],
+      linkHref:
+        'https://vrayasandco.com/blogs/news-24/how-to-read-and-verify-a-gia-or-igi-certificate-for-lab-diamonds',
+      linkLabel: 'Full walkthrough: how to read and verify a GIA or IGI certificate',
+    };
+    diamond.faqs.push({
+      question: 'How do I verify an IGI or GIA diamond certificate?',
+      answer:
+        'Enter the report number on the official GIA or IGI verification page and match carat, measurements, shape, grades, and (when present) the girdle inscription to the stone. For a step-by-step guide, see the linked IGI/GIA certificate verification article on this page.',
+    });
+  }
+}
 
 type RudrakshaSeed = {
   mukhi: number;

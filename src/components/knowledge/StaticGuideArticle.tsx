@@ -3,13 +3,14 @@ import Link from 'next/link';
 import type { StaticKnowledgeGuide } from '@/lib/constants/static-knowledge-guides';
 import { KnowledgePageHero } from '@/components/knowledge/KnowledgePageHero';
 
-const sections = [
+const baseSections = [
   { id: 'what-is-it', label: 'What is it' },
   { id: 'vedic-significance', label: 'Vedic significance' },
   { id: 'benefits', label: 'Benefits' },
   { id: 'who-should-wear', label: 'Who should wear' },
   { id: 'how-to-wear', label: 'How to wear' },
   { id: 'quality-pricing', label: 'Quality and pricing' },
+  { id: 'verify-report', label: 'Verify IGI / GIA report' },
   { id: 'expert-corner', label: "Expert's corner" },
   { id: 'faqs', label: 'FAQs' },
 ] as const;
@@ -54,6 +55,9 @@ export function getStaticGuideSchemas(guide: StaticKnowledgeGuide, pathname: str
 export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledgeGuide; pathname: string }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://purevedicgems.com';
   const schemas = getStaticGuideSchemas(guide, pathname, siteUrl);
+  const sections = guide.verifyGuide
+    ? baseSections
+    : baseSections.filter((section) => section.id !== 'verify-report');
 
   return (
     <main className="pvg-knowledge-page px-4 pb-20 md:px-8">
@@ -168,6 +172,29 @@ export function StaticGuideArticle({ guide, pathname }: { guide: StaticKnowledge
                 ))}
               </div>
             </section>
+
+            {guide.verifyGuide ? (
+              <section id="verify-report" className="pvg-knowledge-scroll-target border border-[#DDD0B4] bg-white p-6">
+                <h2 className="text-3xl font-black text-[#4D0A0A]">{guide.verifyGuide.title}</h2>
+                <div className="mt-4 space-y-4">
+                  {guide.verifyGuide.body.map((paragraph) => (
+                    <p key={paragraph.slice(0, 48)} className="text-base leading-8 text-[#6B5B4E]">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+                <p className="mt-5 text-sm leading-7 text-[#6B5B4E]">
+                  <a
+                    href={guide.verifyGuide.linkHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#7A1515] underline underline-offset-4"
+                  >
+                    {guide.verifyGuide.linkLabel}
+                  </a>
+                </p>
+              </section>
+            ) : null}
 
             <section id="expert-corner" className="pvg-knowledge-on-dark scroll-mt-32 rounded-sm p-6">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#a67c2e]">Expert&apos;s Corner</p>
