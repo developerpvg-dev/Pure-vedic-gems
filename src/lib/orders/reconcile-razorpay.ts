@@ -48,7 +48,7 @@ export async function reconcilePendingRazorpayOrders() {
     .select('*')
     .eq('status', 'pending')
     .eq('method', 'razorpay')
-    .like('razorpay_order_id', 'order_%')
+    .ilike('razorpay_order_id', 'order_%')
     .gte('created_at', since)
     .order('created_at', { ascending: true })
     .limit(LIMIT);
