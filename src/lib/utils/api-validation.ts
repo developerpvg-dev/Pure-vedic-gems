@@ -26,6 +26,7 @@ const FIELD_LABELS: Record<string, string> = {
   country: 'Country',
   country_code: 'Country',
   manual_discount: 'Manual discount',
+  manual_discount_target: 'Discount on',
   coupon_code: 'Coupon',
   fulfillment_type: 'Fulfillment',
 };

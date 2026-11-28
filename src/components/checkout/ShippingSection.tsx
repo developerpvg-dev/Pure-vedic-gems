@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Country, State, City } from 'country-state-city';
-import { Globe, MapPin, Pencil, ChevronDown, Truck, Loader2 } from 'lucide-react';
+import { Globe, MapPin, Pencil, ChevronDown, Truck, Store, Loader2 } from 'lucide-react';
+import { STORE_PICKUP_LOCATIONS, STORE_PICKUP_METHOD_ID } from '@/lib/shipping/store-pickup';
 import { ShippingAddressSchema, type ShippingAddress, type ShippingMethodId } from '@/lib/validators/order';
 import type { SelectedShippingPlan, ShippingPlan } from '@/lib/types/shipping';
 import { formatPrice, localizeInrAmountsInText } from '@/lib/utils/format';
@@ -409,11 +410,13 @@ export function ShippingSection({
                   plan.estimated_days_min != null && plan.estimated_days_max != null
                     ? `${plan.estimated_days_min}-${plan.estimated_days_max} days`
                     : null;
+                const isPickup = plan.id === STORE_PICKUP_METHOD_ID;
+                const selected = shippingMethod === plan.id;
                 return (
                   <label
                     key={plan.id}
                     className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                      shippingMethod === plan.id
+                      selected
                         ? 'border-[var(--pvg-accent)] bg-brand-gold-light'
                         : 'border-[var(--pvg-border)] hover:border-[var(--pvg-accent)]/50'
                     }`}
@@ -422,11 +425,15 @@ export function ShippingSection({
                       type="radio"
                       name="shipping_method"
                       value={plan.id}
-                      checked={shippingMethod === plan.id}
+                      checked={selected}
                       onChange={() => handlePlanSelect(plan.id)}
                       className="sr-only"
                     />
-                    <Truck className="h-4.5 w-4.5 text-[var(--pvg-accent)] mt-0.5 shrink-0" />
+                    {isPickup ? (
+                      <Store className="h-4.5 w-4.5 text-[var(--pvg-accent)] mt-0.5 shrink-0" />
+                    ) : (
+                      <Truck className="h-4.5 w-4.5 text-[var(--pvg-accent)] mt-0.5 shrink-0" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-[var(--pvg-text)] block">
                         {localizeInrAmountsInText(plan.label)}
@@ -437,9 +444,23 @@ export function ShippingSection({
                         </span>
                       ) : null}
                       {eta ? <span className="text-xs text-[var(--pvg-muted)] block mt-1">ETA: {eta}</span> : null}
+                      {isPickup && selected ? (
+                        <div className="mt-3 space-y-2 border-t border-[var(--pvg-border)] pt-3">
+                          {STORE_PICKUP_LOCATIONS.map((place) => (
+                            <div key={place.title}>
+                              <p className="text-xs font-medium text-[var(--pvg-text)]">{place.title}</p>
+                              {place.lines.map((line) => (
+                                <p key={line} className="text-xs text-[var(--pvg-muted)]">
+                                  {line}
+                                </p>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                     <span className="text-sm font-semibold text-[var(--pvg-primary)] shrink-0">
-                      {formatPrice(Number(plan.cost))}
+                      {Number(plan.cost) === 0 ? 'Free' : formatPrice(Number(plan.cost))}
                     </span>
                   </label>
                 );

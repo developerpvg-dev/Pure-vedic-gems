@@ -14,6 +14,7 @@ import {
   parseRudrakshaBeadsFromSnapshot,
 } from '@/lib/utils/rudraksha-order-display';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
+import { readManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 import { parseBankTransferProof } from '@/lib/orders/bank-transfer-proof';
 import { parseComplianceFlags } from '@/lib/orders/returns';
 import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
@@ -184,7 +185,10 @@ export default async function OrderReceiptPage({
   };
   const bankProof = parseBankTransferProof(order.compliance_flags);
   const ceremonyForm = energizationFormFromOrderItems(items);
-  const priceLines = buildOrderPriceLines(order);
+  const priceLines = buildOrderPriceLines({
+    ...order,
+    manual_discount_target: readManualDiscountTarget(order.compliance_flags),
+  });
   const flags = parseComplianceFlags(order.compliance_flags);
   const channel =
     order.order_source === 'offline'

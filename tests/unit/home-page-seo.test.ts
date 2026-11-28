@@ -10,9 +10,7 @@ describe('homepage SEO (head + JSON-LD only)', () => {
     const description = fitDescription(HOME_PAGE_DESCRIPTION);
     expect(title.length).toBeGreaterThanOrEqual(45);
     expect(title.length).toBeLessThanOrEqual(70);
-    expect(title.toLowerCase()).toContain('certified vedic gemstones');
-    expect(title.toLowerCase()).toContain('india');
-    expect(title.toLowerCase()).toContain('purevedicgems');
+    expect(title).toBe('Buy Certified Vedic Gemstones Online in India | Authentic Gems');
     expect(description).toBe(
       'Discover thoughtfully curated treasures from PureVedicGems. Explore the collection and find a meaningful piece to suit your style.',
     );

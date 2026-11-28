@@ -22,6 +22,7 @@ import {
 import { parseConfigurationSnapshot } from '@/lib/utils/configuration-snapshot';
 import { quoteRewardRedemption } from '@/lib/rewards/service';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
+import { capManualDiscount, type ManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,8 @@ export interface PricingBreakdown {
   reward_points_redeemed: number;
   reward_discount: number;
   manual_discount: number;
+  /** Set when the admin named which charge the manual discount comes off. */
+  manual_discount_target: ManualDiscountTarget | null;
   gst_amount: number;
   tax_breakdown: ReturnType<typeof taxBreakdownToJson>;
   total: number;
@@ -83,6 +86,8 @@ export interface PricingBreakdown {
 export type PricingOfflineOptions = {
   /** Admin POS negotiated discount (INR), applied after coupon/rewards */
   manualDiscount?: number;
+  /** Which charge that discount comes off. Missing = whole merchandise, not shipping. */
+  manualDiscountTarget?: ManualDiscountTarget | null;
   /** Pickup / in-store: skip shipping_methods lookup and use this cost */
   shippingCostOverride?: number;
   /** Admin order edit: pieces already held/sold by this order skip availability checks */
@@ -527,9 +532,19 @@ export async function recalculateOrderTotal(
       });
   const rewardDiscount = rewardQuote?.discount_amount ?? 0;
   const rewardPointsRedeemed = rewardQuote?.points_to_redeem ?? 0;
-  const manualDiscountRaw = Math.max(0, Number(offlineOptions?.manualDiscount) || 0);
   const afterCouponReward = Math.max(0, merchandiseTotal - couponDiscount - rewardDiscount);
-  const manualDiscount = Math.min(manualDiscountRaw, afterCouponReward);
+  const manualAllocation = capManualDiscount({
+    target: offlineOptions?.manualDiscountTarget ?? null,
+    requested: offlineOptions?.manualDiscount ?? 0,
+    subtotal,
+    jewelry: jewelryCharges,
+    metal: metalCharges,
+    certification: certificationCharges,
+    energization: energizationCharges,
+    shipping: shippingCost,
+    merchandiseAfterCouponReward: afterCouponReward,
+  });
+  const manualDiscount = manualAllocation.amount;
   const discount = couponDiscount + rewardDiscount + manualDiscount;
 
   // ── 6. GST calculation ────────────────────────────────────────────────
@@ -563,6 +578,7 @@ export async function recalculateOrderTotal(
     if (mode !== 'weight' || taxable <= 0) continue;
     weightJewelleryTaxable += taxable * item.quantity;
   }
+  weightJewelleryTaxable = Math.max(0, weightJewelleryTaxable - manualAllocation.gstBaseReduction);
 
   const taxBreakdown = buildTaxBreakdown(shippingAddress?.state, [
     calculateGstComponent({
@@ -589,10 +605,17 @@ export async function recalculateOrderTotal(
   }
 
   const taxableAmount =
-    subtotal + jewelryCharges + metalCharges + certificationCharges + energizationCharges - discount;
+    subtotal +
+    jewelryCharges +
+    metalCharges +
+    certificationCharges +
+    energizationCharges -
+    couponDiscount -
+    rewardDiscount -
+    manualAllocation.onMerchandise;
 
   // ── 7. Final total ───────────────────────────────────────────────────
-  const total = taxableAmount + gstAmount + shippingCost;
+  const total = taxableAmount + gstAmount + shippingCost - manualAllocation.onShipping;
 
   return {
     items: pricedItems,
@@ -607,6 +630,7 @@ export async function recalculateOrderTotal(
     reward_points_redeemed: rewardPointsRedeemed,
     reward_discount: rewardDiscount,
     manual_discount: manualDiscount,
+    manual_discount_target: manualDiscount > 0 ? offlineOptions?.manualDiscountTarget ?? null : null,
     gst_amount: gstAmount,
     tax_breakdown: taxBreakdownToJson(taxBreakdown),
     total: Math.max(total, 0), // Safety: total should never be negative

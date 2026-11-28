@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { purgeExpiredTrashedProducts } from '@/lib/products/trash';
+import { reconcilePendingRazorpayOrders } from '@/lib/orders/reconcile-razorpay';
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -12,7 +13,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const purged = await purgeExpiredTrashedProducts(asUntypedSupabase(createAdminClient()));
-    return NextResponse.json({ ok: true, purged });
+    const razorpay = await reconcilePendingRazorpayOrders().catch((error) => {
+      console.error('reconcile-razorpay:', error);
+      return { checked: 0, finalized: 0, mismatched: 0, error: true };
+    });
+    return NextResponse.json({ ok: true, purged, razorpay });
   } catch (err) {
     console.error('purge-product-trash:', err);
     return NextResponse.json(

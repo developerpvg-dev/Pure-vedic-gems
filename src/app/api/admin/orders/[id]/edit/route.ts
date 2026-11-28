@@ -18,6 +18,7 @@ import {
   orderEditPricingOptions,
 } from '@/lib/orders/admin-order-edit';
 import { logAdminAction } from '@/lib/utils/admin-log';
+import { withManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 
 type OrderRow = {
   id: string;
@@ -89,6 +90,7 @@ export async function POST(
       {
         ...orderEditPricingOptions(order),
         manualDiscount: data.manual_discount ?? 0,
+        manualDiscountTarget: data.manual_discount_target ?? null,
         shippingCostOverride: isDelivery ? undefined : 0,
       },
     );
@@ -156,6 +158,10 @@ export async function POST(
       tax_invoice_required: Boolean(gstin),
       ...(gstin && order.invoice_status === 'not_required' ? { invoice_status: 'pending' } : {}),
       special_instructions: data.special_instructions ?? null,
+      compliance_flags: withManualDiscountTarget(
+        (raw as { compliance_flags?: unknown }).compliance_flags,
+        pricing.manual_discount > 0 ? data.manual_discount_target ?? null : null,
+      ) as Json,
       commissions: commissions as Json,
       commission_source: commissions[0]?.source ?? null,
       commission_name: commissions[0]?.name ?? null,

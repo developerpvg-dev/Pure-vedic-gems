@@ -91,6 +91,21 @@ describe('buildOrderPriceLines', () => {
     expect(lines.filter((l) => l.sign < 0).map((l) => l.key)).toEqual(['coupon', 'rewards']);
     expect(lines.some((l) => l.key === 'discount')).toBe(false);
   });
+
+  it('labels a manual discount with the charge it comes off', () => {
+    const lines = buildOrderPriceLines({
+      subtotal: 17060,
+      shipping_cost: 1500,
+      discount: 500,
+      manual_discount: 500,
+      manual_discount_target: 'shipping',
+      total: 18060,
+    });
+    const line = lines.find((l) => l.key === 'manual_discount');
+    expect(line?.label).toBe('Discount · Shipping');
+    expect(line?.amount).toBe(500);
+    expect(lines.some((l) => l.key === 'discount')).toBe(false);
+  });
 });
 
 describe('orderItemMerchandiseTotal', () => {

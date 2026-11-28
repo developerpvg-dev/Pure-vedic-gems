@@ -13,6 +13,7 @@ import { logAdminAction } from '@/lib/utils/admin-log';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import { createInAppNotifications } from '@/lib/notifications/in-app';
 import { buildAdminOrderItems } from '@/lib/orders/admin-order-edit';
+import { withManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 
 type OrderRow = {
   customer_id: string | null;
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
       { customerId: data.customer_id ?? null, pointsToRedeem: 0 },
       {
         manualDiscount: data.manual_discount ?? 0,
+        manualDiscountTarget: data.manual_discount_target ?? null,
         shippingCostOverride: isDelivery ? undefined : 0,
       },
     );
@@ -251,10 +253,13 @@ export async function POST(request: NextRequest) {
         tax_policy_version: TAX_POLICY_VERSION,
         recorded_by: auth.user.id,
       } as Json,
-      compliance_flags: {
-        gst_invoice_requested: Boolean(data.contact.billing_gstin),
-        offline_order: true,
-      } as Json,
+      compliance_flags: withManualDiscountTarget(
+        {
+          gst_invoice_requested: Boolean(data.contact.billing_gstin),
+          offline_order: true,
+        },
+        pricing.manual_discount > 0 ? data.manual_discount_target ?? null : null,
+      ) as Json,
       special_instructions: data.special_instructions ?? null,
       include_energization: includeEnergization,
       energization_type: data.energization_type ?? null,

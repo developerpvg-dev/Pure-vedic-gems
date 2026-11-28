@@ -7,23 +7,13 @@ import {
 } from '@/lib/shop/catalog-scope';
 
 describe('catalog listing scope', () => {
-  it('hides quote-only SKUs from ruby listing', () => {
-    expect(shouldHideQuoteOnlyFromListing('navaratna', 'ruby')).toBe(true);
-  });
-
-  it('shows quote-only SKUs on exclusive-gems page', () => {
+  it('keeps on-demand SKUs on the ruby listing', () => {
+    expect(shouldHideQuoteOnlyFromListing('navaratna', 'ruby')).toBe(false);
+    expect(shouldHideQuoteOnlyFromListing('navaratna', 'pitambari')).toBe(false);
     expect(shouldHideQuoteOnlyFromListing('navaratna', 'exclusive-gems')).toBe(false);
   });
 
-  it('hides quote-only SKUs from pitambari listing', () => {
-    expect(shouldHideQuoteOnlyFromListing('navaratna', 'pitambari')).toBe(true);
-  });
-
-  it('does not filter upratna listings', () => {
-    expect(shouldHideQuoteOnlyFromListing('upratna', 'amethyst')).toBe(false);
-  });
-
-  it('applies supabase filter for navaratna ruby', () => {
+  it('does not strip on-demand rows from a ruby query', () => {
     const calls: string[] = [];
     const query = {
       not(column: string, operator: string, value: string) {
@@ -32,29 +22,6 @@ describe('catalog listing scope', () => {
       },
     };
     applyQuoteOnlyListingFilter(query, 'navaratna', 'ruby');
-    expect(calls).toEqual(['price_mode in (on_demand,quote_required)']);
-  });
-
-  it('keeps quote-only rows when Exclusive quality filter is active', () => {
-    const calls: string[] = [];
-    const query = {
-      not(column: string, operator: string, value: string) {
-        calls.push(`${column} ${operator} ${value}`);
-        return this;
-      },
-    };
-    applyQuoteOnlyListingFilter(query, 'navaratna', 'ruby', 'Exclusive');
-    expect(calls).toEqual([]);
-  });
-
-  it('keeps quote-only rows when price_mode=on_demand is selected', () => {
-    const calls: string[] = [];
-    const query = {
-      not(column: string, operator: string, value: string) {
-        calls.push(`${column} ${operator} ${value}`);
-        return this;
-      },
-    };
     applyQuoteOnlyListingFilter(query, 'navaratna', 'ruby', undefined, 'on_demand');
     expect(calls).toEqual([]);
   });

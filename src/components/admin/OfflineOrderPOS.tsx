@@ -30,6 +30,11 @@ import {
   type AdditionalChargeBucketId,
 } from '@/lib/orders/additional-charge-buckets';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
+import {
+  MANUAL_DISCOUNT_TARGETS,
+  manualDiscountTargetLabel,
+  type ManualDiscountTarget,
+} from '@/lib/orders/manual-discount-target';
 import type { ProductCard } from '@/lib/types/product';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { getApiErrorMessage } from '@/lib/utils/api-validation';
@@ -130,6 +135,8 @@ export type OfflineOrderEditInitial = {
   shippingMethod: string;
   couponCode: string;
   manualDiscount: string;
+  /** Empty string = an older discount that was not aimed at one charge. */
+  manualDiscountTarget: ManualDiscountTarget | '';
   notes: string;
   commissions: Commission[];
 };
@@ -148,6 +155,7 @@ type Pricing = {
   coupon_discount: number;
   reward_discount?: number;
   manual_discount: number;
+  manual_discount_target?: string | null;
   gst_amount: number;
   total: number;
   tax_breakdown?: {
@@ -197,6 +205,8 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
     coupon_discount: pricing.coupon_discount,
     coupon_code: couponCode || null,
     reward_discount: pricing.reward_discount ?? 0,
+    manual_discount: pricing.manual_discount,
+    manual_discount_target: pricing.manual_discount_target,
     gst_amount: pricing.gst_amount,
     tax_breakdown: pricing.tax_breakdown,
     total: pricing.total,
@@ -208,7 +218,7 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
   const manualOnly = Math.max(0, (Number(pricing.manual_discount) || 0));
   const showManual =
     manualOnly > 0.009 &&
-    !lines.some((l) => l.key === 'discount') &&
+    !lines.some((l) => l.key === 'discount' || l.key === 'manual_discount') &&
     couponReward + 0.009 < (Number(pricing.discount) || 0);
 
   return (
@@ -245,7 +255,7 @@ function PosPriceBreakdown({ pricing, couponCode }: { pricing: Pricing; couponCo
 export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditInitial } = {}) {
   const router = useRouter();
   const editing = Boolean(editOrder);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(editing ? 1 : 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -278,6 +288,9 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
 
   // Charges
   const [manualDiscount, setManualDiscount] = useState(editOrder?.manualDiscount ?? '');
+  const [discountTarget, setDiscountTarget] = useState<ManualDiscountTarget | ''>(
+    editOrder?.manualDiscountTarget ?? 'stones',
+  );
   const [couponCode, setCouponCode] = useState(editOrder?.couponCode ?? '');
   const [commissions, setCommissions] = useState<Commission[]>(editOrder?.commissions ?? []);
   const [pricing, setPricing] = useState<Pricing | null>(null);
@@ -334,14 +347,22 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
 
   useEffect(() => {
     if (fulfillmentType !== 'delivery') return;
+    const country = (addr.country_code || 'IN').toUpperCase();
+    let cancelled = false;
     void (async () => {
-      const res = await fetch(`/api/shipping?country=IN&subtotal=${pricing?.subtotal ?? 0}`);
+      const res = await fetch(
+        `/api/shipping?country=${encodeURIComponent(country)}&subtotal=${pricing?.subtotal ?? 0}`,
+      );
       const data = await res.json().catch(() => ({}));
+      if (cancelled) return;
       const plans = (data.plans ?? []) as ShippingPlan[];
       setShippingPlans(plans);
       if (plans[0] && !shippingMethod) setShippingMethod(plans[0].id);
     })();
-  }, [fulfillmentType, pricing?.subtotal, shippingMethod]);
+    return () => {
+      cancelled = true;
+    };
+  }, [fulfillmentType, pricing?.subtotal, shippingMethod, addr.country_code]);
 
   function appendSimpleProducts(
     products: Array<{
@@ -614,10 +635,11 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
       shipping_address: addr,
       coupon_code: couponCode.trim() || undefined,
       manual_discount: Number(manualDiscount) || 0,
+      manual_discount_target: discountTarget || undefined,
       customer_id: customerId,
       order_id: editOrder?.orderId,
     }),
-    [items, fulfillmentType, shippingMethod, addr, couponCode, manualDiscount, customerId, editOrder?.orderId],
+    [items, fulfillmentType, shippingMethod, addr, couponCode, manualDiscount, discountTarget, customerId, editOrder?.orderId],
   );
 
   const refreshQuote = useCallback(async () => {
@@ -675,24 +697,40 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
     });
   }, [step, pricing]);
 
+  function customerDetailsError(): string {
+    if (fullName.trim().length < 2) return 'Enter the customer full name (at least 2 characters).';
+    if (!isValidOfflinePhone(phone)) {
+      return 'Enter a valid phone number (10 digits; spaces/dashes ok). Optional +country code.';
+    }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return 'Enter a valid email address, or leave email blank.';
+    }
+    if (!isValidGstin(gstin)) return 'Enter a valid GSTIN, or leave GSTIN blank.';
+    if (addr.line1.trim().length < 5) return 'Billing address must be at least 5 characters.';
+    if (addr.city.trim().length < 2) return 'Enter city.';
+    if (addr.state.trim().length < 2) return 'Enter state.';
+    if (addr.country_code === 'IN' && !isValidIndianPincode(addr.pincode)) {
+      return 'Enter a valid 6-digit Indian pincode.';
+    }
+    if (addr.pincode.trim().length < 2) return 'Enter postal / pin code.';
+    return '';
+  }
+
+  function deliveryDetailsError(): string {
+    if (fulfillmentType !== 'delivery') return '';
+    if (!shippingMethod) return 'Select a shipping method for delivery.';
+    if (!addr.line1.trim() || !addr.city.trim() || !addr.state.trim()) {
+      return 'Complete the delivery address.';
+    }
+    if (addr.country_code === 'IN' && !isValidIndianPincode(addr.pincode)) {
+      return 'Enter a valid 6-digit Indian pincode for delivery.';
+    }
+    return '';
+  }
+
   function stepBlockedReason(): string {
     if (step === 0) {
-      if (fullName.trim().length < 2) return 'Enter the customer full name (at least 2 characters).';
-      if (!isValidOfflinePhone(phone)) {
-        return 'Enter a valid phone number (10 digits; spaces/dashes ok). Optional +country code.';
-      }
-      if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        return 'Enter a valid email address, or leave email blank.';
-      }
-      if (!isValidGstin(gstin)) return 'Enter a valid GSTIN, or leave GSTIN blank.';
-      if (addr.line1.trim().length < 5) return 'Billing address must be at least 5 characters.';
-      if (addr.city.trim().length < 2) return 'Enter city.';
-      if (addr.state.trim().length < 2) return 'Enter state.';
-      if (addr.country_code === 'IN' && !isValidIndianPincode(addr.pincode)) {
-        return 'Enter a valid 6-digit Indian pincode.';
-      }
-      if (addr.pincode.trim().length < 2) return 'Enter postal / pin code.';
-      return '';
+      return customerDetailsError();
     }
     if (step === 1) {
       if (items.length === 0) return 'Add at least one product or manual design.';
@@ -704,16 +742,7 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
       return '';
     }
     if (step === 3) {
-      if (fulfillmentType === 'delivery') {
-        if (!shippingMethod) return 'Select a shipping method for delivery.';
-        if (!addr.line1.trim() || !addr.city.trim() || !addr.state.trim()) {
-          return 'Complete the delivery address.';
-        }
-        if (addr.country_code === 'IN' && !isValidIndianPincode(addr.pincode)) {
-          return 'Enter a valid 6-digit Indian pincode for delivery.';
-        }
-      }
-      return '';
+      return deliveryDetailsError();
     }
     if (step === 4) {
       if (!pricing) return 'Order total is missing — go back to Charges and refresh the quote.';
@@ -727,10 +756,30 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
   }
 
   async function submit() {
-    const blocked = stepBlockedReason();
-    if (blocked) {
-      setError(blocked);
-      return;
+    if (editing) {
+      const customerError = customerDetailsError();
+      if (customerError) {
+        setError(customerError);
+        setStep(0);
+        return;
+      }
+      if (items.length === 0) {
+        setError('Add at least one product or manual design.');
+        setStep(1);
+        return;
+      }
+      const deliveryError = deliveryDetailsError();
+      if (deliveryError) {
+        setError(deliveryError);
+        setStep(3);
+        return;
+      }
+    } else {
+      const blocked = stepBlockedReason();
+      if (blocked) {
+        setError(blocked);
+        return;
+      }
     }
     setBusy(true);
     setError('');
@@ -753,6 +802,7 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
         special_instructions: notes.trim() || undefined,
         coupon_code: couponCode.trim() || undefined,
         manual_discount: Number(manualDiscount) || 0,
+        manual_discount_target: discountTarget || undefined,
         commissions: commissions
           .filter((entry) => entry.name.trim() && entry.amount !== '')
           .map((entry) => ({
@@ -802,7 +852,7 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
           </h1>
           <p className="mt-1 text-sm text-[var(--pvg-muted)]">
             {editOrder
-              ? 'Change customer, products, designs, charges, coupon or fulfillment. Totals are re-priced on save; payments already received stay as recorded.'
+              ? 'Customer, address, and shipping stay as saved. Change the stone or design, then save. Open Customer or Fulfillment only if those details should change.'
               : 'Walk-in / counter sale with advance or full payment. Items are reserved on create; mark sold later from the order page.'}
           </p>
         </div>
@@ -935,8 +985,8 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
                       value={addr[fieldName]}
                       onChange={(e) => setAddr((a) => ({ ...a, [fieldName]: e.target.value }))}
                       placeholder={fieldName === 'pincode' ? '302001' : undefined}
-                      inputMode={fieldName === 'pincode' ? 'numeric' : undefined}
-                      maxLength={fieldName === 'pincode' ? 6 : undefined}
+                      inputMode={fieldName === 'pincode' && addr.country_code === 'IN' ? 'numeric' : undefined}
+                      maxLength={fieldName === 'pincode' && addr.country_code === 'IN' ? 6 : undefined}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2"
                     />
                   </label>
@@ -955,6 +1005,29 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
               Browse a category, then add beads as loose or configure jewellery. Search by tag / SKU
               also has Add (loose) and Configure.
             </p>
+            {editing ? (
+              <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-700">
+                <p className="font-medium text-stone-900">Kept from this order</p>
+                <p className="mt-1">
+                  {[fullName, phone, email].filter(Boolean).join(' · ')}
+                </p>
+                <p>
+                  {[addr.line1, addr.line2, addr.city, addr.state, addr.pincode, addr.country]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                {fulfillmentType === 'delivery' && shippingMethod ? (
+                  <p className="text-xs text-stone-500">Shipping: {shippingMethod.replace(/_/g, ' ')}</p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setStep(0)}
+                  className="mt-1 text-xs font-semibold text-amber-900"
+                >
+                  Change customer or address
+                </button>
+              </div>
+            ) : null}
 
             <OfflinePosCatalogPicker
               onConfigure={openConfigurator}
@@ -1162,9 +1235,31 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
               <IndianRupee className="h-4 w-4" /> Charges & commission
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <label className="text-sm">
-                <span className="mb-1 block text-gray-600">Manual discount (₹)</span>
+                <span className="mb-1 block text-gray-600">Discount on</span>
+                <select
+                  aria-label="Discount on"
+                  value={discountTarget}
+                  onChange={(e) =>
+                    setDiscountTarget(
+                      MANUAL_DISCOUNT_TARGETS.some((row) => row.id === e.target.value)
+                        ? (e.target.value as ManualDiscountTarget)
+                        : '',
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                >
+                  {discountTarget === '' ? <option value="">Whole order</option> : null}
+                  {MANUAL_DISCOUNT_TARGETS.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm">
+                <span className="mb-1 block text-gray-600">Discount amount (₹)</span>
                 <input
                   type="number"
                   min={0}
@@ -1182,6 +1277,16 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
                 />
               </label>
             </div>
+            {Number(manualDiscount) > 0 && discountTarget === 'design' ? (
+              <p className="text-xs text-stone-500">A design discount also lowers the 3% GST on the gold and making.</p>
+            ) : null}
+            {pricing && Number(manualDiscount) > Number(pricing.manual_discount) + 0.5 ? (
+              <p className="text-xs text-amber-800">
+                Capped at the{' '}
+                {discountTarget ? manualDiscountTargetLabel(discountTarget).toLowerCase() : 'order'}{' '}
+                amount ({fmt(pricing.manual_discount)}).
+              </p>
+            ) : null}
             <div className="space-y-3 border-t border-gray-100 pt-3">
               <p className="text-sm font-semibold text-gray-900">Additional charges</p>
               {items.some((i) => i.configuration_summary === ADDITIONAL_CHARGE_LABEL) ? (
@@ -1432,6 +1537,9 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
                     className="w-full rounded-lg border border-gray-200 px-3 py-2"
                   >
                     <option value="">Select…</option>
+                    {shippingMethod && !shippingPlans.some((p) => p.id === shippingMethod) ? (
+                      <option value={shippingMethod}>{shippingMethod.replace(/_/g, ' ')}</option>
+                    ) : null}
                     {shippingPlans.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label} — {fmt(Number(p.cost) || 0)}
@@ -1599,22 +1707,35 @@ export function OfflineOrderPOS({ editOrder }: { editOrder?: OfflineOrderEditIni
           Back
         </button>
         {step < STEPS.length - 1 ? (
-          <button
-            type="button"
-            onClick={() => {
-              const blocked = stepBlockedReason();
-              if (blocked) {
-                setError(blocked);
-                return;
-              }
-              setError('');
-              if (step === 1 || step === 2 || step === 3) void refreshQuote();
-              setStep(nextStep);
-            }}
-            className="rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            Continue
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {editing ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void submit()}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Save changes
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                const blocked = stepBlockedReason();
+                if (blocked) {
+                  setError(blocked);
+                  return;
+                }
+                setError('');
+                if (step === 1 || step === 2 || step === 3) void refreshQuote();
+                setStep(nextStep);
+              }}
+              className="rounded-lg bg-[var(--pvg-primary)] px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              Continue
+            </button>
+          </div>
         ) : (
           <button
             type="button"

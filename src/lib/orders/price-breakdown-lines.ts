@@ -1,3 +1,5 @@
+import { manualDiscountLineLabel } from '@/lib/orders/manual-discount-target';
+
 /**
  * Single source of order charge lines for confirmation, email, account, admin.
  * Amounts come from orders.* columns written by recalculateOrderTotal.
@@ -18,6 +20,8 @@ export type OrderChargeFields = {
   coupon_code?: string | null;
   reward_discount?: number | null;
   reward_points_redeemed?: number | null;
+  manual_discount?: number | null;
+  manual_discount_target?: string | null;
   gst_amount?: number | null;
   tax_breakdown?: unknown;
   total?: number | null;
@@ -65,6 +69,7 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
 
   const couponDiscount = n(order.coupon_discount);
   const rewardDiscount = n(order.reward_discount);
+  const manualDiscount = n(order.manual_discount);
   const combinedDiscount = n(order.discount);
   if (couponDiscount > 0) {
     lines.push({
@@ -83,8 +88,17 @@ export function buildOrderPriceLines(order: OrderChargeFields): OrderPriceLine[]
       sign: -1,
     });
   }
-  if (couponDiscount <= 0 && rewardDiscount <= 0 && combinedDiscount > 0) {
-    lines.push({ key: 'discount', label: 'Discount', amount: combinedDiscount, sign: -1 });
+  if (manualDiscount > 0) {
+    lines.push({
+      key: 'manual_discount',
+      label: manualDiscountLineLabel(order.manual_discount_target),
+      amount: manualDiscount,
+      sign: -1,
+    });
+  }
+  const leftover = combinedDiscount - couponDiscount - rewardDiscount - manualDiscount;
+  if (leftover > 0.009) {
+    lines.push({ key: 'discount', label: 'Discount', amount: leftover, sign: -1 });
   }
 
   return lines.filter((line) => line.amount > 0);

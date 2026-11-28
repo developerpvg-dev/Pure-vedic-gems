@@ -31,6 +31,7 @@ import {
 import { ConfigurationDetailsDisplay } from '@/components/configuration/ConfigurationDetailsDisplay';
 import { resolveOrderFulfillmentContext } from '@/lib/orders/fulfillment-profile';
 import { buildOrderPriceLines } from '@/lib/orders/price-breakdown-lines';
+import { readManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 import { collectOrderProductIds } from '@/lib/inventory/order-availability';
 import { formatProductDisplayName } from '@/lib/utils/product-display-name';
 import { OrderTaxBreakdownBlock } from '@/components/orders/OrderTaxBreakdownBlock';
@@ -86,6 +87,7 @@ function cap(s: string | null | undefined) {
 const METAL_LABELS: Record<string, string> = {
   gold_22k: '22K Gold',
   gold_18k: '18K Gold',
+  gold_18k_yellow: '18K Yellow Gold',
   gold_14k: '14K Gold',
   silver_925: '925 Sterling Silver',
   panchdhatu: 'Panchdhatu (Without Gold)',
@@ -448,6 +450,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
     coupon_code: o.coupon_code,
     reward_discount: rewardDiscount,
     reward_points_redeemed: o.reward_points_redeemed,
+    manual_discount: o.manual_discount,
+    manual_discount_target: readManualDiscountTarget(orderExtras.compliance_flags),
     gst_amount: o.gst_amount,
     tax_breakdown: o.tax_breakdown,
   }).map((line) => ({ label: line.label, value: line.amount, sign: line.sign }));

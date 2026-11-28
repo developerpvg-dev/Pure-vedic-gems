@@ -15,6 +15,9 @@ const QuoteSchema = z.object({
   shipping_method: ShippingMethodIdSchema.optional(),
   coupon_code: z.string().max(50).optional(),
   manual_discount: z.coerce.number().min(0).optional().default(0),
+  manual_discount_target: z
+    .enum(['stones', 'design', 'certification', 'energization', 'shipping'])
+    .optional(),
   energization_type: z.string().max(200).optional(),
   customer_id: z.string().uuid().nullable().optional(),
   /** Editing an existing order — its own reserved/sold pieces and coupon stay valid. */
@@ -88,6 +91,7 @@ export async function POST(request: NextRequest) {
       {
         ...editOptions,
         manualDiscount: data.manual_discount ?? 0,
+        manualDiscountTarget: data.manual_discount_target ?? null,
         shippingCostOverride: isDelivery ? undefined : 0,
       },
     );

@@ -1,71 +1,26 @@
 /**
- * Catalog listing scope — mirrors legacy WooCommerce category boundaries.
- *
- * Old site: /navratan/ruby/ listed 236 priced rubies only.
- * Exclusive "On-Demand" SKUs lived under Exclusive Gems, not ruby/emerald grids.
+ * Catalog listing scope.
+ * On-demand gems stay in their own category (ruby, emerald, …).
+ * The price-mode filter still narrows the grid when a shopper asks for them only.
  */
 
-export const NAVARATNA_PRICED_SUBCATEGORIES = new Set([
-  'ruby',
-  'pearl',
-  'red-coral',
-  'emerald',
-  'yellow-sapphire',
-  'blue-sapphire',
-  'hessonite',
-  'cats-eye',
-  'white-sapphire',
-  'diamond',
-  'pitambari',
-  'padparadscha-sapphire',
-]);
-
-export const QUOTE_ONLY_PRICE_MODES = ['on_demand', 'quote_required'] as const;
-
-/** Standard navaratna gem grids (ruby, emerald, …) exclude quote-only SKUs. */
+/** Kept so older callers can ask; category grids no longer drop on-demand rows. */
 export function shouldHideQuoteOnlyFromListing(
-  category?: string | null,
-  subCategory?: string | null,
+  _category?: string | null,
+  _subCategory?: string | null,
 ): boolean {
-  const normalizedCategory = category?.toLowerCase().trim();
-  const normalizedSubCategory = subCategory?.toLowerCase().trim();
-
-  if (normalizedCategory !== 'navaratna') return false;
-  if (normalizedSubCategory === 'exclusive-gems') return false;
-
-  if (normalizedSubCategory && NAVARATNA_PRICED_SUBCATEGORIES.has(normalizedSubCategory)) {
-    return true;
-  }
-
-  return !normalizedSubCategory;
+  return false;
 }
 
-type FilterableQuery = {
-  not(column: string, operator: string, value: string): FilterableQuery;
-};
-
-/** True when the shopper explicitly asked for the Exclusive quality bucket. */
-export function isExclusiveQualityFilter(qualityLabel?: string | null): boolean {
-  return qualityLabel?.trim().toLowerCase() === 'exclusive';
-}
-
-/** Hide on-request exclusive gems from priced navaratna collection pages. */
-export function applyQuoteOnlyListingFilter<T extends FilterableQuery>(
+/** No-op. On-demand and quote-required products belong on the category page. */
+export function applyQuoteOnlyListingFilter<T>(
   query: T,
-  category?: string | null,
-  subCategory?: string | null,
-  // ponytail: Exclusive filter IS the on-request shelf — don't hide the rows it selects.
-  qualityLabel?: string | null,
-  priceMode?: string | null,
+  _category?: string | null,
+  _subCategory?: string | null,
+  _qualityLabel?: string | null,
+  _priceMode?: string | null,
 ): T {
-  if (isExclusiveQualityFilter(qualityLabel)) return query;
-  // Explicit on_demand / quote_required must not fight the default hide.
-  const mode = priceMode?.trim().toLowerCase();
-  if (mode === 'on_demand' || mode === 'quote_required') return query;
-  if (!shouldHideQuoteOnlyFromListing(category, subCategory)) {
-    return query;
-  }
-  return query.not('price_mode', 'in', '(on_demand,quote_required)') as T;
+  return query;
 }
 
 type OrFilterableQuery = {

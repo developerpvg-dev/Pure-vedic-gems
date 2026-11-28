@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { asUntypedSupabase } from '@/lib/supabase/untyped';
 import type { OrderBalances } from '@/lib/orders/online-payments';
+import { readManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 import { sendOrderConfirmationEmail } from '@/lib/resend/send-order-confirmation';
 import { sendAdminOrderAlertEmail } from '@/lib/resend/send-admin-order-alert';
 import { sendAdminOperationalAlertEmail } from '@/lib/resend/send-admin-alert';
@@ -379,6 +380,8 @@ async function sendVerifiedOrderNotifications(order: Order, balances: OrderBalan
         coupon_code: order.coupon_code,
         reward_discount: order.reward_discount,
         reward_points_redeemed: order.reward_points_redeemed,
+        manual_discount: order.manual_discount,
+        manual_discount_target: readManualDiscountTarget(order.compliance_flags),
         gst_amount: order.gst_amount,
         tax_breakdown: order.tax_breakdown,
         total: order.total,

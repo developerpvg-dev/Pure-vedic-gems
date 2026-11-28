@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
       'id, label, description, cost, min_order_amount, max_order_amount, estimated_days_min, estimated_days_max, country_code, sort_order'
     )
     .eq('is_active', true)
-    .gt('cost', 0)
+    // Store collection is ₹0. Inactive free rows stay hidden via is_active.
+    .gte('cost', 0)
     .order('sort_order', { ascending: true });
 
   if (country) {

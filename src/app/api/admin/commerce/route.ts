@@ -28,7 +28,7 @@ const shippingSchema = z.object({
   id: z.string().trim().min(2).max(40).regex(/^[a-z0-9_-]+$/).optional(),
   label: z.string().trim().min(2).max(160),
   description: z.string().trim().max(500).optional().nullable(),
-  cost: z.coerce.number().finite().positive('Shipping cost must be greater than zero'),
+  cost: z.coerce.number().finite().min(0, 'Shipping cost cannot be negative'),
   free_above: z.literal(null).optional(),
   min_order_amount: nullableNumber,
   max_order_amount: nullableNumber,

@@ -10,6 +10,7 @@ import {
   type LineItem,
   type OfflineOrderEditInitial,
 } from '@/components/admin/OfflineOrderPOS';
+import { readManualDiscountTarget } from '@/lib/orders/manual-discount-target';
 
 export const dynamic = 'force-dynamic';
 
@@ -147,6 +148,9 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
     shippingMethod: fulfillmentType === 'delivery' ? str(o.shipping_method) : '',
     couponCode: str(o.coupon_code),
     manualDiscount: Number(o.manual_discount ?? 0) > 0 ? String(o.manual_discount) : '',
+    manualDiscountTarget:
+      readManualDiscountTarget(o.compliance_flags) ??
+      (Number(o.manual_discount ?? 0) > 0 ? '' : 'stones'),
     notes: str(o.special_instructions),
     commissions: (Array.isArray(o.commissions) ? (o.commissions as Row[]) : []).map((c) => ({
       source: c.source === 'astrologer' ? 'astrologer' : 'salesperson',

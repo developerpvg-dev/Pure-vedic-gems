@@ -293,6 +293,9 @@ const OfflineOrderFieldsSchema = z.object({
     special_instructions: z.string().max(1000).trim().optional(),
     coupon_code: z.string().max(50).trim().optional(),
     manual_discount: z.coerce.number().min(0).max(10_000_000).optional().default(0),
+    manual_discount_target: z
+      .enum(['stones', 'design', 'certification', 'energization', 'shipping'])
+      .optional(),
     energization_type: z.string().max(200).optional(),
     ceremony_dob: z.string().optional(),
     ceremony_gotra: z.string().max(100).optional(),
